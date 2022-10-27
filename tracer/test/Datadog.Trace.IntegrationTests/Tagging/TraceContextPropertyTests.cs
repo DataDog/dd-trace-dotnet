@@ -36,8 +36,10 @@ public class TraceContextPropertyTests
     [InlineData(100)]
     public async Task SamplingPriority(int samplingPriority)
     {
-        var traceContext = CreateTrace(_tracer);
-        traceContext.SetSamplingPriority(samplingPriority);
+        using (var scope = CreateTrace(_tracer))
+        {
+            scope.Span.Context.TraceContext.SetSamplingPriority(samplingPriority);
+        }
 
         await _tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
@@ -55,82 +57,107 @@ public class TraceContextPropertyTests
     }
 
     [Theory]
-    [InlineData(null, null)]                           // null
-    [InlineData("", null)]                             // empty
-    [InlineData(" ", null)]                            // whitespace
-    [InlineData("test", "test")]                       // normal
-    [InlineData("Caps and Spaces", "Caps and Spaces")] // adding this now so it fails later when we start normalizing this
-    public async Task Env(string beforeEnv, string afterEnv)
+    [InlineData(null, null)]                                   // null
+    [InlineData("", null)]                                     // empty
+    [InlineData(" ", null)]                                    // whitespace
+    [InlineData("test", "test")]                               // normal
+    [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
+    public async Task Env(string before, string after)
     {
-        var traceContext = CreateTrace(_tracer);
-        traceContext.Environment = beforeEnv;
+        using (var scope = CreateTrace(_tracer))
+        {
+            scope.Span.Context.TraceContext.Environment = before;
+        }
 
         await _tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
+        var spans = traceChunks.SelectMany(s => s).ToArray();
 
-        traceChunks.Should().HaveCount(1);    // 1 trace chunk
-        traceChunks[0].Should().HaveCount(4); // 4 spans
+        spans.Should().HaveCount(4);
 
-        if (afterEnv is null)
+        if (after is null)
         {
-            traceChunks[0].Should().OnlyContain(s => !s.Tags.ContainsKey("env"));
+            spans.Should().OnlyContain(s => !s.Tags.ContainsKey("env"));
         }
         else
         {
-            traceChunks[0].Should().OnlyContain(s => s.Tags["env"] == afterEnv);
+            spans.Should().OnlyContain(s => s.Tags["env"] == after);
         }
     }
 
     [Theory]
-    [InlineData(null, null)]                           // null
-    [InlineData("", null)]                             // empty
-    [InlineData(" ", null)]                            // whitespace
-    [InlineData("test", "test")]                       // normal
-    [InlineData("Caps and Spaces", "Caps and Spaces")] // adding this now so it fails later when we start normalizing this
-    public async Task Version(string beforeVersion, string afterVersion)
+    [InlineData(null, null)]                                   // null
+    [InlineData("", null)]                                     // empty
+    [InlineData(" ", null)]                                    // whitespace
+    [InlineData("test", "test")]                               // normal
+    [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
+    public async Task Version(string before, string after)
     {
-        using (var scope = _tracer.StartActive("root"))
+        using (var scope = CreateTrace(_tracer))
         {
-            var traceContext = ((Scope)scope).Span.Context.TraceContext;
-            traceContext.ServiceVersion = beforeVersion;
+            scope.Span.Context.TraceContext.ServiceVersion = before;
         }
 
         await _tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
+        var spans = traceChunks.SelectMany(s => s).ToArray();
 
-        traceChunks.Should().HaveCount(1);    // 1 trace chunk
-        traceChunks[0].Should().HaveCount(1); // 1 span
+        spans.Should().HaveCount(4);
 
-        if (afterVersion is null)
+        if (after is null)
         {
-            traceChunks[0].Should().OnlyContain(s => !s.Tags.ContainsKey("env"));
+            spans.Should().OnlyContain(s => !s.Tags.ContainsKey("version"));
         }
         else
         {
-            traceChunks[0].Should().OnlyContain(s => s.Tags["version"] == afterVersion);
+            spans.Should().OnlyContain(s => s.Tags["version"] == after);
         }
     }
 
-    private static TraceContext CreateTrace(Tracer tracer)
+    [Theory]
+    [InlineData(null, null)]                                   // null
+    [InlineData("", null)]                                     // empty
+    [InlineData(" ", null)]                                    // whitespace
+    [InlineData("test", "test")]                               // normal
+    [InlineData("Caps and Spaces! 🐶", "Caps and Spaces! 🐶")] // adding this now so it fails later when we start normalizing this
+    public async Task Origin(string before, string after)
     {
-        TraceContext traceContext;
-
-        using (var scope = tracer.StartActive("root"))
+        using (var scope = CreateTrace(_tracer))
         {
-            traceContext = ((Scope)scope).Span.Context.TraceContext;
+            scope.Span.Context.TraceContext.Origin = before;
+        }
 
-            using (_ = tracer.StartActive("child"))
-            {
-                using (_ = tracer.StartActive("child"))
-                {
-                }
-            }
+        await _tracer.FlushAsync();
+        var traceChunks = _testApi.Wait();
+        var spans = traceChunks.SelectMany(s => s).ToArray();
 
+        spans.Should().HaveCount(4);
+
+        if (after is null)
+        {
+            spans.Should().OnlyContain(s => !s.Tags.ContainsKey("version"));
+        }
+        else
+        {
+            spans.Should().OnlyContain(s => s.Tags["version"] == after);
+        }
+    }
+
+    private static Scope CreateTrace(Tracer tracer)
+    {
+        var rootScope = tracer.StartActive("root");
+
+        using (_ = tracer.StartActive("child"))
+        {
             using (_ = tracer.StartActive("child"))
             {
             }
         }
 
-        return traceContext;
+        using (_ = tracer.StartActive("child"))
+        {
+        }
+
+        return (Scope)rootScope;
     }
 }
