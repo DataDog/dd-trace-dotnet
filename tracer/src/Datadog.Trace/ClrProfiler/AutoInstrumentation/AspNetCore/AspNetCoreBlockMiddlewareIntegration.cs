@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        public static void HandleBranch(Microsoft.AspNetCore.Builder.IApplicationBuilder app)
+        internal static void HandleBranch(Microsoft.AspNetCore.Builder.IApplicationBuilder app)
         {
             app.Run(context =>
             {
