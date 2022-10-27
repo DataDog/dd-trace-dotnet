@@ -79,21 +79,6 @@ namespace Datadog.Trace.Agent.MessagePack
                                           };
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte[] SerializeTagValue(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return null;
-            }
-
-            // truncate and normalize if needed
-            TagValueTruncator.ProcessMetaValue(ref value);
-            value = TraceUtil.NormalizeTag(value);
-
-            return MessagePackSerializer.Serialize(value);
-        }
-
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
             return Serialize(ref bytes, offset, traceChunk, formatterResolver);
