@@ -73,12 +73,9 @@ internal class IastModule
 
     private static Scope? AddVulnerability(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
     {
-        var iActiveScope = tracer.Active;
-        var traceContext = (iActiveScope as Scope)?.Span?.Context?.TraceContext;
-
-        if (traceContext?.RootSpan?.Type == SpanTypes.Web)
+        if (tracer.ActiveScope is Scope { Span.Context.TraceContext: { RootSpan.Type: SpanTypes.Web } traceContext })
         {
-            traceContext?.IastRequestContext.AddVulnerability(vulnerability);
+            traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
             return null;
         }
         else

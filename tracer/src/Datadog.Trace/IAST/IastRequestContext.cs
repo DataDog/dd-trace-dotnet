@@ -11,7 +11,7 @@ namespace Datadog.Trace.Iast;
 
 internal class IastRequestContext
 {
-    private VulnerabilityBatch vulnerabilityBatch = new();
+    private VulnerabilityBatch? vulnerabilityBatch;
 
     internal void AddIastTagsIfNeeded(Span span)
     {
@@ -26,7 +26,7 @@ internal class IastRequestContext
         // Right now, we always set the IastEnabled tag to "1", but in the future, it will not be added if iast is enabled but the request is not analyzed.
         span.SetTag(Tags.IastEnabled, "1");
 
-        if (vulnerabilityBatch.HasVulnerabilities())
+        if (vulnerabilityBatch != null)
         {
             span.SetTag(Tags.IastJson, vulnerabilityBatch.ToString());
         }
@@ -34,6 +34,11 @@ internal class IastRequestContext
 
     internal void AddVulnerability(Vulnerability vulnerability)
     {
+        if (vulnerabilityBatch == null)
+        {
+            vulnerabilityBatch = new();
+        }
+
         vulnerabilityBatch.Add(vulnerability);
     }
 }
