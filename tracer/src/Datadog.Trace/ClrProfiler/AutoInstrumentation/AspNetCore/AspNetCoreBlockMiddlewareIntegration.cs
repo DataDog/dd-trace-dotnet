@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -87,14 +88,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                 }
 
                 var template = settings.BlockedJsonTemplate;
-                if (context.Request.Headers["Accept"] == "text/html")
-                {
-                    httpResponse.ContentType = "text/html";
-                }
-                else
+                if (context.Request.Headers["Accept"].ToString().Contains("text/html"))
                 {
                     httpResponse.ContentType = "text/html";
                     template = settings.BlockedHtmlTemplate;
+                }
+                else
+                {
+                    httpResponse.ContentType = "application/json";
                 }
 
                 return httpResponse.WriteAsync(template);
