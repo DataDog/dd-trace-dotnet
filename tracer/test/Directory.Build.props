@@ -19,7 +19,7 @@
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
   </ItemGroup>
 
-  <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
+  <ItemGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
     <PackageReference Include="DatadogTestLogger" Version="0.0.18">
       <CopyToOutputDirectory>lib\$(TargetFramework)\*</CopyToOutputDirectory>
       <FolderName>datadogtestlogger</FolderName>
@@ -31,7 +31,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.test.cs" />
   </ItemGroup>
 
-  <Target Name="PackageReferenceCopyToOutput" AfterTargets="Build" Condition=" !$(TargetFramework.StartsWith('net4')) ">
+  <Target Name="PackageReferenceCopyToOutput" AfterTargets="Build"  Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
     <ItemGroup>
       <PackageReferenceFiles Condition="%(PackageReference.CopyToOutputDirectory) != '' AND %(PackageReference.FolderName) != ''"
         Include="$(NugetPackageRoot)\%(PackageReference.FolderName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory)" />
