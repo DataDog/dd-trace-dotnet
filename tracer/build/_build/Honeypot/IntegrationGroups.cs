@@ -76,6 +76,7 @@ namespace Honeypot
             NugetPackages.Add("Grpc.AspNetCore.Server", new string[] { "Grpc.AspNetCore" });
             NugetPackages.Add("Grpc.Net.Client", new string[] { "Grpc.AspNetCore" });
             NugetPackages.Add("Grpc.Core", new string[] { "Grpc" });
+            NugetPackages.Add("Microsoft.AspNetCore.Hosting", new [] { "Microsoft.AspNetCore.Hosting" });
             NugetPackages.Add("Microsoft.AspNetCore.Mvc.Core", new [] { "Microsoft.AspNetCore.Mvc.Core" });
         }
 

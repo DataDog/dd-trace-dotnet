@@ -50,17 +50,7 @@ namespace Samples.Security.AspNetCore5
             app.UseRouting();
 
             app.UseAuthorization();
-
-
-            app.Map("/shutdown", builder =>
-            {
-                builder.Run(async context =>
-                {
-                    await context.Response.WriteAsync("Shutting down");
-                    _ = Task.Run(() => builder.ApplicationServices.GetService<IHostApplicationLifetime>().StopApplication());
-                });
-            });
-            
+          
             app.Map("/shutdown", builder =>
             {
                 builder.Run(async context =>
@@ -73,7 +63,7 @@ namespace Samples.Security.AspNetCore5
             app.Use(async (context, next) =>
             {
                 // make sure if we go into this middleware after blocking has happened that it s not a second request issued by the developerhandlingpage middleware! if it s that no worries it s another request, not the attack one., its  a redirect.
-                // await context.Response.WriteAsync("do smth before all");
+                await context.Response.WriteAsync("do smth before all");
                 await next.Invoke();
             });
            
