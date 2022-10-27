@@ -24,6 +24,7 @@ namespace Datadog.Trace
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
         private readonly object _syncRoot = new();
+        private IastRequestContext _iastRequestContext;
 
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
@@ -32,7 +33,6 @@ namespace Datadog.Trace
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
             Tracer = tracer;
-            IastRequestContext = Iast.Iast.Instance.Settings.Enabled ? new IastRequestContext() : null;
             Tags = tags ?? new TraceTagCollection(tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
@@ -55,10 +55,26 @@ namespace Datadog.Trace
             get => _samplingPriority;
         }
 
+        public bool IastInitialized
+        {
+            get => _iastRequestContext != null;
+        }
+
         /// <summary>
         /// Gets the iast context.
         /// </summary>
-        internal IastRequestContext IastRequestContext { get; }
+        internal IastRequestContext IastRequestContext
+        {
+            get
+            {
+                if (_iastRequestContext == null && Iast.Iast.Instance.Settings.Enabled)
+                {
+                    _iastRequestContext = new();
+                }
+
+                return _iastRequestContext;
+            }
+        }
 
         private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
 

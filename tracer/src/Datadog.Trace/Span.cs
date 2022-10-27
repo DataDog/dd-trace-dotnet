@@ -336,7 +336,11 @@ namespace Datadog.Trace
             lock (_lock)
             {
                 ResourceName ??= OperationName;
-                Context.TraceContext?.IastRequestContext?.AddIastTagsIfNeeded(this);
+
+                if (Context.TraceContext.IastInitialized)
+                {
+                    Context.TraceContext?.IastRequestContext?.AddIastTagsIfNeeded(this);
+                }
 
                 if (!IsFinished)
                 {
