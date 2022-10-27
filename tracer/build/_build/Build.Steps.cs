@@ -1139,7 +1139,7 @@ partial class Build
                                 .When(CodeCoverage, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .SetDiagnosticsFile(TestLogsDirectory / "diagnostics.txt")
-                                // .WithDatadogLogger() // There's still a problem when activating this on these tests due the Datadog.Trace.dll requirements (further investigation is required)
+                                .WithDatadogLogger()
                                 .SetProjectFile(project));
         }
         finally

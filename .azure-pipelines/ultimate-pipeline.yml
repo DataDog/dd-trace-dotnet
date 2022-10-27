@@ -948,7 +948,7 @@ stages:
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisTracerIntegrationTests
       env:
-        DD_LOGGER_ENABLED: false
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
