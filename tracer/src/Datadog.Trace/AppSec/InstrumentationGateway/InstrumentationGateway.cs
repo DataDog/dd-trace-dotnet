@@ -35,9 +35,7 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewayEventArgs> LastChanceToWriteTags;
 
-        public event EventHandler<InstrumentationGatewayBlockingEventArgs> BlockingOpportunity;
-
-        public void RaiseRequestEnd(HttpContext context, HttpRequest request, Span relatedSpan)
+        public void RaiseRequestEnd(HttpContext context, HttpRequest request, Span relatedSpan, BeforeRequestStopsArgs beforeRequestStopsArgs = null)
         {
             var getEventData = () =>
             {
@@ -45,19 +43,21 @@ namespace Datadog.Trace.AppSec
                 eventData.Add(AddressesConstants.ResponseStatus, context.Response.StatusCode.ToString());
                 return eventData;
             };
-
-            RaiseEvent(context, relatedSpan, getEventData, EndRequest);
+            RaiseEvent(context, relatedSpan, getEventData, EndRequest, beforeRequestStopsArgs);
         }
 
-        public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan)
+        public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan, BeforeRequestStopsArgs beforeRequestStopsArgs)
         {
             var getEventData = () => request.PrepareArgsForWaf(relatedSpan);
-            RaiseEvent(context, relatedSpan, getEventData, StartRequest);
+            RaiseEvent(context, relatedSpan, getEventData, StartRequest, beforeRequestStopsArgs);
         }
 
-        public void RaisePathParamsAvailable(HttpContext context, Span relatedSpan, IDictionary<string, object> pathParams, bool eraseExistingAddress = true) => RaiseEvent(context, relatedSpan, () => new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } }, PathParamsAvailable, eraseExistingAddress);
+        public void RaisePathParamsAvailable(HttpContext context, Span relatedSpan, IDictionary<string, object> pathParams, BeforeRequestStopsArgs beforeRequestStopsArgs, bool eraseExistingAddress = true)
+        {
+            RaiseEvent(context, relatedSpan, () => new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } }, PathParamsAvailable, beforeRequestStopsArgs, eraseExistingAddress);
+        }
 
-        public void RaiseBodyAvailable(HttpContext context, Span relatedSpan, object body)
+        public void RaiseBodyAvailable(HttpContext context, Span relatedSpan, object body, BeforeRequestStopsArgs beforeRequestStopsArgs)
         {
             var getEventData = () =>
             {
@@ -66,7 +66,7 @@ namespace Datadog.Trace.AppSec
                 return eventData;
             };
 
-            RaiseEvent(context, relatedSpan, getEventData, BodyAvailable);
+            RaiseEvent(context, relatedSpan, getEventData, BodyAvailable, beforeRequestStopsArgs);
         }
 
         public void RaiseLastChanceToWriteTags(HttpContext context, Span relatedSpan)
@@ -92,32 +92,26 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void RaiseEvent(HttpContext context, Span relatedSpan, Func<IDictionary<string, object>> getEventData, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler, bool eraseExistingAddress = true)
+        private void RaiseEvent(HttpContext context, Span relatedSpan, Func<IDictionary<string, object>> getEventData, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler, BeforeRequestStopsArgs beforeRequestStopsArgs, bool eraseExistingAddress = true)
         {
-            if (eventHandler == null)
+            if (eventHandler != null)
             {
-                return;
-            }
-
-            try
-            {
-                var eventData = getEventData();
-                var transport = new HttpTransport(context);
-                if (!transport.Blocked)
+                try
                 {
-                    LogAddressIfDebugEnabled(eventData);
-                    eventHandler?.Invoke(this, new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan, eraseExistingAddress));
+                    var eventData = getEventData();
+                    var transport = new HttpTransport(context);
+                    if (!transport.Blocked)
+                    {
+                        LogAddressIfDebugEnabled(eventData);
+                        var instrumentationGatewaySecurityEventArgs = new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan, beforeRequestStopsArgs, eraseExistingAddress);
+                        eventHandler?.Invoke(this, instrumentationGatewaySecurityEventArgs);
+                    }
+                }
+                catch (Exception ex) when (ex is not BlockException)
+                {
+                    Log.Error(ex, "DDAS-0004-00: AppSec failed to process request.");
                 }
             }
-            catch (Exception ex) when (ex is not BlockException)
-            {
-                Log.Error(ex, "DDAS-0004-00: AppSec failed to process request.");
-            }
-        }
-
-        internal void RaiseBlockingOpportunity(HttpContext context, Scope scope, ImmutableTracerSettings tracerSettings, Action<InstrumentationGatewayBlockingEventArgs> doBeforeActualBlocking = null)
-        {
-            BlockingOpportunity?.Invoke(this, new InstrumentationGatewayBlockingEventArgs(context, scope, tracerSettings, doBeforeActualBlocking));
         }
     }
 }

@@ -39,15 +39,9 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
         public void DisposeAdditiveContext() => GetAdditiveContext()?.Dispose();
 
-        public void SetAdditiveContext(IContext additiveContext)
-        {
-            _context.Items[WafKey] = additiveContext;
-        }
+        public void SetAdditiveContext(IContext additiveContext) => _context.Items[WafKey] = additiveContext;
 
-        public IHeadersCollection GetRequestHeaders()
-        {
-            return new NameValueHeadersCollection(_context.Request.Headers);
-        }
+        public IHeadersCollection GetRequestHeaders() => new NameValueHeadersCollection(_context.Request.Headers);
 
         public IHeadersCollection GetResponseHeaders()
         {

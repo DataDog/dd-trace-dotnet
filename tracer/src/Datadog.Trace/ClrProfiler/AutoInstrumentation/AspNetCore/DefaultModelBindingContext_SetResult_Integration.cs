@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 
 using System.ComponentModel;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -18,27 +19,26 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     /// setModel calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-    AssemblyName = "Microsoft.AspNetCore.Mvc.Core",
-    TypeName = "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext",
-    MethodName = "set_Result",
-    ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
-    MinimumVersion = "2.0.0.0",
-    MaximumVersion = "6.*.*.*.*",
-    IntegrationName = IntegrationName,
-    InstrumentationCategory = InstrumentationCategory.AppSec)]
+        AssemblyName = "Microsoft.AspNetCore.Mvc.Core",
+        TypeName = "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext",
+        MethodName = "set_Result",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
+        MinimumVersion = "2.0.0.0",
+        MaximumVersion = "6.*.*.*.*",
+        IntegrationName = IntegrationName,
+        InstrumentationCategory = InstrumentationCategory.AppSec)]
     [InstrumentMethod(
-    AssemblyName = "Microsoft.AspNetCore.Mvc.Core",
-    TypeName = "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext",
-    MethodName = "set_Result",
-    ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
-    MinimumVersion = "2.0.0.0",
-    MaximumVersion = "6.*.*.*.*",
-    IntegrationName = IntegrationName,
-    CallTargetIntegrationType = IntegrationType.Derived,
-    InstrumentationCategory = InstrumentationCategory.AppSec)]
-
+        AssemblyName = "Microsoft.AspNetCore.Mvc.Core",
+        TypeName = "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext",
+        MethodName = "set_Result",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
+        MinimumVersion = "2.0.0.0",
+        MaximumVersion = "6.*.*.*.*",
+        IntegrationName = IntegrationName,
+        CallTargetIntegrationType = IntegrationType.Derived,
+        InstrumentationCategory = InstrumentationCategory.AppSec)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class DefaultModelBindingContext_SetResult_Integration
@@ -58,11 +58,17 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
                     if (defaultModelBindingContext.Result.IsModelSet && defaultModelBindingContext.IsTopLevelObject)
                     {
                         var span = (state.Scope ?? state.PreviousScope).Span;
-
+                        var beforeBlockingArgs = new BeforeRequestStopsArgs(
+                            defaultModelBindingContext.HttpContext,
+                            state.Scope,
+                            Tracer.Instance.Settings,
+                            args =>
+                            {
+                                AspNetCoreDiagnosticObserver.DoBeforeRequestStops(args.HttpContext, args.Scope, args.TracerSettings);
+                            });
                         if (defaultModelBindingContext.BindingSource.Id == "Body")
                         {
-                            security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
-                            security.InstrumentationGateway.RaiseBlockingOpportunity(defaultModelBindingContext.HttpContext, state.Scope, Tracer.Instance.Settings, (args) => AspNetCoreDiagnosticObserver.DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
+                            security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, beforeBlockingArgs);
                         }
                         else
                         {
@@ -71,10 +77,9 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
                                 var provider = defaultModelBindingContext.ValueProvider[i];
                                 if (provider.TryDuckCast(out BindingSourceValueProvider prov))
                                 {
-                                    if (prov.BindingSource.Id == "Form" || prov.BindingSource.Id == "Body")
+                                    if (prov.BindingSource.Id is "Form" or "Body")
                                     {
-                                        security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
-                                        security.InstrumentationGateway.RaiseBlockingOpportunity(defaultModelBindingContext.HttpContext, state.Scope, Tracer.Instance.Settings, (args) => AspNetCoreDiagnosticObserver.DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
+                                        security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, beforeBlockingArgs);
                                         break;
                                     }
                                 }

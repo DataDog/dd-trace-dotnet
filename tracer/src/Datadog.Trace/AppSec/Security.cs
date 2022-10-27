@@ -263,10 +263,7 @@ namespace Datadog.Trace.AppSec
         }
 
         /// <summary> Frees resources </summary>
-        public void Dispose()
-        {
-            _waf?.Dispose();
-        }
+        public void Dispose() => _waf?.Dispose();
 
         private void SetRemoteConfigCapabilites()
         {
@@ -373,7 +370,6 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
                 _instrumentationGateway.BodyAvailable += RunWafAndReact;
-                _instrumentationGateway.BlockingOpportunity += MightStopRequest;
 #if NETFRAMEWORK
                 if (_usingIntegratedPipeline == null)
                 {
@@ -415,7 +411,6 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
                 _instrumentationGateway.BodyAvailable -= RunWafAndReact;
-                _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
                 _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
 
@@ -489,9 +484,7 @@ namespace Datadog.Trace.AppSec
         {
             TryAddEndPoint(span);
             var headers =
-                CanAccessHeaders() ?
-                    transport.GetResponseHeaders() :
-                    new NameValueHeadersCollection(new NameValueCollection());
+                CanAccessHeaders() ? transport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
             AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
 
@@ -508,49 +501,48 @@ namespace Datadog.Trace.AppSec
             return additiveContext;
         }
 
-        private void MightStopRequest(object sender, InstrumentationGatewayBlockingEventArgs args)
-        {
-            if (args.Transport.Blocked)
-            {
-                AddResponseHeaderTags(args.Transport, args.Scope.Span);
-                args.InvokeDoBeforeBlocking();
-                var transport = args.Transport;
-                var additiveContext = GetOrCreateContext(transport);
-                additiveContext.Dispose();
-            }
-        }
-
         private void RunWafAndReactAndCleanup(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             RunWafAndReact(sender, e);
             e.Transport.DisposeAdditiveContext();
         }
 
-        private void RunWafAndReact(object sender, InstrumentationGatewaySecurityEventArgs e)
+        private void RunWafAndReact(object sender, InstrumentationGatewaySecurityEventArgs args)
         {
             try
             {
-                if (e.Transport.Blocked)
+                if (args.Transport.Blocked)
                 {
                     return;
                 }
 
-                var additiveContext = GetOrCreateContext(e.Transport);
-                var span = GetLocalRootSpan(e.RelatedSpan);
+                var additiveContext = GetOrCreateContext(args.Transport);
+                var span = GetLocalRootSpan(args.RelatedSpan);
 
                 AnnotateSpan(span);
 
                 // run the WAF and execute the results
-                using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
+                using var wafResult = additiveContext.Run(args.EventData, _settings.WafTimeoutMicroSeconds);
                 if (wafResult.ReturnCode is ReturnCode.Match or ReturnCode.Block)
                 {
                     var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock") || wafResult.Actions.Contains("block");
                     if (block)
                     {
-                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
+                        args.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
                     }
 
-                    Report(e.Transport, span, wafResult, block);
+                    Report(args.Transport, span, wafResult, block);
+
+                    if (block)
+                    {
+                        AddResponseHeaderTags(args.Transport, args.RelatedSpan);
+                        args.InvokeDoBeforeBlocking();
+                        additiveContext.Dispose();
+// todo, homogenize with .net core middleware MapWhen type of blocking
+#if NETFRAMEWORK
+                        throw new BlockException();
+#endif
+                    }
                 }
             }
             catch (Exception ex) when (ex is not BlockException)
@@ -582,7 +574,6 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.BodyAvailable -= RunWafAndReact;
                 _instrumentationGateway.StartRequest -= RunWafAndReact;
                 _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
-                _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
             }
 

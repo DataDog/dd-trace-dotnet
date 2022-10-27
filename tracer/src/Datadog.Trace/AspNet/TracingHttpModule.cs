@@ -172,9 +172,18 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpContext.Request, scope.Span);
+                    var beforeBlockingArgs = new BeforeRequestStopsArgs(
+                        httpContext,
+                        scope,
+                        tracer.Settings,
+                        args =>
+                        {
+                            AddHeaderTagsFromHttpResponse(args.HttpContext, args.Scope);
+                        });
 
-                    if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpContext.Request, scope.Span, beforeBlockingArgs);
+
+                    if (httpRequest.ContentType.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
                         var formData = new Dictionary<string, object>();
                         foreach (string key in httpRequest.Form.Keys)
@@ -182,13 +191,8 @@ namespace Datadog.Trace.AspNet
                             formData.Add(key, httpRequest.Form[key]);
                         }
 
-                        security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData);
+                        security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData, beforeBlockingArgs);
                     }
-
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, args =>
-                    {
-                        AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
-                    });
                 }
             }
             catch (Exception ex)
@@ -273,14 +277,18 @@ namespace Datadog.Trace.AspNet
 
                             if (!(httpContext.Items["block"] is bool blocked && blocked))
                             {
+                                var beforeBlockingArgs = new BeforeRequestStopsArgs(
+                                    httpContext,
+                                    scope,
+                                    tracer.Settings,
+                                    args =>
+                                    {
+                                        AddHeaderTagsFromHttpResponse(args.HttpContext, args.Scope);
+                                    });
                                 // raise path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
-                                security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false);
-                                security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
+                                security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false, beforeRequestStopsArgs: beforeBlockingArgs);
+                                security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span, beforeBlockingArgs);
                                 security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
-                                security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, args =>
-                                {
-                                    AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
-                                });
                             }
                         }
 
