@@ -29,42 +29,44 @@ internal static class MessagePackStringCache
     [ThreadStatic]
     private static CachedBytes _origin;
 
-    public static byte[] GetEnvironmentBytes(string? env)
+    public static byte[]? GetEnvironmentBytes(string? env)
     {
         return GetBytes(env, ref _env);
     }
 
-    public static byte[] GetVersionBytes(string? version)
+    public static byte[]? GetVersionBytes(string? version)
     {
         return GetBytes(version, ref _version);
     }
 
-    public static byte[] GetOriginBytes(string? origin)
+    public static byte[]? GetOriginBytes(string? origin)
     {
         return GetBytes(origin, ref _origin);
     }
 
-    private static byte[] GetBytes(string? value, ref CachedBytes cachedBytes)
+    private static byte[]? GetBytes(string? value, ref CachedBytes cachedBytes)
     {
-        if (cachedBytes.String == value)
+        var localCachedBytes = cachedBytes;
+
+        if (localCachedBytes.String == value)
         {
             // return the cached bytes
-            return cachedBytes.Bytes;
+            return localCachedBytes.Bytes;
         }
 
         // encode the string into MessagePack and cache the bytes before returning them
-        var converted = MessagePackSerializer.Serialize(value);
-        cachedBytes = new CachedBytes(value, converted);
-        return converted;
+        var bytes = string.IsNullOrWhiteSpace(value) ? null : MessagePackSerializer.Serialize(value);
+        cachedBytes = new CachedBytes(value, bytes);
+        return bytes;
     }
 
     private readonly struct CachedBytes
     {
         public readonly string? String;
 
-        public readonly byte[] Bytes;
+        public readonly byte[]? Bytes;
 
-        public CachedBytes(string? @string, byte[] bytes)
+        public CachedBytes(string? @string, byte[]? bytes)
         {
             String = @string;
             Bytes = bytes;
