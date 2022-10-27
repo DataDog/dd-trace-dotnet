@@ -199,6 +199,18 @@ internal static partial class DotNetSettingsExtensions
 
     public static DotNetTestSettings WithDatadogLogger(this DotNetTestSettings settings)
     {
+        try
+        {
+            if (string.Equals(Environment.GetEnvironmentVariable("DD_LOGGER_ENABLED"), "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return settings;
+            }
+        }
+        catch
+        {
+            // Security issues...
+        }
+
         var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);
         return settings.SetProcessArgumentConfigurator(
             args =>
