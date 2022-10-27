@@ -35,7 +35,7 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewayEventArgs> LastChanceToWriteTags;
 
-        public void RaiseRequestEnd(HttpContext context, HttpRequest request, Span relatedSpan, BeforeRequestStopsArgs beforeRequestStopsArgs = null)
+        public void RaiseRequestEnd(HttpContext context, HttpRequest request, Span relatedSpan)
         {
             var getEventData = () =>
             {
@@ -43,21 +43,21 @@ namespace Datadog.Trace.AppSec
                 eventData.Add(AddressesConstants.ResponseStatus, context.Response.StatusCode.ToString());
                 return eventData;
             };
-            RaiseEvent(context, relatedSpan, getEventData, EndRequest, beforeRequestStopsArgs);
+            RaiseEvent(context, relatedSpan, getEventData, EndRequest);
         }
 
-        public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan, BeforeRequestStopsArgs beforeRequestStopsArgs)
+        public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan)
         {
             var getEventData = () => request.PrepareArgsForWaf(relatedSpan);
-            RaiseEvent(context, relatedSpan, getEventData, StartRequest, beforeRequestStopsArgs);
+            RaiseEvent(context, relatedSpan, getEventData, StartRequest);
         }
 
-        public void RaisePathParamsAvailable(HttpContext context, Span relatedSpan, IDictionary<string, object> pathParams, BeforeRequestStopsArgs beforeRequestStopsArgs, bool eraseExistingAddress = true)
+        public void RaisePathParamsAvailable(HttpContext context, Span relatedSpan, IDictionary<string, object> pathParams, bool eraseExistingAddress = true)
         {
-            RaiseEvent(context, relatedSpan, () => new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } }, PathParamsAvailable, beforeRequestStopsArgs, eraseExistingAddress);
+            RaiseEvent(context, relatedSpan, () => new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } }, PathParamsAvailable,  eraseExistingAddress);
         }
 
-        public void RaiseBodyAvailable(HttpContext context, Span relatedSpan, object body, BeforeRequestStopsArgs beforeRequestStopsArgs)
+        public void RaiseBodyAvailable(HttpContext context, Span relatedSpan, object body)
         {
             var getEventData = () =>
             {
@@ -66,7 +66,7 @@ namespace Datadog.Trace.AppSec
                 return eventData;
             };
 
-            RaiseEvent(context, relatedSpan, getEventData, BodyAvailable, beforeRequestStopsArgs);
+            RaiseEvent(context, relatedSpan, getEventData, BodyAvailable);
         }
 
         public void RaiseLastChanceToWriteTags(HttpContext context, Span relatedSpan)
@@ -92,7 +92,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void RaiseEvent(HttpContext context, Span relatedSpan, Func<IDictionary<string, object>> getEventData, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler, BeforeRequestStopsArgs beforeRequestStopsArgs, bool eraseExistingAddress = true)
+        private void RaiseEvent(HttpContext context, Span relatedSpan, Func<IDictionary<string, object>> getEventData, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler, bool eraseExistingAddress = true)
         {
             if (eventHandler != null)
             {
@@ -103,11 +103,11 @@ namespace Datadog.Trace.AppSec
                     if (!transport.Blocked)
                     {
                         LogAddressIfDebugEnabled(eventData);
-                        var instrumentationGatewaySecurityEventArgs = new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan, beforeRequestStopsArgs, eraseExistingAddress);
+                        var instrumentationGatewaySecurityEventArgs = new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan, eraseExistingAddress);
                         eventHandler?.Invoke(this, instrumentationGatewaySecurityEventArgs);
                     }
                 }
-                catch (Exception ex) when (ex is not BlockException)
+                catch (Exception ex)
                 {
                     Log.Error(ex, "DDAS-0004-00: AppSec failed to process request.");
                 }

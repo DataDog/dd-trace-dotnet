@@ -86,19 +86,20 @@ namespace Datadog.Trace.AppSec.Transports.Http
             httpResponse.StatusCode = 403;
 
             var template = templateJson;
-            if (_context.Request.Headers["Accept"] == "application/json")
-            {
-                httpResponse.ContentType = "application/json";
-            }
-            else
+            if (_context.Request.Headers["Accept"] == "text/html")
             {
                 httpResponse.ContentType = "text/html";
                 template = templateHtml;
+            }
+            else
+            {
+                httpResponse.ContentType = "application/json";
             }
 
             httpResponse.Write(template);
             httpResponse.Flush();
             httpResponse.Close();
+            _context.ApplicationInstance.CompleteRequest();
         }
     }
 }

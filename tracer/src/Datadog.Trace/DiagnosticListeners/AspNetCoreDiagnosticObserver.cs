@@ -634,15 +634,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    var beforeBlockingArgs = new BeforeRequestStopsArgs(
-                        httpContext,
-                        scope,
-                        tracer.Settings,
-                        args =>
-                        {
-                            DoBeforeRequestStops(args.HttpContext, args.Scope, args.TracerSettings);
-                        });
-
                     httpContext.Response.OnCompleted(
                         () =>
                         {
@@ -655,11 +646,11 @@ namespace Datadog.Trace.DiagnosticListeners
                         {
                             // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
                             // the waf is already disposed by the registerfordispose callback, but we need to be at the end to get the real response status code
-                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span, beforeBlockingArgs);
+                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
                             return Task.CompletedTask;
                         });
 
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span, beforeBlockingArgs);
+                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span);
                 }
             }
         }
@@ -792,15 +783,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 var shouldSecure = security.Settings.Enabled;
                 if (shouldSecure)
                 {
-                    var beforeBlockingArgs = new BeforeRequestStopsArgs(
-                        httpContext,
-                        tracer.InternalActiveScope,
-                        tracer.Settings,
-                        args =>
-                        {
-                            DoBeforeRequestStops(args.HttpContext, args.Scope, args.TracerSettings);
-                        });
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues, beforeBlockingArgs);
+                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues);
                 }
             }
         }
@@ -853,15 +836,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         }
                     }
 
-                    var beforeBlockingArgs = new BeforeRequestStopsArgs(
-                        httpContext,
-                        tracer.InternalActiveScope,
-                        tracer.Settings,
-                        args =>
-                        {
-                            DoBeforeRequestStops(args.HttpContext, args.Scope, args.TracerSettings);
-                        });
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span ?? parentSpan, eventData, beforeBlockingArgs);
+                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span ?? parentSpan, eventData);
                 }
             }
         }
@@ -953,15 +928,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
 
                 var security = CurrentSecurity;
-                if (unhandledStruct.Exception is not BlockException)
+                span.SetException(unhandledStruct.Exception);
+                if (security.Settings.Enabled)
                 {
                     span.SetException(unhandledStruct.Exception);
-                    if (security.Settings.Enabled)
-                    {
-                        span.SetException(unhandledStruct.Exception);
-                        var httpContext = unhandledStruct.HttpContext;
-                        security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, span);
-                    }
+                    var httpContext = unhandledStruct.HttpContext;
+                    security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, span);
                 }
             }
         }

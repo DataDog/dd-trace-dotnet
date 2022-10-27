@@ -536,16 +536,11 @@ namespace Datadog.Trace.AppSec
                     if (block)
                     {
                         AddResponseHeaderTags(args.Transport, args.RelatedSpan);
-                        args.InvokeDoBeforeBlocking();
                         additiveContext.Dispose();
-// todo, homogenize with .net core middleware MapWhen type of blocking
-#if NETFRAMEWORK
-                        throw new BlockException();
-#endif
                     }
                 }
             }
-            catch (Exception ex) when (ex is not BlockException)
+            catch (Exception ex)
             {
                 Log.Error(ex, "Call into the security module failed");
             }

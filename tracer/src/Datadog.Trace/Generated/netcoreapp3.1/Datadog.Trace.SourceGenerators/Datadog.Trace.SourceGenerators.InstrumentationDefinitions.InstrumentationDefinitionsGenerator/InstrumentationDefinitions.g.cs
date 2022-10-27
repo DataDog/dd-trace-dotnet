@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("AerospikeClient", "Aerospike.Client.SyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration"),
 
                 // AspNetCore
-               new ("Microsoft.AspNetCore.Hosting", "Microsoft.AspNetCore.Hosting.Builder.ApplicationBuilderFactory", "CreateBuilder",  new[] { "Microsoft.AspNetCore.Builder.IApplicationBuilder", "Microsoft.AspNetCore.Http.Features.IFeatureCollection" }, 3, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegration"),
+               new ("Microsoft.AspNetCore.Hosting", "Microsoft.AspNetCore.Hosting.Builder.ApplicationBuilderFactory", "CreateBuilder",  new[] { "Microsoft.AspNetCore.Builder.IApplicationBuilder", "Microsoft.AspNetCore.Http.Features.IFeatureCollection" }, 2, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegration"),
 
                 // AwsSdk
                new ("AWSSDK.Core", "Amazon.Runtime.Internal.RuntimePipeline", "InvokeAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "Amazon.Runtime.IExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"),

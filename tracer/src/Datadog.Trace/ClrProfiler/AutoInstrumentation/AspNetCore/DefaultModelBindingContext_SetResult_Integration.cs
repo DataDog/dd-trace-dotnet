@@ -58,17 +58,10 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
                     if (defaultModelBindingContext.Result.IsModelSet && defaultModelBindingContext.IsTopLevelObject)
                     {
                         var span = (state.Scope ?? state.PreviousScope).Span;
-                        var beforeBlockingArgs = new BeforeRequestStopsArgs(
-                            defaultModelBindingContext.HttpContext,
-                            state.Scope,
-                            Tracer.Instance.Settings,
-                            args =>
-                            {
-                                AspNetCoreDiagnosticObserver.DoBeforeRequestStops(args.HttpContext, args.Scope, args.TracerSettings);
-                            });
+
                         if (defaultModelBindingContext.BindingSource.Id == "Body")
                         {
-                            security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, beforeBlockingArgs);
+                            security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
                         }
                         else
                         {
@@ -79,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
                                 {
                                     if (prov.BindingSource.Id is "Form" or "Body")
                                     {
-                                        security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, beforeBlockingArgs);
+                                        security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
                                         break;
                                     }
                                 }

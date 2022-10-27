@@ -5,9 +5,8 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Transports;
-
 #if NETFRAMEWORK
-using System.Web.Routing;
+
 #else
 using Microsoft.AspNetCore.Http;
 #endif
@@ -17,21 +16,17 @@ namespace Datadog.Trace.AppSec
     internal class InstrumentationGatewaySecurityEventArgs : InstrumentationGatewayEventArgs
     {
         private readonly IDictionary<string, object> _eventData;
-        private readonly BeforeRequestStopsArgs _beforeRequestStopsArgs;
         private readonly bool _overrideExistingAddress;
 
-        public InstrumentationGatewaySecurityEventArgs(IDictionary<string, object> eventData, ITransport transport, Span relatedSpan, BeforeRequestStopsArgs beforeRequestStopsArgs, bool overrideExistingAddress = true)
+        public InstrumentationGatewaySecurityEventArgs(IDictionary<string, object> eventData, ITransport transport, Span relatedSpan, bool overrideExistingAddress = true)
             : base(transport, relatedSpan)
         {
             _eventData = eventData;
-            _beforeRequestStopsArgs = beforeRequestStopsArgs;
             _overrideExistingAddress = overrideExistingAddress;
         }
 
         public IDictionary<string, object> EventData => _eventData;
 
         public bool OverrideExistingAddress => _overrideExistingAddress;
-
-        public void InvokeDoBeforeBlocking() => _beforeRequestStopsArgs.Invoke();
     }
 }

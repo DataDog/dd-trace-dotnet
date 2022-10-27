@@ -29,14 +29,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         MethodName = "CreateBuilder",
         ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.Features.IFeatureCollection" },
         ReturnTypeName = "Microsoft.AspNetCore.Builder.IApplicationBuilder",
-        MinimumVersion = Major3,
-        MaximumVersion = Major6,
+        MinimumVersion = "2",
+        MaximumVersion = "6",
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     public class AspNetCoreBlockMiddlewareIntegration
     {
-        private const string Major3 = "3";
-        private const string Major6 = "6";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetCoreBlockMiddlewareIntegration));
 
         /// <summary>
