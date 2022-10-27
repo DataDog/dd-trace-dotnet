@@ -29,6 +29,13 @@ internal static class MessagePackStringCache
     [ThreadStatic]
     private static CachedBytes _origin;
 
+    public static void Clear()
+    {
+        _env = default;
+        _version = default;
+        _origin = default;
+    }
+
     public static byte[]? GetEnvironmentBytes(string? env)
     {
         return GetBytes(env, ref _env);
