@@ -275,6 +275,27 @@ public class DirectSubmissionLoggerTests
         AssertLogs(api, expectedLogs: 3);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(3)]
+    public async Task CreatesValidJsonWhenLoggingABigBlob(int blobCount)
+    {
+        // Based off a pattern seen in an escalation
+        var supplies = Enumerable.Repeat(Supply.Create(), blobCount).ToList();
+
+        var logger = GetLogger(out var api, out var sink);
+
+        logger.LogWarning(123, "Received message: {message}", supplies);
+        logger.Log<object>(logLevel: LogLevel.Warning, eventId: 123, state: null, exception: null, (s, e) => null);
+        logger.LogWarning("This is {s}", "someValue");
+
+        // dispose the sink to flush the logs
+        await sink.DisposeAsync();
+
+        AssertLogs(api, expectedLogs: 3);
+    }
+
     private static Microsoft.Extensions.Logging.ILogger GetLogger(out DatadogSinkTests.TestLogsApi api, out DatadogSink sink)
     {
         api = new DatadogSinkTests.TestLogsApi();
@@ -365,6 +386,46 @@ public class DirectSubmissionLoggerTests
             }
 #endif
         }
+    }
+
+    public class Supply
+    {
+        public string ItemId { get; set; }
+
+        public string ProductClass { get; set; }
+
+        public string Type { get; set; }
+
+        public string ShipNode { get; set; }
+
+        public string UnitOfMeasure { get; set; }
+
+        public string Segment { get; set; }
+
+        public string SegmentType { get; set; }
+
+        public string Eta { get; set; }
+
+        public double ChangedQuantity { get; set; }
+
+        public string ShipByDate { get; set; }
+
+        public string SourceTs { get; set; }
+
+        public static Supply Create() =>
+            new()
+            {
+                ItemId = "1111004",
+                ProductClass = "NEW",
+                Type = "ONHAND",
+                ShipNode = "12-01-01",
+                UnitOfMeasure = "EACH",
+                SegmentType = string.Empty,
+                Eta = "1900-01-01T00: 00: 00.000Z",
+                ChangedQuantity = 5.00,
+                ShipByDate = "2500-01-01T00: 00: 00.000Z",
+                SourceTs = "2022-09-07T14: 14: 31.769Z",
+            };
     }
 }
 #endif
