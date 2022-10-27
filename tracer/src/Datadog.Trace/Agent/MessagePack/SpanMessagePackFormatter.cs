@@ -18,8 +18,6 @@ namespace Datadog.Trace.Agent.MessagePack
     {
         public static readonly SpanMessagePackFormatter Instance = new();
 
-        private static readonly TruncatorTagsProcessor TagValueTruncator = new();
-
         // Cache the UTF-8 bytes for string constants (like tag names)
         // and values that are constant within the lifetime of a service (like process id).
         //
