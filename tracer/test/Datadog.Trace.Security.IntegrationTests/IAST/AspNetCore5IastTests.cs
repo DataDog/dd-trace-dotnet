@@ -8,6 +8,7 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -57,6 +58,29 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             EnableIast(enableIast);
             IncludeAllHttpSpans = true;
             var agent = await RunOnSelfHosted(enableSecurity: false);
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+            settings.AddRegexScrubber(ClientIp, string.Empty);
+            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
+
+        [SkippableTheory]
+        [InlineData(1)]
+        [InlineData(2)]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastWeakHashingRequestVulnerabilitiesPerRequest(int vulnerabilitiesPerRequest)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "true");
+            SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, vulnerabilitiesPerRequest.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
+            var filename = vulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.AspNet5.IastEnabled.1" : "Iast.WeakHashing.AspNet5.IastEnabled";
+            var agent = await RunOnSelfHosted(enableSecurity: false, enableIast: true);
+            var url = "/Iast/WeakHashing";
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
