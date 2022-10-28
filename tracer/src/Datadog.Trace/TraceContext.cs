@@ -36,6 +36,7 @@ namespace Datadog.Trace
 
             if (settings is not null)
             {
+                // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
                 Environment = settings.Environment;
                 ServiceVersion = settings.ServiceVersion;
             }
