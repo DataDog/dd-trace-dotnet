@@ -57,7 +57,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             EnableIast(enableIast);
             IncludeAllHttpSpans = true;
             var agent = await RunOnSelfHosted(enableSecurity: false);
-            IncludeAllHttpSpans = true;
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
