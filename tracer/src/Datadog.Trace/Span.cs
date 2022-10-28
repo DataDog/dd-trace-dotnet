@@ -339,7 +339,7 @@ namespace Datadog.Trace
 
                 if (Context.TraceContext.IastInitialized)
                 {
-                    Context.TraceContext?.IastRequestContext?.AddIastTagsIfNeeded(this);
+                    Context.TraceContext.IastRequestContext?.AddIastTagsIfNeeded(this);
                 }
 
                 if (!IsFinished)
