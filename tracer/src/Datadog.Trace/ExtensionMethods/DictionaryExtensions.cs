@@ -25,6 +25,18 @@ namespace Datadog.Trace.ExtensionMethods
                        : default;
         }
 
+        public static TValue GetValueOrDefault<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key)
+        {
+            if (dictionary == null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
+            }
+
+            return dictionary.TryGetValue(key, out var value)
+                       ? value
+                       : default;
+        }
+
         public static TValue GetValueOrDefault<TValue>(this IDictionary dictionary, object key)
         {
             if (dictionary == null)
