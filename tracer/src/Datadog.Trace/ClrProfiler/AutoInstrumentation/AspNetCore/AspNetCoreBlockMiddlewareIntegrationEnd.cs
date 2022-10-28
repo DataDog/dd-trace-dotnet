@@ -52,14 +52,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-// AppSec doesn't support Asp.Net Core on .NET Framework
-// but this class is needed as it could be called by a
-// .NET Framewok app and should be an no-op in this case
 #if !NETFRAMEWORK
             if (Security.Instance.Settings.Enabled)
             {
                 var appb = (IApplicationBuilder)instance;
-                if (new StackTrace().GetFrame(6)?.GetMethod()?.DeclaringType?.Name == "AsyncMethodBuilderCore")
+                // make sure this is the very last call to build() as build can be called *many* times before the last one.
+                // theoretically, we should have 1. onmethodbegin, 2. CallTarget.Handlers.Beginmethodhandler, 3. CalltargetInvoker.BeginMethod 4.ApplicationBuilder.Build, 5.GenericWebHostService.StartAsync, 6.AsyncMethodBuilderCore.Start<GenericWebHostService>, when comes into play, that's last call to ApplicationBuilder. 
+                // todo: make more robust
+                var frame = new StackTrace().GetFrame(6);
+                if (frame?.GetMethod() is { Name: "Start", DeclaringType.Name: "AsyncMethodBuilderCore" })
                 {
                     appb.MapWhen(context => context.Items["block"] is true, AspNetCoreBlockMiddlewareIntegration.HandleBranch);
                 }
