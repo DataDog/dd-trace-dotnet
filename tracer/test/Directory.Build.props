@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
-    <PackageReference Include="DatadogTestLogger" Version="0.0.18">
+    <PackageReference Include="DatadogTestLogger" Version="0.0.23">
       <CopyToOutputDirectory>lib\$(TargetFramework)\*</CopyToOutputDirectory>
       <FolderName>datadogtestlogger</FolderName>
     </PackageReference>
