@@ -263,7 +263,7 @@ namespace Datadog.Trace.AspNet
                                 return;
                             }
 
-                            if (!(httpContext.Items["block"] is bool blocked && blocked))
+                            if (!(httpContext.Items["block"] is true))
                             {
                                 // raise path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
                                 security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false);
