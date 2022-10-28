@@ -890,7 +890,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
                 var httpContext = httpRequest.HttpContext;
                 var security = Security.Instance;
-                if (security.Settings.Enabled)
+                if (security.Settings.Enabled && !scope.Span.Error)
                 {
                     security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
                 }
