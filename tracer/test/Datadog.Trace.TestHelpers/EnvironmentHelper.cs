@@ -185,8 +185,7 @@ namespace Datadog.Trace.TestHelpers
             IDictionary<string, string> environmentVariables,
             string processToProfile = null,
             bool? enableSecurity = null,
-            string externalRulesFile = null,
-            bool? enableIast = null)
+            string externalRulesFile = null)
         {
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = MonitoringHome;
@@ -223,11 +222,6 @@ namespace Datadog.Trace.TestHelpers
             if (enableSecurity != null)
             {
                 environmentVariables[ConfigurationKeys.AppSec.Enabled] = enableSecurity.Value.ToString();
-            }
-
-            if (enableIast != null)
-            {
-                environmentVariables[ConfigurationKeys.Iast.Enabled] = enableIast.Value.ToString();
             }
 
             if (!string.IsNullOrEmpty(externalRulesFile))
