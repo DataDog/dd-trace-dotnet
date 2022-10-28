@@ -39,7 +39,7 @@ internal class IastRequestContext
 
     internal bool AddVulnerabilitiesAllowed()
     {
-        return (requestEnabled && vulnerabilityBatch.Vulnerabilities.Count < vulnerabilitiesPerRequest);
+        return (requestEnabled && (vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < vulnerabilitiesPerRequest);
     }
 
     internal void AddVulnerability(Vulnerability vulnerability)

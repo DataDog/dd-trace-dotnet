@@ -51,7 +51,8 @@ internal class IastModule
             return null;
         }
 
-        var isRequest = tracer.ActiveScope is Scope { Span.Context.TraceContext: { RootSpan.Type: SpanTypes.Web } traceContext }
+        var traceContext = (tracer.ActiveScope as Scope)?.Span?.Context?.TraceContext;
+        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
 
         if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
         {
