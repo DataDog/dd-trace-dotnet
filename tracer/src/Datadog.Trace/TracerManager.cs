@@ -485,6 +485,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("span_sampling_rules");
                     writer.WriteValue(instanceSettings.SpanSamplingRules);
 
+                    writer.WritePropertyName("stats_computation_enabled");
+                    writer.WriteValue(instanceSettings.StatsComputationEnabled);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
