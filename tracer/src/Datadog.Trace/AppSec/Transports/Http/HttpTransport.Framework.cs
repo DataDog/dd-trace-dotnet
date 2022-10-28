@@ -69,7 +69,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
         public void HandleResponse(string templateJson, string templateHtml, bool canAccessHeaders)
         {
-            _context.Items["block"] = true;
             var httpResponse = _context.Response;
             httpResponse.Clear();
             httpResponse.Cookies.Clear();
@@ -86,14 +85,17 @@ namespace Datadog.Trace.AppSec.Transports.Http
             httpResponse.StatusCode = 403;
 
             var template = templateJson;
-            if (_context.Request.Headers["Accept"].Contains("text/html"))
+            if (_context.Request.Headers["Accept"] is not null)
             {
-                httpResponse.ContentType = "text/html";
-                template = templateHtml;
-            }
-            else
-            {
-                httpResponse.ContentType = "application/json";
+                if (_context.Request.Headers["Accept"].Contains("text/html"))
+                {
+                    httpResponse.ContentType = "text/html";
+                    template = templateHtml;
+                }
+                else
+                {
+                    httpResponse.ContentType = "application/json";
+                }
             }
 
             httpResponse.Write(template);
