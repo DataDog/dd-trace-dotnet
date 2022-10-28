@@ -44,8 +44,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         private const string ApplicationBuilder = "Microsoft.AspNetCore.Builder.ApplicationBuilder";
         private const string InternalApplicationBuilder = "Microsoft.AspNetCore.Builder.Internal.ApplicationBuilder";
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetCoreBlockMiddlewareIntegrationEnd));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
