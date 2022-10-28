@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             try
             {
                 SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
-                SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+                SetEnvironmentVariable("DD_TRACE_DEBUG", "0");
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
