@@ -1839,6 +1839,7 @@ stages:
       env:
         baseImage: $(baseImage)
         azdo_network: $(agent.containernetwork)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
@@ -1848,6 +1849,7 @@ stages:
       displayName: docker-compose run ExplorationTests
       env:
         azdo_network: $(agent.containernetwork)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
