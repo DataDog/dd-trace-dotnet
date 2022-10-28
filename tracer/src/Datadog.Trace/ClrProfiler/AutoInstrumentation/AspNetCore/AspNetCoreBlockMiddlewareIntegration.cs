@@ -50,7 +50,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
 #if !NETFRAMEWORK
-            Log.Warning("on method end");
             if (Security.Instance.Settings.Enabled)
             {
                 var appb = (IApplicationBuilder)returnValue;
