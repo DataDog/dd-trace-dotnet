@@ -28,6 +28,7 @@ namespace Samples.Security.AspNetCore5
             {
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));
             }
+
             services.AddRazorPages();
         }
 
@@ -44,39 +45,45 @@ namespace Samples.Security.AspNetCore5
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseRouting();
 
             app.UseAuthorization();
-          
-            app.Map("/shutdown", builder =>
-            {
-                builder.Run(async context =>
+
+            app.Map(
+                "/shutdown",
+                builder =>
                 {
-                    await context.Response.WriteAsync("Shutting down");
-                    _ = Task.Run(() => builder.ApplicationServices.GetService<IHostApplicationLifetime>().StopApplication());
+                    builder.Run(
+                        async context =>
+                        {
+                            await context.Response.WriteAsync("Shutting down");
+                            _ = Task.Run(() => builder.ApplicationServices.GetService<IHostApplicationLifetime>().StopApplication());
+                        });
                 });
-            });
 
-            app.Use(async (context, next) =>
-            {
-                // make sure if we go into this middleware after blocking has happened that it s not a second request issued by the developerhandlingpage middleware! if it s that no worries it s another request, not the attack one., its  a redirect.
-                // await context.Response.WriteAsync("do smth before all");
-                await next.Invoke();
-            });
-           
+            app.Use(
+                async (context, next) =>
+                {
+                    // make sure if we go into this middleware after blocking has happened that it s not a second request issued by the developerhandlingpage middleware! if it s that no worries it s another request, not the attack one., its  a redirect.
+                    // await context.Response.WriteAsync("do smth before all");
+                    await next.Invoke();
+                });
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.RegisterEndpointsRouting();
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
 
-                endpoints.MapRazorPages();
-            });
+            app.UseEndpoints(
+                endpoints =>
+                {
+                    endpoints.RegisterEndpointsRouting();
+                    endpoints.MapControllerRoute(
+                        name: "default",
+                        pattern: "{controller=Home}/{action=Index}/{id?}");
+
+                    endpoints.MapRazorPages();
+                });
         }
     }
 }

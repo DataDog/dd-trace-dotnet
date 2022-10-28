@@ -3,6 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETFRAMEWORK
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.DependencyInjection;
+#endif
 using System;
 using System.Linq;
 using System.Text;
@@ -12,12 +18,6 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-#if !NETFRAMEWORK
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Builder.Extensions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
-#endif
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
