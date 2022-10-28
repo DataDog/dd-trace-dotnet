@@ -192,15 +192,6 @@ namespace Datadog.Trace.Agent.MessagePack
             var countOffset = offset;
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
-            // add "language=dotnet" tag to all spans, except those that
-            // represents a downstream service or external dependency
-            if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
-            }
-
             // Write span tags
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
             span.Tags.EnumerateTags(ref tagWriter);
@@ -221,12 +212,22 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
+            // add "runtime-id" tag to service-entry (aka top-level) spans
             if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
             {
-                // add "runtime-id" tag to service-entry (aka top-level) spans
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdNameBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
+            }
+
+            // add "_dd.origin" tag to all spans
+            var origin = model.TraceChunk.Origin;
+
+            if (origin is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackStringCache.GetEnvironmentBytes(origin));
             }
 
             // add "env" to all spans
@@ -239,24 +240,23 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackStringCache.GetEnvironmentBytes(env));
             }
 
-            // add "version" to all spans
-            var version = model.TraceChunk.ServiceVersion;
-
-            if (version is not null)
+            // add "language=dotnet" and "version" tags to all spans, except those that
+            // represents a downstream service or external dependency
+            if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
             {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackStringCache.GetEnvironmentBytes(version));
-            }
+                count += 2;
 
-            // add "_dd.origin" tag to all spans
-            var origin = model.TraceChunk.Origin;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
 
-            if (origin is not null)
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackStringCache.GetEnvironmentBytes(origin));
+                var version = model.TraceChunk.ServiceVersion;
+
+                if (version is not null)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackStringCache.GetEnvironmentBytes(version));
+                }
             }
 
             if (count > 0)
