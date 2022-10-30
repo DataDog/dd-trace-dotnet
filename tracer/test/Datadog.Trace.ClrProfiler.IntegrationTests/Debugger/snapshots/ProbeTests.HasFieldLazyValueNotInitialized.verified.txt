@@ -14,15 +14,17 @@
                 "value": "Last"
               },
               "this": {
-                "FirstName": {
-                  "fields": {
-                    "IsValueCreated": {
-                      "type": "Boolean",
-                      "value": "False"
-                    }
-                  },
-                  "type": "Lazy`1",
-                  "value": "Lazy`1"
+                "fields": {
+                  "FirstName": {
+                    "fields": {
+                      "IsValueCreated": {
+                        "type": "Boolean",
+                        "value": "False"
+                      }
+                    },
+                    "type": "Lazy`1",
+                    "value": "Lazy`1"
+                  }
                 },
                 "type": "HasFieldLazyValueNotInitialized",
                 "value": "HasFieldLazyValueNotInitialized"
@@ -36,15 +38,17 @@
                 "value": "Last"
               },
               "this": {
-                "FirstName": {
-                  "fields": {
-                    "IsValueCreated": {
-                      "type": "Boolean",
-                      "value": "False"
-                    }
-                  },
-                  "type": "Lazy`1",
-                  "value": "Lazy`1"
+                "fields": {
+                  "FirstName": {
+                    "fields": {
+                      "IsValueCreated": {
+                        "type": "Boolean",
+                        "value": "False"
+                      }
+                    },
+                    "type": "Lazy`1",
+                    "value": "Lazy`1"
+                  }
                 },
                 "type": "HasFieldLazyValueNotInitialized",
                 "value": "HasFieldLazyValueNotInitialized"

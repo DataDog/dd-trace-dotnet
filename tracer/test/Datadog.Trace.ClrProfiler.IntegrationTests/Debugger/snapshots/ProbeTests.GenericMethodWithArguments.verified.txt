@@ -68,9 +68,11 @@
                 "value": "Person"
               },
               "this": {
-                "Prop": {
-                  "type": "String",
-                  "value": "GenericMethodWithArguments"
+                "fields": {
+                  "Prop": {
+                    "type": "String",
+                    "value": "GenericMethodWithArguments"
+                  }
                 },
                 "type": "GenericMethodWithArguments",
                 "value": "GenericMethodWithArguments"
@@ -138,9 +140,11 @@
                 "value": "Person"
               },
               "this": {
-                "Prop": {
-                  "type": "String",
-                  "value": "GenericMethodWithArguments"
+                "fields": {
+                  "Prop": {
+                    "type": "String",
+                    "value": "GenericMethodWithArguments"
+                  }
                 },
                 "type": "GenericMethodWithArguments",
                 "value": "GenericMethodWithArguments"
@@ -268,9 +272,11 @@
                   "value": "Person"
                 },
                 "this": {
-                  "Prop": {
-                    "type": "String",
-                    "value": "GenericMethodWithArguments"
+                  "fields": {
+                    "Prop": {
+                      "type": "String",
+                      "value": "GenericMethodWithArguments"
+                    }
                   },
                   "type": "GenericMethodWithArguments",
                   "value": "GenericMethodWithArguments"

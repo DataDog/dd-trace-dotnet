@@ -14,9 +14,11 @@
                 "value": "Last"
               },
               "this": {
-                "FirstName": {
-                  "isNull": "true",
-                  "type": "String"
+                "fields": {
+                  "FirstName": {
+                    "isNull": "true",
+                    "type": "String"
+                  }
                 },
                 "type": "HasArgumentsAndLocals",
                 "value": "HasArgumentsAndLocals"
@@ -30,9 +32,11 @@
                 "value": "Last"
               },
               "this": {
-                "FirstName": {
-                  "type": "String",
-                  "value": "First"
+                "fields": {
+                  "FirstName": {
+                    "type": "String",
+                    "value": "First"
+                  }
                 },
                 "type": "HasArgumentsAndLocals",
                 "value": "HasArgumentsAndLocals"

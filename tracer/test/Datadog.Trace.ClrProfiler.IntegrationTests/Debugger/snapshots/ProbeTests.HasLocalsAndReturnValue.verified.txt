@@ -14,9 +14,11 @@
                 "value": "7"
               },
               "this": {
-                "Number": {
-                  "type": "Int32",
-                  "value": "7"
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "7"
+                  }
                 },
                 "type": "HasLocalsAndReturnValue",
                 "value": "HasLocalsAndReturnValue"
@@ -30,9 +32,11 @@
                 "value": "7"
               },
               "this": {
-                "Number": {
-                  "type": "Int32",
-                  "value": "7"
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "7"
+                  }
                 },
                 "type": "HasLocalsAndReturnValue",
                 "value": "HasLocalsAndReturnValue"
@@ -106,9 +110,11 @@
             "16": {
               "arguments": {
                 "this": {
-                  "Number": {
-                    "type": "Int32",
-                    "value": "7"
+                  "fields": {
+                    "Number": {
+                      "type": "Int32",
+                      "value": "7"
+                    }
                   },
                   "type": "HasLocalsAndReturnValue",
                   "value": "HasLocalsAndReturnValue"
@@ -176,9 +182,11 @@
             "17": {
               "arguments": {
                 "this": {
-                  "Number": {
-                    "type": "Int32",
-                    "value": "7"
+                  "fields": {
+                    "Number": {
+                      "type": "Int32",
+                      "value": "7"
+                    }
                   },
                   "type": "HasLocalsAndReturnValue",
                   "value": "HasLocalsAndReturnValue"
@@ -250,9 +258,11 @@
                   "value": "7"
                 },
                 "this": {
-                  "Number": {
-                    "type": "Int32",
-                    "value": "7"
+                  "fields": {
+                    "Number": {
+                      "type": "Int32",
+                      "value": "7"
+                    }
                   },
                   "type": "HasLocalsAndReturnValue",
                   "value": "HasLocalsAndReturnValue"
