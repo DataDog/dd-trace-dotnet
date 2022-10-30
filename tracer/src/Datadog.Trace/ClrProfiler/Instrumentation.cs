@@ -369,33 +369,9 @@ namespace Datadog.Trace.ClrProfiler
                     {
                         var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
-                        var tags = tracer.Settings.GlobalTags.Select(pair => pair.Key + ":" + pair.Value).ToList();
+                        var tags = GetGlobalTags(tracer, rcmSettings);
 
-                        var environment = tracer.Settings.Environment;
-                        if (!string.IsNullOrEmpty(environment))
-                        {
-                            tags.Add($"env:{environment}");
-                        }
-
-                        var serviceVersion = tracer.Settings.ServiceVersion;
-                        if (!string.IsNullOrEmpty(serviceVersion))
-                        {
-                            tags.Add($"version:{serviceVersion}");
-                        }
-
-                        var tracerVersion = rcmSettings.TracerVersion;
-                        if (!string.IsNullOrEmpty(tracerVersion))
-                        {
-                            tags.Add($"tracer_version:{tracerVersion}");
-                        }
-
-                        var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
-                        if (!string.IsNullOrEmpty(hostName))
-                        {
-                            tags.Add($"host_name:{hostName}");
-                        }
-
-                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, environment, serviceVersion, tags);
+                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion, tags);
                         // see comment above
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
@@ -413,6 +389,37 @@ namespace Datadog.Trace.ClrProfiler
                              .ConfigureAwait(false);
                     }
                 });
+        }
+
+        private static List<string> GetGlobalTags(Tracer tracer, RemoteConfigurationSettings rcmSettings)
+        {
+            var tags = tracer.Settings.GlobalTags.Select(pair => pair.Key + ":" + pair.Value).ToList();
+
+            var environment = tracer.Settings.Environment;
+            if (!string.IsNullOrEmpty(environment))
+            {
+                tags.Add($"env:{environment}");
+            }
+
+            var serviceVersion = tracer.Settings.ServiceVersion;
+            if (!string.IsNullOrEmpty(serviceVersion))
+            {
+                tags.Add($"version:{serviceVersion}");
+            }
+
+            var tracerVersion = rcmSettings.TracerVersion;
+            if (!string.IsNullOrEmpty(tracerVersion))
+            {
+                tags.Add($"tracer_version:{tracerVersion}");
+            }
+
+            var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
+            if (!string.IsNullOrEmpty(hostName))
+            {
+                tags.Add($"host_name:{hostName}");
+            }
+
+            return tags;
         }
 
         internal static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
