@@ -21,6 +21,7 @@
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
 #include "SamplesCollector.h"
+#include "StopTheWorldGCProvider.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
 #include "shared/src/native-src/string.h"
@@ -209,6 +210,7 @@ private :
     AllocationsProvider* _pAllocationsProvider = nullptr;
     ContentionProvider* _pContentionProvider = nullptr;
     SamplesCollector* _pSamplesCollector = nullptr;
+    StopTheWorldGCProvider* _pStopTheWorldProvider = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
 

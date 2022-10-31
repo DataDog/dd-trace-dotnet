@@ -191,8 +191,29 @@ bool CorProfilerCallback::InitializeServices()
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
 
+        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+        {
+            // Use the another value type as the Wall time profiler to avoid double count
+            auto valueTypes = StopTheWorldGCProvider::SampleTypeDefinitions;
+            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+            _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
+                valuesOffset,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore,
+                _pConfiguration.get()
+                );
+            valuesOffset += static_cast<uint32_t>(valueTypes.size());
+        }
+
         // TODO: add new CLR events-based providers to the event parser
-        _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider, _pContentionProvider);
+        _pClrEventsParser = std::make_unique<ClrEventsParser>(
+            _pCorProfilerInfoEvents,
+            _pAllocationsProvider,
+            _pContentionProvider,
+            _pStopTheWorldProvider
+            );
     }
 
     // Avoid iterating twice on all providers in order to inject this value in each constructor
@@ -252,6 +273,11 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
             _pSamplesCollector->Register(_pContentionProvider);
+        }
+
+        if (_pStopTheWorldProvider != nullptr)
+        {
+            _pSamplesCollector->Register(_pStopTheWorldProvider);
         }
     }
 
@@ -722,7 +748,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
     // If no such provider is enabled, no need to trigger it.
     // TODO: update the test when a new CLR events-based profiler is added (contention, GC, ...)
-    bool AreEventBasedProfilersEnabled = _pConfiguration->IsAllocationProfilingEnabled() || _pConfiguration->IsContentionProfilingEnabled();
+    bool AreEventBasedProfilersEnabled =
+        _pConfiguration->IsAllocationProfilingEnabled() ||
+        _pConfiguration->IsContentionProfilingEnabled() ||
+        _pConfiguration->IsGarbageCollectionProfilingEnabled()
+        ;
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
         HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
@@ -784,10 +814,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         // Listen to interesting events:
         //  - AllocationTick_V4
         //  - ContentionStop_V1
+        //  - GC related events
 
         UINT64 activatedKeywords = 0;
 
-        if (_pConfiguration->IsAllocationProfilingEnabled())
+        if (
+            (_pConfiguration->IsAllocationProfilingEnabled()) ||
+            (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+            )
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
         }

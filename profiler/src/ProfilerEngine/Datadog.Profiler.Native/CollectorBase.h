@@ -161,6 +161,16 @@ private:
         ProcessID pid;
         std::string appDomainName;
 
+        // check for null AppDomainId (garbage collection for example)
+        if (rawSample.AppDomainId == 0)
+        {
+            // TODO: is pid mandatory?
+            sample.SetAppDomainName("");
+            sample.SetPid("0");
+
+            return;
+        }
+
         if (!_pAppDomainStore->GetInfo(rawSample.AppDomainId, pid, appDomainName))
         {
             sample.SetAppDomainName("");
@@ -178,6 +188,21 @@ private:
         // needed for tests
         if (rawSample.ThreadInfo == nullptr)
         {
+            // find a way to skip thread details like for garbage collection where no managed threads are involved
+            // --> if everything is empty
+
+            if (
+                (rawSample.LocalRootSpanId == 0) &&
+                (rawSample.SpanId == 0) &&
+                (rawSample.AppDomainId == 0) &&
+                (rawSample.Stack.size() == 0)
+                )
+            {
+                sample.SetThreadId("GC");
+                sample.SetThreadName("CLR thread (garbage collector)");
+                return;
+            }
+
             sample.SetThreadId("<0> [# 0]");
             sample.SetThreadName("Managed thread (name unknown) [#0]");
 
@@ -193,6 +218,7 @@ private:
 
     void SetStack(const TRawSample& rawSample, Sample& sample)
     {
+        // Deal with fake stack frames like for garbage collections since the Stack will be empty
         for (auto const& instructionPointer : rawSample.Stack)
         {
             auto [isResolved, moduleName, frame] = _pFrameStore->GetFrame(instructionPointer);

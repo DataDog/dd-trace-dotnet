@@ -238,6 +238,8 @@
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
+    <ClInclude Include="GarbageCollection.h" />
+    <ClInclude Include="StopTheWorldGCProvider.h" />
     <ClInclude Include="GenericSampler.h" />
     <ClInclude Include="GroupSampler.h" />
     <ClInclude Include="IAllocationsListener.h" />
@@ -267,6 +269,7 @@
     <ClInclude Include="IFrameStore.h" />
     <ClInclude Include="HResultConverter.h" />
     <ClInclude Include="IClrLifetime.h" />
+    <ClInclude Include="IGCSuspensionsListener.h" />
     <ClInclude Include="IManagedThreadList.h" />
     <ClInclude Include="IMetricsSender.h" />
     <ClInclude Include="IMetricsSenderFactory.h" />
@@ -291,6 +294,7 @@
     <ClInclude Include="RawCpuSample.h" />
     <ClInclude Include="RawExceptionSample.h" />
     <ClInclude Include="RawSample.h" />
+    <ClInclude Include="RawStopTheWorldSample.h" />
     <ClInclude Include="RefCountingObject.h" />
     <ClInclude Include="RuntimeIdStore.h" />
     <ClInclude Include="RuntimeInfo.h" />
@@ -331,6 +335,7 @@
     <ClCompile Include="ExceptionsProvider.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
+    <ClCompile Include="StopTheWorldGCProvider.cpp" />
     <ClCompile Include="GenericSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />
     <ClCompile Include="IMetricsSenderFactory.cpp" />
