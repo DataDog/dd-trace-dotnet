@@ -8,15 +8,19 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions.Execution;
+using VerifyTests;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     [CollectionDefinition(nameof(HttpMessageHandlerTests), DisableParallelization = true)]
     public class HttpMessageHandlerTests : TracingIntegrationTest
     {
@@ -48,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfig))]
-        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        public Task HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
@@ -94,6 +98,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
                 telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
                 VerifyInstrumentation(processResult.Process);
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                return VerifyHelper.VerifySpans(spans, settings)
+                            .UseFileName($"{nameof(HttpMessageHandlerTests)}.SubmitTraces_useSocket={enableSocketsHandler}_socket={instrumentation.InstrumentSocketHandler}_curl={instrumentation.InstrumentWinHttpOrCurlHandler}");
             }
         }
 
@@ -102,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfig))]
-        public void TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        public Task TracingDisabledWithHeader_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
@@ -133,6 +140,50 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
                 telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
                 VerifyInstrumentation(processResult.Process);
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                return VerifyHelper.VerifySpans(spans, settings)
+                                   .UseFileName($"{nameof(HttpMessageHandlerTests)}.DisabledWithHeader_useSocket={enableSocketsHandler}_socket={instrumentation.InstrumentSocketHandler}_curl={instrumentation.InstrumentWinHttpOrCurlHandler}");
+            }
+        }
+
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [MemberData(nameof(IntegrationConfig))]
+        public Task TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        {
+            SetInstrumentationVerification();
+            ConfigureInstrumentation(instrumentation, enableSocketsHandler);
+
+            const string expectedOperationName = "http.request";
+
+            using var telemetry = this.ConfigureTelemetry();
+            int httpPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            {
+                var spans = agent.WaitForSpans(1, 2000, operationName: expectedOperationName);
+                Assert.Equal(0, spans.Count);
+
+                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+
+                Assert.Null(traceId);
+                Assert.Null(parentSpanId);
+
+                using var scope = new AssertionScope();
+                // ignore auto enabled for simplicity
+                telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
+                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
+                VerifyInstrumentation(processResult.Process);
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                return VerifyHelper.VerifySpans(spans, settings)
+                                   .UseFileName($"{nameof(HttpMessageHandlerTests)}.Disabled_useSocket={enableSocketsHandler}_socket={instrumentation.InstrumentSocketHandler}_curl={instrumentation.InstrumentWinHttpOrCurlHandler}");
             }
         }
 
