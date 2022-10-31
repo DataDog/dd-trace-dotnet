@@ -185,9 +185,9 @@ Expect: 100-continue
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            await Verifier.Verify(spans, settings)
-                          .UseMethodName("ClientDisconnect")
-                          .UseTypeName(_testName);
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseMethodName("ClientDisconnect")
+                              .UseTypeName(_testName);
         }
     }
 }
