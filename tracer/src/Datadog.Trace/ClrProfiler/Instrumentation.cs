@@ -369,7 +369,7 @@ namespace Datadog.Trace.ClrProfiler
                     {
                         var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
-                        var tags = GetGlobalTags(tracer, rcmSettings);
+                        var tags = GetTags(tracer, rcmSettings);
 
                         var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion, tags);
                         // see comment above
@@ -391,9 +391,9 @@ namespace Datadog.Trace.ClrProfiler
                 });
         }
 
-        private static List<string> GetGlobalTags(Tracer tracer, RemoteConfigurationSettings rcmSettings)
+        private static List<string> GetTags(Tracer tracer, RemoteConfigurationSettings rcmSettings)
         {
-            var tags = tracer.Settings.GlobalTags.Select(pair => pair.Key + ":" + pair.Value).ToList();
+            var tags = tracer.Settings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
 
             var environment = tracer.Settings.Environment;
             if (!string.IsNullOrEmpty(environment))
