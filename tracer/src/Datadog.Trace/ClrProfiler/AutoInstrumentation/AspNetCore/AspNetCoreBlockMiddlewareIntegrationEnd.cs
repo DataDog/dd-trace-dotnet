@@ -4,14 +4,11 @@
 // </copyright>
 
 #if !NETFRAMEWORK
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-#endif
 using System.Diagnostics;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
+using Microsoft.AspNetCore.Builder;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
@@ -52,7 +49,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-#if !NETFRAMEWORK
             if (Security.Instance.Settings.Enabled)
             {
                 var appb = (IApplicationBuilder)instance;
@@ -65,9 +61,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                     appb.MapWhen(context => context.Items["block"] is true, AspNetCoreBlockMiddlewareIntegration.HandleBranch);
                 }
             }
-#endif
 
             return default;
         }
     }
 }
+
+#endif

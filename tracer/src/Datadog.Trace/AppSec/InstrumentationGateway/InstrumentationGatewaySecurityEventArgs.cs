@@ -5,28 +5,20 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Transports;
-#if NETFRAMEWORK
-
-#else
-using Microsoft.AspNetCore.Http;
-#endif
 
 namespace Datadog.Trace.AppSec
 {
     internal class InstrumentationGatewaySecurityEventArgs : InstrumentationGatewayEventArgs
     {
-        private readonly IDictionary<string, object> _eventData;
-        private readonly bool _overrideExistingAddress;
-
         public InstrumentationGatewaySecurityEventArgs(IDictionary<string, object> eventData, ITransport transport, Span relatedSpan, bool overrideExistingAddress = true)
             : base(transport, relatedSpan)
         {
-            _eventData = eventData;
-            _overrideExistingAddress = overrideExistingAddress;
+            EventData = eventData;
+            OverrideExistingAddress = overrideExistingAddress;
         }
 
-        public IDictionary<string, object> EventData => _eventData;
+        public IDictionary<string, object> EventData { get; }
 
-        public bool OverrideExistingAddress => _overrideExistingAddress;
+        public bool OverrideExistingAddress { get; }
     }
 }

@@ -86,9 +86,9 @@ namespace Datadog.Trace.AppSec.Transports.Http
             httpResponse.StatusCode = 403;
 
             var template = templateJson;
-            if (_context.Request.Headers["Accept"] is not null)
+            if (_context.Request.Headers["Accept"] is { } acceptHeader)
             {
-                if (_context.Request.Headers["Accept"].Contains("text/html"))
+                if (acceptHeader.Contains("text/html"))
                 {
                     httpResponse.ContentType = "text/html";
                     template = templateHtml;

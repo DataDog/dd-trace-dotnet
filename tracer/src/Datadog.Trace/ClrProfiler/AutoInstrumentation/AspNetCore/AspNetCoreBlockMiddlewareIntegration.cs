@@ -4,20 +4,14 @@
 // </copyright>
 
 #if !NETFRAMEWORK
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.Extensions.DependencyInjection;
-#endif
 using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
@@ -49,18 +43,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// <returns>CallTargetReturn</returns>
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-#if !NETFRAMEWORK
             if (Security.Instance.Settings.Enabled)
             {
                 var appb = (IApplicationBuilder)returnValue;
                 appb.MapWhen(context => context.Items["block"] is true, HandleBranch);
             }
-#endif
 
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-#if !NETFRAMEWORK
         internal static void HandleBranch(Microsoft.AspNetCore.Builder.IApplicationBuilder app)
         {
             app.Run(
@@ -104,6 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                     return httpResponse.WriteAsync(template);
                 });
         }
-#endif
     }
 }
+
+#endif

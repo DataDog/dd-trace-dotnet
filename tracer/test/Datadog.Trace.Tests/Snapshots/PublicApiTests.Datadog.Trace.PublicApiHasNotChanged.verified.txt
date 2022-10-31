@@ -254,18 +254,6 @@ namespace Datadog.Trace.Ci
         public void SetTag(string key, string? value) { }
     }
 }
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
-{
-    public class AspNetCoreBlockMiddlewareIntegration
-    {
-        public AspNetCoreBlockMiddlewareIntegration() { }
-        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, in Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
-    }
-    public static class AspNetCoreBlockMiddlewareIntegrationEnd
-    {
-        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
-    }
-}
 namespace Datadog.Trace.ClrProfiler
 {
     public sealed class InstrumentationLoader
