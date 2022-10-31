@@ -14,7 +14,7 @@ namespace Datadog.Trace.Tests.Debugger
 {
     public class SupportedTypesServiceTests
     {
-        private static readonly object[] Objects = { 3, DateTime.Now, TimeSpan.FromSeconds(3), DateTimeOffset.Now, Guid.NewGuid(), "Hello", new int?(5), new DateTime?(DateTime.Now), ConsoleColor.Blue };
+        private static readonly object[] Objects = { 3, DateTime.MinValue, TimeSpan.FromSeconds(3), DateTimeOffset.MinValue, Guid.Empty, "Hello", new int?(5), new DateTime?(DateTime.MinValue), ConsoleColor.Blue };
 
         public static System.Collections.Generic.IEnumerable<object[]> ObjectsCanCallToStringOn() => Objects.Select(o => new object[] { o });
 
