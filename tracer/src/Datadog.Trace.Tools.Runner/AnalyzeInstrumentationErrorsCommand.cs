@@ -10,8 +10,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.InstrumentedAssemblyGenerator;
 using Datadog.InstrumentedAssemblyVerification;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Tools.Runner.Checks;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -28,7 +26,7 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
             AnsiConsole.WriteLine("Error was in method " + "." + settings.Method);
         }
 
-        var logDirectory = GetLogDirectory(settings.LogDirectory, settings.Pid);
+        var logDirectory = GetLogDirectory(settings.LogDirectory);
         if (logDirectory == null)
         {
             Utils.WriteError("Log directory does not exist.");
@@ -108,31 +106,9 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
         return dirs.SingleOrDefault(d => Regex.IsMatch(d.Name, pattern))?.FullName;
     }
 
-    private string GetLogDirectory(string logDirectory, int? pid)
+    private string GetLogDirectory(string logDirectory)
     {
-        if (!string.IsNullOrEmpty(logDirectory))
-        {
-            return logDirectory;
-        }
-
-        if (pid == null)
-        {
-            return null;
-        }
-
-        var process = ProcessInfo.GetProcessInfo(pid.Value);
-        logDirectory = process?.Configuration?.GetString(ConfigurationKeys.LogDirectory);
-        if (logDirectory == null)
-        {
-#pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
-            var nativeLogFile = process?.Configuration?.GetString(ConfigurationKeys.ProfilerLogPath);
-#pragma warning restore 618
-            if (!string.IsNullOrEmpty(nativeLogFile))
-            {
-                logDirectory = Path.GetDirectoryName(nativeLogFile);
-            }
-        }
-
-        return logDirectory ?? Logging.DatadogLogging.GetLogDirectory();
+        var dir = logDirectory ?? @"C:\ProgramData\Datadog-APM\logs\DotNet\InstrumentationVerification";
+        return Directory.Exists(dir) ? dir : null;
     }
 }

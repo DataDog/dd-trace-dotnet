@@ -168,11 +168,6 @@ namespace Datadog.Trace.Logging
                 }
             }
 
-            return GetDefaultLogDirectory(logDirectory);
-        }
-
-        private static string GetDefaultLogDirectory(string logDirectory)
-        {
             // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
             // because of the following API calls
             //   - Directory.Exists
