@@ -9,7 +9,7 @@
 
 extern "C"
 {
-#include "ddprof/common.h"
+#include "datadog/common.h"
 }
 
 class FfiHelper

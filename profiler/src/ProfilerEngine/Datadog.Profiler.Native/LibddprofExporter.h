@@ -10,7 +10,7 @@
 
 extern "C"
 {
-#include "ddprof/profiling.h"
+#include "datadog/profiling.h"
 }
 
 #include <forward_list>
