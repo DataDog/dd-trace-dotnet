@@ -55,7 +55,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 // Sanity check
                 view.Read<IpcControlBlock>(0, out var controlBlock);
 
-                if (controlBlock.Header.Flags == 0)
+                if (!IsInitialized(in controlBlock))
                 {
                     throw new InvalidOperationException("The IPC control block is not initialized");
                 }
@@ -82,6 +82,25 @@ namespace Datadog.Trace.RuntimeMetrics
             IPC_FLAG_USES_FLAGS = 0x1,
             IPC_FLAG_INITIALIZED = 0x2,
             IPC_FLAG_X86 = 0x4
+        }
+
+        private static bool IsInitialized(in IpcControlBlock controlBlock)
+        {
+            if (controlBlock.Header.Flags == 0)
+            {
+                return false;
+            }
+
+            if ((controlBlock.Header.Flags & IpcHeaderFlags.IPC_FLAG_USES_FLAGS) == IpcHeaderFlags.IPC_FLAG_USES_FLAGS)
+            {
+                // The header uses flags, check that the initialized flag is set
+                if ((controlBlock.Header.Flags & IpcHeaderFlags.IPC_FLAG_INITIALIZED) != IpcHeaderFlags.IPC_FLAG_INITIALIZED)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public void Dispose()
@@ -154,10 +173,10 @@ namespace Datadog.Trace.RuntimeMetrics
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct TRICOUNT
+        private readonly struct TRICOUNT
         {
-            public int Current;
-            public int Total;
+            public readonly int Current;
+            public readonly int Total;
         }
 
         [StructLayout(LayoutKind.Sequential)]
