@@ -13,6 +13,7 @@ using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci;
 
@@ -23,9 +24,10 @@ public sealed class TestSession
 {
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
     private readonly Span _span;
+    private readonly Dictionary<string, string>? _environmentVariablesToRestore = null;
     private int _finished;
 
-    private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate)
+    private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {
         // First we make sure that CI Visibility is initialized.
         CIVisibility.Initialize();
@@ -85,20 +87,15 @@ public sealed class TestSession
         _span = span;
 
         // Inject context to environment variables
-        var environmentVariables = new Dictionary<string, string>
+        if (propagateEnvironmentVariables)
         {
-            [TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable] = tags.Command,
-            [TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable] = tags.WorkingDirectory,
-        };
-
-        SpanContextPropagator.Instance.Inject(
-            span.Context,
-            (IDictionary)environmentVariables,
-            new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
-
-        foreach (var envVar in environmentVariables)
-        {
-            Environment.SetEnvironmentVariable(envVar.Key, envVar.Value);
+            _environmentVariablesToRestore = new();
+            var environmentVariables = GetPropagateEnvironmentVariables();
+            foreach (var envVar in environmentVariables)
+            {
+                _environmentVariablesToRestore[envVar.Key] = EnvironmentHelpers.GetEnvironmentVariable(envVar.Key);
+                EnvironmentHelpers.SetEnvironmentVariable(envVar.Key, envVar.Value);
+            }
         }
 
         Current = this;
@@ -154,7 +151,7 @@ public sealed class TestSession
             return current;
         }
 
-        return new TestSession(command, null, null, null);
+        return new TestSession(command, null, null, null, false);
     }
 
     /// <summary>
@@ -170,7 +167,7 @@ public sealed class TestSession
             return current;
         }
 
-        return new TestSession(command, workingDirectory, null, null);
+        return new TestSession(command, workingDirectory, null, null, false);
     }
 
     /// <summary>
@@ -187,7 +184,7 @@ public sealed class TestSession
             return current;
         }
 
-        return new TestSession(command, workingDirectory, framework, null);
+        return new TestSession(command, workingDirectory, framework, null, false);
     }
 
     /// <summary>
@@ -205,7 +202,26 @@ public sealed class TestSession
             return current;
         }
 
-        return new TestSession(command, workingDirectory, framework, startDate);
+        return new TestSession(command, workingDirectory, framework, startDate, false);
+    }
+
+    /// <summary>
+    /// Get or create a new Test Session
+    /// </summary>
+    /// <param name="command">Test session command</param>
+    /// <param name="workingDirectory">Test session working directory</param>
+    /// <param name="framework">Testing framework name</param>
+    /// <param name="startDate">Test session start date</param>
+    /// <param name="propagateEnvironmentVariable">Propagate session data through environment variables (out of proc session)</param>
+    /// <returns>New test session instance</returns>
+    public static TestSession GetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariable)
+    {
+        if (Current is { } current)
+        {
+            return current;
+        }
+
+        return new TestSession(command, workingDirectory, framework, startDate, propagateEnvironmentVariable);
     }
 
     /// <summary>
@@ -297,6 +313,14 @@ public sealed class TestSession
 
         span.Finish(duration.Value);
 
+        if (_environmentVariablesToRestore is { } envVars)
+        {
+            foreach (var eVar in envVars)
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(eVar.Key, eVar.Value);
+            }
+        }
+
         Current = null;
         CIVisibility.Log.Debug("### Test Session Closed: {command}", Command);
         CIVisibility.FlushSpans();
@@ -335,5 +359,24 @@ public sealed class TestSession
     public TestModule CreateModule(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
     {
         return new TestModule(name, framework, frameworkVersion, startDate, Tags);
+    }
+
+    internal Dictionary<string, string> GetPropagateEnvironmentVariables()
+    {
+        var span = _span;
+        var tags = Tags;
+
+        var environmentVariables = new Dictionary<string, string>
+        {
+            [TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable] = tags.Command,
+            [TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable] = tags.WorkingDirectory,
+        };
+
+        SpanContextPropagator.Instance.Inject(
+            span.Context,
+            (IDictionary)environmentVariables,
+            new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+        return environmentVariables;
     }
 }

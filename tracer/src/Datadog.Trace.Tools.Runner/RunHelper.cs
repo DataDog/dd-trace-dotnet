@@ -124,7 +124,7 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             var command = string.Join(' ', args);
-            var session = TestSession.GetOrCreate(command);
+            var session = TestSession.GetOrCreate(command, null, null, null, true);
             var exitCode = 0;
             try
             {

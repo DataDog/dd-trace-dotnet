@@ -252,6 +252,7 @@ namespace Datadog.Trace.Ci
         public static Datadog.Trace.Ci.TestSession GetOrCreate(string command, string workingDirectory) { }
         public static Datadog.Trace.Ci.TestSession GetOrCreate(string command, string workingDirectory, string framework) { }
         public static Datadog.Trace.Ci.TestSession GetOrCreate(string command, string workingDirectory, string framework, System.DateTimeOffset startDate) { }
+        public static Datadog.Trace.Ci.TestSession GetOrCreate(string command, string? workingDirectory, string? framework, System.DateTimeOffset? startDate, bool propagateEnvironmentVariables) { }
     }
     public enum TestStatus
     {

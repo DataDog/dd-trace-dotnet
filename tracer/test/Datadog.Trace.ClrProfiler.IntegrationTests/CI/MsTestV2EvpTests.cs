@@ -40,11 +40,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var testModules = new List<MockCIVisibilityTestModule>();
             var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 13 : 15;
 
+            // This session will be injected as out of process session to the child process
+            var testSession = TestSession.GetOrCreate("test command", "C:\\evp_demo\\working_directory");
+
             try
             {
                 SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
                 SetEnvironmentVariable("DD_TRACE_DEBUG", "0");
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "0");
+                foreach (var envVar in testSession.GetPropagateEnvironmentVariables())
+                {
+                    SetEnvironmentVariable(envVar.Key, envVar.Value);
+                }
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {
@@ -84,6 +91,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // Check Module
                         Assert.True(tests.All(t => t.TestModuleId == testSuites[0].TestModuleId));
+
+                        // Check Session
+                        Assert.True(tests.All(t => t.TestSessionId == testSuites[0].TestSessionId));
+                        Assert.True(testSuites[0].TestSessionId == testModules[0].TestSessionId);
+                        Assert.True(testModules[0].TestSessionId == testSession.Tags.SessionId);
 
                         foreach (var targetTest in tests)
                         {
@@ -133,6 +145,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                             // CI Library Language
                             AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+
+                            // Check Session data
+                            AssertTargetSpanEqual(targetTest, TestTags.Command, testSession.Command);
+                            AssertTargetSpanEqual(targetTest, TestTags.CommandWorkingDirectory, testSession.WorkingDirectory);
 
                             // check specific test span
                             switch (targetTest.Meta[TestTags.Name])
@@ -205,6 +221,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 WriteSpans(tests);
                 throw;
+            }
+            finally
+            {
+                testSession?.Close(TestStatus.Skip);
             }
         }
 
