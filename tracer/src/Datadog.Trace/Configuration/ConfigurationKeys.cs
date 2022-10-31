@@ -428,6 +428,11 @@ namespace Datadog.Trace.Configuration
             /// Default Value is false (disabled)
             /// </summary>
             public const string IntelligentTestRunnerEnabled = "DD_CIVISIBILITY_ITR_ENABLED";
+
+            /// <summary>
+            /// Configuration key for forcing Agent's EVP Proxy
+            /// </summary>
+            public const string ForceAgentsEvpProxy = "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY";
         }
 
         /// <summary>
