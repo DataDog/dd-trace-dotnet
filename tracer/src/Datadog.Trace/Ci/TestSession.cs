@@ -212,16 +212,16 @@ public sealed class TestSession
     /// <param name="workingDirectory">Test session working directory</param>
     /// <param name="framework">Testing framework name</param>
     /// <param name="startDate">Test session start date</param>
-    /// <param name="propagateEnvironmentVariable">Propagate session data through environment variables (out of proc session)</param>
+    /// <param name="propagateEnvironmentVariables">Propagate session data through environment variables (out of proc session)</param>
     /// <returns>New test session instance</returns>
-    public static TestSession GetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariable)
+    public static TestSession GetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {
         if (Current is { } current)
         {
             return current;
         }
 
-        return new TestSession(command, workingDirectory, framework, startDate, propagateEnvironmentVariable);
+        return new TestSession(command, workingDirectory, framework, startDate, propagateEnvironmentVariables);
     }
 
     /// <summary>
