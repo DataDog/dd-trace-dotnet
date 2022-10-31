@@ -231,7 +231,7 @@ namespace Datadog.Trace.RuntimeMetrics
             public readonly IPCEntry Table;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 2048)]
+        [StructLayout(LayoutKind.Sequential)]
         private readonly struct IpcControlBlock
         {
             public readonly IPCHeader Header;
