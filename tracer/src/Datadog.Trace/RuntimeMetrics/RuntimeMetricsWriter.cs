@@ -157,11 +157,6 @@ namespace Datadog.Trace.RuntimeMetrics
             return new RuntimeEventListener(statsd, delay);
 #elif NETFRAMEWORK
 
-            if (AzureAppServices.Metadata.IsRelevant)
-            {
-                return new AzureAppServicePerformanceCounters(statsd);
-            }
-
             try
             {
                 return new MemoryMappedCounters(statsd);
@@ -169,7 +164,7 @@ namespace Datadog.Trace.RuntimeMetrics
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error while initializing memory-mapped counters. Falling back to performance counters.");
-                return new PerformanceCountersListener(statsd);
+                return AzureAppServices.Metadata.IsRelevant ? new AzureAppServicePerformanceCounters(statsd) : new PerformanceCountersListener(statsd);
             }
 #else
             return null;
