@@ -128,7 +128,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var command = string.Join(' ', args);
             TestSession session = null;
-            if (createTestSession)
+            if (createTestSession && Program.CallbackForTests is null)
             {
                 session = TestSession.GetOrCreate(command, null, null, null, true);
             }
