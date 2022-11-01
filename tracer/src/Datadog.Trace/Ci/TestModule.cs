@@ -139,7 +139,7 @@ public sealed class TestModule
             }
 
             // Extract session variables (from out of process sessions)
-            var environmentVariables = Environment.GetEnvironmentVariables();
+            var environmentVariables = EnvironmentHelpers.GetEnvironmentVariables();
             var sessionContext = SpanContextPropagator.Instance.Extract(
                 environmentVariables, new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 
