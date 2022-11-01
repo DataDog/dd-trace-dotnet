@@ -50,6 +50,10 @@ public class AspNetCoreResourceNameHelperTests
         { "prefix/{controller}/{action}", "/prefix/home/index", true },
         { "prefix-{controller}/{action}-suffix", "/prefix-home/index-suffix", false },
         { "prefix-{controller}/{action}-suffix", "/prefix-home/index-suffix", true },
+        { "prefix-{controller}-{action}-{nonid}-{id}-{FormValue}-suffix", "/prefix-home-index-{nonid}-{id}-{formvalue}-suffix", false },
+        { "prefix-{controller}-{action}-{nonid}-{id}-{FormValue}-suffix", "/prefix-home-index-oops-{id}-view-suffix", true },
+        { "standalone/prefix-{controller}-{action}-{nonid}-{id}-{FormValue}-suffix/standalone", "/standalone/prefix-home-index-{nonid}-{id}-{formvalue}-suffix/standalone", false },
+        { "standalone/prefix-{controller}-{action}-{nonid}-{id}-{FormValue}-suffix/standalone", "/standalone/prefix-home-index-oops-{id}-view-suffix/standalone", true },
         { "{controller}/{action}/{nonid}", "/home/index/{nonid}", false },
         { "{controller}/{action}/{nonid}", "/home/index/oops", true },
         { "{controller}/{action}/{nonid?}", "/home/index/{nonid?}", false },
@@ -78,8 +82,8 @@ public class AspNetCoreResourceNameHelperTests
         { "{controller}/{action}/{idlike}", "/home/index/{idlike}", true },
         { "{controller}/{action}/{id:int}", "/home/index/{id}", false },
         { "{controller}/{action}/{id:int}", "/home/index/{id}", true },
-        // Note: This is _wrong_ (flips the one * -> **), but it's a breaking change
-        // so leave it as this
+        // Note: This is _wrong_ (flips the one * -> ** and vice versa),
+        // but it's a breaking change to fix it, so leave it as is
         { "{controller}/{action}/{*nonid}", "/home/index/{**nonid}", false },
         { "{controller}/{action}/{*nonid}", "/home/index/oops", true },
         { "{controller}/{action}/{**nonid}", "/home/index/{*nonid}", false },
@@ -149,6 +153,9 @@ public class AspNetCoreResourceNameHelperTests
     [MemberData(nameof(ValidRouteTemplates))]
     public void SimplifyRouteTemplate_CleansValidRouteTemplates(string template, string expected, bool expandRouteTemplates)
     {
+        // RouteTemplate doesn't support the concept of encoded slashes, so "fix" the expected value
+        expected = expected.Replace("**", "*");
+
         var routeTemplate = new RouteTemplate(RoutePatternFactory.Parse(template));
         var resource = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
             routePattern: routeTemplate,

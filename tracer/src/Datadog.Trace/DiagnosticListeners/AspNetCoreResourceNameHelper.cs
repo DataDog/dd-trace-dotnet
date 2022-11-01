@@ -33,11 +33,17 @@ internal class AspNetCoreResourceNameHelper
 
         foreach (var pathSegment in routePattern.PathSegments)
         {
+            var parts = 0;
             foreach (var part in pathSegment.DuckCast<AspNetCoreDiagnosticObserver.RoutePatternPathSegmentStruct>().Parts)
             {
+                parts++;
                 if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternContentPartStruct contentPart))
                 {
-                    sb.Append('/');
+                    if (parts == 1)
+                    {
+                        sb.Append('/');
+                    }
+
                     sb.Append(contentPart.Content);
                 }
                 else if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternParameterPartStruct parameter))
@@ -45,17 +51,29 @@ internal class AspNetCoreResourceNameHelper
                     var parameterName = parameter.Name;
                     if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                     {
-                        sb.Append('/');
+                        if (parts == 1)
+                        {
+                            sb.Append('/');
+                        }
+
                         sb.Append(areaName);
                     }
                     else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                     {
-                        sb.Append('/');
+                        if (parts == 1)
+                        {
+                            sb.Append('/');
+                        }
+
                         sb.Append(controllerName);
                     }
                     else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
                     {
-                        sb.Append('/');
+                        if (parts == 1)
+                        {
+                            sb.Append('/');
+                        }
+
                         sb.Append(actionName);
                     }
                     else
@@ -63,7 +81,11 @@ internal class AspNetCoreResourceNameHelper
                         var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
                         if (!parameter.IsOptional || haveParameter)
                         {
-                            sb.Append('/');
+                            if (parts == 1)
+                            {
+                                sb.Append('/');
+                            }
+
                             if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
                             {
                                 // write the expanded parameter value
@@ -122,28 +144,46 @@ internal class AspNetCoreResourceNameHelper
 
         foreach (var pathSegment in routePattern.Segments)
         {
+            var parts = 0;
             foreach (var part in pathSegment.Parts)
             {
+                parts++;
                 var partName = part.Name;
 
                 if (!part.IsParameter)
                 {
-                    sb.Append('/');
+                    if (parts == 1)
+                    {
+                        sb.Append('/');
+                    }
+
                     sb.Append(part.Text);
                 }
                 else if (partName.Equals("area", StringComparison.OrdinalIgnoreCase))
                 {
-                    sb.Append('/');
+                    if (parts == 1)
+                    {
+                        sb.Append('/');
+                    }
+
                     sb.Append(areaName);
                 }
                 else if (partName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                 {
-                    sb.Append('/');
+                    if (parts == 1)
+                    {
+                        sb.Append('/');
+                    }
+
                     sb.Append(controllerName);
                 }
                 else if (partName.Equals("action", StringComparison.OrdinalIgnoreCase))
                 {
-                    sb.Append('/');
+                    if (parts == 1)
+                    {
+                        sb.Append('/');
+                    }
+
                     sb.Append(actionName);
                 }
                 else
@@ -151,7 +191,11 @@ internal class AspNetCoreResourceNameHelper
                     var haveParameter = routeValueDictionary.TryGetValue(partName, out var value);
                     if (!part.IsOptional || haveParameter)
                     {
-                        sb.Append('/');
+                        if (parts == 1)
+                        {
+                            sb.Append('/');
+                        }
+
                         if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
                         {
                             // write the expanded parameter value
