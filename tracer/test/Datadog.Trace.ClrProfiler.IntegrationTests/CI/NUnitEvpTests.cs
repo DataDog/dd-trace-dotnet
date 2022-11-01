@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, "1");
-                SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+                SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
                 foreach (var envVar in testSession.GetPropagateEnvironmentVariables())
                 {
                     SetEnvironmentVariable(envVar.Key, envVar.Value);
