@@ -48,6 +48,7 @@ namespace Datadog.Trace.Tools.Runner
             // CI Visibility mode is enabled.
             // If the agentless feature flag is enabled, we check for ApiKey
             // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
+            var createTestSession = false;
             if (settings is RunCiSettings ciSettings)
             {
                 var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
@@ -76,6 +77,8 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     return 1;
                 }
+
+                createTestSession = true;
 
                 var enableCodeCoverage = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
 
@@ -124,7 +127,12 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             var command = string.Join(' ', args);
-            var session = TestSession.GetOrCreate(command, null, null, null, true);
+            TestSession session = null;
+            if (createTestSession)
+            {
+                session = TestSession.GetOrCreate(command, null, null, null, true);
+            }
+
             var exitCode = 0;
             try
             {
@@ -144,17 +152,17 @@ namespace Datadog.Trace.Tools.Runner
                 }
 
                 exitCode = Utils.RunProcess(processInfo, applicationContext.TokenSource.Token);
-                session.SetTag(TestTags.CommandExitCode, exitCode);
+                session?.SetTag(TestTags.CommandExitCode, exitCode);
                 return exitCode;
             }
             catch (Exception ex)
             {
-                session.SetErrorInfo(ex);
+                session?.SetErrorInfo(ex);
                 throw;
             }
             finally
             {
-                session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+                session?.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
             }
         }
 
