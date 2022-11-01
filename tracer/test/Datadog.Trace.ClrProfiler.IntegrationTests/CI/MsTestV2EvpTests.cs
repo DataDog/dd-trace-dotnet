@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
@@ -45,10 +46,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             try
             {
-                SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
-                SetEnvironmentVariable("DD_TRACE_DEBUG", "0");
-                SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "0");
-                SetEnvironmentVariable("DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY", "1");
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, "1");
+                SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
                 foreach (var envVar in testSession.GetPropagateEnvironmentVariables())
                 {
                     SetEnvironmentVariable(envVar.Key, envVar.Value);

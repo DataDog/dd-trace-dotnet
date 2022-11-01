@@ -20,6 +20,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci
 {
@@ -61,6 +62,23 @@ namespace Datadog.Trace.Ci
             }
 
             Log.Information("Initializing CI Visibility");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("CI Visibility process: {commandLine}", Environment.CommandLine);
+                Log.Debug("Settings.Enabled = {value}", _settings.Enabled);
+                Log.Debug("Settings.Agentless = {value}", _settings.Agentless);
+                Log.Debug("Settings.CodeCoverageEnabled = {value}", _settings.CodeCoverageEnabled);
+                Log.Debug("Settings.GitUploadEnabled = {value}", _settings.GitUploadEnabled);
+                Log.Debug("Settings.TestsSkippingEnabled = {value}", _settings.TestsSkippingEnabled);
+                Log.Debug("Settings.ForceAgentsEvpProxy = {value}", _settings.ForceAgentsEvpProxy);
+                Log.Debug("Settings.IntelligentTestRunnerEnabled = {value}", _settings.IntelligentTestRunnerEnabled);
+                Log.Debug("Settings.CodeCoverageSnkFilePath = {value}", _settings.CodeCoverageSnkFilePath);
+                Log.Debug("Settings.AgentlessUrl = {value}", _settings.AgentlessUrl);
+                Log.Debug("Settings.TracerSettings.Environment = {value}", _settings.TracerSettings.Environment);
+                Log.Debug("Settings.TracerSettings.ServiceName = {value}", _settings.TracerSettings.ServiceName);
+                Log.Debug("Settings.TracerSettings.TraceEnabled = {value}", _settings.TracerSettings.TraceEnabled);
+                Log.Debug("Settings.TracerSettings.Exporter.AgentUri = {value}", _settings.TracerSettings.Exporter.AgentUri);
+            }
 
             // In case we are running using the agent, check if the event platform proxy is supported.
             IDiscoveryService discoveryService = NullDiscoveryService.Instance;
