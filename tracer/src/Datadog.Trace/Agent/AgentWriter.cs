@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
@@ -403,13 +404,34 @@ namespace Datadog.Trace.Agent
                 bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(spans) ?? true;
                 _statsAggregator?.AddRange(spans);
 
+                // the number of spans that will be kept via single span sampling
+                var singleSpanSamplingSpans = new List<Span>(); // TODO maybe we can store this from above?
+                foreach (var span in spans)
+                {
+                    if (span.GetTag(Tags.SingleSpanSampling.SamplingMechanism) is not null)
+                    {
+                        singleSpanSamplingSpans.Add(span);
+                    }
+                }
+
                 // If stats computation determined that we can drop the P0 Trace,
                 // skip all other processing
-                if (!shouldSendTrace)
+                if (!shouldSendTrace && singleSpanSamplingSpans.Count == 0)
                 {
                     Interlocked.Increment(ref _droppedP0Traces);
                     Interlocked.Add(ref _droppedP0Spans, spans.Count);
                     return;
+                }
+                else if (!shouldSendTrace && singleSpanSamplingSpans.Count > 0)
+                {
+                    // TODO is the first span in spans considered to be the "trace"?
+                    if (singleSpanSamplingSpans.Count != spans.Count)
+                    {
+                        // increment dropped p0 traces when at least a single span is dropped
+                        Interlocked.Increment(ref _droppedP0Traces);
+                    }
+
+                    Interlocked.Add(ref _droppedP0Spans, spans.Count - singleSpanSamplingSpans.Count);
                 }
             }
 
