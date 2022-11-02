@@ -7,7 +7,6 @@
 
 using System;
 using System.Diagnostics;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Iast;
@@ -16,7 +15,6 @@ internal class IastModule
 {
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
-    private const string IastOrigin = "iast";
 
     public IastModule()
     {
@@ -75,7 +73,7 @@ internal class IastModule
     {
         if (tracer.ActiveScope is Scope { Span.Context.TraceContext: { RootSpan.Type: SpanTypes.Web } traceContext })
         {
-            traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
+            traceContext.IastRequestContext?.AddVulnerability(vulnerability);
             return null;
         }
         else
@@ -90,7 +88,6 @@ internal class IastModule
                 IastEnabled = "1"
             };
 
-            tags.SetTag(Tags.Origin, IastOrigin);
             var scope = tracer.StartActiveInternal(operationName, tags: tags);
             tracer?.TracerManager?.Telemetry.IntegrationGeneratedSpan(integrationId);
             return scope;
