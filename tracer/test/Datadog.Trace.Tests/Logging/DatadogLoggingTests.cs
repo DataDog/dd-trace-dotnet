@@ -13,6 +13,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -230,14 +231,16 @@ namespace Datadog.Trace.Tests.Logging
                 File.SetLastWriteTime(mockFilePath, DateTime.Now.AddDays(-31 * i));
             }
 
+            // Running method to delete the old files
             DatadogLogging.CleanLogFiles(tempLogsDir);
 
-            var allFiles = Directory.EnumerateFiles(tempLogsDir).Count();
-            var nonTraceFiles = Directory.EnumerateFiles(tempLogsDir, "random-file-*").Count();
+            // Asserting that the correct amount of files are left
+            Directory.EnumerateFiles(tempLogsDir, "DD-DotNet-Profiler-Native-*").Count().Should().Be(0);
+            Directory.EnumerateFiles(tempLogsDir, "dotnet-tracer-*").Count().Should().Be(2);
+            Directory.EnumerateFiles(tempLogsDir, "random-file-*").Count().Should().Be(3);
 
+            // Deleting temporary directory after test run
             Directory.Delete(tempLogsDir, true);
-
-            Assert.True(allFiles - nonTraceFiles == 2);
         }
 
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)

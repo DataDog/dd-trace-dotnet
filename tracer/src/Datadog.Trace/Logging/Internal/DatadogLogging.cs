@@ -235,24 +235,22 @@ namespace Datadog.Trace.Logging
                     "dotnet-native-loader-*.log",
                     "DD-DotNet-Profiler-Native-*.log"
                   };
-
-                foreach (var logFormat in logFormats)
+                try
                 {
-                    foreach (var logFile in Directory.EnumerateFiles(logsDirectory, logFormat))
+                    foreach (var logFormat in logFormats)
                     {
-                        try
+                        foreach (var logFile in Directory.EnumerateFiles(logsDirectory, logFormat))
                         {
                             if (File.GetLastWriteTime(logFile) < date)
                             {
                                 File.Delete(logFile);
                             }
                         }
-                        catch
-                        {
-                            // Abort on first catch when doing IO operation for perofrmance reasons.
-                            break;
-                        }
                     }
+                }
+                catch
+                {
+                    // Abort on first catch when doing IO operation for perofrmance reasons.
                 }
             }
         }
