@@ -62,20 +62,21 @@ namespace Datadog.Trace.Ci
             }
 
             Log.Information("Initializing CI Visibility");
-            Log.Information(" CI Visibility process: {commandLine}", Environment.CommandLine);
-            Log.Information(" Settings.Enabled = {value}", _settings.Enabled);
-            Log.Information(" Settings.Agentless = {value}", _settings.Agentless);
-            Log.Information(" Settings.CodeCoverageEnabled = {value}", _settings.CodeCoverageEnabled);
-            Log.Information(" Settings.GitUploadEnabled = {value}", _settings.GitUploadEnabled);
-            Log.Information(" Settings.TestsSkippingEnabled = {value}", _settings.TestsSkippingEnabled);
-            Log.Information(" Settings.ForceAgentsEvpProxy = {value}", _settings.ForceAgentsEvpProxy);
-            Log.Information(" Settings.IntelligentTestRunnerEnabled = {value}", _settings.IntelligentTestRunnerEnabled);
-            Log.Information(" Settings.CodeCoverageSnkFilePath = {value}", _settings.CodeCoverageSnkFilePath);
-            Log.Information(" Settings.AgentlessUrl = {value}", _settings.AgentlessUrl);
-            Log.Information(" Settings.TracerSettings.Environment = {value}", _settings.TracerSettings.Environment);
-            Log.Information(" Settings.TracerSettings.ServiceName = {value}", _settings.TracerSettings.ServiceName);
-            Log.Information(" Settings.TracerSettings.TraceEnabled = {value}", _settings.TracerSettings.TraceEnabled);
-            Log.Information(" Settings.TracerSettings.Exporter.AgentUri = {value}", _settings.TracerSettings.Exporter.AgentUri);
+            Log.Information(" * CI Visibility process: {commandLine}", Environment.CommandLine);
+            Log.Information(" * Settings.Enabled = {value}", _settings.Enabled);
+            Log.Information(" * Settings.Agentless = {value}", _settings.Agentless);
+            Log.Information(" * Settings.CodeCoverageEnabled = {value}", _settings.CodeCoverageEnabled);
+            Log.Information(" * Settings.GitUploadEnabled = {value}", _settings.GitUploadEnabled);
+            Log.Information(" * Settings.TestsSkippingEnabled = {value}", _settings.TestsSkippingEnabled);
+            Log.Information(" * Settings.ForceAgentsEvpProxy = {value}", _settings.ForceAgentsEvpProxy);
+            Log.Information(" * Settings.IntelligentTestRunnerEnabled = {value}", _settings.IntelligentTestRunnerEnabled);
+            Log.Information(" * Settings.CodeCoverageSnkFilePath = {value}", _settings.CodeCoverageSnkFilePath);
+            Log.Information(" * Settings.AgentlessUrl = {value}", _settings.AgentlessUrl);
+            Log.Information(" * Settings.TracerSettings.Environment = {value}", _settings.TracerSettings.Environment);
+            Log.Information(" * Settings.TracerSettings.ServiceName = {value}", _settings.TracerSettings.ServiceName);
+            Log.Information(" * Settings.TracerSettings.TraceEnabled = {value}", _settings.TracerSettings.TraceEnabled);
+            Log.Information(" * Settings.TracerSettings.Exporter.AgentUri = {value}", _settings.TracerSettings.Exporter.AgentUri);
+            Log.Information(" * Stacktrace = {value}", Environment.StackTrace);
 
             // In case we are running using the agent, check if the event platform proxy is supported.
             IDiscoveryService discoveryService = NullDiscoveryService.Instance;
