@@ -31,7 +31,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         {
             var filename = enableIast ? "Iast.WeakHashing.AspNetCore2.IastEnabled" : "Iast.WeakHashing.AspNetCore2.IastDisabled";
             var url = "/Iast/WeakHashing";
-            var agent = await RunOnSelfHosted(enableSecurity: false, enableIast: enableIast);
+            EnableIast(enableIast);
+            var agent = await RunOnSelfHosted(enableSecurity: false);
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();

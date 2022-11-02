@@ -19,8 +19,7 @@ namespace Datadog.Trace.TestHelpers
             int aspNetCorePort = 5000,
             string processToProfile = null,
             bool? enableSecurity = null,
-            string externalRulesFile = null,
-            bool? enableIast = null)
+            string externalRulesFile = null)
         {
             if (environmentHelper == null)
             {
@@ -38,8 +37,7 @@ namespace Datadog.Trace.TestHelpers
                 startInfo.Environment,
                 processToProfile,
                 enableSecurity,
-                externalRulesFile,
-                enableIast);
+                externalRulesFile);
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
