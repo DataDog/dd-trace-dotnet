@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
@@ -12,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
@@ -41,9 +43,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var testModules = new List<MockCIVisibilityTestModule>();
             var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 13 : 15;
 
-            // This session will be injected as out of process session to the child process
-            // TestSession.TestMode = true;
-            // var testSession = TestSession.GetOrCreate("test command", "C:\\evp_demo\\working_directory");
+            var sessionId = SpanIdGenerator.CreateNew();
+            var sessionCommand = "test command";
+            var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
+            SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
+            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
 
             try
             {
@@ -97,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // Check Session
                         Assert.True(tests.All(t => t.TestSessionId == testSuites[0].TestSessionId));
                         Assert.True(testSuites[0].TestSessionId == testModules[0].TestSessionId);
-                        // Assert.True(testModules[0].TestSessionId == testSession.Tags.SessionId);
+                        Assert.True(testModules[0].TestSessionId == sessionId);
 
                         foreach (var targetTest in tests)
                         {
@@ -149,8 +155,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
 
                             // Check Session data
-                            // AssertTargetSpanEqual(targetTest, TestTags.Command, testSession.Command);
-                            // AssertTargetSpanEqual(targetTest, TestTags.CommandWorkingDirectory, testSession.WorkingDirectory);
+                            AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
+                            AssertTargetSpanEqual(targetTest, TestTags.CommandWorkingDirectory, sessionWorkingDirectory);
 
                             // check specific test span
                             switch (targetTest.Meta[TestTags.Name])
@@ -223,10 +229,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 WriteSpans(tests);
                 throw;
-            }
-            finally
-            {
-                // testSession?.Close(TestStatus.Skip);
             }
         }
 

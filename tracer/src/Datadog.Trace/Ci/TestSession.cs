@@ -29,11 +29,8 @@ public sealed class TestSession
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {
-        if (!TestMode)
-        {
-            // First we make sure that CI Visibility is initialized.
-            CIVisibility.Initialize();
-        }
+        // First we make sure that CI Visibility is initialized.
+        CIVisibility.Initialize();
 
         var environment = CIEnvironmentValues.Instance;
 
@@ -111,8 +108,6 @@ public sealed class TestSession
             span.ResetStartTime();
         }
     }
-
-    internal static bool TestMode { get; set; }
 
     /// <summary>
     /// Gets the session command
@@ -317,10 +312,7 @@ public sealed class TestSession
                 break;
         }
 
-        if (!TestMode)
-        {
-            span.Finish(duration.Value);
-        }
+        span.Finish(duration.Value);
 
         if (_environmentVariablesToRestore is { } envVars)
         {
@@ -332,10 +324,7 @@ public sealed class TestSession
 
         Current = null;
         CIVisibility.Log.Debug("### Test Session Closed: {command}", Command);
-        if (!TestMode)
-        {
-            CIVisibility.FlushSpans();
-        }
+        CIVisibility.FlushSpans();
     }
 
     /// <summary>
@@ -373,7 +362,7 @@ public sealed class TestSession
         return new TestModule(name, framework, frameworkVersion, startDate, Tags);
     }
 
-    internal Dictionary<string, string> GetPropagateEnvironmentVariables()
+    private Dictionary<string, string> GetPropagateEnvironmentVariables()
     {
         var span = _span;
         var tags = Tags;
