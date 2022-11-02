@@ -14,6 +14,7 @@ using System.Web;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.AppSec.Transports.Http
 {
@@ -39,15 +40,11 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
         public void DisposeAdditiveContext() => GetAdditiveContext()?.Dispose();
 
-        public void SetAdditiveContext(IContext additiveContext)
-        {
-            _context.Items[WafKey] = additiveContext;
-        }
+        public void SetAdditiveContext(IContext additiveContext) => _context.Items[WafKey] = additiveContext;
 
-        public IHeadersCollection GetRequestHeaders()
-        {
-            return new NameValueHeadersCollection(_context.Request.Headers);
-        }
+        public IHeadersCollection GetRequestHeaders() => new NameValueHeadersCollection(_context.Request.Headers);
+
+        public Dictionary<string, object> PrepareArgsForWaf(Span span) => _context.Request.PrepareArgsForWaf(span);
 
         public IHeadersCollection GetResponseHeaders()
         {
@@ -71,40 +68,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
             }
 
             return new NameValueHeadersCollection(new NameValueCollection());
-        }
-
-        public void WriteBlockedResponse(string templateJson, string templateHtml, bool canAccessHeaders)
-        {
-            _context.Items["block"] = true;
-            var httpResponse = _context.Response;
-            httpResponse.Clear();
-            httpResponse.Cookies.Clear();
-
-            if (canAccessHeaders)
-            {
-                var keys = httpResponse.Headers.Keys.Cast<string>().ToList();
-                foreach (var key in keys)
-                {
-                    httpResponse.Headers.Remove(key);
-                }
-            }
-
-            httpResponse.StatusCode = 403;
-
-            var template = templateJson;
-            if (_context.Request.Headers["Accept"] == "application/json")
-            {
-                httpResponse.ContentType = "application/json";
-            }
-            else
-            {
-                httpResponse.ContentType = "text/html";
-                template = templateHtml;
-            }
-
-            httpResponse.Write(template);
-            httpResponse.Flush();
-            httpResponse.Close();
         }
     }
 }

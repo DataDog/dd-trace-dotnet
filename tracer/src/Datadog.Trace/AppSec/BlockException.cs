@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.AppSec.Waf;
 
 namespace Datadog.Trace.AppSec
 {
@@ -27,6 +28,13 @@ namespace Datadog.Trace.AppSec
             : base(info, context)
         {
         }
+
+        public BlockException(IResult result)
+        {
+            Result = result;
+        }
+
+        internal IResult Result { get; }
 
         // can give a significant performance boost, this exception is currently caught and logged by the host web server
         public override string ToString() => "BlockException";

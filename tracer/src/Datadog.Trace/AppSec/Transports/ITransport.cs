@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
@@ -28,6 +29,6 @@ namespace Datadog.Trace.AppSec.Transports
 
         IHeadersCollection GetResponseHeaders();
 
-        void WriteBlockedResponse(string templateJson, string templateHtml, bool canAccessHeaders);
+        Dictionary<string, object> PrepareArgsForWaf(Span span);
     }
 }

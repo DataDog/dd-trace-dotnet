@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -172,23 +173,15 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpContext.Request, scope.Span);
+                    var securityTransport = new SecurityTransport(security, httpContext, scope.Span);
+                    var result = securityTransport.ShouldBlock();
+                    securityTransport.CheckAndBlock(result);
 
                     if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
-                        var formData = new Dictionary<string, object>();
-                        foreach (string key in httpRequest.Form.Keys)
-                        {
-                            formData.Add(key, httpRequest.Form[key]);
-                        }
-
-                        security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData);
+                        result = securityTransport.ShouldBlockBody();
+                        securityTransport.CheckAndBlock(result);
                     }
-
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, args =>
-                    {
-                        AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
-                    });
                 }
             }
             catch (Exception ex)
@@ -271,23 +264,17 @@ namespace Datadog.Trace.AspNet
                         var security = Security.Instance;
                         if (security.Settings.Enabled)
                         {
-                            var httpContext = (sender as HttpApplication)?.Context;
-
-                            if (httpContext == null)
+                            if (!(app.Context.Items["block"] is bool blocked && blocked))
                             {
-                                return;
-                            }
-
-                            if (!(httpContext.Items["block"] is bool blocked && blocked))
-                            {
-                                // raise path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
-                                security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false);
-                                security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
-                                security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
-                                security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, args =>
+                                var securityTransport = new SecurityTransport(security, app.Context, rootSpan);
+                                // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
+                                var result = securityTransport.ShouldBlockPathParams();
+                                securityTransport.CheckAndBlock(result);
+                                if (result.ReturnCode != ReturnCode.Block)
                                 {
-                                    AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
-                                });
+                                    result = securityTransport.ShouldBlock();
+                                    securityTransport.CheckAndBlock(result);
+                                }
                             }
                         }
 

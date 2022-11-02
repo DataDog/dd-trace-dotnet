@@ -42,12 +42,9 @@ namespace Datadog.Trace.AppSec
                 }
 
                 var scope = SharedItems.TryPeekScope(context, peekScopeKey);
-                security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, bodyDic);
-                security.InstrumentationGateway.RaisePathParamsAvailable(context, scope.Span, pathParamsDic);
-                security.InstrumentationGateway.RaiseBlockingOpportunity(context, scope, Tracer.Instance.Settings, args =>
-                {
-                    TracingHttpModule.AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
-                });
+                var securityTransport = new SecurityTransport(security, context, scope.Span);
+                using var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, bodyDic }, { AddressesConstants.RequestPathParams, pathParamsDic } });
+                securityTransport.CheckAndBlock(result);
             }
         }
     }

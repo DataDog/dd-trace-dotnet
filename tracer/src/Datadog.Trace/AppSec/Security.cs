@@ -39,7 +39,6 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
         private IWaf _waf;
         private AppSecRateLimiter _rateLimiter;
@@ -88,12 +87,11 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null)
+        private Security(SecuritySettings settings = null, IWaf waf = null)
         {
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
-                _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
                 _waf = waf;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
@@ -133,13 +131,6 @@ namespace Datadog.Trace.AppSec
                 }
             }
         }
-
-        /// <summary>
-        /// Gets <see cref="InstrumentationGateway"/> instance
-        /// </summary>
-        InstrumentationGateway IDatadogSecurity.InstrumentationGateway => _instrumentationGateway;
-
-        internal InstrumentationGateway InstrumentationGateway => _instrumentationGateway;
 
         internal bool WafExportsErrorHappened => _waf?.InitializationResult?.ExportErrors ?? false;
 
@@ -431,36 +422,8 @@ namespace Datadog.Trace.AppSec
             {
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
                 AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged += AsmProductConfigChanged;
-                _instrumentationGateway.StartRequest += RunWafAndReact;
-                _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
-                _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
-                _instrumentationGateway.BodyAvailable += RunWafAndReact;
-                _instrumentationGateway.BlockingOpportunity += MightStopRequest;
-#if NETFRAMEWORK
-                if (_usingIntegratedPipeline == null)
-                {
-                    try
-                    {
-                        _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
-                    }
-                    catch (Exception ex)
-                    {
-                        _usingIntegratedPipeline = false;
-                        Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
-                    }
-                }
-
-                if (_usingIntegratedPipeline.Value)
-                {
-                    _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-                }
-
-#else
-                _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-#endif
                 AddAppsecSpecificInstrumentations();
 
-                _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
                 _rateLimiter ??= new AppSecRateLimiter(_settings.TraceRateLimit);
 
                 _enabled = true;
@@ -473,14 +436,6 @@ namespace Datadog.Trace.AppSec
         {
             if (_enabled)
             {
-                _instrumentationGateway.StartRequest -= RunWafAndReact;
-                _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
-                _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
-                _instrumentationGateway.BodyAvailable -= RunWafAndReact;
-                _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
-                _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
-                _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
-
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
                 AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
                 RemoveAppsecSpecificInstrumentations();
@@ -491,15 +446,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void InstrumentationGateway_AddHeadersResponseTags(object sender, InstrumentationGatewayEventArgs e)
-        {
-            if (e.RelatedSpan.GetTag(Tags.AppSecEvent) == "true")
-            {
-                AddResponseHeaderTags(e.Transport, e.RelatedSpan);
-            }
-        }
-
-        private void Report(ITransport transport, Span span, IResult result, bool blocked)
+        internal void Report(ITransport transport, Span span, IResult result, bool blocked)
         {
             span.SetTag(Tags.AppSecEvent, "true");
             if (blocked)
@@ -545,18 +492,15 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private bool CanAccessHeaders()
+        internal bool CanAccessHeaders()
         {
             return _usingIntegratedPipeline == true || _usingIntegratedPipeline is null;
         }
 
-        private void AddResponseHeaderTags(ITransport transport, Span span)
+        internal void AddResponseHeaderTags(ITransport transport, Span span)
         {
             TryAddEndPoint(span);
-            var headers =
-                CanAccessHeaders() ?
-                    transport.GetResponseHeaders() :
-                    new NameValueHeadersCollection(new NameValueCollection());
+            var headers = CanAccessHeaders() ? transport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
             AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
 
@@ -573,63 +517,34 @@ namespace Datadog.Trace.AppSec
             return additiveContext;
         }
 
-        private void MightStopRequest(object sender, InstrumentationGatewayBlockingEventArgs args)
-        {
-            if (args.Transport.Blocked)
-            {
-                AddResponseHeaderTags(args.Transport, args.Scope.Span);
-                args.InvokeDoBeforeBlocking();
-                var transport = args.Transport;
-                var additiveContext = GetOrCreateContext(transport);
-                additiveContext.Dispose();
-
-                throw new BlockException();
-            }
-        }
-
-        private void RunWafAndReactAndCleanup(object sender, InstrumentationGatewaySecurityEventArgs e)
-        {
-            RunWafAndReact(sender, e);
-            e.Transport.DisposeAdditiveContext();
-        }
-
-        private void RunWafAndReact(object sender, InstrumentationGatewaySecurityEventArgs e)
+        internal IResult RunWaf(ITransport transport, Span span, IDictionary<string, object> args)
         {
             try
             {
-                if (e.Transport.Blocked)
+                if (transport.Blocked)
                 {
-                    return;
+                    return null;
                 }
 
-                var additiveContext = GetOrCreateContext(e.Transport);
-                var span = GetLocalRootSpan(e.RelatedSpan);
+                var additiveContext = GetOrCreateContext(transport);
+                span = GetLocalRootSpan(span);
 
                 AnnotateSpan(span);
 
                 // run the WAF and execute the results
-                using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
-                if (wafResult.ReturnCode is ReturnCode.Match or ReturnCode.Block)
-                {
-                    var block = wafResult.Actions.Contains("block");
-                    if (block)
-                    {
-                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
-                    }
-
-                    Report(e.Transport, span, wafResult, block);
-                }
+                return additiveContext.Run(args, _settings.WafTimeoutMicroSeconds);
             }
             catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "Call into the security module failed");
             }
+
+            return null;
         }
 
-        private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
+        internal void ReportWafInitInfoOnce(Span span)
         {
-            _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
-            var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
+            span = span.Context.TraceContext.RootSpan ?? span;
             span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _waf.InitializationResult.FailedToLoadRules);
@@ -643,16 +558,6 @@ namespace Datadog.Trace.AppSec
 
         private void RunShutdown()
         {
-            if (_instrumentationGateway != null)
-            {
-                _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
-                _instrumentationGateway.BodyAvailable -= RunWafAndReact;
-                _instrumentationGateway.StartRequest -= RunWafAndReact;
-                _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
-                _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
-                _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
-            }
-
             AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;

@@ -98,7 +98,8 @@ namespace Benchmarks.Trace
 
         private void ExecuteCycle(object body)
         {
-            security.InstrumentationGateway.RaiseBodyAvailable(httpContext, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), body);
+            var securityTransport = new SecurityTransport(security, httpContext, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
+            securityTransport.ShouldBlockBody();
 #if NETFRAMEWORK
             var context = httpContext.Items["waf"] as IContext;
             context?.Dispose();

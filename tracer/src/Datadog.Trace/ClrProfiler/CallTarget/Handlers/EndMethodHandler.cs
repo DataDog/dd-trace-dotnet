@@ -6,6 +6,7 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.AppSec;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
@@ -24,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
             }
             catch (Exception ex)
+                when (ex is not BlockException)
             {
                 throw new CallTargetInvokerException(ex);
             }

@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
@@ -78,7 +79,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
 
-        private IDatadogSecurity CurrentSecurity => _security ?? Security.Instance;
+        private Security CurrentSecurity => _security ?? Security.Instance;
 
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
@@ -451,29 +452,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
                     span = scope.Span;
                 }
-
-                if (shouldSecure)
-                {
-                    httpContext.Response.OnCompleted(
-                        () =>
-                        {
-                            security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
-                            return Task.CompletedTask;
-                        });
-
-                    httpContext.Response.OnStarting(
-                        () =>
-                        {
-                            // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
-                            // the waf is already disposed by the registerfordispose callback, but we need to be at the end to get the real response status code
-                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
-                            return Task.CompletedTask;
-                        });
-
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span);
-                    // Should we get rid of the Instrumentation Gateway, it s been making the code very cumbersome and hard to follow and an event driven model doesnt seem adapted here cause we need to get a return value from the security component to know here that we need to flush the span after blocking, hence the cumbersome action (last param here), binding parameters to avoid capturing local variables but so hard to read. It would be simpler to just call the security component with the current data, get the return, flush the span and throw if needed.
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (args) => DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
-                }
             }
         }
 
@@ -605,13 +583,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 var shouldSecure = security.Settings.Enabled;
                 if (shouldSecure)
                 {
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues);
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(
-                        httpContext,
-                        tracer.InternalActiveScope,
-                        tracer.Settings,
-                        args =>
-                            DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
+                    var securityTransport = new SecurityTransport(Security.Instance, httpContext, span);
+                    var result = securityTransport.ShouldBlockPathParams(routeValues);
+                    if (result.ReturnCode == ReturnCode.Block)
+                    {
+                        throw new BlockException(result);
+                    }
                 }
             }
         }
@@ -651,20 +628,26 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
+                // in core 2.1 no routing endpoint so need to do it here too
                 if (shouldSecure && typedArg.ActionDescriptor?.Parameters != null)
                 {
                     var pathParams = typedArg.ActionDescriptor.Parameters;
-                    var eventData = new Dictionary<string, object>(pathParams.Count);
+                    var routeValues = new Dictionary<string, object>(pathParams.Count);
                     for (var i = 0; i < pathParams.Count; i++)
                     {
                         var p = typedArg.ActionDescriptor.Parameters[i];
                         if (typedArg.RouteData.Values.ContainsKey(p.Name))
                         {
-                            eventData.Add(p.Name, typedArg.RouteData.Values[p.Name]);
+                            routeValues.Add(p.Name, typedArg.RouteData.Values[p.Name]);
                         }
                     }
 
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span ?? parentSpan, eventData);
+                    var securityTransport = new SecurityTransport(Security.Instance, httpContext, span);
+                    var result = securityTransport.ShouldBlockPathParams(new RouteValueDictionary(routeValues));
+                    if (result.ReturnCode == ReturnCode.Block)
+                    {
+                        throw new BlockException(result);
+                    }
                 }
             }
         }
@@ -745,7 +728,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
             {
-                int statusCode = 500;
+                var statusCode = 500;
 
                 if (unhandledStruct.Exception.TryDuckCast<BadHttpRequestExceptionStruct>(out var badRequestException))
                 {
@@ -761,10 +744,13 @@ namespace Datadog.Trace.DiagnosticListeners
                     span.SetException(unhandledStruct.Exception);
                     if (security.Settings.Enabled)
                     {
+                        var securityTransport = new SecurityTransport(security, unhandledStruct.HttpContext, span);
                         span.SetException(unhandledStruct.Exception);
-                        var httpContext = unhandledStruct.HttpContext;
-                        security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, span);
-                        security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, tracer.InternalActiveScope, tracer.Settings);
+                        var result = securityTransport.ShouldBlock();
+                        if (result.ReturnCode == ReturnCode.Block)
+                        {
+                            throw new BlockException(result);
+                        }
                     }
                 }
             }
