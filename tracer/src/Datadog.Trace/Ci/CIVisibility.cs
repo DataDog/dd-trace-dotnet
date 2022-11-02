@@ -76,7 +76,7 @@ namespace Datadog.Trace.Ci
             Log.Information(" * Settings.TracerSettings.ServiceName = {value}", _settings.TracerSettings.ServiceName);
             Log.Information(" * Settings.TracerSettings.TraceEnabled = {value}", _settings.TracerSettings.TraceEnabled);
             Log.Information(" * Settings.TracerSettings.Exporter.AgentUri = {value}", _settings.TracerSettings.Exporter.AgentUri);
-            Log.Information(" * Stacktrace = {value}", Environment.StackTrace);
+            // Log.Information(" * Stacktrace = {value}", Environment.StackTrace);
 
             // In case we are running using the agent, check if the event platform proxy is supported.
             IDiscoveryService discoveryService = NullDiscoveryService.Instance;
