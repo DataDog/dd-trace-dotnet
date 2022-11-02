@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests.Logging
 
         public DatadogLoggingTests()
         {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.MaxLogFilesDays, "36");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.LogFileRetentionDays, "36");
 
             GlobalSettings.Reload();
 

@@ -377,8 +377,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for setting in number of days when to delete log files based on their last writetime date.
         /// </summary>
-        /// <seealso cref="TracerSettings.MaxLogFilesDays"/>
-        public const string MaxLogFilesDays = "DD_MAX_LOGFILE_DAYS";
+        /// <seealso cref="TracerSettings.LogFileRetentionDays"/>
+        public const string LogFileRetentionDays = "DD_TRACE_LOGFILE_RETENTION_DAYS";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.
