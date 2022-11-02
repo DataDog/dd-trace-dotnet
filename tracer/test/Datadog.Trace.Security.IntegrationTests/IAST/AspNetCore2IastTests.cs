@@ -29,7 +29,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         [Trait("RunOnWindows", "True")]
         public async Task TestIastNotWeakRequest(bool enableIast)
         {
-            var filename = enableIast ? "Iast.NotWeak.IastEnable.AspNetCore2" : "Iast.NotWeak.AspNetCore2";
+            var filename = enableIast ? "Iast.NotWeak.AspNetCore2.IastEnabled" : "Iast.NotWeak.AspNetCore2.IastDisabled";
             var url = "/Iast";
             EnableIast(enableIast);
             IncludeAllHttpSpans = true;
