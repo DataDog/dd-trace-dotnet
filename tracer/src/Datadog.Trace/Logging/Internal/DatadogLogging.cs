@@ -57,14 +57,7 @@ namespace Datadog.Trace.Logging
                     // Do nothing when an exception is thrown for attempting to access the filesystem
                 }
 
-                try
-                {
-                    Task.Run(() => CleanLogFiles(logDirectory));
-                }
-                catch
-                {
-                    // Do nothing when an exception is thrown for attempting to access the filesystem;
-                }
+                Task.Run(() => CleanLogFiles(logDirectory));
 
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 if (logDirectory == null)
@@ -247,16 +240,17 @@ namespace Datadog.Trace.Logging
                 {
                     foreach (var logFile in Directory.EnumerateFiles(logsDirectory, logFormat))
                     {
-                        if (File.GetLastWriteTime(logFile) < date)
+                        try
                         {
-                            try
+                            if (File.GetLastWriteTime(logFile) < date)
                             {
                                 File.Delete(logFile);
                             }
-                            catch
-                            {
-                                // Do nothing when an exception is thrown for attempting to delete the filesystem
-                            }
+                        }
+                        catch
+                        {
+                            // Abort on first catch when doing IO operation for perofrmance reasons.
+                            break;
                         }
                     }
                 }
