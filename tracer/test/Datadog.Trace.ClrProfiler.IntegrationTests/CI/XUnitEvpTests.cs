@@ -41,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var testModules = new List<MockCIVisibilityTestModule>();
 
             // This session will be injected as out of process session to the child process
+            TestSession.TestMode = true;
             var testSession = TestSession.GetOrCreate("test command", "C:\\evp_demo\\working_directory");
 
             string[] messages = null;

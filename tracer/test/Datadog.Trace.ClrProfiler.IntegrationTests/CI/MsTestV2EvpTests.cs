@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 13 : 15;
 
             // This session will be injected as out of process session to the child process
+            TestSession.TestMode = true;
             var testSession = TestSession.GetOrCreate("test command", "C:\\evp_demo\\working_directory");
 
             try
