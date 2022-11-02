@@ -123,9 +123,9 @@ namespace Datadog.Trace
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
-                if (IastInitialized)
+                if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    IastRequestContext?.AddIastTagsToSpan(span);
+                    IastRequestContext.AddsIastTagsToSpan(span, _iastRequestContext);
                 }
             }
 

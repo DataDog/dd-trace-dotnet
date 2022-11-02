@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using System;
-
 namespace Datadog.Trace.Iast;
 
 internal class IastRequestContext
@@ -14,19 +12,18 @@ internal class IastRequestContext
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
 
-    internal void AddIastTagsToSpan(Span span)
+    public static void AddsIastTagsToSpan(Span span, IastRequestContext? iastRequestContext)
     {
-        if (Iast.Instance.Settings.Enabled)
+        span.Tags.SetTag(Trace.Tags.IastEnabled, "1");
+
+        if (iastRequestContext != null)
         {
-            AddIastInfoToRootSpan(span);
+            iastRequestContext?.AddIastVulnerabilitiesToSpan(span);
         }
     }
 
-    private void AddIastInfoToRootSpan(Span span)
+    internal void AddIastVulnerabilitiesToSpan(Span span)
     {
-        // Right now, we always set the IastEnabled tag to "1", but in the future, it will not be added if iast is enabled but the request is not analyzed.
-        span.Tags.SetTag(Tags.IastEnabled, "1");
-
         if (_vulnerabilityBatch != null)
         {
             span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
