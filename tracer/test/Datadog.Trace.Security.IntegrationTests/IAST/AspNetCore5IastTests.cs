@@ -25,6 +25,28 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         {
         }
 
+
+                [SkippableTheory]
+        [InlineData(true)]
+        [InlineData(false)]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastNotWeakRequest(bool enableIast)
+        {
+            var filename = "Iast.NotWeak.AspNetCore5";
+            var url = "/Iast";
+            EnableIast(enableIast);
+            IncludeAllHttpSpans = true;
+            var agent = await RunOnSelfHosted(enableSecurity: false);
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(ClientIp, string.Empty);
+            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
+
         [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
@@ -34,6 +56,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var filename = enableIast ? "Iast.WeakHashing.AspNet5.IastEnabled" : "Iast.WeakHashing.AspNet5.IastDisabled";
             var url = "/Iast/WeakHashing";
             EnableIast(enableIast);
+            IncludeAllHttpSpans = true;
             var agent = await RunOnSelfHosted(enableSecurity: false);
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
