@@ -67,9 +67,12 @@ namespace Datadog.Trace
         {
             get
             {
-                if (_iastRequestContext == null && Iast.Iast.Instance.Settings.Enabled)
+                lock (_syncRoot)
                 {
-                    _iastRequestContext = new();
+                    if (_iastRequestContext == null && Iast.Iast.Instance.Settings.Enabled)
+                    {
+                        _iastRequestContext = new();
+                    }
                 }
 
                 return _iastRequestContext;
@@ -119,6 +122,11 @@ namespace Datadog.Trace
             if (span.IsRootSpan && span.Type == SpanTypes.Web)
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
+
+                if (IastInitialized)
+                {
+                    IastRequestContext?.AddIastTagsToSpan(span);
+                }
             }
 
             // Determine whether we will sample a dropped span with single span sampling rules

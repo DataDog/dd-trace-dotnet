@@ -11,11 +11,12 @@ namespace Datadog.Trace.Iast;
 
 internal class IastRequestContext
 {
-    private VulnerabilityBatch? vulnerabilityBatch;
+    private VulnerabilityBatch? _vulnerabilityBatch;
+    private object _vulnerabilityLock = new();
 
-    internal void AddIastTagsIfNeeded(Span span)
+    internal void AddIastTagsToSpan(Span span)
     {
-        if (Iast.Instance.Settings.Enabled && span.IsRootSpan && span.Type == SpanTypes.Web)
+        if (Iast.Instance.Settings.Enabled)
         {
             AddIastInfoToRootSpan(span);
         }
@@ -24,21 +25,24 @@ internal class IastRequestContext
     private void AddIastInfoToRootSpan(Span span)
     {
         // Right now, we always set the IastEnabled tag to "1", but in the future, it will not be added if iast is enabled but the request is not analyzed.
-        span.SetTag(Tags.IastEnabled, "1");
+        span.Tags.SetTag(Tags.IastEnabled, "1");
 
-        if (vulnerabilityBatch != null)
+        if (_vulnerabilityBatch != null)
         {
-            span.SetTag(Tags.IastJson, vulnerabilityBatch.ToString());
+            span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
         }
     }
 
     internal void AddVulnerability(Vulnerability vulnerability)
     {
-        if (vulnerabilityBatch == null)
+        lock (_vulnerabilityLock)
         {
-            vulnerabilityBatch = new();
-        }
+            if (_vulnerabilityBatch == null)
+            {
+                _vulnerabilityBatch = new();
+            }
 
-        vulnerabilityBatch.Add(vulnerability);
+            _vulnerabilityBatch.Add(vulnerability);
+        }
     }
 }

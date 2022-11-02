@@ -337,11 +337,6 @@ namespace Datadog.Trace
             {
                 ResourceName ??= OperationName;
 
-                if (Context.TraceContext.IastInitialized)
-                {
-                    Context.TraceContext?.IastRequestContext?.AddIastTagsIfNeeded(this);
-                }
-
                 if (!IsFinished)
                 {
                     Duration = duration;
