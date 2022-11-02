@@ -586,6 +586,9 @@ namespace Datadog.Trace
 
                     Log.Debug("Waiting for disposals.");
                     await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+
+                    instance.RuntimeMetrics?.Dispose();
+
                     Log.Debug("Finished waiting for disposals.");
                 }
             }
