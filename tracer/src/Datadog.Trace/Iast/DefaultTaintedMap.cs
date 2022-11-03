@@ -145,6 +145,9 @@ internal class DefaultTaintedMap : ITaintedMap
                 {
                     IsFlat = true;
                 }
+
+                TaintedObject entry = (TaintedObject)reference;
+                removedCount += Remove(entry);
             }
         }
         finally
