@@ -14,7 +14,7 @@ internal static class CIVisibilityEventsFactory
     {
         return span.Type switch
         {
-            SpanTypes.Test => span.GetTag(TestTags.Type) == TestTags.TypeBenchmark ? new TestEvent(span, 1) : new TestEvent(span, 2),
+            SpanTypes.Test => span.GetTag(TestTags.Type) == TestTags.TypeBenchmark ? new TestEvent(span, 1) : new TestEvent(span),
             SpanTypes.TestSuite => new TestSuiteEvent(span),
             SpanTypes.TestModule => new TestModuleEvent(span),
             SpanTypes.TestSession => new TestSessionEvent(span),

@@ -8,6 +8,11 @@ namespace Datadog.Trace.Ci.EventModel;
 
 internal class TestEvent : CIVisibilityEvent<Span>
 {
+    public TestEvent(Span span)
+        : base(SpanTypes.Test, 2, span)
+    {
+    }
+
     public TestEvent(Span span, int version)
         : base(SpanTypes.Test, version, span)
     {
