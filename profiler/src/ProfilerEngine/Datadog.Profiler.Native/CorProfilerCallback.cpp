@@ -206,6 +206,10 @@ bool CorProfilerCallback::InitializeServices()
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
+        else
+        {
+            _pStopTheWorldProvider = nullptr;
+        }
 
         // TODO: add new CLR events-based providers to the event parser
         _pClrEventsParser = std::make_unique<ClrEventsParser>(
@@ -275,7 +279,7 @@ bool CorProfilerCallback::InitializeServices()
             _pSamplesCollector->Register(_pContentionProvider);
         }
 
-        if (_pStopTheWorldProvider != nullptr)
+        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
             _pSamplesCollector->Register(_pStopTheWorldProvider);
         }
@@ -901,6 +905,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     if (_pContentionProvider != nullptr)
     {
         _pContentionProvider->Stop();
+    }
+
+    if (_pStopTheWorldProvider != nullptr)
+    {
+        _pStopTheWorldProvider->Stop();
     }
 
     // dump all threads time

@@ -15,7 +15,9 @@
 #include "shared/src/native-src/string.h"
 
 std::vector<SampleValueType> StopTheWorldGCProvider::SampleTypeDefinitions(
-    {{"suspension-time", "nanoseconds"}});
+    {
+        {"suspension-time", "nanoseconds"}
+    });
 
 StopTheWorldGCProvider::StopTheWorldGCProvider(
     uint32_t valueOffset,

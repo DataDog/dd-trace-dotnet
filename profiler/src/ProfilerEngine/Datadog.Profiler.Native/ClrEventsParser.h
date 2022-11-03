@@ -58,6 +58,12 @@ struct GCStartPayload
     uint32_t Type;
 };
 
+struct GCEndPayload
+{
+    uint32_t Count;
+    uint32_t Depth;
+};
+
 struct GCHeapStatsV1Payload
 {
     uint64_t GenerationSize0;
@@ -135,6 +141,7 @@ private:
     // garbage collection events processing
     void OnGCTriggered();
     void OnGCStart(GCStartPayload& payload);
+    void OnGCStop(GCEndPayload& payload);
     void OnGCSuspendEEBegin();
     void OnGCRestartEEEnd();
     void OnGCHeapStats();
@@ -204,6 +211,7 @@ private:
     // for more details
     const int EVENT_GC_TRIGGERED = 35;
     const int EVENT_GC_START = 1;                 // V2
+    const int EVENT_GC_END = 2;                   // V1
     const int EVENT_GC_HEAP_STAT = 4;             // V1
     const int EVENT_GC_GLOBAL_HEAP_HISTORY = 205; // V2
     const int EVENT_GC_SUSPEND_EE_BEGIN = 9;      // V1

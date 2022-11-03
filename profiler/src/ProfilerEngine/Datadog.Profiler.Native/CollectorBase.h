@@ -164,8 +164,8 @@ private:
         // check for null AppDomainId (garbage collection for example)
         if (rawSample.AppDomainId == 0)
         {
+            sample.SetAppDomainName("CLR");
             // TODO: is pid mandatory?
-            sample.SetAppDomainName("");
             sample.SetPid("0");
 
             return;

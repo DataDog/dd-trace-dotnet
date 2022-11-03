@@ -13,6 +13,19 @@
 #include "OpSysTools.h"
 
 
+const bool LogGcEvents = true;
+#define LOG_GC_EVENT(x)                     \
+{                                           \
+    if (LogGcEvents)                        \
+    {                                       \
+        std::cout                           \
+        << OpSysTools::GetThreadId()        \
+        << " " << ((_gcInProgress.Number != -1) ? "F" : ((_currentBGC.Number != -1) ? "B" : " "))   \
+        << GetCurrentGC().Number    \
+        << " | " << x << std::endl;         \
+    }                                       \
+}                                           \
+
 ClrEventsParser::ClrEventsParser(
     ICorProfilerInfo12* pCorProfilerInfo,
     IAllocationsListener* pAllocationListener,
@@ -137,8 +150,14 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
     }
 
     // the rest of events are related to garbage collections lifetime
+    if (_pGCSuspensionsListener == nullptr)
+    {
+        return;
+    }
+
     if (id == EVENT_GC_TRIGGERED)
     {
+        LOG_GC_EVENT("OnGCTriggered");
         OnGCTriggered();
     }
     else if (id == EVENT_GC_START)
@@ -150,20 +169,35 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
             return;
         }
 
+        LOG_GC_EVENT("OnGCStart");
         OnGCStart(payload);
+    }
+    else if (id == EVENT_GC_END)
+    {
+        GCEndPayload payload{0};
+        ULONG offset = 0;
+        if (!Read<GCEndPayload>(payload, pEventData, cbEventData, offset))
+        {
+            return;
+        }
+
+        LOG_GC_EVENT("OnGCStop");
+        OnGCStop(payload);
     }
     else if (id == EVENT_GC_SUSPEND_EE_BEGIN)
     {
+        LOG_GC_EVENT("OnGCSuspendEEBegin");
         OnGCSuspendEEBegin();
     }
     else if (id == EVENT_GC_RESTART_EE_END)
     {
+        LOG_GC_EVENT("OnGCRestartEEEnd");
         OnGCRestartEEEnd();
     }
     else if (id == EVENT_GC_HEAP_STAT)
     {
         // This event provides the size of each generation after the collection
-        // --> not used today but could be interested to detect leaks (i.e. gen2/LOH/POH are growing)
+        // --> not used today but could be interesting to detect leaks (i.e. gen2/LOH/POH are growing)
 
         // TODO: check for size and see if V2 with POH numbers could be read from payload
         GCHeapStatsV1Payload payload = {0};
@@ -173,6 +207,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
             return;
         }
 
+        LOG_GC_EVENT("OnGCHeapStats");
         OnGCHeapStats();
     }
     else if (id == EVENT_GC_GLOBAL_HEAP_HISTORY)
@@ -184,6 +219,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
             return;
         }
 
+        LOG_GC_EVENT("OnGCGlobalHeapHistory");
         OnGCGlobalHeapHistory(payload);
     }
 }
@@ -267,7 +303,6 @@ void ClrEventsParser::ClearCollections()
 {
     ResetGC(_currentBGC);
     ResetGC(_gcInProgress);
-    _suspensionStart = 0;
 }
 
 void ClrEventsParser::ResetGC(GCDetails& gc)
@@ -312,6 +347,10 @@ void ClrEventsParser::OnGCStart(GCStartPayload& payload)
     }
 }
 
+void ClrEventsParser::OnGCStop(GCEndPayload& payload)
+{
+}
+
 void ClrEventsParser::OnGCSuspendEEBegin()
 {
     // we don't know yet what will be the next GC corresponding to this suspension
@@ -324,7 +363,9 @@ void ClrEventsParser::OnGCRestartEEEnd()
     GCDetails& gc = GetCurrentGC();
     if (gc.Number == -1)
     {
-        // this should never happen, except if we are unlucky to have missed a GCStart event
+        // this might happen (seen in workstation + concurrent mode)
+        // --> just skip the suspension because we can associate to a GC
+        _suspensionStart = 0;
         return;
     }
 
@@ -341,6 +382,7 @@ void ClrEventsParser::OnGCRestartEEEnd()
     else
     {
         // bad luck: a xxxBegin event has been missed
+        LOG_GC_EVENT("### missing Begin event");
     }
     gc.PauseDuration += suspensionDuration;
 

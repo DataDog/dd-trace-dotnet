@@ -11,7 +11,7 @@ class RawStopTheWorldSample : public RawSample
 public:
     inline void OnTransform(Sample& sample, uint32_t valueOffset) const override
     {
-        uint32_t durationIndex = valueOffset;   // should be WALLTIME INDEX
+        uint32_t durationIndex = valueOffset;
 
         sample.AddValue(Duration, durationIndex);
 
@@ -28,7 +28,7 @@ public:
 
 private:
     // each Stop the World garbage collection will share the same root frame and the second one will show the collected generation
-    const std::string EmptyModule = "";
+    const std::string EmptyModule = "CLR";
     const std::string RootFrame = "|lm: |ns: |ct: |fn:Garbage Collector";
     const std::string Gen0Frame = "|lm: |ns: |ct: |fn:gen0";
     const std::string Gen1Frame = "|lm: |ns: |ct: |fn:gen1";
