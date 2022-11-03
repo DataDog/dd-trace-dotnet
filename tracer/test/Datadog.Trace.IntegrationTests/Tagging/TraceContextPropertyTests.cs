@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -69,20 +70,7 @@ public class TraceContextPropertyTests
             scope.Span.Context.TraceContext.Environment = before;
         }
 
-        await _tracer.FlushAsync();
-        var traceChunks = _testApi.Wait();
-        var spans = traceChunks.SelectMany(s => s).ToArray();
-
-        spans.Should().HaveCount(4);
-
-        if (after is null)
-        {
-            spans.Should().OnlyContain(s => !s.Tags.ContainsKey("env"));
-        }
-        else
-        {
-            spans.Should().OnlyContain(s => s.Tags["env"] == after);
-        }
+        await AssertTag("env", after);
     }
 
     [Theory]
@@ -98,20 +86,7 @@ public class TraceContextPropertyTests
             scope.Span.Context.TraceContext.ServiceVersion = before;
         }
 
-        await _tracer.FlushAsync();
-        var traceChunks = _testApi.Wait();
-        var spans = traceChunks.SelectMany(s => s).ToArray();
-
-        spans.Should().HaveCount(4);
-
-        if (after is null)
-        {
-            spans.Should().OnlyContain(s => !s.Tags.ContainsKey("version"));
-        }
-        else
-        {
-            spans.Should().OnlyContain(s => s.Tags["version"] == after);
-        }
+        await AssertTag("version", after);
     }
 
     [Theory]
@@ -127,20 +102,7 @@ public class TraceContextPropertyTests
             scope.Span.Context.TraceContext.Origin = before;
         }
 
-        await _tracer.FlushAsync();
-        var traceChunks = _testApi.Wait();
-        var spans = traceChunks.SelectMany(s => s).ToArray();
-
-        spans.Should().HaveCount(4);
-
-        if (after is null)
-        {
-            spans.Should().OnlyContain(s => !s.Tags.ContainsKey("version"));
-        }
-        else
-        {
-            spans.Should().OnlyContain(s => s.Tags["version"] == after);
-        }
+        await AssertTag("origin", after);
     }
 
     private static Scope CreateTrace(Tracer tracer)
@@ -159,5 +121,23 @@ public class TraceContextPropertyTests
         }
 
         return (Scope)rootScope;
+    }
+
+    private async Task AssertTag(string key, string value)
+    {
+        await _tracer.FlushAsync();
+        var traceChunks = _testApi.Wait();
+        var spans = traceChunks.SelectMany(s => s).ToArray();
+
+        spans.Should().HaveCount(4);
+
+        if (value is null)
+        {
+            spans.Should().OnlyContain(s => !s.Tags.ContainsKey(key));
+        }
+        else
+        {
+            spans.Should().OnlyContain(s => s.Tags[key] == value);
+        }
     }
 }
