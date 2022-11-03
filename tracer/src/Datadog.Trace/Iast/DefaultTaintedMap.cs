@@ -76,8 +76,8 @@ namespace Datadog.Trace.Iast;
             entry = entry.Next;
             }
 
-            return null;
-        }
+        return null;
+    }
 
     /// <summary>
     /// Put a new TaintedObject in the dictionary.
@@ -270,7 +270,7 @@ namespace Datadog.Trace.Iast;
                 copy = copy.Next;
     }
 
-  public Iterator<TaintedObject> iterator()
+    public Iterator<TaintedObject> iterator()
     {
         return iterator(0, table.length);
     }
