@@ -12,8 +12,8 @@ using System.Threading;
 
 namespace Datadog.Trace.Iast;
 
-internal class DefaultTaintedMap : ITaintedMap
-{
+    internal class DefaultTaintedMap : ITaintedMap
+    {
     // Default capacity. It MUST be a power of 2.
     public const int DefaultCapacity = 1 << 14;
     // Default flat mode threshold.
@@ -33,15 +33,18 @@ internal class DefaultTaintedMap : ITaintedMap
     private object _purgingLock = new();
     // Number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
     private int _entriesCount;
-    /* Number of elements in the hash table before switching to flat mode. */
+        /* Number of elements in the hash table before switching to flat mode. */
     private int _flatModeThreshold;
 
-    public DefaultTaintedMap()
-    {
+        /*
+         * Default constructor. Uses {@link #DEFAULT_CAPACITY} and {@link #DEFAULT_FLAT_MODE_THRESHOLD}.
+         */
+        public DefaultTaintedMap()
+        {
         _map = new ConcurrentDictionary<int, ITaintedObject>();
         _lengthMask = DefaultCapacity - 1;
         _flatModeThreshold = DefaultFlatModeThresold;
-    }
+        }
 
     /// <summary>
     /// Gets a value indicating whether flat mode is enabled or not. Once this is set to true, it is not set to false again unless clear() is called.
@@ -55,7 +58,7 @@ internal class DefaultTaintedMap : ITaintedMap
     /// <param name="objectToFind">The object that should be found in the map</param>
     /// <returns>The retrieved tainted object or null</returns>
     public ITaintedObject? Get(object objectToFind)
-    {
+        {
         if (objectToFind is null)
         {
             return null;
@@ -63,27 +66,27 @@ internal class DefaultTaintedMap : ITaintedMap
 
         _map.TryGetValue(IndexObject(objectToFind), out var entry);
 
-        while (entry != null)
-        {
-            if (objectToFind == entry.Value)
+            while (entry != null)
             {
-                return entry;
-            }
+            if (objectToFind == entry.Value)
+                {
+                    return entry;
+                }
 
             entry = entry.Next;
-        }
+            }
 
-        return null;
-    }
+            return null;
+        }
 
     /// <summary>
     /// Put a new TaintedObject in the dictionary.
     /// </summary>
     /// <param name="entry">Tainted object</param>
     public void Put(ITaintedObject entry)
-    {
-        if (entry is null || (entry.Value is null or ""))
         {
+        if (entry is null || (entry.Value is null or ""))
+            {
             return;
         }
 
@@ -104,25 +107,41 @@ internal class DefaultTaintedMap : ITaintedMap
             Interlocked.Increment(ref _entriesCount);
         }
 
-        // If we flipped to flat mode:
-        // - Always override elements ignoring chaining.
-        // - Stop updating the estimated size.
+                // If we flipped to flat mode:
+                // - Always override elements ignoring chaining.
+                // - Stop updating the estimated size.
 
         _map[index] = entry;
 
         if ((entry.PositiveHashCode & PurgeMask) == 0)
-        {
-            Purge();
+                {
+                    Purge();
+                }
+            }
+            else
+            {
+                // By default, add the new entry to the head of the chain.
+                // We do not control duplicate keys (although we expect they are generally not used).
+                entry.next = table[index];
+                table[index] = entry;
+                if ((entry.positiveHashCode & PURGE_MASK) == 0)
+                {
+                    // To mitigate the cost of maintaining an atomic counter, we only update the size every
+                    // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
+                    // if it was a random number generator, and we assume duplicate keys are rarely inserted.
+                    estimatedSize.addAndGet(PURGE_COUNT);
+                    Purge();
+                }
+            }
         }
-    }
 
     /// <summary>
     /// Purge entries that have been garbage collected. Only one concurrent call to this method is
     /// allowed, further concurrent calls will be ignored.
     /// </summary>
     internal void Purge()
-    {
-        // Ensure we enter only once concurrently.
+        {
+            // Ensure we enter only once concurrently.
         lock (_purgingLock)
         {
             if (_isPurging)
@@ -133,38 +152,42 @@ internal class DefaultTaintedMap : ITaintedMap
             _isPurging = true;
         }
 
-        try
-        {
-            // Remove GC'd entries.
+            try
+            {
+                // Remove GC'd entries.
             var removedCount = RemoveDeadKeys();
 
             if (!IsFlat)
-            {
+                {
                 // We only count the entries if we are not in flat mode
                 if (Interlocked.Add(ref _entriesCount, -removedCount) > _flatModeThreshold)
-                {
+                    {
                     IsFlat = true;
                 }
+
+                if (estimatedSize.addAndGet(-removedCount) > flatModeThreshold)
+                {
+                    isFlat = true;
+                }
             }
-        }
-        finally
-        {
-            // Reset purging flag.
+            finally
+            {
+                // Reset purging flag.
             lock (_purgingLock)
             {
                 _isPurging = false;
             }
+            }
         }
-    }
 
     private int RemoveDeadKeys()
-    {
+            {
         var removed = 0;
         List<int> deadKeys = new();
         ITaintedObject? previous;
 
         foreach (var key in _map.Keys.ToArray())
-        {
+            {
             var current = _map[key];
             previous = null;
 
@@ -173,27 +196,30 @@ internal class DefaultTaintedMap : ITaintedMap
                 if (!current.IsAlive)
                 {
                     if (previous is null)
-                    {
+            {
                         // We can delete the map key
                         if (current.Next is null)
-                        {
+                {
                             deadKeys.Add(key);
-                        }
+                }
                         else
                         {
                             _map[key] = current.Next;
-                        }
-                    }
+            }
+
+            // If we reach this point, the entry was already removed or put was lost.
+            return 0;
+        }
                     else
-                    {
+            {
                         previous.Next = current.Next;
-                    }
+            }
 
                     current = current.Next;
                     removed++;
-                }
+        }
                 else
-                {
+        {
                     previous = current;
                     current = current.Next;
                 }
@@ -206,45 +232,49 @@ internal class DefaultTaintedMap : ITaintedMap
         }
 
         return removed;
-    }
+        }
 
     public void Clear()
-    {
+        {
         IsFlat = false;
         Interlocked.Exchange(ref _entriesCount, 0);
         _map.Clear();
-    }
+        }
 
     private int IndexObject(object objectStored)
-    {
+            {
         return Index(PositiveHashCode(objectStored.GetHashCode()));
     }
 
     private int PositiveHashCode(int hash)
-    {
+                {
         return hash & PositiveMask;
-    }
+                }
 
     public int Index(int hash)
-    {
+                    {
         return hash & _lengthMask;
-    }
+            }
 
     // For testing only
     public List<ITaintedObject> GetListValues()
-    {
+                {
         List<ITaintedObject> list = new();
 
         foreach (var value in _map.Values)
-        {
+                {
             var copy = value;
             while (copy != null)
-            {
+                    {
                 list.Add(copy);
                 copy = copy.Next;
-            }
-        }
+    }
+
+  public Iterator<TaintedObject> iterator()
+    {
+        return iterator(0, table.length);
+    }
 
         return (list);
-    }
+}
 }
