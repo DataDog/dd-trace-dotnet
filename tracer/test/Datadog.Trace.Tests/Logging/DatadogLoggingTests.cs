@@ -234,13 +234,17 @@ namespace Datadog.Trace.Tests.Logging
             // Running method to delete the old files
             DatadogLogging.CleanLogFiles(tempLogsDir);
 
-            // Asserting that the correct amount of files are left
-            Directory.EnumerateFiles(tempLogsDir, "DD-DotNet-Profiler-Native-*").Count().Should().Be(0);
-            Directory.EnumerateFiles(tempLogsDir, "dotnet-tracer-*").Count().Should().Be(2);
-            Directory.EnumerateFiles(tempLogsDir, "random-file-*").Count().Should().Be(3);
+            var deletedLogFiles = Directory.EnumerateFiles(tempLogsDir, "DD-DotNet-Profiler-Native-*").Count();
+            var retainedLogFiles = Directory.EnumerateFiles(tempLogsDir, "dotnet-tracer-*").Count();
+            var ignoredLogFiles = Directory.EnumerateFiles(tempLogsDir, "random-file-*").Count();
 
             // Deleting temporary directory after test run
             Directory.Delete(tempLogsDir, true);
+
+            // Asserting that the correct amount of files are left
+            deletedLogFiles.Should().Be(0);
+            retainedLogFiles.Should().Be(2);
+            ignoredLogFiles.Should().Be(3);
         }
 
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)

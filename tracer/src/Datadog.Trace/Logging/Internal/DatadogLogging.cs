@@ -230,11 +230,11 @@ namespace Datadog.Trace.Logging
                 var date = DateTime.Now.AddDays(-1 * days);
                 var logFormats = new[]
                   {
-                    "dotnet-tracer-managed-*-.log",
-                    "dotnet-tracer-native-*-.log",
+                    "dotnet-tracer-*.log",
                     "dotnet-native-loader-*.log",
                     "DD-DotNet-Profiler-Native-*.log"
                   };
+
                 try
                 {
                     foreach (var logFormat in logFormats)
