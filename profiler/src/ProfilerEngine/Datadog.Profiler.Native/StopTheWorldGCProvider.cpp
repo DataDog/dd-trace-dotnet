@@ -41,8 +41,9 @@ void StopTheWorldGCProvider::OnSuspension(int32_t number, uint32_t generation, u
     rawSample.ThreadInfo = nullptr;
     rawSample.Stack.clear();
 
-    rawSample.Duration = pauseDuration;
+    rawSample.Number = number;
     rawSample.Generation = generation;
+    rawSample.Duration = pauseDuration;
 
     Add(std::move(rawSample));
 }

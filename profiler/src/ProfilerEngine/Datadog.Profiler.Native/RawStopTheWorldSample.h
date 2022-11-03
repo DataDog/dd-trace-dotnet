@@ -15,6 +15,7 @@ public:
 
         sample.AddValue(Duration, durationIndex);
 
+        // TODO: should we use constant string for generations "0", "1" and "2"?
         sample.AddLabel(Label(Sample::GarbageCollectionGenerationLabel, std::to_string(Generation)));
         sample.AddLabel(Label(Sample::GarbageCollectionNumberLabel, std::to_string(Number)));
 
@@ -28,12 +29,12 @@ public:
 
 private:
     // each Stop the World garbage collection will share the same root frame and the second one will show the collected generation
-    const std::string EmptyModule = "CLR";
-    const std::string RootFrame = "|lm: |ns: |ct: |fn:Garbage Collector";
-    const std::string Gen0Frame = "|lm: |ns: |ct: |fn:gen0";
-    const std::string Gen1Frame = "|lm: |ns: |ct: |fn:gen1";
-    const std::string Gen2Frame = "|lm: |ns: |ct: |fn:gen2";
-    const std::string UnknownGenerationFrame = "|lm: |ns: |ct: |fn:unknown";
+    const std::string_view EmptyModule = "CLR";
+    const std::string_view RootFrame = "|lm: |ns: |ct: |fn:Garbage Collector";
+    const std::string_view Gen0Frame = "|lm: |ns: |ct: |fn:gen0";
+    const std::string_view Gen1Frame = "|lm: |ns: |ct: |fn:gen1";
+    const std::string_view Gen2Frame = "|lm: |ns: |ct: |fn:gen2";
+    const std::string_view UnknownGenerationFrame = "|lm: |ns: |ct: |fn:unknown";
 
     void BuildCallStack(Sample& sample, uint32_t generation) const
     {
