@@ -62,11 +62,11 @@ namespace Datadog.Trace
         {
             get
             {
-                lock (_syncRoot)
+                if (_iastRequestContext == null && Iast.Iast.Instance.Settings.Enabled)
                 {
-                    if (_iastRequestContext == null && Iast.Iast.Instance.Settings.Enabled)
+                    lock (_syncRoot)
                     {
-                        _iastRequestContext = new();
+                        _iastRequestContext ??= new();
                     }
                 }
 
