@@ -27,4 +27,9 @@ internal static class IastUtils
 
         return hash;
     }
+
+    public static int IdentityHashCode(object item)
+    {
+        return (item?.GetHashCode() ?? 0);
+    }
 }

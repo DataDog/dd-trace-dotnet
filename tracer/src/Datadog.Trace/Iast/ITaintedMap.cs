@@ -3,15 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Iast;
+
+internal interface ITaintedMap
 {
-    internal class ITaintedMap
-    {
-    }
+    public void Put(TaintedObject tainted);
+
+    public TaintedObject Get(object obj);
+
+    public ConcurrentQueue<object> GetReferenceQueue();
 }

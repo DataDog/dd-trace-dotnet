@@ -3,255 +3,267 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Iast;
+
+internal class DefaultTaintedMap : ITaintedMap
 {
-    internal class DefaultTaintedMap : ITaintedMap
+    /* Default capacity. It MUST be a power of 2. */
+    private static int defaultCapacity = 1 << 14;
+    /* Default flat mode threshold. */
+    private static int defaultFlatModeThresold = 1 << 13;
+    /* Periodicity of table purges, as number of put operations. It MUST be a power of two. */
+    private static int purgeCount = 1 << 6;
+    /* Bitmask for fast modulo with PURGE_COUNT. */
+    private static int puergeMask = purgeCount - 1;
+    /* Bitmask to convert hashes to positive integers. */
+    public const int PositiveMask = int.MaxValue;
+
+    private TaintedObject[] table;
+
+    /* Bitmask for fast modulo with table length. */
+    private int lengthMask = 0;
+    /* Flag to ensure we do not run multiple purges concurrently. */
+    private bool isPurging = false;
+    private object _purgingLock = new();
+    /*
+     * Estimated number of hash table entries. If the hash table switches to flat mode, it stops
+     * counting elements.
+     */
+    private int estimatedSize;
+    /* Reference queue for garbage-collected entries. */
+
+    // TODO: Make object a weak reference
+    private ConcurrentQueue<object> referenceQueue = new();
+
+    /* Number of elements in the hash table before switching to flat mode. */
+    private int flatModeThreshold;
+
+    /*
+     * Default constructor. Uses {@link #DEFAULT_CAPACITY} and {@link #DEFAULT_FLAT_MODE_THRESHOLD}.
+     */
+    public DefaultTaintedMap()
+        : this(defaultCapacity, defaultFlatModeThresold)
     {
-        /* Default capacity. It MUST be a power of 2. */
-        private static int defaultCapacity = 1 << 14;
-        /* Default flat mode threshold. */
-        private static int defaultFlatModeThresold = 1 << 13;
-        /* Periodicity of table purges, as number of put operations. It MUST be a power of two. */
-        private static int purgeCount = 1 << 6;
-        /* Bitmask for fast modulo with PURGE_COUNT. */
-        private static int puergeMask = purgeCount - 1;
-        /* Bitmask to convert hashes to positive integers. */
-        private static int positiveMask = int.MaxValue;
+    }
 
-        private TaintedObject[] table;
+    /*
+     * Create a new hash map with the given capacity and flat mode threshold.
+     *
+     * @param capacity Capacity of the internal array. It must be a power of 2.
+     * @param flatModeThreshold Limit of entries before switching to flat mode.
+     */
+    private DefaultTaintedMap(int capacity, int flatModeThreshold)
+    {
+        table = new TaintedObject[capacity];
+        lengthMask = table.Length - 1;
+        this.flatModeThreshold = flatModeThreshold;
+    }
 
-        /* Bitmask for fast modulo with table length. */
-        private int lengthMask = 0;
-        /* Flag to ensure we do not run multiple purges concurrently. */
-        private bool isPurging = false;
-        /*
-         * Estimated number of hash table entries. If the hash table switches to flat mode, it stops
-         * counting elements.
-         */
-        private int estimatedSize;
-        /* Reference queue for garbage-collected entries. */
-        private ConcurrentQueue<object> referenceQueue = new();
-        /*
-         * Whether flat mode is enabled or not. Once this is true, it is not set to false again unless
-         * {@link #clear()} is called.
-         */
-        private bool isFlat = false;
-        /* Number of elements in the hash table before switching to flat mode. */
-        private int flatModeThreshold;
+    /*
+     * Whether flat mode is enabled or not. Once this is true, it is not set to false again unless
+     * {@link #clear()} is called.
+     */
+    public bool IsFlat { get; private set; } = false;
 
-        /*
-         * Default constructor. Uses {@link #DEFAULT_CAPACITY} and {@link #DEFAULT_FLAT_MODE_THRESHOLD}.
-         */
-        public DefaultTaintedMap()
+    /*
+     * Returns the {@link TaintedObject} for the given input object.
+     *
+     * @param key Key object.
+     * @return The {@link TaintedObject} if it exists, {@code null} otherwise.
+     */
+    public TaintedObject Get(object key)
+    {
+        int index = IndexObject(key);
+        TaintedObject entry = table[index];
+        while (entry != null)
         {
-            this(DEFAULT_CAPACITY, DEFAULT_FLAT_MODE_THRESHOLD);
-        }
-
-        /*
-         * Create a new hash map with the given capacity and flat mode threshold.
-         *
-         * @param capacity Capacity of the internal array. It must be a power of 2.
-         * @param flatModeThreshold Limit of entries before switching to flat mode.
-         */
-        private DefaultTaintedMap(int capacity, int flatModeThreshold)
-        {
-            table = new TaintedObject[capacity];
-            lengthMask = table.length - 1;
-            this.flatModeThreshold = flatModeThreshold;
-        }
-
-        /*
-         * Returns the {@link TaintedObject} for the given input object.
-         *
-         * @param key Key object.
-         * @return The {@link TaintedObject} if it exists, {@code null} otherwise.
-         */
-        public TaintedObject Get(object key)
-        {
-            int index = indexObject(key);
-            TaintedObject entry = table[index];
-            while (entry != null)
+            if (key == entry.Get())
             {
-                if (key == entry.get())
-                {
-                    return entry;
-                }
-
-                entry = entry.next;
+                return entry;
             }
 
-            return null;
+            entry = entry.Next;
         }
 
-        /*
-         * Put a new {@link TaintedObject} in the hash table. This method will lose puts in concurrent
-         * scenarios.
-         *
-         * @param entry Tainted object.
-         */
-        public void Put(TaintedObject entry)
-        {
-            int index = index(entry.positiveHashCode);
-            if (isFlat)
-            {
-                // If we flipped to flat mode:
-                // - Always override elements ignoring chaining.
-                // - Stop updating the estimated size.
+        return null;
+    }
 
-                // TODO: Fix the pathological case where all puts have the same identityHashCode (e.g. limit
-                // chain length?)
-                table[index] = entry;
-                if ((entry.positiveHashCode & PURGE_MASK) == 0)
-                {
-                    Purge();
-                }
-            }
-            else
+    /*
+     * Put a new {@link TaintedObject} in the hash table. This method will lose puts in concurrent
+     * scenarios.
+     *
+     * @param entry Tainted object.
+     */
+    public void Put(TaintedObject entry)
+    {
+        int index = Index(entry.PositiveHashCode);
+
+        if (IsFlat)
+        {
+            // If we flipped to flat mode:
+            // - Always override elements ignoring chaining.
+            // - Stop updating the estimated size.
+
+            // TODO: Fix the pathological case where all puts have the same identityHashCode (e.g. limit
+            // chain length?)
+            table[index] = entry;
+            if ((entry.PositiveHashCode & puergeMask) == 0)
             {
-                // By default, add the new entry to the head of the chain.
-                // We do not control duplicate keys (although we expect they are generally not used).
-                entry.next = table[index];
-                table[index] = entry;
-                if ((entry.positiveHashCode & PURGE_MASK) == 0)
-                {
-                    // To mitigate the cost of maintaining an atomic counter, we only update the size every
-                    // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
-                    // if it was a random number generator, and we assume duplicate keys are rarely inserted.
-                    estimatedSize.addAndGet(PURGE_COUNT);
-                    Purge();
-                }
+                Purge();
             }
         }
-
-        /*
-         * Purge entries that have been garbage collected. Only one concurrent call to this method is
-         * allowed, further concurrent calls will be ignored.
-         */
-        void Purge()
+        else
         {
-            // Ensure we enter only once concurrently.
-            if (!isPurging.compareAndSet(false, true))
+            // By default, add the new entry to the head of the chain.
+            // We do not control duplicate keys (although we expect they are generally not used).
+            entry.Next = table[index];
+            table[index] = entry;
+            if ((entry.PositiveHashCode & puergeMask) == 0)
+            {
+                // To mitigate the cost of maintaining an atomic counter, we only update the size every
+                // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
+                // if it was a random number generator, and we assume duplicate keys are rarely inserted.
+                Interlocked.Add(ref estimatedSize, purgeCount);
+                Purge();
+            }
+        }
+    }
+
+    /*
+     * Purge entries that have been garbage collected. Only one concurrent call to this method is
+     * allowed, further concurrent calls will be ignored.
+     */
+    private void Purge()
+    {
+        // Ensure we enter only once concurrently.
+        lock (_purgingLock)
+        {
+            if (isPurging)
             {
                 return;
             }
 
-            try
-            {
-                // Remove GC'd entries.
-                Reference <?> ref;
-                int removedCount = 0;
-                while ((ref = referenceQueue.poll()) != null)
-                {
-                    // This would be an extremely rare bug, and maybe it should produce a health metric or
-                    // warning.
-                    if (!(ref instanceof TaintedObject)) 
-                    {
-                        continue;
-                    }
-
-                    TaintedObject entry = (TaintedObject)ref;
-                    removedCount += remove(entry);
-                }
-
-                if (estimatedSize.addAndGet(-removedCount) > flatModeThreshold)
-                {
-                    isFlat = true;
-                }
-            }
-            finally
-            {
-                // Reset purging flag.
-                isPurging.set(false);
-            }
+            isPurging = true;
         }
 
-        /*
-         * Removes a {@link TaintedObject} from the hash table. This method will lose puts in concurrent
-         * scenarios.
-         *
-         * @param entry
-         * @return Number of removed elements.
-         */
-        private int Remove(TaintedObject entry)
+        try
         {
-            // A remove might be lost when it is concurrent to puts. If that happens, the object will not be
-            // removed again, (until the map goes to flat mode). When a remove is lost under concurrency,
-            // this method will still return 1, and it will still be subtracted from the map size estimate.
-            // If this is infrequent enough, this would lead to a performance degradation of get opertions.
-            // If this happens extremely frequently, like number of lost removals close to number of puts,
-            // it could prevent the map from ever going into flat mode, and its size might become
-            // effectively unbound.
-            int index = index(entry.positiveHashCode);
-            TaintedObject cur = table[index];
-            if (cur == entry)
-            {
-                table[index] = cur.next;
-                return 1;
-            }
+            // Remove GC'd entries.
+            int removedCount = 0;
 
-            if (cur == null)
+            while (referenceQueue.TryDequeue(out var reference))
             {
-                return 0;
-            }
-
-            for (TaintedObject prev = cur.next; cur != null; prev = cur, cur = cur.next)
-            {
-                if (cur == entry)
+                // This would be an extremely rare bug, and maybe it should produce a health metric or
+                // warning.
+                if (reference is not TaintedObject)
                 {
-                    prev.next = cur.next;
-                    return 1;
+                    continue;
                 }
+
+                TaintedObject entry = (TaintedObject)reference;
+                removedCount += Remove(entry);
             }
 
-            // If we reach this point, the entry was already removed or put was lost.
+            if (Interlocked.Add(ref estimatedSize, -removedCount) > flatModeThreshold)
+            {
+                IsFlat = true;
+            }
+        }
+        finally
+        {
+            // Reset purging flag.
+            lock (_purgingLock)
+            {
+                isPurging = false;
+            }
+        }
+    }
+
+    /*
+     * Removes a {@link TaintedObject} from the hash table. This method will lose puts in concurrent
+     * scenarios.
+     *
+     * @param entry
+     * @return Number of removed elements.
+     */
+    private int Remove(TaintedObject entry)
+    {
+        // A remove might be lost when it is concurrent to puts. If that happens, the object will not be
+        // removed again, (until the map goes to flat mode). When a remove is lost under concurrency,
+        // this method will still return 1, and it will still be subtracted from the map size estimate.
+        // If this is infrequent enough, this would lead to a performance degradation of get opertions.
+        // If this happens extremely frequently, like number of lost removals close to number of puts,
+        // it could prevent the map from ever going into flat mode, and its size might become
+        // effectively unbound.
+        int index = Index(entry.PositiveHashCode);
+        TaintedObject cur = table[index];
+        if (cur == entry)
+        {
+            table[index] = cur.Next;
+            return 1;
+        }
+
+        if (cur == null)
+        {
             return 0;
         }
 
-        public void Clear()
+        for (TaintedObject prev = cur.Next; cur != null; prev = cur, cur = cur.Next)
         {
-            isFlat = false;
-            estimatedSize = 0;
-
-            for (int i = 0; i < table.Length; i++)
+            if (cur == entry)
             {
-                table[i] = null;
+                prev.Next = cur.Next;
+                return 1;
             }
-
-            referenceQueue = new ReferenceQueue<>();
         }
 
-        public ReferenceQueue<object> GetReferenceQueue()
+        // If we reach this point, the entry was already removed or put was lost.
+        return 0;
+    }
+
+    public void Clear()
+    {
+        IsFlat = false;
+        Interlocked.Exchange(ref estimatedSize, 0);
+        estimatedSize = 0;
+
+        for (int i = 0; i < table.Length; i++)
         {
-            return referenceQueue;
+            table[i] = null;
         }
 
-        private int IndexObject(object obj)
-        {
-            return index(positiveHashCode(System.identityHashCode(obj)));
-        }
+        referenceQueue = new();
+    }
 
-        private int PositiveHashCode(int h)
-        {
-            return h & PositiveMask;
-        }
+    public ConcurrentQueue<object> GetReferenceQueue()
+    {
+        return referenceQueue;
+    }
 
-        private int index(int h)
-        {
-            return h & lengthMask;
-        }
+    private int IndexObject(object obj)
+    {
+        return Index(PositiveHashCode(IastUtils.IdentityHashCode(obj)));
+    }
 
+    private int PositiveHashCode(int h)
+    {
+        return h & PositiveMask;
+    }
+
+    private int Index(int h)
+    {
+        return h & lengthMask;
+    }
+
+    /*
         private Iterator<TaintedObject> iterator(int start, int stop)
         {
-            return new Iterator<TaintedObject>() 
+            return new Iterator<TaintedObject>()
             {
-      int currentIndex = start;
+            int currentIndex = start;
             TaintedObject currentSubPos;
 
             public bool hasNext()
@@ -270,14 +282,15 @@ namespace Datadog.Trace.Iast
                 return false;
             }
 
-            public TaintedObject next()
+            public TaintedObject Next()
             {
                 if (currentSubPos != null)
                 {
                     TaintedObject toReturn = currentSubPos;
-                    currentSubPos = toReturn.next;
+                    currentSubPos = toReturn.Next;
                     return toReturn;
                 }
+
                 for (; currentIndex < stop; currentIndex++)
                 {
                     final TaintedObject entry = table[currentIndex];
@@ -293,15 +306,9 @@ namespace Datadog.Trace.Iast
         };
     }
 
-  public Iterator<TaintedObject> iterator()
+    public Iterator<TaintedObject> iterator()
     {
         return iterator(0, table.length);
     }
-
-    /* Testing only. */
-    bool IsFlat()
-    {
-        return IsFlat;
-    }
-}
+    */
 }
