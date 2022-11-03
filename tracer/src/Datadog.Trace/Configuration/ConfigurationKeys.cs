@@ -377,7 +377,6 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for setting in number of days when to delete log files based on their last writetime date.
         /// </summary>
-        /// <seealso cref="TracerSettings.LogFileRetentionDays"/>
         public const string LogFileRetentionDays = "DD_TRACE_LOGFILE_RETENTION_DAYS";
 
         /// <summary>

@@ -225,9 +225,9 @@ namespace Datadog.Trace.Logging
         internal static void CleanLogFiles(string logsDirectory)
         {
             var logDaysLimit = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogFileRetentionDays);
-            if (int.TryParse(logDaysLimit, out var days) && (days > 0 && days < int.MaxValue))
+            if (int.TryParse(logDaysLimit, out var days) && days > 0)
             {
-                var date = DateTime.Now.AddDays(-1 * days);
+                var date = DateTime.Now.AddDays(-days);
                 var logFormats = new[]
                   {
                     "dotnet-tracer-*.log",
@@ -250,7 +250,7 @@ namespace Datadog.Trace.Logging
                 }
                 catch
                 {
-                    // Abort on first catch when doing IO operation for perofrmance reasons.
+                    // Abort on first catch when doing IO operation for performance reasons.
                 }
             }
         }

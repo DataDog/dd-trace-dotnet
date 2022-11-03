@@ -231,8 +231,6 @@ namespace Datadog.Trace.Configuration
             IsDataStreamsMonitoringEnabled = source?.GetBool(ConfigurationKeys.DataStreamsMonitoring.Enabled) ??
                                         // default value
                                         false;
-
-            LogFileRetentionDays = source?.GetInt32(ConfigurationKeys.LogFileRetentionDays) ?? 32;
         }
 
         /// <summary>
@@ -509,11 +507,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
         internal bool IsDataStreamsMonitoringEnabled { get; }
-
-        /// <summary>
-        /// Gets or sets the number of days a log file can be kept until
-        /// </summary>
-        internal int LogFileRetentionDays { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
