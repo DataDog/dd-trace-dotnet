@@ -48,6 +48,11 @@ namespace Datadog.Trace.Tagging
                 case "out.host": 
                     Host = value;
                     break;
+                case "span.kind": 
+                case "component": 
+                case "db.type": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(CosmosDbTags));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;

@@ -90,6 +90,9 @@ namespace Datadog.Trace.ServiceFabric
                 case "service-fabric.service-remoting.invocation-id": 
                     RemotingInvocationId = value;
                     break;
+                case "span.kind": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(ServiceRemotingTags));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;
