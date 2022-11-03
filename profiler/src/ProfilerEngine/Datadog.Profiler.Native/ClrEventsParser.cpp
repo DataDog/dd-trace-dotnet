@@ -13,7 +13,7 @@
 #include "OpSysTools.h"
 
 
-const bool LogGcEvents = true;
+const bool LogGcEvents = false;
 #define LOG_GC_EVENT(x)                     \
 {                                           \
     if (LogGcEvents)                        \

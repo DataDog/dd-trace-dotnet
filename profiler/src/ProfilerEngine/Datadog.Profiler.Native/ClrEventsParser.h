@@ -196,10 +196,15 @@ private:
     IContentionListener* _pContentionListener = nullptr;
     IGCSuspensionsListener* _pGCSuspensionsListener;
 
-    // state for garbage collection details
+ // state for garbage collection details including Stop The World duration
 private:
+    // set when GCSuspendEEBegin is received (usually no GC is known at that time)
     uint64_t _suspensionStart;
+
+    // for concurrent mode, a background GC could be started
     GCDetails _currentBGC;
+
+    // this is a foreground GC (could be triggered while a background GC is already running)
     GCDetails _gcInProgress;
 
 private:
