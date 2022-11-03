@@ -190,6 +190,24 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public async Task Serialization_SettingReadOnlyProperty()
+        {
+            var tags = new WebTags();
+            using (var scope = _tracer.StartActiveInternal("root", serviceName: "service1", tags: tags))
+            {
+                // Read only property, so shouldn't be able to set it
+                tags.SetTag(Trace.Tags.SpanKind, SpanKinds.Client);
+            }
+
+            await _tracer.FlushAsync();
+
+            var traceChunks = _testApi.Wait(TimeSpan.FromSeconds(20));
+
+            var deserializedSpan = traceChunks.Should().ContainSingle().Which.Should().ContainSingle().Subject;
+            deserializedSpan.Tags.Should().ContainKey(Tags.SpanKind).WhoseValue.Should().Be(SpanKinds.Server);
+        }
+
+        [Fact]
         public async Task Serialize_LanguageTag_ManualInstrumentation()
         {
             using (var scope = _tracer.StartActive("root"))
