@@ -144,6 +144,7 @@ variables:
   DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH: $[variables['System.PullRequest.SourceBranch']]
   DD_LOGGER_API_KEY_CHECKER_ENABLED: false
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
+  DD_LOGGER_ENABLED: true
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -948,7 +949,6 @@ stages:
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        DD_LOGGER_ENABLED: false
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1839,6 +1839,7 @@ stages:
       env:
         baseImage: $(baseImage)
         azdo_network: $(agent.containernetwork)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
@@ -1848,6 +1849,7 @@ stages:
       displayName: docker-compose run ExplorationTests
       env:
         azdo_network: $(agent.containernetwork)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
@@ -2702,7 +2704,19 @@ stages:
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [integration_tests_windows, integration_tests_windows_iis, msi_integration_tests_windows, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, master_commit_id]
+  dependsOn: 
+    - integration_tests_windows
+    - integration_tests_windows_iis
+    - msi_integration_tests_windows
+    - integration_tests_linux
+    - integration_tests_arm64
+    - unit_tests_linux
+    - unit_tests_macos
+    - unit_tests_arm64
+    - unit_tests_windows
+    - master_commit_id
+    - tool_artifacts_tests_windows
+    - tool_artifacts_tests_linux
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -3614,6 +3628,9 @@ stages:
     - msi_integration_tests_windows
     - integration_tests_linux
     - integration_tests_arm64
+    - profiler_integration_tests_linux
+    - exploration_tests_windows
+    - exploration_tests_linux
     - benchmarks
     - throughput
     - throughput_appsec
@@ -3621,19 +3638,19 @@ stages:
     - tool_artifacts_tests_linux
     - upload_to_s3
     - upload_to_azure
+    - execution_benchmarks
     - installer_smoke_tests
     - installer_smoke_tests_arm64
     - nuget_installer_smoke_tests
     - nuget_installer_smoke_tests_arm64
     - nuget_installer_smoke_tests_windows
+    - dotnet_tool_nuget_smoke_tests_linux
     - dotnet_tool_smoke_tests_linux
     - dotnet_tool_smoke_tests_arm64
     - dotnet_tool_smoke_tests_windows
     - msi_installer_smoke_tests
     - tracer_home_smoke_tests
     - coverage
-    - exploration_tests_windows
-    - exploration_tests_linux
     - system_tests
   jobs:
   - job: build_and_run
