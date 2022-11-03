@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -31,34 +32,6 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public void StatsComputationAndSingleSampling()
-        {
-            var statsAggregator = new Mock<IStatsAggregator>();
-            statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
-            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, spanSampler: null, automaticFlush: false);
-        }
-
-        [Fact]
-        public void Sample()
-        {
-            // sample/allow all single span rule
-            var rules = new List<SpanSamplingRule>() { new SpanSamplingRule("*", "*") };
-            var spanSmapler = new SpanSampler(rules);
-            var tracer = new Mock<IDatadogTracer>();
-            tracer.Setup(x => x.DefaultServiceName).Returns("Default");
-            var traceContext = new TraceContext(tracer.Object);
-            var rootSpanContext = new SpanContext(null, traceContext, null);
-            var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow);
-            var childSpan = new Span(new SpanContext(rootSpanContext, traceContext, null), DateTimeOffset.UtcNow);
-            traceContext.AddSpan(rootSpan);
-            traceContext.AddSpan(childSpan);
-            var trace = new ArraySegment<Span>(new[] { rootSpan, childSpan });
-
-            traceContext.SetSamplingPriority(-1); // state that we want to drop the trace
-        }
-
-        [Fact]
         public void CanComputeStats_ShouldNotSend_WhenNoSpanSamplingMatches()
         {
             false.Should().BeTrue();
@@ -67,27 +40,28 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task SpanSampling_CanComputeStats_ShouldNotSend_WhenSpanSamplingDoesNotMatch()
         {
+            var api = new Mock<IApi>();
             var rules = new List<SpanSamplingRule>() { new SpanSamplingRule("*", "*", 0.0f) }; // don't sample any rule
             var spanSampler = new SpanSampler(rules);
-            var tracer = new Mock<IDatadogTracer>();
             var statsAggregator = new Mock<IStatsAggregator>();
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
+            statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, spanSampler: spanSampler, automaticFlush: false);
+            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, spanSampler: spanSampler, automaticFlush: false);
+            var tracer = new Tracer(new TracerSettings(), agent, sampler: null, scopeManager: null, statsd: null);
 
-            var traceContext = new TraceContext(tracer.Object);
+            var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
             var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(new SamplingDecision(SamplingPriorityValues.UserReject, SamplingMechanism.Manual));
             span.Finish(); // triggers the span sampler to run
             var traceChunk = new ArraySegment<Span>(new[] { span });
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk), SpanFormatterResolver.Instance);
 
             agent.WriteTrace(traceChunk);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
-            _api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Never);
+            api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Never);
 
             await _agentWriter.FlushAndCloseAsync();
         }
@@ -102,10 +76,10 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var rules = new List<SpanSamplingRule>() { new SpanSamplingRule("*", "*") };
             var spanSampler = new SpanSampler(rules);
-            var tracer = new Mock<IDatadogTracer>();
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, spanSampler: spanSampler, automaticFlush: false);
+            var tracer = new Tracer(new TracerSettings(), agent, sampler: null, scopeManager: null, statsd: null);
 
-            var traceContext = new TraceContext(tracer.Object);
+            var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
             var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(span);
@@ -119,8 +93,7 @@ namespace Datadog.Trace.Tests.Agent
 
             api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
 
-            // TODO this is a more specific test
-            // _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
+            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
 
             await _agentWriter.FlushAndCloseAsync();
         }
@@ -128,28 +101,75 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task SpanSampling_ShouldSend_MultipleMatchedSpans_WhenStatsDrops()
         {
+            var api = new Mock<IApi>();
             var statsAggregator = new Mock<IStatsAggregator>();
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
+            statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var rules = new List<SpanSamplingRule>() { new SpanSamplingRule("*", "*") };
             var spanSampler = new SpanSampler(rules);
-            var tracer = new Mock<IDatadogTracer>();
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, spanSampler: spanSampler, automaticFlush: false);
+            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, spanSampler: spanSampler, automaticFlush: false);
+            var tracer = new Tracer(new TracerSettings(), agent, sampler: null, scopeManager: null, statsd: null);
 
-            var traceContext = new TraceContext(tracer.Object);
-            var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
-            traceContext.AddSpan(span);
+            var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(new SamplingDecision(SamplingPriorityValues.UserReject, SamplingMechanism.Manual));
-            span.Finish();
-            var traceChunk = new ArraySegment<Span>(new[] { span });
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk), SpanFormatterResolver.Instance);
+            var rootSpanContext = new SpanContext(null, traceContext, "service");
+            var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var keptChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(rootSpan); // IS single span sampled
+            traceContext.AddSpan(keptChildSpan); // IS single span sampled
+
+            var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk), SpanFormatterResolver.Instance);
+
+            agent.WriteTrace(expectedChunk);
+            await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
+
+            var expectedDroppedP0Traces = 0;
+            var expectedDroppedP0Spans = 0;
+            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans)), Times.Once);
+
+            await _agentWriter.FlushAndCloseAsync();
+        }
+
+        [Fact]
+        public async Task SpanSampling_ShouldSend_MultipleMatchedSpans_WhenStatsDropsOne()
+        {
+            var api = new Mock<IApi>();
+            var statsAggregator = new Mock<IStatsAggregator>();
+            statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
+            statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
+            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
+            var rules = new List<SpanSamplingRule>() { new SpanSamplingRule("*", "operation") };
+            var spanSampler = new SpanSampler(rules);
+            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, spanSampler: spanSampler, automaticFlush: false);
+            var tracer = new Tracer(new TracerSettings(), agent, sampler: null, scopeManager: null, statsd: null);
+
+            var traceContext = new TraceContext(tracer);
+            traceContext.SetSamplingPriority(new SamplingDecision(SamplingPriorityValues.UserReject, SamplingMechanism.Manual));
+            var rootSpanContext = new SpanContext(null, traceContext, "service");
+            var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var droppedChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "drop_me" };
+            var droppedChildSpan2 = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "drop_me_also" };
+            var keptChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(rootSpan); // IS single span sampled
+            traceContext.AddSpan(droppedChildSpan); // is NOT single span sampled
+            traceContext.AddSpan(droppedChildSpan2); // is NOT single span sampled
+            traceContext.AddSpan(keptChildSpan); // IS single span sampled
+
+            var traceChunk = new ArraySegment<Span>(new[] { rootSpan, droppedChildSpan, droppedChildSpan2, keptChildSpan });
+            var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk), SpanFormatterResolver.Instance);
 
             agent.WriteTrace(traceChunk);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
-            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 2), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
+            var expectedDroppedP0Traces = 1;
+            var expectedDroppedP0Spans = 2;
+            // expecting a single trace, but there should have been two spans
+            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans)), Times.Once);
 
+            // validate that we've dropped 1 span
             await _agentWriter.FlushAndCloseAsync();
         }
 
@@ -164,18 +184,6 @@ namespace Datadog.Trace.Tests.Agent
         {
             // _sampling_priority_v1 needs to be 2 (manual keep)
             // or set the "priority" of each request chunk to 2 (manual keep)
-            false.Should().BeTrue();
-        }
-
-        [Fact]
-        public void CanComputeStats_ShouldNotIncrement_DroppedTraces_WhenSpanSampling()
-        {
-            false.Should().BeTrue();
-        }
-
-        [Fact]
-        public void CanComputeStats_ShouldIncrement_DroppedSpans_AccountingForKeptSpans()
-        {
             false.Should().BeTrue();
         }
 
