@@ -485,6 +485,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("span_sampling_rules");
                     writer.WriteValue(instanceSettings.SpanSamplingRules);
 
+                    writer.WritePropertyName("stats_computation_enabled");
+                    writer.WriteValue(instanceSettings.StatsComputationEnabled);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
@@ -583,6 +586,9 @@ namespace Datadog.Trace
 
                     Log.Debug("Waiting for disposals.");
                     await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+
+                    instance.RuntimeMetrics?.Dispose();
+
                     Log.Debug("Finished waiting for disposals.");
                 }
             }

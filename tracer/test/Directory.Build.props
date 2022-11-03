@@ -19,29 +19,18 @@
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
   </ItemGroup>
 
+  <!-- This property ensures NuGet packages are copied to the bin folder. This happens automatically in netcoreapp3.0+ -->
+  <PropertyGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' AND '$(TargetFramework)' == 'netcoreapp2.1' ">
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
   <ItemGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
-    <PackageReference Include="DatadogTestLogger" Version="0.0.18">
-      <CopyToOutputDirectory>lib\$(TargetFramework)\*</CopyToOutputDirectory>
-      <FolderName>datadogtestlogger</FolderName>
-    </PackageReference>
+    <PackageReference Include="DatadogTestLogger" Version="0.0.26" ExcludeAssets="compile"/>
   </ItemGroup>
 
   <!-- StyleCop -->
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.test.cs" />
   </ItemGroup>
-
-  <Target Name="PackageReferenceCopyToOutput" AfterTargets="Build"  Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
-    <ItemGroup>
-      <PackageReferenceFiles Condition="%(PackageReference.CopyToOutputDirectory) != '' AND %(PackageReference.FolderName) != ''"
-        Include="$(NugetPackageRoot)\%(PackageReference.FolderName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory)" />
-    </ItemGroup>
-    <Message Condition="%(PackageReference.CopyToOutputDirectory) != ''" 
-             Text="> $(NugetPackageRoot) | %(PackageReference.FolderName) | %(PackageReference.Version) | %(PackageReference.CopyToOutputDirectory) [$(NugetPackageRoot)\%(PackageReference.FileName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory) | $(OutDir)]" Importance="high"/>
-    <Message Condition="%(PackageReference.CopyToOutputDirectory) != '' AND '@(PackageReferenceFiles->'%(Identity)')' != ''"
-             Text="  Copy @(PackageReferenceFiles->'%(Identity)') to $(OutDir)"
-             Importance="high"/>
-    <Copy SourceFiles="@(PackageReferenceFiles)" DestinationFolder="$(OutDir)" />
-  </Target>
 
 </Project>

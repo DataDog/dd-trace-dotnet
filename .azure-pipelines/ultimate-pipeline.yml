@@ -144,7 +144,7 @@ variables:
   DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH: $[variables['System.PullRequest.SourceBranch']]
   DD_LOGGER_API_KEY_CHECKER_ENABLED: false
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
-  DD_LOGGER_ENABLED: false
+  DD_LOGGER_ENABLED: true
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -948,7 +948,7 @@ stages:
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisTracerIntegrationTests
       env:
-        DD_LOGGER_ENABLED: false
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1839,6 +1839,7 @@ stages:
       env:
         baseImage: $(baseImage)
         azdo_network: $(agent.containernetwork)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
@@ -1848,6 +1849,7 @@ stages:
       displayName: docker-compose run ExplorationTests
       env:
         azdo_network: $(agent.containernetwork)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml

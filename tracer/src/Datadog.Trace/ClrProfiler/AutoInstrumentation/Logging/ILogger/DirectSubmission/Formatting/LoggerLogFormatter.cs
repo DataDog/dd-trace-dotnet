@@ -16,14 +16,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     {
         private const string MessageTemplateKey = "{OriginalFormat}";
 
-        public static string? FormatLogEvent<T>(LogFormatter logFormatter, in LogEntry<T> logEntry)
+        public static string FormatLogEvent<T>(LogFormatter logFormatter, in LogEntry<T> logEntry)
         {
-            var message = logEntry.Formatter(logEntry.State, logEntry.Exception);
-            if (logEntry.Exception == null && message == null)
-            {
-                // No message! weird...
-                return null;
-            }
+            // Always set a message of some sort. Most log formatters will
+            // automatically return "[null]" even if there's no state or exception
+            // so use that as a fallback
+            var message = logEntry.Formatter(logEntry.State, logEntry.Exception)
+                       ?? logEntry.Exception?.Message
+                       ?? "[null]";
 
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 

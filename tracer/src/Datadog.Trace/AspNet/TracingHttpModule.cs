@@ -239,7 +239,14 @@ namespace Datadog.Trace.AspNet
 
                         if (!rootSpan.HasHttpStatusCode())
                         {
-                            var status = app.Context.Response.StatusCode;
+                            var response = app.Context.Response;
+                            var status = response.StatusCode;
+                            if (status == 500 && !response.IsClientConnected && app.Context.Error is null)
+                            {
+                                // rare case when client disconnects - IIS returns a 400 but reports a 500
+                                status = 400;
+                            }
+
                             rootSpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
                             AddHeaderTagsFromHttpResponse(app.Context, rootScope);
 

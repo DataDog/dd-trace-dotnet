@@ -156,7 +156,16 @@ namespace Datadog.Trace.RuntimeMetrics
 #if NETCOREAPP
             return new RuntimeEventListener(statsd, delay);
 #elif NETFRAMEWORK
-            return AzureAppServices.Metadata.IsRelevant ? new AzureAppServicePerformanceCounters(statsd) : new PerformanceCountersListener(statsd);
+
+            try
+            {
+                return new MemoryMappedCounters(statsd);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error while initializing memory-mapped counters. Falling back to performance counters.");
+                return AzureAppServices.Metadata.IsRelevant ? new AzureAppServicePerformanceCounters(statsd) : new PerformanceCountersListener(statsd);
+            }
 #else
             return null;
 #endif
