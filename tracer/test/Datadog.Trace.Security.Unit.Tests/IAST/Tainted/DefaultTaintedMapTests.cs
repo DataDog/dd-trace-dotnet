@@ -42,7 +42,7 @@ public class DefaultTaintedMapTests
 
     [Fact]
     public void GivenATaintedObjectMap_WhenPutAndGetStringBuilder_ObjectIsRetrieved()
-    {
+        {
         DefaultTaintedMap map = new();
         var text = new StringBuilder("test");
         var tainted = new TaintedObject(text, null);
@@ -50,7 +50,7 @@ public class DefaultTaintedMapTests
         var tainted2 = map.Get(text);
         tainted2.Should().NotBeNull();
         text.Should().Be(tainted2.Value);
-    }
+        }
 
     [Fact]
     public void GivenATaintedObjectMap_WhenPutAndGetDifferentObjectSameValue_ObjectIsNotRetrieved()
@@ -103,6 +103,7 @@ public class DefaultTaintedMapTests
         DefaultTaintedMap map = new();
         var testObject = new object();
         var tainted = new TaintedObject(testObject, new Range[] { new Range(1, 2, new Source(12, "name", "value")) });
+        var hash1 = tainted.GetHashCode();
         map.Put(tainted);
         map.Purge();
         var tainted2 = map.Get(testObject);
@@ -200,7 +201,7 @@ public class DefaultTaintedMapTests
 
     [Fact]
     public void GivenATaintedObjectMap_WhenFlatMode_LastElementIsStored()
-    {
+            {
         List<string> objects = new();
         DefaultTaintedMap map = new();
         AssertFlatMode(map, objects);
@@ -210,8 +211,8 @@ public class DefaultTaintedMapTests
             var testString = new StringForTest(Guid.NewGuid().ToString());
             map.Put(new TaintedForTest(testString, null));
             map.Get(testString).Should().NotBeNull();
+            }
         }
-    }
 
     [Fact]
     public void GivenATaintedObjectMap_WhenPutObjectsThatGetDisposed_ObjectsArePurged()
@@ -245,7 +246,7 @@ public class DefaultTaintedMapTests
 
     [Fact]
     public void GivenATaintedObjectMap_WhenASingleObjectNotDisposed_IsNotPurged()
-    {
+        {
         DefaultTaintedMap map = new();
         var testString = Guid.NewGuid().ToString();
         var tainted = new TaintedForTest(testString, null);
@@ -253,7 +254,7 @@ public class DefaultTaintedMapTests
         map.Get(testString).Should().NotBeNull();
         map.Purge();
         map.Get(testString).Should().NotBeNull();
-    }
+        }
 
     [Fact]
     public void GivenATaintedObjectMap_WhenASingleObjectDisposed_IsPurged()

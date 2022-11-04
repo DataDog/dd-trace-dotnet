@@ -31,9 +31,9 @@ namespace Datadog.Trace.Iast
                 _map.Put(new TaintedObject(objectToTaint, ranges));
         }
 
-        public void Taint(object obj, Range[] ranges)
+        public void Taint(object obj, Range[]? ranges)
         {
-            map.Put(new TaintedObject(obj, ranges, map.GetReferenceQueue()));
+            map.Put(new TaintedObject(obj, ranges));
         }
 
         public TaintedObject? Get(object objectToFind)
