@@ -24,7 +24,7 @@ public class TraceContextPropertyTests
         _testApi = new MockApi();
 
         var settings = new TracerSettings();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
         _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
