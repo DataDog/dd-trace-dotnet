@@ -1,17 +1,14 @@
 <Project>
-  <!-- THIS FILE IS NECESSARY BECAUSE SETTING <OutputType> BREAKS THE AZURE FUNCTIONS HOST -->
+  <!--
+  This file intentionally left blank...
+  to stop msbuild from looking up the folder hierarchy
+  -->
+
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
-    <Platforms>x64;x86</Platforms>
-    <PlatformTarget>$(Platform)</PlatformTarget>
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <LangVersion>latest</LangVersion>
-
-    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
-    <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>
-
-    <IsPackable>false</IsPackable>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-
   </PropertyGroup>
 
+  <Import Project="..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
 </Project>
