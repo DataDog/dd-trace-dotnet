@@ -1017,6 +1017,78 @@ stages:
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
+- stage: integration_tests_azure_functions
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [windows]
+
+  - job: windows
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
+    pool:
+      name: azure-windows-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/install-dotnet-sdks.yml
+    - template: steps/restore-working-directory.yml
+ 
+    - script: |
+        $(runtimeInstall)
+        func
+      displayName: 'Install Azure Functions core tools'
+      workingDirectory: $(Pipeline.Workspace)
+      retryCountOnTaskFailure: 5
+
+    - script: |
+        "%ProgramFiles(x86)%\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start
+      displayName: 'Start Azure Storage Emulator'
+      workingDirectory: $(Pipeline.Workspace)
+      retryCountOnTaskFailure: 5
+
+    - script: tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage
+      displayName: Run Azure Functions tests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      displayName: Uploading tracer logs
+      artifact: integration_tests_windows_azure_functions_tracer_logs_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_windows_azure_functions__snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
+
+    - script: |
+        $(runtimeUninstall)
+      displayName: 'Uninstall Azure Functions core tools'
+      workingDirectory: $(Pipeline.Workspace)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: msi_integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
@@ -2708,6 +2780,7 @@ stages:
   dependsOn: 
     - integration_tests_windows
     - integration_tests_windows_iis
+    - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
     - integration_tests_arm64
@@ -3627,6 +3700,7 @@ stages:
     - unit_tests_arm64
     - integration_tests_windows
     - integration_tests_windows_iis
+    - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
     - integration_tests_arm64
