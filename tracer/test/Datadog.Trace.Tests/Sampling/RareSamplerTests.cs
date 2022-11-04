@@ -6,8 +6,6 @@
 using System.Linq;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -93,18 +91,6 @@ namespace Datadog.Trace.Tests.Sampling
 
             sampler.Sample(new(trace)).Should().BeFalse();
             trace.Single().GetMetric(Metrics.RareSpan).Should().Be(null);
-        }
-
-        [Fact]
-        public void DoNotSampleManualPriority()
-        {
-            var tracer = TracerHelper.Create();
-            var sampler = new RareSampler(new ImmutableTracerSettings(new TracerSettings { IsRareSamplerEnabled = true }));
-
-            var trace1 = new[] { tracer.StartSpan("1") };
-            trace1[0].Context.TraceContext.Tags.SetTag(Tags.Propagated.DecisionMaker, $"-{SamplingMechanism.Manual}");
-
-            sampler.Sample(new(trace1)).Should().BeFalse();
         }
 
         [Fact]

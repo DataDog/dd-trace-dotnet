@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Util
 {
@@ -17,22 +16,5 @@ namespace Datadog.Trace.Util
 
         internal static bool IsKeptBySamplingPriority(ArraySegment<Span> trace) =>
             trace.Array![trace.Offset].Context.TraceContext?.SamplingPriority > 0;
-
-        internal static int? GetDecisionMaker(TraceContext traceContext)
-        {
-            var decisionMaker = traceContext.Tags.GetTag(Tags.Propagated.DecisionMaker);
-
-            if (decisionMaker != null)
-            {
-                var hyphen = decisionMaker.IndexOf('-');
-
-                if (hyphen != -1 && int.TryParse(decisionMaker.Substring(hyphen + 1), out var value))
-                {
-                    return value;
-                }
-            }
-
-            return null;
-        }
     }
 }

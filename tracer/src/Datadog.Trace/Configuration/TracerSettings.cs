@@ -513,7 +513,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets a value indicating whether the rare sampler is enabled or not.
         /// </summary>
-        public bool IsRareSamplerEnabled { get; set; }
+        internal bool IsRareSamplerEnabled { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
