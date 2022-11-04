@@ -2700,7 +2700,8 @@ stages:
         ./run-appsec.sh "linux"
       displayName: Crank
       env:
-        DD_SERVICE: dd-trace-dotnet-appsec
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -2824,6 +2825,7 @@ stages:
       displayName: Execute Samples.$(sampleName) benchmark
       env:
         DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - task: PowerShell@2
       displayName: Wait 20 seconds to agent flush before finishing pipeline

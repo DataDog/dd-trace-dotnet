@@ -234,6 +234,9 @@ namespace Datadog.Trace.Ci.Tagging
                 case "test.status": 
                     Status = value;
                     break;
+                case "test.bundle": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(TestModuleSpanTags));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;

@@ -14,13 +14,30 @@ namespace Datadog.Trace.TestHelpers
 {
     internal class MockApi : IApi
     {
-        private readonly ManualResetEventSlim _resetEvent = new();
-        private List<List<MockSpan>> _objects = null;
+        private readonly ManualResetEventSlim _resetEvent;
+        private readonly object _lock = new();
+        private List<List<MockSpan>> _objects = new();
 
-        public List<List<MockSpan>> Wait()
+        public MockApi(ManualResetEventSlim resetEvent = null)
         {
-            _resetEvent.Wait();
-            var objects = Interlocked.Exchange(ref _objects, null);
+            _resetEvent = resetEvent ?? new();
+        }
+
+        public List<List<MockSpan>> Traces
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _objects;
+                }
+            }
+        }
+
+        public List<List<MockSpan>> Wait(TimeSpan? timeout = null)
+        {
+            _resetEvent.Wait(timeout ?? TimeSpan.FromMinutes(1));
+            var objects = Traces;
             _resetEvent.Reset();
             return objects;
         }
@@ -32,14 +49,10 @@ namespace Datadog.Trace.TestHelpers
 
             if (spans.Count > 0)
             {
-                var previous = Interlocked.Exchange(ref _objects, null);
-                if (previous is not null)
+                lock (_lock)
                 {
-                    Interlocked.Exchange(ref _objects, previous.Concat(spans).ToList());
-                }
-                else
-                {
-                    Interlocked.Exchange(ref _objects, spans);
+                    var previous = _objects;
+                    _objects = previous.Concat(spans).ToList();
                 }
 
                 _resetEvent.Set();

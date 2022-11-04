@@ -45,6 +45,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                 case "elasticsearch.url": 
                     Url = value;
                     break;
+                case "span.kind": 
+                case "component": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(ElasticsearchTags));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;
