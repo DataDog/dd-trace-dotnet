@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.Iast
 {
     internal class TaintedObjects
@@ -19,14 +21,14 @@ namespace Datadog.Trace.Iast
             this.map = map;
         }
 
-        public void TaintInputString(string obj, Source source)
+        public void TaintInputString(string obj, Source? source)
         {
-            map.Put(new TaintedObject(obj, Ranges.ForString(obj, source), map.GetReferenceQueue()));
+            map.Put(new TaintedObject(obj, Ranges.ForString(obj, source)));
         }
 
-        public void Taint(object obj, Range[] ranges)
+        public void Taint(object obj, Range[]? ranges)
         {
-            map.Put(new TaintedObject(obj, ranges, map.GetReferenceQueue()));
+            map.Put(new TaintedObject(obj, ranges));
         }
 
         public TaintedObject Get(object obj)

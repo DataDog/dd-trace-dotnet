@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections;
 
 namespace Datadog.Trace.Iast;
 

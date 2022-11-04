@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Datadog.Trace.Iast;
@@ -11,17 +14,17 @@ namespace Datadog.Trace.Iast;
 internal class DefaultTaintedMap : ITaintedMap
 {
     /* Default capacity. It MUST be a power of 2. */
-    private static int defaultCapacity = 1 << 14;
+    public const int DefaultCapacity = 1 << 14;
     /* Default flat mode threshold. */
-    private static int defaultFlatModeThresold = 1 << 13;
+    public const int DefaultFlatModeThresold = 1 << 13;
     /* Periodicity of table purges, as number of put operations. It MUST be a power of two. */
     private static int purgeCount = 1 << 6;
     /* Bitmask for fast modulo with PURGE_COUNT. */
-    private static int puergeMask = purgeCount - 1;
+    private static int purgeMask = purgeCount - 1;
     /* Bitmask to convert hashes to positive integers. */
     public const int PositiveMask = int.MaxValue;
 
-    private TaintedObject[] table;
+    private TaintedObject?[] table;
 
     /* Bitmask for fast modulo with table length. */
     private int lengthMask = 0;
@@ -35,8 +38,11 @@ internal class DefaultTaintedMap : ITaintedMap
     private int estimatedSize;
     /* Reference queue for garbage-collected entries. */
 
-    // TODO: Make object a weak reference
-    private ConcurrentQueue<object> referenceQueue = new();
+    // TODO: make it taintedobject instead of iweakaware
+    // TODO: remove estimatesize
+    // TODO: hacer locked todo el map
+    // TODO: usar map no concurrente???
+    private ConcurrentQueue<IWeakAware> referenceList = new();
 
     /* Number of elements in the hash table before switching to flat mode. */
     private int flatModeThreshold;
@@ -45,7 +51,7 @@ internal class DefaultTaintedMap : ITaintedMap
      * Default constructor. Uses {@link #DEFAULT_CAPACITY} and {@link #DEFAULT_FLAT_MODE_THRESHOLD}.
      */
     public DefaultTaintedMap()
-        : this(defaultCapacity, defaultFlatModeThresold)
+        : this(DefaultCapacity, DefaultFlatModeThresold)
     {
     }
 
@@ -74,13 +80,13 @@ internal class DefaultTaintedMap : ITaintedMap
      * @param key Key object.
      * @return The {@link TaintedObject} if it exists, {@code null} otherwise.
      */
-    public TaintedObject Get(object key)
+    public TaintedObject? Get(object key)
     {
         int index = IndexObject(key);
-        TaintedObject entry = table[index];
+        TaintedObject? entry = table[index];
         while (entry != null)
         {
-            if (key == entry.Get())
+            if (key == entry.Value)
             {
                 return entry;
             }
@@ -110,7 +116,7 @@ internal class DefaultTaintedMap : ITaintedMap
             // TODO: Fix the pathological case where all puts have the same identityHashCode (e.g. limit
             // chain length?)
             table[index] = entry;
-            if ((entry.PositiveHashCode & puergeMask) == 0)
+            if ((entry.PositiveHashCode & purgeMask) == 0)
             {
                 Purge();
             }
@@ -121,22 +127,24 @@ internal class DefaultTaintedMap : ITaintedMap
             // We do not control duplicate keys (although we expect they are generally not used).
             entry.Next = table[index];
             table[index] = entry;
-            if ((entry.PositiveHashCode & puergeMask) == 0)
+            if ((entry.PositiveHashCode & purgeMask) == 0)
             {
-                // To mitigate the cost of maintaining an atomic counter, we only update the size every
+                // To mitigate the cost of maintaining a thread safe counter, we only update the size every
                 // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
                 // if it was a random number generator, and we assume duplicate keys are rarely inserted.
                 Interlocked.Add(ref estimatedSize, purgeCount);
                 Purge();
             }
         }
+
+        referenceList.Enqueue(entry);
     }
 
     /*
      * Purge entries that have been garbage collected. Only one concurrent call to this method is
      * allowed, further concurrent calls will be ignored.
      */
-    private void Purge()
+    internal void Purge()
     {
         // Ensure we enter only once concurrently.
         lock (_purgingLock)
@@ -152,20 +160,7 @@ internal class DefaultTaintedMap : ITaintedMap
         try
         {
             // Remove GC'd entries.
-            int removedCount = 0;
-
-            while (referenceQueue.TryDequeue(out var reference))
-            {
-                // This would be an extremely rare bug, and maybe it should produce a health metric or
-                // warning.
-                if (reference is not TaintedObject)
-                {
-                    continue;
-                }
-
-                TaintedObject entry = (TaintedObject)reference;
-                removedCount += Remove(entry);
-            }
+            int removedCount = RemoveDeadKeys();
 
             if (Interlocked.Add(ref estimatedSize, -removedCount) > flatModeThreshold)
             {
@@ -180,6 +175,34 @@ internal class DefaultTaintedMap : ITaintedMap
                 isPurging = false;
             }
         }
+    }
+
+    private int RemoveDeadKeys()
+    {
+        var removed = 0;
+        var alive = new List<IWeakAware>();
+        while (referenceList.TryDequeue(out var key))
+        {
+            if (key.IsAlive)
+            {
+                alive.Add(key);
+            }
+            else
+            {
+                if (key is TaintedObject tainted)
+                {
+                    Remove(tainted);
+                    removed++;
+                }
+            }
+        }
+
+        foreach (var value in alive)
+        {
+            referenceList.Enqueue(value);
+        }
+
+        return removed;
     }
 
     /*
@@ -199,19 +222,22 @@ internal class DefaultTaintedMap : ITaintedMap
         // it could prevent the map from ever going into flat mode, and its size might become
         // effectively unbound.
         int index = Index(entry.PositiveHashCode);
-        TaintedObject cur = table[index];
+        TaintedObject? cur = table[index];
+
+        if (cur is null)
+        {
+            return 0;
+        }
+
         if (cur == entry)
         {
             table[index] = cur.Next;
             return 1;
         }
 
-        if (cur == null)
-        {
-            return 0;
-        }
-
-        for (TaintedObject prev = cur.Next; cur != null; prev = cur, cur = cur.Next)
+        var first = cur;
+        cur = cur.Next;
+        for (TaintedObject? prev = first; cur != null; prev = cur, cur = cur.Next)
         {
             if (cur == entry)
             {
@@ -228,19 +254,18 @@ internal class DefaultTaintedMap : ITaintedMap
     {
         IsFlat = false;
         Interlocked.Exchange(ref estimatedSize, 0);
-        estimatedSize = 0;
 
         for (int i = 0; i < table.Length; i++)
         {
             table[i] = null;
         }
 
-        referenceQueue = new();
+        referenceList = new();
     }
 
-    public ConcurrentQueue<object> GetReferenceQueue()
+    public ConcurrentQueue<IWeakAware> GetReferenceQueue()
     {
-        return referenceQueue;
+        return referenceList;
     }
 
     private int IndexObject(object obj)
@@ -256,6 +281,26 @@ internal class DefaultTaintedMap : ITaintedMap
     private int Index(int h)
     {
         return h & lengthMask;
+    }
+
+    // For testing only
+    internal List<IWeakAware> TableToList()
+    {
+        List<IWeakAware> list = new();
+        foreach (var element in table)
+        {
+            if (element != null)
+            {
+                var item = element;
+                do
+                {
+                    list.Add(item);
+                }
+                while ((item = item.Next) != null);
+            }
+        }
+
+        return list;
     }
 
     /*
