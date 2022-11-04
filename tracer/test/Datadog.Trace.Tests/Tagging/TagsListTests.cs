@@ -204,7 +204,7 @@ namespace Datadog.Trace.Tests.Tagging
             var traceChunks = _testApi.Wait(TimeSpan.FromSeconds(20));
 
             var deserializedSpan = traceChunks.Should().ContainSingle().Which.Should().ContainSingle().Subject;
-            deserializedSpan.Tags.Should().ContainKey(Tags.SpanKind).WhoseValue.Should().Be(SpanKinds.Server);
+            deserializedSpan.Tags.Should().Contain(Tags.SpanKind, SpanKinds.Server);
         }
 
         [Fact]

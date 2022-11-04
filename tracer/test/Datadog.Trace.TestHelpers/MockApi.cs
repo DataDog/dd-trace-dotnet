@@ -9,7 +9,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using FluentAssertions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -37,7 +36,7 @@ namespace Datadog.Trace.TestHelpers
 
         public List<List<MockSpan>> Wait(TimeSpan? timeout = null)
         {
-            _resetEvent.Wait(timeout ?? TimeSpan.FromMinutes(1)).Should().BeTrue();
+            _resetEvent.Wait(timeout ?? TimeSpan.FromMinutes(1));
             var objects = Traces;
             _resetEvent.Reset();
             return objects;
