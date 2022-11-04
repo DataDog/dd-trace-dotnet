@@ -53,6 +53,7 @@ internal class IntelligentTestRunnerClient
     private readonly string _workingDirectory;
     private readonly string _environment;
     private readonly string _serviceName;
+    private readonly Dictionary<string, string>? _customConfigurations;
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly Uri _settingsUrl;
     private readonly Uri _searchCommitsUrl;
@@ -71,6 +72,21 @@ internal class IntelligentTestRunnerClient
         _workingDirectory = workingDirectory;
         _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty) ?? string.Empty;
         _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
+        _customConfigurations = null;
+
+        // Extract custom tests configurations from DD_TAGS
+        var globalTags = _settings.TracerSettings.GlobalTags;
+        foreach (var tag in globalTags)
+        {
+            const string testConfigKey = "test.configuration.";
+            if (tag.Key.StartsWith(testConfigKey, StringComparison.OrdinalIgnoreCase))
+            {
+                var key = tag.Key.Substring(testConfigKey.Length);
+                _customConfigurations ??= new Dictionary<string, string>();
+                _customConfigurations[key] = tag.Value;
+            }
+        }
+
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _getBranchNameTask = GetBranchNameAsync();
         _getShaTask = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory));
@@ -184,7 +200,8 @@ internal class IntelligentTestRunnerClient
                         framework.OSArchitecture,
                         skipFrameworkInfo ? null : framework.Name,
                         skipFrameworkInfo ? null : framework.ProductVersion,
-                        skipFrameworkInfo ? null : framework.ProcessArchitecture))),
+                        skipFrameworkInfo ? null : framework.ProcessArchitecture,
+                        _customConfigurations))),
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
@@ -260,7 +277,8 @@ internal class IntelligentTestRunnerClient
                         framework.OSArchitecture,
                         framework.Name,
                         framework.ProductVersion,
-                        framework.ProcessArchitecture))),
+                        framework.ProcessArchitecture,
+                        _customConfigurations))),
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
@@ -699,9 +717,9 @@ internal class IntelligentTestRunnerClient
         public readonly string Sha;
 
         [JsonProperty("configurations")]
-        public readonly TestsConfigurations Configurations;
+        public readonly TestsConfigurations? Configurations;
 
-        public SkippableTestsQuery(string service, string environment, string repositoryUrl, string sha, TestsConfigurations configurations)
+        public SkippableTestsQuery(string service, string environment, string repositoryUrl, string sha, TestsConfigurations? configurations)
         {
             Service = service;
             Environment = environment;
@@ -739,37 +757,6 @@ internal class IntelligentTestRunnerClient
             Branch = branch;
             Sha = sha;
             Configurations = configurations;
-        }
-    }
-
-    private readonly struct TestsConfigurations
-    {
-        [JsonProperty(CommonTags.OSPlatform)]
-        public readonly string OSPlatform;
-
-        [JsonProperty(CommonTags.OSVersion)]
-        public readonly string OSVersion;
-
-        [JsonProperty(CommonTags.OSArchitecture)]
-        public readonly string OSArchitecture;
-
-        [JsonProperty(CommonTags.RuntimeName)]
-        public readonly string? RuntimeName;
-
-        [JsonProperty(CommonTags.RuntimeVersion)]
-        public readonly string? RuntimeVersion;
-
-        [JsonProperty(CommonTags.RuntimeArchitecture)]
-        public readonly string? RuntimeArchitecture;
-
-        public TestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string?runtimeName, string? runtimeVersion, string? runtimeArchitecture)
-        {
-            OSPlatform = osPlatform;
-            OSVersion = osVersion;
-            OSArchitecture = osArchitecture;
-            RuntimeName = runtimeName;
-            RuntimeVersion = runtimeVersion;
-            RuntimeArchitecture = runtimeArchitecture;
         }
     }
 
