@@ -224,7 +224,8 @@ namespace Datadog.Trace.Logging
 
         internal static void CleanLogFiles(string logsDirectory)
         {
-            var logDaysLimit = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogFileRetentionDays);
+            var logDaysLimit = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogFileRetentionDays) ?? "32";
+
             if (int.TryParse(logDaysLimit, out var days) && days > 0)
             {
                 var date = DateTime.Now.AddDays(-days);
