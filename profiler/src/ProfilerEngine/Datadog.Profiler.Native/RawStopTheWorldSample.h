@@ -19,6 +19,9 @@ public:
         sample.AddLabel(Label(Sample::GarbageCollectionGenerationLabel, std::to_string(Generation)));
         sample.AddLabel(Label(Sample::GarbageCollectionNumberLabel, std::to_string(Number)));
 
+        // set event type
+        sample.AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeStopTheWorld));
+
         BuildCallStack(sample, Generation);
     }
 

@@ -16,7 +16,7 @@
 
 std::vector<SampleValueType> StopTheWorldGCProvider::SampleTypeDefinitions(
     {
-        {"suspension-time", "nanoseconds"}
+        {"timeline", "nanoseconds"}
     });
 
 StopTheWorldGCProvider::StopTheWorldGCProvider(

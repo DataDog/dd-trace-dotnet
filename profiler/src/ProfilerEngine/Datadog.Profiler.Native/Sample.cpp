@@ -15,6 +15,9 @@ const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
 const std::string Sample::GarbageCollectionGenerationLabel = "generation";
 const std::string Sample::GarbageCollectionNumberLabel = "number";
+const std::string Sample::TimelineEventTypeLabel = "event";
+const std::string Sample::TimelineEventTypeStopTheWorld = "stw";
+const std::string Sample::TimelineEventTypeGarbageCollection = "gc";
 
 
 // TODO: update the values vector size if more than 16 slots are needed
