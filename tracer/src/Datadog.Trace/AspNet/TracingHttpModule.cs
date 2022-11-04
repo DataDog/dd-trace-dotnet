@@ -149,7 +149,7 @@ namespace Datadog.Trace.AspNet
                 scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
-                if (Security.Instance.Settings.Enabled)
+                if (tracer.Settings.IpHeaderEnabled || Security.Instance.Settings.Enabled)
                 {
                     Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => httpRequest.Headers[key], tracer.Settings.IpHeader, tags);
                 }
