@@ -244,8 +244,7 @@ namespace Datadog.Trace.Agent.MessagePack
             // represents a downstream service or external dependency
             if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
             {
-                count += 2;
-
+                count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
 
