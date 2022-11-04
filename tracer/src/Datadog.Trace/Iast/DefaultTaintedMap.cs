@@ -114,6 +114,8 @@ internal class DefaultTaintedMap : ITaintedMap
         {
             Purge();
         }
+
+        referenceList.Enqueue(entry);
     }
 
     /// <summary>
