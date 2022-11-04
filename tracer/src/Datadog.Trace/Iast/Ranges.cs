@@ -3,12 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.Iast;
 internal class Ranges
 {
     // public static Range[] EMPTY = new Range[0];
 
-    public static Range[] ForString(string obj, Source source)
+    public static Range[] ForString(string obj, Source? source)
     {
         return new Range[] { new Range(0, obj.Length, source) };
     }
