@@ -221,23 +221,23 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add "_dd.origin" tag to all spans
-            var origin = model.TraceChunk.Origin;
+            var originRawBytes = MessagePackStringCache.GetEnvironmentBytes(model.TraceChunk.Origin);
 
-            if (origin is not null)
+            if (originRawBytes is not null)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackStringCache.GetEnvironmentBytes(origin));
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, originRawBytes);
             }
 
             // add "env" to all spans
-            var env = model.TraceChunk.Environment;
+            var envRawBytes = MessagePackStringCache.GetEnvironmentBytes(model.TraceChunk.Environment);
 
-            if (env is not null)
+            if (envRawBytes is not null)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackStringCache.GetEnvironmentBytes(env));
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, envRawBytes);
             }
 
             // add "language=dotnet" and "version" tags to all spans, except those that
@@ -248,13 +248,13 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
 
-                var version = model.TraceChunk.ServiceVersion;
+                var versionRawBytes = MessagePackStringCache.GetEnvironmentBytes(model.TraceChunk.ServiceVersion);
 
-                if (version is not null)
+                if (versionRawBytes is not null)
                 {
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackStringCache.GetEnvironmentBytes(version));
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, versionRawBytes);
                 }
             }
 
