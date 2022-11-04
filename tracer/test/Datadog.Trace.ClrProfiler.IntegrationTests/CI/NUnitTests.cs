@@ -55,7 +55,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             try
             {
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
-                SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {

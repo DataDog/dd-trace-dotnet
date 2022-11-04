@@ -114,9 +114,6 @@ namespace Datadog.Trace.Ci.Tagging
                 case "test.status": 
                     Status = value;
                     break;
-                case "library_version": 
-                    LibraryVersion = value;
-                    break;
                 case "ci.provider.name": 
                     CIProvider = value;
                     break;
@@ -182,6 +179,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "_dd.ci.env_vars": 
                     CiEnvVars = value;
+                    break;
+                case "library_version": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(TestSessionSpanTags));
                     break;
                 default: 
                     base.SetTag(key, value);

@@ -28,7 +28,6 @@ internal partial class TestSuiteSpanTags : TestModuleSpanTags
         GitCommit = moduleTags.GitCommit;
         GitRepository = moduleTags.GitRepository;
         GitTag = moduleTags.GitTag;
-        LibraryVersion = moduleTags.LibraryVersion;
         ModuleId = moduleTags.ModuleId;
         SessionId = moduleTags.SessionId;
         RuntimeArchitecture = moduleTags.RuntimeArchitecture;

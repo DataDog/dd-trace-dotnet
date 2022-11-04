@@ -1,4 +1,4 @@
-﻿// <copyright file="TestSpanTags.cs" company="Datadog">
+// <copyright file="TestSpanTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -30,7 +30,6 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         GitCommit = suiteTags.GitCommit;
         GitRepository = suiteTags.GitRepository;
         GitTag = suiteTags.GitTag;
-        LibraryVersion = suiteTags.LibraryVersion;
         ModuleId = suiteTags.ModuleId;
         SessionId = suiteTags.SessionId;
         RuntimeArchitecture = suiteTags.RuntimeArchitecture;

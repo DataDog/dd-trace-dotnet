@@ -81,7 +81,6 @@ public sealed class TestModule
                 GitCommitCommitterEmail = sessionSpanTags.GitCommitCommitterEmail,
                 GitCommitMessage = sessionSpanTags.GitCommitMessage,
                 BuildSourceRoot = sessionSpanTags.BuildSourceRoot,
-                LibraryVersion = TracerConstants.AssemblyVersion,
                 RuntimeName = frameworkDescription.Name,
                 RuntimeVersion = frameworkDescription.ProductVersion,
                 RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
@@ -103,28 +102,6 @@ public sealed class TestModule
                 Module = name,
                 Framework = framework,
                 FrameworkVersion = frameworkVersion,
-                CIProvider = environment.Provider,
-                CIPipelineId = environment.PipelineId,
-                CIPipelineName = environment.PipelineName,
-                CIPipelineNumber = environment.PipelineNumber,
-                CIPipelineUrl = environment.PipelineUrl,
-                CIJobName = environment.JobName,
-                CIJobUrl = environment.JobUrl,
-                StageName = environment.StageName,
-                CIWorkspacePath = environment.WorkspacePath,
-                GitRepository = environment.Repository,
-                GitCommit = environment.Commit,
-                GitBranch = environment.Branch,
-                GitTag = environment.Tag,
-                GitCommitAuthorDate = environment.AuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
-                GitCommitAuthorName = environment.AuthorName,
-                GitCommitAuthorEmail = environment.AuthorEmail,
-                GitCommitCommitterDate = environment.CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
-                GitCommitCommitterName = environment.CommitterName,
-                GitCommitCommitterEmail = environment.CommitterEmail,
-                GitCommitMessage = environment.Message,
-                BuildSourceRoot = environment.SourceRoot,
-                LibraryVersion = TracerConstants.AssemblyVersion,
                 RuntimeName = frameworkDescription.Name,
                 RuntimeVersion = frameworkDescription.ProductVersion,
                 RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
@@ -133,10 +110,7 @@ public sealed class TestModule
                 OSVersion = CIVisibility.GetOperatingSystemVersion(),
             };
 
-            if (environment.VariablesToBypass is { } variablesToBypass)
-            {
-                tags.CiEnvVars = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass);
-            }
+            tags.SetCIEnvironmentValues(environment);
 
             // Extract session variables (from out of process sessions)
             var environmentVariables = EnvironmentHelpers.GetEnvironmentVariables();

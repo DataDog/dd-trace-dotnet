@@ -15,6 +15,7 @@ using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -56,7 +57,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, "1");
-                SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
 
                 using var logsIntake = new MockLogsIntakeForCiVisibility();
                 EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
@@ -102,9 +102,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.True(tests.All(t => t.TestModuleId == testSuites[0].TestModuleId));
 
                         // Check Session
-                        Assert.True(tests.All(t => t.TestSessionId == testSuites[0].TestSessionId));
-                        Assert.True(testSuites[0].TestSessionId == testModules[0].TestSessionId);
-                        Assert.True(testModules[0].TestSessionId == sessionId);
+                        tests.Should().OnlyContain(t => t.TestSessionId == testSuites[0].TestSessionId);
+                        testSuites[0].TestSessionId.Should().Be(testModules[0].TestSessionId);
+                        testModules[0].TestSessionId.Should().Be(sessionId);
 
                         // ***************************************************************************
 

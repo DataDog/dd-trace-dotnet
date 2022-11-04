@@ -44,34 +44,9 @@ public sealed class TestSession
         {
             Command = command ?? string.Empty,
             WorkingDirectory = WorkingDirectory,
-            CIProvider = environment.Provider,
-            CIPipelineId = environment.PipelineId,
-            CIPipelineName = environment.PipelineName,
-            CIPipelineNumber = environment.PipelineNumber,
-            CIPipelineUrl = environment.PipelineUrl,
-            CIJobName = environment.JobName,
-            CIJobUrl = environment.JobUrl,
-            StageName = environment.StageName,
-            CIWorkspacePath = environment.WorkspacePath,
-            GitRepository = environment.Repository,
-            GitCommit = environment.Commit,
-            GitBranch = environment.Branch,
-            GitTag = environment.Tag,
-            GitCommitAuthorDate = environment.AuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
-            GitCommitAuthorName = environment.AuthorName,
-            GitCommitAuthorEmail = environment.AuthorEmail,
-            GitCommitCommitterDate = environment.CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
-            GitCommitCommitterName = environment.CommitterName,
-            GitCommitCommitterEmail = environment.CommitterEmail,
-            GitCommitMessage = environment.Message,
-            BuildSourceRoot = environment.SourceRoot,
-            LibraryVersion = TracerConstants.AssemblyVersion,
         };
 
-        if (environment.VariablesToBypass is { } variablesToBypass)
-        {
-            tags.CiEnvVars = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass);
-        }
+        tags.SetCIEnvironmentValues(environment);
 
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",

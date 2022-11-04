@@ -29,12 +29,9 @@ internal readonly struct DictionaryGetterAndSetter : ICarrierGetter<IDictionary>
 
     public IEnumerable<string?> Get(IDictionary carrier, string key)
     {
-        if (_keyProcessor is not null)
-        {
-            key = _keyProcessor.Invoke(key);
-        }
+        key = _keyProcessor?.Invoke(key) ?? key;
 
-        if (carrier is not null && carrier.TryGetValue<string>(key, out var value))
+        if (carrier?.TryGetValue<string>(key, out var value) == true)
         {
             return new[] { value };
         }
@@ -44,11 +41,7 @@ internal readonly struct DictionaryGetterAndSetter : ICarrierGetter<IDictionary>
 
     public void Set(IDictionary carrier, string key, string value)
     {
-        if (_keyProcessor is not null)
-        {
-            key = _keyProcessor.Invoke(key);
-        }
-
+        key = _keyProcessor?.Invoke(key) ?? key;
         carrier[key] = value;
     }
 }
