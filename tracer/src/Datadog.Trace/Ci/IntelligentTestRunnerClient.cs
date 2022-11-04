@@ -75,17 +75,7 @@ internal class IntelligentTestRunnerClient
         _customConfigurations = null;
 
         // Extract custom tests configurations from DD_TAGS
-        var globalTags = _settings.TracerSettings.GlobalTags;
-        foreach (var tag in globalTags)
-        {
-            const string testConfigKey = "test.configuration.";
-            if (tag.Key.StartsWith(testConfigKey, StringComparison.OrdinalIgnoreCase))
-            {
-                var key = tag.Key.Substring(testConfigKey.Length);
-                _customConfigurations ??= new Dictionary<string, string>();
-                _customConfigurations[key] = tag.Value;
-            }
-        }
+        _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
 
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _getBranchNameTask = GetBranchNameAsync();
@@ -145,6 +135,31 @@ internal class IntelligentTestRunnerClient
             _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
             _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{skippableTestsUrlPath}");
         }
+    }
+
+    internal static Dictionary<string, string>? GetCustomTestsConfigurations(IDictionary<string, string> globalTags)
+    {
+        Dictionary<string, string>? customConfiguration = null;
+        if (globalTags is not null)
+        {
+            foreach (var tag in globalTags)
+            {
+                const string testConfigKey = "test.configuration.";
+                if (tag.Key.StartsWith(testConfigKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    var key = tag.Key.Substring(testConfigKey.Length);
+                    if (string.IsNullOrEmpty(key))
+                    {
+                        continue;
+                    }
+
+                    customConfiguration ??= new Dictionary<string, string>();
+                    customConfiguration[key] = tag.Value;
+                }
+            }
+        }
+
+        return customConfiguration;
     }
 
     public async Task<long> UploadRepositoryChangesAsync()
