@@ -102,7 +102,7 @@ public class TraceContextPropertyTests
             scope.Span.Context.TraceContext.Origin = before;
         }
 
-        await AssertTag("origin", after);
+        await AssertTag("_dd.origin", after);
     }
 
     private static Scope CreateTrace(Tracer tracer)
