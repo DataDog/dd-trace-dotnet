@@ -191,6 +191,32 @@ namespace ");
                 ");
                 }
 
+                var haveReadOnlyTags = false;
+                for (int i = 0; i < tagList.TagProperties.Count; i++)
+                {
+                    var property = tagList.TagProperties[i];
+                    if (property.IsReadOnly)
+                    {
+                        haveReadOnlyTags = true;
+                        sb.Append(@"case """)
+                          .Append(property.TagValue)
+                          .Append(
+                               @""": 
+                ");
+                    }
+                }
+
+                if (haveReadOnlyTags)
+                {
+                    sb
+                       .Append(@"    Logger.Value.Warning(""Attempted to set readonly tag {TagName} on {TagType}. Ignoring."", key, nameof(")
+                       .Append(tagList.ClassName)
+                       .Append(
+                            @"));
+                    break;
+                ");
+                }
+
                 sb.Append(
                     @"default: 
                     base.SetTag(key, value);
@@ -302,6 +328,32 @@ namespace ");
                       .Append(property.PropertyName)
                       .Append(
                            @" = value;
+                    break;
+                ");
+                }
+
+                var haveReadOnlyMetrics = false;
+                for (int i = 0; i < tagList.MetricProperties.Count; i++)
+                {
+                    var property = tagList.MetricProperties[i];
+                    if (property.IsReadOnly)
+                    {
+                        haveReadOnlyMetrics = true;
+                        sb.Append(@"case """)
+                          .Append(property.TagValue)
+                          .Append(
+                               @""": 
+                ");
+                    }
+                }
+
+                if (haveReadOnlyMetrics)
+                {
+                    sb
+                       .Append(@"    Logger.Value.Warning(""Attempted to set readonly metric {MetricName} on {TagType}. Ignoring."", key, nameof(")
+                       .Append(tagList.ClassName)
+                       .Append(
+                            @"));
                     break;
                 ");
                 }

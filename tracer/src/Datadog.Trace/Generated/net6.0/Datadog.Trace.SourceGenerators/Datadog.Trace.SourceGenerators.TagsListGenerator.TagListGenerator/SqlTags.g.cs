@@ -54,6 +54,9 @@ namespace Datadog.Trace.Tagging
                 case "out.host": 
                     OutHost = value;
                     break;
+                case "span.kind": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(SqlTags));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;

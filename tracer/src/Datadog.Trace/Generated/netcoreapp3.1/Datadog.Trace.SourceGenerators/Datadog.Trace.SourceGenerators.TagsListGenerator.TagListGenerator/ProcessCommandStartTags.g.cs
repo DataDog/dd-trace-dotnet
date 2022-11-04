@@ -30,6 +30,9 @@ namespace Datadog.Trace.Tagging
                 case "cmd.environment_variables": 
                     EnvironmentVariables = value;
                     break;
+                case "span.kind": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(ProcessCommandStartTags));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;

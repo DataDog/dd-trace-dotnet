@@ -12,6 +12,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Coverage.Models;
 using Datadog.Trace.Ci.EventModel;
+using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -30,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
 
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new TestSpanTags());
             span.Type = SpanTypes.Test;
             span.SetTag(TestTags.Type, TestTags.TypeTest);
 
