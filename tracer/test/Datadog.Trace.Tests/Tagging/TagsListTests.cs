@@ -174,7 +174,7 @@ namespace Datadog.Trace.Tests.Tagging
             var traceChunks = _testApi.Wait();
             var deserializedSpan = traceChunks.Single().Single(s => s.ParentId > 0);
 
-            // deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
+            deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Count.Should().Be(customTagCount + 2);
 
