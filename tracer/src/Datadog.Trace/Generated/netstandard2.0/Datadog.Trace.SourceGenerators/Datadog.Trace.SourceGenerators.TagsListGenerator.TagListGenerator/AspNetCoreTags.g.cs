@@ -27,11 +27,11 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "aspnet_core.route": 
                     AspNetCoreRoute = value;
-                    break;
-                case "component": 
-                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AspNetCoreTags));
                     break;
                 default: 
                     base.SetTag(key, value);
