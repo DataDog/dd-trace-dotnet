@@ -3,15 +3,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging
 {
     internal abstract class TagsList : ITags
     {
+        protected static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor<TagsList>());
         private List<KeyValuePair<string, string>> _tags;
         private List<KeyValuePair<string, double>> _metrics;
 

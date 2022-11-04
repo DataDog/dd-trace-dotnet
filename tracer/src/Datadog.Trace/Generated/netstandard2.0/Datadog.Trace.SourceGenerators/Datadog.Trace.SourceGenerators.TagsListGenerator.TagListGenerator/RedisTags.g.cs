@@ -48,6 +48,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 case "out.port": 
                     Port = value;
                     break;
+                case "span.kind": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(RedisTags));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;
