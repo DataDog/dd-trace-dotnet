@@ -15,6 +15,7 @@
 
 #include "GarbageCollection.h"
 #include "IAllocationsListener.h"
+#include "IGarbageCollectionsListener.h"
 #include "IGCSuspensionsListener.h"
 
 #include "shared/src/native-src/string.h"
@@ -104,7 +105,7 @@ struct GCDetails
     GCType Type;
     bool IsCompacting;
     uint64_t PauseDuration;
-    uint64_t Timestamp;
+    uint64_t StartTimestamp;
 };
 
 class ClrEventsParser
@@ -117,7 +118,9 @@ public:
     ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo,
                     IAllocationsListener* pAllocationListener,
                     IContentionListener* pContentionListener,
-                    IGCSuspensionsListener* pGCSuspensionsListener);
+                    IGCSuspensionsListener* pGCSuspensionsListener,
+                    IGarbageCollectionsListener* pGarbageCollectionsListener
+                    );
 
     void ParseEvent(EVENTPIPE_PROVIDER provider,
                     DWORD eventId,
@@ -154,7 +157,9 @@ private:
         GCType type,
         bool isCompacting,
         uint64_t pauseDuration,
-        uint64_t timestamp);
+        uint64_t totalDuration,
+        uint64_t endTimestamp
+        );
     GCDetails& GetCurrentGC();
     void InitializeGC(GCDetails& gc, GCStartPayload& payload);
     void ClearCollections();
@@ -194,7 +199,8 @@ private:
     ICorProfilerInfo12* _pCorProfilerInfo = nullptr;
     IAllocationsListener* _pAllocationListener = nullptr;
     IContentionListener* _pContentionListener = nullptr;
-    IGCSuspensionsListener* _pGCSuspensionsListener;
+    IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
+    IGarbageCollectionsListener* _pGarbageCollectionsListener = nullptr;
 
  // state for garbage collection details including Stop The World duration
 private:
@@ -213,6 +219,7 @@ private:
 
     // Events emitted during garbage collection lifetime
     // read https://medium.com/criteo-engineering/spying-on-net-garbage-collector-with-net-core-eventpipes-9f2a986d5705?source=friends_link&sk=baf9a7766fb5c7899b781f016803597f
+    //  and https://www.codeproject.com/Articles/1127179/Visualising-the-NET-Garbage-Collector
     // for more details
     const int EVENT_GC_TRIGGERED = 35;
     const int EVENT_GC_START = 1;                 // V2

@@ -275,7 +275,19 @@
     <ClInclude Include="RawStopTheWorldSample.h">
       <Filter>GarbageCollections</Filter>
     </ClInclude>
+    <ClInclude Include="IGarbageCollectionsListener.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
     <ClInclude Include="GarbageCollection.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="GarbageCollectionProvider.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="RawGarbageCollectionSample.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="GCBaseRawSample.h">
       <Filter>GarbageCollections</Filter>
     </ClInclude>
   </ItemGroup>
@@ -410,6 +422,9 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="StopTheWorldGCProvider.cpp">
+      <Filter>GarbageCollections</Filter>
+    </ClCompile>
+    <ClCompile Include="GarbageCollectionProvider.cpp">
       <Filter>GarbageCollections</Filter>
     </ClCompile>
   </ItemGroup>

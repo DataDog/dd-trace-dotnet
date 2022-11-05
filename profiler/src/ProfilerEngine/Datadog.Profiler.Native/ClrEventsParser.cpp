@@ -14,28 +14,32 @@
 
 
 const bool LogGcEvents = false;
-#define LOG_GC_EVENT(x)                     \
-{                                           \
-    if (LogGcEvents)                        \
-    {                                       \
-        std::cout                           \
-        << OpSysTools::GetThreadId()        \
+#define LOG_GC_EVENT(x)                         \
+{                                               \
+    if (LogGcEvents)                            \
+    {                                           \
+        std::stringstream builder;              \
+        builder << OpSysTools::GetThreadId()    \
         << " " << ((_gcInProgress.Number != -1) ? "F" : ((_currentBGC.Number != -1) ? "B" : " "))   \
-        << GetCurrentGC().Number    \
-        << " | " << x << std::endl;         \
-    }                                       \
-}                                           \
+        << GetCurrentGC().Number                \
+        << " | " << x << std::endl;             \
+        std::cout << builder.str();             \
+    }                                           \
+}                                               \
+
 
 ClrEventsParser::ClrEventsParser(
     ICorProfilerInfo12* pCorProfilerInfo,
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
-    IGCSuspensionsListener* pGCSuspensionsListener)
+    IGCSuspensionsListener* pGCSuspensionsListener,
+    IGarbageCollectionsListener* pGarbageCollectionsListener)
     :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pAllocationListener{pAllocationListener},
     _pContentionListener{pContentionListener},
-    _pGCSuspensionsListener{pGCSuspensionsListener}
+    _pGCSuspensionsListener{pGCSuspensionsListener},
+    _pGarbageCollectionsListener{pGarbageCollectionsListener}
 {
     ClearCollections();
 }
@@ -284,9 +288,23 @@ void ClrEventsParser::NotifyGarbageCollection(
     GCType type,
     bool isCompacting,
     uint64_t pauseDuration,
-    uint64_t timestamp)
+    uint64_t totalDuration,
+    uint64_t endTimestamp
+    )
 {
-    // TODO: when we will need to have per GC information such as reason, type and compacting
+    if (_pGarbageCollectionsListener != nullptr)
+    {
+        _pGarbageCollectionsListener->OnGarbageCollection(
+            number,
+            generation,
+            reason,
+            type,
+            isCompacting,
+            pauseDuration,
+            totalDuration,
+            endTimestamp
+            );
+    }
 }
 
 GCDetails& ClrEventsParser::GetCurrentGC()
@@ -313,7 +331,7 @@ void ClrEventsParser::ResetGC(GCDetails& gc)
     gc.Type = (GCType)0;
     gc.IsCompacting = false;
     gc.PauseDuration;
-    gc.Timestamp = 0;
+    gc.StartTimestamp = 0;
 }
 
 void ClrEventsParser::InitializeGC(GCDetails& gc, GCStartPayload& payload)
@@ -324,7 +342,7 @@ void ClrEventsParser::InitializeGC(GCDetails& gc, GCStartPayload& payload)
     gc.Type = (GCType)payload.Type;
     gc.IsCompacting = false;
     gc.PauseDuration = 0;
-    gc.Timestamp = GetCurrentTimestamp();
+    gc.StartTimestamp = GetCurrentTimestamp();
 }
 
 void ClrEventsParser::OnGCTriggered()
@@ -391,7 +409,17 @@ void ClrEventsParser::OnGCRestartEEEnd()
         (gc.Generation < 2) ||
         (gc.Type == GCType::NonConcurrentGC))
     {
-        NotifyGarbageCollection(gc.Number, gc.Generation, gc.Reason, gc.Type, gc.IsCompacting, gc.PauseDuration, gc.Timestamp);
+        auto endTimestamp = GetCurrentTimestamp();
+        NotifyGarbageCollection(
+            gc.Number,
+            gc.Generation,
+            gc.Reason,
+            gc.Type,
+            gc.IsCompacting,
+            gc.PauseDuration,
+            endTimestamp - gc.StartTimestamp,
+            endTimestamp
+            );
         _gcInProgress.Number = -1;
         return;
     }
@@ -411,7 +439,17 @@ void ClrEventsParser::OnGCHeapStats()
         (_currentBGC.Number != -1) &&
         (gc.Generation < 2))
     {
-        NotifyGarbageCollection(gc.Number, gc.Generation, gc.Reason, gc.Type, gc.IsCompacting, gc.PauseDuration, gc.Timestamp);
+        auto endTimestamp = GetCurrentTimestamp();
+        NotifyGarbageCollection(
+            gc.Number,
+            gc.Generation,
+            gc.Reason,
+            gc.Type,
+            gc.IsCompacting,
+            gc.PauseDuration,
+            endTimestamp - gc.StartTimestamp,
+            endTimestamp
+            );
         ResetGC(_gcInProgress);
     }
 }
@@ -439,7 +477,17 @@ void ClrEventsParser::OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload)
             return;
         }
 
-        NotifyGarbageCollection(gc.Number, gc.Generation, gc.Reason, gc.Type, gc.IsCompacting, gc.PauseDuration, gc.Timestamp);
+        auto endTimestamp = GetCurrentTimestamp();
+        NotifyGarbageCollection(
+            gc.Number,
+            gc.Generation,
+            gc.Reason,
+            gc.Type,
+            gc.IsCompacting,
+            gc.PauseDuration,
+            endTimestamp - gc.StartTimestamp,
+            endTimestamp
+            );
 
         ClearCollections();
     }

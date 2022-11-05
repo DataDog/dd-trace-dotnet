@@ -20,8 +20,7 @@ class StopTheWorldGCProvider
     public CollectorBase<RawStopTheWorldSample>,
     public IGCSuspensionsListener
 {
-public:
-    static std::vector<SampleValueType> SampleTypeDefinitions;
+// use the same sample type definition as the GarbageCollectorProvider
 
 public:
     StopTheWorldGCProvider(

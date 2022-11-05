@@ -193,10 +193,18 @@ bool CorProfilerCallback::InitializeServices()
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
-            // Use the another value type as the Wall time profiler to avoid double count
-            auto valueTypes = StopTheWorldGCProvider::SampleTypeDefinitions;
+            // Use the same value type for timeline
+            auto valueTypes = GarbageCollectionProvider::SampleTypeDefinitions;
             sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
+                valuesOffset,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore,
+                _pConfiguration.get()
+                );
+            _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
                 valuesOffset,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
@@ -209,6 +217,7 @@ bool CorProfilerCallback::InitializeServices()
         else
         {
             _pStopTheWorldProvider = nullptr;
+            _pGarbageCollectionProvider = nullptr;
         }
 
         // TODO: add new CLR events-based providers to the event parser
@@ -216,7 +225,8 @@ bool CorProfilerCallback::InitializeServices()
             _pCorProfilerInfoEvents,
             _pAllocationsProvider,
             _pContentionProvider,
-            _pStopTheWorldProvider
+            _pStopTheWorldProvider,
+            _pGarbageCollectionProvider
             );
     }
 
@@ -282,6 +292,7 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
             _pSamplesCollector->Register(_pStopTheWorldProvider);
+            _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
     }
 
@@ -910,6 +921,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     if (_pStopTheWorldProvider != nullptr)
     {
         _pStopTheWorldProvider->Stop();
+    }
+
+    if (_pGarbageCollectionProvider != nullptr)
+    {
+        _pGarbageCollectionProvider->Stop();
     }
 
     // dump all threads time

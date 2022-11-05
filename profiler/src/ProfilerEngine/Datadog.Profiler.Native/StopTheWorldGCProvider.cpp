@@ -14,10 +14,6 @@
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
-std::vector<SampleValueType> StopTheWorldGCProvider::SampleTypeDefinitions(
-    {
-        {"timeline", "nanoseconds"}
-    });
 
 StopTheWorldGCProvider::StopTheWorldGCProvider(
     uint32_t valueOffset,

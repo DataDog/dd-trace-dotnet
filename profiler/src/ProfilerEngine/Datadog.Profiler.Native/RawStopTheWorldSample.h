@@ -3,65 +3,17 @@
 
 #pragma once
 
+#include "GCBaseRawSample.h"
 #include "RawSample.h"
 #include "Sample.h"
 
-class RawStopTheWorldSample : public RawSample
+class RawStopTheWorldSample : public GCBaseRawSample
 {
 public:
-    inline void OnTransform(Sample& sample, uint32_t valueOffset) const override
+    // Duration is the suspension time so default sample value
+    virtual void DoAdditionalTransform(Sample& sample, uint32_t valueOffset) const
     {
-        uint32_t durationIndex = valueOffset;
-
-        sample.AddValue(Duration, durationIndex);
-
-        // TODO: should we use constant string for generations "0", "1" and "2"?
-        sample.AddLabel(Label(Sample::GarbageCollectionGenerationLabel, std::to_string(Generation)));
-        sample.AddLabel(Label(Sample::GarbageCollectionNumberLabel, std::to_string(Number)));
-
         // set event type
         sample.AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeStopTheWorld));
-
-        BuildCallStack(sample, Generation);
-    }
-
-public:
-     int32_t Number;
-     uint32_t Generation;
-     int64_t Duration;
-
-private:
-    // each Stop the World garbage collection will share the same root frame and the second one will show the collected generation
-    static constexpr inline std::string_view EmptyModule = "CLR";
-    static constexpr inline std::string_view RootFrame = "|lm: |ns: |ct: |fn:Garbage Collector";
-    static constexpr inline std::string_view Gen0Frame = "|lm: |ns: |ct: |fn:gen0";
-    static constexpr inline std::string_view Gen1Frame = "|lm: |ns: |ct: |fn:gen1";
-    static constexpr inline std::string_view Gen2Frame = "|lm: |ns: |ct: |fn:gen2";
-    static constexpr inline std::string_view UnknownGenerationFrame = "|lm: |ns: |ct: |fn:unknown";
-
-    void BuildCallStack(Sample& sample, uint32_t generation) const
-    {
-        // add same root frame
-        sample.AddFrame(EmptyModule, RootFrame);
-
-        // add generation based frame
-        switch (generation)
-        {
-            case 0:
-                sample.AddFrame(EmptyModule, Gen0Frame);
-                break;
-
-            case 1:
-                sample.AddFrame(EmptyModule, Gen1Frame);
-                break;
-
-            case 2:
-                sample.AddFrame(EmptyModule, Gen2Frame);
-                break;
-
-            default:
-                sample.AddFrame(EmptyModule, UnknownGenerationFrame);
-                break;
-        }
     }
 };

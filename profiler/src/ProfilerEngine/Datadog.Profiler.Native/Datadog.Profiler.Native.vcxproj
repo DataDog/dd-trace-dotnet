@@ -239,6 +239,10 @@
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="GarbageCollection.h" />
+    <ClInclude Include="GCBaseRawSample.h" />
+    <ClInclude Include="GarbageCollectionProvider.h" />
+    <ClInclude Include="IGarbageCollectionsListener.h" />
+    <ClInclude Include="RawGarbageCollectionSample.h" />
     <ClInclude Include="StopTheWorldGCProvider.h" />
     <ClInclude Include="GenericSampler.h" />
     <ClInclude Include="GroupSampler.h" />
@@ -335,6 +339,7 @@
     <ClCompile Include="ExceptionsProvider.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
+    <ClCompile Include="GarbageCollectionProvider.cpp" />
     <ClCompile Include="StopTheWorldGCProvider.cpp" />
     <ClCompile Include="GenericSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />

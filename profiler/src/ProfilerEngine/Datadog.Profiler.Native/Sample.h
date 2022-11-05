@@ -86,6 +86,9 @@ public:
     static const std::string TimelineEventTypeLabel;
     static const std::string TimelineEventTypeStopTheWorld;
     static const std::string TimelineEventTypeGarbageCollection;
+    static const std::string GarbageCollectionReasonLabel;
+    static const std::string GarbageCollectionTypeLabel;
+    static const std::string GarbageCollectionCompactingLabel;
 
 private:
     uint64_t _timestamp;
