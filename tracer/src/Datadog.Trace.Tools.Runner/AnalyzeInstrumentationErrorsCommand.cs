@@ -25,14 +25,15 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
         var process = $"'{settings.ProcessName ?? "na"}'";
         if (settings.Pid != null)
         {
-            process += ", ID: " + settings.Pid;
+            process += ", pid: " + settings.Pid;
         }
 
-        AnsiConsole.WriteLine("Running instrumentation error analysis on process " + process);
-        if (!string.IsNullOrEmpty(settings.Method))
+        if (!string.IsNullOrEmpty(settings.LogDirectory))
         {
-            AnsiConsole.WriteLine("Error was in method " + "." + settings.Method);
+            process += ", log path is: " + settings.LogDirectory;
         }
+
+        AnsiConsole.WriteLine("Running instrumentation error analysis on process: " + process);
 
         var logDirectory = GetLogDirectory(settings.LogDirectory, settings.Pid);
         if (logDirectory == null)
@@ -49,7 +50,7 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
             return -1;
         }
 
-        var generatorArgs = new AssemblyGeneratorArgs(processLogDir, modulesToVerify: settings.Module == null ? null : new[] { settings.Module });
+        var generatorArgs = new AssemblyGeneratorArgs(processLogDir, modulesToVerify: null);
 
         var exportedModulesPathsAndMethods = InstrumentedAssemblyGeneration.Generate(generatorArgs);
 
@@ -121,21 +122,19 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
             return logDirectory;
         }
 
-        if (pid == null)
+        if (pid != null)
         {
-            return null;
-        }
-
-        var process = ProcessInfo.GetProcessInfo(pid.Value);
-        logDirectory = process?.Configuration?.GetString(ConfigurationKeys.LogDirectory);
-        if (logDirectory == null)
-        {
-#pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
-            var nativeLogFile = process?.Configuration?.GetString(ConfigurationKeys.ProfilerLogPath);
-#pragma warning restore 618
-            if (!string.IsNullOrEmpty(nativeLogFile))
+            var process = ProcessInfo.GetProcessInfo(pid.Value);
+            logDirectory = process?.Configuration?.GetString(ConfigurationKeys.LogDirectory);
+            if (logDirectory == null)
             {
-                logDirectory = Path.GetDirectoryName(nativeLogFile);
+#pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
+                var nativeLogFile = process?.Configuration?.GetString(ConfigurationKeys.ProfilerLogPath);
+#pragma warning restore 618
+                if (!string.IsNullOrEmpty(nativeLogFile))
+                {
+                    logDirectory = Path.GetDirectoryName(nativeLogFile);
+                }
             }
         }
 
