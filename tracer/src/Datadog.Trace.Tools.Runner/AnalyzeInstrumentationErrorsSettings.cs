@@ -5,25 +5,23 @@
 
 #nullable enable
 
+using System.ComponentModel;
 using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
 {
     internal class AnalyzeInstrumentationErrorsSettings : CommandSettings
     {
-        [CommandArgument(0, "[name]")]
+        [Description("Sets the process name.")]
+        [CommandOption("--name <NAME>")]
         public string? ProcessName { get; set; }
 
-        [CommandArgument(1, "[pid]")]
+        [Description("Sets the process ID.")]
+        [CommandOption("--pid <PID>")]
         public int? Pid { get; set; }
 
-        [CommandArgument(2, "[log-dir]")]
+        [Description("Sets the instrumentation log folder path.")]
+        [CommandOption("--log-path <PATH>")]
         public string? LogDirectory { get; set; }
-
-        [CommandArgument(3, "[method]")]
-        public string? Method { get; set; }
-
-        [CommandArgument(4, "[module]")]
-        public string? Module { get; set; }
     }
 }
