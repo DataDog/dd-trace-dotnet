@@ -19,6 +19,12 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
+/// <summary>
+/// These tests require the Azure Function Core Tools to be installed
+/// You can read how to install them here: https://github.com/Azure/azure-functions-core-tools
+/// Note that you need a _Different_ version of the tools for V3 and V4
+/// And you can't install them side-by-side
+/// </summary>
 public abstract class AzureFunctionsTests : TestHelper
 {
     protected AzureFunctionsTests(string sampleAppName, ITestOutputHelper output)
@@ -26,6 +32,7 @@ public abstract class AzureFunctionsTests : TestHelper
     {
         // Ensures we filter out the host span requests etc
         SetEnvironmentVariable("DD_AZURE_APP_SERVICES", "1");
+        SetEnvironmentVariable("DD_API_KEY", "NOT_SET"); // required for tracing to activate
         SetEnvironmentVariable("WEBSITE_SITE_NAME", "AzureFunctionsAllTriggers");
         SetEnvironmentVariable("COMPUTERNAME", "IntegrationTestHost");
         SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet");

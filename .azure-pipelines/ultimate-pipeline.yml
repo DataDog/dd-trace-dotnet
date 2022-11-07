@@ -1018,7 +1018,6 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_azure_functions
-  condition: eq(variables['run_azure_functions_tests'], 'True')
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -1069,13 +1068,13 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading tracer logs
-      artifact: integration_tests_windows_azure_functions_tracer_logs_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      artifact: integration_tests_windows_azure_functions_tracer_logs_$(framework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_windows_azure_functions__snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      artifact: integration_tests_windows_azure_functions__snapshots_$(framework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
