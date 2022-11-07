@@ -201,6 +201,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";
 
+        public const string RareSamplerEnabled = "DD_APM_ENABLE_RARE_SAMPLER";
+
         /// <summary>
         /// Configuration key for enabling or disabling internal metrics sent to DogStatsD.
         /// Default value is <c>false</c> (disabled).
