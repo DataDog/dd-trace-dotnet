@@ -105,6 +105,23 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return result;
         }
 
+        internal string? GetProcessLogDirectory()
+        {
+            var logDirectory = Configuration?.GetString(ConfigurationKeys.LogDirectory);
+            if (logDirectory == null)
+            {
+#pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
+                var nativeLogFile = Configuration?.GetString(ConfigurationKeys.ProfilerLogPath);
+#pragma warning restore 618
+                if (!string.IsNullOrEmpty(nativeLogFile))
+                {
+                    logDirectory = Path.GetDirectoryName(nativeLogFile);
+                }
+            }
+
+            return logDirectory;
+        }
+
         private static Runtime DetectRuntime(string[] modules)
         {
             var result = Runtime.Unknown;

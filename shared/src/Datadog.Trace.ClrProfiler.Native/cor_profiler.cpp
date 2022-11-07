@@ -463,7 +463,11 @@ namespace datadog::shared::nativeloader
                     instrumented_assembly_generator::WriteTextToFile(instrumented_assembly_generator::ModulesFileName, moduleName);
                     if (instrumented_assembly_generator::IsCopyingOriginalsModulesEnabled())
                     {
-                        // by default this is disabled but we keep that option to be able to do the instrumentation verification on a offline environment
+                        // This option means we copy every loaded assembly to the InstrumentationVerification folder.
+                        // It is off by default, but can be useful as during an escalation, we can request that the customer turn it on,
+                        // and then the customer will only need to upload the contents of their logs folder (which contains the InstrumentationVerification folder) to us for offline analysis, 
+                        // so we won't have to ask the customer to go and locate wherever it was that the assembly was loaded from at runtime.
+                        // In most cases, this would hopefully not be necessary as the textual output of the `dd-trace analyze-instrumentation` command should suffice.
                         instrumented_assembly_generator::CopyOriginalModuleForInstrumentationVerification(modulePath);
                     }
                 }

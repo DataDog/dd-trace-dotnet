@@ -151,7 +151,9 @@ namespace Datadog.Trace.Tools.Runner
 
             config.AddCommand<AnalyzeInstrumentationErrorsCommand>("analyze-instrumentation")
                   .WithDescription("Analyze instrumentation errors")
-                  .WithExample("analyze-instrumentation [--name dotnet] [--pid 123456] [--log-path c:\\logs\\]".Split(' '));
+                  .WithExample("analyze-instrumentation [--process-name dotnet]".Split(' '))
+                  .WithExample("analyze-instrumentation [--pid 12345]".Split(' '))
+                  .WithExample("analyze-instrumentation [--log-path \"C:\\ProgramData\\Datadog .NET Tracer\\logs\\\"]".Split(' '));
         }
 
         private static int ExecuteLegacyCommandLine(string[] args, ApplicationContext applicationContext)

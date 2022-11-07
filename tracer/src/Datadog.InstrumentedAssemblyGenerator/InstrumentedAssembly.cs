@@ -3,7 +3,8 @@ using System.Collections.Generic;
 namespace Datadog.InstrumentedAssemblyGenerator
 {
     /// <summary>
-    /// Represents the results info of modified assembly and methods
+    /// Represents the modified assembly on disk, which contains all the metadata 
+    /// changes and IL bytecode instrumentation that we performed at runtime.
     /// </summary>
     public record InstrumentedAssembly
     {
@@ -14,7 +15,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
         {
             InstrumentedAssemblyPath = exportPath;
             OriginalAssemblyPath = originalPath;
-            InstrumentedMethods = modifiedMethods;
+            ModifiedMethods = modifiedMethods;
         }
 
         /// <summary>
@@ -30,6 +31,6 @@ namespace Datadog.InstrumentedAssemblyGenerator
         /// <summary>
         /// Instrumented methods - List of <see cref="ModifiedMethod"/>
         /// </summary>
-        public List<ModifiedMethod> InstrumentedMethods { get; }
+        public List<ModifiedMethod> ModifiedMethods { get; }
     }
 }

@@ -17,8 +17,9 @@ namespace Datadog.Trace.TestHelpers;
 internal static class InstrumentationVerification
 {
     /// <summary>
-    /// Configuration key for enabling or disabling the instrumentation verification.
-    /// Default is value is disabled in tests (should be enabled in production).
+    /// Configuration key for enabling or disabling writing the instrumentation changes to disk
+    /// (to allow for post-mortem instrumentation verification analysis).
+    /// Default value is enabled.
     /// </summary>
     public const string InstrumentationVerificationEnabled = "DD_WRITE_INSTRUMENTATION_TO_DISK";
 
@@ -41,7 +42,7 @@ internal static class InstrumentationVerification
             var result = new VerificationsRunner(
                 instrumentedAssembly.InstrumentedAssemblyPath,
                 instrumentedAssembly.OriginalAssemblyPath,
-                instrumentedAssembly.InstrumentedMethods.Select(m => (m.TypeName, m.MethodName)).ToList()).Run();
+                instrumentedAssembly.ModifiedMethods.Select(m => (m.TypeFullName, m.MethodAndArgumentsName)).ToList()).Run();
             results.Add(result);
         }
 
@@ -58,8 +59,7 @@ internal static class InstrumentationVerification
 
         if (!instrumentationLogsFolder.Exists)
         {
-            instrumentationLogsFolder = new DirectoryInfo(@"C:\ProgramData\Datadog-APM\logs\DotNet\InstrumentationVerification");
-            // throw new Exception($"Unable to find instrumentation verification directory at {instrumentationLogsFolder}");
+            throw new Exception($"Unable to find instrumentation verification directory at {instrumentationLogsFolder}");
         }
 
         string pattern = $"{processExecutableFileName}_{process.Id}_*"; // * wildcard matches process start time
