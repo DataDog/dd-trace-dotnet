@@ -30,6 +30,6 @@ public:
     GCReason Reason;
     GCType Type;
     bool IsCompacting;
-    uint64_t PauseDuration;
+    uint64_t PauseDuration;  // not used today
     uint64_t TotalDuration;
 };

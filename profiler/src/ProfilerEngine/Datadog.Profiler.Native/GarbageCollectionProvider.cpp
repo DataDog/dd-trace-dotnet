@@ -44,6 +44,7 @@ void GarbageCollectionProvider::OnGarbageCollection(
     rawSample.Generation = generation;
     rawSample.Duration = pauseDuration;
     rawSample.TotalDuration = totalDuration;
+    rawSample.PauseDuration = pauseDuration;
     rawSample.Reason = reason;
     rawSample.Type = type;
     rawSample.IsCompacting = isCompacting;
