@@ -370,6 +370,9 @@ namespace MyTests.TestListNameSpace
         [Tag(""IdTag"")]
     	public string Id { get; } = ""Some Value"";
 
+        [Tag(""TestId"")]
+    	public string Test { get; set; };
+
         [Tag(""NameTag"")]
     	public string Name => ""Some Name"";
     }
@@ -386,6 +389,8 @@ namespace MyTests.TestListNameSpace
     {
         // IdBytes = System.Text.Encoding.UTF8.GetBytes(""IdTag"");
         private static readonly byte[] IdBytes = new byte[] { 73, 100, 84, 97, 103 };
+        // TestBytes = System.Text.Encoding.UTF8.GetBytes(""TestId"");
+        private static readonly byte[] TestBytes = new byte[] { 84, 101, 115, 116, 73, 100 };
         // NameBytes = System.Text.Encoding.UTF8.GetBytes(""NameTag"");
         private static readonly byte[] NameBytes = new byte[] { 78, 97, 109, 101, 84, 97, 103 };
 
@@ -394,6 +399,7 @@ namespace MyTests.TestListNameSpace
             return key switch
             {
                 ""IdTag"" => Id,
+                ""TestId"" => Test,
                 ""NameTag"" => Name,
                 _ => base.GetTag(key),
             };
@@ -403,6 +409,13 @@ namespace MyTests.TestListNameSpace
         {
             switch(key)
             {
+                case ""TestId"": 
+                    Test = value;
+                    break;
+                case ""IdTag"": 
+                case ""NameTag"": 
+                    Logger.Value.Warning(""Attempted to set readonly tag {TagName} on {TagType}. Ignoring."", key, nameof(TestList));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;
@@ -414,6 +427,11 @@ namespace MyTests.TestListNameSpace
             if (Id is not null)
             {
                 processor.Process(new TagItem<string>(""IdTag"", Id, IdBytes));
+            }
+
+            if (Test is not null)
+            {
+                processor.Process(new TagItem<string>(""TestId"", Test, TestBytes));
             }
 
             if (Name is not null)
@@ -430,6 +448,13 @@ namespace MyTests.TestListNameSpace
             {
                 sb.Append(""IdTag (tag):"")
                   .Append(Id)
+                  .Append(',');
+            }
+
+            if (Test is not null)
+            {
+                sb.Append(""TestId (tag):"")
+                  .Append(Test)
                   .Append(',');
             }
 
@@ -461,6 +486,9 @@ namespace MyTests.TestListNameSpace
         [Metric(""IdMetric"")]
     	public double? Id { get; } = ""Some Value"";
 
+        [Metric(""TestId"")]
+    	public double? Test { get; set; }
+
         [Metric(""NameMetric"")]
     	public double? Name => ""Some Name"";
     }
@@ -477,6 +505,8 @@ namespace MyTests.TestListNameSpace
     {
         // IdBytes = System.Text.Encoding.UTF8.GetBytes(""IdMetric"");
         private static readonly byte[] IdBytes = new byte[] { 73, 100, 77, 101, 116, 114, 105, 99 };
+        // TestBytes = System.Text.Encoding.UTF8.GetBytes(""TestId"");
+        private static readonly byte[] TestBytes = new byte[] { 84, 101, 115, 116, 73, 100 };
         // NameBytes = System.Text.Encoding.UTF8.GetBytes(""NameMetric"");
         private static readonly byte[] NameBytes = new byte[] { 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
 
@@ -485,6 +515,7 @@ namespace MyTests.TestListNameSpace
             return key switch
             {
                 ""IdMetric"" => Id,
+                ""TestId"" => Test,
                 ""NameMetric"" => Name,
                 _ => base.GetMetric(key),
             };
@@ -494,6 +525,13 @@ namespace MyTests.TestListNameSpace
         {
             switch(key)
             {
+                case ""TestId"": 
+                    Test = value;
+                    break;
+                case ""IdMetric"": 
+                case ""NameMetric"": 
+                    Logger.Value.Warning(""Attempted to set readonly metric {MetricName} on {TagType}. Ignoring."", key, nameof(TestList));
+                    break;
                 default: 
                     base.SetMetric(key, value);
                     break;
@@ -505,6 +543,11 @@ namespace MyTests.TestListNameSpace
             if (Id is not null)
             {
                 processor.Process(new TagItem<double>(""IdMetric"", Id.Value, IdBytes));
+            }
+
+            if (Test is not null)
+            {
+                processor.Process(new TagItem<double>(""TestId"", Test.Value, TestBytes));
             }
 
             if (Name is not null)
@@ -521,6 +564,13 @@ namespace MyTests.TestListNameSpace
             {
                 sb.Append(""IdMetric (metric):"")
                   .Append(Id.Value)
+                  .Append(',');
+            }
+
+            if (Test is not null)
+            {
+                sb.Append(""TestId (metric):"")
+                  .Append(Test.Value)
                   .Append(',');
             }
 

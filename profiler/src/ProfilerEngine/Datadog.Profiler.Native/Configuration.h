@@ -67,9 +67,12 @@ private:
     static bool GetDefaultDebugLogEnabled();
     template <typename T>
     static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue);
+    template <typename T>
+    static bool IsEnvironmentValueSet(shared::WSTRING const& name, T& value);
     static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate();
     static int32_t ExtractWallTimeThreadsThreshold();
     static int32_t ExtractCpuThreadsThreshold();
+    static bool GetContention();
 
 private:
     static std::string const DefaultProdSite;

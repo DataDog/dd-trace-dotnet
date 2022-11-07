@@ -24,6 +24,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "component": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(WcfTags));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;

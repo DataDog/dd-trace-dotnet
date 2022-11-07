@@ -14,19 +14,21 @@
                 "value": "First"
               },
               "this": {
-                "FirstName": {
-                  "fields": {
-                    "IsValueCreated": {
-                      "type": "Boolean",
-                      "value": "True"
+                "fields": {
+                  "FirstName": {
+                    "fields": {
+                      "IsValueCreated": {
+                        "type": "Boolean",
+                        "value": "True"
+                      },
+                      "Value": {
+                        "type": "String",
+                        "value": "First"
+                      }
                     },
-                    "Value": {
-                      "type": "String",
-                      "value": "First"
-                    }
-                  },
-                  "type": "Lazy`1",
-                  "value": "Lazy`1"
+                    "type": "Lazy`1",
+                    "value": "Lazy`1"
+                  }
                 },
                 "type": "HasFieldLazyValueInitialized",
                 "value": "HasFieldLazyValueInitialized"
@@ -40,19 +42,21 @@
                 "value": "First"
               },
               "this": {
-                "FirstName": {
-                  "fields": {
-                    "IsValueCreated": {
-                      "type": "Boolean",
-                      "value": "True"
+                "fields": {
+                  "FirstName": {
+                    "fields": {
+                      "IsValueCreated": {
+                        "type": "Boolean",
+                        "value": "True"
+                      },
+                      "Value": {
+                        "type": "String",
+                        "value": "First"
+                      }
                     },
-                    "Value": {
-                      "type": "String",
-                      "value": "First"
-                    }
-                  },
-                  "type": "Lazy`1",
-                  "value": "Lazy`1"
+                    "type": "Lazy`1",
+                    "value": "Lazy`1"
+                  }
                 },
                 "type": "HasFieldLazyValueInitialized",
                 "value": "HasFieldLazyValueInitialized"

@@ -1,4 +1,5 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "Configuration.h"
@@ -38,7 +39,7 @@ Configuration::Configuration()
     _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
     _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, false);
     _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false);
-    _isContentionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ContentionProfilingEnabled, false);
+    _isContentionProfilingEnabled = GetContention();
     _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, false);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
@@ -376,6 +377,21 @@ int32_t Configuration::ExtractCpuThreadsThreshold()
     return threshold;
 }
 
+bool Configuration::GetContention()
+{
+    // disabled by default
+    bool lockContentionEnabled = false;
+
+    // first look at the supported env var
+    if (IsEnvironmentValueSet(EnvironmentVariables::LockContentionProfilingEnabled, lockContentionEnabled))
+    {
+        return lockContentionEnabled;
+    }
+
+    // if not there, look at the deprecated one
+    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, false);
+}
+
 bool Configuration::GetDefaultDebugLogEnabled()
 {
     auto r = shared::GetEnvironmentValue(EnvironmentVariables::DevelopmentConfiguration);
@@ -437,4 +453,17 @@ T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defau
     T result{};
     if (!convert_to(r, result)) return std::move(defaultValue);
     return result;
+}
+
+template <typename T>
+bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
+{
+    auto r = shared::Trim(shared::GetEnvironmentValue(name));
+    if (r.empty()) return false;
+
+    T result{};
+    if (!convert_to(r, result)) return false;
+
+    value = result;
+    return true;
 }
