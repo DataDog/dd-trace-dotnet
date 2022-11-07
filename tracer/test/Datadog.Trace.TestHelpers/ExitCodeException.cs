@@ -9,15 +9,24 @@ namespace Datadog.Trace.TestHelpers;
 
 public class ExitCodeException : Exception
 {
-    public ExitCodeException(int actualExitCode, int expectedExitCode, string message)
+    private ExitCodeException(int actualExitCode, int expectedExitCode, string message)
         : base(string.IsNullOrWhiteSpace(message) ?
                    $"Expected exit code: {expectedExitCode}, actual exit code: {actualExitCode}." :
                    $"Expected exit code: {expectedExitCode}, actual exit code: {actualExitCode}. Message: {message}")
     {
     }
 
-    public static void Throw(int actualExitCode, int expectedExitCode, string message = null)
+    public static void ThrowIfNonZero(int actualExitCode, string message = null)
+        => ThrowIfNonExpected(actualExitCode, expectedExitCode: 0, message);
+
+    public static void ThrowIfNonExpected(int actualExitCode, int expectedExitCode, string message = null)
     {
-        throw new ExitCodeException(actualExitCode, expectedExitCode, message);
+        if (actualExitCode != expectedExitCode)
+        {
+            Throw(actualExitCode, expectedExitCode, message);
+        }
     }
+
+    public static void Throw(int actualExitCode, int expectedExitCode, string message = null)
+        => throw new ExitCodeException(actualExitCode, expectedExitCode, message);
 }

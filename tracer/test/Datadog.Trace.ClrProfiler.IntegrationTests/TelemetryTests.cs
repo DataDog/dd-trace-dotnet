@@ -48,10 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                if (processResult.ExitCode >= 0)
-                {
-                    ExitCodeException.Throw(processResult.ExitCode, 0, processResult.StandardError);
-                }
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
                 var spans = agent.WaitForSpans(ExpectedSpans);
 
@@ -77,10 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                if (processResult.ExitCode >= 0)
-                {
-                    ExitCodeException.Throw(processResult.ExitCode, 0, processResult.StandardError);
-                }
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
                 var spans = agent.WaitForSpans(ExpectedSpans);
                 await AssertExpectedSpans(spans);
@@ -105,10 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                if (processResult.ExitCode >= 0)
-                {
-                    ExitCodeException.Throw(processResult.ExitCode, 0, processResult.StandardError);
-                }
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
                 var spans = agent.WaitForSpans(ExpectedSpans);
                 await AssertExpectedSpans(spans);
@@ -155,10 +146,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
                 using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
                 {
-                    if (processResult.ExitCode >= 0)
-                    {
-                        ExitCodeException.Throw(processResult.ExitCode, 0, processResult.StandardError);
-                    }
+                    ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
                     var spans = agent.WaitForSpans(ExpectedSpans);
                     await AssertExpectedSpans(spans);
@@ -183,10 +171,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                if (processResult.ExitCode >= 0)
-                {
-                    ExitCodeException.Throw(processResult.ExitCode, 0, processResult.StandardError);
-                }
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
                 var spans = agent.WaitForSpans(ExpectedSpans);
                 await AssertExpectedSpans(spans);

@@ -35,10 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     throw new SkipException("Unexpected segmentation fault in NativeProfilerChecks");
                 }
 
-                if (processResult.ExitCode >= 0)
-                {
-                    ExitCodeException.Throw(processResult.ExitCode, 0, processResult.StandardError);
-                }
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
                 VerifyInstrumentation(processResult.Process);
             }
