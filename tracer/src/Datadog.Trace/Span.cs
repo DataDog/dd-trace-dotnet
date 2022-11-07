@@ -331,11 +331,11 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.SamplingPriority:
-                    return Context.TraceContext.SamplingPriority?.ToString();
+                    return Context.TraceContext?.SamplingPriority?.ToString();
                 case Trace.Tags.Env:
-                    return Context.TraceContext.Environment;
+                    return Context.TraceContext?.Environment;
                 case Trace.Tags.Version:
-                    return Context.TraceContext.ServiceVersion;
+                    return Context.TraceContext?.ServiceVersion;
                 case Trace.Tags.Origin:
                     return Context.TraceContext?.Origin;
                 default:
