@@ -10,9 +10,11 @@
           "entry": {
             "arguments": {
               "this": {
-                "Number": {
-                  "type": "Int32",
-                  "value": "0"
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "0"
+                  }
                 },
                 "type": "MethodThrowExceptionTest",
                 "value": "MethodThrowExceptionTest"
@@ -26,9 +28,11 @@
           "return": {
             "arguments": {
               "this": {
-                "Number": {
-                  "type": "Int32",
-                  "value": "2147483647"
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "2147483647"
+                  }
                 },
                 "type": "MethodThrowExceptionTest",
                 "value": "MethodThrowExceptionTest"
@@ -116,9 +120,11 @@
             "26": {
               "arguments": {
                 "this": {
-                  "Number": {
-                    "type": "Int32",
-                    "value": "2147483647"
+                  "fields": {
+                    "Number": {
+                      "type": "Int32",
+                      "value": "2147483647"
+                    }
                   },
                   "type": "MethodThrowExceptionTest",
                   "value": "MethodThrowExceptionTest"

@@ -38,7 +38,7 @@ Configuration::Configuration()
     _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
     _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, false);
     _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false);
-    _isContentionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ContentionProfilingEnabled, false);
+    _isContentionProfilingEnabled = GetContention();
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
     _version = GetEnvironmentValue(EnvironmentVariables::Version, DefaultVersion);
@@ -370,6 +370,21 @@ int32_t Configuration::ExtractCpuThreadsThreshold()
     return threshold;
 }
 
+bool Configuration::GetContention()
+{
+    // disabled by default
+    bool lockContentionEnabled = false;
+
+    // first look at the supported env var
+    if (IsEnvironmentValueSet(EnvironmentVariables::LockContentionProfilingEnabled, lockContentionEnabled))
+    {
+        return lockContentionEnabled;
+    }
+
+    // if not there, look at the deprecated one
+    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, false);
+}
+
 bool Configuration::GetDefaultDebugLogEnabled()
 {
     auto r = shared::GetEnvironmentValue(EnvironmentVariables::DevelopmentConfiguration);
@@ -431,4 +446,17 @@ T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defau
     T result{};
     if (!convert_to(r, result)) return std::move(defaultValue);
     return result;
+}
+
+template <typename T>
+bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
+{
+    auto r = shared::Trim(shared::GetEnvironmentValue(name));
+    if (r.empty()) return false;
+
+    T result{};
+    if (!convert_to(r, result)) return false;
+
+    value = result;
+    return true;
 }

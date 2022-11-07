@@ -361,16 +361,46 @@ TEST(ConfigurationTest, CheckContentionProfilingIsDisabledByDefault)
 
 TEST(ConfigurationTest, CheckContentionProfilingIsEnabledIfEnvVarSetToTrue)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionProfilingEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LockContentionProfilingEnabled, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
 }
 
 TEST(ConfigurationTest, CheckContentionProfilingIsDisabledIfEnvVarSetToFalse)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionProfilingEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LockContentionProfilingEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckDeprecatedContentionProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DeprecatedContentionProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckDeprecatedContentionProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DeprecatedContentionProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckLockProfilingOverrideContentionEnvVarIfSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar1(EnvironmentVariables::LockContentionProfilingEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::DeprecatedContentionProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckLockProfilingOverrideContentionEnvVarIfSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar1(EnvironmentVariables::LockContentionProfilingEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::DeprecatedContentionProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
 }
 
 TEST(ConfigurationTest, CheckContentionSampleLimitIfEnvVarSet)

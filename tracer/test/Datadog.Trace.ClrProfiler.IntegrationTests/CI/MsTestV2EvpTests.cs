@@ -5,13 +5,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -40,11 +44,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var testModules = new List<MockCIVisibilityTestModule>();
             var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 13 : 15;
 
+            var sessionId = SpanIdGenerator.CreateNew();
+            var sessionCommand = "test command";
+            var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
+            SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
+            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
+
             try
             {
-                SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
-                SetEnvironmentVariable("DD_TRACE_DEBUG", "0");
-                SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "0");
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, "1");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {
@@ -84,6 +95,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // Check Module
                         Assert.True(tests.All(t => t.TestModuleId == testSuites[0].TestModuleId));
+
+                        // Check Session
+                        tests.Should().OnlyContain(t => t.TestSessionId == testSuites[0].TestSessionId);
+                        testSuites[0].TestSessionId.Should().Be(testModules[0].TestSessionId);
+                        testModules[0].TestSessionId.Should().Be(sessionId);
 
                         foreach (var targetTest in tests)
                         {
@@ -133,6 +149,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                             // CI Library Language
                             AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+
+                            // Check Session data
+                            AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
+                            AssertTargetSpanEqual(targetTest, TestTags.CommandWorkingDirectory, sessionWorkingDirectory);
 
                             // check specific test span
                             switch (targetTest.Meta[TestTags.Name])
