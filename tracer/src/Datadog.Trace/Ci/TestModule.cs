@@ -13,6 +13,7 @@ using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -30,6 +31,11 @@ public sealed class TestModule
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
+        : this(name, framework, frameworkVersion, startDate, null)
+    {
+    }
+
+    internal TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate, TestSessionSpanTags? sessionSpanTags)
     {
         // First we make sure that CI Visibility is initialized.
         CIVisibility.Initialize();
@@ -41,45 +47,89 @@ public sealed class TestModule
         Name = name;
         Framework = framework;
 
-        var tags = new TestModuleSpanTags
-        {
-            Type = TestTags.TypeTest,
-            Module = name,
-            Framework = framework,
-            FrameworkVersion = frameworkVersion,
-            CIProvider = environment.Provider,
-            CIPipelineId = environment.PipelineId,
-            CIPipelineName = environment.PipelineName,
-            CIPipelineNumber = environment.PipelineNumber,
-            CIPipelineUrl = environment.PipelineUrl,
-            CIJobName = environment.JobName,
-            CIJobUrl = environment.JobUrl,
-            StageName = environment.StageName,
-            CIWorkspacePath = environment.WorkspacePath,
-            GitRepository = environment.Repository,
-            GitCommit = environment.Commit,
-            GitBranch = environment.Branch,
-            GitTag = environment.Tag,
-            GitCommitAuthorDate = environment.AuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
-            GitCommitAuthorName = environment.AuthorName,
-            GitCommitAuthorEmail = environment.AuthorEmail,
-            GitCommitCommitterDate = environment.CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
-            GitCommitCommitterName = environment.CommitterName,
-            GitCommitCommitterEmail = environment.CommitterEmail,
-            GitCommitMessage = environment.Message,
-            BuildSourceRoot = environment.SourceRoot,
-            LibraryVersion = TracerConstants.AssemblyVersion,
-            RuntimeName = frameworkDescription.Name,
-            RuntimeVersion = frameworkDescription.ProductVersion,
-            RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
-            OSArchitecture = frameworkDescription.OSArchitecture,
-            OSPlatform = frameworkDescription.OSPlatform,
-            OSVersion = CIVisibility.GetOperatingSystemVersion(),
-        };
+        // if sessionSpanTags is not null then the TestSession is in-proc.
+        // otherwise the TestSession is out of process
 
-        if (environment.VariablesToBypass is { } variablesToBypass)
+        TestModuleSpanTags tags;
+        if (sessionSpanTags is not null)
         {
-            tags.CiEnvVars = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass);
+            // In-Proc session
+            tags = new TestModuleSpanTags
+            {
+                Type = TestTags.TypeTest,
+                Module = name,
+                Framework = framework,
+                FrameworkVersion = frameworkVersion,
+                CIProvider = sessionSpanTags.CIProvider,
+                CIPipelineId = sessionSpanTags.CIPipelineId,
+                CIPipelineName = sessionSpanTags.CIPipelineName,
+                CIPipelineNumber = sessionSpanTags.CIPipelineNumber,
+                CIPipelineUrl = sessionSpanTags.CIPipelineUrl,
+                CIJobName = sessionSpanTags.CIJobName,
+                CIJobUrl = sessionSpanTags.CIJobUrl,
+                StageName = sessionSpanTags.StageName,
+                CIWorkspacePath = sessionSpanTags.CIWorkspacePath,
+                GitRepository = sessionSpanTags.GitRepository,
+                GitCommit = sessionSpanTags.GitCommit,
+                GitBranch = sessionSpanTags.GitBranch,
+                GitTag = sessionSpanTags.GitTag,
+                GitCommitAuthorDate = sessionSpanTags.GitCommitAuthorDate,
+                GitCommitAuthorName = sessionSpanTags.GitCommitAuthorName,
+                GitCommitAuthorEmail = sessionSpanTags.GitCommitAuthorEmail,
+                GitCommitCommitterDate = sessionSpanTags.GitCommitCommitterDate,
+                GitCommitCommitterName = sessionSpanTags.GitCommitCommitterName,
+                GitCommitCommitterEmail = sessionSpanTags.GitCommitCommitterEmail,
+                GitCommitMessage = sessionSpanTags.GitCommitMessage,
+                BuildSourceRoot = sessionSpanTags.BuildSourceRoot,
+                RuntimeName = frameworkDescription.Name,
+                RuntimeVersion = frameworkDescription.ProductVersion,
+                RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
+                OSArchitecture = frameworkDescription.OSArchitecture,
+                OSPlatform = frameworkDescription.OSPlatform,
+                OSVersion = CIVisibility.GetOperatingSystemVersion(),
+                CiEnvVars = sessionSpanTags.CiEnvVars,
+                SessionId = sessionSpanTags.SessionId,
+                Command = sessionSpanTags.Command,
+                WorkingDirectory = sessionSpanTags.WorkingDirectory,
+            };
+        }
+        else
+        {
+            // Out-of-Proc session
+            tags = new TestModuleSpanTags
+            {
+                Type = TestTags.TypeTest,
+                Module = name,
+                Framework = framework,
+                FrameworkVersion = frameworkVersion,
+                RuntimeName = frameworkDescription.Name,
+                RuntimeVersion = frameworkDescription.ProductVersion,
+                RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
+                OSArchitecture = frameworkDescription.OSArchitecture,
+                OSPlatform = frameworkDescription.OSPlatform,
+                OSVersion = CIVisibility.GetOperatingSystemVersion(),
+            };
+
+            tags.SetCIEnvironmentValues(environment);
+
+            // Extract session variables (from out of process sessions)
+            var environmentVariables = EnvironmentHelpers.GetEnvironmentVariables();
+            var sessionContext = SpanContextPropagator.Instance.Extract(
+                environmentVariables, new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+            if (sessionContext is not null)
+            {
+                tags.SessionId = sessionContext.SpanId;
+                if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, out var testSessionCommand))
+                {
+                    tags.Command = testSessionCommand;
+                }
+
+                if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, out var testSessionWorkingDirectory))
+                {
+                    tags.WorkingDirectory = testSessionWorkingDirectory;
+                }
+            }
         }
 
         // Check if Intelligent Test Runner has skippable tests
@@ -141,7 +191,7 @@ public sealed class TestModule
     /// Create a new Test Module
     /// </summary>
     /// <param name="name">Test module name</param>
-    /// <returns>New test session instance</returns>
+    /// <returns>New test module instance</returns>
     public static TestModule Create(string name)
     {
         return new TestModule(name, null, null, null);
@@ -153,7 +203,7 @@ public sealed class TestModule
     /// <param name="name">Test module name</param>
     /// <param name="framework">Testing framework name</param>
     /// <param name="frameworkVersion">Testing framework version</param>
-    /// <returns>New test session instance</returns>
+    /// <returns>New test module instance</returns>
     public static TestModule Create(string name, string framework, string frameworkVersion)
     {
         return new TestModule(name, framework, frameworkVersion, null);
@@ -166,7 +216,7 @@ public sealed class TestModule
     /// <param name="framework">Testing framework name</param>
     /// <param name="frameworkVersion">Testing framework version</param>
     /// <param name="startDate">Test session start date</param>
-    /// <returns>New test session instance</returns>
+    /// <returns>New test module instance</returns>
     public static TestModule Create(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
     {
         return new TestModule(name, framework, frameworkVersion, startDate);
