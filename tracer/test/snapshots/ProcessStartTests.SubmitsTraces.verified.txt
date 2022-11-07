@@ -13,6 +13,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -40,6 +41,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -67,6 +69,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -94,6 +97,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -121,6 +125,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.p.dm: -0
     },
     Metrics: {
