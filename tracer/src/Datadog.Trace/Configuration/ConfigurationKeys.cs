@@ -201,6 +201,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";
 
+        public const string RareSamplerEnabled = "DD_APM_ENABLE_RARE_SAMPLER";
+
         /// <summary>
         /// Configuration key for enabling or disabling internal metrics sent to DogStatsD.
         /// Default value is <c>false</c> (disabled).
@@ -433,6 +435,11 @@ namespace Datadog.Trace.Configuration
             /// Default Value is false (disabled)
             /// </summary>
             public const string IntelligentTestRunnerEnabled = "DD_CIVISIBILITY_ITR_ENABLED";
+
+            /// <summary>
+            /// Configuration key for forcing Agent's EVP Proxy
+            /// </summary>
+            public const string ForceAgentsEvpProxy = "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY";
         }
 
         /// <summary>

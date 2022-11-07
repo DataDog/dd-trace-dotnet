@@ -10,9 +10,11 @@
           "entry": {
             "arguments": {
               "this": {
-                "Number": {
-                  "type": "Int32",
-                  "value": "0"
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "0"
+                  }
                 },
                 "type": "HasReturnValue",
                 "value": "HasReturnValue"
@@ -22,9 +24,11 @@
           "return": {
             "arguments": {
               "this": {
-                "Number": {
-                  "type": "Int32",
-                  "value": "7"
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "7"
+                  }
                 },
                 "type": "HasReturnValue",
                 "value": "HasReturnValue"

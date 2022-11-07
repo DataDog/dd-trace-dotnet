@@ -165,7 +165,7 @@ namespace Datadog.Trace.Debugger
                 Locals = SnapshotSerializationHelpers.ToCapturedValue(locals);
             }
 
-            if (_additionalData.TryGetValue("token", out var fields))
+            if (_additionalData.TryGetValue("fields", out var fields))
             {
                 Fields = SnapshotSerializationHelpers.ToCapturedValue(fields);
             }

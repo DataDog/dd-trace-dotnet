@@ -20,6 +20,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci
 {
@@ -68,7 +69,7 @@ namespace Datadog.Trace.Ci
             if (!_settings.Agentless)
             {
                 discoveryService = DiscoveryService.Create(new ImmutableExporterSettings(_settings.TracerSettings.Exporter));
-                eventPlatformProxyEnabled = IsEventPlatformProxySupportedByAgent(discoveryService);
+                eventPlatformProxyEnabled = _settings.ForceAgentsEvpProxy || IsEventPlatformProxySupportedByAgent(discoveryService);
             }
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
