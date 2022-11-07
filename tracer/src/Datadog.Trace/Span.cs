@@ -162,7 +162,9 @@ namespace Datadog.Trace
                 return this;
             }
 
-            // some tags have special meaning
+            // since we don't expose a public API for setting trace-level attributes yet,
+            // allow setting them through any span in the trace.
+            // also, some "pseudo-tags" have special meaning, such as "manual.keep" and "_dd.measured".
             switch (key)
             {
                 case Trace.Tags.Env:
@@ -175,7 +177,6 @@ namespace Datadog.Trace
                     Context.TraceContext.Origin = value;
                     break;
                 case Trace.Tags.SamplingPriority:
-                    // allow setting the sampling priority via a tag
                     // note: this tag allows numeric or string representations of the enum,
                     // (e.g. "AutoKeep" or "1"), but try parsing as `int` first since it's much faster
                     if (int.TryParse(value, out var samplingPriorityInt32))
@@ -319,12 +320,14 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the value (or default/null if the key is not a valid tag) of a tag with the key value passed
+        /// Gets the value of the specified tag.
         /// </summary>
         /// <param name="key">The tag's key</param>
-        /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
+        /// <returns>The value for the tag with the specified key, or <c>null</c> if the tag does not exist.</returns>
         internal string GetTag(string key)
         {
+            // since we don't expose a public API for getting trace-level attributes yet,
+            // allow retrieval through any span in the trace
             switch (key)
             {
                 case Trace.Tags.SamplingPriority:
