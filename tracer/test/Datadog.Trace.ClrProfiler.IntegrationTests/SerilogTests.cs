@@ -121,7 +121,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = MockTracerAgent.Create(Output, agentPort);
             using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
-            Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
+            if (processResult.ExitCode >= 0)
+            {
+                ExitCodeException.Throw(processResult.ExitCode, 0, processResult.StandardError);
+            }
 
             var logs = logsIntake.Logs;
 

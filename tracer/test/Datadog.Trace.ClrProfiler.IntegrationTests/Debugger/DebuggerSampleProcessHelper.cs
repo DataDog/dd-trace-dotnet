@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
 
             if (Process.ExitCode != 0)
             {
-                throw new InvalidOperationException($"Process exit code is {Process.ExitCode}");
+                ExitCodeException.Throw(Process.ExitCode, 0);
             }
         }
 

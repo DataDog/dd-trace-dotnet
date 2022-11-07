@@ -84,7 +84,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
             using (var processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                processResult.ExitCode.Should().Be(0);
+                if (processResult.ExitCode >= 0)
+                {
+                    ExitCodeException.Throw(processResult.ExitCode, 0, processResult.StandardError);
+                }
+
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 await VerifyHelper.VerifySpans(spans, VerifyHelper.GetSpanVerifierSettings())
