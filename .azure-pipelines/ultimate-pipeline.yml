@@ -1018,7 +1018,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_azure_functions
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: eq(variables['run_azure_functions_tests'], 'True')
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
