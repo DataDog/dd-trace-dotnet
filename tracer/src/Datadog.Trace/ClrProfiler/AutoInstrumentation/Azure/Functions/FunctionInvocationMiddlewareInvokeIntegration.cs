@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         ReturnTypeName = "System.Threading.Tasks.Task",
         ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.HttpContext" },
         MinimumVersion = "3.0.0",
-        MaximumVersion = "3.*.*",
+        MaximumVersion = "4.*.*",
         IntegrationName = AzureFunctionsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
