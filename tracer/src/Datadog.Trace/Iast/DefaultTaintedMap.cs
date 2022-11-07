@@ -270,9 +270,7 @@ namespace Datadog.Trace.Iast;
                 copy = copy.Next;
     }
 
-    public Iterator<TaintedObject> iterator()
-    {
-        return iterator(0, table.length);
+        return (list);
     }
 
         return (list);
