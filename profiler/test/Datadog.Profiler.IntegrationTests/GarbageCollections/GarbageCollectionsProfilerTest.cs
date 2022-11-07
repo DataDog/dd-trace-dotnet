@@ -54,7 +54,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
                 int sampleCount = 0;
                 foreach (var sample in profile.Sample)
                 {
-                    if (!sample.Labels(profile).Any(l => l.Name == "generation"))
+                    if (!sample.Labels(profile).Any(l => l.Name == "gc generation"))
                     {
                         return false;
                     }
