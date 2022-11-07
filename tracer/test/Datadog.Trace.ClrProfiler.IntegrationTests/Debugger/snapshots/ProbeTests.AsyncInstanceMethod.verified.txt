@@ -7,118 +7,36 @@
     "debugger": {
       "snapshot": {
         "captures": {
-          "entry": {
-            "arguments": {
-              "input": {
-                "fields": null,
-                "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync"
-              }
-            },
-            "fields": {
-              "ClassName": {
-                "fields": null,
-                "type": "String",
-                "value": "AsyncInstanceMethod"
-              }
-            }
-          },
-          "return": {
-            "arguments": {
-              "input": {
-                "fields": null,
-                "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync"
-              }
-            },
-            "fields": {
-              "ClassName": {
-                "fields": null,
-                "type": "String",
-                "value": "AsyncInstanceMethod"
-              }
-            },
-            "locals": {
-              "@return": {
-                "fields": null,
-                "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync.Method"
-              },
-              "output": {
-                "fields": null,
-                "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync."
-              }
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "Method",
-            "type": "Samples.Probes.SmokeTests.AsyncInstanceMethod"
-          }
-        },
-        "stack": [],
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "Method",
-      "name": "Samples.Probes.SmokeTests.AsyncInstanceMethod",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(input=AsyncInstanceMethod.RunAsync): AsyncInstanceMethod.RunAsync.Method\r\n@return=AsyncInstanceMethod.RunAsync.Method, output=AsyncInstanceMethod.RunAsync.",
-    "service": "Probes"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "ddtags": "Unknown",
-    "debugger": {
-      "snapshot": {
-        "captures": {
           "lines": {
             "21": {
-              "fields": {
-                "<>1__state": {
-                  "fields": null,
-                  "type": "Int32",
-                  "value": "-1"
-                },
-                "<>4__this": {
+              "arguments": {
+                "this": {
                   "fields": {
-                    "ClassName": {
-                      "fields": null,
-                      "type": "String",
+                    "<>1__state": {
+                      "type": "Int32",
+                      "value": "-1"
+                    },
+                    "<>4__this": {
+                      "type": "AsyncInstanceMethod",
                       "value": "AsyncInstanceMethod"
+                    },
+                    "<>dd_liveDebugger_isReEntryToMoveNext": {
+                      "type": "Boolean",
+                      "value": "False"
+                    },
+                    "<>t__builder": "ScrubbedValue",
+                    "<>u__1": "ScrubbedValue",
+                    "<output>5__1": {
+                      "isNull": "true",
+                      "type": "String"
+                    },
+                    "input": {
+                      "type": "String",
+                      "value": "AsyncInstanceMethod.RunAsync"
                     }
                   },
-                  "type": "AsyncInstanceMethod",
-                  "value": "AsyncInstanceMethod"
-                },
-                "<>dd_liveDebugger_isReEntryToMoveNext": {
-                  "fields": null,
-                  "type": "Boolean",
-                  "value": "True"
-                },
-                "<>t__builder": "ScrubbedValue",
-                "<>u__1": "ScrubbedValue",
-                "<output>5__1": {
-                  "fields": null,
-                  "type": "String",
-                  "value": "null"
-                },
-                "input": {
-                  "fields": null,
-                  "type": "String",
-                  "value": "AsyncInstanceMethod.RunAsync"
+                  "type": "<Method>d__2",
+                  "value": "<Method>d__2"
                 }
               }
             }
@@ -165,7 +83,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext()",
+    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(this=<Method>d__2)",
     "service": "Probes"
   }
 ]
