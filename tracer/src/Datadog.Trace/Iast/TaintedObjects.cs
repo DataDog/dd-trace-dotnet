@@ -23,17 +23,23 @@ namespace Datadog.Trace.Iast
 
         public void TaintInputString(string obj, Source? source)
         {
-            map.Put(new TaintedObject(obj, Ranges.ForString(obj, source)));
+            if (!string.IsNullOrEmpty(obj))
+            {
+                map.Put(new TaintedObject(obj, IastUtils.GetRangesForString(obj, source)));
+            }
         }
 
         public void Taint(object obj, Range[]? ranges)
         {
-            map.Put(new TaintedObject(obj, ranges));
+            if (obj is not null && (obj is not string objAsString || objAsString != string.Empty))
+            {
+                map.Put(new TaintedObject(obj, ranges));
+            }
         }
 
-        public TaintedObject Get(object obj)
+        public TaintedObject? Get(object obj)
         {
-            return map.Get(obj);
+            return map.Get(obj) as TaintedObject;
         }
     }
 }

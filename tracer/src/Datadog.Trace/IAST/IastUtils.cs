@@ -31,4 +31,9 @@ internal static class IastUtils
     {
         return (item?.GetHashCode() ?? 0);
     }
+
+    public static Range[] GetRangesForString(string obj, Source? source)
+    {
+        return new Range[] { new Range(0, obj.Length, source) };
+    }
 }

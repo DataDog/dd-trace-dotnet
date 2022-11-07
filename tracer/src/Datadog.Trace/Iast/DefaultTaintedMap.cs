@@ -7,6 +7,7 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace Datadog.Trace.Iast;
@@ -24,10 +25,10 @@ internal class DefaultTaintedMap : ITaintedMap
     /* Bitmask to convert hashes to positive integers. */
     public const int PositiveMask = int.MaxValue;
 
-    private TaintedObject?[] table;
+    private ConcurrentDictionary<int, ITaintedObject> _map;
 
     /* Bitmask for fast modulo with table length. */
-    private int lengthMask = 0;
+    private int _lengthMask = 0;
     /* Flag to ensure we do not run multiple purges concurrently. */
     private bool isPurging = false;
     private object _purgingLock = new();
@@ -35,17 +36,12 @@ internal class DefaultTaintedMap : ITaintedMap
      * Estimated number of hash table entries. If the hash table switches to flat mode, it stops
      * counting elements.
      */
-    private int estimatedSize;
+    private int _estimatedSize;
     /* Reference queue for garbage-collected entries. */
 
-    // TODO: make it taintedobject instead of iweakaware
     // TODO: remove estimatesize
-    // TODO: hacer locked todo el map
-    // TODO: usar map no concurrente???
-    private ConcurrentQueue<IWeakAware> referenceList = new();
-
     /* Number of elements in the hash table before switching to flat mode. */
-    private int flatModeThreshold;
+    private int _flatModeThreshold;
 
     /*
      * Default constructor. Uses {@link #DEFAULT_CAPACITY} and {@link #DEFAULT_FLAT_MODE_THRESHOLD}.
@@ -63,9 +59,9 @@ internal class DefaultTaintedMap : ITaintedMap
      */
     private DefaultTaintedMap(int capacity, int flatModeThreshold)
     {
-        table = new TaintedObject[capacity];
-        lengthMask = table.Length - 1;
-        this.flatModeThreshold = flatModeThreshold;
+        _map = new ConcurrentDictionary<int, ITaintedObject>();
+        _lengthMask = capacity - 1;
+        this._flatModeThreshold = flatModeThreshold;
     }
 
     /*
@@ -80,10 +76,11 @@ internal class DefaultTaintedMap : ITaintedMap
      * @param key Key object.
      * @return The {@link TaintedObject} if it exists, {@code null} otherwise.
      */
-    public TaintedObject? Get(object key)
+    public ITaintedObject? Get(object key)
     {
         int index = IndexObject(key);
-        TaintedObject? entry = table[index];
+
+        _map.TryGetValue(index, out var entry);
         while (entry != null)
         {
             if (key == entry.Value)
@@ -103,7 +100,7 @@ internal class DefaultTaintedMap : ITaintedMap
      *
      * @param entry Tainted object.
      */
-    public void Put(TaintedObject entry)
+    public void Put(ITaintedObject entry)
     {
         int index = Index(entry.PositiveHashCode);
 
@@ -115,7 +112,7 @@ internal class DefaultTaintedMap : ITaintedMap
 
             // TODO: Fix the pathological case where all puts have the same identityHashCode (e.g. limit
             // chain length?)
-            table[index] = entry;
+            _map[index] = entry;
             if ((entry.PositiveHashCode & purgeMask) == 0)
             {
                 Purge();
@@ -125,19 +122,18 @@ internal class DefaultTaintedMap : ITaintedMap
         {
             // By default, add the new entry to the head of the chain.
             // We do not control duplicate keys (although we expect they are generally not used).
-            entry.Next = table[index];
-            table[index] = entry;
+            _map.TryGetValue(index, out var existingValue);
+            entry.Next = existingValue;
+            _map[index] = entry;
             if ((entry.PositiveHashCode & purgeMask) == 0)
             {
                 // To mitigate the cost of maintaining a thread safe counter, we only update the size every
                 // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
                 // if it was a random number generator, and we assume duplicate keys are rarely inserted.
-                Interlocked.Add(ref estimatedSize, purgeCount);
+                Interlocked.Add(ref _estimatedSize, purgeCount);
                 Purge();
             }
         }
-
-        referenceList.Enqueue(entry);
     }
 
     /*
@@ -162,7 +158,7 @@ internal class DefaultTaintedMap : ITaintedMap
             // Remove GC'd entries.
             int removedCount = RemoveDeadKeys();
 
-            if (Interlocked.Add(ref estimatedSize, -removedCount) > flatModeThreshold)
+            if (Interlocked.Add(ref _estimatedSize, -removedCount) > _flatModeThreshold)
             {
                 IsFlat = true;
             }
@@ -180,26 +176,47 @@ internal class DefaultTaintedMap : ITaintedMap
     private int RemoveDeadKeys()
     {
         var removed = 0;
-        var alive = new List<IWeakAware>();
-        while (referenceList.TryDequeue(out var key))
+        List<int> deadKeys = new();
+
+        foreach (var key in _map.Keys)
         {
-            if (key.IsAlive)
+            var current = _map[key];
+            ITaintedObject? previous = null;
+
+            while (current != null)
             {
-                alive.Add(key);
-            }
-            else
-            {
-                if (key is TaintedObject tainted)
+                if (!current.IsAlive)
                 {
-                    Remove(tainted);
+                    if (previous == null)
+                    {
+                        if (current.Next == null)
+                        {
+                            deadKeys.Add(key);
+                        }
+                        else
+                        {
+                            _map[key] = current.Next;
+                        }
+                    }
+                    else
+                    {
+                        previous.Next = current.Next;
+                    }
+
+                    current = current.Next;
                     removed++;
+                }
+                else
+                {
+                    previous = current;
+                    current = current.Next;
                 }
             }
         }
 
-        foreach (var value in alive)
+        foreach (var key in deadKeys)
         {
-            referenceList.Enqueue(value);
+            _map.TryRemove(key, out _);
         }
 
         return removed;
@@ -222,7 +239,7 @@ internal class DefaultTaintedMap : ITaintedMap
         // it could prevent the map from ever going into flat mode, and its size might become
         // effectively unbound.
         int index = Index(entry.PositiveHashCode);
-        TaintedObject? cur = table[index];
+        _map.TryGetValue(index, out var cur);
 
         if (cur is null)
         {
@@ -231,13 +248,21 @@ internal class DefaultTaintedMap : ITaintedMap
 
         if (cur == entry)
         {
-            table[index] = cur.Next;
+            if (cur.Next != null)
+            {
+                _map[index] = cur.Next;
+            }
+            else
+            {
+                _map.TryRemove(index, out _);
+            }
+
             return 1;
         }
 
         var first = cur;
         cur = cur.Next;
-        for (TaintedObject? prev = first; cur != null; prev = cur, cur = cur.Next)
+        for (ITaintedObject? prev = first; cur != null; prev = cur, cur = cur.Next)
         {
             if (cur == entry)
             {
@@ -253,19 +278,8 @@ internal class DefaultTaintedMap : ITaintedMap
     public void Clear()
     {
         IsFlat = false;
-        Interlocked.Exchange(ref estimatedSize, 0);
-
-        for (int i = 0; i < table.Length; i++)
-        {
-            table[i] = null;
-        }
-
-        referenceList = new();
-    }
-
-    public ConcurrentQueue<IWeakAware> GetReferenceQueue()
-    {
-        return referenceList;
+        Interlocked.Exchange(ref _estimatedSize, 0);
+        _map.Clear();
     }
 
     private int IndexObject(object obj)
@@ -280,80 +294,24 @@ internal class DefaultTaintedMap : ITaintedMap
 
     private int Index(int h)
     {
-        return h & lengthMask;
+        return h & _lengthMask;
     }
 
     // For testing only
-    internal List<IWeakAware> TableToList()
+    internal List<ITaintedObject> ToList()
     {
-        List<IWeakAware> list = new();
-        foreach (var element in table)
+        List<ITaintedObject> list = new();
+
+        foreach (var value in _map.Values)
         {
-            if (element != null)
+            var copy = value;
+            while (copy != null)
             {
-                var item = element;
-                do
-                {
-                    list.Add(item);
-                }
-                while ((item = item.Next) != null);
+                list.Add(copy);
+                copy = copy.Next;
             }
         }
 
-        return list;
+        return (list);
     }
-
-    /*
-        private Iterator<TaintedObject> iterator(int start, int stop)
-        {
-            return new Iterator<TaintedObject>()
-            {
-            int currentIndex = start;
-            TaintedObject currentSubPos;
-
-            public bool hasNext()
-            {
-                if (currentSubPos != null)
-                {
-                    return true;
-                }
-                for (; currentIndex < stop; currentIndex++)
-                {
-                    if (table[currentIndex] != null)
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            public TaintedObject Next()
-            {
-                if (currentSubPos != null)
-                {
-                    TaintedObject toReturn = currentSubPos;
-                    currentSubPos = toReturn.Next;
-                    return toReturn;
-                }
-
-                for (; currentIndex < stop; currentIndex++)
-                {
-                    final TaintedObject entry = table[currentIndex];
-                    if (entry != null)
-                    {
-                        currentSubPos = entry.next;
-                        currentIndex++;
-                        return entry;
-                    }
-                }
-                throw new NoSuchElementException();
-            }
-        };
-    }
-
-    public Iterator<TaintedObject> iterator()
-    {
-        return iterator(0, table.length);
-    }
-    */
 }

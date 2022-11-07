@@ -9,9 +9,7 @@ namespace Datadog.Trace.Iast;
 
 internal interface ITaintedMap
 {
-    public void Put(TaintedObject tainted);
+    public void Put(ITaintedObject tainted);
 
-    public TaintedObject Get(object obj);
-
-    public ConcurrentQueue<IWeakAware> GetReferenceQueue();
+    public ITaintedObject Get(object obj);
 }

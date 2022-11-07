@@ -9,7 +9,7 @@ using System;
 
 namespace Datadog.Trace.Iast;
 
-internal class TaintedObject : IWeakAware
+internal class TaintedObject : ITaintedObject
 {
     private readonly Range[]? _ranges;
 
@@ -28,7 +28,7 @@ internal class TaintedObject : IWeakAware
 
     public int PositiveHashCode { get; }
 
-    public TaintedObject? Next { get; set; }
+    public ITaintedObject? Next { get; set; }
 
     /*
      * Get ranges. The array or its elements MUST NOT be mutated. This may be reused in multiple
