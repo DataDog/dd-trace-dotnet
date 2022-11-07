@@ -13,7 +13,11 @@ namespace Datadog.InstrumentedAssemblyGenerator
             ModulesToGenerate = modulesToVerify ?? Array.Empty<string>();
             if (copyOriginalModulesToDisk)
             {
-                OriginalModulesFolder = Path.Combine(InstrumentationLogsBaseFolder, InstrumentedAssembliesFolderName);
+                // If DD_COPY_ORIGINALS_MODULES_TO_DISK was enabled, this folder will contain all the assemblies that were loaded at runtime,
+                // and we'll read the original assemblies from there exclusively.
+                // Otherwise, we assume are running in the same machine as the customer application and that files haven't changed,
+                // and load the assemblies from their original locations.
+                OriginalModulesFolder = Path.Combine(InstrumentationLogsBaseFolder, OriginalModulesFolderName);
             }
         }
 
@@ -30,5 +34,12 @@ namespace Datadog.InstrumentedAssemblyGenerator
         internal string InstrumentedAssembliesFolder => Path.Combine(InstrumentationLogsBaseFolder, InstrumentedAssembliesFolderName);
 
         internal string InstrumentedMethodsFolder => Path.Combine(InstrumentedAssembliesFolder, InstrumentedMethodsInstructionsFolderName);
+
+        internal void PrintArgs()
+        {
+            Logger.Info($"Instrumentation input logs = {InstrumentationInputLogs}");
+            Logger.Info($"Copy original modules = {(string.IsNullOrEmpty(OriginalModulesFolder) ? "false" : "true")}");
+            Logger.Info($"ModulesToGenerate = {(ModulesToGenerate.Length == 0 ? "default" : string.Join(";", ModulesToGenerate))}");
+        }
     }
 }

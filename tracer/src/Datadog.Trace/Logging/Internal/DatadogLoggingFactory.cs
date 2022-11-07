@@ -130,7 +130,7 @@ internal static class DatadogLoggingFactory
     internal static string GetLogDirectory()
         => GetLogDirectory(GlobalConfigurationSource.CreateDefaultConfigurationSource());
 
-    internal static string GetLogDirectory(IConfigurationSource? source)
+    private static string GetLogDirectory(IConfigurationSource? source)
     {
         var logDirectory = source?.GetString(ConfigurationKeys.LogDirectory);
         if (string.IsNullOrEmpty(logDirectory))

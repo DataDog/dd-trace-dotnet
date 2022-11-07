@@ -85,8 +85,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
             Logger.Info("Collecting original modules metadata");
             // Collect all original modules that participating in the test - i.e. module name & mvid are same
             var originalsModulesOfRewrittenMembers = (from file in originalModulesPaths.Distinct()
-                                                      let extension = Path.GetExtension(file).ToLower()
-                                                      where extension is ".dll" or ".exe"
+                                                      where Path.GetExtension(file).ToLower() is ".dll" or ".exe"
                                                       select LoadModuleWithDnlibSafe(file) into module
                                                       where module?.Mvid != null
                                                       let key = (module.Name, (Guid)module.Mvid)
@@ -167,18 +166,16 @@ namespace Datadog.InstrumentedAssemblyGenerator
 
         private List<string> ReadOriginalModulesPathsFromFile()
         {
-            Logger.Info("\r\nSanitize modules path");
-            var isOriginalModulesCopied = !string.IsNullOrEmpty(_args.OriginalModulesFolder);
+            Logger.Info("Sanitize modules path");
+            var wereOriginalModulesCopied = !string.IsNullOrEmpty(_args.OriginalModulesFolder);
 
             var newLines =
                 (from line in File.ReadAllLines(_args.OriginalModulesFilePath)
-                 where !string.IsNullOrWhiteSpace(line)
+                 where !string.IsNullOrWhiteSpace(line) && Path.GetExtension(line).ToLower() is ".dll" or ".exe"
                  let line2 = line.Trim(new char['"'])
-                 let ext = Path.GetExtension(line2)
-                 where ext.ToLower() is ".dll" or ".exe"
                  let fileName = Path.GetFileName(line2)
                  where fileName != null
-                 select isOriginalModulesCopied ? Path.Combine(_args.OriginalModulesFolder, fileName) : line2).ToList();
+                 select wereOriginalModulesCopied ? Path.Combine(_args.OriginalModulesFolder, fileName) : line2).ToList();
 
             if (!newLines.Any())
             {
@@ -374,11 +371,8 @@ namespace Datadog.InstrumentedAssemblyGenerator
             methodDef.Body = body;
             LogMethodInstructions(methodDef);
             return new ModifiedMethod(
-                instrumentedMethod,
                 methodDef,
-                ModuleRewriteContext,
-                module,
-                _args.InstrumentedAssembliesFolder);
+                Path.Combine(_args.InstrumentedAssembliesFolder, module.FullName));
         }
 
         private MethodDef FindInstrumentedMethod(ModuleDefMD module, InstrumentedMethod instrumentedMethod, ModuleTokensMapping originalModuleTokens)

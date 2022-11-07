@@ -37,6 +37,8 @@ namespace Datadog.InstrumentedAssemblyGenerator
             ValidateInputFolders(assemblyGeneratorArgs);
             CreateOutputFolders(assemblyGeneratorArgs);
 
+            assemblyGeneratorArgs.PrintArgs();
+
             var assemblyGenerator = new InstrumentedAssemblyGenerator(assemblyGeneratorArgs);
 
             assemblyGenerator.Initialize();

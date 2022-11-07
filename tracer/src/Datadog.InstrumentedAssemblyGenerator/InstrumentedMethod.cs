@@ -53,7 +53,6 @@ namespace Datadog.InstrumentedAssemblyGenerator
         internal bool IsStatic { get; }
         internal Lazy<byte[]> Code { get; }
 
-
         /// <summary>
         /// File content pattern:
         /// 0: 279430E-35CD-4177-B100-751FC0E07B17}@ // module id
@@ -101,10 +100,6 @@ namespace Datadog.InstrumentedAssemblyGenerator
                 filePath.Replace(TextFilePrefix, BinaryFilePrefix));
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         public override string ToString()
         {
             return $"{TypeName}.{MethodName}";

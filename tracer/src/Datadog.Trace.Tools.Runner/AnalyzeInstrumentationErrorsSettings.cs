@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tools.Runner
     internal class AnalyzeInstrumentationErrorsSettings : CommandSettings
     {
         [Description("Sets the process name.")]
-        [CommandOption("--name <NAME>")]
+        [CommandOption("--process-name <NAME>")]
         public string? ProcessName { get; set; }
 
         [Description("Sets the process ID.")]

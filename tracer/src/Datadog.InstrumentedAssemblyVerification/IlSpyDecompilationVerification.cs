@@ -47,34 +47,31 @@ namespace Datadog.InstrumentedAssemblyVerification
             {
                 try
                 {
-                    ITypeDefinition typeInfo = decompiler.TypeSystem.MainModule.Compilation.FindType(new FullTypeName(type)).GetDefinition();
-                    if (typeInfo == null)
+                    ITypeDefinition typeDefinition = ILSpyHelper.FindType(decompiler, type);
+                    if (typeDefinition == null)
                     {
                         string error = $"{nameof(IlSpyDecompilationVerification)} Type {type} not found in assembly {decompiler.TypeSystem.MainModule.AssemblyName}";
                         _logger.Warn(error);
                         continue;
                     }
 
-                    // we can't do this replace in ILSpy method because '`' is valid sign for generic type
-                    var copyOfMethodAndParameterName = method.Replace("!", "`");
-                    var tokenOfFirstMethod = typeInfo.Methods.SingleOrDefault(m => ILSpyHelper.GetMethodAndParametersName(m.Name, m.Parameters) == copyOfMethodAndParameterName) ??
-                                             typeInfo.GetConstructors().SingleOrDefault(m => ILSpyHelper.GetMethodAndParametersName(m.Name.Substring(1), m.Parameters) == copyOfMethodAndParameterName);
-                    if (tokenOfFirstMethod?.MetadataToken == null)
+                    var ilSpyMethod = ILSpyHelper.FindMethod(typeDefinition, method);
+                    if (ilSpyMethod?.MetadataToken == null)
                     {
-                        string error = $"{nameof(IlSpyDecompilationVerification)} Method {method} not found in type {typeInfo.FullTypeName}";
+                        string error = $"{nameof(IlSpyDecompilationVerification)} Method {method} not found in type {typeDefinition.FullTypeName}";
                         _logger.Warn(error);
                         continue;
                     }
 
-                    var decompiled = decompiler.Decompile(tokenOfFirstMethod.MetadataToken);
+                    var decompiled = decompiler.Decompile(ilSpyMethod.MetadataToken);
                     if (decompiled == null)
                     {
-                        string error = $"{nameof(IlSpyDecompilationVerification)} Compilation of {tokenOfFirstMethod.FullName} failed";
+                        string error = $"{nameof(IlSpyDecompilationVerification)} Compilation of {ilSpyMethod.FullName} failed";
                         errors.Add(error);
                         continue;
                     }
 
-                    errors.AddRange(GetDecompilationIlErrors(decompiled, method, tokenOfFirstMethod));
+                    errors.AddRange(GetDecompilationIlErrors(decompiled, method, ilSpyMethod));
                 }
                 catch (Exception e)
                 {
