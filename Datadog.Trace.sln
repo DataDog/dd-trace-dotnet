@@ -498,6 +498,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WeakCipher", "trace
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Deduplication", "tracer\test\test-applications\integrations\Samples.Deduplication\Samples.Deduplication.csproj", "{63B3A841-F3E0-4D60-B85D-156D7251FFDF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4InProcess", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4InProcess\Samples.AzureFunctions.V4InProcess.csproj", "{0F0F7D45-0E13-42B0-A158-8F303BBE8358}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{3c6dd42e-9214-4747-92ba-78de29aace59}*SharedItemsImports = 4
@@ -2504,6 +2506,14 @@ Global
 		{63B3A841-F3E0-4D60-B85D-156D7251FFDF}.Release|x64.Build.0 = Release|x64
 		{63B3A841-F3E0-4D60-B85D-156D7251FFDF}.Release|x86.ActiveCfg = Release|x86
 		{63B3A841-F3E0-4D60-B85D-156D7251FFDF}.Release|x86.Build.0 = Release|x86
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Debug|x64.Build.0 = Debug|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Release|x64.ActiveCfg = Release|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Release|x64.Build.0 = Release|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2693,6 +2703,7 @@ Global
 		{8C615906-AA60-4BA7-9B04-6A4E20969D6D} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{43C696FA-3812-4312-9529-98CECCD32A81} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{63B3A841-F3E0-4D60-B85D-156D7251FFDF} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
