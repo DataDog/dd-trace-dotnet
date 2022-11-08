@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Security.Cryptography;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -154,12 +155,17 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        internal ISpan SetTag(string key, string value)
+        internal Span SetTag(string key, string value)
         {
             if (IsFinished)
             {
                 Log.Warning("SetTag should not be called after the span was closed");
                 return this;
+            }
+
+            static void LogMissingTraceContext(string key, string value)
+            {
+                Log.Warning("Ignoring ISpan.SetTag({key}, {value}) because the span is not associated to a TraceContext.", key, value);
             }
 
             // since we don't expose a public API for setting trace-level attributes yet,
@@ -168,15 +174,39 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.Env:
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
                     Context.TraceContext.Environment = value;
                     break;
                 case Trace.Tags.Version:
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
                     Context.TraceContext.ServiceVersion = value;
                     break;
                 case Trace.Tags.Origin:
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
                     Context.TraceContext.Origin = value;
                     break;
                 case Trace.Tags.SamplingPriority:
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
                     // note: this tag allows numeric or string representations of the enum,
                     // (e.g. "AutoKeep" or "1"), but try parsing as `int` first since it's much faster
                     if (int.TryParse(value, out var samplingPriorityInt32))
@@ -190,6 +220,12 @@ namespace Datadog.Trace
 
                     break;
                 case Trace.Tags.ManualKeep:
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserKeep priority
@@ -198,6 +234,12 @@ namespace Datadog.Trace
 
                     break;
                 case Trace.Tags.ManualDrop:
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserReject priority
