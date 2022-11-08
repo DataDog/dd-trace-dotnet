@@ -361,6 +361,11 @@ namespace Datadog.Trace.TestHelpers
             return (process, newConfig);
         }
 
+        public void EnableIast(bool enable = true)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString());
+        }
+
         public void SetEnvironmentVariable(string key, string value)
         {
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;

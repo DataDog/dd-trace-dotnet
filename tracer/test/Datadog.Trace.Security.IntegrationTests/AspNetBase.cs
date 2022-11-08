@@ -73,6 +73,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             get { return _process?.Id; }
         }
 
+        protected bool IncludeAllHttpSpans { get; set; } = false;
+
         public Task<MockTracerAgent> RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
         {
             if (_agent == null)
@@ -317,7 +319,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
         {
             agent.SpanFilters.Clear();
-            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
+
+            if (!IncludeAllHttpSpans)
+            {
+                agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
+            }
 
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
             if (spans.Count != expectedSpans)
