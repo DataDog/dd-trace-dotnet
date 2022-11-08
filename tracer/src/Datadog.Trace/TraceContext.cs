@@ -58,23 +58,20 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the iast context.
         /// </summary>
-        internal IastRequestContext IastRequestContext
-        {
-            get
-            {
-                if (_iastRequestContext == null && Iast.Iast.Instance.Settings.Enabled)
-                {
-                    lock (_syncRoot)
-                    {
-                        _iastRequestContext ??= new();
-                    }
-                }
-
-                return _iastRequestContext;
-            }
-        }
+        internal IastRequestContext IastRequestContext => _iastRequestContext;
 
         private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
+
+        internal void EnableIastInRequest()
+        {
+            if (Iast.Iast.Instance.Settings.Enabled)
+            {
+                lock (_syncRoot)
+                {
+                    _iastRequestContext ??= new();
+                }
+            }
+        }
 
         public void AddSpan(Span span)
         {

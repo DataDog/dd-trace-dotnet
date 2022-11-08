@@ -11,6 +11,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -129,10 +130,10 @@ namespace Datadog.Trace.PlatformHelpers
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, getRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
             }
 
-            if (Iast.Iast.Instance.Settings.Enabled)
+            if (Iast.Iast.Instance.Settings.Enabled && OverheadController.Instance.AcquireRequest())
             {
-                // If the overheadController disables the vulnerability detection, we disable it
-                scope.Span?.Context?.TraceContext?.IastRequestContext?.UpdateShouldCollectVulnerabilities();
+                // If the overheadController disables the vulnerability detection, we do not enable the iast for the request
+                scope.Span?.Context?.TraceContext?.EnableIastInRequest();
             }
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);

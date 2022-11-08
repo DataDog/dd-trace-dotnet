@@ -14,21 +14,12 @@ internal class IastRequestContext
     private static int vulnerabilitiesPerRequest = Iast.Instance.Settings.VulnerabilitiesPerRequest;
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
-    private bool requestEnabled = true;
-
-    internal void UpdateShouldCollectVulnerabilities()
-    {
-        requestEnabled = OverheadController.Instance.AcquireRequest();
-    }
 
     public void AddIastInfoToRootSpan(Span span)
     {
-        if (requestEnabled)
-        {
-            span.Tags.SetTag(Tags.IastEnabled, "1");
-            AddIastVulnerabilitiesToSpan(span);
-            OverheadController.Instance.ReleaseRequest();
-        }
+        span.Tags.SetTag(Tags.IastEnabled, "1");
+        AddIastVulnerabilitiesToSpan(span);
+        OverheadController.Instance.ReleaseRequest();
     }
 
     internal void AddIastVulnerabilitiesToSpan(Span span)
@@ -41,7 +32,7 @@ internal class IastRequestContext
 
     internal bool AddVulnerabilitiesAllowed()
     {
-        return (requestEnabled && (_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < vulnerabilitiesPerRequest);
+        return ((_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < vulnerabilitiesPerRequest);
     }
 
     internal void AddVulnerability(Vulnerability vulnerability)
