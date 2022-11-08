@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Spectre.Console;
@@ -65,6 +66,7 @@ namespace Datadog.Trace.Tools.Runner
                     profilerEnvironmentVariables[Configuration.ConfigurationKeys.ApiKey] = ciSettings.ApiKey;
                 }
 
+                AgentConfiguration agentConfiguration = null;
                 if (agentless)
                 {
                     if (string.IsNullOrWhiteSpace(apiKey))
@@ -73,12 +75,24 @@ namespace Datadog.Trace.Tools.Runner
                         return 1;
                     }
                 }
-                else if (!Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult())
+                else
                 {
-                    return 1;
+                    agentConfiguration = Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult();
+                    if (agentConfiguration is null)
+                    {
+                        return 1;
+                    }
                 }
 
-                createTestSession = true;
+                if (agentless || !string.IsNullOrEmpty(agentConfiguration.EventPlatformProxyEndpoint))
+                {
+                    createTestSession = true;
+                    if (!agentless)
+                    {
+                        // EVP proxy is enabled.
+                        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy] = "1";
+                    }
+                }
 
                 var enableCodeCoverage = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
 

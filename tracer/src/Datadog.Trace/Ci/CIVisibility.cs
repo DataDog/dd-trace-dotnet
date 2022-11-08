@@ -16,6 +16,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
@@ -68,7 +69,21 @@ namespace Datadog.Trace.Ci
             var eventPlatformProxyEnabled = false;
             if (!_settings.Agentless)
             {
-                discoveryService = DiscoveryService.Create(new ImmutableExporterSettings(_settings.TracerSettings.Exporter));
+                if (!_settings.ForceAgentsEvpProxy)
+                {
+                    discoveryService = new DiscoveryService(
+                        AgentTransportStrategy.Get(
+                            new ImmutableExporterSettings(_settings.TracerSettings.Exporter),
+                            productName: "discovery",
+                            tcpTimeout: TimeSpan.FromSeconds(5),
+                            AgentHttpHeaderNames.MinimalHeaders,
+                            () => new MinimalAgentHeaderHelper(),
+                            uri => uri),
+                        10,
+                        1000,
+                        int.MaxValue);
+                }
+
                 eventPlatformProxyEnabled = _settings.ForceAgentsEvpProxy || IsEventPlatformProxySupportedByAgent(discoveryService);
             }
 
