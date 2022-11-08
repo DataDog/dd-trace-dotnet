@@ -53,6 +53,7 @@ internal class IntelligentTestRunnerClient
     private readonly string _workingDirectory;
     private readonly string _environment;
     private readonly string _serviceName;
+    private readonly Dictionary<string, string>? _customConfigurations;
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly Uri _settingsUrl;
     private readonly Uri _searchCommitsUrl;
@@ -71,6 +72,11 @@ internal class IntelligentTestRunnerClient
         _workingDirectory = workingDirectory;
         _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty) ?? string.Empty;
         _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
+        _customConfigurations = null;
+
+        // Extract custom tests configurations from DD_TAGS
+        _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
+
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _getBranchNameTask = GetBranchNameAsync();
         _getShaTask = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory));
@@ -129,6 +135,31 @@ internal class IntelligentTestRunnerClient
             _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
             _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{skippableTestsUrlPath}");
         }
+    }
+
+    internal static Dictionary<string, string>? GetCustomTestsConfigurations(IDictionary<string, string> globalTags)
+    {
+        Dictionary<string, string>? customConfiguration = null;
+        if (globalTags is not null)
+        {
+            foreach (var tag in globalTags)
+            {
+                const string testConfigKey = "test.configuration.";
+                if (tag.Key.StartsWith(testConfigKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    var key = tag.Key.Substring(testConfigKey.Length);
+                    if (string.IsNullOrEmpty(key))
+                    {
+                        continue;
+                    }
+
+                    customConfiguration ??= new Dictionary<string, string>();
+                    customConfiguration[key] = tag.Value;
+                }
+            }
+        }
+
+        return customConfiguration;
     }
 
     public async Task<long> UploadRepositoryChangesAsync()
@@ -220,11 +251,12 @@ internal class IntelligentTestRunnerClient
                     currentSha,
                     new TestsConfigurations(
                         framework.OSPlatform,
-                        Environment.OSVersion.VersionString,
+                        CIVisibility.GetOperatingSystemVersion(),
                         framework.OSArchitecture,
                         skipFrameworkInfo ? null : framework.Name,
                         skipFrameworkInfo ? null : framework.ProductVersion,
-                        skipFrameworkInfo ? null : framework.ProcessArchitecture))),
+                        skipFrameworkInfo ? null : framework.ProcessArchitecture,
+                        _customConfigurations))),
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
@@ -296,11 +328,12 @@ internal class IntelligentTestRunnerClient
                     currentSha,
                     new TestsConfigurations(
                         framework.OSPlatform,
-                        Environment.OSVersion.VersionString,
+                        CIVisibility.GetOperatingSystemVersion(),
                         framework.OSArchitecture,
                         framework.Name,
                         framework.ProductVersion,
-                        framework.ProcessArchitecture))),
+                        framework.ProcessArchitecture,
+                        _customConfigurations))),
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
@@ -348,13 +381,42 @@ internal class IntelligentTestRunnerClient
                 return Array.Empty<SkippableTest>();
             }
 
-            var testAttributes = new SkippableTest[deserializedResult.Data.Length];
+            var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
+            var customConfigurations = _customConfigurations;
             for (var i = 0; i < deserializedResult.Data.Length; i++)
             {
-                testAttributes[i] = deserializedResult.Data[i].Attributes;
+                var includeItem = true;
+                var item = deserializedResult.Data[i].Attributes;
+                if (item.Configurations?.Custom is { } itemCustomConfiguration)
+                {
+                    if (customConfigurations is null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var rsCustomConfigurationItem in itemCustomConfiguration)
+                    {
+                        if (!customConfigurations.TryGetValue(rsCustomConfigurationItem.Key, out var customConfigValue) ||
+                            rsCustomConfigurationItem.Value != customConfigValue)
+                        {
+                            includeItem = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (includeItem)
+                {
+                    testAttributes.Add(item);
+                }
             }
 
-            return testAttributes;
+            if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
+            {
+                Log.Debug("ITR: JSON Filtered = {json}", JsonConvert.SerializeObject(testAttributes));
+            }
+
+            return testAttributes.ToArray();
         }
     }
 
@@ -739,9 +801,9 @@ internal class IntelligentTestRunnerClient
         public readonly string Sha;
 
         [JsonProperty("configurations")]
-        public readonly TestsConfigurations Configurations;
+        public readonly TestsConfigurations? Configurations;
 
-        public SkippableTestsQuery(string service, string environment, string repositoryUrl, string sha, TestsConfigurations configurations)
+        public SkippableTestsQuery(string service, string environment, string repositoryUrl, string sha, TestsConfigurations? configurations)
         {
             Service = service;
             Environment = environment;
@@ -779,37 +841,6 @@ internal class IntelligentTestRunnerClient
             Branch = branch;
             Sha = sha;
             Configurations = configurations;
-        }
-    }
-
-    private readonly struct TestsConfigurations
-    {
-        [JsonProperty(CommonTags.OSPlatform)]
-        public readonly string OSPlatform;
-
-        [JsonProperty(CommonTags.OSVersion)]
-        public readonly string OSVersion;
-
-        [JsonProperty(CommonTags.OSArchitecture)]
-        public readonly string OSArchitecture;
-
-        [JsonProperty(CommonTags.RuntimeName)]
-        public readonly string? RuntimeName;
-
-        [JsonProperty(CommonTags.RuntimeVersion)]
-        public readonly string? RuntimeVersion;
-
-        [JsonProperty(CommonTags.RuntimeArchitecture)]
-        public readonly string? RuntimeArchitecture;
-
-        public TestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string?runtimeName, string? runtimeVersion, string? runtimeArchitecture)
-        {
-            OSPlatform = osPlatform;
-            OSVersion = osVersion;
-            OSArchitecture = osArchitecture;
-            RuntimeName = runtimeName;
-            RuntimeVersion = runtimeVersion;
-            RuntimeArchitecture = runtimeArchitecture;
         }
     }
 
