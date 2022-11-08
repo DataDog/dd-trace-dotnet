@@ -231,6 +231,8 @@ namespace Datadog.Trace.Configuration
             IsDataStreamsMonitoringEnabled = source?.GetBool(ConfigurationKeys.DataStreamsMonitoring.Enabled) ??
                                         // default value
                                         false;
+
+            IsRareSamplerEnabled = source?.GetBool(ConfigurationKeys.RareSamplerEnabled) ?? false;
         }
 
         /// <summary>
@@ -507,6 +509,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
         internal bool IsDataStreamsMonitoringEnabled { get; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the rare sampler is enabled or not.
+        /// </summary>
+        internal bool IsRareSamplerEnabled { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

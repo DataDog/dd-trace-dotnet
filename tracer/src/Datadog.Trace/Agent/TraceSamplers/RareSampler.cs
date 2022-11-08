@@ -5,19 +5,25 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
     internal class RareSampler : ITraceChunkSampler
     {
-        private const string RareKey = "_dd.rare";
         private const int CacheLimit = 200; // Uses default value of 200 as found in the trace agent
 
         private readonly HashSet<StatsAggregationKey> _keys = new();
         private readonly Queue<StatsAggregationKey> _cache = new();
 
-        public bool IsEnabled => true; // TODO: Add ability to disable the RareSampler, which the trace agent has
+        public RareSampler(ImmutableTracerSettings settings)
+        {
+            IsEnabled = settings.IsRareSamplerEnabled;
+        }
+
+        public bool IsEnabled { get; }
 
         /// <summary>
         /// Samples the trace chunk with the following rules:
@@ -26,17 +32,22 @@ namespace Datadog.Trace.Agent.TraceSamplers
         /// 3) If a span was kept, update the seen spans.
         /// 4) Return whether a span was sampled.
         /// </summary>
-        /// <param name="trace">The input trace chunk</param>
+        /// <param name="traceChunk">The input trace chunk</param>
         /// <returns>true when a rare span is found, false otherwise</returns>
-        public bool Sample(ArraySegment<Span> trace)
+        public bool Sample(ArraySegment<Span> traceChunk)
         {
-            if (SamplingHelpers.IsKeptBySamplingPriority(trace))
+            if (!IsEnabled)
             {
-                UpdateSeenSpans(trace);
                 return false;
             }
 
-            return SampleSpansAndUpdateSeenSpansIfKept(trace);
+            if (SamplingHelpers.IsKeptBySamplingPriority(traceChunk))
+            {
+                UpdateSeenSpans(traceChunk);
+                return false;
+            }
+
+            return SampleSpansAndUpdateSeenSpansIfKept(traceChunk);
         }
 
         private void UpdateSeenSpans(ArraySegment<Span> trace)
@@ -85,7 +96,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
             if (isNewKey)
             {
-                span.Tags.SetMetric(RareKey, 1);
+                span.Tags.SetMetric(Metrics.RareSpan, 1);
                 UpdateCache(key);
             }
 
