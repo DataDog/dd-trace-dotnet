@@ -79,7 +79,7 @@
     <!-- Integration: System.Net.Http.WinHttpHandler -->
     <!-- Assembly: System.Net.Http.WinHttpHandler -->
     <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/6.0.1 -->
-    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="6.0.1" />
+    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="7.0.0" />
 
     <!-- Integration: Microsoft.Extensions.Logging -->
     <!-- Assembly: Microsoft.Extensions.Logging -->
