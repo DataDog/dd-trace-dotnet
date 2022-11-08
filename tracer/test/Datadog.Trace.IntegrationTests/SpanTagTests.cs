@@ -207,29 +207,6 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
-        public void SpanSampler_ShouldNotTag_WhenTraceContext_IsNull()
-        {
-            var expectedRuleRate = "1";
-            var expectedMaxPerSecond = "1000";
-            var expectedSamplingMechanism = "8";
-
-            var inputSpan = new Span(new SpanContext(5, 6, null, serviceName: "test"), DateTimeOffset.Now) { OperationName = "test" };
-            inputSpan.Context.TraceContext.Should().BeNull();
-            var spans = new Span[1];
-            spans[0] = inputSpan;
-            _writer.WriteTrace(new ArraySegment<Span>(spans));
-
-            var trace = _testApi.Wait();
-            trace.Should().HaveCount(1);
-            trace[0].Should().HaveCount(1);
-
-            var span = trace[0].Single();
-            span.Tags.Should().NotContain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
-            span.Tags.Should().NotContain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
-            span.Tags.Should().NotContain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
-        }
-
-        [Fact]
         public void SpanSampler_ShouldNotTag_WhenSamplingPriority_IsNull()
         {
             var expectedRuleRate = "1";
