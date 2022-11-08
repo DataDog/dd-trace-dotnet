@@ -377,6 +377,11 @@ namespace Datadog.Trace.Configuration
         public const string QueryStringReportingEnabled = "DD_HTTP_SERVER_TAG_QUERY_STRING";
 
         /// <summary>
+        /// Configuration key for setting in number of days when to delete log files based on their last writetime date.
+        /// </summary>
+        public const string LogFileRetentionDays = "DD_TRACE_LOGFILE_RETENTION_DAYS";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
