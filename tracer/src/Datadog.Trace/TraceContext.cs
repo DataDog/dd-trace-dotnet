@@ -71,7 +71,7 @@ namespace Datadog.Trace
         public string Origin { get; set; }
 
         /// <summary>
-        /// Gets the iast context.
+        /// Gets the IAST context.
         /// </summary>
         internal IastRequestContext IastRequestContext
         {
@@ -93,7 +93,7 @@ namespace Datadog.Trace
 
         public void AddSpan(Span span)
         {
-            lock (this)
+            lock (_syncRoot)
             {
                 if (RootSpan == null)
                 {
@@ -192,7 +192,7 @@ namespace Datadog.Trace
         {
             ArraySegment<Span> spansToWrite;
 
-            lock (this)
+            lock (_syncRoot)
             {
                 spansToWrite = _spans.GetArray();
                 _spans = default;
