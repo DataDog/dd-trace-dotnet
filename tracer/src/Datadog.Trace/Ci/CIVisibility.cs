@@ -83,6 +83,10 @@ namespace Datadog.Trace.Ci
                         1000,
                         int.MaxValue);
                 }
+                else
+                {
+                    Log.Information("Using the Event platform proxy through the agent.");
+                }
 
                 eventPlatformProxyEnabled = _settings.ForceAgentsEvpProxy || IsEventPlatformProxySupportedByAgent(discoveryService);
             }
