@@ -233,7 +233,7 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
             }
 
-            exitCode.Should().Be(0);
+            ExitCodeException.ThrowIfNonZero(exitCode);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
