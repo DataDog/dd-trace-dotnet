@@ -236,24 +236,19 @@ namespace Datadog.Trace.IntegrationTests
             var expectedMaxPerSecond = "1000";
             var expectedSamplingMechanism = "8";
 
-            var traceContext = new TraceContext(_tracer);
-            traceContext.SetSamplingPriority(null);
-            var spanContext = new SpanContext(null, traceContext, "serviceName");
-
-            var inputSpan = new Span(spanContext, DateTimeOffset.Now) { OperationName = "test" };
-            inputSpan.Context.TraceContext.SamplingPriority.Should().BeNull();
+            var spanContext = new SpanContext(4, 5, samplingPriority: null, serviceName: "serviceName");
+            var span = new Span(spanContext, DateTimeOffset.Now) { OperationName = "test" };
             var spans = new Span[1];
-            spans[0] = inputSpan;
+            spans[0] = span;
             _writer.WriteTrace(new ArraySegment<Span>(spans));
-
             var trace = _testApi.Wait();
             trace.Should().HaveCount(1);
             trace[0].Should().HaveCount(1);
 
-            var span = trace[0].Single();
-            span.Tags.Should().NotContain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
-            span.Tags.Should().NotContain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
-            span.Tags.Should().NotContain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+            var writtenSpan = trace[0].Single();
+            writtenSpan.Tags.Should().NotContain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
+            writtenSpan.Tags.Should().NotContain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+            writtenSpan.Tags.Should().NotContain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
         }
     }
 }
