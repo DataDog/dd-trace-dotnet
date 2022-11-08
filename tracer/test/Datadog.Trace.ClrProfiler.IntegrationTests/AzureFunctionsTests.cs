@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -18,6 +19,12 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
+/// <summary>
+/// These tests require the Azure Function Core Tools to be installed
+/// You can read how to install them here: https://github.com/Azure/azure-functions-core-tools
+/// Note that you need a _Different_ version of the tools for V3 and V4
+/// And you can't install them side-by-side
+/// </summary>
 public abstract class AzureFunctionsTests : TestHelper
 {
     protected AzureFunctionsTests(string sampleAppName, ITestOutputHelper output)
@@ -25,6 +32,7 @@ public abstract class AzureFunctionsTests : TestHelper
     {
         // Ensures we filter out the host span requests etc
         SetEnvironmentVariable("DD_AZURE_APP_SERVICES", "1");
+        SetEnvironmentVariable("DD_API_KEY", "NOT_SET"); // required for tracing to activate
         SetEnvironmentVariable("WEBSITE_SITE_NAME", "AzureFunctionsAllTriggers");
         SetEnvironmentVariable("COMPUTERNAME", "IntegrationTestHost");
         SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet");
@@ -55,7 +63,27 @@ public abstract class AzureFunctionsTests : TestHelper
         return WaitForProcessResult(helper);
     }
 
-#if NETCOREAPP3_1 || NET6_0
+    protected async Task AssertInProcessSpans(IImmutableList<MockSpan> spans)
+    {
+        // AAS _potentially_ attaches extra tags here, depending on exactly where in the trace the tags are
+        // so can't easily validate
+        // _ when span.Name == "http.request" => span.IsHttpMessageHandler(),
+        // _ when span.Name == "aspnet_core.request" => span.IsAspNetCore(),
+        // ValidateIntegrationSpans(spans, expectedServiceName: nameof(InProcessRuntimeV3));
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        // v3 runtime and v4 runtime report different versions
+        settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
+        settings.AddRegexScrubber(
+            new(@"Microsoft.Azure.WebJobs.Extensions, Version=\d.\d.\d.\d"),
+            @"Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0");
+
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName($"{nameof(AzureFunctionsTests)}.InProcess")
+                          .DisableRequireUniquePrefix();
+    }
+
+#if NETCOREAPP3_1
     [UsesVerify]
     public class InProcessRuntimeV3 : AzureFunctionsTests
     {
@@ -79,22 +107,37 @@ public abstract class AzureFunctionsTests : TestHelper
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
 
-                // AAS _potentially_ attaches extra tags here, depending on exactly where in the trace the tags are
-                // so can't easily validate
-                // _ when span.Name == "http.request" => span.IsHttpMessageHandler(),
-                // _ when span.Name == "aspnet_core.request" => span.IsAspNetCore(),
-                // ValidateIntegrationSpans(spans, expectedServiceName: nameof(InProcessRuntimeV3));
+                await AssertInProcessSpans(spans);
+            }
+        }
+    }
+#endif
 
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-                // v3 runtime and v4 runtime report different versions
-                settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
-                settings.AddRegexScrubber(
-                    new(@"Microsoft.Azure.WebJobs.Extensions, Version=\d.\d.\d.\d"),
-                    @"Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0");
+#if NET6_0
+    [UsesVerify]
+    public class InProcessRuntimeV4 : AzureFunctionsTests
+    {
+        public InProcessRuntimeV4(ITestOutputHelper output)
+            : base("AzureFunctions.V4InProcess", output)
+        {
+        }
 
-                await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName($"{nameof(AzureFunctionsTests)}.InProcess")
-                                  .DisableRequireUniquePrefix();
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces()
+        {
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (RunAzureFunctionAndWaitForExit(agent, framework: "net6.0"))
+            {
+                const int expectedSpanCount = 9;
+                var spans = agent.WaitForSpans(expectedSpanCount);
+
+                using var s = new AssertionScope();
+                spans.Count.Should().Be(expectedSpanCount);
+
+                await AssertInProcessSpans(spans);
             }
         }
     }
