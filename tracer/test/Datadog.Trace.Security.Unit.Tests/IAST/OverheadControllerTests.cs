@@ -59,7 +59,7 @@ public class OverheadControllerTests
     }
 
     [Fact]
-    public void GivenAnOverheadController_WhenSetMaxConcurrentRequestsTo1_Only2ConcurrentRequestsAreAllowed()
+    public void GivenAnOverheadController_WhenSetMaxConcurrentRequestsTo1_Only1ConcurrentRequestsIsAllowed()
     {
         var settings = new CustomSettingsForTests(new Dictionary<string, object>()
         {

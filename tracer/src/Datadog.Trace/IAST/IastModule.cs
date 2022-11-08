@@ -55,7 +55,8 @@ internal class IastModule
 
         if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
         {
-            // we are inside a request but we don't accept more vulnerabilities
+            // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
+            // not activated for this particular request
             return null;
         }
 

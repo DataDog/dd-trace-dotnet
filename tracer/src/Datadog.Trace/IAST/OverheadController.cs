@@ -12,7 +12,7 @@ internal class OverheadController
 {
     private int _sampling;
     private int _executedRequests = 0;
-    private IastSettings _iastSettings = Iast.Instance.Settings;
+    private IastSettings _iastSettings;
     private int _availableRequests;
 
     /// <summary>
