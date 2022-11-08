@@ -19,7 +19,8 @@ namespace Datadog.Trace.TestHelpers
             int aspNetCorePort = 5000,
             string processToProfile = null,
             bool? enableSecurity = null,
-            string externalRulesFile = null)
+            string externalRulesFile = null,
+            string workingDirectory = null)
         {
             if (environmentHelper == null)
             {
@@ -44,6 +45,10 @@ namespace Datadog.Trace.TestHelpers
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
             startInfo.RedirectStandardInput = redirectStandardInput;
+            if (!string.IsNullOrEmpty(workingDirectory))
+            {
+                startInfo.WorkingDirectory = workingDirectory;
+            }
 
             return Process.Start(startInfo);
         }

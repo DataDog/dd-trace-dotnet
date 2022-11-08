@@ -749,7 +749,7 @@ partial class Build
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
-            var filter = string.IsNullOrEmpty(Filter) && IsArm64 ? "(Category!=ArmUnsupported)" : Filter;
+            var filter = string.IsNullOrEmpty(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
             try
             {
                 DotNetTest(x => x
@@ -1046,7 +1046,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
+                    .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions")
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1054,6 +1054,77 @@ partial class Build
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
                         .SetProjectFile(project)));
+            }
+            finally
+            {
+                CopyDumpsToBuildData();
+            }
+        });
+
+    Target CompileAzureFunctionsSamplesWindows => _ => _
+        .Unlisted()
+        .After(CreatePlatformlessSymlinks)
+        .After(CompileFrameworkReproductions)
+        .Requires(() => MonitoringHomeDirectory != null)
+        .Requires(() => Framework)
+        .Executes(() =>
+        {
+            // This does some "unnecessary" rebuilding and restoring
+            var azureFunctions = TracerDirectory.GlobFiles("test/test-applications/azure-functions/**/*.csproj");
+
+            var projects = azureFunctions
+                .Select(x => Solution.GetProject(x))
+                .Where(project =>
+                 (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
+                 {
+                     var (_, targets, _) when targets is not null => targets.Contains(Framework),
+                     _ => true,
+                 });
+
+            // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+            DotNetBuild(config => config
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatform(TargetPlatform)
+                .EnableNoDependencies()
+                .SetProperty("BuildInParallel", "true")
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                .CombineWith(projects, (s, project) => s
+                                                 .SetProjectFile(project)));
+        });
+
+    Target RunWindowsAzureFunctionsTests => _ => _
+        .Unlisted()
+        .After(BuildTracerHome)
+        .After(CompileIntegrationTests)
+        .After(CompileAzureFunctionsSamplesWindows)
+        .After(BuildWindowsIntegrationTests)
+        .Requires(() => IsWin)
+        .Requires(() => Framework)
+        .Triggers(PrintSnapshotsDiff)
+        .Executes(() =>
+        {
+            var project = Solution.GetProject(Projects.ClrProfilerIntegrationTests);
+            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureResultsDirectory(project);
+
+            try
+            {
+                DotNetTest(config => config
+                    .SetDotnetPath(TargetPlatform)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatform(TargetPlatform)
+                    .SetFramework(Framework)
+                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetFilter(Filter ?? "RunOnWindows=True&Category=AzureFunctions")
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetLogsDirectory(TestLogsDirectory)
+                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .EnableTrxLogOutput(GetResultsDirectory(project))
+                    .WithDatadogLogger()
+                    .SetProjectFile(project));
             }
             finally
             {
@@ -1084,7 +1155,7 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True")
+                    .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions")
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1133,7 +1204,7 @@ partial class Build
                                 .SetFramework(Framework)
                                 .EnableNoRestore()
                                 .EnableNoBuild()
-                                .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
+                                .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True&Category!=AzureFunctions")
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1169,7 +1240,7 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True")
+                    .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True&Category!=AzureFunctions")
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1419,7 +1490,7 @@ partial class Build
             var filter = string.IsNullOrEmpty(Filter) switch
             {
                 false => Filter,
-                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda){dockerFilter}{armFilter}",
+                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
             };
 
             try
