@@ -89,7 +89,7 @@
     <!-- Integration: Microsoft.Extensions.Logging.Abstractions -->
     <!-- Assembly: Microsoft.Extensions.Logging.Abstractions -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/6.0.2 -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
 
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
