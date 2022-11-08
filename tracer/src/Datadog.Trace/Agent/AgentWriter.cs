@@ -473,11 +473,11 @@ namespace Datadog.Trace.Agent
                 return;
             }
 
-            foreach (var span in spans)
+            if (spans.Array![spans.Offset].Context.TraceContext?.SamplingPriority <= 0)
             {
-                if (span.Context.TraceContext?.SamplingPriority <= 0)
+                for (int i = 0; i < spans.Count; i++)
                 {
-                    _spanSampler.MakeSamplingDecision(span);
+                    _spanSampler.MakeSamplingDecision(spans.Array[i + spans.Offset]);
                 }
             }
         }
