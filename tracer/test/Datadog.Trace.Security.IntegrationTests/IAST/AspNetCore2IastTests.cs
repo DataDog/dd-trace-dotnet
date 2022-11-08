@@ -95,47 +95,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             await TestWeakHashing(filename, agent);
         }
 
-        [SkippableTheory]
-        [InlineData(1, 2)]
-        [InlineData(2, 2)]
-        [InlineData(3, 4)]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastWeakHashingRequestMaxConcurrentRequests(int maxConcurrentRequests, int requestsMade)
-        {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
-            SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
-            SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
-            EnableIast(true);
-            IncludeAllHttpSpans = true;
-            SetEnvironmentVariable(ConfigurationKeys.Iast.MaxConcurrentRequests, maxConcurrentRequests.ToString());
-            var agent = await RunOnSelfHosted(enableSecurity: false);
-            var url = "/Iast/WeakHashing/5000";
-            var tasks = new Task<IImmutableList<MockSpan>>[requestsMade];
-
-            for (int i = 0; i < requestsMade; i++)
-            {
-                tasks[i] = SendRequestsAsync(agent, new string[] { url });
-            }
-
-            for (int i = 0; i < requestsMade - 1; i++)
-            {
-                await tasks[i];
-            }
-
-            var spans = await tasks[requestsMade - 1];
-            var requestsAnalyzed = 0;
-
-            foreach (var span in spans)
-            {
-                if (!string.IsNullOrEmpty(span.GetTag(Tags.IastJson)))
-                {
-                    requestsAnalyzed++;
-                }
-            }
-
-            Assert.Equal(maxConcurrentRequests, requestsAnalyzed);
-        }
-
         private async Task TestWeakHashing(string filename, MockTracerAgent agent)
         {
             var url = "/Iast/WeakHashing";
