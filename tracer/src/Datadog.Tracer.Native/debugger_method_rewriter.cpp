@@ -327,12 +327,14 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     ULONG lineProbeCallTargetStateIndex, 
     std::vector<EHClause>& lineProbesEHClauses, 
     const std::vector<ILInstr*>& branchTargets, 
-    const std::shared_ptr<LineProbeDefinition>& lineProbe)
+    const std::shared_ptr<LineProbeDefinition>& lineProbe,
+    bool isAsyncMethod)
 {
     const auto& lineProbeId = lineProbe->probeId;
     const auto& bytecodeOffset = lineProbe->bytecodeOffset;
     const auto& probeLineNumber = lineProbe->lineNumber;
     const auto& probeFilePath = lineProbe->probeFilePath;
+    const auto& probeType = isAsyncMethod ? AsyncLineProbe : NonAsyncLineProbe;
 
     ILInstr* lineProbeFirstInstruction;
     auto hr = rewriter.GetInstrFromOffset(bytecodeOffset, &lineProbeFirstInstruction);
@@ -398,7 +400,7 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     // *** Emit BeginLine call
 
     ILInstr* beginLineCallInstruction;
-    hr = debuggerTokens->WriteBeginLine(&rewriterWrapper, &caller->type, &beginLineCallInstruction);
+    hr = debuggerTokens->WriteBeginLine(&rewriterWrapper, &caller->type, &beginLineCallInstruction, probeType);
 
     IfFailRet(hr);
 
@@ -406,20 +408,22 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
 
     // *** Emit LogLocal call(s)
     hr = WriteCallsToLogLocal(corProfiler, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
-                              lineProbeCallTargetStateIndex, &beginLineCallInstruction,
-                              LineProbe);
+                              lineProbeCallTargetStateIndex, &beginLineCallInstruction, probeType);
 
     IfFailRet(hr);
 
-    // *** Emit LogArg call(s)
-    hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
-                            lineProbeCallTargetStateIndex, &beginLineCallInstruction, LineProbe);
+    if (probeType == NonAsyncLineProbe) // The signature of MoveNext is without arguments.
+    {
+        // *** Emit LogArg call(s)
+        hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
+                                lineProbeCallTargetStateIndex, &beginLineCallInstruction, probeType);   
+    }
 
     IfFailRet(hr);
 
     // Load the DebuggerState
     rewriterWrapper.LoadLocalAddress(lineProbeCallTargetStateIndex);
-    hr = debuggerTokens->WriteEndLine(&rewriterWrapper, &beginLineCallInstruction);
+    hr = debuggerTokens->WriteEndLine(&rewriterWrapper, &beginLineCallInstruction, probeType);
 
     IfFailRet(hr);
 
@@ -430,7 +434,7 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
 
     // *** BeginMethod call catch
     ILInstr* beginLineCatchFirstInstr = rewriterWrapper.LoadLocalAddress(lineProbeCallTargetStateIndex);
-    debuggerTokens->WriteLogException(&rewriterWrapper, LineProbe);
+    debuggerTokens->WriteLogException(&rewriterWrapper, probeType);
     ILInstr* beginLineCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** BeginMethod exception handling clause
@@ -467,7 +471,8 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
     int numLocals, 
     ILRewriterWrapper& rewriterWrapper, 
     ULONG lineProbeCallTargetStateIndex, 
-    std::vector<EHClause>& newClauses) const
+    std::vector<EHClause>& newClauses,
+    bool isAsyncMethod) const
 {
     Logger::Info("Applying ", lineProbes.size(), " line probe(s) instrumentation.");
 
@@ -476,8 +481,8 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
     for (const auto& lineProbe : lineProbes)
     {
         HRESULT hr = CallLineProbe(instrumentedMethodIndex, corProfiler, module_id, module_metadata, caller, debuggerTokens,
-                           function_token, isStatic, methodArguments, numArgs, rewriter, methodLocals, numLocals,
-                           rewriterWrapper, lineProbeCallTargetStateIndex, newClauses, branchTargets, lineProbe);
+                           function_token, isStatic, methodArguments, numArgs, rewriter, methodLocals, numLocals, rewriterWrapper, lineProbeCallTargetStateIndex, newClauses,
+                                   branchTargets, lineProbe, isAsyncMethod);
         if (FAILED(hr))
         {
             // Appropriate error message is already logged in CallLineProbe.
@@ -536,7 +541,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     // *** Emit BeginMethod call
     ILInstr* beginCallInstruction;
-    hr = debuggerTokens->WriteBeginMethod_StartMarker(&rewriterWrapper, &caller->type, &beginCallInstruction, debugger::MethodProbeInNonAsyncMethod);
+    hr = debuggerTokens->WriteBeginMethod_StartMarker(&rewriterWrapper, &caller->type, &beginCallInstruction, debugger::NonAsyncMethodProbe);
 
     IfFailRet(hr);
 
@@ -544,13 +549,13 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     // *** Emit LogArg call(s)
     hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
-                            callTargetStateIndex, &beginCallInstruction, MethodProbeInNonAsyncMethod);
+                            callTargetStateIndex, &beginCallInstruction, NonAsyncMethodProbe);
 
     IfFailRet(hr);
 
     // Load the DebuggerState
     rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
-    hr = debuggerTokens->WriteBeginMethod_EndMarker(&rewriterWrapper, &beginCallInstruction, MethodProbeInNonAsyncMethod);
+    hr = debuggerTokens->WriteBeginMethod_EndMarker(&rewriterWrapper, &beginCallInstruction, NonAsyncMethodProbe);
 
     IfFailRet(hr);
 
@@ -558,7 +563,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     // *** BeginMethod call catch
     ILInstr* beginMethodCatchFirstInstr = rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
-    debuggerTokens->WriteLogException(&rewriterWrapper, MethodProbeInNonAsyncMethod);
+    debuggerTokens->WriteLogException(&rewriterWrapper, NonAsyncMethodProbe);
     ILInstr* beginMethodCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     EHClause beginMethodExClause = {};
@@ -614,29 +619,29 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     ILInstr* endMethodCallInstr;
     if (isVoid)
     {
-        debuggerTokens->WriteEndVoidReturnMemberRef(&rewriterWrapper, &caller->type, &endMethodCallInstr, MethodProbeInNonAsyncMethod);
+        debuggerTokens->WriteEndVoidReturnMemberRef(&rewriterWrapper, &caller->type, &endMethodCallInstr, NonAsyncMethodProbe);
     }
     else
     {
-        debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type, &retFuncArg, &endMethodCallInstr,MethodProbeInNonAsyncMethod);
+        debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type, &retFuncArg, &endMethodCallInstr,NonAsyncMethodProbe);
     }
     rewriterWrapper.StLocal(callTargetReturnIndex);
 
     // *** Emit LogLocal call(s)
     hr = WriteCallsToLogLocal(corProfiler, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
-                              callTargetStateIndex, &endMethodCallInstr, MethodProbeInNonAsyncMethod);
+                              callTargetStateIndex, &endMethodCallInstr, NonAsyncMethodProbe);
 
     IfFailRet(hr);
     
     // *** Emit LogArg call(s)
     hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
-                            callTargetStateIndex, &endMethodCallInstr, MethodProbeInNonAsyncMethod);
+                            callTargetStateIndex, &endMethodCallInstr, NonAsyncMethodProbe);
 
     IfFailRet(hr);
 
     // Load the DebuggerState
     rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
-    hr = debuggerTokens->WriteEndMethod_EndMarker(&rewriterWrapper, &endMethodCallInstr, MethodProbeInNonAsyncMethod);
+    hr = debuggerTokens->WriteEndMethod_EndMarker(&rewriterWrapper, &endMethodCallInstr, NonAsyncMethodProbe);
 
     IfFailRet(hr);
 
@@ -655,7 +660,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     // Load the DebuggerState
     ILInstr* endMethodCatchFirstInstr = rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
-    debuggerTokens->WriteLogException(&rewriterWrapper, MethodProbeInNonAsyncMethod);
+    debuggerTokens->WriteLogException(&rewriterWrapper, NonAsyncMethodProbe);
     ILInstr* endMethodCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     EHClause endMethodExClause = {};
@@ -784,7 +789,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
                 /*debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type,methodReturnType,
                     &endMethodCallInstr, AsyncMethod);*/
                 debuggerTokens->WriteEndVoidReturnMemberRef(&rewriterWrapper, &caller->type,
-                    &endMethodCallInstr, MethodProbeInAsyncMethod);
+                    &endMethodCallInstr, AsyncMethodProbe);
             }
             else
             {
@@ -796,7 +801,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
                 rewriterWrapper.LoadNull(); // exception
                 rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
                 debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type, methodReturnType,
-                                                        &endMethodCallInstr, MethodProbeInAsyncMethod);
+                                                        &endMethodCallInstr, AsyncMethodProbe);
             }
 
             *setResultEndMethodTryStartInstr = endMethodTryStartInstr;
@@ -827,12 +832,12 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
             if (elementType != ELEMENT_TYPE_VOID)
             {
                  debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type, methodReturnType,
-                &endMethodCallInstr, MethodProbeInAsyncMethod);
+                &endMethodCallInstr, AsyncMethodProbe);
             }
             else
             {
                 debuggerTokens->WriteEndVoidReturnMemberRef(&rewriterWrapper, &caller->type,
-                    &endMethodCallInstr, MethodProbeInAsyncMethod);
+                    &endMethodCallInstr, AsyncMethodProbe);
             }
         }
 
@@ -841,18 +846,18 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
 
         // call LogLocal
         hr = WriteCallsToLogLocal(corProfiler, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
-                                       callTargetStateIndex, &endMethodCallInstr, MethodProbeInAsyncMethod);
+                                       callTargetStateIndex, &endMethodCallInstr, AsyncMethodProbe);
         IfFailRet(hr);
 
         // load the state and call EndMethod_EndMarker
         rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
-        hr = debuggerTokens->WriteEndMethod_EndMarker(&rewriterWrapper, &endMethodCallInstr, MethodProbeInAsyncMethod);
+        hr = debuggerTokens->WriteEndMethod_EndMarker(&rewriterWrapper, &endMethodCallInstr, AsyncMethodProbe);
         IfFailRet(hr);
         ILInstr* endMethodTryLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
         // call LogException
         ILInstr* endMethodCatchFirstInstr = rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
-        debuggerTokens->WriteLogException(&rewriterWrapper, MethodProbeInAsyncMethod);
+        debuggerTokens->WriteLogException(&rewriterWrapper, AsyncMethodProbe);
         ILInstr* endMethodCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
         // target the leave instructions of the try and catch to the first corresponding instruction of the original code
@@ -1026,7 +1031,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
 
     ILInstr* beginCallInstruction;
     hr = debuggerTokens->WriteBeginMethod_StartMarker(&rewriterWrapper, &caller->type, &beginCallInstruction,
-                                                      MethodProbeInAsyncMethod);
+                                                      AsyncMethodProbe);
     IfFailRet(hr);
 
     rewriterWrapper.StLocal(asyncMethodStateIndex);
@@ -1034,7 +1039,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
 
     // *** BeginMethod call catch
     ILInstr* beginMethodCatchFirstInstr = rewriterWrapper.LoadLocalAddress(asyncMethodStateIndex);
-    debuggerTokens->WriteLogException(&rewriterWrapper, MethodProbeInAsyncMethod);
+    debuggerTokens->WriteLogException(&rewriterWrapper, AsyncMethodProbe);
     ILInstr* beginMethodCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     EHClause beginMethodExClause{};
@@ -1310,7 +1315,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, &methodReturnType, &callTargetStateIndex, &exceptionIndex,
                                                      &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
-                                                     &exceptionToken, &callTargetReturnToken, &firstInstruction);
+                                                     &exceptionToken, &callTargetReturnToken, &firstInstruction, isAsyncMethod);
 
     if (FAILED(hr))
     {
@@ -1322,7 +1327,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     mdToken lineProbeCallTargetStateToken = mdTokenNil;
     ULONG asyncMethodStateIndex = static_cast<ULONG>(ULONG_MAX);
     hr = debuggerTokens->GetDebuggerLocals(&rewriterWrapper, &lineProbeCallTargetStateIndex,
-                                           &lineProbeCallTargetStateToken, &asyncMethodStateIndex);
+                                           &lineProbeCallTargetStateToken, &asyncMethodStateIndex, isAsyncMethod);
 
     if (FAILED(hr))
     {
@@ -1343,9 +1348,19 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     if (!lineProbes.empty())
     {
+        if (isAsyncMethod)
+        {
+            Logger::Info("Applying ", lineProbes.size(), " Async Line Probe(s)");
+        }
+        else
+        {
+            Logger::Info("Applying ", lineProbes.size(), " Non-Async Line Probe(s)");
+        }
+
         hr = ApplyLineProbes(instrumentedMethodIndex, lineProbes, corProfiler, module_id, module_metadata, caller,
-                            debuggerTokens, function_token, isStatic, methodArguments, numArgs, rewriter, methodLocals,
-                            numLocals, rewriterWrapper, lineProbeCallTargetStateIndex, newClauses);
+                                 debuggerTokens, function_token, isStatic, methodArguments, numArgs, rewriter,
+                                 methodLocals, numLocals, rewriterWrapper, lineProbeCallTargetStateIndex, newClauses, isAsyncMethod);
+
         if (FAILED(hr))
         {
             // Appropriate error message is already logged in ApplyLineProbes.
@@ -1361,18 +1376,18 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         const auto& methodProbeId = methodProbes[0]->probeId; // TODO accept multiple probeIds
 
-
         if (isAsyncMethod)
         {
             Logger::Info("Async method probe is disabled");
-            /* hr = ApplyAsyncMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
+            Logger::Info("Applying Async Method Probe instrumentation with probeId.", methodProbeId);
+             hr = ApplyAsyncMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
                                        isStatic, &methodReturnType, methodProbeId, methodLocals, numLocals, rewriterWrapper, asyncMethodStateIndex, callTargetReturnIndex,
                                        returnValueIndex, callTargetReturnToken, firstInstruction, instrumentedMethodIndex, beforeLineProbe,
-                                       newClauses); */
+                                       newClauses); 
         }
         else
         {
-            Logger::Info("Applying Method Probe instrumentation with probeId.", methodProbeId);
+            Logger::Info("Applying Non-Async Method Probe instrumentation with probeId.", methodProbeId);
             hr = ApplyMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
                                   retFuncArg, isVoid, isStatic, methodArguments, numArgs, methodProbeId, rewriter,
                                   methodLocals, numLocals, rewriterWrapper, callTargetStateIndex, exceptionIndex,

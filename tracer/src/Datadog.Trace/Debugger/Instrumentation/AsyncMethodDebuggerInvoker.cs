@@ -163,7 +163,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         private static AsyncMethodDebuggerState BeginMethodEndMarker(ref AsyncMethodDebuggerState asyncState)
         {
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
-                                       asyncState.HasArguments;
+                                       asyncState.HasArguments ||
+                                       !asyncState.MethodMetadataInfo.Method.IsStatic;
 
             asyncState.HasLocalsOrReturnValue = false;
             asyncState.HasArguments = false;
@@ -240,13 +241,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             asyncState.SnapshotCreator.StartReturn();
             asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+            BeginEndMethodLogArgs(ref asyncState);
             if (exception != null)
             {
                 asyncState.SnapshotCreator.CaptureException(exception);
             }
 
             EndMethodLogLocals(ref asyncState);
-            BeginEndMethodLogArgs(ref asyncState);
 
             return DebuggerReturn.GetDefault();
         }
@@ -274,6 +275,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             asyncState.SnapshotCreator.StartReturn();
             asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+            BeginEndMethodLogArgs(ref asyncState);
             if (exception != null)
             {
                 asyncState.SnapshotCreator.CaptureException(exception);
@@ -285,7 +287,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             EndMethodLogLocals(ref asyncState);
-            BeginEndMethodLogArgs(ref asyncState);
             return new DebuggerReturn<TReturn>(returnValue);
         }
 
@@ -319,7 +320,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
-                                       asyncState.HasArguments;
+                                       asyncState.HasArguments ||
+                                       !asyncState.MethodMetadataInfo.Method.IsStatic;
             asyncState.SnapshotCreator.MethodProbeEndReturn(hasArgumentsOrLocals);
             FinalizeSnapshot(ref asyncState);
             RestoreContext();
