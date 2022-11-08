@@ -202,7 +202,7 @@ partial class Build
         if (ExplorationTestUseCase == global::ExplorationTestUseCase.Tracer &&
             testDescription.Name is global::ExplorationTestName.paket)
         {
-            Logger.Info("The Exploration Tests: protobuf, are disabled for Tracer because it fails due to poor environment isolation.");
+            Logger.Info("The Exploration Tests: paket, are disabled for Tracer because it fails due to poor environment isolation.");
             return;
         }
 
