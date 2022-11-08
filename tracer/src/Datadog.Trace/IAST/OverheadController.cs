@@ -10,10 +10,10 @@ namespace Datadog.Trace.Iast;
 
 internal class OverheadController
 {
-    private int sampling;
-    private int executedRequests = 0;
-    private IastSettings iastSettings = Iast.Instance.Settings;
-    private int availableRequests;
+    private int _sampling;
+    private int _executedRequests = 0;
+    private IastSettings _iastSettings = Iast.Instance.Settings;
+    private int _availableRequests;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OverheadController"/> class.
@@ -22,9 +22,9 @@ internal class OverheadController
     /// </summary>
     internal OverheadController(IastSettings settings = null)
     {
-        iastSettings = settings ?? Iast.Instance.Settings;
-        availableRequests = iastSettings.MaxConcurrentRequests;
-        sampling = ComputeSamplingParameter(iastSettings.RequestSampling);
+        _iastSettings = settings ?? Iast.Instance.Settings;
+        _availableRequests = _iastSettings.MaxConcurrentRequests;
+        _sampling = ComputeSamplingParameter(_iastSettings.RequestSampling);
     }
 
     public static OverheadController Instance { get; } = new();
@@ -33,12 +33,12 @@ internal class OverheadController
     {
         lock (Instance)
         {
-            if (((executedRequests++) % sampling != 0) || (availableRequests <= 0))
+            if ((_executedRequests++ % _sampling != 0) || (_availableRequests <= 0))
             {
                 return false;
             }
 
-            availableRequests--;
+            _availableRequests--;
         }
 
         return true;
@@ -46,28 +46,24 @@ internal class OverheadController
 
     public void ReleaseRequest()
     {
-        if (availableRequests < iastSettings.MaxConcurrentRequests)
+        if (_availableRequests < _iastSettings.MaxConcurrentRequests)
         {
             lock (Instance)
             {
-                availableRequests++;
+                _availableRequests++;
             }
         }
     }
 
     public void Reset()
     {
-        // Periodic reset of maximum concurrent requests. This guards us against exhausting concurrent
-        // requests if some bug led us to lose a request end event. This will lead to periodically
-        // going above the max concurrent requests. But overall, it should be self-stabilizing. So for
-        // practical purposes, the max concurrent requests is a hint.
         lock (Instance)
         {
-            availableRequests = iastSettings.MaxConcurrentRequests;
+            _availableRequests = _iastSettings.MaxConcurrentRequests;
         }
     }
 
-    private static int ComputeSamplingParameter(decimal pct)
+    private static int ComputeSamplingParameter(int pct)
     {
         // We don't support disabling IAST by setting the sampling to 0.
         if ((pct >= 100) || (pct <= 0))
@@ -75,6 +71,6 @@ internal class OverheadController
             return 1;
         }
 
-        return (int)Math.Round(100 / pct);
+        return (int)Math.Round(100m / pct);
     }
 }

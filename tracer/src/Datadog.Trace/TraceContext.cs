@@ -55,11 +55,6 @@ namespace Datadog.Trace
             get => _samplingPriority;
         }
 
-        public bool IastInitialized
-        {
-            get => _iastRequestContext != null;
-        }
-
         /// <summary>
         /// Gets the iast context.
         /// </summary>
@@ -125,7 +120,7 @@ namespace Datadog.Trace
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    _iastRequestContext.AddIastInfoToRootSpan(span);
+                    _iastRequestContext?.AddIastInfoToRootSpan(span);
                 }
             }
 

@@ -137,9 +137,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spans = await tasks[requestsMade - 1];
             var requestsAnalyzed = 0;
 
-            for (int i = 0; i < spans.Count; i++)
+            foreach (var span in spans)
             {
-                if (!string.IsNullOrEmpty(spans[i].GetTag(Tags.IastJson)))
+                if (!string.IsNullOrEmpty(span.GetTag(Tags.IastJson)))
                 {
                     requestsAnalyzed++;
                 }
