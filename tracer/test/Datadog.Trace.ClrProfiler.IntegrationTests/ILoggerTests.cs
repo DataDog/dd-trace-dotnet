@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = MockTracerAgent.Create(Output, agentPort);
             using var processResult = RunSampleAndWaitForExit(agent, aspNetCorePort: 0);
 
-            Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
+            ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
             var logs = logsIntake.Logs;
 

@@ -36,10 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
                 throw new InvalidOperationException($"The process did not exit after {timeout}ms");
             }
 
-            if (Process.ExitCode != 0)
-            {
-                throw new InvalidOperationException($"Process exit code is {Process.ExitCode}");
-            }
+            ExitCodeException.ThrowIfNonZero(Process.ExitCode);
         }
 
         internal async Task RunCodeSample()
