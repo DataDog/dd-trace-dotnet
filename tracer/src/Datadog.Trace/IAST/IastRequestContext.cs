@@ -26,7 +26,6 @@ internal class IastRequestContext
         span.Tags.SetTag(Trace.Tags.IastEnabled, "1");
 
         iastRequestContext?.AddIastVulnerabilitiesToSpan(span);
-        }
     }
 
     internal void AddIastVulnerabilitiesToSpan(Span span)
