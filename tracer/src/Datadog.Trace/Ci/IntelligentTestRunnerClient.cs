@@ -251,7 +251,7 @@ internal class IntelligentTestRunnerClient
                     currentSha,
                     new TestsConfigurations(
                         framework.OSPlatform,
-                        Environment.OSVersion.VersionString,
+                        CIVisibility.GetOperatingSystemVersion(),
                         framework.OSArchitecture,
                         skipFrameworkInfo ? null : framework.Name,
                         skipFrameworkInfo ? null : framework.ProductVersion,
@@ -328,7 +328,7 @@ internal class IntelligentTestRunnerClient
                     currentSha,
                     new TestsConfigurations(
                         framework.OSPlatform,
-                        Environment.OSVersion.VersionString,
+                        CIVisibility.GetOperatingSystemVersion(),
                         framework.OSArchitecture,
                         framework.Name,
                         framework.ProductVersion,
@@ -381,13 +381,42 @@ internal class IntelligentTestRunnerClient
                 return Array.Empty<SkippableTest>();
             }
 
-            var testAttributes = new SkippableTest[deserializedResult.Data.Length];
+            var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
+            var customConfigurations = _customConfigurations;
             for (var i = 0; i < deserializedResult.Data.Length; i++)
             {
-                testAttributes[i] = deserializedResult.Data[i].Attributes;
+                var includeItem = true;
+                var item = deserializedResult.Data[i].Attributes;
+                if (item.Configurations?.Custom is { } itemCustomConfiguration)
+                {
+                    if (customConfigurations is null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var rsCustomConfigurationItem in itemCustomConfiguration)
+                    {
+                        if (!customConfigurations.TryGetValue(rsCustomConfigurationItem.Key, out var customConfigValue) ||
+                            rsCustomConfigurationItem.Value != customConfigValue)
+                        {
+                            includeItem = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (includeItem)
+                {
+                    testAttributes.Add(item);
+                }
             }
 
-            return testAttributes;
+            if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
+            {
+                Log.Debug("ITR: JSON Filtered = {json}", JsonConvert.SerializeObject(testAttributes));
+            }
+
+            return testAttributes.ToArray();
         }
     }
 

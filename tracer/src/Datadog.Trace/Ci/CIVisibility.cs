@@ -295,6 +295,7 @@ namespace Datadog.Trace.Ci
                         }
 
                         var osxVersion = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")).GetAwaiter().GetResult();
+                        osxVersion = osxVersion?.Trim(' ', '\n');
                         if (!string.IsNullOrEmpty(osxVersion))
                         {
                             return osxVersion!;
