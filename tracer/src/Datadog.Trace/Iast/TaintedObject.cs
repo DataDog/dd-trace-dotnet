@@ -30,10 +30,6 @@ internal class TaintedObject : ITaintedObject
 
     public ITaintedObject? Next { get; set; }
 
-    /*
-     * Get ranges. The array or its elements MUST NOT be mutated. This may be reused in multiple
-     * instances.
-     */
     public Range[]? GetRanges()
     {
         return _ranges;
@@ -41,7 +37,6 @@ internal class TaintedObject : ITaintedObject
 
     public override int GetHashCode()
     {
-        // We exclude Next
-        return IastUtils.GetHashCode(new object?[] { _ranges, Weak, PositiveHashCode });
+        return PositiveHashCode & DefaultTaintedMap.DefaultCapacity - 1;
     }
 }

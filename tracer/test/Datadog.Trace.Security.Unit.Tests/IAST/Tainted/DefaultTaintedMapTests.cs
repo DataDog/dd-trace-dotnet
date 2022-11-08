@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Iast;
@@ -25,6 +26,24 @@ public class DefaultTaintedMapTests
         var tainted2 = map.Get(testString);
         Assert.NotNull(tainted2);
         Assert.Equal(tainted.GetHashCode(), tainted2.GetHashCode());
+    }
+
+    [Fact]
+    public void Test()
+    {
+        ConcurrentDictionary<int, string> dic = new();
+        dic.TryAdd(23, "a");
+        dic.TryAdd(23, "b");
+        Assert.Equal(2, dic.Values.Count);
+    }
+
+    [Fact]
+    public void Test2()
+    {
+        ConcurrentDictionary<string, string> dic = new();
+        dic.TryAdd("23", "a");
+        dic.TryAdd("23", "b");
+        Assert.Equal(2, dic.Values.Count);
     }
 
     [Fact]

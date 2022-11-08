@@ -1,4 +1,4 @@
-// <copyright file = "DefaultTaintedMap.cs" company = "Datadog" >
+// <copyright file = "DefaultTaintedMap2.cs" company = "Datadog" >
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,11 +7,12 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace Datadog.Trace.Iast;
 
-internal class DefaultTaintedMap : ITaintedMap
+internal class DefaultTaintedMap2 : ITaintedMap
 {
     // Default capacity. It MUST be a power of 2.
     public const int DefaultCapacity = 1 << 14;
@@ -25,7 +26,7 @@ internal class DefaultTaintedMap : ITaintedMap
     public const int PositiveMask = int.MaxValue;
 
     // Map containing the tainted objects
-    private ConcurrentDictionary<int, ITaintedObject> _map;
+    private ConcurrentDictionary<object, ITaintedObject> _map;
 
     // Bitmask for fast modulo with table length.
     private int _lengthMask = 0;
@@ -33,24 +34,21 @@ internal class DefaultTaintedMap : ITaintedMap
     private bool isPurging = false;
     private object _purgingLock = new();
 
-    // Estimated number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
-    private int _estimatedSize;
-
     /* Number of elements in the hash table before switching to flat mode. */
     private int _flatModeThreshold;
 
-    public DefaultTaintedMap()
+    public DefaultTaintedMap2()
         : this(DefaultCapacity, DefaultFlatModeThresold)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultTaintedMap"/> class.
+    /// Initializes a new instance of the <see cref="DefaultTaintedMap2"/> class.
     /// </summary>
     /// <param name="capacity">Capacity of the internal map. It must be a power of 2.</param>
     /// <param name="flatModeThreshold">Limit of entries before switching to flat mode.</param>
     /// <returns>The retrieved tainted object or null</returns>
-    private DefaultTaintedMap(int capacity, int flatModeThreshold)
+    private DefaultTaintedMap2(int capacity, int flatModeThreshold)
     {
         _map = new ConcurrentDictionary<int, ITaintedObject>();
         _lengthMask = capacity - 1;
@@ -91,7 +89,10 @@ internal class DefaultTaintedMap : ITaintedMap
     /// <param name="entry">Tainted object</param>
     public void Put(ITaintedObject entry)
     {
-        int index = Index(entry.PositiveHashCode);
+        if (entry.Value is null)
+        {
+            return;
+        }
 
         if (IsFlat)
         {
@@ -107,17 +108,9 @@ internal class DefaultTaintedMap : ITaintedMap
         }
         else
         {
-            // By default, add the new entry to the head of the chain.
-            // We do not control duplicate entries (although we expect they are generally not used).
-            _map.TryGetValue(index, out var existingValue);
-            entry.Next = existingValue;
-            _map[index] = entry;
+            _map.TryAdd(index, entry);
             if ((entry.PositiveHashCode & purgeMask) == 0)
             {
-                // To mitigate the cost of maintaining a thread safe counter, we only update the size every
-                // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
-                // if it was a random number generator, and we assume duplicate keys are rarely inserted.
-                Interlocked.Add(ref _estimatedSize, purgeCount);
                 Purge();
             }
         }
@@ -145,7 +138,7 @@ internal class DefaultTaintedMap : ITaintedMap
             // Remove GC'd entries.
             var removedCount = RemoveDeadKeys();
 
-            if (Interlocked.Add(ref _estimatedSize, -removedCount) > _flatModeThreshold)
+            if (_map.Count > _flatModeThreshold)
             {
                 IsFlat = true;
             }
@@ -163,43 +156,18 @@ internal class DefaultTaintedMap : ITaintedMap
     private int RemoveDeadKeys()
     {
         var removed = 0;
-        List<int> deadKeys = new();
-        ITaintedObject? previous;
+        List<object> deadKeys = new();
+
+        var f = _map.Count;
 
         foreach (var key in _map.Keys)
         {
             var current = _map[key];
-            previous = null;
 
-            while (current != null)
+            if (!current.IsAlive)
             {
-                if (!current.IsAlive)
-                {
-                    if (previous == null)
-                    {
-                        // We can delete the map key
-                        if (current.Next == null)
-                        {
-                            deadKeys.Add(key);
-                        }
-                        else
-                        {
-                            _map[key] = current.Next;
-                        }
-                    }
-                    else
-                    {
-                        previous.Next = current.Next;
-                    }
-
-                    current = current.Next;
-                    removed++;
-                }
-                else
-                {
-                    previous = current;
-                    current = current.Next;
-                }
+                deadKeys.Add(key);
+                removed++;
             }
         }
 
@@ -214,40 +182,12 @@ internal class DefaultTaintedMap : ITaintedMap
     public void Clear()
     {
         IsFlat = false;
-        Interlocked.Exchange(ref _estimatedSize, 0);
         _map.Clear();
-    }
-
-    private int IndexObject(object objectStored)
-    {
-        return Index(PositiveHashCode(IastUtils.IdentityHashCode(objectStored)));
-    }
-
-    private int PositiveHashCode(int hash)
-    {
-        return hash & PositiveMask;
-    }
-
-    public int Index(int hash)
-    {
-        return hash & _lengthMask;
     }
 
     // For testing only
     internal List<ITaintedObject> ToList()
     {
-        List<ITaintedObject> list = new();
-
-        foreach (var value in _map.Values)
-        {
-            var copy = value;
-            while (copy != null)
-            {
-                list.Add(copy);
-                copy = copy.Next;
-            }
-        }
-
-        return (list);
+        return _map.Values.ToList();
     }
 }
