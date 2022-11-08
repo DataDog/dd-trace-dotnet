@@ -53,8 +53,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public async Task TestIastWeakHashingRequest(bool enableIast)
         {
             var filename = enableIast ? "Iast.WeakHashing.AspNetCore2.IastEnabled" : "Iast.WeakHashing.AspNetCore2.IastDisabled";
+            EnableIast(enableIast);
+            IncludeAllHttpSpans = true;
             var agent = await RunOnSelfHosted(enableSecurity: false);
-            await TestWeakHashing(filename, agent, enableIast);
+            await TestWeakHashing(filename, agent);
         }
 
         [SkippableTheory]
@@ -66,6 +68,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "true");
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, vulnerabilitiesPerRequest.ToString());
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
+            EnableIast(true);
+            IncludeAllHttpSpans = true;
             var filename = vulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.AspNetCore2.IastEnabled.SingleVulnerability" : "Iast.WeakHashing.AspNetCore2.IastEnabled";
             var agent = await RunOnSelfHosted(enableSecurity: false);
             await TestWeakHashing(filename, agent);
@@ -78,6 +82,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "50");
+            EnableIast(true);
+            IncludeAllHttpSpans = true;
             var filename = "Iast.WeakHashing.AspNetCore2.IastEnabled";
             var agent = await RunOnSelfHosted(enableSecurity: false);
             await TestWeakHashing(filename, agent);
@@ -99,6 +105,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
+            EnableIast(true);
+            IncludeAllHttpSpans = true;
             SetEnvironmentVariable(ConfigurationKeys.Iast.MaxConcurrentRequests, maxConcurrentRequests.ToString());
             var agent = await RunOnSelfHosted(enableSecurity: false);
             var url = "/Iast/WeakHashing/5000";
@@ -117,7 +125,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spans = await tasks[requestsMade - 1];
             var requestsAnalyzed = 0;
 
-            for (int i = 0; i < requestsMade; i++)
+            for (int i = 0; i < spans.Count; i++)
             {
                 if (!string.IsNullOrEmpty(spans[i].GetTag(Tags.IastJson)))
                 {
@@ -128,11 +136,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             Assert.Equal(maxConcurrentRequests, requestsAnalyzed);
         }
 
-        private async Task TestWeakHashing(string filename, MockTracerAgent agent, bool enableIast = true)
+        private async Task TestWeakHashing(string filename, MockTracerAgent agent)
         {
             var url = "/Iast/WeakHashing";
-            EnableIast(enableIast);
-            IncludeAllHttpSpans = true;
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();

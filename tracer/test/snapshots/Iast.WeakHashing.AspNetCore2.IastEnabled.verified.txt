@@ -60,7 +60,7 @@
     Tags: {
       aspnet_core.action: weakhashing,
       aspnet_core.controller: iast,
-      aspnet_core.route: iast/weakhashing,
+      aspnet_core.route: iast/weakhashing/{delayinanswerms:int?},
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,

@@ -81,6 +81,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, vulnerabilitiesPerRequest.ToString());
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
             var filename = vulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.AspNetCore5.IastEnabled.SingleVulnerability" : "Iast.WeakHashing.AspNetCore5.IastEnabled";
+            EnableIast(true);
+            IncludeAllHttpSpans = true;
             var agent = await RunOnSelfHosted(enableSecurity: false);
             await TestWeakHashing(filename, agent);
         }
@@ -93,6 +95,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "50");
             var filename = "Iast.WeakHashing.AspNetCore5.IastEnabled";
+            EnableIast(true);
+            IncludeAllHttpSpans = true;
             var agent = await RunOnSelfHosted(enableSecurity: false);
             await TestWeakHashing(filename, agent);
 
@@ -114,6 +118,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
             SetEnvironmentVariable(ConfigurationKeys.Iast.MaxConcurrentRequests, maxConcurrentRequests.ToString());
+            EnableIast(true);
+            IncludeAllHttpSpans = true;
             var agent = await RunOnSelfHosted(enableSecurity: false);
             var url = "/Iast/WeakHashing/5000";
             var tasks = new Task<IImmutableList<MockSpan>>[requestsMade];
@@ -131,7 +137,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spans = await tasks[requestsMade - 1];
             var requestsAnalyzed = 0;
 
-            for (int i = 0; i < requestsMade; i++)
+            for (int i = 0; i < spans.Count; i++)
             {
                 if (!string.IsNullOrEmpty(spans[i].GetTag(Tags.IastJson)))
                 {
@@ -142,11 +148,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             Assert.Equal(maxConcurrentRequests, requestsAnalyzed);
         }
 
-        private async Task TestWeakHashing(string filename, MockTracerAgent agent, bool enableIast = true)
+        private async Task TestWeakHashing(string filename, MockTracerAgent agent)
         {
             var url = "/Iast/WeakHashing";
-            EnableIast(enableIast);
-            IncludeAllHttpSpans = true;
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();

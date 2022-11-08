@@ -21,11 +21,14 @@ internal class IastRequestContext
         requestEnabled = OverheadController.Instance.AcquireRequest();
     }
 
-    public static void AddsIastTagsToSpan(Span span, IastRequestContext? iastRequestContext)
+    public void AddIastInfoToRootSpan(Span span)
     {
-        span.Tags.SetTag(Trace.Tags.IastEnabled, "1");
-
-        iastRequestContext?.AddIastVulnerabilitiesToSpan(span);
+        if (requestEnabled)
+        {
+            span.Tags.SetTag(Tags.IastEnabled, "1");
+            AddIastVulnerabilitiesToSpan(span);
+            OverheadController.Instance.ReleaseRequest();
+        }
     }
 
     internal void AddIastVulnerabilitiesToSpan(Span span)

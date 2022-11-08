@@ -125,7 +125,7 @@ namespace Datadog.Trace
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    IastRequestContext.AddsIastTagsToSpan(span, _iastRequestContext);
+                    _iastRequestContext.AddIastInfoToRootSpan(span);
                 }
             }
 
