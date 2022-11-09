@@ -52,7 +52,6 @@ public:
     bool IsTimestampsAsLabelEnabled() const override;
     int32_t WalltimeThreadsThreshold() const override;
     int32_t CpuThreadsThreshold() const override;
-    bool IsGarbageCollectionProfilingEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -91,7 +90,6 @@ private:
     bool _isExceptionProfilingEnabled;
     bool _isAllocationProfilingEnabled;
     bool _isContentionProfilingEnabled;
-    bool _isGarbageCollectionProfilingEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;
     fs::path _pprofDirectory;

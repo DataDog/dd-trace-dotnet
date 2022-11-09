@@ -584,23 +584,3 @@ TEST(ConfigurationTest, CheckCpuThreadsThresholdIfCorrectValue)
     auto threshold = configuration.CpuThreadsThreshold();
     ASSERT_THAT(threshold, 16);
 }
-
-TEST(ConfigurationTest, CheckGarbageCollectionProfilingIsDisabledByDefault)
-{
-    auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), false);
-}
-
-TEST(ConfigurationTest, CheckGarbageCollectionProfilingIsEnabledIfEnvVarSetToTrue)
-{
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GCProfilingEnabled, WStr("1"));
-    auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), true);
-}
-
-TEST(ConfigurationTest, CheckGarbageCollectionProfilingIsDisabledIfEnvVarSetToFalse)
-{
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GCProfilingEnabled, WStr("0"));
-    auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), false);
-}
