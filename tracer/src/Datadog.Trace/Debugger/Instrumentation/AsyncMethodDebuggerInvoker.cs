@@ -112,8 +112,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance);
             if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
             {
-                Log.Error($"{nameof(BeginMethod)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                Log.Warning($"{nameof(BeginMethod)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
             }
 
             if (!MethodMetadataProvider.TryCreateIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
