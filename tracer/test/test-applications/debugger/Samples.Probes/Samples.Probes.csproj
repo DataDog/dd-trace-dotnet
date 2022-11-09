@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;$(TargetFrameworks)</TargetFrameworks>
     <RuntimeIdentifiers Condition="'$(OS)' == 'Windows_NT' AND '$(TargetFramework)' == 'net461'">win7-x86;win7-x64</RuntimeIdentifiers>
   </PropertyGroup>
