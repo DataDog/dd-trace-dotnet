@@ -330,7 +330,7 @@ void ClrEventsParser::ResetGC(GCDetails& gc)
     gc.Reason = (GCReason)0;
     gc.Type = (GCType)0;
     gc.IsCompacting = false;
-    gc.PauseDuration;
+    gc.PauseDuration = 0;
     gc.StartTimestamp = 0;
 }
 
