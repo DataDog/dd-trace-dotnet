@@ -331,7 +331,7 @@ jobs:
 
   build_windows:
     name: Build Windows Profiler and Tracer
-    runs-on: windows-2019
+    runs-on: windows-2022
     env:
       NugetPackageDirectory: ./packages
     strategy:
@@ -348,6 +348,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
         
       - name: Support longpaths
         run: git config --system core.longpaths true
@@ -375,7 +376,7 @@ jobs:
 
   test_windows_profiler:
     name: STests Windows Profiler
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: build_windows
     strategy:
       fail-fast: false
@@ -395,6 +396,7 @@ jobs:
           dotnet-version: | 
             3.1.x
             6.0.100
+            7.0.100
     
       - name: Support longpaths
         run: git config --system core.longpaths true
@@ -454,7 +456,7 @@ jobs:
 
   benchmark_windows_x64:
     name: BMmark Windows Profiler x64
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: build_windows
     strategy:
       fail-fast: false
@@ -473,6 +475,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
     
       - name: Install Datadog agent
         continue-on-error: false
@@ -541,7 +544,7 @@ jobs:
 
   benchmark_ClrEvents_windows_x64:
     name: BMmark ClrEvents Windows Profiler x64
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: build_windows
     strategy:
     # add scenarios when new profilers based on CLR events are added
@@ -558,6 +561,7 @@ jobs:
         with:
           dotnet-version: |
             6.0.100
+            7.0.100
 
       - name: Install Datadog agent
         continue-on-error: false
@@ -652,7 +656,7 @@ jobs:
 
   build_windows_asan_release:
     name: Build Windows Profiler ASAN
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -669,6 +673,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
     
       - name: Install Datadog agent
         continue-on-error: false
@@ -700,6 +705,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
 
       - name: Build Monitoring home
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}} --target-platform ${{matrix.platform}}
@@ -821,7 +827,7 @@ jobs:
 
   run_static_analysis_windows:
     name: Analyze Windows Profiler code
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
