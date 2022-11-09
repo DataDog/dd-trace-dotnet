@@ -88,7 +88,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="instance">Instance value</param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
-        /// <param name="methodMetadataIndex">The index used to lookup for the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
+        /// <param name="methodMetadataIndex">The index used to lookup the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
         /// <param name="lineNumber">The line instrumented</param>
         /// <param name="probeFilePath">The path to the file of the probe</param>
         /// <returns>Live debugger state</returns>
