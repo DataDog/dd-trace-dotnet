@@ -893,6 +893,27 @@ partial class Build
                 .EnableNoDependencies()
                 .SetTargets("BuildDependencyLibs")
             );
+
+            // The live debugger dependency lib _sometimes_ has to be x86/x64, and _sometimes_ has to be AnyCPU apparently
+            // so try building it with both...
+            var debuggerProjects = GlobFiles(TestsDirectory / "test-applications" / "debugger" / "dependency-libs" / "**" / "*.csproj");
+            DotNetBuild(config => config
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .CombineWith(debuggerProjects, (x, project) => x
+                    .SetProjectFile(project)));
+
+            DotNetBuild(config => config
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatform(TargetPlatform)
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .CombineWith(debuggerProjects, (x, project) => x
+                    .SetProjectFile(project)));
         });
 
     Target CompileRegressionDependencyLibs => _ => _
@@ -994,7 +1015,10 @@ partial class Build
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(TargetPlatform)
+                // Including this apparently breaks the integration tests when running against with the .NET 7 SDK
+                // as dotnet test doesn't look in the right folder. No, I don't understand it either
+                // .SetTargetPlatform(TargetPlatform)
+                .SetTargetPlatformAnyCPU()
                 .SetTargets("BuildCsharpIntegrationTests")
                 .SetMaxCpuCount(null));
         });
