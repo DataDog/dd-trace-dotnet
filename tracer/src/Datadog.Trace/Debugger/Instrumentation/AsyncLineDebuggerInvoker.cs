@@ -142,11 +142,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void CollectLocals(ref AsyncLineDebuggerState asyncState)
         {
-            // MethodMetadataInfo saves locals from MoveNext localVarSig,
-            // this isn't enough in async scenario because we need to extract more locals the may hoisted in the builder object
-            // and we need to subtract some locals that exist in the localVarSig but they are not belongs to the kickoff method
-            // For know we capturing here all locals the are hoisted (except known generated locals)
-            // and we capturing in LogLocal the locals form localVarSig
+            // In the async scenario MethodMetadataInfo stores locals from MoveNext's localVarSig,
+            // which isn't enough because we need to extract more locals that may be hoisted in the builder object
+            // and we need to remove some locals that exist in the localVarSig but are just part of the async machinery and do not represent actual variables in the user's code.
             var kickOffMethodLocalsValues = asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals;
             for (var index = 0; index < kickOffMethodLocalsValues.Length; index++)
             {
