@@ -38,7 +38,7 @@ public :
 private:
     bool GetFunctionInfo(
         FunctionID functionId,
-        mdToken& functionToken,
+        mdToken& mdTokenFunc,
         ClassID& classId,
         ModuleID& moduleId,
         ULONG32& genericParametersCount,

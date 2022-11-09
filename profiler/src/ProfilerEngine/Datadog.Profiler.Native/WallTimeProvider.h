@@ -27,7 +27,7 @@ public:
         uint32_t valueOffset,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
-        IAppDomainStore* pAssemblyStore,
+        IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration
         );
