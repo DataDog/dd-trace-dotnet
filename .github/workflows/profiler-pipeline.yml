@@ -346,6 +346,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
         
       - name: Support longpaths
         run: git config --system core.longpaths true
@@ -393,6 +394,7 @@ jobs:
           dotnet-version: | 
             3.1.x
             6.0.100
+            7.0.100
     
       - name: Support longpaths
         run: git config --system core.longpaths true
@@ -471,6 +473,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
     
       - name: Install Datadog agent
         continue-on-error: false
@@ -555,7 +558,7 @@ jobs:
       - uses: actions/setup-dotnet@v2
         with:
           dotnet-version: |
-            6.0.100
+            7.0.100
 
       - name: Install Datadog agent
         continue-on-error: false
@@ -667,6 +670,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
     
       - name: Install Datadog agent
         continue-on-error: false
@@ -698,6 +702,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
 
       - name: Build Monitoring home
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}} --target-platform ${{matrix.platform}}
