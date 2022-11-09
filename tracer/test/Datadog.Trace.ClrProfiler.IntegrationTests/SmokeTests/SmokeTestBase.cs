@@ -161,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
             }
 
-            Assert.True(expectedExitCode == result.ExitCode, $"Expected exit code: {expectedExitCode}, actual exit code: {result.ExitCode}");
+            ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode, result.StandardError);
 
             if (expectedExitCode == 0)
             {

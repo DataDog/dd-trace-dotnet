@@ -52,6 +52,7 @@ namespace Datadog.Trace.Configuration
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
             GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
             IpHeader = settings.IpHeader;
+            IpHeaderEnabled = settings.IpHeaderEnabled;
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             StatsComputationEnabled = settings.StatsComputationEnabled;
             StatsComputationInterval = settings.StatsComputationInterval;
@@ -72,6 +73,7 @@ namespace Datadog.Trace.Configuration
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
             IsDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
+            IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
             // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
@@ -191,6 +193,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
         internal string IpHeader { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the ip header should be collected. The default is false.
+        /// </summary>
+        internal bool IpHeaderEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether internal metrics
@@ -338,6 +345,11 @@ namespace Datadog.Trace.Configuration
         /// This value is not used when extracting an incoming propagation header from an upstream service.
         /// </remarks>
         internal int OutgoingTagPropagationHeaderMaxLength { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the rare sampler is enabled
+        /// </summary>
+        internal bool IsRareSamplerEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

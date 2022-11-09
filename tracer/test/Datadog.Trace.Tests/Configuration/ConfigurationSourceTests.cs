@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration
@@ -19,6 +20,7 @@ namespace Datadog.Trace.Tests.Configuration
     {
         private static readonly Dictionary<string, string> TagsK1V1K2V2 = new Dictionary<string, string> { { "k1", "v1" }, { "k2", "v2" } };
         private static readonly Dictionary<string, string> TagsK2V2 = new Dictionary<string, string> { { "k2", "v2" } };
+        private static readonly Dictionary<string, string> TagsWithColonsInValue = new Dictionary<string, string> { { "k1", "v1" }, { "k2", "v2:with:colons" }, { "trailing", "colon:good:" } };
         private static readonly Dictionary<string, string> HeaderTagsWithOptionalMappings = new Dictionary<string, string> { { "header1", "tag1" }, { "header2", "content-type" }, { "header3", "content-type" }, { "header4", "c___ont_____ent----typ_/_e" }, { "validheaderonly", string.Empty }, { "validheaderwithoutcolon", string.Empty } };
         private static readonly Dictionary<string, string> HeaderTagsWithDots = new Dictionary<string, string> { { "header3", "my.header.with.dot" }, { "my.new.header.with.dot", string.Empty } };
         private static readonly Dictionary<string, string> HeaderTagsSameTag = new Dictionary<string, string> { { "header1", "tag1" }, { "header2", "tag1" } };
@@ -55,6 +57,8 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.DebugEnabled, "no", CreateGlobalFunc(s => s.DebugEnabled), false };
             yield return new object[] { ConfigurationKeys.DebugEnabled, "T", CreateGlobalFunc(s => s.DebugEnabled), true };
             yield return new object[] { ConfigurationKeys.DebugEnabled, "F", CreateGlobalFunc(s => s.DebugEnabled), false };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "Y", CreateGlobalFunc(s => s.DebugEnabled), true };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "N", CreateGlobalFunc(s => s.DebugEnabled), false };
 
             // garbage checks
             yield return new object[] { ConfigurationKeys.DebugEnabled, "what_even_is_this", CreateGlobalFunc(s => s.DebugEnabled), false };
@@ -101,6 +105,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", CreateFunc(s => s.GlobalTags), TagsK2V2 };
             yield return new object[] { "DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
             yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", CreateFunc(s => s.GlobalTags.Count), 1 };
+            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2:with:colons, :leading:colon:bad, trailing:colon:good:", CreateFunc(s => s.GlobalTags), TagsWithColonsInValue };
 
 #pragma warning disable 618 // App Analytics is deprecated but still supported
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };
@@ -209,8 +214,8 @@ namespace Datadog.Trace.Tests.Configuration
                 settings = GetTracerSettings(key, value);
             }
 
-            object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            var actualValue = settingGetter(settings);
+            actualValue.Should().BeEquivalentTo(expectedValue);
 
             static TracerSettings GetTracerSettings(string key, string value)
             {

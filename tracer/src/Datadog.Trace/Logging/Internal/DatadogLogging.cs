@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -55,6 +56,8 @@ namespace Datadog.Trace.Logging
                 {
                     // Do nothing when an exception is thrown for attempting to access the filesystem
                 }
+
+                Task.Run(() => CleanLogFiles(logDirectory));
 
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 if (logDirectory == null)
@@ -217,6 +220,40 @@ namespace Datadog.Trace.Logging
             }
 
             return logDirectory;
+        }
+
+        internal static void CleanLogFiles(string logsDirectory)
+        {
+            var logDaysLimit = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogFileRetentionDays) ?? "32";
+
+            if (int.TryParse(logDaysLimit, out var days) && days > 0)
+            {
+                var date = DateTime.Now.AddDays(-days);
+                var logFormats = new[]
+                  {
+                    "dotnet-tracer-*.log",
+                    "dotnet-native-loader-*.log",
+                    "DD-DotNet-Profiler-Native-*.log"
+                  };
+
+                try
+                {
+                    foreach (var logFormat in logFormats)
+                    {
+                        foreach (var logFile in Directory.EnumerateFiles(logsDirectory, logFormat))
+                        {
+                            if (File.GetLastWriteTime(logFile) < date)
+                            {
+                                File.Delete(logFile);
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Abort on first catch when doing IO operation for performance reasons.
+                }
+            }
         }
     }
 }

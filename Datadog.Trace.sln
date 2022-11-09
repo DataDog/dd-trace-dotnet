@@ -379,7 +379,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "azure-functions", "azure-fu
 		tracer\test\test-applications\azure-functions\Directory.Build.props = tracer\test\test-applications\azure-functions\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllTriggers", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.AllTriggers.csproj", "{536F1D82-D40C-4E33-B7FA-76A0F17BF672}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.V3InProcess", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V3InProcess\Samples.AzureFunctions.V3InProcess.csproj", "{536F1D82-D40C-4E33-B7FA-76A0F17BF672}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Samples.Shared", "tracer\test\test-applications\Samples.Shared\Samples.Shared.shproj", "{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A}"
 EndProject
@@ -497,6 +497,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WeakCipher", "tracer\test\test-applications\integrations\Samples.WeakCipher\Samples.WeakCipher.csproj", "{43C696FA-3812-4312-9529-98CECCD32A81}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Deduplication", "tracer\test\test-applications\integrations\Samples.Deduplication\Samples.Deduplication.csproj", "{63B3A841-F3E0-4D60-B85D-156D7251FFDF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4InProcess", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4InProcess\Samples.AzureFunctions.V4InProcess.csproj", "{0F0F7D45-0E13-42B0-A158-8F303BBE8358}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -2504,6 +2506,14 @@ Global
 		{63B3A841-F3E0-4D60-B85D-156D7251FFDF}.Release|x64.Build.0 = Release|x64
 		{63B3A841-F3E0-4D60-B85D-156D7251FFDF}.Release|x86.ActiveCfg = Release|x86
 		{63B3A841-F3E0-4D60-B85D-156D7251FFDF}.Release|x86.Build.0 = Release|x86
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Debug|x64.Build.0 = Debug|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Release|x64.ActiveCfg = Release|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Release|x64.Build.0 = Release|Any CPU
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2693,6 +2703,7 @@ Global
 		{8C615906-AA60-4BA7-9B04-6A4E20969D6D} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{43C696FA-3812-4312-9529-98CECCD32A81} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{63B3A841-F3E0-4D60-B85D-156D7251FFDF} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{0F0F7D45-0E13-42B0-A158-8F303BBE8358} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

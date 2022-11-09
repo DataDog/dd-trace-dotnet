@@ -53,6 +53,7 @@ internal class IntelligentTestRunnerClient
     private readonly string _workingDirectory;
     private readonly string _environment;
     private readonly string _serviceName;
+    private readonly Dictionary<string, string>? _customConfigurations;
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly Uri _settingsUrl;
     private readonly Uri _searchCommitsUrl;
@@ -71,6 +72,11 @@ internal class IntelligentTestRunnerClient
         _workingDirectory = workingDirectory;
         _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty) ?? string.Empty;
         _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
+        _customConfigurations = null;
+
+        // Extract custom tests configurations from DD_TAGS
+        _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
+
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _getBranchNameTask = GetBranchNameAsync();
         _getShaTask = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory));
@@ -131,17 +137,82 @@ internal class IntelligentTestRunnerClient
         }
     }
 
+    internal static Dictionary<string, string>? GetCustomTestsConfigurations(IDictionary<string, string> globalTags)
+    {
+        Dictionary<string, string>? customConfiguration = null;
+        if (globalTags is not null)
+        {
+            foreach (var tag in globalTags)
+            {
+                const string testConfigKey = "test.configuration.";
+                if (tag.Key.StartsWith(testConfigKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    var key = tag.Key.Substring(testConfigKey.Length);
+                    if (string.IsNullOrEmpty(key))
+                    {
+                        continue;
+                    }
+
+                    customConfiguration ??= new Dictionary<string, string>();
+                    customConfiguration[key] = tag.Value;
+                }
+            }
+        }
+
+        return customConfiguration;
+    }
+
     public async Task<long> UploadRepositoryChangesAsync()
     {
         Log.Debug("ITR: Uploading Repository Changes...");
-        var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "log --format=%H -n 1000 --since=\"1 month ago\"", _workingDirectory)).ConfigureAwait(false);
-        if (gitOutput is null)
+
+        try
+        {
+            // We need to check if the git clone is a shallow one before uploading anything.
+            // In the case is a shallow clone we need to reconfigure it to upload the git tree
+            // without blobs so no content will be downloaded.
+            var gitRevParseShallowOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse --is-shallow-repository", _workingDirectory)).ConfigureAwait(false);
+            if (gitRevParseShallowOutput is null)
+            {
+                Log.Warning("ITR: 'git rev-parse --is-shallow-repository' command is null");
+                return 0;
+            }
+
+            if (gitRevParseShallowOutput.IndexOf("true", StringComparison.OrdinalIgnoreCase) > -1)
+            {
+                // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
+                var gitShallowLogOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "log --format=oneline -n 2", _workingDirectory)).ConfigureAwait(false);
+                if (gitShallowLogOutput is null)
+                {
+                    Log.Warning("ITR: 'git log --format=oneline -n 2' command is null");
+                    return 0;
+                }
+
+                // After asking for 2 logs lines, if the git log command returns just one commit sha, we reconfigure the repo
+                // to ask for git commits and trees of the last month (no blobs)
+                var shallowLogArray = gitShallowLogOutput.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                if (shallowLogArray.Length == 1)
+                {
+                    // Just one commit SHA. Reconfiguring repo
+                    Log.Information("ITR: The current repo is a shallow clone, reconfiguring git repo and refetching data...");
+                    await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "config remote.origin.partialclonefilter \"blob:none\"", _workingDirectory)).ConfigureAwait(false);
+                    await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "fetch --shallow-since=\"1 month ago\" --update-shallow --refetch", _workingDirectory)).ConfigureAwait(false);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error detecting and reconfiguring git repository for shallow clone.");
+        }
+
+        var gitLogOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "log --format=%H -n 1000 --since=\"1 month ago\"", _workingDirectory)).ConfigureAwait(false);
+        if (gitLogOutput is null)
         {
             Log.Warning("ITR: 'git log...' command is null");
             return 0;
         }
 
-        var localCommits = gitOutput.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        var localCommits = gitLogOutput.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
         if (localCommits.Length == 0)
         {
             Log.Debug("ITR: Local commits not found. (since 1 month ago)");
@@ -180,11 +251,12 @@ internal class IntelligentTestRunnerClient
                     currentSha,
                     new TestsConfigurations(
                         framework.OSPlatform,
-                        Environment.OSVersion.VersionString,
+                        CIVisibility.GetOperatingSystemVersion(),
                         framework.OSArchitecture,
                         skipFrameworkInfo ? null : framework.Name,
                         skipFrameworkInfo ? null : framework.ProductVersion,
-                        skipFrameworkInfo ? null : framework.ProcessArchitecture))),
+                        skipFrameworkInfo ? null : framework.ProcessArchitecture,
+                        _customConfigurations))),
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
@@ -256,11 +328,12 @@ internal class IntelligentTestRunnerClient
                     currentSha,
                     new TestsConfigurations(
                         framework.OSPlatform,
-                        Environment.OSVersion.VersionString,
+                        CIVisibility.GetOperatingSystemVersion(),
                         framework.OSArchitecture,
                         framework.Name,
                         framework.ProductVersion,
-                        framework.ProcessArchitecture))),
+                        framework.ProcessArchitecture,
+                        _customConfigurations))),
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
@@ -308,13 +381,42 @@ internal class IntelligentTestRunnerClient
                 return Array.Empty<SkippableTest>();
             }
 
-            var testAttributes = new SkippableTest[deserializedResult.Data.Length];
+            var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
+            var customConfigurations = _customConfigurations;
             for (var i = 0; i < deserializedResult.Data.Length; i++)
             {
-                testAttributes[i] = deserializedResult.Data[i].Attributes;
+                var includeItem = true;
+                var item = deserializedResult.Data[i].Attributes;
+                if (item.Configurations?.Custom is { } itemCustomConfiguration)
+                {
+                    if (customConfigurations is null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var rsCustomConfigurationItem in itemCustomConfiguration)
+                    {
+                        if (!customConfigurations.TryGetValue(rsCustomConfigurationItem.Key, out var customConfigValue) ||
+                            rsCustomConfigurationItem.Value != customConfigValue)
+                        {
+                            includeItem = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (includeItem)
+                {
+                    testAttributes.Add(item);
+                }
             }
 
-            return testAttributes;
+            if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
+            {
+                Log.Debug("ITR: JSON Filtered = {json}", JsonConvert.SerializeObject(testAttributes));
+            }
+
+            return testAttributes.ToArray();
         }
     }
 
@@ -699,9 +801,9 @@ internal class IntelligentTestRunnerClient
         public readonly string Sha;
 
         [JsonProperty("configurations")]
-        public readonly TestsConfigurations Configurations;
+        public readonly TestsConfigurations? Configurations;
 
-        public SkippableTestsQuery(string service, string environment, string repositoryUrl, string sha, TestsConfigurations configurations)
+        public SkippableTestsQuery(string service, string environment, string repositoryUrl, string sha, TestsConfigurations? configurations)
         {
             Service = service;
             Environment = environment;
@@ -739,37 +841,6 @@ internal class IntelligentTestRunnerClient
             Branch = branch;
             Sha = sha;
             Configurations = configurations;
-        }
-    }
-
-    private readonly struct TestsConfigurations
-    {
-        [JsonProperty(CommonTags.OSPlatform)]
-        public readonly string OSPlatform;
-
-        [JsonProperty(CommonTags.OSVersion)]
-        public readonly string OSVersion;
-
-        [JsonProperty(CommonTags.OSArchitecture)]
-        public readonly string OSArchitecture;
-
-        [JsonProperty(CommonTags.RuntimeName)]
-        public readonly string? RuntimeName;
-
-        [JsonProperty(CommonTags.RuntimeVersion)]
-        public readonly string? RuntimeVersion;
-
-        [JsonProperty(CommonTags.RuntimeArchitecture)]
-        public readonly string? RuntimeArchitecture;
-
-        public TestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string?runtimeName, string? runtimeVersion, string? runtimeArchitecture)
-        {
-            OSPlatform = osPlatform;
-            OSVersion = osVersion;
-            OSArchitecture = osArchitecture;
-            RuntimeName = runtimeName;
-            RuntimeVersion = runtimeVersion;
-            RuntimeArchitecture = runtimeArchitecture;
         }
     }
 
