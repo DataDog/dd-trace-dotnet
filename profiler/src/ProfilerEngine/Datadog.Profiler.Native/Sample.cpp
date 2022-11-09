@@ -14,16 +14,6 @@ const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
 
-// garbage collection related labels
-const std::string Sample::TimelineEventTypeLabel = "event";
-    const std::string Sample::TimelineEventTypeStopTheWorld = "stw";
-    const std::string Sample::TimelineEventTypeGarbageCollection = "gc";
-        const std::string Sample::GarbageCollectionReasonLabel = "gc reason";   // look at GCReason enumeration
-        const std::string Sample::GarbageCollectionTypeLabel = "gc type";       // look at GCType enumeration
-        const std::string Sample::GarbageCollectionCompactingLabel = "gc compacting"; // true or false
-const std::string Sample::GarbageCollectionGenerationLabel = "gc generation";
-const std::string Sample::GarbageCollectionNumberLabel = "gc number";
-
 
 // TODO: update the values vector size if more than 16 slots are needed
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created

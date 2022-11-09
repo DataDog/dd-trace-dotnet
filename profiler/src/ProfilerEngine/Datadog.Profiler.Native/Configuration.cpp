@@ -39,7 +39,6 @@ Configuration::Configuration()
     _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, false);
     _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false);
     _isContentionProfilingEnabled = GetContention();
-    _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, false);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
     _version = GetEnvironmentValue(EnvironmentVariables::Version, DefaultVersion);
@@ -135,11 +134,6 @@ int32_t Configuration::AllocationSampleLimit() const
 bool Configuration::IsContentionProfilingEnabled() const
 {
     return _isContentionProfilingEnabled;
-}
-
-bool Configuration::IsGarbageCollectionProfilingEnabled() const
-{
-    return _isGarbageCollectionProfilingEnabled;
 }
 
 int32_t Configuration::ContentionSampleLimit() const

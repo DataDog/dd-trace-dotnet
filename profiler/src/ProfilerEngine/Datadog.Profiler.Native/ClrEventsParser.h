@@ -13,10 +13,7 @@
 #include <shared_mutex>
 #include <math.h>
 
-#include "GarbageCollection.h"
 #include "IAllocationsListener.h"
-#include "IGarbageCollectionsListener.h"
-#include "IGCSuspensionsListener.h"
 
 #include "shared/src/native-src/string.h"
 #include "assert.h"
@@ -50,63 +47,9 @@ struct ContentionStopV1Payload
     uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
     double_t DurationNs;       // Duration of the contention (without spinning)
 };
-
-struct GCStartPayload
-{
-    uint32_t Count;
-    uint32_t Depth;
-    uint32_t Reason;
-    uint32_t Type;
-};
-
-struct GCEndPayload
-{
-    uint32_t Count;
-    uint32_t Depth;
-};
-
-struct GCHeapStatsV1Payload
-{
-    uint64_t GenerationSize0;
-    uint64_t TotalPromotedSize0;
-    uint64_t GenerationSize1;
-    uint64_t TotalPromotedSize1;
-    uint64_t GenerationSize2;
-    uint64_t TotalPromotedSize2;
-    uint64_t GenerationSize3;
-    uint64_t TotalPromotedSize3;
-    uint64_t FinalizationPromotedSize;
-    uint64_t FinalizationPromotedCount;
-    uint32_t PinnedObjectCount;
-    uint32_t SinkBlockCount;
-    uint32_t GCHandleCount;
-    uint16_t ClrInstanceID;
-};
-
-struct GCGlobalHeapPayload
-{
-    uint64_t FinalYoungestDesired;
-    uint32_t NumHeaps;
-    uint32_t CondemnedGeneration;
-    uint32_t Gen0ReductionCount;
-    uint32_t Reason;
-    uint32_t GlobalMechanisms;
-};
 #pragma pack()
 
 class IContentionListener;
-
-
-struct GCDetails
-{
-    int32_t Number;
-    uint32_t Generation;
-    GCReason Reason;
-    GCType Type;
-    bool IsCompacting;
-    uint64_t PauseDuration;
-    uint64_t StartTimestamp;
-};
 
 class ClrEventsParser
 {
@@ -115,13 +58,7 @@ public:
     static const int KEYWORD_CONTENTION = 0x4000;
 
 public:
-    ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo,
-                    IAllocationsListener* pAllocationListener,
-                    IContentionListener* pContentionListener,
-                    IGCSuspensionsListener* pGCSuspensionsListener,
-                    IGarbageCollectionsListener* pGarbageCollectionsListener
-                    );
-
+    ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo, IAllocationsListener* pAllocationListener, IContentionListener* pContentionListener);
     void ParseEvent(EVENTPIPE_PROVIDER provider,
                     DWORD eventId,
                     DWORD eventVersion,
@@ -140,32 +77,6 @@ private:
     bool TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version);
     void ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
     void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
-
-    // garbage collection events processing
-    void OnGCTriggered();
-    void OnGCStart(GCStartPayload& payload);
-    void OnGCStop(GCEndPayload& payload);
-    void OnGCSuspendEEBegin();
-    void OnGCRestartEEEnd();
-    void OnGCHeapStats();
-    void OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload);
-    void NotifySuspension(uint32_t number, uint32_t generation, uint64_t duration, uint64_t timestamp);
-    void NotifyGarbageCollection(
-        int32_t number,
-        uint32_t generation,
-        GCReason reason,
-        GCType type,
-        bool isCompacting,
-        uint64_t pauseDuration,
-        uint64_t totalDuration,
-        uint64_t endTimestamp
-        );
-    GCDetails& GetCurrentGC();
-    void InitializeGC(GCDetails& gc, GCStartPayload& payload);
-    void ClearCollections();
-    void ResetGC(GCDetails& gc);
-    uint64_t GetCurrentTimestamp();
-
 
 private:
     // Points to the UTF16, null terminated string from the given event data buffer
@@ -199,33 +110,8 @@ private:
     ICorProfilerInfo12* _pCorProfilerInfo = nullptr;
     IAllocationsListener* _pAllocationListener = nullptr;
     IContentionListener* _pContentionListener = nullptr;
-    IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
-    IGarbageCollectionsListener* _pGarbageCollectionsListener = nullptr;
-
- // state for garbage collection details including Stop The World duration
-private:
-    // set when GCSuspendEEBegin is received (usually no GC is known at that time)
-    uint64_t _suspensionStart;
-
-    // for concurrent mode, a background GC could be started
-    GCDetails _currentBGC;
-
-    // this is a foreground GC (could be triggered while a background GC is already running)
-    GCDetails _gcInProgress;
 
 private:
     const int EVENT_ALLOCATION_TICK = 10;   // version 4 contains the size + reference
     const int EVENT_CONTENTION_STOP = 91;   // version 1 contains the duration in nanoseconds
-
-    // Events emitted during garbage collection lifetime
-    // read https://medium.com/criteo-engineering/spying-on-net-garbage-collector-with-net-core-eventpipes-9f2a986d5705?source=friends_link&sk=baf9a7766fb5c7899b781f016803597f
-    //  and https://www.codeproject.com/Articles/1127179/Visualising-the-NET-Garbage-Collector
-    // for more details
-    const int EVENT_GC_TRIGGERED = 35;
-    const int EVENT_GC_START = 1;                 // V2
-    const int EVENT_GC_END = 2;                   // V1
-    const int EVENT_GC_HEAP_STAT = 4;             // V1
-    const int EVENT_GC_GLOBAL_HEAP_HISTORY = 205; // V2
-    const int EVENT_GC_SUSPEND_EE_BEGIN = 9;      // V1
-    const int EVENT_GC_RESTART_EE_END = 3;        // V2
 };

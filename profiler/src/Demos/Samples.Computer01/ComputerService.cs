@@ -28,7 +28,6 @@ namespace Samples.Computer01
         private IteratorComputation _iteratorComputation;
         private GenericsAllocation _genericsAllocation;
         private ContentionGenerator _contentionGenerator;
-        private GarbageCollections _garbageCollections;
 
 #if NET6_0_OR_GREATER
         private LinuxSignalHandler _linuxSignalHandler;
@@ -97,9 +96,6 @@ namespace Samples.Computer01
                     StartLinuxSignalHandler();
                     break;
 #endif
-                case Scenario.GarbageCollection:
-                    StartGarbageCollections(parameter);
-                    break;
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
@@ -164,10 +160,6 @@ namespace Samples.Computer01
                     StopLinuxSignalHandler();
                     break;
 #endif
-
-                case Scenario.GarbageCollection:
-                    StopGarbageCollections();
-                    break;
             }
         }
 
@@ -234,9 +226,6 @@ namespace Samples.Computer01
                         RunLinuxSignalHandler();
                         break;
 #endif
-                    case Scenario.GarbageCollection:
-                        RunGarbageCollections(parameter);
-                        break;
 
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
@@ -327,17 +316,6 @@ namespace Samples.Computer01
             _linuxSignalHandler.Start();
         }
 #endif
-        private void StartGarbageCollections(int parameter)
-        {
-            if (parameter == int.MaxValue)
-            {
-                // gen0 GC by default
-                parameter = 0;
-            }
-
-            _garbageCollections = new GarbageCollections(parameter);
-            _garbageCollections.Start();
-        }
 
         private void StopComputer()
         {
@@ -409,11 +387,6 @@ namespace Samples.Computer01
             _linuxSignalHandler.Stop();
         }
 #endif
-
-        private void StopGarbageCollections()
-        {
-            _garbageCollections.Stop();
-        }
 
         private void RunComputer()
         {
@@ -490,18 +463,6 @@ namespace Samples.Computer01
             linuxSignalHandler.Run();
         }
 #endif
-
-        private void RunGarbageCollections(int parameter)
-        {
-            if (parameter == int.MaxValue)
-            {
-                // gen0 collection by default
-                parameter = 0;
-            }
-
-            var garbageCollections = new GarbageCollections(parameter);
-            garbageCollections.Run();
-        }
 
         public class MySpecialClassA
         {

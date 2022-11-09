@@ -52,7 +52,6 @@ public:
     MOCK_METHOD(bool, IsTimestampsAsLabelEnabled, (), (const override));
     MOCK_METHOD(int32_t, WalltimeThreadsThreshold, (), (const override));
     MOCK_METHOD(int32_t, CpuThreadsThreshold, (), (const override));
-    MOCK_METHOD(bool, IsGarbageCollectionProfilingEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter

@@ -81,14 +81,6 @@ public:
     static const std::string ExceptionTypeLabel;
     static const std::string ExceptionMessageLabel;
     static const std::string AllocationClassLabel;
-    static const std::string GarbageCollectionGenerationLabel;
-    static const std::string GarbageCollectionNumberLabel;
-    static const std::string TimelineEventTypeLabel;
-    static const std::string TimelineEventTypeStopTheWorld;
-    static const std::string TimelineEventTypeGarbageCollection;
-    static const std::string GarbageCollectionReasonLabel;
-    static const std::string GarbageCollectionTypeLabel;
-    static const std::string GarbageCollectionCompactingLabel;
 
 private:
     uint64_t _timestamp;
