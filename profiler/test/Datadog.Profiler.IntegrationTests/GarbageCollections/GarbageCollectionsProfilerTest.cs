@@ -3,15 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
-using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -29,7 +23,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
-        public void ShouldGetAllocationSamples(string appName, string framework, string appAssembly)
+        public void ShouldGetGarbageCollectionSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
 

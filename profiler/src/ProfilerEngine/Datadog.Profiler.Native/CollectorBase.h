@@ -165,8 +165,7 @@ private:
         if (rawSample.AppDomainId == 0)
         {
             sample.SetAppDomainName("CLR");
-            // TODO: is pid mandatory?
-            sample.SetPid("0");
+            sample.SetPid(std::to_string(OpSysTools::GetProcId()));
 
             return;
         }

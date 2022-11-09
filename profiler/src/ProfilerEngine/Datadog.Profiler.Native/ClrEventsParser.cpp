@@ -405,9 +405,7 @@ void ClrEventsParser::OnGCRestartEEEnd()
     gc.PauseDuration += suspensionDuration;
 
     // could be the end of a gen0/gen1 or of a non concurrent gen2 GC
-    if (
-        (gc.Generation < 2) ||
-        (gc.Type == GCType::NonConcurrentGC))
+    if ((gc.Generation < 2) || (gc.Type == GCType::NonConcurrentGC))
     {
         auto endTimestamp = GetCurrentTimestamp();
         NotifyGarbageCollection(
@@ -435,9 +433,7 @@ void ClrEventsParser::OnGCHeapStats()
     }
 
     // this is the last event for a gen0/gen1 foreground collection during a background gen2 collections
-    if (
-        (_currentBGC.Number != -1) &&
-        (gc.Generation < 2))
+    if ((_currentBGC.Number != -1) && (gc.Generation < 2))
     {
         auto endTimestamp = GetCurrentTimestamp();
         NotifyGarbageCollection(

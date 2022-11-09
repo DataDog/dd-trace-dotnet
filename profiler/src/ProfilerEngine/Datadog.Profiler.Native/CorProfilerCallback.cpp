@@ -832,11 +832,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - GC related events
 
         UINT64 activatedKeywords = 0;
+        int verbosity = 4;  // informational
 
-        if (
-            (_pConfiguration->IsAllocationProfilingEnabled()) ||
-            (_pConfiguration->IsGarbageCollectionProfilingEnabled())
-            )
+        if (_pConfiguration->IsAllocationProfilingEnabled())
+        {
+            activatedKeywords |= ClrEventsParser::KEYWORD_GC;
+
+            // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+            verbosity = 5;
+        }
+        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
         }
@@ -850,7 +855,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                 {
                     WStr("Microsoft-Windows-DotNETRuntime"),
                     activatedKeywords,
-                    5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+                    verbosity,
                     NULL
                 }
             };
