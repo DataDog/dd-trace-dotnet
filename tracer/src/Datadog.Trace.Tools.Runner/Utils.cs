@@ -13,10 +13,12 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.HttpOverStreams;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -235,7 +237,7 @@ namespace Datadog.Trace.Tools.Runner
             return defaultValue;
         }
 
-        public static async Task<bool> CheckAgentConnectionAsync(string agentUrl)
+        public static async Task<AgentConfiguration> CheckAgentConnectionAsync(string agentUrl)
         {
             var env = new NameValueCollection();
             if (!string.IsNullOrWhiteSpace(agentUrl))
@@ -251,30 +253,38 @@ namespace Datadog.Trace.Tools.Runner
 
             var tracerSettings = new TracerSettings(configurationSource);
             var settings = tracerSettings.Build();
-            var discoveryService = DiscoveryService.Create(settings.Exporter);
+            var discoveryService = new DiscoveryService(
+                AgentTransportStrategy.Get(
+                    settings.Exporter,
+                    productName: "discovery",
+                    tcpTimeout: TimeSpan.FromSeconds(5),
+                    AgentHttpHeaderNames.MinimalHeaders,
+                    () => new MinimalAgentHeaderHelper(),
+                    uri => uri),
+                10,
+                1000,
+                int.MaxValue);
 
-            var agentWriter = new ApmAgentWriter(settings, new CISampler(), discoveryService);
-
-            try
-            {
-                if (!await agentWriter.Ping().ConfigureAwait(false))
+            var tcs = new TaskCompletionSource<AgentConfiguration>(TaskCreationOptions.RunContinuationsAsynchronously);
+            discoveryService.SubscribeToChanges(
+                aCfg =>
                 {
-                    WriteError($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                WriteError($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
-                AnsiConsole.WriteException(ex);
-                return false;
-            }
-            finally
-            {
-                await agentWriter.FlushAndCloseAsync().ConfigureAwait(false);
-            }
+                    tcs.TrySetResult(aCfg);
+                    discoveryService.DisposeAsync();
+                });
 
-            return true;
+            var cts = new CancellationTokenSource();
+            cts.CancelAfter(5000);
+            using (cts.Token.Register(
+                       () =>
+                       {
+                           WriteError($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
+                           tcs.TrySetResult(null);
+                           discoveryService.DisposeAsync();
+                       }))
+            {
+                return await tcs.Task.ConfigureAwait(false);
+            }
         }
 
         internal static void WriteError(string message)
