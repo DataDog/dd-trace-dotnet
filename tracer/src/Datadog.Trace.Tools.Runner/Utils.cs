@@ -276,13 +276,12 @@ namespace Datadog.Trace.Tools.Runner
             var cts = new CancellationTokenSource();
             cts.CancelAfter(5000);
             using (cts.Token.Register(
-                       token =>
+                       () =>
                        {
                            WriteError($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
                            tcs.TrySetResult(null);
                            discoveryService.DisposeAsync();
-                       },
-                       cts.Token))
+                       }))
             {
                 return await tcs.Task.ConfigureAwait(false);
             }
