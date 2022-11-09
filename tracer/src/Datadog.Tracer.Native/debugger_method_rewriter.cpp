@@ -992,6 +992,16 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
      *  }
      */
 
+    mdFieldDef isReEntryFieldTok;
+    HRESULT hr = debuggerTokens->GetIsFirstEntryToMoveNextFieldToken(caller->type.id, isReEntryFieldTok);
+    IfFailRet(hr);
+
+    if (hr != S_OK)
+    {
+        Logger::Info("Failed to apply Method Probe on Async Method due to failure in the lookup of the isReEntry field in the state machine. module id:", moduleId, " method: ", caller->type.name, ".", caller->name);
+        return S_OK; // We do not fail the whole instrumentation as there could be Line Probes that we want to emit. They do not suffer from the absence of the IsReEntry field.
+    }
+
     LogDebugCallerInfo(caller, instrumentedMethodIndex);
     Logger::Info("Applying async method probe. module id:", moduleId, " method: ", caller->type.name, ".", caller->name);
 
@@ -1004,7 +1014,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
 
     // the manage call look like this: 
     // static AsyncMethodDebuggerState BeginMethod<TTarget>(string probeId, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, ref bool isReEntryToMoveNext)
-    HRESULT hr = LoadProbeIdIntoStack(moduleId, moduleMetadata, functionToken, methodProbeId, rewriterWrapper);
+    hr = LoadProbeIdIntoStack(moduleId, moduleMetadata, functionToken, methodProbeId, rewriterWrapper);
     IfFailRet(hr);
 
     ILInstr* loadInstanceInstr;
@@ -1015,10 +1025,6 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     rewriterWrapper.LoadToken(caller->type.id);
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
     loadInstanceInstr = rewriterWrapper.LoadArgument(0);
-
-    mdFieldDef isReEntryFieldTok;
-    hr = debuggerTokens->GetIsFirstEntryToMoveNextFieldToken(caller->type.id, isReEntryFieldTok);
-    IfFailRet(hr);
 
     if (isReEntryFieldTok == mdFieldDefNil)
     {
@@ -1379,11 +1385,11 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         if (isAsyncMethod)
         {
             Logger::Info("Async method probe is disabled");
-            Logger::Info("Applying Async Method Probe instrumentation with probeId.", methodProbeId);
-             hr = ApplyAsyncMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
-                                       isStatic, &methodReturnType, methodProbeId, methodLocals, numLocals, rewriterWrapper, asyncMethodStateIndex, callTargetReturnIndex,
-                                       returnValueIndex, callTargetReturnToken, firstInstruction, instrumentedMethodIndex, beforeLineProbe,
-                                       newClauses); 
+            //Logger::Info("Applying Async Method Probe instrumentation with probeId.", methodProbeId);
+            // hr = ApplyAsyncMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
+            //                           isStatic, &methodReturnType, methodProbeId, methodLocals, numLocals, rewriterWrapper, asyncMethodStateIndex, callTargetReturnIndex,
+            //                           returnValueIndex, callTargetReturnToken, firstInstruction, instrumentedMethodIndex, beforeLineProbe,
+            //                           newClauses);
         }
         else
         {
