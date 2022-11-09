@@ -16,6 +16,7 @@ public class TargetFramework : Enumeration
     public static TargetFramework NETCOREAPP3_1 = new TargetFramework { Value = "netcoreapp3.1" };
     public static TargetFramework NET5_0 = new TargetFramework { Value = "net5.0" };
     public static TargetFramework NET6_0 = new TargetFramework { Value = "net6.0" };
+    public static TargetFramework NET7_0 = new TargetFramework { Value = "net7.0" };
 
     public static implicit operator string(TargetFramework framework)
     {
