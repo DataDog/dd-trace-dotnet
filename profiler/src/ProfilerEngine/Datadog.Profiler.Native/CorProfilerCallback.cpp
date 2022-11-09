@@ -66,6 +66,7 @@ Error("unknown platform");
 #define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.Profiler.Native" LIBRARY_FILE_EXTENSION)
 #endif
 
+
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
     return _pClrLifetime.get();
@@ -703,6 +704,10 @@ void CorProfilerCallback::ConfigureDebugLog(void)
     }
 }
 
+// CLR event verbosity definition
+const uint32_t InformationalVerbosity = 4;
+const uint32_t VerboseVerbosity = 5;
+
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerInfoUnk)
 {
     Log::Info("CorProfilerCallback is initializing.");
@@ -832,14 +837,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - GC related events
 
         UINT64 activatedKeywords = 0;
-        int verbosity = 4;  // informational
+        uint32_t verbosity = InformationalVerbosity;
 
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
 
             // the documentation states that AllocationTick is Informational but... need Verbose  :^(
-            verbosity = 5;
+            verbosity = VerboseVerbosity;
         }
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
