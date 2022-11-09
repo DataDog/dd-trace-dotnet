@@ -124,12 +124,6 @@ namespace Datadog.Trace
                 }
             }
 
-            // Determine whether we will sample a dropped span with single span sampling rules
-            if (_samplingPriority <= 0)
-            {
-                Tracer.SpanSampler?.MakeSamplingDecision(span);
-            }
-
             lock (_syncRoot)
             {
                 _spans.Add(span);

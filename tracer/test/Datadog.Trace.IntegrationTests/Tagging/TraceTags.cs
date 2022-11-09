@@ -1,4 +1,4 @@
-﻿// <copyright file="TraceTags.cs" company="Datadog">
+// <copyright file="TraceTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ public class TraceTags
         var settings = new TracerSettings { GlobalSamplingRate = 0 };
 
         _testApi = new MockApi();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
         _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 

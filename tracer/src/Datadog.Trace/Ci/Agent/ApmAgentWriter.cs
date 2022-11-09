@@ -31,12 +31,12 @@ namespace Datadog.Trace.Ci.Agent
             var api = new Api(apiRequestFactory, null, rates => sampler.SetDefaultSampleRates(rates), partialFlushEnabled);
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize);
+            _agentWriter = new AgentWriter(api, statsAggregator, null, null, maxBufferSize: maxBufferSize);
         }
 
         public ApmAgentWriter(IApi api, int maxBufferSize = DefaultMaxBufferSize)
         {
-            _agentWriter = new AgentWriter(api, null, null, maxBufferSize: maxBufferSize);
+            _agentWriter = new AgentWriter(api, null, null, null, maxBufferSize: maxBufferSize);
         }
 
         public void WriteEvent(IEvent @event)
