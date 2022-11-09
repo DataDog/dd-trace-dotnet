@@ -198,7 +198,8 @@ internal readonly partial struct SecurityCoordinator
             { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestHeaderNoCookies, headersDic },
             { AddressesConstants.RequestCookies, cookiesDic },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) },
+            { AddressesConstants.UserId, _localRootSpan.Context.TraceContext.Tags.GetTag(Tags.User.Id) },
         };
 
         return dict;

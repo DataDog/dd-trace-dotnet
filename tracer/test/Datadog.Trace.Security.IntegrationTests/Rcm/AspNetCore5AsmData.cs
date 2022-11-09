@@ -38,12 +38,29 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         }
     }
 
+    public class AspNetCore5AsmDataSecurityDisabledBlockingUser : AspNetCore5AsmDataBlockingUser
+    {
+        public AspNetCore5AsmDataSecurityDisabledBlockingUser(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: false, testName: "AspNetCore5AsmDataSecurityDisabled")
+        {
+        }
+    }
+
+    public class AspNetCore5AsmDataSecurityEnabledBlockingUser : AspNetCore5AsmDataBlockingUser
+    {
+        public AspNetCore5AsmDataSecurityEnabledBlockingUser(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: "AspNetCore5AsmDataSecurityEnabled")
+        {
+        }
+    }
+
     public abstract class AspNetCore5AsmDataBlockingRequestIp : RcmBase
     {
         public AspNetCore5AsmDataBlockingRequestIp(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
             : base(fixture, outputHelper, enableSecurity, testName: testName)
         {
-            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
+            this.EnableDebugMode();
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
         }
 
         [SkippableTheory]
@@ -146,6 +163,54 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spanAfterAsmDataReactivated);
 
             await VerifySpans(spans.ToImmutableList(), settings);
+        }
+    }
+
+    public abstract class AspNetCore5AsmDataBlockingUser : RcmBase
+    {
+        public AspNetCore5AsmDataBlockingUser(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
+            : base(fixture, outputHelper, enableSecurity, testName: testName)
+        {
+            this.EnableDebugMode();
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+        }
+
+        [SkippableTheory]
+        [InlineData("blocking-user", "/user")]
+        [Trait("RunOnWindows", "True")]
+        public async Task RunTest(string test, string url)
+        {
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(parameters: new object[] { test, sanitisedUrl });
+            var spanBeforeAsmData = await SendRequestsAsync(agent, url);
+
+            var product = new AsmDataProduct();
+            agent.SetupRcm(
+                Output,
+                new[]
+                {
+                    ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, "asm_data")
+                },
+                product.Name);
+
+            var request1 = await agent.WaitRcmRequestAndReturnLast();
+            if (EnableSecurity == true)
+            {
+                await logEntryWatcher.WaitForLogEntry($"1 {RulesUpdatedMessage()}", LogEntryWatcherTimeout);
+            }
+            else
+            {
+                await Task.Delay(1500);
+            }
+
+            var spanAfterAsmData = await SendRequestsAsync(agent, url);
+            var spans = new List<MockSpan>();
+            spans.AddRange(spanBeforeAsmData);
+            spans.AddRange(spanAfterAsmData);
+            await VerifySpans(spans.ToImmutableList(), settings, true);
         }
     }
 }
