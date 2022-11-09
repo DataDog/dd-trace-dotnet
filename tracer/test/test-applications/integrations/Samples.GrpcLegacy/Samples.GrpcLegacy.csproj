@@ -5,7 +5,8 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <Platforms>x86;x64</Platforms>
-    <NoWarn>0618;NETSDK1138</NoWarn>
+    <!-- Suppress warnings about lowercase variable names in generated code -->
+    <NoWarn>0618;NETSDK1138;CS8981</NoWarn>
 
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.45.0</ApiVersion>
 
