@@ -238,7 +238,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 #endif
 
-#if NET6_0
+#if NET6_0_OR_GREATER
         [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForWebApplicationBuilder_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)

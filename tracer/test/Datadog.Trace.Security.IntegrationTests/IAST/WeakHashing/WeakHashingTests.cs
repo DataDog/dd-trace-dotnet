@@ -41,7 +41,7 @@ public class WeakHashingTests : TestHelper
         // Avoid tests parallel log collision
         SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
 
-#if NET6_0 || NET5_0
+#if NET5_0_OR_GREATER
         const int expectedSpanCount = 28;
         var filename = "WeakHashingTests.SubmitsTraces.Net50.60";
 #else
