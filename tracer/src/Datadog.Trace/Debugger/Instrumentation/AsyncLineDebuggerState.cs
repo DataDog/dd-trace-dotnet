@@ -42,7 +42,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <param name="probeId">The id of the probe</param>
         /// <param name="scope">Scope instance</param>
-        /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
+        /// <param name="startTime">The timestamp captured when the relevant line of code was hit</param>
         /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Instrumentation.MethodMetadataInfo"/></param>
         /// <param name="lineNumber">The line number where the probe is located on</param>
         /// <param name="probeFilePath">The path to the file of the probe</param>
