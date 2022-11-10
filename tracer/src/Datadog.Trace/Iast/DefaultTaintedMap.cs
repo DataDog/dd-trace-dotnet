@@ -8,6 +8,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using Datadog.Trace.Vendors.Serilog.Formatting.Display.Obsolete;
 
 namespace Datadog.Trace.Iast;
 
@@ -91,6 +92,11 @@ internal class DefaultTaintedMap : ITaintedMap
     /// <param name="entry">Tainted object</param>
     public void Put(ITaintedObject entry)
     {
+        if (entry is null || (entry.Value as string == string.Empty))
+        {
+            return;
+        }
+
         int index = Index(entry.PositiveHashCode);
 
         if (IsFlat)
@@ -234,7 +240,7 @@ internal class DefaultTaintedMap : ITaintedMap
     }
 
     // For testing only
-    internal List<ITaintedObject> ToList()
+    public List<ITaintedObject> ToList()
     {
         List<ITaintedObject> list = new();
 

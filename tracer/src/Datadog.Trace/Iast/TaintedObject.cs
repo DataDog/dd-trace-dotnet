@@ -37,6 +37,6 @@ internal class TaintedObject : ITaintedObject
 
     public override int GetHashCode()
     {
-        return PositiveHashCode & DefaultTaintedMap.DefaultCapacity - 1;
+        return Weak?.Target?.GetHashCode() ?? 0;
     }
 }

@@ -1,4 +1,4 @@
-// <copyright file="DefaultTaintedMapTests.cs" company="Datadog">
+// <copyright file="DefaultTaintedMap2Tests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,18 +8,35 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Iast;
+using Datadog.Trace.Security.Unit.Tests.Iast.Tainted;
 using Xunit;
 using Range = Datadog.Trace.Iast.Range;
 
-namespace Datadog.Trace.Security.Unit.Tests.Iast.Tainted;
+namespace Datadog.Trace.Security.Unit.Tests.IAST.Tainted;
 
-public class DefaultTaintedMapTests
+public class DefaultTaintedMap2Tests
 {
+    [Fact]
+    public void Map1Vs2()
+    {
+        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map2 = new();
+
+        var time1put = PutTime(map);
+        var time2put = PutTime(map2);
+
+        var time1get = GetTime(map);
+        var time2get = GetTime(map2);
+
+        var info = ("time1put: " + time1put + " time2put: " + time2put + " time1get: " + time1get + " time2get: " + time2get);
+        Assert.False(true, info);
+    }
+
     [Fact]
     public void GivenATaintedObjectMap_WhenPutAndGet_ObjectIsRetrieved()
     {
-        DefaultTaintedMap map = new();
-        string testString = "test";
+        DefaultTaintedMap2 map = new();
+        var testString = "test";
         var source = new Source(12, "name", "value");
         var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
         map.Put(tainted);
@@ -31,7 +48,7 @@ public class DefaultTaintedMapTests
     [Fact]
     public void GivenATaintedObjectMap_WhenPutEmptyString_ObjectIsNotInserted()
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
         var tainted = new TaintedObject(string.Empty, null);
         map.Put(tainted);
         Assert.Empty(map.ToList());
@@ -40,7 +57,7 @@ public class DefaultTaintedMapTests
     [Fact]
     public void GivenATaintedObjectMap_WhenPutNull_ObjectIsNotInserted()
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
         map.Put(null);
         Assert.Empty(map.ToList());
     }
@@ -48,14 +65,14 @@ public class DefaultTaintedMapTests
     [Fact]
     public void GivenATaintedObjectMap_WhenGetNull_NoExceptionIsThrown()
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
         Assert.Null(map.Get(null));
     }
 
     [Fact]
     public void GivenATaintedObjectMap_WhenGetAfterPurge_ObjectIsRetrievedAndUnchanged()
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
         var testObject = new object();
         var tainted = new TaintedObject(testObject, new Range[] { new Range(1, 2, new Source(12, "name", "value")) });
         var hash1 = tainted.GetHashCode();
@@ -69,7 +86,7 @@ public class DefaultTaintedMapTests
     [Fact]
     public void GivenATaintedObjectMap_WhenClear_ObjectIsNotRetrieved()
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
         var testObject = new object();
         var source = new Source(12, "name", "value");
         var tainted = new TaintedObject(testObject, new Range[] { new Range(1, 2, source) });
@@ -83,11 +100,11 @@ public class DefaultTaintedMapTests
     [Fact]
     public void GivenATaintedObjectMap_WhenPutManyObjects_LastObjectIsAlwaysRetrieved()
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
 
-        for (int i = 0; i < DefaultTaintedMap.DefaultCapacity; i++)
+        for (var i = 0; i < DefaultTaintedMap2.DefaultCapacity; i++)
         {
-            string testString = Guid.NewGuid().ToString();
+            var testString = Guid.NewGuid().ToString();
             var source = new Source(12, "name", "value");
             var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
             map.Put(tainted);
@@ -100,13 +117,13 @@ public class DefaultTaintedMapTests
     [Fact]
     public void GivenATaintedObjectMap_WhenPutDefaultFlatModeThresoldElements_AllObjectsAreAlwaysRetrieved()
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
         List<string> objects = new();
-        var iterations = DefaultTaintedMap.DefaultFlatModeThresold / 2;
+        var iterations = DefaultTaintedMap2.DefaultFlatModeThresold / 2;
 
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
-            string testString = Guid.NewGuid().ToString();
+            var testString = Guid.NewGuid().ToString();
             var source = new Source(12, "name", "value");
             var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
             map.Put(tainted);
@@ -116,29 +133,14 @@ public class DefaultTaintedMapTests
 
         map.Purge();
         Assert.Equal(iterations, map.ToList().Count);
-        Assert.False(map.IsFlat);
         AssertContained(map, objects);
-    }
-
-    [Fact]
-    public void GivenATaintedObjectMap_WhenPutMoreThanDefaultFlatModeThresoldElements_GetsFlatAndObjectsAreTheSame()
-    {
-        List<string> objects = new();
-        DefaultTaintedMap map = new();
-        AssertFlatMode(map, objects);
-
-        foreach (var itemInMap in map.ToList())
-        {
-            Assert.Contains((itemInMap as TaintedObject).Value, objects);
-        }
     }
 
     [Fact]
     public void GivenATaintedObjectMap_WhenPutMoreThanDefaultFlatModeThresoldElements_GetsFlatAndOnlyOneObjectWithSameHashIsStored()
     {
         List<string> objects = new();
-        DefaultTaintedMap map = new();
-        AssertFlatMode(map, objects);
+        DefaultTaintedMap2 map = new();
 
         var testString = new StringForTest(Guid.NewGuid().ToString());
         testString.Hash = 10;
@@ -151,18 +153,18 @@ public class DefaultTaintedMapTests
         map.Put(new TaintedForTest(testString2, null));
 
         Assert.NotNull(map.Get(testString2));
-        Assert.Null(map.Get(testString));
+        Assert.NotNull(map.Get(testString));
     }
 
     [Fact]
     public void GivenATaintedObjectMap_WhenPutObjectsThatGetDisposed_ObjectsArePurged()
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
         List<string> disposedObjects = new();
         List<string> aliveObjects = new();
-        bool alive = true;
+        var alive = true;
 
-        for (int i = 0; i < DefaultTaintedMap.DefaultFlatModeThresold / 2; i++)
+        for (var i = 0; i < DefaultTaintedMap2.DefaultFlatModeThresold / 2; i++)
         {
             var testString = Guid.NewGuid().ToString();
             var tainted = new TaintedForTest(testString, null);
@@ -187,7 +189,7 @@ public class DefaultTaintedMapTests
     [Fact]
     public void GivenATaintedObjectMap_WhenASingleObjectNotDisposed_IsNotPurged()
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
         var testString = Guid.NewGuid().ToString();
         var tainted = new TaintedForTest(testString, null);
         map.Put(tainted);
@@ -199,7 +201,7 @@ public class DefaultTaintedMapTests
     [Fact]
     public void GivenATaintedObjectMap_WhenASingleObjectDisposed_IsPurged()
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
         var testString = Guid.NewGuid().ToString();
         var tainted = new TaintedForTest(testString, null);
         map.Put(tainted);
@@ -224,10 +226,10 @@ public class DefaultTaintedMapTests
 
     private static void TestObjectPurgeSameHash(int totalObjects, int disposedIndex)
     {
-        DefaultTaintedMap map = new();
+        DefaultTaintedMap2 map = new();
         List<StringForTest> addedObjects = new();
 
-        for (int i = 0; i < totalObjects; i++)
+        for (var i = 0; i < totalObjects; i++)
         {
             var testString = new StringForTest(i.ToString());
             testString.Hash = 10;
@@ -239,7 +241,7 @@ public class DefaultTaintedMapTests
         (map.Get(addedObjects[disposedIndex]) as TaintedForTest).SetAlive(false);
         map.Purge();
 
-        for (int i = 0; i < totalObjects; i++)
+        for (var i = 0; i < totalObjects; i++)
         {
             if (i == disposedIndex)
             {
@@ -252,7 +254,7 @@ public class DefaultTaintedMapTests
         }
     }
 
-    private static void AssertNotContained(DefaultTaintedMap map, List<string> objects)
+    private static void AssertNotContained(DefaultTaintedMap2 map, List<string> objects)
     {
         foreach (var item in objects)
         {
@@ -260,7 +262,7 @@ public class DefaultTaintedMapTests
         }
     }
 
-    private static void AssertContained(DefaultTaintedMap map, List<string> objects)
+    private static void AssertContained(DefaultTaintedMap2 map, List<string> objects)
     {
         foreach (var item in objects)
         {
@@ -268,17 +270,30 @@ public class DefaultTaintedMapTests
         }
     }
 
-    private static void AssertFlatMode(DefaultTaintedMap map, List<string> objects)
+    private static int PutTime(ITaintedMap map)
     {
-        for (int i = 0; i < DefaultTaintedMap.DefaultFlatModeThresold * 2; i++)
+        var time1 = DateTime.Now;
+        for (int i = 0; i < DefaultTaintedMap.DefaultCapacity * 4; i++)
         {
             string testString = Guid.NewGuid().ToString();
             var source = new Source(12, "name", "value");
             var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
             map.Put(tainted);
-            objects.Add(testString);
         }
 
-        Assert.True(map.IsFlat);
+        return (int)(DateTime.Now - time1).TotalMilliseconds;
+    }
+
+    private static int GetTime(ITaintedMap map)
+    {
+        var list = map.ToList();
+        var time1 = DateTime.Now;
+        foreach (var item in list)
+        {
+            map.Get(item.Value);
+            map.Get(new Guid().ToString());
+        }
+
+        return (int)(DateTime.Now - time1).TotalMilliseconds;
     }
 }

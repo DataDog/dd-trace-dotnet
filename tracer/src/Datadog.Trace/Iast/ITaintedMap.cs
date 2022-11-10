@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.Iast;
 
@@ -12,4 +13,6 @@ internal interface ITaintedMap
     public void Put(ITaintedObject tainted);
 
     public ITaintedObject Get(object obj);
+
+    public List<ITaintedObject> ToList();
 }
