@@ -623,6 +623,8 @@ stages:
   dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  pool:
+    name: azure-windows-scale-set
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -631,8 +633,6 @@ stages:
 
     - job: managed
       timeoutInMinutes: 60 #default value
-      pool:
-        name: azure-windows-scale-set
       steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -659,8 +659,6 @@ stages:
 
     - job: native
       timeoutInMinutes: 60 #default value
-      pool:
-        vmImage: windows-2019
       steps:
       - template: steps/clone-repo.yml
         parameters:
