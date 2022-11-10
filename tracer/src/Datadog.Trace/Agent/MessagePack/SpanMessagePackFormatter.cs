@@ -240,14 +240,18 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, envRawBytes);
             }
 
-            // add "language=dotnet" and "version" tags to all spans, except those that
+            // add "language=dotnet" tag to all spans, except those that
             // represents a downstream service or external dependency
             if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
+            }
 
+            // add "version" tags to all spans whose service name is the default service name
+            if (string.Equals(span.Context.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            {
                 var versionRawBytes = MessagePackStringCache.GetEnvironmentBytes(model.TraceChunk.ServiceVersion);
 
                 if (versionRawBytes is not null)
