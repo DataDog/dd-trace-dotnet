@@ -256,7 +256,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var discoveryService = DiscoveryService.Create(
                 settings.Exporter,
-                TimeSpan.FromSeconds(5),
+                tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 10,
                 maxRetryDelayMs: 1000,
                 recheckIntervalMs: int.MaxValue);

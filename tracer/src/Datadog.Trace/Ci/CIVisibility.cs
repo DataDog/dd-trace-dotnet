@@ -70,7 +70,7 @@ namespace Datadog.Trace.Ci
                 {
                     discoveryService = DiscoveryService.Create(
                         new ImmutableExporterSettings(_settings.TracerSettings.Exporter),
-                        TimeSpan.FromSeconds(5),
+                        tcpTimeout: TimeSpan.FromSeconds(5),
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
                         recheckIntervalMs: int.MaxValue);
