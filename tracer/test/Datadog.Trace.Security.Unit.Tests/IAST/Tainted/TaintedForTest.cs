@@ -32,6 +32,8 @@ public class TaintedForTest : ITaintedObject
 
     public int PositiveHashCode { get; set; }
 
+    public WeakReference Weak => throw new NotImplementedException();
+
     public void SetAlive(bool isAlive)
     {
         _alive = isAlive;
