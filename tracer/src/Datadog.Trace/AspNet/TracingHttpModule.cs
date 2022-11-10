@@ -19,6 +19,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
+using SecurityTransport = Datadog.Trace.AppSec.Transports.SecurityTransport;
 
 namespace Datadog.Trace.AspNet
 {
@@ -174,14 +175,20 @@ namespace Datadog.Trace.AspNet
                 if (security.Settings.Enabled)
                 {
                     var securityTransport = new SecurityTransport(security, httpContext, scope.Span);
-                    var result = securityTransport.ShouldBlock();
-                    securityTransport.CheckAndBlock(result);
+                    securityTransport.ReportWafInitInfoOnce();
 
-                    if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    // request args
+                    var args = securityTransport.GetBasicRequestArgsForWaf();
+
+                    // body args
+                    if (httpRequest.ContentType.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
-                        result = securityTransport.ShouldBlockBody();
-                        securityTransport.CheckAndBlock(result);
+                        var bodyArgs = securityTransport.GetBodyFromFormData();
+                        args.Add(AddressesConstants.RequestBody, bodyArgs);
                     }
+
+                    var result = securityTransport.RunWaf(args);
+                    securityTransport.CheckAndBlock(result);
                 }
             }
             catch (Exception ex)
@@ -192,10 +199,7 @@ namespace Datadog.Trace.AspNet
                     scope?.Dispose();
                 }
 
-                if (ex is not BlockException)
-                {
-                    Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
-                }
+                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
         }
 
@@ -264,18 +268,17 @@ namespace Datadog.Trace.AspNet
                         var security = Security.Instance;
                         if (security.Settings.Enabled)
                         {
-                            if (!(app.Context.Items["block"] is bool blocked && blocked))
+                            var securityTransport = new SecurityTransport(security, app.Context, rootSpan);
+                            if (!securityTransport.Blocked)
                             {
-                                var securityTransport = new SecurityTransport(security, app.Context, rootSpan);
                                 // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
-                                var result = securityTransport.ShouldBlockPathParams();
+                                var basicRequestArgsForWaf = securityTransport.GetBasicRequestArgsForWaf();
+                                basicRequestArgsForWaf.Add(AddressesConstants.RequestPathParams, securityTransport.GetPathParams());
+                                using var result = securityTransport.RunWaf(basicRequestArgsForWaf);
                                 securityTransport.CheckAndBlock(result);
-                                if (result.ReturnCode != ReturnCode.Block)
-                                {
-                                    result = securityTransport.ShouldBlock();
-                                    securityTransport.CheckAndBlock(result);
-                                }
                             }
+
+                            securityTransport.Cleanup();
                         }
 
                         scope.Dispose();
@@ -287,7 +290,7 @@ namespace Datadog.Trace.AspNet
                     }
                 }
             }
-            catch (Exception ex) when (ex is not BlockException)
+            catch (Exception ex)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
@@ -330,10 +333,7 @@ namespace Datadog.Trace.AspNet
             }
             catch (Exception ex)
             {
-                if (ex is not BlockException)
-                {
-                    Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
-                }
+                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
         }
 

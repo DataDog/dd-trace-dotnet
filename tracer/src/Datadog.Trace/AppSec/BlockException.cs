@@ -29,9 +29,15 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        public BlockException(IResult result) => Result = result;
+        public BlockException(IResult result, bool reported = false)
+        {
+            Result = result;
+            Reported = reported;
+        }
 
         internal IResult Result { get; }
+
+        public bool Reported { get; }
 
         // can give a significant performance boost, this exception is currently caught and logged by the host web server
         public override string ToString() => "BlockException";

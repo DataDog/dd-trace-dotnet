@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         MaximumVersion = Major2,
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AspNetCoreBlockMiddlewareIntegrationEnd
     {
         private const string Major2 = "2";
@@ -53,19 +54,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : IApplicationBuilder
         {
-            if (Security.Instance.Settings.Enabled)
-            {
-                instance.Components.Insert(0, rd => new BlockingMiddleware(rd, true).Invoke);
+            instance.Components.Insert(0, rd => new BlockingMiddleware(rd, runSecurity: true).Invoke);
 
-                // var componentsCount = instance.Components.Count;
-                // for (var i = 2; i < componentsCount; i += 2)
-                // {
-                //     instance.Components.Insert(i, rd => new BlockingMiddleware(rd).Invoke);
-                //     componentsCount++;
-                // }
+            // var componentsCount = instance.Components.Count;
+            // for (var i = 2; i < componentsCount; i += 2)
+            // {
+            //     instance.Components.Insert(i, rd => new BlockingMiddleware(rd).Invoke);
+            //     componentsCount++;
+            // }
 
-                instance.Components.Add(rd => new BlockingMiddleware(rd, true, true).Invoke);
-            }
+            instance.Components.Add(rd => new BlockingMiddleware(rd, runSecurity: true, endPipeline: true).Invoke);
 
             return default;
         }

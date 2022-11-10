@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -404,28 +405,6 @@ namespace Datadog.Trace.DiagnosticListeners
             return span;
         }
 
-        internal static void DoBeforeRequestStops(HttpContext httpContext, Scope scope, ImmutableTracerSettings tracerSettings)
-        {
-            var span = scope.Span;
-            var isMissingHttpStatusCode = !span.HasHttpStatusCode();
-
-            if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
-            {
-                if (string.IsNullOrEmpty(span.ResourceName))
-                {
-                    span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
-                }
-
-                if (isMissingHttpStatusCode)
-                {
-                    span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracerSettings);
-                }
-            }
-
-            span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracerSettings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-            scope.Dispose();
-        }
-
         private void OnHostingHttpRequestInStart(object arg)
         {
             var tracer = CurrentTracer;
@@ -442,15 +421,16 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
                 HttpContext httpContext = requestStruct.HttpContext;
-                HttpRequest request = httpContext.Request;
-                Span span = null;
-                Scope scope = null;
                 if (shouldTrace)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
-                    span = scope.Span;
+                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
+                    if (shouldSecure)
+                    {
+                        var securityTransport = new SecurityTransport(security, httpContext, scope.Span);
+                        securityTransport.ReportWafInitInfoOnce();
+                    }
                 }
             }
         }
@@ -585,10 +565,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     var securityTransport = new SecurityTransport(Security.Instance, httpContext, span);
                     var result = securityTransport.ShouldBlockPathParams(routeValues);
-                    if (result.ReturnCode == ReturnCode.Block)
-                    {
-                        throw new BlockException(result);
-                    }
+                    securityTransport.CheckAndBlock(result);
                 }
             }
         }
@@ -643,11 +620,8 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
 
                     var securityTransport = new SecurityTransport(Security.Instance, httpContext, span);
-                    var result = securityTransport.ShouldBlockPathParams(new RouteValueDictionary(routeValues));
-                    if (result.ReturnCode == ReturnCode.Block)
-                    {
-                        throw new BlockException(result);
-                    }
+                    var result = securityTransport.ShouldBlockPathParams(routeValues);
+                    securityTransport.CheckAndBlock(result);
                 }
             }
         }
@@ -709,9 +683,32 @@ namespace Datadog.Trace.DiagnosticListeners
                 // If we had an unhandled exception, the status code will already be updated correctly,
                 // but if the span was manually marked as an error, we still need to record the status code
                 var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
-                HttpContext httpContext = httpRequest.HttpContext;
+                var httpContext = httpRequest.HttpContext;
+                var span = scope.Span;
+                var isMissingHttpStatusCode = !span.HasHttpStatusCode();
 
-                DoBeforeRequestStops(httpContext, scope, tracer.Settings);
+                if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
+                {
+                    if (string.IsNullOrEmpty(span.ResourceName))
+                    {
+                        span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
+                    }
+
+                    if (isMissingHttpStatusCode)
+                    {
+                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
+                    }
+                }
+
+                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                var security = CurrentSecurity;
+                if (security.Settings.Enabled)
+                {
+                    var transport = new SecurityTransport(security, httpContext, span);
+                    transport.Cleanup();
+                }
+
+                scope.Dispose();
             }
         }
 
@@ -745,12 +742,8 @@ namespace Datadog.Trace.DiagnosticListeners
                     if (security.Settings.Enabled)
                     {
                         var securityTransport = new SecurityTransport(security, unhandledStruct.HttpContext, span);
-                        span.SetException(unhandledStruct.Exception);
                         var result = securityTransport.ShouldBlock();
-                        if (result.ReturnCode == ReturnCode.Block)
-                        {
-                            throw new BlockException(result);
-                        }
+                        securityTransport.CheckAndBlock(result);
                     }
                 }
             }

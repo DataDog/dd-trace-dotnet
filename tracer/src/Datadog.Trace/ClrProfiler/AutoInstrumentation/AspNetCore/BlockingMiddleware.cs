@@ -7,7 +7,7 @@
 #if !NETFRAMEWORK
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Transports;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
@@ -16,17 +16,16 @@ internal class BlockingMiddleware
 {
     private readonly bool _runSecurity;
     private readonly bool _endPipeline;
+    private readonly RequestDelegate? _next;
 
     internal BlockingMiddleware(RequestDelegate? next = null, bool runSecurity = false, bool endPipeline = false)
     {
-        Next = next;
+        _next = next;
         _runSecurity = runSecurity;
         _endPipeline = endPipeline;
     }
 
-    protected RequestDelegate? Next { get; }
-
-    protected static Task WriteResponse(HttpContext context, SecuritySettings settings, out bool endedResponse)
+    private static Task WriteResponse(HttpContext context, SecuritySettings settings, out bool endedResponse)
     {
         var httpResponse = context.Response;
         if (!httpResponse.HasStarted)
@@ -59,14 +58,13 @@ internal class BlockingMiddleware
         return Task.CompletedTask;
     }
 
-    internal virtual async Task Invoke(HttpContext context)
+    internal async Task Invoke(HttpContext context)
     {
         var security = Security.Instance;
+        var endedResponse = false;
         if (security.Settings.Enabled)
         {
-            var endedResponse = false;
             var securityTransport = new SecurityTransport(security, context, Tracer.Instance.ActiveScope.Span as Span);
-
             if (_runSecurity)
             {
                 if (_endPipeline && !context.Response.HasStarted)
@@ -77,29 +75,40 @@ internal class BlockingMiddleware
                 using var result = securityTransport.ShouldBlock();
                 if (result.ShouldBeReported)
                 {
-                    var shouldBlock = result.ReturnCode == ReturnCode.Block;
-                    if (shouldBlock)
+                    if (result.Block)
                     {
                         await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
+                        securityTransport.MarkBlocked();
                     }
 
                     securityTransport.Report(result, endedResponse);
-                    securityTransport.AddResponseHeaderTags();
                 }
             }
 
-            if (Next != null && !endedResponse)
+            if (_next != null && !endedResponse)
             {
+                // unlikely that security is disabled and there's a blockexception, but might happen as race condition
                 try
                 {
-                    await Next(context).ConfigureAwait(false);
+                    await _next(context).ConfigureAwait(false);
                 }
                 catch (BlockException e)
                 {
                     await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
-                    securityTransport.Report(e.Result, endedResponse);
-                    securityTransport.AddResponseHeaderTags();
+                    if (!e.Reported)
+                    {
+                        securityTransport.Report(e.Result, endedResponse);
+                    }
+
+                    securityTransport.Cleanup();
                 }
+            }
+        }
+        else
+        {
+            if (_next != null)
+            {
+                await _next(context).ConfigureAwait(false);
             }
         }
     }

@@ -7,6 +7,7 @@
 
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -89,10 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         {
             var securityTransport = new SecurityTransport(security, defaultModelBindingContext.HttpContext, span);
             var result = securityTransport.ShouldBlockBody(defaultModelBindingContext.Result.Model);
-            if (result.ReturnCode == ReturnCode.Block)
-            {
-                throw new BlockException(result);
-            }
+            securityTransport.CheckAndBlock(result);
         }
     }
 }

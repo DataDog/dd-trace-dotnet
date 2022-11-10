@@ -4,7 +4,6 @@
 // </copyright>
 
 #if NETFRAMEWORK
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,9 +41,12 @@ namespace Datadog.Trace.AppSec
                 }
 
                 var scope = SharedItems.TryPeekScope(context, peekScopeKey);
-                var securityTransport = new SecurityTransport(security, context, scope.Span);
-                using var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, bodyDic }, { AddressesConstants.RequestPathParams, pathParamsDic } });
-                securityTransport.CheckAndBlock(result);
+                var securityTransport = new Transports.SecurityTransport(security, context, scope.Span);
+                if (!securityTransport.Blocked)
+                {
+                    using var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, BodyExtractor.Extract(bodyDic) }, { AddressesConstants.RequestPathParams, pathParamsDic } });
+                    securityTransport.CheckAndBlock(result);
+                }
             }
         }
     }

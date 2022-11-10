@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,8 +12,10 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using SecurityTransport = Datadog.Trace.AppSec.Transports.SecurityTransport;
 #if NETFRAMEWORK
 using System.Web;
+
 #else
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -33,44 +34,15 @@ namespace Benchmarks.Trace
             Gender = "Female",
             Name = "Tata",
             LastName = "Toto",
-            Address = new Address
-            {
-                Number = 12,
-                City = new City { Name = "Paris", Country = new Country { Name = "France", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } },
-                IsHouse = false,
-                NameStreet = "lorem ipsum dolor sit amet"
-            },
-            Address2 = new Address
-            {
-                Number = 15,
-                City = new City
-                {
-                    Name = "Madrid",
-                    Country = new Country
-                    {
-                        Name = "Spain",
-                        Continent = new Continent
-                        {
-                            Name = "Europe",
-                            Planet = new Planet { Name = "Earth" }
-                        }
-                    }
-                },
-                IsHouse = true,
-                NameStreet = "lorem ipsum dolor sit amet"
-            },
-            Dogs = new List<Dog> {
-                    new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" } } },
-                    new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "tata" }, new Dog { Name = "tata" } } },
-                    new Dog { Name = "tata", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" }, new Dog { Name = "tutu" } } }
-                    }
+            Address = new Address { Number = 12, City = new City { Name = "Paris", Country = new Country { Name = "France", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } }, IsHouse = false, NameStreet = "lorem ipsum dolor sit amet" },
+            Address2 = new Address { Number = 15, City = new City { Name = "Madrid", Country = new Country { Name = "Spain", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } }, IsHouse = true, NameStreet = "lorem ipsum dolor sit amet" },
+            Dogs = new List<Dog> { new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" } } }, new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "tata" }, new Dog { Name = "tata" } } }, new Dog { Name = "tata", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" }, new Dog { Name = "tutu" } } } }
         };
 #if NETFRAMEWORK
         private static HttpContext httpContext;
-#else                                   
+#else
         private static HttpContext httpContext;
 #endif
-
 
         static AppSecBodyBenchmark()
         {
@@ -79,6 +51,7 @@ namespace Benchmarks.Trace
             {
                 dir = Directory.GetParent(dir).FullName;
             }
+
             Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
             Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", Path.Combine(dir, "bin", "dd-tracer-home", RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty));
             security = Security.Instance;
@@ -90,7 +63,6 @@ namespace Benchmarks.Trace
 #else
             httpContext = new DefaultHttpContext();
 #endif
-
         }
 
         [Benchmark]
@@ -99,18 +71,19 @@ namespace Benchmarks.Trace
         private void ExecuteCycle(object body)
         {
             var securityTransport = new SecurityTransport(security, httpContext, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
-            securityTransport.ShouldBlockBody();
-#if NETFRAMEWORK
-            var context = httpContext.Items["waf"] as IContext;
-            context?.Dispose();
-            httpContext.Items["waf"] = null;
-#else
+#if !NETFRAMEWORK
+            var bodyData = securityTransport.ShouldBlockBody(body);
             var context = httpContext.Features.Get<IContext>();
             context?.Dispose();
             httpContext.Features.Set<IContext>(null);
+#else
+            using var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, BodyExtractor.Extract(body) } });
+            var context = httpContext.Items["waf"] as IContext;
+            context?.Dispose();
+            httpContext.Items["waf"] = null;
 #endif
         }
-        
+
         [Benchmark]
         public void AllCycleMoreComplexBody() => ExecuteCycle(complexModel);
 
@@ -132,12 +105,12 @@ namespace Benchmarks.Trace
         public Address Address2 { get; set; }
         public string Gender { get; set; }
     }
+
     public class Dog
     {
         public string Name { get; set; }
 
         public IEnumerable<Dog> Dogs { get; set; }
-
     }
 
     public class Address
@@ -172,7 +145,6 @@ namespace Benchmarks.Trace
     {
         public string Name { get; set; }
         public Planet Planet { get; set; }
-
     }
 
     public class Planet
