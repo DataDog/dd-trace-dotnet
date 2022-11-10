@@ -46,9 +46,9 @@ internal class OverheadController
 
     public void ReleaseRequest()
     {
-        if (_availableRequests < _iastSettings.MaxConcurrentRequests)
+        lock (Instance)
         {
-            lock (Instance)
+            if (_availableRequests < _iastSettings.MaxConcurrentRequests)
             {
                 _availableRequests++;
             }
