@@ -6,9 +6,15 @@ using Samples.Probes.Shared;
 
 namespace Samples.Probes.SmokeTests
 {
-    [LineProbeTestData(39)]
-    [LineProbeTestData(40)]
-    [LineProbeTestData(41)]
+    [LineProbeTestData(23)]
+    [LineProbeTestData(25)]
+    [LineProbeTestData(26)]
+    [LineProbeTestData(27)]
+    [LineProbeTestData(28)]
+    [LineProbeTestData(29)]
+    [LineProbeTestData(45)]
+    [LineProbeTestData(46)]
+    [LineProbeTestData(47)]
     internal class AsyncLineProbeWithFieldsArgsAndLocalsTest : IAsyncRun
     {
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
