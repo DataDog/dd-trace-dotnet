@@ -5,10 +5,12 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.Iast;
 
@@ -36,6 +38,7 @@ internal class DefaultTaintedMap2 : ITaintedMap
 
     /* Number of elements in the hash table before switching to flat mode. */
     private int _flatModeThreshold;
+    private Random _random = new();
 
     public DefaultTaintedMap2()
         : this(DefaultCapacity, DefaultFlatModeThresold)
@@ -50,15 +53,10 @@ internal class DefaultTaintedMap2 : ITaintedMap
     /// <returns>The retrieved tainted object or null</returns>
     private DefaultTaintedMap2(int capacity, int flatModeThreshold)
     {
-        _map = new ConcurrentDictionary<int, ITaintedObject>();
+        _map = new();
         _lengthMask = capacity - 1;
         this._flatModeThreshold = flatModeThreshold;
     }
-
-    /// <summary>
-    /// Gets a value indicating whether whether flat mode is enabled or not. Once this is true, it is not set to false again unless clear is called.
-    /// </summary>
-    public bool IsFlat { get; private set; } = false;
 
     /// <summary>
     /// Returns the TaintedObject for the given input object.
@@ -67,9 +65,12 @@ internal class DefaultTaintedMap2 : ITaintedMap
     /// <returns>The retrieved tainted object or null</returns>
     public ITaintedObject? Get(object objectToFind)
     {
-        int index = IndexObject(objectToFind);
+        if (objectToFind is null)
+        {
+            return null;
+        }
 
-        _map.TryGetValue(index, out var entry);
+        _map.TryGetValue(objectToFind, out var entry);
         while (entry != null)
         {
             if (objectToFind == entry.Value)
@@ -89,31 +90,28 @@ internal class DefaultTaintedMap2 : ITaintedMap
     /// <param name="entry">Tainted object</param>
     public void Put(ITaintedObject entry)
     {
-        if (entry.Value is null)
+        if (entry?.Value is null || (entry.Value as string == string.Empty))
         {
             return;
         }
 
-        if (IsFlat)
+        var count = _map.Count;
+        if (count > _flatModeThreshold)
         {
-            // If we flipped to flat mode:
-            // - Always override elements ignoring chaining.
-            // - Stop updating the estimated size.
+            RemoveRandomValue(count);
+        }
 
-            _map[index] = entry;
-            if ((entry.PositiveHashCode & purgeMask) == 0)
-            {
-                Purge();
-            }
-        }
-        else
+        _map.TryAdd(new WeakMapReference(entry.Value), entry);
+        if ((entry.PositiveHashCode & purgeMask) == 0)
         {
-            _map.TryAdd(index, entry);
-            if ((entry.PositiveHashCode & purgeMask) == 0)
-            {
-                Purge();
-            }
+            Purge();
         }
+    }
+
+    private void RemoveRandomValue(int count)
+    {
+        int index = _random.Next(count);
+        _map.TryRemove(_map.ElementAt(index).Key, out _);
     }
 
     /// <summary>
@@ -137,11 +135,6 @@ internal class DefaultTaintedMap2 : ITaintedMap
         {
             // Remove GC'd entries.
             var removedCount = RemoveDeadKeys();
-
-            if (_map.Count > _flatModeThreshold)
-            {
-                IsFlat = true;
-            }
         }
         finally
         {
@@ -162,9 +155,7 @@ internal class DefaultTaintedMap2 : ITaintedMap
 
         foreach (var key in _map.Keys)
         {
-            var current = _map[key];
-
-            if (!current.IsAlive)
+            if ((key as WeakMapReference)?.IsAlive == false || !_map[key].IsAlive)
             {
                 deadKeys.Add(key);
                 removed++;
@@ -181,12 +172,11 @@ internal class DefaultTaintedMap2 : ITaintedMap
 
     public void Clear()
     {
-        IsFlat = false;
         _map.Clear();
     }
 
     // For testing only
-    internal List<ITaintedObject> ToList()
+    public List<ITaintedObject> ToList()
     {
         return _map.Values.ToList();
     }

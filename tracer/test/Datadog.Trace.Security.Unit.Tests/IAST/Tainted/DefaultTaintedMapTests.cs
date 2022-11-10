@@ -66,24 +66,6 @@ public class DefaultTaintedMapTests
     }
 
     [Fact]
-    public void Test()
-    {
-        ConcurrentDictionary<int, string> dic = new();
-        dic.TryAdd(23, "a");
-        dic.TryAdd(23, "b");
-        Assert.Equal(2, dic.Values.Count);
-    }
-
-    [Fact]
-    public void Test2()
-    {
-        ConcurrentDictionary<string, string> dic = new();
-        dic.TryAdd("23", "a");
-        dic.TryAdd("23", "b");
-        Assert.Equal(2, dic.Values.Count);
-    }
-
-    [Fact]
     public void GivenATaintedObjectMap_WhenPutEmptyString_ObjectIsNotInserted()
     {
         DefaultTaintedMap map = new();
