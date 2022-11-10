@@ -12,6 +12,74 @@
 
 
 
+
+## [Release 2.19.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.19.0)
+
+## Summary
+
+Tracer
+* IP Collection can now be enabled by setting `DD_TRACE_CLIENT_IP_ENABLED` (#3419)
+* Automatic cleanup of log files that are 31 days or older (#3346)
+
+## Changes
+
+### Tracer
+
+#### Enhancements
+
+* Allow colons in global tag values (`DD_TAGS`) (#3328)
+* Delete Log Files That are 31 Days or Older (#3346)
+* Make RareSampler configurable (#3360)
+* Move `SpanSampler` into `AgentWriter.WriteTrace` (#3381)
+* Handle client-disconnect scenario in IIS (#3395)
+* [Tracer] Add stats_computation_enabled in startup logs (#3400)
+* Read performance counter values directly from memory (#3403)
+* [Tracer] Reintroduce opt-in ip collection (#3419)
+
+#### Fixes
+* Fix `ILogger` direct submission when formatter returns `null` (#3398)
+* Fix ASP.NET and ASP.NET Core resource name template expansion (#3409)
+* Update `SetTag()` source generator to avoid incorrect usage (#3415)
+* Add integration tests for Azure Functions and fix warning (#3422)
+* Fix Azure Functions Runtime V4 distributed tracing (#3423)
+
+### CI Visibility
+* [CI Visibility] - Add support for agent's event platform proxy. (#3322)
+* Datadog Test Logger (#3355)
+* [CIVisibility] - Test session visibility support (#3389)
+* [CIVisibility] Fix EVP tests by turning off the DD_TRACE_DEBUG flag (#3402)
+* Fix BenchmarkDotNet Exporter (#3416)
+* [CIVisibility] - Add Test custom configurations support for ITR (#3417)
+* [CI Visibility] - Add support for git shallow clone (#3424)
+* [CI Visibility] - CheckAgentConnectionAsync rewrite to use the DiscoveryService. (#3433)
+
+### ASM
+* [ASM] IAST request management (#3384)
+
+### Continuous Profiler
+* [Profiler] Rename DD_PROFILING_CONTENTION_ENABLED to DD_PROFILING_LOCK_ENABLED (#3414)
+
+### Debugger
+* [Dynamic Instrumentation] Activating line probe on async methods + Fixed snapshot serialization issues (#3406)
+
+### Build / Test
+* Fix OSX managed loader issue. (#3386)
+* Change list of expected modified files for release (#3387)
+* Fix Pipeline when Pull Request variables are not available (#3388)
+* Add missing dependencies to `coverage` and `traces_pipeline` stages (#3390)
+* Apply new PackageReference Conditional to fix IIS tests (#3394)
+* Enable Test DataLogger (#3397)
+* Small fixes for DatadogTestLogger (#3399)
+* Bump version of DatadogTestLogger to remove direct reference to Datadog.Trace (#3401)
+* Ensure test parameters are constant across test runs (#3404)
+* Fix the env and service names for AppSec throughput tests and benchmarks (#3413)
+* Add special ExitCodeException to test suites (#3425)
+* Bump DatadogLogger version to 0.0.28 (#3427)
+* [Build] Fix exported symbols issue with CMake builds (#3428)
+
+
+[Changes since 2.18.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.18.0...v2.19.0)
+
 ## [Release 2.18.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.18.0)
 
 ## Summary
