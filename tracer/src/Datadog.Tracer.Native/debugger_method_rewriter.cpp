@@ -474,6 +474,13 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
     std::vector<EHClause>& newClauses,
     bool isAsyncMethod) const
 {
+    if (isAsyncMethod && caller->type.isGeneric && caller->type.valueType)
+    {
+        Logger::Warn("Async generic methods in optimized code are not supported at the moment. Skipping on placing ",
+                     lineProbes.size(), " line probe(s).");
+        return S_OK;
+    }
+
     Logger::Info("Applying ", lineProbes.size(), " line probe(s) instrumentation.");
 
     const auto branchTargets = std::move(GetBranchTargets(&rewriter));
