@@ -109,6 +109,7 @@ partial class Build
             NuGetTasks.NuGetRestore(s => s
                 .SetTargetPath(ProfilerMsBuildProject)
                 .SetVerbosity(NuGetVerbosity.Normal)
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackagesDirectory(NugetPackageDirectory))
                 .CombineWith(testProjects, (m, testProjects) => m.SetTargetPath(testProjects)));
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
