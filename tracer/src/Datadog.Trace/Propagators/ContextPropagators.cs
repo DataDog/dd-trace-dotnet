@@ -24,14 +24,6 @@ namespace Datadog.Trace.Propagators
             { ContextPropagationHeaderStyle.Deprecated.B3MultipleHeaders, typeof(B3ContextPropagator) },
         };
 
-        public enum Names
-        {
-            Datadog,
-            W3C,
-            B3,
-            B3SingleHeader,
-        }
-
         public static SpanContextPropagator GetSpanContextPropagator(IEnumerable<string> requestedInjectors, IEnumerable<string> requestedExtractors)
         {
             var propagatorInstances = new Dictionary<string, object>(4, StringComparer.InvariantCultureIgnoreCase);
