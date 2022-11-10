@@ -14,11 +14,14 @@ namespace Datadog.Trace.Propagators
     {
         private static readonly IReadOnlyDictionary<string, Type> AvailablePropagators = new Dictionary<string, Type>
         {
-            { nameof(Names.Datadog), typeof(DatadogContextPropagator) },
-            { nameof(Names.W3C), typeof(W3CContextPropagator) },
-            { nameof(Names.B3), typeof(B3ContextPropagator) },
-            { nameof(Names.B3SingleHeader), typeof(B3SingleHeaderContextPropagator) },
-            { "B3 single header", typeof(B3SingleHeaderContextPropagator) },
+            { ContextPropagationHeaderStyle.W3CTraceContext, typeof(W3CContextPropagator) },
+            { ContextPropagationHeaderStyle.Datadog, typeof(DatadogContextPropagator) },
+            { ContextPropagationHeaderStyle.B3SingleHeader, typeof(B3SingleHeaderContextPropagator) },
+            { ContextPropagationHeaderStyle.B3MultipleHeaders, typeof(B3ContextPropagator) },
+            // deprecated values
+            { ContextPropagationHeaderStyle.Deprecated.W3CTraceContext, typeof(W3CContextPropagator) },
+            { ContextPropagationHeaderStyle.Deprecated.B3SingleHeader, typeof(B3SingleHeaderContextPropagator) },
+            { ContextPropagationHeaderStyle.Deprecated.B3MultipleHeaders, typeof(B3ContextPropagator) },
         };
 
         public enum Names
