@@ -253,25 +253,16 @@ namespace Datadog.Trace.Tools.Runner
 
             var tracerSettings = new TracerSettings(configurationSource);
             var settings = tracerSettings.Build();
-            var discoveryService = new DiscoveryService(
-                AgentTransportStrategy.Get(
-                    settings.Exporter,
-                    productName: "discovery",
-                    tcpTimeout: TimeSpan.FromSeconds(5),
-                    AgentHttpHeaderNames.MinimalHeaders,
-                    () => new MinimalAgentHeaderHelper(),
-                    uri => uri),
-                10,
-                1000,
-                int.MaxValue);
+
+            var discoveryService = DiscoveryService.Create(
+                settings.Exporter,
+                tcpTimeout: TimeSpan.FromSeconds(5),
+                initialRetryDelayMs: 10,
+                maxRetryDelayMs: 1000,
+                recheckIntervalMs: int.MaxValue);
 
             var tcs = new TaskCompletionSource<AgentConfiguration>(TaskCreationOptions.RunContinuationsAsynchronously);
-            discoveryService.SubscribeToChanges(
-                aCfg =>
-                {
-                    tcs.TrySetResult(aCfg);
-                    discoveryService.DisposeAsync();
-                });
+            discoveryService.SubscribeToChanges(aCfg => tcs.TrySetResult(aCfg));
 
             var cts = new CancellationTokenSource();
             cts.CancelAfter(5000);
@@ -280,10 +271,11 @@ namespace Datadog.Trace.Tools.Runner
                        {
                            WriteError($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
                            tcs.TrySetResult(null);
-                           discoveryService.DisposeAsync();
                        }))
             {
-                return await tcs.Task.ConfigureAwait(false);
+                var configuration = await tcs.Task.ConfigureAwait(false);
+                await discoveryService.DisposeAsync().ConfigureAwait(false);
+                return configuration;
             }
         }
 
