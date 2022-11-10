@@ -176,9 +176,11 @@ stages:
     steps:
     - checkout: none
     - bash: |
+        rm -rf ./s
         git clone --quiet --no-checkout --depth 1 --branch master $BUILD_REPOSITORY_URI ./s
         cd s
         MASTER_SHA=$(git rev-parse origin/master)
+        rm -rf ./s
         echo "Using master commit ID $MASTER_SHA"
         echo "##vso[task.setvariable variable=master;isOutput=true]$MASTER_SHA"
       failOnStderr: true
