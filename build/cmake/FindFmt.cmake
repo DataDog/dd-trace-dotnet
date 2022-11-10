@@ -2,15 +2,27 @@ include(ExternalProject)
 
 SET(FMT_VERSION "5.3.0")
 
-ExternalProject_Add(fmt
-    DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${FMT_VERSION} --config advice.detachedHead=false https://github.com/DataDog/fmt.git
-    TIMEOUT 5
-    INSTALL_COMMAND ""
-    BUILD_IN_SOURCE TRUE
-    CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
-    BUILD_COMMAND ${CMAKE_COMMAND} -E env CXXFLAGS=-D_GLIBCXX_USE_CXX11_ABI=0 make -j
-    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/fmt-prefix/src/fmt/libfmt.a
-)
+if (ISMACOS)
+    ExternalProject_Add(fmt
+        DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${FMT_VERSION} --config advice.detachedHead=false https://github.com/DataDog/fmt.git
+        TIMEOUT 5
+        INSTALL_COMMAND ""
+        BUILD_IN_SOURCE TRUE
+        CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
+        BUILD_COMMAND ${CMAKE_COMMAND} -E env CXXFLAGS=-target\ ${OSX_ARCH}-apple-darwin${CMAKE_HOST_SYSTEM_VERSION}\ -D_GLIBCXX_USE_CXX11_ABI=0 make -j
+        BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/fmt-prefix/src/fmt/libfmt.a
+    )
+elseif(ISLINUX)
+    ExternalProject_Add(fmt
+        DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${FMT_VERSION} --config advice.detachedHead=false https://github.com/DataDog/fmt.git
+        TIMEOUT 5
+        INSTALL_COMMAND ""
+        BUILD_IN_SOURCE TRUE
+        CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
+        BUILD_COMMAND ${CMAKE_COMMAND} -E env CXXFLAGS=-D_GLIBCXX_USE_CXX11_ABI=0 make -j
+        BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/fmt-prefix/src/fmt/libfmt.a
+    )
+endif()
 
 ExternalProject_Get_property(fmt SOURCE_DIR)
 
