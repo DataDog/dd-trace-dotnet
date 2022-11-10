@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests.Propagators
 
         static W3CSpanContextPropagatorTests()
         {
-            W3CPropagator = ContextPropagators.GetSpanContextPropagator(new[] { nameof(ContextPropagators.Names.W3C) }, new[] { nameof(ContextPropagators.Names.W3C) });
+            W3CPropagator = ContextPropagators.GetSpanContextPropagator(new[] { ContextPropagationHeaderStyle.W3CTraceContext }, new[] { ContextPropagationHeaderStyle.W3CTraceContext });
         }
 
         [Fact]

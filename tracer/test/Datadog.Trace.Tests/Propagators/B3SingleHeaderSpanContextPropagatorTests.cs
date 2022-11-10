@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests.Propagators
 
         static B3SingleHeaderSpanContextPropagatorTests()
         {
-            B3Propagator = ContextPropagators.GetSpanContextPropagator(new[] { nameof(ContextPropagators.Names.B3SingleHeader) }, new[] { nameof(ContextPropagators.Names.B3SingleHeader) });
+            B3Propagator = ContextPropagators.GetSpanContextPropagator(new[] { ContextPropagationHeaderStyle.B3SingleHeader }, new[] { ContextPropagationHeaderStyle.B3SingleHeader });
         }
 
         [Fact]

@@ -18,7 +18,14 @@ namespace Datadog.Trace.Tests.Propagators
 
         static MultiSpanContextPropagatorTests()
         {
-            var names = Enum.GetNames(typeof(ContextPropagators.Names));
+            var names = new[]
+                        {
+                            ContextPropagationHeaderStyle.W3CTraceContext,
+                            ContextPropagationHeaderStyle.Datadog,
+                            ContextPropagationHeaderStyle.B3MultipleHeaders,
+                            ContextPropagationHeaderStyle.B3SingleHeader,
+                        };
+
             Propagator = ContextPropagators.GetSpanContextPropagator(names, names);
         }
 
