@@ -197,18 +197,23 @@ internal static partial class DotNetSettingsExtensions
         );
     }
 
-    public static DotNetTestSettings WithDatadogLogger(this DotNetTestSettings settings)
+    public static DotNetTestSettings WithDatadogLogger(this DotNetTestSettings settings, bool isLocalBuild)
     {
+        string envVar = null;
         try
         {
-            if (string.Equals(Environment.GetEnvironmentVariable("DD_LOGGER_ENABLED"), "false", StringComparison.OrdinalIgnoreCase))
-            {
-                return settings;
-            }
+            envVar = Environment.GetEnvironmentVariable("DD_LOGGER_ENABLED");
         }
         catch
         {
             // Security issues...
+        }
+
+        // enable by default if running in-CI, and disable for local dev 
+        string defaultValue = isLocalBuild ? "false" : "true";
+        if (string.Equals(envVar ?? defaultValue, "false", StringComparison.OrdinalIgnoreCase))
+        {
+            return settings;
         }
 
         var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);

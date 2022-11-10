@@ -806,7 +806,7 @@ partial class Build
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .CombineWith(testProjects, (x, project) => x
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
+                        .WithDatadogLogger(IsLocalBuild)
                         .SetProjectFile(project)));
             }
             finally
@@ -1073,7 +1073,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
+                        .WithDatadogLogger(IsLocalBuild)
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
 
@@ -1093,7 +1093,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
+                        .WithDatadogLogger(IsLocalBuild)
                         .SetProjectFile(project)));
             }
             finally
@@ -1164,7 +1164,7 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(GetResultsDirectory(project))
-                    .WithDatadogLogger()
+                    .WithDatadogLogger(IsLocalBuild)
                     .SetProjectFile(project));
             }
             finally
@@ -1202,7 +1202,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
+                        .WithDatadogLogger(IsLocalBuild)
                         .SetProjectFile(project)));
             }
             finally
@@ -1250,7 +1250,7 @@ partial class Build
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
-                                .WithDatadogLogger()
+                                .WithDatadogLogger(IsLocalBuild)
                                 .SetProjectFile(project));
         }
         finally
@@ -1286,7 +1286,7 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(resultsDirectory)
-                    .WithDatadogLogger()
+                    .WithDatadogLogger(IsLocalBuild)
                     .SetProjectFile(project));
             }
             finally
@@ -1555,7 +1555,7 @@ partial class Build
                         .When(CodeCoverage, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
-                            .WithDatadogLogger()
+                            .WithDatadogLogger(IsLocalBuild)
                             .SetProjectFile(project)),
                     degreeOfParallelism: 2);
 
@@ -1577,7 +1577,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
+                        .WithDatadogLogger(IsLocalBuild)
                         .SetProjectFile(project))
                 );
             }
@@ -1642,7 +1642,7 @@ partial class Build
                 .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
                 .SetLogsDirectory(TestLogsDirectory)
                 .EnableTrxLogOutput(GetResultsDirectory(project))
-                .WithDatadogLogger());
+                .WithDatadogLogger(IsLocalBuild));
         });
 
     Target CopyServerlessArtifacts => _ => _
