@@ -32,6 +32,15 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl);
+
+            // for .NET 7+, the endpoint names changed from
+            // aspnet_core.endpoint: /params-endpoint/{s} HTTP: GET,
+            // to
+            // aspnet_core.endpoint: HTTP: GET /params-endpoint/{s},
+            // So normalize to the .NET 6 pattern for simplicity
+#if NET7_0_OR_GREATER
+            settings.AddSimpleScrubber("HTTP: GET /params-endpoint/{s}", "/params-endpoint/{s} HTTP: GET");
+#endif
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1,  settings);
         }
     }
