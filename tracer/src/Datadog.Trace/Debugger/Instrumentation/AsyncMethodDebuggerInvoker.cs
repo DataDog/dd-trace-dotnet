@@ -108,14 +108,17 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return AsyncContext.Value;
             }
 
-            isReEntryToMoveNext = true;
-            var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance);
+            isReEntryToMoveNext = true; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
+            // State machine is null either when we run in Optimized code and the original async method was generic,
+            // in which case the state machine is a generic value type.
+            var stateMachineType = instance == null ? Type.GetTypeFromHandle(typeHandle) : instance.GetType();
+            var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
             if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
             {
                 Log.Warning($"{nameof(BeginMethod)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
             }
 
-            if (!MethodMetadataProvider.TryCreateIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
+            if (!MethodMetadataProvider.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
             {
                 Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadataId = {methodMetadataIndex}");
                 return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
@@ -163,7 +166,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
                                        asyncState.HasArguments ||
-                                       !asyncState.MethodMetadataInfo.Method.IsStatic;
+                                       asyncState.KickoffInvocationTarget != null;
 
             asyncState.HasLocalsOrReturnValue = false;
             asyncState.HasArguments = false;
