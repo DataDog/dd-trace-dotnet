@@ -253,17 +253,13 @@ namespace Datadog.Trace.Tools.Runner
 
             var tracerSettings = new TracerSettings(configurationSource);
             var settings = tracerSettings.Build();
-            var discoveryService = new DiscoveryService(
-                AgentTransportStrategy.Get(
-                    settings.Exporter,
-                    productName: "discovery",
-                    tcpTimeout: TimeSpan.FromSeconds(5),
-                    AgentHttpHeaderNames.MinimalHeaders,
-                    () => new MinimalAgentHeaderHelper(),
-                    uri => uri),
-                10,
-                1000,
-                int.MaxValue);
+
+            var discoveryService = DiscoveryService.Create(
+                settings.Exporter,
+                TimeSpan.FromSeconds(5),
+                initialRetryDelayMs: 10,
+                maxRetryDelayMs: 1000,
+                recheckIntervalMs: int.MaxValue);
 
             var tcs = new TaskCompletionSource<AgentConfiguration>(TaskCreationOptions.RunContinuationsAsynchronously);
             discoveryService.SubscribeToChanges(

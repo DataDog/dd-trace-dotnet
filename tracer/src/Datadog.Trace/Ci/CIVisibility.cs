@@ -14,14 +14,11 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci
 {
@@ -71,17 +68,12 @@ namespace Datadog.Trace.Ci
             {
                 if (!_settings.ForceAgentsEvpProxy)
                 {
-                    discoveryService = new DiscoveryService(
-                        AgentTransportStrategy.Get(
-                            new ImmutableExporterSettings(_settings.TracerSettings.Exporter),
-                            productName: "discovery",
-                            tcpTimeout: TimeSpan.FromSeconds(5),
-                            AgentHttpHeaderNames.MinimalHeaders,
-                            () => new MinimalAgentHeaderHelper(),
-                            uri => uri),
-                        10,
-                        1000,
-                        int.MaxValue);
+                    discoveryService = DiscoveryService.Create(
+                        new ImmutableExporterSettings(_settings.TracerSettings.Exporter),
+                        TimeSpan.FromSeconds(5),
+                        initialRetryDelayMs: 10,
+                        maxRetryDelayMs: 1000,
+                        recheckIntervalMs: int.MaxValue);
                 }
                 else
                 {
