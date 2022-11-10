@@ -12,6 +12,7 @@ using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
@@ -189,9 +190,19 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) is { } x and > 0 ? x : 200;
 
-            PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), commaSeparator);
+            var propagationStyleInject = source?.GetString(ConfigurationKeys.PropagationStyleInject) ??
+                                         source?.GetString("DD_PROPAGATION_STYLE_INJECT") ?? // deprecated setting name
+                                         source?.GetString(ConfigurationKeys.PropagationStyle) ??
+                                         ContextPropagationHeaderStyle.Datadog; // default value
 
-            PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), commaSeparator);
+            PropagationStyleInject = TrimSplitString(propagationStyleInject.ToUpperInvariant(), commaSeparator);
+
+            var propagationStyleExtract = source?.GetString(ConfigurationKeys.PropagationStyleExtract) ??
+                                          source?.GetString("DD_PROPAGATION_STYLE_EXTRACT") ?? // deprecated setting name
+                                          source?.GetString(ConfigurationKeys.PropagationStyle) ??
+                                          ContextPropagationHeaderStyle.Datadog; // default value
+
+            PropagationStyleExtract = TrimSplitString(propagationStyleExtract.ToUpperInvariant(), commaSeparator);
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
 
@@ -218,23 +229,27 @@ namespace Datadog.Trace.Configuration
 
             IpHeaderEnabled = source?.GetBool(ConfigurationKeys.IpHeaderEnabled) ?? false;
 
+            // If Activity support is enabled, we must enable the W3C Trace Context propagators
             if (IsActivityListenerEnabled)
             {
-                // If the activities support is activated, we must enable W3C propagators
-                if (!Array.Exists(PropagationStyleExtract, key => string.Equals(key, nameof(Propagators.ContextPropagators.Names.W3C), StringComparison.OrdinalIgnoreCase)))
+                if (!PropagationStyleExtract.Any(
+                        v => string.Equals(v, ContextPropagationHeaderStyle.W3CTraceContext) ||
+                             string.Equals(v, ContextPropagationHeaderStyle.Deprecated.W3CTraceContext)))
                 {
-                    PropagationStyleExtract = PropagationStyleExtract.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
+                    PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
                 }
 
-                if (!Array.Exists(PropagationStyleInject, key => string.Equals(key, nameof(Propagators.ContextPropagators.Names.W3C), StringComparison.OrdinalIgnoreCase)))
+                if (!PropagationStyleInject.Any(
+                        v => string.Equals(v, ContextPropagationHeaderStyle.W3CTraceContext) ||
+                             string.Equals(v, ContextPropagationHeaderStyle.Deprecated.W3CTraceContext)))
                 {
-                    PropagationStyleInject = PropagationStyleInject.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
+                    PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
                 }
             }
 
             IsDataStreamsMonitoringEnabled = source?.GetBool(ConfigurationKeys.DataStreamsMonitoring.Enabled) ??
-                                        // default value
-                                        false;
+                                             // default value
+                                             false;
 
             IsRareSamplerEnabled = source?.GetBool(ConfigurationKeys.RareSamplerEnabled) ?? false;
         }
@@ -616,12 +631,11 @@ namespace Datadog.Trace.Configuration
             return headerTags;
         }
 
-        // internal for testing
         internal static string[] TrimSplitString(string textValues, char[] separators)
         {
-            if (textValues == null)
+            if (string.IsNullOrWhiteSpace(textValues))
             {
-                return null;
+                return Array.Empty<string>();
             }
 
             var values = textValues.Split(separators);
