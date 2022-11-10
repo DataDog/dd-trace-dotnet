@@ -24,21 +24,19 @@ namespace Datadog.Trace.AppSec.Waf
             this.wafNative = wafNative;
             Actions = new string[returnStruct.ActionsSize];
             ReadActions(returnStruct);
-
+            Block = Actions.Contains("block");
+            ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
         }
 
-        ~Result()
-        {
-            Dispose(false);
-        }
+        ~Result() => Dispose(false);
 
         public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);
 
         public string Data => Marshal.PtrToStringAnsi(returnStruct.Data);
 
-        public string[] Actions { get; }
+        public IList<string> Actions { get; }
 
         /// <summary>
         /// Gets the total runtime in microseconds
@@ -49,6 +47,10 @@ namespace Datadog.Trace.AppSec.Waf
         /// Gets the total runtime in microseconds with parameter passing to the waf
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
+
+        public bool Block { get; }
+
+        public bool ShouldBeReported { get; }
 
         private void ReadActions(DdwafResultStruct returnStruct)
         {

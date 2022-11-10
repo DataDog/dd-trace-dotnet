@@ -31,7 +31,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
             }
             catch (Exception ex)
-                when (ex is not BlockException)
             {
                 throw new CallTargetInvokerException(ex);
             }

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 #if !NETFRAMEWORK
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
@@ -14,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// <summary>
     /// appbuilder
     /// </summary>
+    [Browsable(false)]
     public interface IApplicationBuilder
     {
         /// <summary>

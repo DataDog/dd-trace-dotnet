@@ -50,9 +50,9 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         internal void CheckAndBlock(IResult result)
         {
-            if (result.ReturnCode >= ReturnCode.Match)
+            if (result.ShouldBeReported)
             {
-                if (result.ReturnCode == ReturnCode.Block)
+                if (result.Block)
                 {
                     WriteAndEndResponse();
                     Report(result, true);

@@ -15,11 +15,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 internal class BlockingMiddleware
 {
     private readonly bool _runSecurity;
+    private readonly bool _endPipeline;
 
-    internal BlockingMiddleware(RequestDelegate? next = null, bool runSecurity = false)
+    internal BlockingMiddleware(RequestDelegate? next = null, bool runSecurity = false, bool endPipeline = false)
     {
         Next = next;
         _runSecurity = runSecurity;
+        _endPipeline = endPipeline;
     }
 
     protected RequestDelegate? Next { get; }
@@ -67,8 +69,13 @@ internal class BlockingMiddleware
 
             if (_runSecurity)
             {
+                if (_endPipeline && !context.Response.HasStarted)
+                {
+                    context.Response.StatusCode = 404;
+                }
+
                 using var result = securityTransport.ShouldBlock();
-                if (result.ReturnCode >= ReturnCode.Match)
+                if (result.ShouldBeReported)
                 {
                     var shouldBlock = result.ReturnCode == ReturnCode.Block;
                     if (shouldBlock)

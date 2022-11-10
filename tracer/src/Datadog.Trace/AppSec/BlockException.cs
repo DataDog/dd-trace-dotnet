@@ -29,10 +29,7 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        public BlockException(IResult result)
-        {
-            Result = result;
-        }
+        public BlockException(IResult result) => Result = result;
 
         internal IResult Result { get; }
 

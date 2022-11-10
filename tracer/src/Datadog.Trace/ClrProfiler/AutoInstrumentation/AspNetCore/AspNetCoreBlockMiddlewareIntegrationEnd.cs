@@ -1,4 +1,4 @@
-﻿// <copyright file="AspNetCoreBlockMiddlewareIntegrationEnd.cs" company="Datadog">
+// <copyright file="AspNetCoreBlockMiddlewareIntegrationEnd.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -57,14 +57,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             {
                 instance.Components.Insert(0, rd => new BlockingMiddleware(rd, true).Invoke);
 
-                var componentsCount = instance.Components.Count;
-                for (var i = 2; i < componentsCount; i += 2)
-                {
-                    instance.Components.Insert(i, rd => new BlockingMiddleware(rd).Invoke);
-                    componentsCount++;
-                }
+                // var componentsCount = instance.Components.Count;
+                // for (var i = 2; i < componentsCount; i += 2)
+                // {
+                //     instance.Components.Insert(i, rd => new BlockingMiddleware(rd).Invoke);
+                //     componentsCount++;
+                // }
 
-                instance.Components.Add(rd => new EndPipelineBlockingMiddleware(rd, true).Invoke);
+                instance.Components.Add(rd => new BlockingMiddleware(rd, true, true).Invoke);
             }
 
             return default;

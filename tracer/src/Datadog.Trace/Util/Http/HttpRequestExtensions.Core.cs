@@ -81,6 +81,7 @@ namespace Datadog.Trace.Util.Http
             var dict = new Dictionary<string, object>
             {
                 { AddressesConstants.RequestMethod, request.Method },
+                { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() },
                 { AddressesConstants.RequestUriRaw, request.GetUrl() },
                 { AddressesConstants.RequestQuery, queryStringDic },
                 { AddressesConstants.RequestHeaderNoCookies, headersDic },
