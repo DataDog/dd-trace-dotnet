@@ -53,6 +53,8 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public TracerSettings(IConfigurationSource source)
         {
+            var commaSeparator = new[] { ',' };
+
             Environment = source?.GetString(ConfigurationKeys.Environment);
 
             ServiceName = source?.GetString(ConfigurationKeys.ServiceName) ??
@@ -145,7 +147,7 @@ namespace Datadog.Trace.Configuration
 
             if (urlSubstringSkips != null)
             {
-                HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), ',').ToArray();
+                HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator);
             }
 
             var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
@@ -187,9 +189,9 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) is { } x and > 0 ? x : 200;
 
-            PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
+            PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), commaSeparator);
 
-            PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
+            PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), commaSeparator);
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
 
@@ -615,17 +617,25 @@ namespace Datadog.Trace.Configuration
         }
 
         // internal for testing
-        internal static IEnumerable<string> TrimSplitString(string textValues, char separator)
+        internal static string[] TrimSplitString(string textValues, char[] separators)
         {
-            var values = textValues.Split(separator);
-
-            for (var i = 0; i < values.Length; i++)
+            if (textValues == null)
             {
-                if (!string.IsNullOrWhiteSpace(values[i]))
+                return null;
+            }
+
+            var values = textValues.Split(separators);
+            var list = new List<string>(values.Length);
+
+            foreach (var value in values)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
                 {
-                    yield return values[i].Trim();
+                    list.Add(value.Trim());
                 }
             }
+
+            return list.ToArray();
         }
 
         internal static bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)
