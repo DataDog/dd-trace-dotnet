@@ -13,6 +13,7 @@ const std::string Sample::SpanIdLabel = "span id";
 const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
+const std::string Sample::ObjectAllocationTimeLabel = "allocation time";
 
 // garbage collection related labels
 const std::string Sample::TimelineEventTypeLabel = "event";

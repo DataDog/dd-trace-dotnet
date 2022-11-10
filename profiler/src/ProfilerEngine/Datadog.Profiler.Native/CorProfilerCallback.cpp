@@ -160,7 +160,20 @@ bool CorProfilerCallback::InitializeServices()
     {
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
-            auto valueTypes = AllocationsProvider::SampleTypeDefinitions;
+            // TODO: add IsLiveObjectProfilingEnabled() to IConfiguration
+            // --> requires allocation profiling to be enabled too or override it?
+            auto valueTypes = LiveObjectsProvider::SampleTypeDefinitions;
+            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+            _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
+                valuesOffset,
+                _pCorProfilerInfo,
+                _pFrameStore.get(),
+                _pAppDomainStore.get(),
+                pRuntimeIdStore,
+                _pConfiguration.get());
+            valuesOffset += static_cast<uint32_t>(valueTypes.size());
+
+            valueTypes = AllocationsProvider::SampleTypeDefinitions;
             sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
                 valuesOffset,
@@ -170,7 +183,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get()
+                _pConfiguration.get(),
+                _pLiveObjectsProvider
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
@@ -283,6 +297,7 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
             _pSamplesCollector->Register(_pAllocationsProvider);
+            _pSamplesCollector->RegisterBatchedProvider(_pLiveObjectsProvider);
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -938,6 +953,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
         _pGarbageCollectionProvider->Stop();
     }
 
+    if (_pLiveObjectsProvider != nullptr)
+    {
+        _pLiveObjectsProvider->Stop();
+    }
+
+
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();
 
@@ -1397,6 +1418,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherExecute(void)
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionStarted(int cGenerations, BOOL generationCollected[], COR_PRF_GC_REASON reason)
 {
+    if (_pLiveObjectsProvider != nullptr)
+    {
+        _pLiveObjectsProvider->OnGarbageCollectionStarted();
+    }
+
     return S_OK;
 }
 
@@ -1407,6 +1433,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::SurvivingReferences(ULONG cSurviv
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionFinished(void)
 {
+    if (_pLiveObjectsProvider != nullptr)
+    {
+        _pLiveObjectsProvider->OnGarbageCollectionFinished();
+    }
+
     return S_OK;
 }
 

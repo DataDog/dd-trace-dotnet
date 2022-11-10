@@ -241,8 +241,13 @@
     <ClInclude Include="GarbageCollection.h" />
     <ClInclude Include="GCBaseRawSample.h" />
     <ClInclude Include="GarbageCollectionProvider.h" />
+    <ClInclude Include="IBatchedSamplesProvider.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
+    <ClInclude Include="ISampledAllocationsListener.h" />
+    <ClInclude Include="LiveObjectInfo.h" />
+    <ClInclude Include="LiveObjectsProvider.h" />
     <ClInclude Include="RawGarbageCollectionSample.h" />
+    <ClInclude Include="RawLiveObjectSample.h" />
     <ClInclude Include="StopTheWorldGCProvider.h" />
     <ClInclude Include="GenericSampler.h" />
     <ClInclude Include="GroupSampler.h" />
@@ -340,6 +345,8 @@
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="GarbageCollectionProvider.cpp" />
+    <ClCompile Include="LiveObjectInfo.cpp" />
+    <ClCompile Include="LiveObjectsProvider.cpp" />
     <ClCompile Include="StopTheWorldGCProvider.cpp" />
     <ClCompile Include="GenericSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />

@@ -23,6 +23,7 @@
 #include "SamplesCollector.h"
 #include "GarbageCollectionProvider.h"
 #include "StopTheWorldGCProvider.h"
+#include "LiveObjectsProvider.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
 #include "shared/src/native-src/string.h"
@@ -213,6 +214,7 @@ private :
     SamplesCollector* _pSamplesCollector = nullptr;
     StopTheWorldGCProvider* _pStopTheWorldProvider = nullptr;
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
+    LiveObjectsProvider* _pLiveObjectsProvider = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
 

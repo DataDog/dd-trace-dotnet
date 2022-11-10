@@ -13,6 +13,7 @@ class IFrameStore;
 class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
+class ISampledAllocationsListener;
 
 
 class AllocationsProvider
@@ -32,7 +33,8 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration);
+        IConfiguration* pConfiguration,
+        ISampledAllocationsListener* pListener);
 
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,
@@ -44,6 +46,7 @@ private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
+    ISampledAllocationsListener* _pListener = nullptr;
     GroupSampler<ClassID> _sampler;
     int32_t _sampleLimit;
 };
