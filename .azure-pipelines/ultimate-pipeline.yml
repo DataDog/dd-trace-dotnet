@@ -203,6 +203,11 @@ stages:
       name: azure-windows-scale-set-2
 
     steps:
+    - script: |
+        dir "C:\Program Files (x86)\Microsoft SDKs\Windows Kits\"
+        dir "C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\"
+        dir "C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\"
+        dir "C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.UniversalCRT.Debug"
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
