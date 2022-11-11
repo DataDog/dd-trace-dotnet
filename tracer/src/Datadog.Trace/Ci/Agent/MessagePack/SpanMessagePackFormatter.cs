@@ -196,6 +196,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private int WriteTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
         {
             int originalOffset = offset;
+            var traceContext = span.Context.TraceContext;
 
             // Start of "meta" dictionary. Do not add any string tags before this line.
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaBytes);
@@ -216,7 +217,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // TODO: for each trace tag, determine if it should be added to the local root,
             // to the first span in the chunk, or to all orphan spans.
             // For now, we add them to the local root which is correct in most cases.
-            if (span.IsRootSpan && span.Context.TraceContext?.Tags?.ToArray() is { Length: > 0 } traceTags)
+            if (span.IsRootSpan && traceContext?.Tags?.ToArray() is { Length: > 0 } traceTags)
             {
                 count += traceTags.Length;
 
@@ -232,7 +233,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originValueBytes);
 
             // add "env" to all spans
-            var env = span.Context.TraceContext?.Environment;
+            var env = traceContext?.Environment;
 
             if (!string.IsNullOrWhiteSpace(env))
             {
@@ -251,9 +252,9 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             }
 
             // add "version" tags to all spans whose service name is the default service name
-            if (string.Equals(span.Context.ServiceName, span.Context.TraceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(span.Context.ServiceName, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
-                var version = span.Context.TraceContext?.ServiceVersion;
+                var version = traceContext?.ServiceVersion;
 
                 if (!string.IsNullOrWhiteSpace(version))
                 {
