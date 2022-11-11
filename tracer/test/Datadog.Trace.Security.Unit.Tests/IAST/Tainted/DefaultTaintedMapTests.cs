@@ -66,6 +66,18 @@ public class DefaultTaintedMapTests
     }
 
     [Fact]
+    public void GivenATaintedObjectMap_WhenPutAndGetDifferentObjectSameValue_ObjectIsNotRetrieved()
+    {
+        DefaultTaintedMap map = new();
+        var testGuid = Guid.NewGuid();
+        var testString = testGuid.ToString();
+        var testString2 = testGuid.ToString();
+        map.Put(new TaintedObject(testString, null));
+        var tainted2 = map.Get(testString2);
+        Assert.Null(tainted2);
+    }
+
+    [Fact]
     public void GivenATaintedObjectMap_WhenPutEmptyString_ObjectIsNotInserted()
     {
         DefaultTaintedMap map = new();
@@ -211,6 +223,21 @@ public class DefaultTaintedMapTests
             var testString = new StringForTest(Guid.NewGuid().ToString());
             map.Put(new TaintedForTest(testString, null));
             map.Get(testString).Should().NotBeNull();
+        }
+    }
+
+    [Fact]
+    public void GivenATaintedObjectMap_WhenFlatMode_LastElementIsStored()
+    {
+        List<string> objects = new();
+        DefaultTaintedMap map = new();
+        AssertFlatMode(map, objects);
+
+        for (int i = 0; i < 100; i++)
+        {
+            var testString = new StringForTest(Guid.NewGuid().ToString());
+            map.Put(new TaintedForTest(testString, null));
+            Assert.NotNull(map.Get(testString));
         }
     }
 

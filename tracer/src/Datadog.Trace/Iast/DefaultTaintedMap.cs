@@ -8,7 +8,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.Vendors.Serilog.Formatting.Display.Obsolete;
 
 namespace Datadog.Trace.Iast;
 
