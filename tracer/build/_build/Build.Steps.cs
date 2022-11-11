@@ -861,8 +861,18 @@ partial class Build
                 .SetTargets("BuildDependencyLibs")
             );
 
-            // The live debugger dependency lib has to be x86/x64 apparently...
+            // The live debugger dependency lib _sometimes_ has to be x86/x64, and _sometimes_ has to be AnyCPU apparently
+            // so try building it with both...
             var debuggerProjects = GlobFiles(TestsDirectory / "test-applications" / "debugger" / "dependency-libs" / "**" / "*.csproj");
+            DotNetBuild(config => config
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .CombineWith(debuggerProjects, (x, project) => x
+                    .SetProjectFile(project)));
+
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
