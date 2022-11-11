@@ -2009,8 +2009,8 @@ partial class Build
         {
             return new (string Arch, string Folder, string Ext)[]
             {
+                ("arm64", "osx-arm64", "dylib"),
                 ("x86_64", "osx-x64", "dylib"),
-                ("arm64", "osx-arm64", "dylib")
             };
         }
 
