@@ -389,7 +389,6 @@ partial class Build : NukeBuild
                 DotNetBuild(s => s
                     .SetProjectFile(benchmarksProject)
                     .SetConfiguration(BuildConfiguration)
-                    .SetFramework(TargetFramework.NETCOREAPP3_1)
                     .EnableNoDependencies()
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 );

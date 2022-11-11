@@ -171,14 +171,16 @@ stages:
   - job: fetch
     timeoutInMinutes: 60 #default value
     pool:
-      vmImage: ubuntu-20.04
+      name: azure-linux-task-scale-set
 
     steps:
     - checkout: none
     - bash: |
+        rm -rf ./s
         git clone --quiet --no-checkout --depth 1 --branch master $BUILD_REPOSITORY_URI ./s
         cd s
         MASTER_SHA=$(git rev-parse origin/master)
+        rm -rf ./s
         echo "Using master commit ID $MASTER_SHA"
         echo "##vso[task.setvariable variable=master;isOutput=true]$MASTER_SHA"
       failOnStderr: true
@@ -198,7 +200,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -223,7 +225,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -252,7 +254,7 @@ stages:
 
   - job: build
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -577,7 +579,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    vmImage: windows-2019
+    name: azure-windows-scale-set
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -622,7 +624,8 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    vmImage: windows-2019
+    name: azure-windows-scale-set
+
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -1817,7 +1820,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
 
     # Enable the Datadog Agent service for this job
     services:
@@ -1874,7 +1877,7 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
     pool:
-      vmImage: ubuntu-20.04
+      name: azure-linux-scale-set
 
     # Enable the Datadog Agent service for this job
     services:
@@ -2075,7 +2078,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2216,7 +2219,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2281,23 +2284,19 @@ stages:
           name: centos7
           baseImage: centos7
           artifactSuffix: linux-x64
-          poolImage: ubuntu-20.04
-          poolName:
+          poolName: azure-linux-scale-set
         alpine:
           name: alpine
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolImage: ubuntu-20.04
-          poolName:
+          poolName: azure-linux-scale-set
         arm64:
           name: arm64
           baseImage: debian
           artifactSuffix: linux-arm64
-          poolImage:
           poolname: aws-arm64-auto-scaling
 
     pool:
-      vmImage: $(poolImage)
       name: $(poolName)
 
     steps:

@@ -33,10 +33,13 @@
     </MSBuild>
   </Target>
 
-  <Target Name="BuildCppTests" DependsOnTargets="Restore">
+  <Target Name="BuildCppTestsOnly">
     <MSBuild Targets="Build" Projects="@(CppTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
+  </Target>
+
+  <Target Name="BuildCppTests" DependsOnTargets="Restore;BuildCppTestsOnly">
   </Target>
 
   <Target Name="BuildCppWithAsan"  DependsOnTargets="Restore">
