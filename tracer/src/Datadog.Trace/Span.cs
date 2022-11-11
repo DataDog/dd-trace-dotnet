@@ -155,7 +155,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        internal Span SetTag(string key, string value)
+        internal ISpan SetTag(string key, string value)
         {
             if (IsFinished)
             {
