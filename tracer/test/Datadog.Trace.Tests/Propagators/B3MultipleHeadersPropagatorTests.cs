@@ -1,4 +1,4 @@
-// <copyright file="B3SpanContextPropagatorTests.cs" company="Datadog">
+// <copyright file="B3MultipleHeadersPropagatorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,13 +12,15 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Propagators
 {
-    public class B3SpanContextPropagatorTests
+    public class B3MultipleHeadersPropagatorTests
     {
         private static readonly SpanContextPropagator B3Propagator;
 
-        static B3SpanContextPropagatorTests()
+        static B3MultipleHeadersPropagatorTests()
         {
-            B3Propagator = ContextPropagators.GetSpanContextPropagator(new[] { ContextPropagationHeaderStyle.B3MultipleHeaders }, new[] { ContextPropagationHeaderStyle.B3MultipleHeaders });
+            B3Propagator = ContextPropagators.GetSpanContextPropagator(
+                new[] { ContextPropagationHeaderStyle.B3MultipleHeaders },
+                new[] { ContextPropagationHeaderStyle.B3MultipleHeaders });
         }
 
         [Fact]

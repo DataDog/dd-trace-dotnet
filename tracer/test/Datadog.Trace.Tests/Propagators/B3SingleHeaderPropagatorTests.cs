@@ -1,4 +1,4 @@
-// <copyright file="B3SingleHeaderSpanContextPropagatorTests.cs" company="Datadog">
+// <copyright file="B3SingleHeaderPropagatorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,13 +12,15 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Propagators
 {
-    public class B3SingleHeaderSpanContextPropagatorTests
+    public class B3SingleHeaderPropagatorTests
     {
         private static readonly SpanContextPropagator B3Propagator;
 
-        static B3SingleHeaderSpanContextPropagatorTests()
+        static B3SingleHeaderPropagatorTests()
         {
-            B3Propagator = ContextPropagators.GetSpanContextPropagator(new[] { ContextPropagationHeaderStyle.B3SingleHeader }, new[] { ContextPropagationHeaderStyle.B3SingleHeader });
+            B3Propagator = ContextPropagators.GetSpanContextPropagator(
+                new[] { ContextPropagationHeaderStyle.B3SingleHeader },
+                new[] { ContextPropagationHeaderStyle.B3SingleHeader });
         }
 
         [Fact]
@@ -183,7 +185,7 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
-        public void Extract_EmptyStrigs()
+        public void Extract_EmptyStrings()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
             headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))

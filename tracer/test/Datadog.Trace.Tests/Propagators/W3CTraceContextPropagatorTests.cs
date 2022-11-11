@@ -1,4 +1,4 @@
-// <copyright file="W3CSpanContextPropagatorTests.cs" company="Datadog">
+// <copyright file="W3CTraceContextPropagatorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,13 +12,15 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Propagators
 {
-    public class W3CSpanContextPropagatorTests
+    public class W3CTraceContextPropagatorTests
     {
         private static readonly SpanContextPropagator W3CPropagator;
 
-        static W3CSpanContextPropagatorTests()
+        static W3CTraceContextPropagatorTests()
         {
-            W3CPropagator = ContextPropagators.GetSpanContextPropagator(new[] { ContextPropagationHeaderStyle.W3CTraceContext }, new[] { ContextPropagationHeaderStyle.W3CTraceContext });
+            W3CPropagator = ContextPropagators.GetSpanContextPropagator(
+                new[] { ContextPropagationHeaderStyle.W3CTraceContext },
+                new[] { ContextPropagationHeaderStyle.W3CTraceContext });
         }
 
         [Fact]
