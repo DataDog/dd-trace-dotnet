@@ -347,6 +347,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for setting the header injection propagation style.
+        /// If <see cref="PropagationStyle"/> is also defined, this value overrides the header injection styles.
         /// </summary>
         /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
         /// <seealso cref="TracerSettings.PropagationStyleInject"/>
@@ -354,6 +355,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for setting the header extraction propagation style.
+        /// If <see cref="PropagationStyle"/> is also defined, this value overrides the header extraction styles.
         /// </summary>
         /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
         /// <seealso cref="TracerSettings.PropagationStyleExtract"/>
@@ -361,6 +363,8 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for setting the propagation style for both header injection and extraction.
+        /// If <see cref="PropagationStyleInject"/> or <see cref="PropagationStyleExtract"/> are also defined,
+        /// they will override any header injections or extraction styled defined here, respectively.
         /// </summary>
         public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
