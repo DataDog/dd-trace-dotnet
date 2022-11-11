@@ -8,7 +8,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.Vendors.Serilog.Formatting.Display.Obsolete;
 
 namespace Datadog.Trace.Iast;
 
@@ -18,12 +17,12 @@ internal class DefaultTaintedMap : ITaintedMap
     public const int DefaultCapacity = 1 << 14;
     // Default flat mode threshold.
     public const int DefaultFlatModeThresold = 1 << 13;
+    // Bitmask to convert hashes to positive integers.
+    public const int PositiveMask = int.MaxValue;
     // Periodicity of table purges, as number of put operations. It MUST be a power of two.
     private static int purgeCount = 1 << 6;
     // Bitmask for fast modulo with PURGE_COUNT.
     private static int purgeMask = purgeCount - 1;
-    // Bitmask to convert hashes to positive integers.
-    public const int PositiveMask = int.MaxValue;
 
     // Map containing the tainted objects
     private ConcurrentDictionary<int, ITaintedObject> _map;
@@ -31,7 +30,7 @@ internal class DefaultTaintedMap : ITaintedMap
     // Bitmask for fast modulo with table length.
     private int _lengthMask = 0;
     // Flag to ensure we do not run multiple purges concurrently.
-    private bool isPurging = false;
+    private bool _isPurging = false;
     private object _purgingLock = new();
 
     // Estimated number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
@@ -55,7 +54,7 @@ internal class DefaultTaintedMap : ITaintedMap
     {
         _map = new ConcurrentDictionary<int, ITaintedObject>();
         _lengthMask = capacity - 1;
-        this._flatModeThreshold = flatModeThreshold;
+        _flatModeThreshold = flatModeThreshold;
     }
 
     /// <summary>
@@ -64,7 +63,7 @@ internal class DefaultTaintedMap : ITaintedMap
     public bool IsFlat { get; private set; } = false;
 
     /// <summary>
-    /// Returns the TaintedObject for the given input object.
+    /// Returns the ITaintedObject for the given input object.
     /// </summary>
     /// <param name="objectToFind">The object that should be found in the map</param>
     /// <returns>The retrieved tainted object or null</returns>
@@ -75,9 +74,8 @@ internal class DefaultTaintedMap : ITaintedMap
             return null;
         }
 
-        int index = IndexObject(objectToFind);
+        _map.TryGetValue(IndexObject(objectToFind), out var entry);
 
-        _map.TryGetValue(index, out var entry);
         while (entry != null)
         {
             if (objectToFind == entry.Value)
@@ -143,12 +141,12 @@ internal class DefaultTaintedMap : ITaintedMap
         // Ensure we enter only once concurrently.
         lock (_purgingLock)
         {
-            if (isPurging)
+            if (_isPurging)
             {
                 return;
             }
 
-            isPurging = true;
+            _isPurging = true;
         }
 
         try
@@ -166,7 +164,7 @@ internal class DefaultTaintedMap : ITaintedMap
             // Reset purging flag.
             lock (_purgingLock)
             {
-                isPurging = false;
+                _isPurging = false;
             }
         }
     }

@@ -29,6 +29,18 @@ public class DefaultTaintedMapTests
     }
 
     [Fact]
+    public void GivenATaintedObjectMap_WhenPutAndGetDifferentObjectSameValue_ObjectIsNotRetrieved()
+    {
+        DefaultTaintedMap map = new();
+        var testGuid = Guid.NewGuid();
+        var testString = testGuid.ToString();
+        var testString2 = testGuid.ToString();
+        map.Put(new TaintedObject(testString, null));
+        var tainted2 = map.Get(testString2);
+        Assert.Null(tainted2);
+    }
+
+    [Fact]
     public void GivenATaintedObjectMap_WhenPutEmptyString_ObjectIsNotInserted()
     {
         DefaultTaintedMap map = new();
@@ -155,6 +167,21 @@ public class DefaultTaintedMapTests
     }
 
     [Fact]
+    public void GivenATaintedObjectMap_WhenFlatMode_LastElementIsStored()
+    {
+        List<string> objects = new();
+        DefaultTaintedMap map = new();
+        AssertFlatMode(map, objects);
+
+        for (int i = 0; i < 100; i++)
+        {
+            var testString = new StringForTest(Guid.NewGuid().ToString());
+            map.Put(new TaintedForTest(testString, null));
+            Assert.NotNull(map.Get(testString));
+        }
+    }
+
+    [Fact]
     public void GivenATaintedObjectMap_WhenPutObjectsThatGetDisposed_ObjectsArePurged()
     {
         DefaultTaintedMap map = new();
@@ -217,12 +244,7 @@ public class DefaultTaintedMapTests
     [InlineData(50, 0)]
     [InlineData(50, 49)]
     [InlineData(50, 25)]
-    public void GivenATaintedObjectMap_WhenDisposedInSameHashPosition0_IsPurged(int totalObjects, int indexDisposed)
-    {
-        TestObjectPurgeSameHash(totalObjects, indexDisposed);
-    }
-
-    private static void TestObjectPurgeSameHash(int totalObjects, int disposedIndex)
+    public void GivenATaintedObjectMap_WhenDisposedInSameHashPosition0_IsPurged(int totalObjects, int disposedIndex)
     {
         DefaultTaintedMap map = new();
         List<StringForTest> addedObjects = new();
