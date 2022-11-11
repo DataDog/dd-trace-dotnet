@@ -105,7 +105,7 @@ internal class IastModule
         };
 
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
-        tracer?.TracerManager?.Telemetry.IntegrationGeneratedSpan(integrationId);
+        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
         return scope;
     }
 
