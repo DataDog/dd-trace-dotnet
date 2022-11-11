@@ -22,7 +22,7 @@ namespace Datadog.Trace.Propagators
 
         public static IEnumerable<TPropagator> GetPropagators<TPropagator>(string[] headerStyles)
         {
-            foreach (var headerStyle in headerStyles)
+            foreach (var headerStyle in headerStyles.Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 if (GetPropagator(headerStyle) is TPropagator propagator)
                 {
