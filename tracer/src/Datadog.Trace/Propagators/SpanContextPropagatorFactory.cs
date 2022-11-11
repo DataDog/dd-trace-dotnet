@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Datadog.Trace.Propagators
 {
@@ -33,26 +34,30 @@ namespace Datadog.Trace.Propagators
 
         public static object? GetPropagator(string headerStyle)
         {
-            switch (headerStyle)
+            if (string.Equals(headerStyle, ContextPropagationHeaderStyle.Datadog, StringComparison.OrdinalIgnoreCase))
             {
-                case ContextPropagationHeaderStyle.Datadog:
-                    return DatadogContextPropagator.Instance;
-
-                case ContextPropagationHeaderStyle.W3CTraceContext:
-                case ContextPropagationHeaderStyle.Deprecated.W3CTraceContext:
-                    return W3CContextPropagator.Instance;
-
-                case ContextPropagationHeaderStyle.B3MultipleHeaders:
-                case ContextPropagationHeaderStyle.Deprecated.B3MultipleHeaders:
-                    return B3MultipleHeaderContextPropagator.Instance;
-
-                case ContextPropagationHeaderStyle.B3SingleHeader:
-                case ContextPropagationHeaderStyle.Deprecated.B3SingleHeader:
-                    return B3SingleHeaderContextPropagator.Instance;
-
-                default:
-                    return null;
+                return DatadogContextPropagator.Instance;
             }
+
+            if (string.Equals(headerStyle, ContextPropagationHeaderStyle.W3CTraceContext, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(headerStyle, ContextPropagationHeaderStyle.Deprecated.W3CTraceContext, StringComparison.OrdinalIgnoreCase))
+            {
+                return W3CContextPropagator.Instance;
+            }
+
+            if (string.Equals(headerStyle, ContextPropagationHeaderStyle.B3MultipleHeaders, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(headerStyle, ContextPropagationHeaderStyle.Deprecated.B3MultipleHeaders, StringComparison.OrdinalIgnoreCase))
+            {
+                return B3MultipleHeaderContextPropagator.Instance;
+            }
+
+            if (string.Equals(headerStyle, ContextPropagationHeaderStyle.B3SingleHeader, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(headerStyle, ContextPropagationHeaderStyle.Deprecated.B3SingleHeader, StringComparison.OrdinalIgnoreCase))
+            {
+                return B3SingleHeaderContextPropagator.Instance;
+            }
+
+            return null;
         }
     }
 }

@@ -199,14 +199,14 @@ namespace Datadog.Trace.Configuration
                                          source?.GetString(ConfigurationKeys.PropagationStyle) ??
                                          ContextPropagationHeaderStyle.Datadog; // default value
 
-            PropagationStyleInject = TrimSplitString(propagationStyleInject.ToUpperInvariant(), commaSeparator);
+            PropagationStyleInject = TrimSplitString(propagationStyleInject, commaSeparator);
 
             var propagationStyleExtract = source?.GetString(ConfigurationKeys.PropagationStyleExtract) ??
                                           source?.GetString("DD_PROPAGATION_STYLE_EXTRACT") ?? // deprecated setting name
                                           source?.GetString(ConfigurationKeys.PropagationStyle) ??
                                           ContextPropagationHeaderStyle.Datadog; // default value
 
-            PropagationStyleExtract = TrimSplitString(propagationStyleExtract.ToUpperInvariant(), commaSeparator);
+            PropagationStyleExtract = TrimSplitString(propagationStyleExtract, commaSeparator);
 
             // If Activity support is enabled, we must enable the W3C Trace Context propagators.
             // It's ok to include W3C multiple times, we handle that later.
