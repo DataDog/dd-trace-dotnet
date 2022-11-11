@@ -1998,9 +1998,9 @@ partial class Build
     private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
         (IsOsx, IsAlpine) switch
         {
+            (true, _) => ($"osx-{UnixArchitectureIdentifier}", "dylib"),
             (false, false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
             (false, true) => ($"linux-musl-{UnixArchitectureIdentifier}", "so"),
-            (_, _) => default,
         };
 
     private (string Arch, string Folder, string Ext)[] GetMacOsArchitectureAndExtension()
