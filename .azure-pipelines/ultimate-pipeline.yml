@@ -103,6 +103,7 @@ variables:
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
+  slackWebhookUrl: $(SLACK_WEBHOOK_URL)
   isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/'))]
@@ -3743,3 +3744,26 @@ stages:
 
     - bash: sleep 20
       displayName: Wait 20 seconds to agent flush before finishing pipeline
+
+- stage: notify_slack_on_failures
+  condition: >
+    and(
+      failed(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(variables['isMainBranch'], true)
+    )
+  dependsOn: trace_pipeline # so it runs last
+  jobs:
+  - job: notify
+    timeoutInMinutes: 10
+    pool:
+      vmImage: ubuntu-20.04
+
+    steps:
+    - bash: |
+        sha=$(echo $(OriginalCommitId) | head -c 7)
+        curl -X POST \
+        -H "Content-Type: application/json" \
+        -d '{"commit": "'$sha'"}' \
+          $(slackWebhookUrl) 
+      displayName: "notify"
