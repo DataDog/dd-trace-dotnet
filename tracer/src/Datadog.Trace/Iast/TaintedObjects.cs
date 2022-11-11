@@ -31,11 +31,11 @@ namespace Datadog.Trace.Iast
                 _map.Put(new TaintedObject(objectToTaint, ranges));
         }
 
-        public void Taint(object obj, Range[]? ranges)
+        public void Taint(object objectToTaint, Range[]? ranges)
         {
-            if (obj is not null && (obj is not string objAsString || objAsString != string.Empty))
+            if (objectToTaint is not null && (objectToTaint is not string || objectToTaint as string != string.Empty))
             {
-                map.Put(new TaintedObject(obj, ranges));
+                _map.Put(new TaintedObject(objectToTaint, ranges));
             }
         }
 
