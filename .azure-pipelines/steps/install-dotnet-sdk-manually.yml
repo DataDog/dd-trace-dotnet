@@ -17,7 +17,7 @@ parameters:
 steps:
   - powershell: |
       $channel = "${{ parameters.channel }}"
-      $sdkVersion = "${{ parameters.sdkVersion }}
+      $sdkVersion = "${{ parameters.sdkVersion }}"
 
       echo "Downloading dotnet-install.ps1"
       Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
