@@ -12,6 +12,18 @@ namespace Datadog.Trace.Tests.Propagators;
 public class SpanContextPropagatorFactoryTests
 {
     [Theory]
+    [InlineData("invalid")]
+    [InlineData("1, 2, 3")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void InvalidContextPropagator(string headerStyles)
+    {
+        var propagators = SpanContextPropagatorFactory.GetPropagators<IContextExtractor>(headerStyles?.Split(','));
+
+        propagators.Should().NotBeNull().And.BeEmpty();
+    }
+
+    [Theory]
     [InlineData("Datadog")]
     [InlineData("datadog")]         // case-insensitive
     [InlineData("Datadog,datadog")] // multiple entries return one instance
