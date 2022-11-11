@@ -96,6 +96,15 @@ public class DefaultTaintedMapTests
     }
 
     [Fact]
+    public void GivenATaintedObjectMap_WhenPutNullTaintedValue_ObjectIsNotInserted()
+    {
+        DefaultTaintedMap map = new();
+        var tainted = new TaintedObject(null, null);
+        map.Put(tainted);
+        Assert.Empty(map.ToList());
+    }
+
+    [Fact]
     public void GivenATaintedObjectMap_WhenPutNull_ObjectIsNotInserted()
     {
         DefaultTaintedMap map = new();
