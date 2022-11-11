@@ -13,6 +13,8 @@ internal class TaintedObject : ITaintedObject
 {
     private readonly WeakReference _weak;
 
+    private readonly WeakReference _weak;
+
     public TaintedObject(object value, Range[]? ranges)
     {
         _weak = new WeakReference(value);
