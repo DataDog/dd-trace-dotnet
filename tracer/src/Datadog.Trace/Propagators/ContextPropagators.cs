@@ -17,11 +17,11 @@ namespace Datadog.Trace.Propagators
             { ContextPropagationHeaderStyle.W3CTraceContext, typeof(W3CContextPropagator) },
             { ContextPropagationHeaderStyle.Datadog, typeof(DatadogContextPropagator) },
             { ContextPropagationHeaderStyle.B3SingleHeader, typeof(B3SingleHeaderContextPropagator) },
-            { ContextPropagationHeaderStyle.B3MultipleHeaders, typeof(B3ContextPropagator) },
+            { ContextPropagationHeaderStyle.B3MultipleHeaders, typeof(B3MultipleHeaderContextPropagator) },
             // deprecated values
             { ContextPropagationHeaderStyle.Deprecated.W3CTraceContext, typeof(W3CContextPropagator) },
             { ContextPropagationHeaderStyle.Deprecated.B3SingleHeader, typeof(B3SingleHeaderContextPropagator) },
-            { ContextPropagationHeaderStyle.Deprecated.B3MultipleHeaders, typeof(B3ContextPropagator) },
+            { ContextPropagationHeaderStyle.Deprecated.B3MultipleHeaders, typeof(B3MultipleHeaderContextPropagator) },
         };
 
         public static SpanContextPropagator GetSpanContextPropagator(IEnumerable<string> requestedInjectors, IEnumerable<string> requestedExtractors)

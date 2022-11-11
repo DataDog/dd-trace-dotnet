@@ -43,9 +43,9 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set(HttpHeaderNames.TraceId, "123456789"), Times.Once());
             headers.Verify(h => h.Set(HttpHeaderNames.ParentId, "987654321"), Times.Once());
             headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, "2"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.TraceId, "00000000075bcd15"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.SpanId, "000000003ade68b1"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
+            headers.Verify(h => h.Set(B3MultipleHeaderContextPropagator.TraceId, "00000000075bcd15"), Times.Once());
+            headers.Verify(h => h.Set(B3MultipleHeaderContextPropagator.SpanId, "000000003ade68b1"), Times.Once());
+            headers.Verify(h => h.Set(B3MultipleHeaderContextPropagator.Sampled, "1"), Times.Once());
             headers.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-1"), Times.Once());
             headers.Verify(h => h.Set(W3CContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
             headers.VerifyNoOtherCalls();
@@ -67,9 +67,9 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set(HttpHeaderNames.TraceId, "123456789"), Times.Once());
             headers.Verify(h => h.Set(HttpHeaderNames.ParentId, "987654321"), Times.Once());
             headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, "2"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.TraceId, "00000000075bcd15"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.SpanId, "000000003ade68b1"), Times.Once());
-            headers.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
+            headers.Verify(h => h.Set(B3MultipleHeaderContextPropagator.TraceId, "00000000075bcd15"), Times.Once());
+            headers.Verify(h => h.Set(B3MultipleHeaderContextPropagator.SpanId, "000000003ade68b1"), Times.Once());
+            headers.Verify(h => h.Set(B3MultipleHeaderContextPropagator.Sampled, "1"), Times.Once());
             headers.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-1"), Times.Once());
             headers.Verify(h => h.Set(W3CContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
             headers.VerifyNoOtherCalls();
@@ -79,18 +79,18 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_B3_IHeadersCollection()
         {
             var headers = new Mock<IHeadersCollection>();
-            headers.Setup(h => h.GetValues(B3ContextPropagator.TraceId))
+            headers.Setup(h => h.GetValues(B3MultipleHeaderContextPropagator.TraceId))
                    .Returns(new[] { "000000000000000000000000075bcd15" });
-            headers.Setup(h => h.GetValues(B3ContextPropagator.SpanId))
+            headers.Setup(h => h.GetValues(B3MultipleHeaderContextPropagator.SpanId))
                    .Returns(new[] { "000000003ade68b1" });
-            headers.Setup(h => h.GetValues(B3ContextPropagator.Sampled))
+            headers.Setup(h => h.GetValues(B3MultipleHeaderContextPropagator.Sampled))
                    .Returns(new[] { "1" });
 
             var result = Propagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(B3ContextPropagator.TraceId), Times.Once());
-            headers.Verify(h => h.GetValues(B3ContextPropagator.SpanId), Times.Once());
-            headers.Verify(h => h.GetValues(B3ContextPropagator.Sampled), Times.Once());
+            headers.Verify(h => h.GetValues(B3MultipleHeaderContextPropagator.TraceId), Times.Once());
+            headers.Verify(h => h.GetValues(B3MultipleHeaderContextPropagator.SpanId), Times.Once());
+            headers.Verify(h => h.GetValues(B3MultipleHeaderContextPropagator.Sampled), Times.Once());
             result.Should()
                   .BeEquivalentTo(
                        new SpanContextMock
@@ -209,11 +209,11 @@ namespace Datadog.Trace.Tests.Propagators
             var spanId = "00f067aa0ba902b7";
 
             var headers = new Mock<IHeadersCollection>();
-            headers.Setup(h => h.GetValues(B3ContextPropagator.TraceId))
+            headers.Setup(h => h.GetValues(B3MultipleHeaderContextPropagator.TraceId))
                    .Returns(new[] { traceId });
-            headers.Setup(h => h.GetValues(B3ContextPropagator.SpanId))
+            headers.Setup(h => h.GetValues(B3MultipleHeaderContextPropagator.SpanId))
                    .Returns(new[] { spanId });
-            headers.Setup(h => h.GetValues(B3ContextPropagator.Sampled))
+            headers.Setup(h => h.GetValues(B3MultipleHeaderContextPropagator.Sampled))
                    .Returns(new[] { "1" });
             var result = Propagator.Extract(headers.Object);
 
@@ -229,15 +229,15 @@ namespace Datadog.Trace.Tests.Propagators
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
-            headersForInjection.Setup(h => h.Set(B3ContextPropagator.TraceId, traceId));
-            headersForInjection.Setup(h => h.Set(B3ContextPropagator.SpanId, spanId));
-            headersForInjection.Setup(h => h.Set(B3ContextPropagator.Sampled, "1"));
+            headersForInjection.Setup(h => h.Set(B3MultipleHeaderContextPropagator.TraceId, traceId));
+            headersForInjection.Setup(h => h.Set(B3MultipleHeaderContextPropagator.SpanId, spanId));
+            headersForInjection.Setup(h => h.Set(B3MultipleHeaderContextPropagator.Sampled, "1"));
 
             Propagator.Inject(result, headersForInjection.Object);
 
-            headersForInjection.Verify(h => h.Set(B3ContextPropagator.TraceId, traceId), Times.Once());
-            headersForInjection.Verify(h => h.Set(B3ContextPropagator.SpanId, spanId), Times.Once());
-            headersForInjection.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
+            headersForInjection.Verify(h => h.Set(B3MultipleHeaderContextPropagator.TraceId, traceId), Times.Once());
+            headersForInjection.Verify(h => h.Set(B3MultipleHeaderContextPropagator.SpanId, spanId), Times.Once());
+            headersForInjection.Verify(h => h.Set(B3MultipleHeaderContextPropagator.Sampled, "1"), Times.Once());
         }
 
         [Fact]
