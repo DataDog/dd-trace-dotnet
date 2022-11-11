@@ -190,6 +190,10 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) is { } x and > 0 ? x : 200;
 
+            IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
+                                        // default value
+                                        false;
+
             var propagationStyleInject = source?.GetString(ConfigurationKeys.PropagationStyleInject) ??
                                          source?.GetString("DD_PROPAGATION_STYLE_INJECT") ?? // deprecated setting name
                                          source?.GetString(ConfigurationKeys.PropagationStyle) ??
@@ -203,6 +207,14 @@ namespace Datadog.Trace.Configuration
                                           ContextPropagationHeaderStyle.Datadog; // default value
 
             PropagationStyleExtract = TrimSplitString(propagationStyleExtract.ToUpperInvariant(), commaSeparator);
+
+            // If Activity support is enabled, we must enable the W3C Trace Context propagators.
+            // It's ok to include W3C multiple times, we handle that later.
+            if (IsActivityListenerEnabled)
+            {
+                PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+                PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+            }
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
 
@@ -221,31 +233,9 @@ namespace Datadog.Trace.Configuration
 
             OutgoingTagPropagationHeaderMaxLength = outgoingTagPropagationHeaderMaxLength is >= 0 and <= Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength ? (int)outgoingTagPropagationHeaderMaxLength : Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength;
 
-            IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
-                                        // default value
-                                        false;
-
             IpHeader = source?.GetString(ConfigurationKeys.IpHeader) ?? source?.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
 
             IpHeaderEnabled = source?.GetBool(ConfigurationKeys.IpHeaderEnabled) ?? false;
-
-            // If Activity support is enabled, we must enable the W3C Trace Context propagators
-            if (IsActivityListenerEnabled)
-            {
-                if (!PropagationStyleExtract.Any(
-                        v => string.Equals(v, ContextPropagationHeaderStyle.W3CTraceContext) ||
-                             string.Equals(v, ContextPropagationHeaderStyle.Deprecated.W3CTraceContext)))
-                {
-                    PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
-                }
-
-                if (!PropagationStyleInject.Any(
-                        v => string.Equals(v, ContextPropagationHeaderStyle.W3CTraceContext) ||
-                             string.Equals(v, ContextPropagationHeaderStyle.Deprecated.W3CTraceContext)))
-                {
-                    PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
-                }
-            }
 
             IsDataStreamsMonitoringEnabled = source?.GetBool(ConfigurationKeys.DataStreamsMonitoring.Enabled) ??
                                              // default value
