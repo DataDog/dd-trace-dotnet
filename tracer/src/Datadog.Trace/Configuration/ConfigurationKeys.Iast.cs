@@ -39,7 +39,8 @@ namespace Datadog.Trace.Configuration
             public const string RequestSampling = "DD_IAST_REQUEST_SAMPLING";
 
             /// <summary>
-            /// Maximum number of requests to be analyzed by IAST concurrently.
+            /// Configuration key for the maximum number of requests 
+            /// to be analyzed by IAST concurrently. Defaults to 2.
             /// </summary>
             public const string MaxConcurrentRequests = "DD_IAST_MAX_CONCURRENT_REQUESTS";
 
