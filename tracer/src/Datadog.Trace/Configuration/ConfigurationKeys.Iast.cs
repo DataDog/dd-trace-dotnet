@@ -33,7 +33,8 @@ namespace Datadog.Trace.Configuration
             public const string IsIastDeduplicationEnabled = "DD_IAST_DEDUPLICATION_ENABLED";
 
             /// <summary>
-            /// Percentage of requests analyzed by IAST.
+            /// Configuration key for controlling the percentage of requests
+            /// to be analyzed by IAST, between 1 and 100. Defaults to 30.
             /// </summary>
             public const string RequestSampling = "DD_IAST_REQUEST_SAMPLING";
 
