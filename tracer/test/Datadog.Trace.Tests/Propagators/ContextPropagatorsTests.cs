@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData(new[] { "ERROR" }, new[] { "ERROR" })]
         public void TestCombinations(string[] injectors, string[] extractors)
         {
-            var propagator = ContextPropagators.GetSpanContextPropagator(injectors, extractors);
+            var propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(injectors, extractors);
             Assert.NotNull(propagator);
         }
     }

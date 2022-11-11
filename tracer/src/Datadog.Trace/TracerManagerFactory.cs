@@ -125,7 +125,7 @@ namespace Datadog.Trace
             telemetry.RecordIastSettings(Datadog.Trace.Iast.Iast.Instance.Settings);
             telemetry.RecordProfilerSettings(Profiler.Instance);
 
-            SpanContextPropagator.Instance = ContextPropagators.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
+            SpanContextPropagator.Instance = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
 
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 

@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.Propagators
                             ContextPropagationHeaderStyle.B3SingleHeader,
                         };
 
-            Propagator = ContextPropagators.GetSpanContextPropagator(names, names);
+            Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names);
         }
 
         [Fact]
