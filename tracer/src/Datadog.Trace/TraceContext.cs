@@ -117,7 +117,8 @@ namespace Datadog.Trace
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    _iastRequestContext?.AddIastInfoToRootSpan(span);
+                    _iastRequestContext?.AddIastVulnerabilitiesToSpan(span);
+                    OverheadController.Instance.ReleaseRequest();
                 }
             }
 

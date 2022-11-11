@@ -75,7 +75,7 @@ internal class IastModule
         {
             if (isRequest)
             {
-                traceContext.IastRequestContext.AddVulnerability(vulnerability);
+                traceContext?.IastRequestContext.AddVulnerability(vulnerability);
                 return null;
             }
             else
@@ -85,11 +85,6 @@ internal class IastModule
         }
 
         return null;
-    }
-
-    private static void AddVulnerabilityInRequest(Vulnerability vulnerability, TraceContext? traceContext)
-    {
-        traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
     }
 
     private static Scope? AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)

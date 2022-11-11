@@ -39,13 +39,13 @@ namespace Datadog.Trace.Configuration
             public const string RequestSampling = "DD_IAST_REQUEST_SAMPLING";
 
             /// <summary>
-            /// Configuration key for the maximum number of requests 
+            /// Configuration key for the maximum number of requests
             /// to be analyzed by IAST concurrently. Defaults to 2.
             /// </summary>
             public const string MaxConcurrentRequests = "DD_IAST_MAX_CONCURRENT_REQUESTS";
 
             /// <summary>
-            /// Configuration key for the maximum number of IAST vulnerabilities to 
+            /// Configuration key for the maximum number of IAST vulnerabilities to
             /// detect in a request. Defaults to 2.
             /// </summary>
             public const string VulnerabilitiesPerRequest = "DD_IAST_VULNERABILITIES_PER_REQUEST";

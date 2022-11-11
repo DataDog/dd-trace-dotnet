@@ -15,15 +15,10 @@ internal class IastRequestContext
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
 
-    public void AddIastInfoToRootSpan(Span span)
+    public void AddIastVulnerabilitiesToSpan(Span span)
     {
         span.Tags.SetTag(Tags.IastEnabled, "1");
-        AddIastVulnerabilitiesToSpan(span);
-        OverheadController.Instance.ReleaseRequest();
-    }
 
-    internal void AddIastVulnerabilitiesToSpan(Span span)
-    {
         if (_vulnerabilityBatch != null)
         {
             span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
