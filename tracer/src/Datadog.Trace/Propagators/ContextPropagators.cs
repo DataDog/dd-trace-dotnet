@@ -12,62 +12,47 @@ namespace Datadog.Trace.Propagators
 {
     internal static class ContextPropagators
     {
-        private static readonly IReadOnlyDictionary<string, Type> AvailablePropagators = new Dictionary<string, Type>
+        public static SpanContextPropagator GetSpanContextPropagator(string[] requestedInjectors, string[] requestedExtractors)
         {
-            { ContextPropagationHeaderStyle.W3CTraceContext, typeof(W3CContextPropagator) },
-            { ContextPropagationHeaderStyle.Datadog, typeof(DatadogContextPropagator) },
-            { ContextPropagationHeaderStyle.B3SingleHeader, typeof(B3SingleHeaderContextPropagator) },
-            { ContextPropagationHeaderStyle.B3MultipleHeaders, typeof(B3MultipleHeaderContextPropagator) },
-            // deprecated values
-            { ContextPropagationHeaderStyle.Deprecated.W3CTraceContext, typeof(W3CContextPropagator) },
-            { ContextPropagationHeaderStyle.Deprecated.B3SingleHeader, typeof(B3SingleHeaderContextPropagator) },
-            { ContextPropagationHeaderStyle.Deprecated.B3MultipleHeaders, typeof(B3MultipleHeaderContextPropagator) },
-        };
+            var injectors = GetPropagators<IContextInjector>(requestedInjectors);
+            var extractors = GetPropagators<IContextExtractor>(requestedExtractors);
 
-        public static SpanContextPropagator GetSpanContextPropagator(IEnumerable<string> requestedInjectors, IEnumerable<string> requestedExtractors)
+            return new SpanContextPropagator(injectors, extractors);
+        }
+
+        public static IEnumerable<TPropagator> GetPropagators<TPropagator>(string[] headerStyles)
         {
-            var propagatorInstances = new Dictionary<string, object>(4, StringComparer.InvariantCultureIgnoreCase);
-            var selectedInjectors = new List<IContextInjector>(4);
-            var selectedExtractors = new List<IContextExtractor>(4)
+            foreach (var headerStyle in headerStyles)
             {
-                new DistributedContextExtractor(),
-            };
-
-            foreach (var injector in requestedInjectors)
-            {
-                if (AvailablePropagators.TryGetValue(injector, out var injectorType))
+                if (GetPropagator(headerStyle) is TPropagator propagator)
                 {
-                    if (!propagatorInstances.TryGetValue(injector, out var existingInstance))
-                    {
-                        var instance = (IContextInjector)Activator.CreateInstance(injectorType)!;
-                        selectedInjectors.Add(instance);
-                        propagatorInstances[injector] = instance;
-                    }
-                    else
-                    {
-                        selectedInjectors.Add((IContextInjector)existingInstance);
-                    }
+                    yield return propagator;
                 }
             }
+        }
 
-            foreach (var extractor in requestedExtractors)
+        public static object? GetPropagator(string headerStyle)
+        {
+            switch (headerStyle)
             {
-                if (AvailablePropagators.TryGetValue(extractor, out var extractorType))
-                {
-                    if (!propagatorInstances.TryGetValue(extractor, out var existingInstance))
-                    {
-                        var instance = (IContextExtractor)Activator.CreateInstance(extractorType)!;
-                        selectedExtractors.Add(instance);
-                        propagatorInstances[extractor] = instance;
-                    }
-                    else
-                    {
-                        selectedExtractors.Add((IContextExtractor)existingInstance);
-                    }
-                }
-            }
+                case ContextPropagationHeaderStyle.Datadog:
+                    return DatadogContextPropagator.Instance;
 
-            return new SpanContextPropagator(selectedInjectors, selectedExtractors);
+                case ContextPropagationHeaderStyle.W3CTraceContext:
+                case ContextPropagationHeaderStyle.Deprecated.W3CTraceContext:
+                    return W3CContextPropagator.Instance;
+
+                case ContextPropagationHeaderStyle.B3MultipleHeaders:
+                case ContextPropagationHeaderStyle.Deprecated.B3MultipleHeaders:
+                    return B3MultipleHeaderContextPropagator.Instance;
+
+                case ContextPropagationHeaderStyle.B3SingleHeader:
+                case ContextPropagationHeaderStyle.Deprecated.B3SingleHeader:
+                    return B3SingleHeaderContextPropagator.Instance;
+
+                default:
+                    return null;
+            }
         }
     }
 }
