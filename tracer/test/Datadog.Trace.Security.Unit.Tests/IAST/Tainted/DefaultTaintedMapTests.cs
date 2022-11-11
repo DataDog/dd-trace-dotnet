@@ -50,6 +50,15 @@ public class DefaultTaintedMapTests
     }
 
     [Fact]
+    public void GivenATaintedObjectMap_WhenPutNullTaintedValue_ObjectIsNotInserted()
+    {
+        DefaultTaintedMap map = new();
+        var tainted = new TaintedObject(null, null);
+        map.Put(tainted);
+        Assert.Empty(map.ToList());
+    }
+
+    [Fact]
     public void GivenATaintedObjectMap_WhenPutNull_ObjectIsNotInserted()
     {
         DefaultTaintedMap map = new();
@@ -244,7 +253,7 @@ public class DefaultTaintedMapTests
     [InlineData(50, 0)]
     [InlineData(50, 49)]
     [InlineData(50, 25)]
-    public void GivenATaintedObjectMap_WhenDisposedInSameHashPosition0_IsPurged(int totalObjects, int disposedIndex)
+    public void GivenATaintedObjectMap_WhenDisposedInSameHashPosition_IsPurged(int totalObjects, int disposedIndex)
     {
         DefaultTaintedMap map = new();
         List<StringForTest> addedObjects = new();
