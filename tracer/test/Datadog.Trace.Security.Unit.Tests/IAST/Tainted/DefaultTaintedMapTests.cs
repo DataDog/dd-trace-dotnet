@@ -216,6 +216,21 @@ public class DefaultTaintedMapTests
         }
 
     [Fact]
+    public void GivenATaintedObjectMap_WhenFlatMode_LastElementIsStored()
+    {
+        List<string> objects = new();
+        DefaultTaintedMap map = new();
+        AssertFlatMode(map, objects);
+
+        for (int i = 0; i < 100; i++)
+        {
+            var testString = new StringForTest(Guid.NewGuid().ToString());
+            map.Put(new TaintedForTest(testString, null));
+            Assert.NotNull(map.Get(testString));
+        }
+    }
+
+    [Fact]
     public void GivenATaintedObjectMap_WhenPutObjectsThatGetDisposed_ObjectsArePurged()
     {
         DefaultTaintedMap map = new();
