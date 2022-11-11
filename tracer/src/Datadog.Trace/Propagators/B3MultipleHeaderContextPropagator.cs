@@ -27,6 +27,8 @@ namespace Datadog.Trace.Propagators
         /// </summary>
         public const string Sampled = "x-b3-sampled";
 
+        public static readonly B3MultipleHeaderContextPropagator Instance = new();
+
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {

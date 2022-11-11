@@ -17,6 +17,8 @@ namespace Datadog.Trace.Propagators
         /// </summary>
         public const string B3 = "b3";
 
+        public static readonly B3SingleHeaderContextPropagator Instance = new();
+
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {

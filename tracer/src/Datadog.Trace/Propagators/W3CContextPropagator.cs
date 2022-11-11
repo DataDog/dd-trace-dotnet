@@ -17,6 +17,8 @@ namespace Datadog.Trace.Propagators
         /// </summary>
         public const string TraceParent = "traceparent";
 
+        public static readonly W3CContextPropagator Instance = new();
+
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
