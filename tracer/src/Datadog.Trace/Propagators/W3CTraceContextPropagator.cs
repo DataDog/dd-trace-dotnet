@@ -1,4 +1,4 @@
-// <copyright file="W3CContextPropagator.cs" company="Datadog">
+// <copyright file="W3CTraceContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,14 +10,14 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Propagators
 {
-    internal class W3CContextPropagator : IContextInjector, IContextExtractor
+    internal class W3CTraceContextPropagator : IContextInjector, IContextExtractor
     {
         /// <summary>
         /// W3C TraceParent header
         /// </summary>
         public const string TraceParent = "traceparent";
 
-        public static readonly W3CContextPropagator Instance = new();
+        public static readonly W3CTraceContextPropagator Instance = new();
 
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>

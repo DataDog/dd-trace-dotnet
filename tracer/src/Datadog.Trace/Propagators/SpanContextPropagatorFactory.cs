@@ -42,7 +42,7 @@ namespace Datadog.Trace.Propagators
             if (string.Equals(headerStyle, ContextPropagationHeaderStyle.W3CTraceContext, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(headerStyle, ContextPropagationHeaderStyle.Deprecated.W3CTraceContext, StringComparison.OrdinalIgnoreCase))
             {
-                return W3CContextPropagator.Instance;
+                return W3CTraceContextPropagator.Instance;
             }
 
             if (string.Equals(headerStyle, ContextPropagationHeaderStyle.B3MultipleHeaders, StringComparison.OrdinalIgnoreCase) ||

@@ -31,7 +31,7 @@ public class SpanContextPropagatorFactoryTests
     {
         var propagators = SpanContextPropagatorFactory.GetPropagators<IContextExtractor>(headerStyles.Split(','));
 
-        propagators.Should().HaveCount(1).And.AllBeOfType<W3CContextPropagator>();
+        propagators.Should().HaveCount(1).And.AllBeOfType<W3CTraceContextPropagator>();
     }
 
     [Theory]
