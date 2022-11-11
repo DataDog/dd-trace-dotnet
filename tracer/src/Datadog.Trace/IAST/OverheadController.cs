@@ -65,12 +65,6 @@ internal class OverheadController
 
     private static int ComputeSamplingParameter(int pct)
     {
-        // We don't support disabling IAST by setting the sampling to 0.
-        if ((pct >= 100) || (pct <= 0))
-        {
-            return 1;
-        }
-
         return (int)Math.Round(100m / pct);
     }
 }
