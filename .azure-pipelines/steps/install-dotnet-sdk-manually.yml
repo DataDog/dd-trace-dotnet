@@ -16,6 +16,10 @@ parameters:
 
 steps:
   - powershell: |
+      Write-Host (Get-Host).Version
+      echo (Get-Host).Version
+  - powershell: |
+      Write-Host $PSVersionTable
       $channel = "${{ parameters.channel }}"
       $sdkVersion = "${{ parameters.sdkVersion }}
       echo "Channel: $channel"
