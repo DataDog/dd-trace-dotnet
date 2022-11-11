@@ -805,6 +805,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .CombineWith(testProjects, (x, project) => x
+                        .SetDiagnosticsFile(TestLogsDirectory / "diagnostics.txt" )
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
                         .SetProjectFile(project)));
