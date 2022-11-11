@@ -199,6 +199,12 @@ partial class Build
             throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
+        if (testDescription.Name is global::ExplorationTestName.paket)
+        {
+            Logger.Info("The Exploration Tests: paket, are disabled currently in CI because it fails due to poor environment isolation.");
+            return;
+        }
+
         if (ExplorationTestUseCase == global::ExplorationTestUseCase.Debugger &&
             testDescription.Name is global::ExplorationTestName.protobuf or global::ExplorationTestName.cake or global::ExplorationTestName.paket or global::ExplorationTestName.polly)
         {
