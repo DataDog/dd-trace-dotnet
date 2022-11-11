@@ -70,6 +70,11 @@ internal class DefaultTaintedMap : ITaintedMap
     /// <returns>The retrieved tainted object or null</returns>
     public ITaintedObject? Get(object objectToFind)
     {
+        if (objectToFind is null)
+        {
+            return null;
+        }
+
         int index = IndexObject(objectToFind);
 
         _map.TryGetValue(index, out var entry);
