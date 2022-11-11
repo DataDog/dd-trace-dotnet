@@ -115,9 +115,9 @@ namespace Datadog.Trace
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
-                if (Iast.Iast.Instance.Settings.Enabled)
+                if (Iast.Iast.Instance.Settings.Enabled && _iastRequestContext != null)
                 {
-                    _iastRequestContext?.AddIastVulnerabilitiesToSpan(span);
+                    _iastRequestContext.AddIastVulnerabilitiesToSpan(span);
                     OverheadController.Instance.ReleaseRequest();
                 }
             }
