@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Nuke.Common;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
@@ -59,9 +60,25 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            CMake.Value(arguments: $"-B {NativeBuildDirectory} -S {RootDirectory}");
-            CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeLoader}");
+            EnsureExistingDirectory(NativeBuildDirectory);
+
+            foreach (var (arch, folder, extension) in GetMacOsArchitectureAndExtension())
+            {
+                DeleteDirectory(NativeBuildDirectory);
+
+                var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = arch };
+                
+                CMake.Value(
+                    arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release",
+                    environmentVariables: envVariables);
+                CMake.Value(
+                    arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeLoader}",
+                    environmentVariables: envVariables);
+                
+                CopyFile(NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{extension}",
+                         NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.{extension}",
+                         FileExistsPolicy.Overwrite);
+            }
         });
 
     Target PublishNativeLoader => _ => _
@@ -103,15 +120,30 @@ partial class Build
         .After(CompileNativeLoader)
         .Executes(() =>
         {
-            // Copy native loader assets
-            var (arch, ext) = GetUnixArchitectureAndExtension();
-            var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
-            var dest = MonitoringHomeDirectory / arch;
-            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            if (IsLinux)
+            {
+                // Copy native loader assets
+                var (arch, ext) = GetUnixArchitectureAndExtension();
+                var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+                var dest = MonitoringHomeDirectory / arch;
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-            source = NativeLoaderProject.Directory / "bin" /
-                         $"{NativeLoaderProject.Name}.{ext}";
-            dest = MonitoringHomeDirectory / arch;
-            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
+                dest = MonitoringHomeDirectory / arch;
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            }
+            else if (IsOsx)
+            {
+                foreach (var (arch, folder, extension) in GetMacOsArchitectureAndExtension())
+                {
+                    var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+                    var dest = MonitoringHomeDirectory / folder;
+                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                    
+                    CopyFile(NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.{extension}",
+                             MonitoringHomeDirectory / folder / $"{NativeLoaderProject.Name}.{extension}",
+                             FileExistsPolicy.Overwrite);
+                }
+            }
         });
 }
