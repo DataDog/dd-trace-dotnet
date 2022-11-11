@@ -58,7 +58,7 @@ internal class DefaultTaintedMap : ITaintedMap
     }
 
     /// <summary>
-    /// Gets a value indicating whether whether flat mode is enabled or not. Once this is true, it is not set to false again unless clear is called.
+    /// Gets a value indicating whether flat mode is enabled or not. Once this is set to true, it is not set to false again unless clear() is called.
     /// </summary>
     public bool IsFlat { get; private set; } = false;
 
@@ -90,7 +90,7 @@ internal class DefaultTaintedMap : ITaintedMap
     }
 
     /// <summary>
-    /// Put a new {@link TaintedObject} in the hash table. This method will lose puts in concurrent scenarios.
+    /// Put a new TaintedObject in the dictionary.
     /// </summary>
     /// <param name="entry">Tainted object</param>
     public void Put(ITaintedObject entry)
@@ -100,7 +100,7 @@ internal class DefaultTaintedMap : ITaintedMap
             return;
         }
 
-        int index = Index(entry.PositiveHashCode);
+        var index = Index(entry.PositiveHashCode);
 
         if (IsFlat)
         {
@@ -117,7 +117,7 @@ internal class DefaultTaintedMap : ITaintedMap
         else
         {
             // By default, add the new entry to the head of the chain.
-            // We do not control duplicate entries (although we expect they are generally not used).
+            // We do not control duplicate entries.
             _map.TryGetValue(index, out var existingValue);
             entry.Next = existingValue;
             _map[index] = entry;
@@ -125,7 +125,7 @@ internal class DefaultTaintedMap : ITaintedMap
             {
                 // To mitigate the cost of maintaining a thread safe counter, we only update the size every
                 // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
-                // if it was a random number generator, and we assume duplicate keys are rarely inserted.
+                // if it was a random number generator.
                 Interlocked.Add(ref _estimatedSize, purgeCount);
                 Purge();
             }
@@ -154,9 +154,12 @@ internal class DefaultTaintedMap : ITaintedMap
             // Remove GC'd entries.
             var removedCount = RemoveDeadKeys();
 
-            if (Interlocked.Add(ref _estimatedSize, -removedCount) > _flatModeThreshold)
+            if (!IsFlat)
             {
-                IsFlat = true;
+                if (Interlocked.Add(ref _estimatedSize, -removedCount) > _flatModeThreshold)
+                {
+                    IsFlat = true;
+                }
             }
         }
         finally
@@ -180,14 +183,14 @@ internal class DefaultTaintedMap : ITaintedMap
             var current = _map[key];
             previous = null;
 
-            while (current != null)
+            while (current is not null)
             {
                 if (!current.IsAlive)
                 {
-                    if (previous == null)
+                    if (previous is null)
                     {
                         // We can delete the map key
-                        if (current.Next == null)
+                        if (current.Next is null)
                         {
                             deadKeys.Add(key);
                         }

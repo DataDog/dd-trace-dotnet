@@ -9,37 +9,32 @@ namespace Datadog.Trace.Iast
 {
     internal class TaintedObjects
     {
-        private ITaintedMap map;
+        private ITaintedMap _map;
 
         public TaintedObjects()
         {
-            map = new DefaultTaintedMap();
+            _map = new DefaultTaintedMap();
         }
 
-        public TaintedObjects(ITaintedMap map)
+        public void TaintInputString(string stringToTaint, Source? source)
         {
-            this.map = map;
-        }
-
-        public void TaintInputString(string obj, Source? source)
-        {
-            if (!string.IsNullOrEmpty(obj))
+            if (!string.IsNullOrEmpty(stringToTaint))
             {
-                map.Put(new TaintedObject(obj, IastUtils.GetRangesForString(obj, source)));
+                _map.Put(new TaintedObject(stringToTaint, IastUtils.GetRangesForString(stringToTaint, source)));
             }
         }
 
-        public void Taint(object obj, Range[]? ranges)
+        public void Taint(object objectToTaint, Range[]? ranges)
         {
-            if (obj is not null && (obj is not string objAsString || objAsString != string.Empty))
+            if (objectToTaint is not null && (objectToTaint is not string || objectToTaint as string != string.Empty))
             {
-                map.Put(new TaintedObject(obj, ranges));
+                _map.Put(new TaintedObject(objectToTaint, ranges));
             }
         }
 
-        public TaintedObject? Get(object obj)
+        public TaintedObject? Get(object objectToFind)
         {
-            return map.Get(obj) as TaintedObject;
+            return _map.Get(objectToFind) as TaintedObject;
         }
     }
 }
