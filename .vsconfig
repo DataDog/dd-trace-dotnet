@@ -30,6 +30,7 @@
     "Component.Microsoft.WebTools.BrowserLink.WebLivePreview",
     "Microsoft.VisualStudio.ComponentGroup.Web",
     "Microsoft.NetCore.Component.Runtime.6.0",
+    "Microsoft.NetCore.Component.Runtime.7.0",
     "Microsoft.NetCore.Component.SDK",
     "Microsoft.VisualStudio.Component.FSharp",
     "Microsoft.ComponentGroup.ClickOnce.Publish",
@@ -50,13 +51,19 @@
     "Microsoft.VisualStudio.Component.ManagedDesktop.Prerequisites",
     "Microsoft.ComponentGroup.Blend",
     "Microsoft.VisualStudio.Workload.ManagedDesktop",
+    "Microsoft.VisualStudio.Component.VC.DiagnosticTools",
+    "Microsoft.VisualStudio.Component.VC.ATL",
     "Microsoft.VisualStudio.Component.VC.Redist.14.Latest",
     "Microsoft.VisualStudio.ComponentGroup.NativeDesktop.Core",
+    "Microsoft.VisualStudio.Component.VC.TestAdapterForGoogleTest",
+    "Microsoft.VisualStudio.Component.VC.ASAN",
     "Microsoft.VisualStudio.Workload.NativeDesktop",
     "Microsoft.VisualStudio.Component.Git",
     "Microsoft.NetCore.Component.Runtime.3.1",
     "Microsoft.NetCore.Component.Runtime.5.0",
+    "Microsoft.VisualStudio.Component.VC.v141.ATL",
     "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64",
-    "Microsoft.Net.Component.4.6.1.TargetingPack"
+    "Microsoft.VisualStudio.Component.VC.14.29.16.11.ATL",
+    "Microsoft.Net.Component.4.6.1.TargetingPack",
   ]
 }
