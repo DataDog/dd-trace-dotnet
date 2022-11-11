@@ -44,7 +44,8 @@ namespace Datadog.Trace.Configuration
             public const string MaxConcurrentRequests = "DD_IAST_MAX_CONCURRENT_REQUESTS";
 
             /// <summary>
-            /// Maximum number of the vulnerabilities to detect in a request
+            /// Configuration key for the maximum number of IAST vulnerabilities to 
+            /// detect in a request. Defaults to 2.
             /// </summary>
             public const string VulnerabilitiesPerRequest = "DD_IAST_VULNERABILITIES_PER_REQUEST";
         }
