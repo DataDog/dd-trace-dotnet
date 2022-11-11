@@ -18,18 +18,6 @@ steps:
   - powershell: |
       $channel = "${{ parameters.channel }}"
       $sdkVersion = "${{ parameters.sdkVersion }}
-      
-      if ($channel -and $sdkVersion) {
-        echo "##vso[task.logissue type=error;]You can't provide both 'channel' and 'sdkVersion'. Pick one."
-        echo "##vso[task.complete result=Failed;]"
-        exit 1
-      } 
-
-      if( -not ($channel -or $sdkVersion)) {
-        echo "##vso[task.logissue type=error;]You must provide either 'channel' or 'sdkVersion'."
-        echo "##vso[task.complete result=Failed;]"
-        exit 1
-      }
 
       echo "Downloading dotnet-install.ps1"
       Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
