@@ -16,15 +16,9 @@ parameters:
 
 steps:
   - powershell: |
-      Write-Host (Get-Host).Version
-      echo (Get-Host).Version
-  - powershell: |
-      Write-Host $PSVersionTable
       $channel = "${{ parameters.channel }}"
       $sdkVersion = "${{ parameters.sdkVersion }}
-      echo "Channel: $channel"
-      echo "SDK version: $sdkVersion"
-
+      
       if ($channel -and $sdkVersion) {
         echo "##vso[task.logissue type=error;]You can't provide both 'channel' and 'sdkVersion'. Pick one."
         echo "##vso[task.complete result=Failed;]"
