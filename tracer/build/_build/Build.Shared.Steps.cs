@@ -84,7 +84,8 @@ partial class Build
     Target PublishNativeLoader => _ => _
         .Unlisted()
         .DependsOn(PublishNativeLoaderWindows)
-        .DependsOn(PublishNativeLoaderUnix);
+        .DependsOn(PublishNativeLoaderUnix)
+        .DependsOn(PublishNativeLoaderOsx);
 
     Target PublishNativeLoaderWindows => _ => _
         .Unlisted()
@@ -116,34 +117,36 @@ partial class Build
 
     Target PublishNativeLoaderUnix => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux || IsOsx)
+        .OnlyWhenStatic(() => IsLinux)
         .After(CompileNativeLoader)
         .Executes(() =>
         {
-            if (IsLinux)
-            {
-                // Copy native loader assets
-                var (arch, ext) = GetUnixArchitectureAndExtension();
-                var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
-                var dest = MonitoringHomeDirectory / arch;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            // Copy native loader assets
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+            var dest = MonitoringHomeDirectory / arch;
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-                source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
-                dest = MonitoringHomeDirectory / arch;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-            }
-            else if (IsOsx)
+            source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
+            dest = MonitoringHomeDirectory / arch;
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+        });
+
+    Target PublishNativeLoaderOsx => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsOsx)
+        .After(CompileNativeLoader)
+        .Executes(() =>
+        {
+            foreach (var (arch, folder, extension) in GetMacOsArchitectureAndExtension())
             {
-                foreach (var (arch, folder, extension) in GetMacOsArchitectureAndExtension())
-                {
-                    var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
-                    var dest = MonitoringHomeDirectory / folder;
-                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+                var dest = MonitoringHomeDirectory / folder;
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
                     
-                    CopyFile(NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.{extension}",
-                             MonitoringHomeDirectory / folder / $"{NativeLoaderProject.Name}.{extension}",
-                             FileExistsPolicy.Overwrite);
-                }
+                CopyFile(NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.{extension}",
+                         MonitoringHomeDirectory / folder / $"{NativeLoaderProject.Name}.{extension}",
+                         FileExistsPolicy.Overwrite);
             }
         });
 }

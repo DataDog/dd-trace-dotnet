@@ -332,28 +332,25 @@ partial class Build
                   CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
               }
           }
-          else
+          else if (IsLinux)
           {
-              if (IsLinux)
-              {
-                  var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
-                  var (destArch, _) = GetUnixArchitectureAndExtension();
+              var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
+              var (destArch, _) = GetUnixArchitectureAndExtension();
 
-                  var ddwafFileName = $"libddwaf.{ext}";
+              var ddwafFileName = $"libddwaf.{ext}";
 
-                  var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
-                  var dest = MonitoringHomeDirectory / destArch;
-                  CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-              }
-              else if (IsOsx)
-              {
-                  var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
-                  var ddwafFileName = $"libddwaf.{ext}";
+              var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
+              var dest = MonitoringHomeDirectory / destArch;
+              CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+          }
+          else if (IsOsx)
+          {
+              var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
+              var ddwafFileName = $"libddwaf.{ext}";
 
-                  var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
-                  var dest = MonitoringHomeDirectory / sourceArch;
-                  CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-              }
+              var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
+              var dest = MonitoringHomeDirectory / sourceArch;
+              CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
           }
         });
 
@@ -470,38 +467,41 @@ partial class Build
 
     Target PublishNativeTracerUnix => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux || IsOsx)
+        .OnlyWhenStatic(() => IsLinux)
         .After(CompileNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
-            if (IsLinux)
-            {
-                var (arch, extension) = GetUnixArchitectureAndExtension();
+            var (arch, extension) = GetUnixArchitectureAndExtension();
 
-                // Copy Native file
-                CopyFileToDirectory(
-                    NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
-                    MonitoringHomeDirectory / arch,
-                    FileExistsPolicy.Overwrite);
-            }
-            else if (IsOsx)
+            // Copy Native file
+            CopyFileToDirectory(
+                NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
+                MonitoringHomeDirectory / arch,
+                FileExistsPolicy.Overwrite);
+        });
+
+    Target PublishNativeTracerOsx => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsOsx)
+        .After(CompileNativeSrc, PublishManagedTracer)
+        .Executes(() =>
+        {
+            foreach (var (arch, folder, extension) in GetMacOsArchitectureAndExtension())
             {
-                foreach (var (arch, folder, extension) in GetMacOsArchitectureAndExtension())
-                {
-                    // Copy Native file
-                    CopyFile(
-                        NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{arch}.{extension}",
-                        MonitoringHomeDirectory / folder / $"{NativeTracerProject.Name}.{extension}",
-                        FileExistsPolicy.Overwrite,
-                        true);
-                }
+                // Copy Native file
+                CopyFile(
+                    NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{arch}.{extension}",
+                    MonitoringHomeDirectory / folder / $"{NativeTracerProject.Name}.{extension}",
+                    FileExistsPolicy.Overwrite,
+                    true);
             }
         });
 
     Target PublishNativeTracer => _ => _
         .Unlisted()
         .DependsOn(PublishNativeTracerWindows)
-        .DependsOn(PublishNativeTracerUnix);
+        .DependsOn(PublishNativeTracerUnix)
+        .DependsOn(PublishNativeTracerOsx);
 
     Target BuildMsi => _ => _
         .Unlisted()
