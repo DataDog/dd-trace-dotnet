@@ -64,7 +64,7 @@ namespace Datadog.Trace
 
         internal void EnableIastInRequest()
         {
-            if (Iast.Iast.Instance.Settings.Enabled && _iastRequestContext is null)
+            if (_iastRequestContext is null)
             {
                 lock (_syncRoot)
                 {
