@@ -92,7 +92,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 EnlargeCapacity(index);
 
                 var method = MethodBase.GetMethodFromHandle(methodHandle, typeHandle);
-                var type = Type.GetTypeFromHandle(typeHandle);
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
@@ -104,7 +103,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return false;
                 }
 
-                _items[index] = MethodMetadataInfoFactory.Create(method, type, asyncKickOffInfo);
+                var targetType = targetObject == null ? Type.GetTypeFromHandle(typeHandle) : targetObject.GetType();
+                _items[index] = MethodMetadataInfoFactory.Create(method, targetType, asyncKickOffInfo);
             }
 
             return true;

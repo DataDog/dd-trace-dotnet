@@ -343,7 +343,7 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     {
         // Note we are not sabotaging the whole rewriting upon failure to lookup for a specific bytecode offset.
         // TODO Upon implementing the Probe Statuses, we'll need to reflect that.
-        return S_OK;
+        return E_NOTIMPL;
     }
 
     if (lineProbeFirstInstruction->m_opcode == CEE_NOP || lineProbeFirstInstruction->m_opcode == CEE_BR_S ||
@@ -478,7 +478,7 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
     {
         Logger::Warn("Async generic methods in optimized code are not supported at the moment. Skipping on placing ",
                      lineProbes.size(), " line probe(s).");
-        return S_OK;
+        return E_NOTIMPL;
     }
 
     Logger::Info("Applying ", lineProbes.size(), " line probe(s) instrumentation.");
@@ -490,10 +490,16 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
         HRESULT hr = CallLineProbe(instrumentedMethodIndex, corProfiler, module_id, module_metadata, caller, debuggerTokens,
                            function_token, isStatic, methodArguments, numArgs, rewriter, methodLocals, numLocals, rewriterWrapper, lineProbeCallTargetStateIndex, newClauses,
                                    branchTargets, lineProbe, isAsyncMethod);
-        if (FAILED(hr))
+        if (hr == E_NOTIMPL)
         {
             // Appropriate error message is already logged in CallLineProbe.
-            return S_FALSE;
+            return E_NOTIMPL;
+        }
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("Failed to apply line probe instrumentation.");
+            return hr;
         }
     }
 
@@ -1359,6 +1365,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     // TODO support multiple line probes & multiple line probes on the same bytecode offset (by deduplicating the probe ids)
 
+    bool appliedAtLeastOneLineProbeInstrumentation = false;
     if (!lineProbes.empty())
     {
         if (isAsyncMethod)
@@ -1374,17 +1381,25 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                  debuggerTokens, function_token, isStatic, methodArguments, numArgs, rewriter,
                                  methodLocals, numLocals, rewriterWrapper, lineProbeCallTargetStateIndex, newClauses, isAsyncMethod);
 
-        if (FAILED(hr))
+        if (hr != E_NOTIMPL && FAILED(hr))
         {
             // Appropriate error message is already logged in ApplyLineProbes.
-            return E_FAIL;
+            return E_FAIL;            
         }
+
+        if (hr == E_NOTIMPL)
+        {
+            Logger::Info("Emplacement of a line probe is not supported.");
+        }
+
+        appliedAtLeastOneLineProbeInstrumentation = hr == S_OK;
     }
 
     // ***
     // BEGIN METHOD PROBE PART
     // ***
 
+    bool appliedAtLeastOneMethodProbeInstrumentation = false;
     if (!methodProbes.empty())
     {
         const auto& methodProbeId = methodProbes[0]->probeId; // TODO accept multiple probeIds
@@ -1408,11 +1423,24 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                   instrumentedMethodIndex, beforeLineProbe, newClauses);
         }
 
-        if (FAILED(hr))
+        if (hr != E_NOTIMPL && FAILED(hr))
         {
-            // Appropriate error message is already logged in ApplyMethodProbe.
+            // Appropriate error message is already logged in ApplyMethodProbe / ApplyAsyncMethodProbe.
             return E_FAIL;
         }
+
+        if (hr == E_NOTIMPL)
+        {
+            Logger::Info("Emplacement of a method probe is not supported.");
+        }
+
+        appliedAtLeastOneMethodProbeInstrumentation = hr == S_OK;
+    }
+
+    if (!appliedAtLeastOneMethodProbeInstrumentation && !appliedAtLeastOneLineProbeInstrumentation)
+    {
+        Logger::Info("There are not Method nor Line probes instrumentations. Skipping method instrumentation.");
+        return S_FALSE;
     }
 
     // ***
