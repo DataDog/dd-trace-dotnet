@@ -290,6 +290,17 @@
     <ClInclude Include="GCBaseRawSample.h">
       <Filter>GarbageCollections</Filter>
     </ClInclude>
+    <ClInclude Include="IBatchedSamplesProvider.h" />
+    <ClInclude Include="ISampledAllocationsListener.h" />
+    <ClInclude Include="LiveObjectsProvider.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="LiveObjectInfo.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="RawLiveObjectSample.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -426,6 +437,12 @@
     </ClCompile>
     <ClCompile Include="GarbageCollectionProvider.cpp">
       <Filter>GarbageCollections</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveObjectInfo.cpp">
+      <Filter>Allocations</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveObjectsProvider.cpp">
+      <Filter>Allocations</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

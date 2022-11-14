@@ -92,6 +92,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
         rawSample.AllocationClass = shared::ToString(shared::WSTRING(typeName));
     }
 
+    // the listener is the live objects profiler: could be null if disabled
     if (_pListener != nullptr)
     {
         _pListener->OnAllocation(rawSample);

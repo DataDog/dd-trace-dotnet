@@ -35,6 +35,7 @@ public:
     inline static const shared::WSTRING DeprecatedContentionProfilingEnabled = WStr("DD_PROFILING_CONTENTION_ENABLED");  // should be deprecated (only used in 2.18)
     inline static const shared::WSTRING LockContentionProfilingEnabled = WStr("DD_PROFILING_LOCK_ENABLED");
     inline static const shared::WSTRING GCProfilingEnabled          = WStr("DD_PROFILING_GC_ENABLED");
+    inline static const shared::WSTRING HeapProfilingEnabled        = WStr("DD_PROFILING_HEAP_ENABLED");
 
     inline static const shared::WSTRING ExceptionSampleLimit        = WStr("DD_INTERNAL_PROFILING_EXCEPTION_SAMPLE_LIMIT");
     inline static const shared::WSTRING AllocationSampleLimit       = WStr("DD_INTERNAL_PROFILING_ALLOCATION_SAMPLE_LIMIT");

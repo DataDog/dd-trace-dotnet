@@ -158,10 +158,10 @@ bool CorProfilerCallback::InitializeServices()
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
     if (_pCorProfilerInfoEvents != nullptr)
     {
-        if (_pConfiguration->IsAllocationProfilingEnabled())
+        // live objects profiling requires allocations profiling
+        if (_pConfiguration->IsHeapProfilingEnabled())
         {
-            // TODO: add IsLiveObjectProfilingEnabled() to IConfiguration
-            // --> requires allocation profiling to be enabled too or override it?
+            // TODO: need to check that _pCorProfilerInfoLiveObjects is not null and log a warning if null
             auto valueTypes = LiveObjectsProvider::SampleTypeDefinitions;
             sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
@@ -185,6 +185,30 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 _pLiveObjectsProvider
+                );
+            valuesOffset += static_cast<uint32_t>(valueTypes.size());
+
+            if (!_pConfiguration->IsAllocationProfilingEnabled())
+            {
+                Log::Warn("Allocations profiling is enabled due to activated live objects profiling.");
+            }
+        }
+
+        // check for allocations profiling only
+        if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
+        {
+            auto valueTypes = AllocationsProvider::SampleTypeDefinitions;
+            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+            _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                valuesOffset,
+                _pCorProfilerInfo,
+                _pManagedThreadList,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore,
+                _pConfiguration.get(),
+                nullptr  // no listener
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
@@ -811,7 +835,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         {
             if (AreEventBasedProfilersEnabled)
             {
-                Log::Warn("Event-based profilers (Allocation, Contention) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
+                Log::Warn("Event-based profilers (Allocation, LockContention) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
             }
         }
     }
