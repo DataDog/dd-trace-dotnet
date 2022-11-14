@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Iast.Settings;
-using Datadog.Trace.Security.Unit.Tests.IAST;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests.Iast;

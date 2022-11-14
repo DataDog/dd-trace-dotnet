@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.Security.Unit.Tests.IAST
+namespace Datadog.Trace.Security.Unit.Tests.Iast
 {
     internal class CustomSettingsForTests : IConfigurationSource
     {
