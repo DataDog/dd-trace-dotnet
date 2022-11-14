@@ -10,49 +10,51 @@
       Stats: [
         {
           EdgeTags: [
+            direction:out,
             topic:data-streams-fan-in-out-1,
-            type:kafka,
-            direction:out
+            type:kafka
           ],
-          Hash: 3686154324245475927,
+          Hash: 12768432526128850544,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           TimestampType: current
         },
         {
           EdgeTags: [
+            direction:in,
             group:Samples.DataStreams.Kafka.fan-in-consumer,
             topic:data-streams-fan-in-out-1,
             type:kafka,
-            direction:in
+            
           ],
-          Hash: 17040441696978222044,
-          ParentHash: 3686154324245475927,
+          Hash: 15097168115956663958,
+          ParentHash: 12768432526128850544,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           TimestampType: current
         },
         {
           EdgeTags: [
+            direction:out,
             topic:data-streams-fan-in-out-2,
-            type:kafka,
-            direction:out
+            type:kafka
           ],
-          Hash: 17248882029868025275,
-          ParentHash: 17040441696978222044,
+          Hash: 4255040070006404392,
+          ParentHash: 15097168115956663958,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           TimestampType: current
         },
         {
           EdgeTags: [
+            direction:in,
             group:Samples.DataStreams.Kafka.topic-2-consumer,
             topic:data-streams-fan-in-out-2,
             type:kafka,
-            direction:in
+            
           ],
-          Hash: 7979263627024345334,
-          ParentHash: 17248882029868025275,
+          Hash: 272166839240348846,
+          ParentHash: 4255040070006404392,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           TimestampType: current
@@ -65,49 +67,51 @@
       Stats: [
         {
           EdgeTags: [
+            direction:out,
             topic:data-streams-fan-in-out-1,
-            type:kafka,
-            direction:out
+            type:kafka
           ],
-          Hash: 3686154324245475927,
+          Hash: 12768432526128850544,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           TimestampType: origin
         },
         {
           EdgeTags: [
+            direction:in,
             group:Samples.DataStreams.Kafka.fan-in-consumer,
             topic:data-streams-fan-in-out-1,
             type:kafka,
-            direction:in
+            
           ],
-          Hash: 17040441696978222044,
-          ParentHash: 3686154324245475927,
+          Hash: 15097168115956663958,
+          ParentHash: 12768432526128850544,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           TimestampType: origin
         },
         {
           EdgeTags: [
+            direction:out,
             topic:data-streams-fan-in-out-2,
-            type:kafka,
-            direction:out
+            type:kafka
           ],
-          Hash: 17248882029868025275,
-          ParentHash: 17040441696978222044,
+          Hash: 4255040070006404392,
+          ParentHash: 15097168115956663958,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           TimestampType: origin
         },
         {
           EdgeTags: [
+            direction:in,
             group:Samples.DataStreams.Kafka.topic-2-consumer,
             topic:data-streams-fan-in-out-2,
             type:kafka,
-            direction:in
+            
           ],
-          Hash: 7979263627024345334,
-          ParentHash: 17248882029868025275,
+          Hash: 272166839240348846,
+          ParentHash: 4255040070006404392,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           TimestampType: origin

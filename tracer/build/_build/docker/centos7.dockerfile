@@ -1,4 +1,4 @@
-﻿FROM gleocadie/centos7-clang9 as base
+﻿FROM gleocadie/centos7-clang9:amd64 as base
 
 ARG DOTNETSDK_VERSION
 
