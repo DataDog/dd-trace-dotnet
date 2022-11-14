@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Nuke.Common;
 using Nuke.Common.Tools.DotNet;
@@ -62,22 +63,34 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
-            foreach (var (arch, folder, extension) in GetMacOsArchitectureAndExtension())
+            var extension = "dylib";
+            foreach (var arch in OsxArchs)
             {
                 DeleteDirectory(NativeBuildDirectory);
 
                 var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = arch };
                 
+                // Build native
                 CMake.Value(
                     arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release",
                     environmentVariables: envVariables);
                 CMake.Value(
                     arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeLoader}",
                     environmentVariables: envVariables);
+
+                var sourceFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{extension}";
+                var destFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.{extension}";
+
+                // Check the architecture of the build
+                var output = Lipo.Value(arguments: $"-archs {sourceFile}", logOutput: false);
+                var strOutput = string.Join('\n', output.Where(o => o.Type == OutputType.Std).Select(o => o.Text));
+                if (!strOutput.Contains(arch, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ApplicationException($"Invalid architecture, expected: '{arch}', actual: '{strOutput}'");
+                }
                 
-                CopyFile(NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{extension}",
-                         NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.{extension}",
-                         FileExistsPolicy.Overwrite);
+                // Copy binary to the temporal destination
+                CopyFile(sourceFile, destFile, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -138,15 +151,20 @@ partial class Build
         .After(CompileNativeLoader)
         .Executes(() =>
         {
-            foreach (var (arch, folder, extension) in GetMacOsArchitectureAndExtension())
-            {
-                var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
-                var dest = MonitoringHomeDirectory / folder;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-                    
-                CopyFile(NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.{extension}",
-                         MonitoringHomeDirectory / folder / $"{NativeLoaderProject.Name}.{extension}",
-                         FileExistsPolicy.Overwrite);
-            }
+            // Copy loader.conf
+            var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+            var dest = MonitoringHomeDirectory / "osx";
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            
+            // Create universal shared library with all archs in a single file
+            var lstNativeBinaries = OsxArchs
+               .Select(arch => NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.dylib");
+
+            var destination = $"./{NativeLoaderProject.Name}.dylib";
+            var destFolder = MonitoringHomeDirectory / "osx";
+            Console.WriteLine($"Creating universal binary for {destination}");
+            EnsureExistingDirectory(destFolder);
+            var strNativeBinaries = string.Join(' ', lstNativeBinaries);
+            Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destFolder}/{destination}");
         });
 }
