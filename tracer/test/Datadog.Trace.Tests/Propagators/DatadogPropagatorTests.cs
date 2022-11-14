@@ -352,8 +352,6 @@ namespace Datadog.Trace.Tests.Propagators
             var once = Times.Once();
             string value;
 
-            headers.Verify(h => h.TryGetValue(SpanContext.Keys.TraceId, out value), once);
-
             foreach (var pair in DefaultHeaderValues)
             {
                 headers.Verify(h => h.TryGetValue(pair.Key, out value), once);
