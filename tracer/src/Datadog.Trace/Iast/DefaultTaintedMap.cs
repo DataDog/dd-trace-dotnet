@@ -40,10 +40,18 @@ namespace Datadog.Trace.Iast;
          */
         public DefaultTaintedMap()
         {
-        _map = new ConcurrentDictionary<int, ITaintedObject>();
+    /// <summary>
         _lengthMask = DefaultCapacity - 1;
         _flatModeThreshold = DefaultFlatModeThresold;
         }
+    /// <param name="flatModeThreshold">Limit of entries before switching to flat mode.</param>
+    /// <returns>The retrieved tainted object or null</returns>
+    private DefaultTaintedMap(int capacity, int flatModeThreshold)
+    {
+        _map = new ConcurrentDictionary<int, ITaintedObject>();
+        _lengthMask = capacity - 1;
+        _flatModeThreshold = flatModeThreshold;
+    }
 
     /// <summary>
     /// Gets a value indicating whether flat mode is enabled or not. Once this is set to true, it is not set to false again unless clear() is called.
@@ -85,14 +93,6 @@ namespace Datadog.Trace.Iast;
     public void Put(ITaintedObject entry)
         {
         if (entry is null || (entry.Value is null or ""))
-            {
-            return;
-        }
-
-        var index = Index(entry.PositiveHashCode);
-
-        if (!IsFlat)
-        {
             // By default, add the new entry to the head of the chain.
             // We do not control duplicate entries.
             _map.TryGetValue(index, out var existingValue);
@@ -133,6 +133,14 @@ namespace Datadog.Trace.Iast;
                 }
             }
         }
+                // To mitigate the cost of maintaining a thread safe counter, we only update the size every
+                // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
+                // if it was a random number generator.
+                Interlocked.Add(ref _estimatedSize, purgeCount);
+                Purge();
+            }
+        }
+    }
 
     /// <summary>
     /// Purge entries that have been garbage collected. Only one concurrent call to this method is
@@ -149,18 +157,18 @@ namespace Datadog.Trace.Iast;
             }
 
             _isPurging = true;
-        }
-
-            try
+                {
+                // We only count the entries if we are not in flat mode
+                if (Interlocked.Add(ref _entriesCount, -removedCount) > _flatModeThreshold)
+                    {
             {
                 // Remove GC'd entries.
             var removedCount = RemoveDeadKeys();
 
             if (!IsFlat)
+            {
+                if (Interlocked.Add(ref _estimatedSize, -removedCount) > _flatModeThreshold)
                 {
-                // We only count the entries if we are not in flat mode
-                if (Interlocked.Add(ref _entriesCount, -removedCount) > _flatModeThreshold)
-                    {
                     IsFlat = true;
                 }
 
