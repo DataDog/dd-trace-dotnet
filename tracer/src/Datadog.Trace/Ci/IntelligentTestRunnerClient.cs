@@ -62,7 +62,7 @@ internal class IntelligentTestRunnerClient
     private readonly bool _useEvpProxy;
     private readonly Task<string> _getRepositoryUrlTask;
     private readonly Task<string> _getBranchNameTask;
-    private readonly Task<string?> _getShaTask;
+    private readonly Task<ProcessHelpers.CommandOutput?> _getShaTask;
 
     public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
     {
@@ -178,7 +178,7 @@ internal class IntelligentTestRunnerClient
                 return 0;
             }
 
-            if (gitRevParseShallowOutput.IndexOf("true", StringComparison.OrdinalIgnoreCase) > -1)
+            if (gitRevParseShallowOutput.Output.IndexOf("true", StringComparison.OrdinalIgnoreCase) > -1)
             {
                 // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
                 var gitShallowLogOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "log --format=oneline -n 2", _workingDirectory)).ConfigureAwait(false);
@@ -190,7 +190,7 @@ internal class IntelligentTestRunnerClient
 
                 // After asking for 2 logs lines, if the git log command returns just one commit sha, we reconfigure the repo
                 // to ask for git commits and trees of the last month (no blobs)
-                var shallowLogArray = gitShallowLogOutput.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                var shallowLogArray = gitShallowLogOutput.Output.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
                 if (shallowLogArray.Length == 1)
                 {
                     // Just one commit SHA. Reconfiguring repo
@@ -212,7 +212,7 @@ internal class IntelligentTestRunnerClient
             return 0;
         }
 
-        var localCommits = gitLogOutput.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        var localCommits = gitLogOutput.Output.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
         if (localCommits.Length == 0)
         {
             Log.Debug("ITR: Local commits not found. (since 1 month ago)");
@@ -230,14 +230,14 @@ internal class IntelligentTestRunnerClient
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var branchName = await _getBranchNameTask.ConfigureAwait(false);
-        var currentSha = await _getShaTask.ConfigureAwait(false);
-        if (currentSha is null)
+        var currentShaCommand = await _getShaTask.ConfigureAwait(false);
+        if (currentShaCommand is null)
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command is null");
             return default;
         }
 
-        currentSha = currentSha.Replace("\n", string.Empty);
+        var currentSha = currentShaCommand.Output.Replace("\n", string.Empty);
 
         var query = new DataEnvelope<Data<SettingsQuery>>(
             new Data<SettingsQuery>(
@@ -308,14 +308,14 @@ internal class IntelligentTestRunnerClient
         Log.Debug("ITR: Getting skippable tests...");
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var currentSha = await _getShaTask.ConfigureAwait(false);
-        if (currentSha is null)
+        var currentShaCommand = await _getShaTask.ConfigureAwait(false);
+        if (currentShaCommand is null)
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command is null");
             return Array.Empty<SkippableTest>();
         }
 
-        currentSha = currentSha.Replace("\n", string.Empty);
+        var currentSha = currentShaCommand.Output.Replace("\n", string.Empty);
 
         var query = new DataEnvelope<Data<SkippableTestsQuery>>(
             new Data<SkippableTestsQuery>(
@@ -600,8 +600,8 @@ internal class IntelligentTestRunnerClient
         var temporaryPath = Path.GetTempFileName();
 
         var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c));
-        var getObjects = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getObjectsArguments, _workingDirectory)).ConfigureAwait(false);
-        if (string.IsNullOrEmpty(getObjects))
+        var getObjectsCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getObjectsArguments, _workingDirectory)).ConfigureAwait(false);
+        if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {
             // If not objects has been returned we skip the pack + upload.
             Log.Debug("ITR: No objects were returned from the git rev-list command.");
@@ -609,15 +609,42 @@ internal class IntelligentTestRunnerClient
         }
 
         Log.Debug("ITR: Packing objects...");
-        var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m  {temporaryPath}";
-        var packObjectsResult = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjects).ConfigureAwait(false);
-        if (packObjectsResult is null)
+        var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
+        var packObjectsResultCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjectsCommand!.Output).ConfigureAwait(false);
+        if (packObjectsResultCommand is null)
         {
             Log.Warning("ITR: 'git pack-objects...' command is null");
             return Array.Empty<string>();
         }
 
-        var packObjectsSha = packObjectsResult.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        if (packObjectsResultCommand.ExitCode != 0 && packObjectsResultCommand.Error.IndexOf("Cross-device", StringComparison.OrdinalIgnoreCase) != -1)
+        {
+            // Git can throw a cross device error if the temporal folder is in a different drive than the .git folder (eg. symbolic link)
+            // to handle this edge case, we create a temporal folder inside the current folder.
+
+            Log.Warning("ITR: 'git pack-objects...' returned a cross-device error, retrying using a local temporal folder.");
+            var temporaryFolder = Path.Combine(Environment.CurrentDirectory, ".git_tmp");
+            if (!Directory.Exists(temporaryFolder))
+            {
+                Directory.CreateDirectory(temporaryFolder);
+            }
+
+            temporaryPath = Path.Combine(temporaryFolder, Path.GetFileName(temporaryPath));
+            getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
+            packObjectsResultCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjectsCommand!.Output).ConfigureAwait(false);
+            if (packObjectsResultCommand is null)
+            {
+                Log.Warning("ITR: 'git pack-objects...' command is null");
+                return Array.Empty<string>();
+            }
+
+            if (packObjectsResultCommand.ExitCode != 0)
+            {
+                Log.Warning("ITR: 'git pack-objects...' command error: {stderr}", packObjectsResultCommand.Error);
+            }
+        }
+
+        var packObjectsSha = packObjectsResultCommand.Output.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
         // We try to return an array with the path in the same order as has been returned by the git command.
         var tempFolder = Path.GetDirectoryName(temporaryPath) ?? string.Empty;
@@ -711,7 +738,7 @@ internal class IntelligentTestRunnerClient
             return string.Empty;
         }
 
-        return gitOutput.Replace("\n", string.Empty);
+        return gitOutput.Output.Replace("\n", string.Empty);
     }
 
     private async Task<string> GetBranchNameAsync()
@@ -723,7 +750,7 @@ internal class IntelligentTestRunnerClient
             return string.Empty;
         }
 
-        return gitOutput.Replace("\n", string.Empty);
+        return gitOutput.Output.Replace("\n", string.Empty);
     }
 
     private readonly struct DataEnvelope<T>

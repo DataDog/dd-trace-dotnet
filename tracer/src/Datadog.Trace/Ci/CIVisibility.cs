@@ -305,8 +305,8 @@ namespace Datadog.Trace.Ci
                             SynchronizationContext.SetSynchronizationContext(null);
                         }
 
-                        var osxVersion = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")).GetAwaiter().GetResult();
-                        osxVersion = osxVersion?.Trim(' ', '\n');
+                        var osxVersionCommand = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")).GetAwaiter().GetResult();
+                        var osxVersion = osxVersionCommand?.Output.Trim(' ', '\n');
                         if (!string.IsNullOrEmpty(osxVersion))
                         {
                             return osxVersion!;

@@ -83,8 +83,8 @@ namespace Datadog.Trace.Util
         /// </summary>
         /// <param name="command">Command to run</param>
         /// <param name="input">Standard input content</param>
-        /// <returns>Task with the content of the standard output</returns>
-        public static async Task<string?> RunCommandAsync(Command command, string? input = null)
+        /// <returns>Task with the output of the command</returns>
+        public static async Task<CommandOutput?> RunCommandAsync(Command command, string? input = null)
         {
             Log.Debug("Running command: {command} {args}", command.Cmd, command.Arguments);
             var processStartInfo = GetProcessStartInfo(command);
@@ -106,15 +106,20 @@ namespace Datadog.Trace.Util
                 processInfo.StandardInput.Close();
             }
 
-            var sb = new StringBuilder();
+            var outputStringBuilder = new StringBuilder();
+            var errorStringBuilder = new StringBuilder();
             while (!processInfo.HasExited)
             {
-                sb.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+                outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+                errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
                 await Task.Delay(15).ConfigureAwait(false);
             }
 
-            sb.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
-            return sb.ToString();
+            outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+            errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
+
+            Log.Debug<int>("Process finished with exit code: {value}.", processInfo.ExitCode);
+            return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
         }
 
         private static ProcessStartInfo GetProcessStartInfo(Command command)
@@ -125,6 +130,7 @@ namespace Datadog.Trace.Util
             processStartInfo.CreateNoWindow = true;
             processStartInfo.UseShellExecute = false;
             processStartInfo.RedirectStandardOutput = true;
+            processStartInfo.RedirectStandardError = true;
 
             if (command.WorkingDirectory is not null)
             {
@@ -146,6 +152,22 @@ namespace Datadog.Trace.Util
                 Arguments = arguments;
                 WorkingDirectory = workingDirectory;
             }
+        }
+
+        public class CommandOutput
+        {
+            public CommandOutput(string output, string error, int exitCode)
+            {
+                Output = output;
+                Error = error;
+                ExitCode = exitCode;
+            }
+
+            public string Output { get; }
+
+            public string Error { get; }
+
+            public int ExitCode { get; }
         }
     }
 }
