@@ -176,33 +176,6 @@ namespace Datadog.Trace.Tests.Sampling
             rule.SamplingRate.Should().Be(1.0f);
         }
 
-        [Fact]
-        public void SampleRateString_ShouldMatch_SampleRate()
-        {
-            var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5}]";
-            var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
-
-            rule.SamplingRateString.Should().Be("0.5");
-        }
-
-        [Fact]
-        public void MaxPerSecondString_ShouldMatch_MaxPerSecond()
-        {
-            var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5, \"max_per_second\":1000.5}]";
-            var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
-
-            rule.MaxPerSecondString.Should().Be("1000.5");
-        }
-
-        [Fact]
-        public void MaxPerSecondString_ShouldBeNull_WhenMaxPerSecondNull()
-        {
-            var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5}]";
-            var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
-
-            rule.MaxPerSecondString.Should().BeNull();
-        }
-
         private void VerifySingleRule(string config, Span span, bool isMatch)
         {
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
