@@ -27,6 +27,7 @@ public class WeakCipherTests : TestHelper
         : base("WeakCipher", output)
     {
         SetServiceVersion("1.0.0");
+        EnableDebugMode();
     }
 
     [SkippableFact]

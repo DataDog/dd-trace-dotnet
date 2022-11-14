@@ -29,6 +29,7 @@ public class WeakHashingTests : TestHelper
         : base("WeakHashing", output)
     {
         SetServiceVersion("1.0.0");
+        EnableDebugMode();
     }
 
     [SkippableFact]
