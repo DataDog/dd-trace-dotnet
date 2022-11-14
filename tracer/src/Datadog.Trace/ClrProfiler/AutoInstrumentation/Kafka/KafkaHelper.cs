@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
         private static bool _headersInjectionEnabled = true;
-        private static string[] defaultProduceEdgeTags = new[] { "type:kafka", "direction:out" };
+        private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
 
         internal static Scope CreateProducerScope(Tracer tracer, ITopicPartition topicPartition, bool isTombstone, bool finishOnClose)
         {
@@ -202,8 +202,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         // ','is not a valid character in kafka topic or group names, so we use as the
                         // separator here NOTE: the tags must be sorted in alphabetical order
                         var edgeTags = string.IsNullOrEmpty(topic)
-                                           ? $"group:{groupId},type:kafka,direction:in"
-                                           : $"group:{groupId},topic:{topic},type:kafka,direction:in";
+                                           ? $"direction:in,group:{groupId},type:kafka"
+                                           : $"direction:in,group:{groupId},topic:{topic},type:kafka,";
                         message.Headers.Add(DataStreamsPropagationHeaders.TemporaryEdgeTags, Encoding.UTF8.GetBytes(edgeTags));
                     }
                     else
@@ -213,8 +213,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         // TODO: we could pool these arrays to reduce allocations
                         // NOTE: the tags must be sorted in alphabetical order
                         var edgeTags = string.IsNullOrEmpty(topic)
-                                           ? new[] { $"group:{groupId}", "type:kafka", "direction:in" }
-                                           : new[] { $"group:{groupId}", $"topic:{topic}", "type:kafka", "direction:in" };
+                                           ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
+                                           : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
 
                         span.Context.SetCheckpoint(dataStreamsManager, edgeTags);
                     }
@@ -292,7 +292,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
-                        : new[] { $"topic:{topic}", "type:kafka", "direction:out" };
+                        : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
                     context.SetCheckpoint(dataStreamsManager, edgeTags);
                     dataStreamsManager.InjectPathwayContext(context.PathwayContext, adapter);
                 }
