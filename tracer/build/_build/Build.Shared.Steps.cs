@@ -98,6 +98,7 @@ partial class Build
 
             // Create universal shared library with all architectures in a single file
             var destination = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
+            DeleteFile(destination);
             Console.WriteLine($"Creating universal binary for {destination}");
             var strNativeBinaries = string.Join(' ', lstNativeBinaries);
             Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
