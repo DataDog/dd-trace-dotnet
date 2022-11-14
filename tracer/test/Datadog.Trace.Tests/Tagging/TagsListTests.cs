@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var settings = new TracerSettings();
             _testApi = new MockApi();
-            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
+            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null, automaticFlush: false);
             _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
@@ -38,20 +38,22 @@ namespace Datadog.Trace.Tests.Tagging
         public void GetTag_GetMetric_ReturnUpdatedValues()
         {
             var tags = new CommonTags();
-            var span = new Span(new SpanContext(42, 41), DateTimeOffset.UtcNow, tags);
+            var scope = _tracer.StartActiveInternal("root", tags: tags);
+            var span = scope.Span;
 
             const int customTagCount = 15;
             SetupForSerializationTest(span, customTagCount);
 
-            Assert.Equal("Overridden Environment", span.GetTag(Tags.Env));
-            Assert.Equal(0.75, span.GetMetric(Metrics.SamplingLimitDecision));
+            span.Context.TraceContext.Environment.Should().Be("Overridden Environment");
+            span.GetTag(Tags.Env).Should().Be("Overridden Environment");
+            span.GetMetric(Metrics.SamplingLimitDecision).Should().Be(0.75);
 
             for (int i = 0; i < customTagCount; i++)
             {
                 var key = i.ToString();
 
-                Assert.Equal(key, span.GetTag(key));
-                Assert.Equal((double)i, span.GetMetric(key));
+                span.GetTag(key).Should().Be(key);
+                span.GetMetric(key).Should().Be(i);
             }
         }
 
@@ -63,7 +65,7 @@ namespace Datadog.Trace.Tests.Tagging
             Action<ITags, string, double?> setMetric = (tagsList, name, value) => tagsList.SetMetric(name, value);
             Func<ITags, string, double?> getMetric = (tagsList, name) => tagsList.GetMetric(name);
 
-            var assemblies = new[] { typeof(TagsList).Assembly, typeof(SqlTags).Assembly };
+            var assemblies = new[] { typeof(TagsList).Assembly, typeof(SqlTags).Assembly }.Distinct();
 
             foreach (var type in assemblies.SelectMany(a => a.GetTypes()))
             {
@@ -260,8 +262,9 @@ namespace Datadog.Trace.Tests.Tagging
             // The header is resized when there are 16 or more elements in the collection
             // Neither common or additional tags have enough elements, but put together they will cause to use a bigger header
             var tags = (CommonTags)span.Tags;
-            tags.Environment = "Test";
             tags.SamplingLimitDecision = 0.5;
+
+            span.Context.TraceContext.Environment = "Test";
 
             // Override the properties
             span.SetTag(Tags.Env, "Overridden Environment");
@@ -294,9 +297,13 @@ namespace Datadog.Trace.Tests.Tagging
                                      })
                                     .ToArray();
 
-            propertyAndTagName
-               .Should()
-               .OnlyContain(x => !string.IsNullOrEmpty(x.tagOrMetric));
+            if (isTag && type != typeof(CommonTags))
+            {
+                // skip this for CommonTags because it is the only type without any string tags
+                propertyAndTagName
+                   .Should()
+                   .OnlyContain(x => !string.IsNullOrEmpty(x.tagOrMetric));
+            }
 
             var writeableProperties = propertyAndTagName.Where(p => p.property.CanWrite).ToArray();
             var readonlyProperties = propertyAndTagName.Where(p => !p.property.CanWrite).ToArray();

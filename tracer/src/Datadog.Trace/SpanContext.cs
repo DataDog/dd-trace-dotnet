@@ -41,6 +41,8 @@ namespace Datadog.Trace
         /// </summary>
         public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: 0, spanId: 0, serviceName: null);
 
+        private string _origin;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
         /// from a propagated context. <see cref="Parent"/> will be null
@@ -114,9 +116,9 @@ namespace Datadog.Trace
             SpanId = spanId ?? SpanIdGenerator.CreateNew();
             Parent = parent;
             TraceContext = traceContext;
+
             if (parent is SpanContext spanContext)
             {
-                Origin = spanContext.Origin;
                 RawTraceId = spanContext.RawTraceId ?? rawTraceId;
                 PathwayContext = spanContext.PathwayContext;
             }
@@ -172,9 +174,24 @@ namespace Datadog.Trace
         public string ServiceName { get; set; }
 
         /// <summary>
-        /// Gets or sets the origin of the trace
+        /// Gets or sets the origin of the trace.
+        /// For local contexts, this property delegates to TraceContext.Origin.
+        /// This is a temporary work around because we use SpanContext
+        /// for all local spans and also for propagation.
         /// </summary>
-        internal string Origin { get; set; }
+        internal string Origin
+        {
+            get => TraceContext?.Origin ?? _origin;
+            set
+            {
+                _origin = value;
+
+                if (TraceContext is not null)
+                {
+                    TraceContext.Origin = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the header value that contains the propagated trace tags,
