@@ -418,7 +418,7 @@ partial class Build
                     {
                         var (arch, _) = GetUnixArchitectureAndExtension();
                         var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
-                        var source = MonitoringHomeDirectory / arch;
+                        var source = MonitoringHomeDirectory / (IsOsx ? "osx" : arch);
                         var oldVersionPath = oldVersionTempPath / "runtimes" / archWaf / "native" / $"libddwaf.{ext}";
                         foreach (var fmk in frameworks)
                         {
