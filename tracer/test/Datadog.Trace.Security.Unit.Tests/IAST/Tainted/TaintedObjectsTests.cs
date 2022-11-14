@@ -32,7 +32,7 @@ public class TaintedObjectsTests
         taintedObjects.TaintInputString(taintedString, source);
         var tainted2 = taintedObjects.Get(taintedString);
         Assert.Equal(taintedString, tainted2.Value);
-        Assert.Equal(source, tainted2.GetRanges()[0].Source);
+        Assert.Equal(source, tainted2.Ranges[0].Source);
     }
 
     [Fact]

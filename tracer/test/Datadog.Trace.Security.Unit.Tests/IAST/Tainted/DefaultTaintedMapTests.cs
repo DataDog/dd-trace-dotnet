@@ -4,9 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
+using System.Text;
 using Datadog.Trace.Iast;
 using Xunit;
 using Range = Datadog.Trace.Iast.Range;
@@ -16,7 +15,7 @@ namespace Datadog.Trace.Security.Unit.Tests.Iast.Tainted;
 public class DefaultTaintedMapTests
 {
     [Fact]
-    public void GivenATaintedObjectMap_WhenPutAndGet_ObjectIsRetrieved()
+    public void GivenATaintedObjectMap_WhenPutAndGetString_ObjectIsRetrieved()
     {
         DefaultTaintedMap map = new();
         string testString = "test";
@@ -25,7 +24,31 @@ public class DefaultTaintedMapTests
         map.Put(tainted);
         var tainted2 = map.Get(testString);
         Assert.NotNull(tainted2);
-        Assert.Equal(tainted.GetHashCode(), tainted2.GetHashCode());
+        Assert.Equal(testString, tainted2.Value);
+    }
+
+    [Fact]
+    public void GivenATaintedObjectMap_WhenPutAndGetObject_ObjectIsRetrieved()
+    {
+        DefaultTaintedMap map = new();
+        var stringObject = new StringForTest("StringForTest");
+        var tainted = new TaintedObject(stringObject, null);
+        map.Put(tainted);
+        var tainted2 = map.Get(stringObject);
+        Assert.NotNull(tainted2);
+        Assert.Equal(stringObject, tainted2.Value);
+    }
+
+    [Fact]
+    public void GivenATaintedObjectMap_WhenPutAndGetStringBuilder_ObjectIsRetrieved()
+    {
+        DefaultTaintedMap map = new();
+        var text = new StringBuilder("test");
+        var tainted = new TaintedObject(text, null);
+        map.Put(tainted);
+        var tainted2 = map.Get(text);
+        Assert.NotNull(tainted2);
+        Assert.Equal(text, tainted2.Value);
     }
 
     [Fact]
@@ -79,12 +102,11 @@ public class DefaultTaintedMapTests
         DefaultTaintedMap map = new();
         var testObject = new object();
         var tainted = new TaintedObject(testObject, new Range[] { new Range(1, 2, new Source(12, "name", "value")) });
-        var hash1 = tainted.GetHashCode();
         map.Put(tainted);
         map.Purge();
         var tainted2 = map.Get(testObject);
         Assert.NotNull(tainted2);
-        Assert.Equal(hash1, tainted2.GetHashCode());
+        Assert.Equal(tainted.Value, tainted2.Value);
     }
 
     [Fact]
@@ -114,7 +136,7 @@ public class DefaultTaintedMapTests
             map.Put(tainted);
             var tainted2 = map.Get(testString);
             Assert.NotNull(tainted2);
-            Assert.Equal(tainted.GetHashCode(), tainted2.GetHashCode());
+            Assert.Equal(tainted.Value, tainted2.Value);
         }
     }
 

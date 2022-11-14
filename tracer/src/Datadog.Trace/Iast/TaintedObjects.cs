@@ -9,7 +9,7 @@ namespace Datadog.Trace.Iast
 {
     internal class TaintedObjects
     {
-        private ITaintedMap _map;
+        private readonly ITaintedMap _map;
 
         public TaintedObjects()
         {

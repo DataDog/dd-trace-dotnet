@@ -11,15 +11,13 @@ namespace Datadog.Trace.Iast;
 
 internal class TaintedObject : ITaintedObject
 {
-    private readonly Range[]? _ranges;
-
     private readonly WeakReference _weak;
 
     public TaintedObject(object value, Range[]? ranges)
     {
         _weak = new WeakReference(value);
         PositiveHashCode = IastUtils.IdentityHashCode(value) & DefaultTaintedMap.PositiveMask;
-        _ranges = ranges;
+        Ranges = ranges;
     }
 
     public object? Value => _weak.Target;
@@ -28,15 +26,7 @@ internal class TaintedObject : ITaintedObject
 
     public int PositiveHashCode { get; }
 
+    public Range[]? Ranges { get; }
+
     public ITaintedObject? Next { get; set; }
-
-    public Range[]? GetRanges()
-    {
-        return _ranges;
-    }
-
-    public override int GetHashCode()
-    {
-        return _weak?.Target?.GetHashCode() ?? 0;
-    }
 }

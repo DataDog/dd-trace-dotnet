@@ -23,19 +23,15 @@ internal class DefaultTaintedMap : ITaintedMap
     private const int PurgeCount = 1 << 6;
     // Bitmask for fast modulo with PURGE_COUNT.
     private const int PurgeMask = PurgeCount - 1;
-
     // Map containing the tainted objects
     private ConcurrentDictionary<int, ITaintedObject> _map;
-
     // Bitmask for fast modulo with table length.
     private int _lengthMask = 0;
     // Flag to ensure we do not run multiple purges concurrently.
     private bool _isPurging = false;
     private object _purgingLock = new();
-
     // Number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
     private int _entriesCount;
-
     /* Number of elements in the hash table before switching to flat mode. */
     private int _flatModeThreshold;
 
@@ -97,6 +93,9 @@ internal class DefaultTaintedMap : ITaintedMap
             // We do not control duplicate entries.
             _map.TryGetValue(index, out var existingValue);
             entry.Next = existingValue;
+
+            // We only count the entries if we are not in flat mode
+            Interlocked.Increment(ref _entriesCount);
         }
 
         // If we flipped to flat mode:
@@ -109,8 +108,6 @@ internal class DefaultTaintedMap : ITaintedMap
         {
             Purge();
         }
-
-        Interlocked.Increment(ref _entriesCount);
     }
 
     /// <summary>
@@ -137,6 +134,7 @@ internal class DefaultTaintedMap : ITaintedMap
 
             if (!IsFlat)
             {
+                // We only count the entries if we are not in flat mode
                 if (Interlocked.Add(ref _entriesCount, -removedCount) > _flatModeThreshold)
                 {
                     IsFlat = true;
