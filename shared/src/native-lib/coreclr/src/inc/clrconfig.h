@@ -6,13 +6,8 @@
 //
 
 //
-// Unified method of accessing configuration values from environment variables, registry and config file(s).
-// This class replaces all GetConfigDWORD and GetConfigString methods in EEConfig and REGUTIL. To define a
-// flag, add an entry in the table in file:CLRConfigValues.h.
-//
-//
-//
-//
+// Unified method of accessing configuration values.
+// To define a flag, add an entry in the table in file:CLRConfigValues.h.
 // --------------------------------------------------------------------------------------------------
 
 
@@ -25,38 +20,22 @@
 class CLRConfig
 {
 public:
-    //
-    // Types
-    //
+    // Setting each option results in some change to the config value.
+    enum class LookupOptions
+    {
+        // Default options.
+        Default = 0,
 
-    // Setting each option results in some change to the config value lookup method. Default behavior is (in
-    // the following order):
-    // * Look at environment variables (prepending COMPlus to the name)
-    // * Look at the framework registry keys (HKCU\Software\Microsoft\.NETFramework then
-    //     HKLM\Software\Microsoft\.NETFramework)
-    // * Look at the available config files (system, application, host and user). For details see TODO:
-    //     Link to BOTR documentation
-    enum LookupOptions {
-        // If set, don't look in environment variables.
-        IgnoreEnv = 0x1,
-        // If set, do not prepend "COMPlus_" when doing environment variable lookup.
-        DontPrependCOMPlus_ = 0x2,
-        // If set, don't look in HKLM in the registry.
-        IgnoreHKLM = 0x4,
-        // If set, don't look in HKCU in the registry.
-        IgnoreHKCU = 0x8,
-        // If set, look only in the system config file, ignoring other config files.
-        // (This option does not affect environment variable and registry lookups)
-        ConfigFile_SystemOnly = 0x40,
-        // If set, reverse the order of config file lookups (application config file first).
-        // (This option does not affect environment variable and registry lookups)
-        ConfigFile_ApplicationFirst = 0x80,
+        // If set, do not prepend prefix when doing environment variable lookup.
+        DontPrependPrefix = 0x1,
+
         // Remove any whitespace at beginning and end of value.  (Only applicable for
         // *string* configuration values.)
-        TrimWhiteSpaceFromStringValue = 0x100,
+        TrimWhiteSpaceFromStringValue = 0x2,
 
-        // Legacy EEConfig-style lookup.
-        EEConfig_default = 0,
+        // The configuration should be parsed using a 10 radix as opposed to the
+        // default of 16.
+        ParseIntegerAsBase10 = 0x4,
     };
 
     // Struct used to store information about where/how to find a Config DWORD.
@@ -92,14 +71,6 @@ public:
     #define RETAIL_CONFIG_STRING_INFO_EX(symbol, name, description, lookupOptions) \
         static const ConfigStringInfo symbol;
 
-    // TEMPORARY macros that declare strings. These are used for config value accesses that haven't been
-    // moved over to CLRConfig yet. Once all accesses have been moved, these macros (and corresponding
-    // instantiations in file:../utilcode/CLRConfig.cpp) should be removed.
-    #define RETAIL_CONFIG_DWORD_INFO_DIRECT_ACCESS(symbol, name, description) \
-        static const LPCWSTR symbol;
-    #define RETAIL_CONFIG_STRING_INFO_DIRECT_ACCESS(symbol, name, description) \
-        static const LPCWSTR symbol;
-
     //
     // Debug versions of the macros
     //
@@ -112,18 +83,13 @@ public:
         static const ConfigStringInfo symbol;
     #define CONFIG_STRING_INFO_EX(symbol, name, description, lookupOptions) \
         static const ConfigStringInfo symbol;
-    #define CONFIG_DWORD_INFO_DIRECT_ACCESS(symbol, name, description) \
-        static const LPCWSTR symbol;
-    #define CONFIG_STRING_INFO_DIRECT_ACCESS(symbol, name, description) \
-        static const LPCWSTR symbol;
 #else
     #define CONFIG_DWORD_INFO(symbol, name, defaultValue, description)
     #define CONFIG_DWORD_INFO_EX(symbol, name, defaultValue, description, lookupOptions)
     #define CONFIG_STRING_INFO(symbol, name, description)
     #define CONFIG_STRING_INFO_EX(symbol, name, description, lookupOptions)
-    #define CONFIG_DWORD_INFO_DIRECT_ACCESS(symbol, name, description)
-    #define CONFIG_STRING_INFO_DIRECT_ACCESS(symbol, name, description)
 #endif // _DEBUG
+
         // Now that we have defined what what the macros in file:CLRConfigValues.h mean, include it to generate the code.
         #include "clrconfigvalues.h"
 
@@ -131,14 +97,10 @@ public:
     #undef RETAIL_CONFIG_STRING_INFO
     #undef RETAIL_CONFIG_DWORD_INFO_EX
     #undef RETAIL_CONFIG_STRING_INFO_EX
-    #undef RETAIL_CONFIG_DWORD_INFO_DIRECT_ACCESS
-    #undef RETAIL_CONFIG_STRING_INFO_DIRECT_ACCESS
     #undef CONFIG_DWORD_INFO
     #undef CONFIG_STRING_INFO
     #undef CONFIG_DWORD_INFO_EX
     #undef CONFIG_STRING_INFO_EX
-    #undef CONFIG_DWORD_INFO_DIRECT_ACCESS
-    #undef CONFIG_STRING_INFO_DIRECT_ACCESS
 
     //
     // Methods to do config value (DWORD and String) lookups.
@@ -149,7 +111,10 @@ public:
     static DWORD GetConfigValue(const ConfigDWORDInfo & info);
 
     // Look up a DWORD config value.
-    static DWORD GetConfigValue(const ConfigDWORDInfo & info, bool acceptExplicitDefaultFromRegutil, /* [Out] */ bool *isDefault);
+    static DWORD GetConfigValue(const ConfigDWORDInfo & info, /* [Out] */ bool *isDefault);
+
+    // Look up a DWORD config value.
+    static DWORD GetConfigValue(const ConfigDWORDInfo & info, DWORD defaultValue);
 
     // Look up a string config value.
     // You own the string that's returned.
@@ -158,55 +123,28 @@ public:
     // Look up a string config value, passing it out through a pointer reference. Reports out of memory
     // errors (HRESULT E_OUTOFMEMORY).
     // You own the string that's returned.
-    static HRESULT GetConfigValue(const ConfigStringInfo & info, __deref_out_z LPWSTR * outVal);
+    static HRESULT GetConfigValue(const ConfigStringInfo & info, _Outptr_result_z_ LPWSTR * outVal);
 
     //
-    // Check whether an option is specified (e.g. explicitly listed) in any of the CLRConfig
-    // locations: environment or registry (with or without COMPlus_) or any config file.
-    // The result is therefore a conservative approximation (some settings do not actually
-    // take effect everywhere and no setting is valid both with and without COMPlus_)
+    // Check whether an option is specified (e.g. explicitly listed) in the CLRConfig.
     //
     static BOOL IsConfigOptionSpecified(LPCWSTR name);
 
     // Free a string returned by GetConfigValue
-    static void   FreeConfigString(__in __in_z LPWSTR name);
+    static void FreeConfigString(_In_ _In_z_ LPWSTR name);
 
-private:
-
-    // Helper method to translate LookupOptions to REGUTIL::CORConfigLevel
-    static REGUTIL::CORConfigLevel GetConfigLevel(LookupOptions options);
-
-    //
-    // Helper methods.
-    //
-
-    // Helper method to check if a certain option is set in a ConfigDWORDInfo struct.
-    static inline BOOL CheckLookupOption(const ConfigDWORDInfo & info, LookupOptions option)
-    {
-        LIMITED_METHOD_CONTRACT;
-        return ((info.options & option) == option) ? TRUE : FALSE;
-    }
-
-    // Helper method to check if a certain option is set in a ConfigStringInfo struct.
-    static inline BOOL CheckLookupOption(const ConfigStringInfo & info, LookupOptions option)
-    {
-        LIMITED_METHOD_CONTRACT;
-        return ((info.options & option) == option) ? TRUE : FALSE;
-    }
-
-    // Helper method to check if a certain option is set in an options enum.
-    static inline BOOL CheckLookupOption(LookupOptions infoOptions, LookupOptions optionToCheck)
-    {
-        LIMITED_METHOD_CONTRACT;
-        return ((infoOptions & optionToCheck) == optionToCheck) ? TRUE : FALSE;
-    }
-
-    static HRESULT TrimWhiteSpace(LPCWSTR wszOrig, __deref_out_z LPWSTR * pwszTrimmed);
+    // Initialize the configuration.
+    static void Initialize();
 };
 
 inline CLRConfig::LookupOptions operator|(CLRConfig::LookupOptions lhs, CLRConfig::LookupOptions rhs)
 {
     return static_cast<CLRConfig::LookupOptions>(static_cast<DWORD>(lhs) | static_cast<DWORD>(rhs));
+}
+
+inline CLRConfig::LookupOptions operator&(CLRConfig::LookupOptions lhs, CLRConfig::LookupOptions rhs)
+{
+    return static_cast<CLRConfig::LookupOptions>(static_cast<DWORD>(lhs) & static_cast<DWORD>(rhs));
 }
 
 typedef Wrapper<LPWSTR, DoNothing, CLRConfig::FreeConfigString, NULL> CLRConfigStringHolder;
