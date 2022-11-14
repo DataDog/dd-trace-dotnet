@@ -203,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         // separator here NOTE: the tags must be sorted in alphabetical order
                         var edgeTags = string.IsNullOrEmpty(topic)
                                            ? $"direction:in,group:{groupId},type:kafka"
-                                           : $"direction:in,group:{groupId},topic:{topic},type:kafka,";
+                                           : $"direction:in,group:{groupId},topic:{topic},type:kafka";
                         message.Headers.Add(DataStreamsPropagationHeaders.TemporaryEdgeTags, Encoding.UTF8.GetBytes(edgeTags));
                     }
                     else
