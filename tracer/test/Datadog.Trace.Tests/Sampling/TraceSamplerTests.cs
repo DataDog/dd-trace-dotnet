@@ -5,8 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
@@ -103,10 +103,16 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Choose_Between_Sampling_Mechanisms()
         {
-            var span = GetMyServiceSpan(traceId: 1);
+            var settings = new TracerSettings { ServiceName = ServiceName };
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+
+            using var scope = (Scope)tracer.StartActive(OperationName);
+            scope.Span.Context.TraceContext.Environment = Env;
+
+            var span = scope.Span;
             var sampler = new TraceSampler(new NoLimits());
 
-            // if there are no other rules, and before we wave agent rates, mechanism is "Default"
+            // if there are no other rules, and before we have agent rates, mechanism is "Default"
             var (_, mechanism1) = sampler.MakeSamplingDecision(span);
             mechanism1.Should().Be(SamplingMechanism.Default);
 
@@ -116,13 +122,6 @@ namespace Datadog.Trace.Tests.Sampling
             // after we have agent rates, mechanism is "AgentRate"
             var (_, mechanism2) = sampler.MakeSamplingDecision(span);
             mechanism2.Should().Be(SamplingMechanism.AgentRate);
-        }
-
-        private static Span GetMyServiceSpan(ulong traceId)
-        {
-            var span = new Span(new SpanContext(traceId, spanId: 1, null, serviceName: ServiceName), DateTimeOffset.Now) { OperationName = OperationName };
-            span.SetTag(Tags.Env, Env);
-            return span;
         }
 
         private void RunSamplerTest(
@@ -136,11 +135,15 @@ namespace Datadog.Trace.Tests.Sampling
             var autoKeeps = 0;
             var userKeeps = 0;
 
+            var settings = new TracerSettings { ServiceName = ServiceName };
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+
             while (sampleSize-- > 0)
             {
-                var traceId = SpanIdGenerator.CreateNew();
-                var span = GetMyServiceSpan(traceId);
-                var decision = sampler.MakeSamplingDecision(span);
+                using var scope = (Scope)tracer.StartActive(OperationName);
+                scope.Span.Context.TraceContext.Environment = Env;
+
+                var decision = sampler.MakeSamplingDecision(scope.Span);
 
                 if (decision.Priority == SamplingPriorityValues.AutoKeep)
                 {

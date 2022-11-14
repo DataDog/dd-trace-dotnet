@@ -6,6 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
 
@@ -35,9 +37,46 @@ namespace Datadog.Trace.Configuration
         /// <param name="settings">The tracer settings to use to populate the immutable tracer settings</param>
         public ImmutableTracerSettings(TracerSettings settings)
         {
-            Environment = settings.Environment;
+            // DD_ENV has precedence over DD_TAGS
+            if (!string.IsNullOrWhiteSpace(settings.Environment))
+            {
+                Environment = settings.Environment.Trim();
+            }
+            else
+            {
+                var env = settings.GlobalTags.GetValueOrDefault(Tags.Env);
+
+                if (!string.IsNullOrWhiteSpace(env))
+                {
+                    Environment = env.Trim();
+                }
+            }
+
+            // DD_VERSION has precedence over DD_TAGS
+            if (!string.IsNullOrWhiteSpace(settings.ServiceVersion))
+            {
+                ServiceVersion = settings.ServiceVersion.Trim();
+            }
+            else
+            {
+                var version = settings.GlobalTags.GetValueOrDefault(Tags.Version);
+
+                if (!string.IsNullOrWhiteSpace(version))
+                {
+                    ServiceVersion = version.Trim();
+                }
+            }
+
+            // create dictionary copy without "env" or "version",
+            // these value are used for "Environment" and "ServiceVersion"
+            // or overriden with DD_ENV and DD_VERSION
+            var globalTags = settings.GlobalTags
+                                     .Where(kvp => kvp.Key is not (Tags.Env or Tags.Version))
+                                     .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            GlobalTags = new ReadOnlyDictionary<string, string>(globalTags);
+
             ServiceName = settings.ServiceName;
-            ServiceVersion = settings.ServiceVersion;
             TraceEnabled = settings.TraceEnabled;
             Exporter = new ImmutableExporterSettings(settings.Exporter);
 #pragma warning disable 618 // App analytics is deprecated, but still used
@@ -48,7 +87,6 @@ namespace Datadog.Trace.Configuration
             SpanSamplingRules = settings.SpanSamplingRules;
             GlobalSamplingRate = settings.GlobalSamplingRate;
             Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
-            GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
             GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
             IpHeader = settings.IpHeader;
