@@ -312,7 +312,6 @@ partial class Build : NukeBuild
                         new (string publishFramework, string runtimeTag)[]
                         {
                             (publishFramework: TargetFramework.NET7_0, "35-7.0"),
-                            (publishFramework: TargetFramework.NET7_0, "34-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "35-5.0"),
                             (publishFramework: TargetFramework.NET5_0, "34-5.0"),
@@ -383,7 +382,7 @@ partial class Build : NukeBuild
                         "centos-stream",
                         new (string publishFramework, string runtimeTag)[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "9-7.0"),
+                            // (publishFramework: TargetFramework.NET7_0, "9-7.0"), Not updated from RC1 yet
                             (publishFramework: TargetFramework.NET6_0, "9-6.0"),
                             (publishFramework: TargetFramework.NET6_0, "8-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "8-5.0"),
@@ -628,7 +627,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new (string publishFramework, string runtimeTag)[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "34-7.0"),
+                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "33-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
@@ -790,7 +789,7 @@ partial class Build : NukeBuild
                                      from image in runtimeImages
                                      let dockerTag = $"{platform.platform}_{image.runtimeTag.Replace('.', '_')}_{(platform.enable32Bit ? "32bit" : "64bit")}"
                                      let channel32Bit = platform.enable32Bit
-                                                                       ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
+                                                                       ? GetInstallerChannel(image.publishFramework)
                                                                        : string.Empty
                                      select new
                                      {
@@ -822,7 +821,7 @@ partial class Build : NukeBuild
                                      from image in runtimeImages
                                      let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
                                      let channel32Bit = platform == MSBuildTargetPlatform.x86
-                                                                       ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
+                                                                       ? GetInstallerChannel(image.publishFramework)
                                                                        : string.Empty
                                      select new
                                      {
@@ -855,7 +854,7 @@ partial class Build : NukeBuild
                                      from image in runtimeImages
                                      let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
                                      let channel32Bit = platform == MSBuildTargetPlatform.x86
-                                                                       ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
+                                                                       ? GetInstallerChannel(image.publishFramework)
                                                                        : string.Empty
                                      select new
                                      {
@@ -888,7 +887,7 @@ partial class Build : NukeBuild
                                      from image in runtimeImages
                                      let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
                                      let channel32Bit = platform == MSBuildTargetPlatform.x86
-                                                                       ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
+                                                                       ? GetInstallerChannel(image.publishFramework)
                                                                        : string.Empty
                                      select new
                                      {
@@ -903,6 +902,10 @@ partial class Build : NukeBuild
                     Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("dotnet_tool_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
+
+                static string GetInstallerChannel(string publishFramework) =>
+                    publishFramework.Replace("netcoreapp", string.Empty)
+                                    .Replace("net", string.Empty);
             }
         };
 
