@@ -70,11 +70,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
         }
 
-        public static bool TryCreateIfNotExists(int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle)
-        {
-            return TryCreateIfNotExists<object>(null, index, in methodHandle, in typeHandle);
-        }
-
         /// <summary>
         /// Tries to create a new <see cref="MethodMetadataInfo"/> at <paramref name="index"/>.
         /// </summary>
@@ -84,7 +79,90 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="typeHandle">The handle of the type</param>
         /// <param name="asyncKickOffInfo">The info for the async kickoff method</param>
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
-        public static bool TryCreateIfNotExists<TTarget>(TTarget targetObject, int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo = default)
+        public static bool TryCreateAsyncMethodMetadataIfNotExists<TTarget>(TTarget targetObject, int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo)
+        {
+            if (IsIndexExists(index))
+            {
+                return true;
+            }
+
+            // Create a new one at the given index
+            lock (ItemsLocker)
+            {
+                EnlargeCapacity(index);
+
+                var method = MethodBase.GetMethodFromHandle(methodHandle, typeHandle);
+
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                {
+                    Log.Debug($"{nameof(MethodMetadataProvider)}.{nameof(TryCreateAsyncMethodMetadataIfNotExists)}: Creating a new metadata info for Async method = {method}, index = {index}, Items.Length = {_items.Length}");
+                }
+
+                if (method == null)
+                {
+                    return false;
+                }
+
+                var targetType = targetObject == null ? Type.GetTypeFromHandle(typeHandle) : targetObject.GetType();
+                _items[index] = MethodMetadataInfoFactory.Create(method, targetType, asyncKickOffInfo);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Tries to create a new <see cref="MethodMetadataInfo"/> at <paramref name="index"/>.
+        /// </summary>
+        /// <param name="index">The index of the method inside <see cref="_items"/></param>
+        /// <param name="methodHandle">The handle of the executing method</param>
+        /// <param name="typeHandle">The handle of the type</param>
+        /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
+        public static bool TryCreateNonAsyncMethodMetadataIfNotExists(int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle)
+        {
+            if (IsIndexExists(index))
+            {
+                return true;
+            }
+
+            // Create a new one at the given index
+            lock (ItemsLocker)
+            {
+                EnlargeCapacity(index);
+
+                var method = MethodBase.GetMethodFromHandle(methodHandle, typeHandle);
+                var type = Type.GetTypeFromHandle(typeHandle);
+
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                {
+                    Log.Debug($"{nameof(MethodMetadataProvider)}.{nameof(TryCreateNonAsyncMethodMetadataIfNotExists)}: Creating a new metadata info for Non-Async method = {method}, index = {index}, Items.Length = {_items.Length}");
+                }
+
+                if (method == null)
+                {
+                    return false;
+                }
+
+                _items[index] = MethodMetadataInfoFactory.Create(method, type);
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void EnlargeCapacity(int index)
+        {
+            if (index == _items.Length)
+            {
+                EnsureCapacity(index + 1);
+            }
+            else if (index > _items.Length)
+            {
+                EnsureCapacity(index);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsIndexExists(int index)
         {
             // Check if there's a MetadataMethodInfo associated with the given index
             if (index < _items.Length)
@@ -98,45 +176,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
             }
 
-            // Create a new one at the given index
-            lock (ItemsLocker)
-            {
-                if (index == _items.Length)
-                {
-                    EnsureCapacity(index + 1);
-                }
-                else if (index > _items.Length)
-                {
-                    EnsureCapacity(index);
-                }
-
-                var method = MethodBase.GetMethodFromHandle(methodHandle, typeHandle);
-                var type = Type.GetTypeFromHandle(typeHandle);
-
-                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
-                {
-                    Log.Debug($"{nameof(MethodMetadataProvider)}.{nameof(TryCreateIfNotExists)}: Creating a new metadata info for method = {method}, index = {index}, Items.Length = {_items.Length}");
-                }
-
-                if (method == null)
-                {
-                    return false;
-                }
-
-                MethodMetadataInfo methodMetadataInfo;
-                if (targetObject == null)
-                {
-                    methodMetadataInfo = MethodMetadataInfoFactory.Create(method, type);
-                }
-                else
-                {
-                    methodMetadataInfo = MethodMetadataInfoFactory.Create(method, targetObject, type, asyncKickOffInfo);
-                }
-
-                _items[index] = methodMetadataInfo;
-            }
-
-            return true;
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

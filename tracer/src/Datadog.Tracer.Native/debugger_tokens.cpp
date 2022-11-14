@@ -69,7 +69,7 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = probeType == MethodProbeInAsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
@@ -175,6 +175,30 @@ HRESULT DebuggerTokens::EnsureBaseCalltargetTokens()
         }
     }
 
+    // *** Ensure lineInvoker type ref
+    if (asyncLineInvokerTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, managed_profiler_debugger_async_line_type.data(), &asyncLineInvokerTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper asyncLineInvokerTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure lineDebuggerState type ref
+    if (asyncLineDebuggerStateTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, managed_profiler_debugger_async_linestatetype.data(), &asyncLineDebuggerStateTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper asyncLineDebuggerStateTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
     // *** Ensure AsyncMethodDebuggerInvoker type ref
     if (asyncMethodDebuggerInvokerTypeRef == mdTypeRefNil)
     {
@@ -231,11 +255,11 @@ int DebuggerTokens::GetAdditionalLocalsCount()
     return 2;
 }
 
-void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize)
+void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod)
 {
     // Gets the calltarget state of line probe type buffer and size
     unsigned callTargetStateTypeRefBuffer;
-    const auto callTargetStateTypeRefSize = CorSigCompressToken(lineDebuggerStateTypeRef, &callTargetStateTypeRefBuffer);
+    const auto callTargetStateTypeRefSize = CorSigCompressToken(GetDebuggerState(isAsyncMethod ? AsyncLineProbe : NonAsyncLineProbe), &callTargetStateTypeRefBuffer);
 
     // Enlarge the *new* signature size
     signatureSize += (1 + callTargetStateTypeRefSize);
@@ -348,16 +372,16 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     unsigned runtimeTypeHandleBuffer;
     auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
 
-    unsigned long signatureLength = (probeType == MethodProbeInAsyncMethod ? 12 : 10) + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
+    unsigned long signatureLength = (probeType == AsyncMethodProbe ? 12 : 10) + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
 
     COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
     signature[offset++] = 0x01; // generic arguments count
-    signature[offset++] = probeType == MethodProbeInAsyncMethod ? 0x06 : 0x05; // arguments count
+    signature[offset++] = probeType == AsyncMethodProbe ? 0x06 : 0x05; // arguments count
 
-    signature[offset++] = probeType == MethodProbeInAsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+    signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;
 
@@ -379,7 +403,7 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
 
     WSTRING methodName;
-    if (probeType == MethodProbeInAsyncMethod)
+    if (probeType == AsyncMethodProbe)
     {
         methodName = managed_profiler_debugger_begin_async_method_name;
         signature[offset++] = ELEMENT_TYPE_BYREF;
@@ -604,7 +628,7 @@ HRESULT DebuggerTokens::CreateEndMethodStartMarkerRefSignature(ProbeType probeTy
 
     signature[offset++] = ELEMENT_TYPE_BYREF;
 
-    signature[offset++] = probeType == MethodProbeInAsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+    signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;
 
@@ -651,7 +675,7 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, ProbeType pr
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = probeType == MethodProbeInAsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
@@ -713,7 +737,7 @@ HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = probeType == MethodProbeInAsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
@@ -742,8 +766,7 @@ HRESULT DebuggerTokens::WriteEndMethod_EndMarker(void* rewriterWrapperPtr, ILIns
     return WriteBeginOrEndMethod_EndMarker(rewriterWrapperPtr, false /* isBeginMethod */, instruction, probeType);
 }
 
-HRESULT DebuggerTokens::WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo* currentType,
-    ILInstr** instruction)
+HRESULT DebuggerTokens::WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo* currentType, ILInstr** instruction, ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -754,10 +777,15 @@ HRESULT DebuggerTokens::WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo*
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
 
+    mdMemberRef beginLineRef = GetBeginMethodStartMarker(probeType);
+
     if (beginLineRef == mdMemberRefNil)
     {
+        mdTypeRef stateTypeRef = GetDebuggerState(probeType);
+        mdTypeRef lineTypeRef = GetDebuggerInvoker(probeType);
+
         unsigned callTargetStateBuffer;
-        auto lineStateSize = CorSigCompressToken(lineDebuggerStateTypeRef, &callTargetStateBuffer);
+        auto lineStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
 
         unsigned runtimeMethodHandleBuffer;
         auto runtimeMethodHandleSize = CorSigCompressToken(runtimeMethodHandleRef, &runtimeMethodHandleBuffer);
@@ -798,12 +826,19 @@ HRESULT DebuggerTokens::WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo*
         signature[offset++] = ELEMENT_TYPE_STRING; // probeFilePath
 
         auto hr = module_metadata->metadata_emit->DefineMemberRef(
-            lineInvokerTypeRef, managed_profiler_debugger_beginline_name.data(), signature, signatureLength, &beginLineRef);
+            lineTypeRef, 
+            managed_profiler_debugger_beginline_name.data(), 
+            signature, 
+            signatureLength, 
+            &beginLineRef);
+
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper beginMethod could not be defined.");
             return hr;
         }
+
+        SetBeginMethodStartMarker(probeType, beginLineRef);
     }
 
     mdMethodSpec beginMethodSpec = mdMethodSpecNil;
@@ -850,7 +885,7 @@ HRESULT DebuggerTokens::WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo*
     return S_OK;
 }
 
-HRESULT DebuggerTokens::WriteEndLine(void* rewriterWrapperPtr, ILInstr** instruction)
+HRESULT DebuggerTokens::WriteEndLine(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -861,10 +896,15 @@ HRESULT DebuggerTokens::WriteEndLine(void* rewriterWrapperPtr, ILInstr** instruc
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
 
+    mdMemberRef endLineRef = GetEndMethodStartMarker(probeType, false /* isVoid, non-relevant for Line Probes */);
+
     if (endLineRef == mdMemberRefNil)
     {
+        mdTypeRef stateTypeRef = GetDebuggerState(probeType);
+        mdTypeRef lineTypeRef = GetDebuggerInvoker(probeType);
+
         unsigned callTargetStateBuffer;
-        auto callTargetStateSize = CorSigCompressToken(lineDebuggerStateTypeRef, &callTargetStateBuffer);
+        auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
 
         unsigned long signatureLength = 4 + callTargetStateSize;
 
@@ -884,122 +924,26 @@ HRESULT DebuggerTokens::WriteEndLine(void* rewriterWrapperPtr, ILInstr** instruc
         offset += callTargetStateSize;
 
         auto hr = module_metadata->metadata_emit->DefineMemberRef(
-            lineInvokerTypeRef, managed_profiler_debugger_endline_name.data(), signature, signatureLength, &endLineRef);
+            lineTypeRef, managed_profiler_debugger_endline_name.data(), signature, signatureLength, &endLineRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper beginMethod could not be defined.");
             return hr;
         }
+
+        SetEndMethodStartMarker(probeType, false /* isVoid, non-relevant for Line Probes */, endLineRef);
     }
 
     *instruction = rewriterWrapper->CallMember(endLineRef, false);
     return S_OK;
 }
 
-HRESULT DebuggerTokens::ModifyLocalSigForLineProbe(ILRewriter* reWriter, ULONG* callTargetStateIndex, mdToken* callTargetStateToken)
-{
-    auto hr = EnsureBaseCalltargetTokens();
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    ModuleMetadata* module_metadata = GetMetadata();
-
-    PCCOR_SIGNATURE originalSignature = nullptr;
-    ULONG originalSignatureSize = 0;
-    mdToken localVarSig = reWriter->GetTkLocalVarSig();
-
-    if (localVarSig != mdTokenNil)
-    {
-        IfFailRet(
-            module_metadata->metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize));
-
-        // Check if the localvarsig has been already rewritten (the last local
-        // should be the LineDebuggerState)
-        unsigned temp = 0;
-        const auto len = CorSigCompressToken(lineDebuggerStateTypeRef, &temp);
-        if (originalSignatureSize - len > 0)
-        {
-            if (originalSignature[originalSignatureSize - len - 1] == ELEMENT_TYPE_VALUETYPE)
-            {
-                if (memcmp(&originalSignature[originalSignatureSize - len], &temp, len) == 0)
-                {
-                    Logger::Warn("The signature for this method has been already modified.");
-                    return E_FAIL;
-                }
-            }
-        }
-    }
-
-    ULONG newLocalsCount = 1;
-
-    // Gets the calltarget state type buffer and size
-    unsigned callTargetStateTypeRefBuffer;
-    auto callTargetStateTypeRefSize = CorSigCompressToken(lineDebuggerStateTypeRef, &callTargetStateTypeRefBuffer);
-
-    // New signature size
-    ULONG newSignatureSize = originalSignatureSize + (1 + callTargetStateTypeRefSize);
-    ULONG newSignatureOffset = 0;
-
-    ULONG oldLocalsBuffer;
-    ULONG oldLocalsLen = 0;
-    unsigned newLocalsBuffer;
-    ULONG newLocalsLen;
-
-    // Calculate the new locals count
-    if (originalSignatureSize == 0)
-    {
-        newSignatureSize += 2;
-        newLocalsLen = CorSigCompressData(newLocalsCount, &newLocalsBuffer);
-    }
-    else
-    {
-        oldLocalsLen = CorSigUncompressData(originalSignature + 1, &oldLocalsBuffer);
-        newLocalsCount += oldLocalsBuffer;
-        newLocalsLen = CorSigCompressData(newLocalsCount, &newLocalsBuffer);
-        newSignatureSize += newLocalsLen - oldLocalsLen;
-    }
-
-    // New signature declaration
-    COR_SIGNATURE newSignatureBuffer[signatureBufferSize];
-    newSignatureBuffer[newSignatureOffset++] = IMAGE_CEE_CS_CALLCONV_LOCAL_SIG;
-
-    // Set the locals count
-    memcpy(&newSignatureBuffer[newSignatureOffset], &newLocalsBuffer, newLocalsLen);
-    newSignatureOffset += newLocalsLen;
-
-    // Copy previous locals to the signature
-    if (originalSignatureSize > 0)
-    {
-        const auto copyLength = originalSignatureSize - 1 - oldLocalsLen;
-        memcpy(&newSignatureBuffer[newSignatureOffset], originalSignature + 1 + oldLocalsLen, copyLength);
-        newSignatureOffset += copyLength;
-    }
-
-    // Add new locals
-
-    // CallTarget state value
-    newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&newSignatureBuffer[newSignatureOffset], &callTargetStateTypeRefBuffer, callTargetStateTypeRefSize);
-    newSignatureOffset += callTargetStateTypeRefSize;
-
-    // Get new locals token
-    mdToken newLocalVarSig;
-    hr = module_metadata->metadata_emit->GetTokenFromSig(newSignatureBuffer, newSignatureSize, &newLocalVarSig);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error creating new locals var signature.");
-        return hr;
-    }
-
-    reWriter->SetTkLocalVarSig(newLocalVarSig);
-    *callTargetStateToken = lineDebuggerStateTypeRef;
-    *callTargetStateIndex = newLocalsCount - 1;
-    return hr;
-}
-
-HRESULT DebuggerTokens::GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callTargetStateIndex, mdToken* callTargetStateToken, ULONG* asyncMethodStateIndex)
+HRESULT DebuggerTokens::GetDebuggerLocals(
+    void* rewriterWrapperPtr, 
+    ULONG* callTargetStateIndex, 
+    mdToken* callTargetStateToken, 
+    ULONG* asyncMethodStateIndex, 
+    bool isAsyncMethod)
 {
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     const auto reWriter = rewriterWrapper->GetILRewriter();
@@ -1023,7 +967,7 @@ HRESULT DebuggerTokens::GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callT
     auto bytesRead = CorSigUncompressData(originalSignature + 1, &localsLen);
 
     const auto debuggerAdditionalLocalsCount = GetAdditionalLocalsCount();
-    *callTargetStateToken = lineDebuggerStateTypeRef;
+    *callTargetStateToken = GetDebuggerState(isAsyncMethod ? AsyncLineProbe : NonAsyncLineProbe);
     *callTargetStateIndex = localsLen - /* Accounting for MethodDebuggerState */ 1 - debuggerAdditionalLocalsCount;
     *asyncMethodStateIndex = localsLen - debuggerAdditionalLocalsCount; // last local
     return S_OK;

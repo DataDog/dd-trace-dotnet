@@ -26,7 +26,7 @@ namespace Datadog.Trace.Debugger.Helpers
         private const BindingFlags AllFieldsBindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static FieldInfo[] GetHoistedArgumentsFromStateMachine<TTarget>(TTarget instance, string[] originalMethodParametersName)
+        internal static FieldInfo[] GetHoistedArgumentsFromStateMachine(Type stateMachineType, string[] originalMethodParametersName)
         {
             if (originalMethodParametersName is null || originalMethodParametersName.Length == 0)
             {
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger.Helpers
             }
 
             var foundFields = new FieldInfo[originalMethodParametersName.Length];
-            var allFields = instance.GetType().GetFields(AllFieldsBindingFlags);
+            var allFields = stateMachineType.GetFields(AllFieldsBindingFlags);
 
             int found = 0;
             for (int i = 0; i < allFields.Length; i++)
@@ -73,15 +73,14 @@ namespace Datadog.Trace.Debugger.Helpers
         /// For now, we're capturing all locals that are hoisted (except known generated locals),
         /// and we're capturing all the locals that appear in localVarSig with `LogLocal`
         /// </summary>
-        /// <typeparam name="TTarget">Instance type</typeparam>
-        /// <param name="instance">Instance object</param>
+        /// <param name="stateMachineType">The <see cref="System.Type"/> of the state machine</param>
         /// <param name="asyncKickoffInfo">The async kickoff info</param>
         /// <returns>List of locals</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static FieldInfoNameSanitized[] GetHoistedLocalsFromStateMachine<TTarget>(TTarget instance, AsyncKickoffMethodInfo asyncKickoffInfo)
+        internal static FieldInfoNameSanitized[] GetHoistedLocalsFromStateMachine(Type stateMachineType, AsyncKickoffMethodInfo asyncKickoffInfo)
         {
             var foundFields = new List<FieldInfoNameSanitized>();
-            var allFields = instance.GetType().GetFields(AllFieldsBindingFlags);
+            var allFields = stateMachineType.GetFields(AllFieldsBindingFlags);
             var kickoffParameters = asyncKickoffInfo.KickoffMethod.GetParameters();
             for (var i = 0; i < allFields.Length; i++)
             {
@@ -185,6 +184,13 @@ namespace Datadog.Trace.Debugger.Helpers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static object GetAsyncKickoffThisObject<TTarget>(TTarget stateMachine)
         {
+            if (stateMachine == null)
+            {
+                // State machine is null when we run in Optimized code and the original async method was generic,
+                // in which case the state machine is a generic value type.
+                return null;
+            }
+
             var thisField = stateMachine.GetType().GetField(StateMachineThisFieldName, BindingFlags.Instance | BindingFlags.Public);
             if (thisField == null)
             {
@@ -204,10 +210,11 @@ namespace Datadog.Trace.Debugger.Helpers
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static AsyncKickoffMethodInfo GetAsyncKickoffMethodInfo<TTarget>(TTarget stateMachine)
+        internal static AsyncKickoffMethodInfo GetAsyncKickoffMethodInfo<TTarget>(TTarget stateMachine, Type stateMachineType)
         {
+            // tries to grab the hoisted 'this' if one exists, returns null when we fail to do so
             var kickoffParentObject = GetAsyncKickoffThisObject(stateMachine);
-            var kickoffMethod = GetAsyncKickoffMethod(stateMachine.GetType());
+            var kickoffMethod = GetAsyncKickoffMethod(stateMachineType);
             var kickoffParentType = kickoffParentObject?.GetType() ?? kickoffMethod.DeclaringType;
             return new AsyncKickoffMethodInfo(kickoffParentObject, kickoffParentType, kickoffMethod);
         }
