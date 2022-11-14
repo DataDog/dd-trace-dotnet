@@ -34,21 +34,21 @@ namespace Datadog.Trace.Tests.Propagators
 
             B3Propagator.Inject(context, headers.Object);
 
-            headers.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-1"), Times.Once());
+            headers.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-1"), Times.Once());
             headers.VerifyNoOtherCalls();
 
             // Extract sampling from trace context
             var newContext = new SpanContext(null, new TraceContext(null), null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
-            newHeaders.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-0"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-0"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
 
             var traceContextSamplingField = typeof(TraceContext).GetField("_samplingPriority", BindingFlags.Instance | BindingFlags.NonPublic);
             traceContextSamplingField.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
             newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
-            newHeaders.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-1"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-1"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
         }
 
@@ -65,21 +65,21 @@ namespace Datadog.Trace.Tests.Propagators
 
             B3Propagator.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
-            headers.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-1"), Times.Once());
+            headers.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-1"), Times.Once());
             headers.VerifyNoOtherCalls();
 
             // Extract sampling from trace context
             var newContext = new SpanContext(null, new TraceContext(null), null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
-            newHeaders.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-0"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-0"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
 
             var traceContextSamplingField = typeof(TraceContext).GetField("_samplingPriority", BindingFlags.Instance | BindingFlags.NonPublic);
             traceContextSamplingField.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
             newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
-            newHeaders.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-1"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-1"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
         }
 
@@ -87,12 +87,12 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_IHeadersCollection()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+            headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { "00000000075bcd15-000000003ade68b1-1" });
 
             var result = B3Propagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(B3SingleHeaderContextPropagator.B3), Times.Once());
+            headers.Verify(h => h.GetValues("b3"), Times.Once());
             result.Should()
                   .BeEquivalentTo(
                        new SpanContextMock
@@ -109,12 +109,12 @@ namespace Datadog.Trace.Tests.Propagators
         {
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+            headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { "00000000075bcd15-000000003ade68b1-1" });
 
             var result = B3Propagator.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
 
-            headers.Verify(h => h.GetValues(B3SingleHeaderContextPropagator.B3), Times.Once());
+            headers.Verify(h => h.GetValues("b3"), Times.Once());
 
             result.Should()
                   .BeEquivalentTo(
@@ -134,7 +134,7 @@ namespace Datadog.Trace.Tests.Propagators
             var spanId = "00f067aa0ba902b7";
             var expectedTraceParent = $"{traceId}-{spanId}-1";
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+            headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { expectedTraceParent });
 
             var result = B3Propagator.Extract(headers.Object);
@@ -151,23 +151,23 @@ namespace Datadog.Trace.Tests.Propagators
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
-            headersForInjection.Setup(h => h.Set(B3SingleHeaderContextPropagator.B3, expectedTraceParent));
+            headersForInjection.Setup(h => h.Set("b3", expectedTraceParent));
 
             B3Propagator.Inject(result, headersForInjection.Object);
 
-            headersForInjection.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, expectedTraceParent), Times.Once());
+            headersForInjection.Verify(h => h.Set("b3", expectedTraceParent), Times.Once());
         }
 
         [Fact]
         public void Extract_InvalidLength()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+            headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { "242300000000075bcd15-000000003ade68b1-1" });
 
             var result = B3Propagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(B3SingleHeaderContextPropagator.B3), Times.Once());
+            headers.Verify(h => h.GetValues("b3"), Times.Once());
             Assert.Null(result);
         }
 
@@ -175,12 +175,12 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_InvalidFormat()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+            headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { "00000000075bcd15=000000003ade68b1=1" });
 
             var result = B3Propagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(B3SingleHeaderContextPropagator.B3), Times.Once());
+            headers.Verify(h => h.GetValues("b3"), Times.Once());
             Assert.Null(result);
         }
 
@@ -188,12 +188,12 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_EmptyStrings()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+            headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { "                                   " });
 
             var result = B3Propagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(B3SingleHeaderContextPropagator.B3), Times.Once());
+            headers.Verify(h => h.GetValues("b3"), Times.Once());
             Assert.Null(result);
         }
     }

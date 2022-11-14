@@ -34,21 +34,21 @@ namespace Datadog.Trace.Tests.Propagators
 
             W3CPropagator.Inject(context, headers.Object);
 
-            headers.Verify(h => h.Set(W3CTraceContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
             headers.VerifyNoOtherCalls();
 
             // Extract sampling from trace context
             var newContext = new SpanContext(null, new TraceContext(null), null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             W3CPropagator.Inject(newContext, newHeaders.Object);
-            newHeaders.Verify(h => h.Set(W3CTraceContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-00"), Times.Once());
+            newHeaders.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-00"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
 
             var traceContextSamplingField = typeof(TraceContext).GetField("_samplingPriority", BindingFlags.Instance | BindingFlags.NonPublic);
             traceContextSamplingField.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
             newHeaders = new Mock<IHeadersCollection>();
             W3CPropagator.Inject(newContext, newHeaders.Object);
-            newHeaders.Verify(h => h.Set(W3CTraceContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            newHeaders.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
         }
 
@@ -65,21 +65,21 @@ namespace Datadog.Trace.Tests.Propagators
 
             W3CPropagator.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
-            headers.Verify(h => h.Set(W3CTraceContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
             headers.VerifyNoOtherCalls();
 
             // Extract sampling from trace context
             var newContext = new SpanContext(null, new TraceContext(null), null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             W3CPropagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
-            newHeaders.Verify(h => h.Set(W3CTraceContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-00"), Times.Once());
+            newHeaders.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-00"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
 
             var traceContextSamplingField = typeof(TraceContext).GetField("_samplingPriority", BindingFlags.Instance | BindingFlags.NonPublic);
             traceContextSamplingField.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
             newHeaders = new Mock<IHeadersCollection>();
             W3CPropagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
-            newHeaders.Verify(h => h.Set(W3CTraceContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            newHeaders.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
         }
 
@@ -87,12 +87,12 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_IHeadersCollection()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(W3CTraceContextPropagator.TraceParent))
+            headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(W3CTraceContextPropagator.TraceParent), Times.Once());
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
             result.Should()
                   .BeEquivalentTo(
                        new SpanContextMock
@@ -109,12 +109,12 @@ namespace Datadog.Trace.Tests.Propagators
         {
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(W3CTraceContextPropagator.TraceParent))
+            headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
 
             var result = W3CPropagator.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
 
-            headers.Verify(h => h.GetValues(W3CTraceContextPropagator.TraceParent), Times.Once());
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
 
             result.Should()
                   .BeEquivalentTo(
@@ -134,7 +134,7 @@ namespace Datadog.Trace.Tests.Propagators
             var spanId = "00f067aa0ba902b7";
             var expectedTraceParent = $"00-{traceId}-{spanId}-01";
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(W3CTraceContextPropagator.TraceParent))
+            headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { expectedTraceParent });
 
             var result = W3CPropagator.Extract(headers.Object);
@@ -151,23 +151,23 @@ namespace Datadog.Trace.Tests.Propagators
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headersForInjection.Setup(h => h.Set(W3CTraceContextPropagator.TraceParent, expectedTraceParent));
+            headersForInjection.Setup(h => h.Set("traceparent", expectedTraceParent));
 
             W3CPropagator.Inject(result, headersForInjection.Object);
 
-            headersForInjection.Verify(h => h.Set(W3CTraceContextPropagator.TraceParent, expectedTraceParent), Times.Once());
+            headersForInjection.Verify(h => h.Set("traceparent", expectedTraceParent), Times.Once());
         }
 
         [Fact]
         public void Extract_InvalidLength()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(W3CTraceContextPropagator.TraceParent))
+            headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-1234000000000000000000000000075bcd15-000000003ade68b1-01" });
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(W3CTraceContextPropagator.TraceParent), Times.Once());
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
             Assert.Null(result);
         }
 
@@ -175,12 +175,12 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_InvalidFormat()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(W3CTraceContextPropagator.TraceParent))
+            headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00=000000000000000000000000075bcd15=000000003ade68b1=01" });
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(W3CTraceContextPropagator.TraceParent), Times.Once());
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
             Assert.Null(result);
         }
 
@@ -188,12 +188,12 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_InvalidSampledFormat()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(W3CTraceContextPropagator.TraceParent))
+            headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-51" });
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(W3CTraceContextPropagator.TraceParent), Times.Once());
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
             Assert.Null(result);
         }
 
@@ -201,12 +201,12 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_EmptyTraceIdStrings()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(W3CTraceContextPropagator.TraceParent))
+            headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-                                -000000003ade68b1-01" });
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(W3CTraceContextPropagator.TraceParent), Times.Once());
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
             Assert.Null(result);
         }
 
@@ -214,12 +214,12 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_EmptyStrings()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
-            headers.Setup(h => h.GetValues(W3CTraceContextPropagator.TraceParent))
+            headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "       " });
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            headers.Verify(h => h.GetValues(W3CTraceContextPropagator.TraceParent), Times.Once());
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
             Assert.Null(result);
         }
     }
