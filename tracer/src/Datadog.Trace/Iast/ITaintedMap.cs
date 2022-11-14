@@ -14,5 +14,5 @@ internal interface ITaintedMap
 
     public ITaintedObject Get(object obj);
 
-    public List<ITaintedObject> ToList();
+    public List<ITaintedObject> GetListValues();
 }

@@ -211,7 +211,7 @@ internal class DefaultTaintedMap : ITaintedMap
 
     private int IndexObject(object objectStored)
     {
-        return Index(PositiveHashCode(IastUtils.IdentityHashCode(objectStored)));
+        return Index(PositiveHashCode(objectStored.GetHashCode()));
     }
 
     private int PositiveHashCode(int hash)
@@ -225,7 +225,7 @@ internal class DefaultTaintedMap : ITaintedMap
     }
 
     // For testing only
-    public List<ITaintedObject> ToList()
+    public List<ITaintedObject> GetListValues()
     {
         List<ITaintedObject> list = new();
 

@@ -69,7 +69,7 @@ public class DefaultTaintedMapTests
         DefaultTaintedMap map = new();
         var tainted = new TaintedObject(string.Empty, null);
         map.Put(tainted);
-        Assert.Empty(map.ToList());
+        Assert.Empty(map.GetListValues());
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class DefaultTaintedMapTests
         DefaultTaintedMap map = new();
         var tainted = new TaintedObject(null, null);
         map.Put(tainted);
-        Assert.Empty(map.ToList());
+        Assert.Empty(map.GetListValues());
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class DefaultTaintedMapTests
     {
         DefaultTaintedMap map = new();
         map.Put(null);
-        Assert.Empty(map.ToList());
+        Assert.Empty(map.GetListValues());
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class DefaultTaintedMapTests
         Assert.NotNull(map.Get(testObject));
         map.Clear();
         Assert.Null(map.Get(testObject));
-        Assert.Empty(map.ToList());
+        Assert.Empty(map.GetListValues());
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class DefaultTaintedMapTests
         }
 
         map.Purge();
-        Assert.Equal(iterations, map.ToList().Count);
+        Assert.Equal(iterations, map.GetListValues().Count);
         Assert.False(map.IsFlat);
         AssertContained(map, objects);
     }
@@ -170,7 +170,7 @@ public class DefaultTaintedMapTests
         DefaultTaintedMap map = new();
         AssertFlatMode(map, objects);
 
-        foreach (var itemInMap in map.ToList())
+        foreach (var itemInMap in map.GetListValues())
         {
             Assert.Contains((itemInMap as TaintedObject).Value, objects);
         }

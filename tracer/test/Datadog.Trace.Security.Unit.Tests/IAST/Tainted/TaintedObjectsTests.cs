@@ -51,8 +51,7 @@ public class TaintedObjectsTests
     {
         TaintedObjects taintedObjects = new();
         var taintedString = string.Empty;
-        var source = new Source(12, "name", "value");
-        taintedObjects.TaintInputString(taintedString, source);
+        taintedObjects.TaintInputString(taintedString, null);
         var tainted2 = taintedObjects.Get(taintedString);
         Assert.Null(tainted2);
     }
