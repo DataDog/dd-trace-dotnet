@@ -984,8 +984,9 @@ partial class Build
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 // Including this apparently breaks the integration tests when running against with the .NET 7 SDK
-                // on x64, as dotnet test doesn't look in the right folder. No, I don't understand it either 
-                .When(TargetPlatform == MSBuildTargetPlatform.x86, o => o.SetTargetPlatform(TargetPlatform))
+                // as dotnet test doesn't look in the right folder. No, I don't understand it either
+                // .SetTargetPlatform(TargetPlatform)
+                .SetTargetPlatformAnyCPU()
                 .SetTargets("BuildCsharpIntegrationTests")
                 .SetMaxCpuCount(null));
         });
