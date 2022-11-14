@@ -63,7 +63,7 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
-            var extension = "dylib";
+            var lstNativeBinaries = new List<string>();
             foreach (var arch in OsxArchs)
             {
                 DeleteDirectory(NativeBuildDirectory);
@@ -78,8 +78,8 @@ partial class Build
                     arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeLoader}",
                     environmentVariables: envVariables);
 
-                var sourceFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{extension}";
-                var destFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.{extension}";
+                var sourceFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
+                var destFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.dylib";
 
                 // Check the architecture of the build
                 var output = Lipo.Value(arguments: $"-archs {sourceFile}", logOutput: false);
@@ -91,7 +91,16 @@ partial class Build
                 
                 // Copy binary to the temporal destination
                 CopyFile(sourceFile, destFile, FileExistsPolicy.Overwrite);
+                
+                // Add library to the list
+                lstNativeBinaries.Add(destFile);
             }
+
+            // Create universal shared library with all architectures in a single file
+            var destination = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
+            Console.WriteLine($"Creating universal binary for {destination}");
+            var strNativeBinaries = string.Join(' ', lstNativeBinaries);
+            Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
         });
 
     Target PublishNativeLoader => _ => _
@@ -151,20 +160,19 @@ partial class Build
         .After(CompileNativeLoader)
         .Executes(() =>
         {
-            // Copy loader.conf
-            var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
             var dest = MonitoringHomeDirectory / "osx";
-            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-            
-            // Create universal shared library with all archs in a single file
-            var lstNativeBinaries = OsxArchs
-               .Select(arch => NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.dylib");
 
-            var destination = $"./{NativeLoaderProject.Name}.dylib";
-            var destFolder = MonitoringHomeDirectory / "osx";
-            Console.WriteLine($"Creating universal binary for {destination}");
-            EnsureExistingDirectory(destFolder);
-            var strNativeBinaries = string.Join(' ', lstNativeBinaries);
-            Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destFolder}/{destination}");
+            // Copy loader.conf
+            CopyFileToDirectory(
+                NativeLoaderProject.Directory / "bin" / "loader.conf",
+                dest,
+                FileExistsPolicy.Overwrite);
+            
+            // Copy the universal binary to the output folder
+            CopyFileToDirectory(
+                NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib",
+                dest,
+                FileExistsPolicy.Overwrite,
+                true);
         });
 }

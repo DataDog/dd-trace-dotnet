@@ -213,7 +213,7 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
-            var extension = "dylib";
+            var lstNativeBinaries = new List<string>();
             foreach (var arch in OsxArchs)
             {
                 DeleteDirectory(NativeBuildDirectory);
@@ -228,8 +228,8 @@ partial class Build
                     arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeTracer}",
                     environmentVariables: envVariables);
 
-                var sourceFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}";
-                var destFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{arch}.{extension}";
+                var sourceFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib";
+                var destFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{arch}.dylib";
                 
                 // Check section with the manager loader
                 var output = OTool.Value(arguments: $"-s binary dll {sourceFile}", logOutput: false);
@@ -249,7 +249,16 @@ partial class Build
                 
                 // Copy binary to the temporal destination
                 CopyFile(sourceFile, destFile, FileExistsPolicy.Overwrite);
+                
+                // Add library to the list
+                lstNativeBinaries.Add(destFile);
             }
+            
+            // Create universal shared library with all architectures in a single file
+            var destination = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib";
+            Console.WriteLine($"Creating universal binary for {destination}");
+            var strNativeBinaries = string.Join(' ', lstNativeBinaries);
+            Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
         });
 
     Target CompileNativeSrc => _ => _
@@ -512,16 +521,12 @@ partial class Build
         .After(CompileNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
-            // Create universal shared library with all archs in a single file
-            var lstNativeBinaries = OsxArchs
-                                   .Select(arch => NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{arch}.dylib");
-
-            var destination = $"./{NativeTracerProject.Name}.dylib";
-            var destFolder = MonitoringHomeDirectory / "osx";
-            Console.WriteLine($"Creating universal binary for {destination}");
-            EnsureExistingDirectory(destFolder);
-            var strNativeBinaries = string.Join(' ', lstNativeBinaries);
-            Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destFolder}/{destination}");
+            // Copy the universal binary to the output folder
+            CopyFileToDirectory(
+                NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib",
+                MonitoringHomeDirectory / "osx",
+                FileExistsPolicy.Overwrite,
+                true);
         });
 
     Target PublishNativeTracer => _ => _
