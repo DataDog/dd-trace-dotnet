@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Iast;
@@ -113,7 +112,6 @@ public class DefaultTaintedMapTests
         DefaultTaintedMap map = new();
         var testObject = new object();
         var tainted = new TaintedObject(testObject, new Range[] { new Range(1, 2, new Source(12, "name", "value")) });
-        var hash1 = tainted.GetHashCode();
         map.Put(tainted);
         map.Purge();
         var tainted2 = map.Get(testObject);
