@@ -113,6 +113,19 @@ internal class DefaultTaintedMap : ITaintedMap
         {
             Purge();
         }
+
+        // If we flipped to flat mode:
+        // - Always override elements ignoring chaining.
+        // - Stop updating the estimated size.
+
+        _map[index] = entry;
+
+        if ((entry.PositiveHashCode & PurgeMask) == 0)
+        {
+            Purge();
+        }
+
+        Interlocked.Increment(ref _entriesCount);
     }
 
     /// <summary>
