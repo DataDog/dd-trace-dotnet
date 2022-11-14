@@ -30,19 +30,16 @@ namespace Datadog.Trace.Propagators
 
             if (samplingPriority != null)
             {
-#pragma warning disable SA1118 // Parameter should not span multiple lines
-                carrierSetter.Set(
-                    carrier,
-                    HttpHeaderNames.SamplingPriority,
-                    samplingPriority.Value switch
-                    {
-                        -1 => "-1",
-                        0 => "0",
-                        1 => "1",
-                        2 => "2",
-                        _ => samplingPriority.Value.ToString(invariantCulture)
-                    });
-#pragma warning restore SA1118 // Parameter should not span multiple lines
+                var samplingPriorityString = samplingPriority.Value switch
+                                             {
+                                                 -1 => "-1",
+                                                 0 => "0",
+                                                 1 => "1",
+                                                 2 => "2",
+                                                 _ => samplingPriority.Value.ToString(invariantCulture)
+                                             };
+
+                carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriorityString);
             }
 
             var propagatedTraceTags = context.TraceContext?.Tags.ToPropagationHeader() ?? context.PropagatedTags;
