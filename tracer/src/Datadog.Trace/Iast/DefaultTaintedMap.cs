@@ -20,9 +20,9 @@ internal class DefaultTaintedMap : ITaintedMap
     // Bitmask to convert hashes to positive integers.
     public const int PositiveMask = int.MaxValue;
     // Periodicity of table purges, as number of put operations. It MUST be a power of two.
-    private static int purgeCount = 1 << 6;
+    private const int PurgeCount = 1 << 6;
     // Bitmask for fast modulo with PURGE_COUNT.
-    private static int purgeMask = purgeCount - 1;
+    private const int PurgeMask = PurgeCount - 1;
 
     // Map containing the tainted objects
     private ConcurrentDictionary<int, ITaintedObject> _map;
@@ -33,28 +33,17 @@ internal class DefaultTaintedMap : ITaintedMap
     private bool _isPurging = false;
     private object _purgingLock = new();
 
-    // Estimated number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
-    private int _estimatedSize;
+    // Number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
+    private int _entriesCount;
 
     /* Number of elements in the hash table before switching to flat mode. */
     private int _flatModeThreshold;
 
     public DefaultTaintedMap()
-        : this(DefaultCapacity, DefaultFlatModeThresold)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultTaintedMap"/> class.
-    /// </summary>
-    /// <param name="capacity">Capacity of the internal map. It must be a power of 2.</param>
-    /// <param name="flatModeThreshold">Limit of entries before switching to flat mode.</param>
-    /// <returns>The retrieved tainted object or null</returns>
-    private DefaultTaintedMap(int capacity, int flatModeThreshold)
     {
         _map = new ConcurrentDictionary<int, ITaintedObject>();
-        _lengthMask = capacity - 1;
-        _flatModeThreshold = flatModeThreshold;
+        _lengthMask = DefaultCapacity - 1;
+        _flatModeThreshold = DefaultFlatModeThresold;
     }
 
     /// <summary>
@@ -102,34 +91,26 @@ internal class DefaultTaintedMap : ITaintedMap
 
         var index = Index(entry.PositiveHashCode);
 
-        if (IsFlat)
-        {
-            // If we flipped to flat mode:
-            // - Always override elements ignoring chaining.
-            // - Stop updating the estimated size.
-
-            _map[index] = entry;
-            if ((entry.PositiveHashCode & purgeMask) == 0)
-            {
-                Purge();
-            }
-        }
-        else
+        if (!IsFlat)
         {
             // By default, add the new entry to the head of the chain.
             // We do not control duplicate entries.
             _map.TryGetValue(index, out var existingValue);
             entry.Next = existingValue;
-            _map[index] = entry;
-            if ((entry.PositiveHashCode & purgeMask) == 0)
-            {
-                // To mitigate the cost of maintaining a thread safe counter, we only update the size every
-                // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
-                // if it was a random number generator.
-                Interlocked.Add(ref _estimatedSize, purgeCount);
-                Purge();
-            }
         }
+
+        // If we flipped to flat mode:
+        // - Always override elements ignoring chaining.
+        // - Stop updating the estimated size.
+
+        _map[index] = entry;
+
+        if ((entry.PositiveHashCode & PurgeMask) == 0)
+        {
+            Purge();
+        }
+
+        Interlocked.Increment(ref _entriesCount);
     }
 
     /// <summary>
@@ -156,7 +137,7 @@ internal class DefaultTaintedMap : ITaintedMap
 
             if (!IsFlat)
             {
-                if (Interlocked.Add(ref _estimatedSize, -removedCount) > _flatModeThreshold)
+                if (Interlocked.Add(ref _entriesCount, -removedCount) > _flatModeThreshold)
                 {
                     IsFlat = true;
                 }
@@ -226,7 +207,7 @@ internal class DefaultTaintedMap : ITaintedMap
     public void Clear()
     {
         IsFlat = false;
-        Interlocked.Exchange(ref _estimatedSize, 0);
+        Interlocked.Exchange(ref _entriesCount, 0);
         _map.Clear();
     }
 
