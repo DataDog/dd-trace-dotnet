@@ -11,7 +11,6 @@ namespace Datadog.Trace.Iast;
 
 internal class IastRequestContext
 {
-    private static int vulnerabilitiesPerRequest = Iast.Instance.Settings.VulnerabilitiesPerRequest;
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
 
@@ -27,7 +26,7 @@ internal class IastRequestContext
 
     internal bool AddVulnerabilitiesAllowed()
     {
-        return ((_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < vulnerabilitiesPerRequest);
+        return ((_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < Iast.Instance.Settings.VulnerabilitiesPerRequest);
     }
 
     internal void AddVulnerability(Vulnerability vulnerability)
