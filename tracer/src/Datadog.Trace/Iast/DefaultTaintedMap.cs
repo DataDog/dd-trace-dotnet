@@ -124,8 +124,6 @@ internal class DefaultTaintedMap : ITaintedMap
         {
             Purge();
         }
-
-        Interlocked.Increment(ref _entriesCount);
     }
 
     /// <summary>
