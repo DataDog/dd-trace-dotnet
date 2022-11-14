@@ -25,7 +25,11 @@ public class DeduplicationTests : TestHelper
         SetServiceVersion("1.0.0");
     }
 
-    [SkippableTheory]
+#if NET7_0_OR_GREATER
+    [SkippableTheory(Skip = "Flaky in .NET 7")]
+#else
+    [SkippableTheory(Skip = "Flaky in .NET 7")]
+#endif
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [InlineData(false)]
