@@ -100,7 +100,7 @@ public class DefaultTaintedMapTests
         DefaultTaintedMap map = new();
         var tainted = new TaintedObject(null, null);
         map.Put(tainted);
-        Assert.Empty(map.ToList());
+        Assert.Empty(map.GetListValues());
     }
 
     [Fact]
