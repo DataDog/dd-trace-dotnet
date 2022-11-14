@@ -47,6 +47,8 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
             helper.Process.WaitForExit();
             helper.Drain();
 
+            using var scope = StartAssertionScope(helper);
+
             helper.Process.ExitCode.Should().Be(0);
 
             var environmentVariables = new Dictionary<string, string>();
@@ -81,6 +83,7 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
             helper.Process.WaitForExit();
             helper.Drain();
 
+            using var scope = StartAssertionScope(helper);
             helper.Process.ExitCode.Should().Be(0);
             helper.StandardOutput.Should().NotContainEquivalentOf("error");
             helper.ErrorOutput.Should().BeEmpty();
