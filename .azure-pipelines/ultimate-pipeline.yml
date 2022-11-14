@@ -563,12 +563,6 @@ stages:
     - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
 
-    - script: $([[ $(otool -s binary dll $(monitoringHome)/osx-x64/Datadog.Tracer.Native.dylib | wc -c) -gt 50000 ]] && [[ $(otool -s binary pdb $(monitoringHome)/osx-x64/Datadog.Tracer.Native.dylib | wc -c) -gt 40000 ]])
-      displayName: Checking managed loader in the x64 native binary
-
-    - script: $([[ $(otool -s binary dll $(monitoringHome)/osx-arm64/Datadog.Tracer.Native.dylib | wc -c) -gt 50000 ]] && [[ $(otool -s binary pdb $(monitoringHome)/osx-arm64/Datadog.Tracer.Native.dylib | wc -c) -gt 40000 ]])
-      displayName: Checking managed loader in the arm64 native binary
-
     - publish: $(monitoringHome)
       displayName: Uploading macos profiler artifact
       artifact: macos-tracer-home
