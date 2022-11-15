@@ -1,4 +1,4 @@
-﻿// <copyright file="NewsController.cs" company="Datadog">
+// <copyright file="NewsController.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ namespace BuggyBits.Controllers
     public class NewsController : Controller
     {
 #pragma warning disable IDE0052 // Remove unread private members | this field is used to better show memory leaks
-        private readonly int[] bits = new int[100000];
+        private readonly int[] bits = new int[10000];
 #pragma warning restore IDE0052
         private IMemoryCache cache;
 

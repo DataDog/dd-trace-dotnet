@@ -86,6 +86,9 @@ namespace BuggyBits
 
                 case Scenario.FormatExceptions:
                     return $"{rootUrl}/Products/Sales";
+
+                case Scenario.MemoryLeak:
+                    return $"{rootUrl}/News";
             }
         }
 
