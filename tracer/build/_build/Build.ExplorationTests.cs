@@ -212,22 +212,37 @@ partial class Build
             return;
         }
 
-        DotNetTest(
-            x =>
+        if (Framework == null)
+        {
+            foreach (var targetFramework in testDescription.SupportedFrameworks)
             {
-                x = x
-                   .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, Framework, BuildConfiguration))
-                   .EnableNoRestore()
-                   .EnableNoBuild()
-                   .SetConfiguration(BuildConfiguration)
-                   .When(Framework != null, settings => settings.SetFramework(Framework))
-                   .SetProcessEnvironmentVariables(envVariables)
-                   .SetIgnoreFilter(testDescription.TestsToIgnore)
-                   .WithMemoryDumpAfter(100)
-                    ;
+                Test(targetFramework);
+            }
+        }
+        else
+        {
+            Test(Framework);
+        }
 
-                return x;
-            });
+        void Test(TargetFramework targetFramework)
+        {
+            DotNetTest(
+                x =>
+                {
+                    x = x
+                       .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, targetFramework, BuildConfiguration))
+                       .EnableNoRestore()
+                       .EnableNoBuild()
+                       .SetConfiguration(BuildConfiguration)
+                       .SetFramework(targetFramework)
+                       .SetProcessEnvironmentVariables(envVariables)
+                       .SetIgnoreFilter(testDescription.TestsToIgnore)
+                       .WithMemoryDumpAfter(100)
+                        ;
+
+                    return x;
+                });
+        }
     }
 
     void RunExplorationTestAssertions()
