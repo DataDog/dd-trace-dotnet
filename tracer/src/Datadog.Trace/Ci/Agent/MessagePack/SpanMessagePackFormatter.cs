@@ -8,7 +8,6 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -19,7 +18,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 {
     internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanMessagePackFormatter));
         public static readonly IMessagePackFormatter<Span> Instance = new SpanMessagePackFormatter();
 
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
