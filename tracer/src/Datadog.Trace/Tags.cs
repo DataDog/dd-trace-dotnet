@@ -11,12 +11,16 @@ namespace Datadog.Trace
     public static class Tags
     {
         /// <summary>
-        /// The environment of the profiled service.
+        /// The environment of the instrumented service. It's value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.Environment"/>.
         /// </summary>
         public const string Env = "env";
 
         /// <summary>
-        /// The version of the profiled service.
+        /// The version of the instrumented service. It's value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.ServiceVersion"/>.
         /// </summary>
         public const string Version = "version";
 
@@ -128,7 +132,8 @@ namespace Datadog.Trace
         public const string ManualDrop = "manual.drop";
 
         /// <summary>
-        /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
+        /// Language tag, applied to all spans that are .NET runtime (e.g. ASP.NET).
+        /// This tag is added during MessagePack serialization. It's value is always "dotnet".
         /// </summary>
         public const string Language = "language";
 
@@ -401,7 +406,8 @@ namespace Datadog.Trace
         internal const string AzureFunctionBindingSource = "aas.function.binding";
 
         /// <summary>
-        /// Configures the origin of the trace
+        /// Configures the origin of the trace. This tag is added during MessagePack serialization
+        /// using the value from <see cref="TraceContext.Origin"/>.
         /// </summary>
         internal const string Origin = "_dd.origin";
 
@@ -522,30 +528,6 @@ namespace Datadog.Trace
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
 
         internal const string TagPropagationError = "_dd.propagation_error";
-
-        /// <summary>
-        /// Contains tags that are associated with Single Span Sampling.
-        /// </summary>
-        internal static class SingleSpanSampling
-        {
-            /// <summary>
-            /// Contains the <see cref="Sampling.SamplingMechanism"/> by which the individual span was sampled.
-            /// </summary>
-            internal const string SamplingMechanism = "_dd.span_sampling.mechanism";
-
-            /// <summary>
-            /// Contains the configured sampling probability for the <see cref="Sampling.ISpanSamplingRule"/> applied.
-            /// </summary>
-            /// <seealso cref="Sampling.ISpanSamplingRule.SamplingRate"/>
-            internal const string RuleRate = "_dd.span_sampling.rule_rate";
-
-            /// <summary>
-            /// Contains the configured limit of maximum number of sampled spans for the <see cref="Sampling.ISpanSamplingRule"/> applied.
-            /// <para>If there is no configured limit for the matched rule, this tag is omitted.</para>
-            /// </summary>
-            /// <seealso cref="Sampling.ISpanSamplingRule.MaxPerSecond"/>
-            internal const string MaxPerSecond = "_dd.span_sampling.max_per_second";
-        }
 
         internal static class User
         {

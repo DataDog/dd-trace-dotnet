@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public XUnitTests(ITestOutputHelper output)
             : base("XUnitTests", output)
         {
+            SetServiceName("xunit-tests");
             SetServiceVersion("1.0.0");
         }
 

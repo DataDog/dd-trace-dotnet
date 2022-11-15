@@ -55,8 +55,8 @@ public sealed class TestSession
 
         span.Type = SpanTypes.TestSession;
         span.ResourceName = $"{span.OperationName}.{command}";
-        span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
-        span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
+        span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep);
+        span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
 
         tags.SessionId = span.SpanId;
 

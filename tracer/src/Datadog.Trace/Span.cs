@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Security.Cryptography;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -162,14 +163,50 @@ namespace Datadog.Trace
                 return this;
             }
 
-            // some tags have special meaning
+            static void LogMissingTraceContext(string key, string value)
+            {
+                Log.Warning("Ignoring ISpan.SetTag({key}, {value}) because the span is not associated to a TraceContext.", key, value);
+            }
+
+            // since we don't expose a public API for setting trace-level attributes yet,
+            // allow setting them through any span in the trace.
+            // also, some "pseudo-tags" have special meaning, such as "manual.keep" and "_dd.measured".
             switch (key)
             {
+                case Trace.Tags.Env:
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
+                    Context.TraceContext.Environment = value;
+                    break;
+                case Trace.Tags.Version:
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
+                    Context.TraceContext.ServiceVersion = value;
+                    break;
                 case Trace.Tags.Origin:
-                    Context.Origin = value;
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
+                    Context.TraceContext.Origin = value;
                     break;
                 case Trace.Tags.SamplingPriority:
-                    // allow setting the sampling priority via a tag
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
                     // note: this tag allows numeric or string representations of the enum,
                     // (e.g. "AutoKeep" or "1"), but try parsing as `int` first since it's much faster
                     if (int.TryParse(value, out var samplingPriorityInt32))
@@ -183,6 +220,12 @@ namespace Datadog.Trace
 
                     break;
                 case Trace.Tags.ManualKeep:
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserKeep priority
@@ -191,6 +234,12 @@ namespace Datadog.Trace
 
                     break;
                 case Trace.Tags.ManualDrop:
+                    if (Context.TraceContext == null)
+                    {
+                        LogMissingTraceContext(key, value);
+                        return this;
+                    }
+
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserReject priority
@@ -313,18 +362,24 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the value (or default/null if the key is not a valid tag) of a tag with the key value passed
+        /// Gets the value of the specified tag.
         /// </summary>
         /// <param name="key">The tag's key</param>
-        /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
+        /// <returns>The value for the tag with the specified key, or <c>null</c> if the tag does not exist.</returns>
         internal string GetTag(string key)
         {
+            // since we don't expose a public API for getting trace-level attributes yet,
+            // allow retrieval through any span in the trace
             switch (key)
             {
                 case Trace.Tags.SamplingPriority:
-                    return Context.TraceContext?.SamplingPriority.ToString();
+                    return Context.TraceContext?.SamplingPriority?.ToString();
+                case Trace.Tags.Env:
+                    return Context.TraceContext?.Environment;
+                case Trace.Tags.Version:
+                    return Context.TraceContext?.ServiceVersion;
                 case Trace.Tags.Origin:
-                    return Context.Origin;
+                    return Context.TraceContext?.Origin;
                 default:
                     return Tags.GetTag(key);
             }

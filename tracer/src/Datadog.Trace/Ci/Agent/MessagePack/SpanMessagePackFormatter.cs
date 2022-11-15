@@ -36,6 +36,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
         private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
+
+        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
+
+        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
+
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private readonly byte[] _originValueBytes = StringEncoding.UTF8.GetBytes(TestTags.CIAppTestOriginName);
 
@@ -191,6 +196,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private int WriteTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
         {
             int originalOffset = offset;
+            var traceContext = span.Context.TraceContext;
 
             // Start of "meta" dictionary. Do not add any string tags before this line.
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaBytes);
@@ -201,15 +207,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             var countOffset = offset;
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
-            // add "language=dotnet" tag to all spans, except those that
-            // represents a downstream service or external dependency
-            if (tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
-            }
-
             // Write span tags
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
             tags.EnumerateTags(ref tagWriter);
@@ -217,10 +214,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            if (span.IsRootSpan && span.Context.TraceContext != null)
+            // TODO: for each trace tag, determine if it should be added to the local root,
+            // to the first span in the chunk, or to all orphan spans.
+            // For now, we add them to the local root which is correct in most cases.
+            if (span.IsRootSpan && traceContext?.Tags?.ToArray() is { Length: > 0 } traceTags)
             {
-                // write trace-level string tags
-                var traceTags = span.Context.TraceContext.Tags.ToArray();
                 count += traceTags.Length;
 
                 foreach (var tag in traceTags)
@@ -233,6 +231,38 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             count++;
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originValueBytes);
+
+            // add "env" to all spans
+            var env = traceContext?.Environment;
+
+            if (!string.IsNullOrWhiteSpace(env))
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, env);
+            }
+
+            // add "language=dotnet" tag to all spans, except those that
+            // represents a downstream service or external dependency
+            if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
+            }
+
+            // add "version" tags to all spans whose service name is the default service name
+            if (string.Equals(span.Context.ServiceName, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            {
+                var version = traceContext?.ServiceVersion;
+
+                if (!string.IsNullOrWhiteSpace(version))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, version);
+                }
+            }
 
             if (count > 0)
             {

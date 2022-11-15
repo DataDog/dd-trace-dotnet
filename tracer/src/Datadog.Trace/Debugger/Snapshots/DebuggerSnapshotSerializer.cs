@@ -211,8 +211,6 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static void WriteFieldsInternal(object source, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, IEnumerable<MemberInfo> fields, string fieldsObjectName)
         {
-            // According the the debugger snapshot json structure RFC, the "this" value, unlike all other complex types,
-            // should NOT contain a "fields" property, but rather the fields should be serialized directly under the "this" object.
             int index = 0;
             foreach (var field in fields)
             {

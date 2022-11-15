@@ -33,9 +33,9 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public void SpanSampler_ShouldNotAddTags_OnSpanClose_ForKeptTrace()
         {
-            var expectedRuleRate = "1";
-            var expectedMaxPerSecond = "1000";
-            var expectedSamplingMechanism = "8";
+            var expectedRuleRate = 1.0f;
+            var expectedMaxPerSecond = 1000.0f;
+            var expectedSamplingMechanism = 8;
 
             using (var scope = _tracer.StartActive("root"))
             {
@@ -46,17 +46,17 @@ namespace Datadog.Trace.IntegrationTests
             trace[0].Should().HaveCount(1);
 
             var span = trace[0].Single();
-            span.Tags.Should().NotContain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
-            span.Tags.Should().NotContain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
-            span.Tags.Should().NotContain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+            span.Metrics.Should().NotContain(Metrics.SingleSpanSampling.RuleRate, expectedRuleRate);
+            span.Metrics.Should().NotContain(Metrics.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+            span.Metrics.Should().NotContain(Metrics.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
         }
 
         [Fact]
         public void SpanSampler_ShouldTag_OnSpanFinish()
         {
-            var expectedRuleRate = "1";
-            var expectedMaxPerSecond = "1000";
-            var expectedSamplingMechanism = "8";
+            var expectedRuleRate = 1.0f;
+            var expectedMaxPerSecond = 1000.0f;
+            var expectedSamplingMechanism = 8;
 
             using (var scope = _tracer.StartActive("root"))
             {
@@ -69,17 +69,17 @@ namespace Datadog.Trace.IntegrationTests
             trace[0].Should().HaveCount(1);
 
             var span = trace[0].Single();
-            span.Tags.Should().Contain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
-            span.Tags.Should().Contain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
-            span.Tags.Should().Contain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+            span.Metrics.Should().Contain(Metrics.SingleSpanSampling.RuleRate, expectedRuleRate);
+            span.Metrics.Should().Contain(Metrics.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+            span.Metrics.Should().Contain(Metrics.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
         }
 
         [Fact]
         public void SpanSampler_ShouldTagMultiple_OnSpanFinish()
         {
-            var expectedRuleRate = "1";
-            var expectedMaxPerSecond = "1000";
-            var expectedSamplingMechanism = "8";
+            var expectedRuleRate = 1.0f;
+            var expectedMaxPerSecond = 1000.0f;
+            var expectedSamplingMechanism = 8;
 
             using (var rootScope = _tracer.StartActive("root"))
             {
@@ -103,27 +103,27 @@ namespace Datadog.Trace.IntegrationTests
             rootSpan.Should().NotBeNull();
 
             // assert that root span has the span sampling tags
-            rootSpan.Tags.Should().Contain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
-            rootSpan.Tags.Should().Contain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
-            rootSpan.Tags.Should().Contain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+            rootSpan.Metrics.Should().Contain(Metrics.SingleSpanSampling.RuleRate, expectedRuleRate);
+            rootSpan.Metrics.Should().Contain(Metrics.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+            rootSpan.Metrics.Should().Contain(Metrics.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
 
             // assert child spans have span sampling tags
             var childSpans = traces[0].Where(s => s.ParentId is not null and not 0);
 
             foreach (var span in childSpans)
             {
-                span.Tags.Should().Contain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
-                span.Tags.Should().Contain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
-                span.Tags.Should().Contain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+                span.Metrics.Should().Contain(Metrics.SingleSpanSampling.RuleRate, expectedRuleRate);
+                span.Metrics.Should().Contain(Metrics.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+                span.Metrics.Should().Contain(Metrics.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
             }
         }
 
         [Fact]
         public void SpanSampler_ShouldTagMultiple_OnSpanFinish_WhenSamplingPriorityChanges()
         {
-            var expectedRuleRate = "1";
-            var expectedMaxPerSecond = "1000";
-            var expectedSamplingMechanism = "8";
+            var expectedRuleRate = 1.0f;
+            var expectedMaxPerSecond = 1000.0f;
+            var expectedSamplingMechanism = 8;
 
             using (var rootScope = _tracer.StartActive("root"))
             {
@@ -150,27 +150,27 @@ namespace Datadog.Trace.IntegrationTests
             rootSpan.Should().NotBeNull();
 
             // assert that root span has the span sampling tags
-            rootSpan.Tags.Should().Contain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
-            rootSpan.Tags.Should().Contain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
-            rootSpan.Tags.Should().Contain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+            rootSpan.Metrics.Should().Contain(Metrics.SingleSpanSampling.RuleRate, expectedRuleRate);
+            rootSpan.Metrics.Should().Contain(Metrics.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+            rootSpan.Metrics.Should().Contain(Metrics.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
 
             // assert child spans have span sampling tags
             var childSpans = traces[0].Where(s => s.ParentId is not null and not 0);
 
             foreach (var span in childSpans)
             {
-                span.Tags.Should().Contain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
-                span.Tags.Should().Contain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
-                span.Tags.Should().Contain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+                span.Metrics.Should().Contain(Metrics.SingleSpanSampling.RuleRate, expectedRuleRate);
+                span.Metrics.Should().Contain(Metrics.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+                span.Metrics.Should().Contain(Metrics.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
             }
         }
 
         [Fact]
         public void SpanSampler_ShouldNotTag_WhenSpansAreKept()
         {
-            var ruleRate = "1";
-            var maxPerSecond = "1000";
-            var samplingMechanism = "8";
+            var expectedRuleRate = 1.0f;
+            var expectedMaxPerSecond = 1000.0f;
+            var expectedSamplingMechanism = 8;
 
             using (var rootScope = _tracer.StartActive("root"))
             {
@@ -191,27 +191,27 @@ namespace Datadog.Trace.IntegrationTests
             rootSpan.Should().NotBeNull();
 
             // assert that root span has the span sampling tags
-            rootSpan.Tags.Should().NotContain(Tags.SingleSpanSampling.RuleRate, ruleRate);
-            rootSpan.Tags.Should().NotContain(Tags.SingleSpanSampling.MaxPerSecond, maxPerSecond);
-            rootSpan.Tags.Should().NotContain(Tags.SingleSpanSampling.SamplingMechanism, samplingMechanism);
+            rootSpan.Metrics.Should().NotContain(Metrics.SingleSpanSampling.RuleRate, expectedRuleRate);
+            rootSpan.Metrics.Should().NotContain(Metrics.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+            rootSpan.Metrics.Should().NotContain(Metrics.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
 
             // assert child spans have span sampling tags
             var childSpans = traces[0].Where(s => s.ParentId is not null and not 0);
 
             foreach (var span in childSpans)
             {
-                span.Tags.Should().NotContain(Tags.SingleSpanSampling.RuleRate, ruleRate);
-                span.Tags.Should().NotContain(Tags.SingleSpanSampling.MaxPerSecond, maxPerSecond);
-                span.Tags.Should().NotContain(Tags.SingleSpanSampling.SamplingMechanism, samplingMechanism);
+                span.Metrics.Should().NotContain(Metrics.SingleSpanSampling.RuleRate, expectedRuleRate);
+                span.Metrics.Should().NotContain(Metrics.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+                span.Metrics.Should().NotContain(Metrics.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
             }
         }
 
         [Fact]
         public void SpanSampler_ShouldNotTag_WhenSamplingPriority_IsNull()
         {
-            var expectedRuleRate = "1";
-            var expectedMaxPerSecond = "1000";
-            var expectedSamplingMechanism = "8";
+            var expectedRuleRate = 1.0f;
+            var expectedMaxPerSecond = 1000.0f;
+            var expectedSamplingMechanism = 8;
 
             var spanContext = new SpanContext(4, 5, samplingPriority: null, serviceName: "serviceName");
             var span = new Span(spanContext, DateTimeOffset.Now) { OperationName = "test" };
@@ -223,9 +223,9 @@ namespace Datadog.Trace.IntegrationTests
             trace[0].Should().HaveCount(1);
 
             var writtenSpan = trace[0].Single();
-            writtenSpan.Tags.Should().NotContain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
-            writtenSpan.Tags.Should().NotContain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
-            writtenSpan.Tags.Should().NotContain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+            writtenSpan.Metrics.Should().NotContain(Metrics.SingleSpanSampling.RuleRate, expectedRuleRate);
+            writtenSpan.Metrics.Should().NotContain(Metrics.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+            writtenSpan.Metrics.Should().NotContain(Metrics.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
         }
     }
 }
