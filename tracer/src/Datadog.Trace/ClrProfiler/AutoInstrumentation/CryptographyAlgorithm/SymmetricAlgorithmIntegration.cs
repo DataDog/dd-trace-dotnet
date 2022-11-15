@@ -23,10 +23,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
     MethodName = ".ctor",
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "1.0.0",
+    MaximumVersion = "6.*.*",
+    InstrumentationCategory = InstrumentationCategory.Iast,
+    IntegrationName = nameof(Configuration.IntegrationId.SymmetricAlgorithm))]
+[InstrumentMethod(
+    AssemblyNames = new[] { "System.Security.Cryptography" },
+    TypeNames = new[] { "System.Security.Cryptography.SymmetricAlgorithm" },
+    ParameterTypeNames = new string[] { },
+    MethodName = ".ctor",
+    ReturnTypeName = ClrNames.Void,
+    MinimumVersion = "7.0.0",
     MaximumVersion = "7.*.*",
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.SymmetricAlgorithm))]
-
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class SymmetricAlgorithmIntegration
