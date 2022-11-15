@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -43,16 +44,19 @@ public class WeakHashingTests : TestHelper
         SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
 
 #if NET5_0_OR_GREATER
-        const int expectedSpanCount = 28;
+        const int expectedSpanCount = 4 * 8;
         var filename = "WeakHashingTests.SubmitsTraces.Net50.60";
 #else
-        const int expectedSpanCount = 21;
+        const int expectedSpanCount = 3 * 8;
         var filename = "WeakHashingTests.SubmitsTraces";
 #endif
 
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = RunSampleAndWaitForExit(agent);
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
+
+        using var s = new AssertionScope();
+        spans.Should().HaveCount(expectedSpanCount);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
