@@ -221,7 +221,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add "_dd.origin" tag to all spans
-            var originRawBytes = MessagePackStringCache.GetEnvironmentBytes(model.TraceChunk.Origin);
+            var originRawBytes = MessagePackStringCache.GetOriginBytes(model.TraceChunk.Origin);
 
             if (originRawBytes is not null)
             {
@@ -252,7 +252,7 @@ namespace Datadog.Trace.Agent.MessagePack
             // add "version" tags to all spans whose service name is the default service name
             if (string.Equals(span.Context.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
-                var versionRawBytes = MessagePackStringCache.GetEnvironmentBytes(model.TraceChunk.ServiceVersion);
+                var versionRawBytes = MessagePackStringCache.GetVersionBytes(model.TraceChunk.ServiceVersion);
 
                 if (versionRawBytes is not null)
                 {
