@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -18,6 +19,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 {
     internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanMessagePackFormatter));
         public static readonly IMessagePackFormatter<Span> Instance = new SpanMessagePackFormatter();
 
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
@@ -252,6 +254,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             }
 
             // add "version" tags to all spans whose service name is the default service name
+            Log.Information(
+                "[ServiceName={sName}, DefaultServiceName={defSName}, ServiceVersion={version}]",
+                span.Context.ServiceName,
+                traceContext?.Tracer.DefaultServiceName,
+                traceContext?.ServiceVersion);
             if (string.Equals(span.Context.ServiceName, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
                 var version = traceContext?.ServiceVersion;

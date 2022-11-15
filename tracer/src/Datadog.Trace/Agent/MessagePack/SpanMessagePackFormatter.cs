@@ -6,6 +6,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -16,6 +17,7 @@ namespace Datadog.Trace.Agent.MessagePack
 {
     internal class SpanMessagePackFormatter : IMessagePackFormatter<TraceChunkModel>
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanMessagePackFormatter));
         public static readonly SpanMessagePackFormatter Instance = new();
 
         // Cache the UTF-8 bytes for string constants (like tag names)
@@ -250,6 +252,11 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add "version" tags to all spans whose service name is the default service name
+            Log.Information(
+                "[ServiceName={sName}, DefaultServiceName={defSName}, ServiceVersion={version}]",
+                span.Context.ServiceName,
+                model.TraceChunk.DefaultServiceName,
+                model.TraceChunk.ServiceVersion);
             if (string.Equals(span.Context.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
                 var versionRawBytes = MessagePackStringCache.GetEnvironmentBytes(model.TraceChunk.ServiceVersion);
