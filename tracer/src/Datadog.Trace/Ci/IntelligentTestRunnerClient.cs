@@ -518,8 +518,8 @@ internal class IntelligentTestRunnerClient
     {
         Log.Debug("ITR: Packing and sending delta of commits and tree objects...");
 
-        var packFiles = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsToExclude).ConfigureAwait(false);
-        if (packFiles.Length == 0)
+        var packFilesObject = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsToExclude).ConfigureAwait(false);
+        if (packFilesObject is null || packFilesObject.Files.Length == 0)
         {
             return 0;
         }
@@ -530,7 +530,7 @@ internal class IntelligentTestRunnerClient
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
         long totalUploadSize = 0;
-        foreach (var packFile in packFiles)
+        foreach (var packFile in packFilesObject.Files)
         {
             // Send PackFile content
             Log.Information("ITR: Sending {packFile}", packFile);
@@ -544,6 +544,19 @@ internal class IntelligentTestRunnerClient
             catch (Exception ex)
             {
                 Log.Warning(ex, "ITR: Error deleting pack file: '{packFile}'", packFile);
+            }
+        }
+
+        // Delete temporary folder after the upload
+        if (!string.IsNullOrEmpty(packFilesObject.TemporaryFolder))
+        {
+            try
+            {
+                Directory.Delete(packFilesObject.TemporaryFolder, true);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "ITR: Error deleting temporary folder: '{temporaryFolder}'", packFilesObject.TemporaryFolder);
             }
         }
 
@@ -593,10 +606,11 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private async Task<string[]> GetObjectsPackFileFromWorkingDirectoryAsync(string[]? commitsToExclude)
+    private async Task<ObjectPackFilesResult> GetObjectsPackFileFromWorkingDirectoryAsync(string[]? commitsToExclude)
     {
         Log.Debug("ITR: Getting objects...");
         commitsToExclude ??= Array.Empty<string>();
+        var temporaryFolder = string.Empty;
         var temporaryPath = Path.GetTempFileName();
 
         var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c));
@@ -605,7 +619,7 @@ internal class IntelligentTestRunnerClient
         {
             // If not objects has been returned we skip the pack + upload.
             Log.Debug("ITR: No objects were returned from the git rev-list command.");
-            return Array.Empty<string>();
+            return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
         }
 
         Log.Debug("ITR: Packing objects...");
@@ -614,7 +628,7 @@ internal class IntelligentTestRunnerClient
         if (packObjectsResultCommand is null)
         {
             Log.Warning("ITR: 'git pack-objects...' command is null");
-            return Array.Empty<string>();
+            return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
         }
 
         if (packObjectsResultCommand.ExitCode != 0 && packObjectsResultCommand.Error.IndexOf("Cross-device", StringComparison.OrdinalIgnoreCase) != -1)
@@ -623,7 +637,7 @@ internal class IntelligentTestRunnerClient
             // to handle this edge case, we create a temporal folder inside the current folder.
 
             Log.Warning("ITR: 'git pack-objects...' returned a cross-device error, retrying using a local temporal folder.");
-            var temporaryFolder = Path.Combine(Environment.CurrentDirectory, ".git_tmp");
+            temporaryFolder = Path.Combine(Environment.CurrentDirectory, ".git_tmp");
             if (!Directory.Exists(temporaryFolder))
             {
                 Directory.CreateDirectory(temporaryFolder);
@@ -635,7 +649,7 @@ internal class IntelligentTestRunnerClient
             if (packObjectsResultCommand is null)
             {
                 Log.Warning("ITR: 'git pack-objects...' command is null");
-                return Array.Empty<string>();
+                return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
             }
 
             if (packObjectsResultCommand.ExitCode != 0)
@@ -663,7 +677,7 @@ internal class IntelligentTestRunnerClient
             }
         }
 
-        return lstFiles.ToArray();
+        return new ObjectPackFilesResult(lstFiles.ToArray(), temporaryFolder);
     }
 
     private async Task<T> WithRetries<T, TState>(Func<TState, bool, Task<T>> sendDelegate, TState state, int numOfRetries)
@@ -878,5 +892,18 @@ internal class IntelligentTestRunnerClient
 
         [JsonProperty("tests_skipping")]
         public readonly bool? TestsSkipping;
+    }
+
+    private class ObjectPackFilesResult
+    {
+        public ObjectPackFilesResult(string[] files, string temporaryFolder)
+        {
+            Files = files;
+            TemporaryFolder = temporaryFolder;
+        }
+
+        public string[] Files { get; }
+
+        public string TemporaryFolder { get; }
     }
 }
