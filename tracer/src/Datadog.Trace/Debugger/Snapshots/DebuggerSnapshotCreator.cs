@@ -352,7 +352,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             // "locals" should always come after "arguments"
-            if (currentParent == "locals" && newParent == "arguments")
+            if ((currentParent == "locals" && newParent == "arguments") ||
+                (currentParent == "arguments" && newParent == "locals"))
             {
                 // We need to close the previous node first.
                 _jsonWriter.WriteEndObject();

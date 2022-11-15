@@ -105,12 +105,19 @@ partial class Build
                     ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                     : new[] { MSBuildTargetPlatform.x86 };
 
+            var testProjects = ProfilerDirectory.GlobFiles("test/**/*.vcxproj");
+            NuGetTasks.NuGetRestore(s => s
+                .SetTargetPath(ProfilerMsBuildProject)
+                .SetVerbosity(NuGetVerbosity.Normal)
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackagesDirectory(NugetPackageDirectory))
+                .CombineWith(testProjects, (m, testProjects) => m.SetTargetPath(testProjects)));
+
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             MSBuild(s => s
                 .SetTargetPath(ProfilerMsBuildProject)
                 .SetConfiguration(BuildConfiguration)
                 .SetMSBuildPath()
-                .SetTargets("BuildCppTests")
+                .SetTargets("BuildCppTestsOnly")
                 .DisableRestore()
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m

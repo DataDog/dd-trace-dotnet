@@ -201,6 +201,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";
 
+        public const string RareSamplerEnabled = "DD_APM_ENABLE_RARE_SAMPLER";
+
         /// <summary>
         /// Configuration key for enabling or disabling internal metrics sent to DogStatsD.
         /// Default value is <c>false</c> (disabled).
@@ -312,6 +314,12 @@ namespace Datadog.Trace.Configuration
         public const string IpHeader = "DD_TRACE_CLIENT_IP_HEADER";
 
         /// <summary>
+        /// Configuration key indicating if the header should be collected. The default for DD_TRACE_CLIENT_IP_ENABLED is false.
+        /// </summary>
+        /// <seealso cref="TracerSettings.IpHeaderEnabled"/>
+        public const string IpHeaderEnabled = "DD_TRACE_CLIENT_IP_ENABLED";
+
+        /// <summary>
         /// Configuration key to enable or disable the creation of a span context on exiting a successful Kafka
         /// Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
         /// Default value is <c>true</c> (enabled).
@@ -375,6 +383,11 @@ namespace Datadog.Trace.Configuration
         public const string QueryStringReportingEnabled = "DD_HTTP_SERVER_TAG_QUERY_STRING";
 
         /// <summary>
+        /// Configuration key for setting in number of days when to delete log files based on their last writetime date.
+        /// </summary>
+        public const string LogFileRetentionDays = "DD_TRACE_LOGFILE_RETENTION_DAYS";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -428,6 +441,11 @@ namespace Datadog.Trace.Configuration
             /// Default Value is false (disabled)
             /// </summary>
             public const string IntelligentTestRunnerEnabled = "DD_CIVISIBILITY_ITR_ENABLED";
+
+            /// <summary>
+            /// Configuration key for forcing Agent's EVP Proxy
+            /// </summary>
+            public const string ForceAgentsEvpProxy = "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY";
         }
 
         /// <summary>

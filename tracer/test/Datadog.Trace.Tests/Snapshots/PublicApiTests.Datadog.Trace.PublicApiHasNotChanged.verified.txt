@@ -233,6 +233,27 @@ namespace Datadog.Trace.Ci
         public System.Collections.Generic.Dictionary<string, object>? Arguments { get; set; }
         public System.Collections.Generic.Dictionary<string, object>? Metadata { get; set; }
     }
+    public sealed class TestSession
+    {
+        public string? Command { get; }
+        public string? Framework { get; }
+        public System.DateTimeOffset StartTime { get; }
+        public string? WorkingDirectory { get; }
+        public void Close(Datadog.Trace.Ci.TestStatus status) { }
+        public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
+        public Datadog.Trace.Ci.TestModule CreateModule(string name) { }
+        public Datadog.Trace.Ci.TestModule CreateModule(string name, string framework, string frameworkVersion) { }
+        public Datadog.Trace.Ci.TestModule CreateModule(string name, string framework, string frameworkVersion, System.DateTimeOffset startDate) { }
+        public void SetErrorInfo(System.Exception exception) { }
+        public void SetErrorInfo(string type, string message, string? callStack) { }
+        public void SetTag(string key, double? value) { }
+        public void SetTag(string key, string? value) { }
+        public static Datadog.Trace.Ci.TestSession GetOrCreate(string command) { }
+        public static Datadog.Trace.Ci.TestSession GetOrCreate(string command, string workingDirectory) { }
+        public static Datadog.Trace.Ci.TestSession GetOrCreate(string command, string workingDirectory, string framework) { }
+        public static Datadog.Trace.Ci.TestSession GetOrCreate(string command, string workingDirectory, string framework, System.DateTimeOffset startDate) { }
+        public static Datadog.Trace.Ci.TestSession GetOrCreate(string command, string? workingDirectory, string? framework, System.DateTimeOffset? startDate, bool propagateEnvironmentVariables) { }
+    }
     public enum TestStatus
     {
         Pass = 0,

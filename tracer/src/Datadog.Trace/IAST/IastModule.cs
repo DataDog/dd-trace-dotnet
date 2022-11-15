@@ -15,7 +15,6 @@ internal class IastModule
 {
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
-    private const string IastOrigin = "iast";
 
     public IastModule()
     {
@@ -64,25 +63,35 @@ internal class IastModule
 
         if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
-            // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
+            return AddVulnerability(tracer, integrationId, operationName, vulnerability);
+        }
+
+        return null;
+    }
+
+    private static Scope? AddVulnerability(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
+    {
+        if (tracer.ActiveScope is Scope { Span.Context.TraceContext: { RootSpan.Type: SpanTypes.Web } traceContext })
+        {
+            traceContext.IastRequestContext?.AddVulnerability(vulnerability);
+            return null;
+        }
+        else
+        {
+            // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
 
-            // Right now, we always set the IastEnabled tag to "1", but in the future, it might be zero to indicate that a request has not been analyzed
             var tags = new IastTags()
             {
                 IastJson = batch.ToString(),
                 IastEnabled = "1"
             };
 
-            tags.SetTag(Tags.Origin, IastOrigin);
             var scope = tracer.StartActiveInternal(operationName, tags: tags);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-
+            tracer?.TracerManager?.Telemetry.IntegrationGeneratedSpan(integrationId);
             return scope;
         }
-
-        return null;
     }
 
     private static string? GetMethodName(StackFrame? frame)

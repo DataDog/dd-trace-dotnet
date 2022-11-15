@@ -50,13 +50,13 @@ private:
                                  int numArgs, ILRewriter& rewriter, std::vector<TypeSignature>& methodLocals,
                                  int numLocals, ILRewriterWrapper& rewriterWrapper, ULONG lineProbeCallTargetStateIndex,
                                  std::vector<EHClause>& lineProbesEHClauses, const std::vector<ILInstr*>& branchTargets,
-                                 const std::shared_ptr<LineProbeDefinition>& lineProbe);
+                                 const std::shared_ptr<LineProbeDefinition>& lineProbe, bool isAsyncMethod);
     HRESULT ApplyLineProbes(int instrumentedMethodIndex, const LineProbeDefinitions& lineProbes,
                            CorProfiler* corProfiler, ModuleID module_id, ModuleMetadata& module_metadata,
                            FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken function_token, bool isStatic,
                            std::vector<TypeSignature>& methodArguments, int numArgs, ILRewriter& rewriter,
                            std::vector<TypeSignature>& methodLocals, int numLocals, ILRewriterWrapper& rewriterWrapper,
-                           ULONG lineProbeCallTargetStateIndex, std::vector<EHClause>& lineProbesEHClauses) const;
+                           ULONG lineProbeCallTargetStateIndex, std::vector<EHClause>& lineProbesEHClauses, bool isAsyncMethod) const;
     HRESULT ApplyMethodProbe(CorProfiler* corProfiler, ModuleID module_id, ModuleMetadata& module_metadata,
                           FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken function_token,
                           TypeSignature retFuncArg, bool isVoid, bool isStatic,

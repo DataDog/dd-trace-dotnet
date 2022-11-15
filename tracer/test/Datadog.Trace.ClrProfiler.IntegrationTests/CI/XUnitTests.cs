@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public XUnitTests(ITestOutputHelper output)
             : base("XUnitTests", output)
         {
+            SetServiceName("xunit-tests");
             SetServiceVersion("1.0.0");
         }
 
@@ -41,9 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             string[] messages = null;
             try
             {
-                SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
-                SetEnvironmentVariable("DD_TRACE_DEBUG", "0");
-                SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "0");
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
 
                 using var logsIntake = new MockLogsIntakeForCiVisibility();
                 EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));

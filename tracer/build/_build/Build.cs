@@ -55,7 +55,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.19.0";
+    readonly string Version = "2.20.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -234,6 +234,16 @@ partial class Build : NukeBuild
         .DependsOn(BuildWindowsRegressionTests)
         .DependsOn(RunWindowsRegressionTests);
 
+    Target BuildAndRunWindowsAzureFunctionsTests => _ => _
+        .Requires(() => IsWin)
+        .Description("Builds and runs the Windows Azure Functions tests")
+        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CreatePlatformlessSymlinks)
+        .DependsOn(CompileAzureFunctionsSamplesWindows)
+        .DependsOn(BuildRunnerTool)
+        .DependsOn(CompileIntegrationTests)
+        .DependsOn(RunWindowsAzureFunctionsTests);
+
     Target BuildLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)
         .Description("Builds the linux integration tests")
@@ -379,7 +389,6 @@ partial class Build : NukeBuild
                 DotNetBuild(s => s
                     .SetProjectFile(benchmarksProject)
                     .SetConfiguration(BuildConfiguration)
-                    .SetFramework(TargetFramework.NETCOREAPP3_1)
                     .EnableNoDependencies()
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 );

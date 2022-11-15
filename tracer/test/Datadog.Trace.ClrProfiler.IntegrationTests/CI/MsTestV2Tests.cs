@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public MsTestV2Tests(ITestOutputHelper output)
             : base("MSTestTests", output)
         {
+            SetServiceName("mstest-tests");
             SetServiceVersion("1.0.0");
         }
 
@@ -38,9 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             try
             {
-                SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
-                SetEnvironmentVariable("DD_TRACE_DEBUG", "0");
-                SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "0");
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {

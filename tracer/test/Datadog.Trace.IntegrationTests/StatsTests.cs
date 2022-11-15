@@ -358,6 +358,7 @@ namespace Datadog.Trace.IntegrationTests
                 GlobalSamplingRate = globalSamplingRate,
                 StatsComputationEnabled = statsComputationEnabled,
                 StatsComputationInterval = StatsComputationIntervalSeconds,
+                IsRareSamplerEnabled = statsComputationEnabled,
                 ServiceVersion = "V",
                 Environment = "Test",
                 Exporter = new ExporterSettings

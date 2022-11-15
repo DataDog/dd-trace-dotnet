@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tools.Runner
                                 return 1;
                             }
                         }
-                        else if (!Utils.CheckAgentConnectionAsync(options.AgentUrl).GetAwaiter().GetResult())
+                        else if (Utils.CheckAgentConnectionAsync(options.AgentUrl).GetAwaiter().GetResult() is null)
                         {
                             return 1;
                         }

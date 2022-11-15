@@ -27,7 +27,7 @@
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_WALLTIME_ENABLED": "0",
         "DD_PROFILING_CPU_ENABLED": "0",
-        "DD_PROFILING_CONTENTION_ENABLED": "1",
+        "DD_PROFILING_LOCK_ENABLED": "1",
         "DD_TRACE_ENABLED" : "0"
       }
     },
@@ -38,7 +38,7 @@
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_WALLTIME_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
-        "DD_PROFILING_CONTENTION_ENABLED": "1",
+        "DD_PROFILING_LOCK_ENABLED": "1",
         "DD_TRACE_ENABLED" : "0"
       }
     }

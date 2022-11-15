@@ -1,4 +1,4 @@
-﻿// <copyright file="TestSpanTags.cs" company="Datadog">
+// <copyright file="TestSpanTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,19 +19,17 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         Name = testName;
         SuiteId = suiteTags.SuiteId;
         Suite = suiteTags.Suite;
-        Environment = suiteTags.Environment;
         Framework = suiteTags.Framework;
         Module = suiteTags.Module;
         Status = suiteTags.Status;
         Type = suiteTags.Type;
-        Version = suiteTags.Version;
         FrameworkVersion = suiteTags.FrameworkVersion;
         GitBranch = suiteTags.GitBranch;
         GitCommit = suiteTags.GitCommit;
         GitRepository = suiteTags.GitRepository;
         GitTag = suiteTags.GitTag;
-        LibraryVersion = suiteTags.LibraryVersion;
         ModuleId = suiteTags.ModuleId;
+        SessionId = suiteTags.SessionId;
         RuntimeArchitecture = suiteTags.RuntimeArchitecture;
         RuntimeName = suiteTags.RuntimeName;
         RuntimeVersion = suiteTags.RuntimeVersion;
@@ -59,6 +57,8 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         GitCommitCommitterDate = suiteTags.GitCommitCommitterDate;
         GitCommitCommitterEmail = suiteTags.GitCommitCommitterEmail;
         GitCommitCommitterName = suiteTags.GitCommitCommitterName;
+        Command = suiteTags.Command;
+        WorkingDirectory = suiteTags.WorkingDirectory;
     }
 
     [Tag(TestTags.Name)]

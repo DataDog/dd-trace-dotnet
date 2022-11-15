@@ -1,4 +1,4 @@
-﻿FROM gleocadie/centos7-clang9:amd64 as base
+﻿FROM gleocadie/centos7-clang9 as base
 
 ARG DOTNETSDK_VERSION
 
@@ -54,7 +54,7 @@ RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \
     gem install --version 3.2.3  --user-install rexml && \
     gem install backports -v 3.21.0 && \
     gem install --version 2.7.6 dotenv && \
-    gem install --minimal-deps fpm
+    gem install --version 1.14.2 --minimal-deps fpm
 
 
 # Install the .NET SDK

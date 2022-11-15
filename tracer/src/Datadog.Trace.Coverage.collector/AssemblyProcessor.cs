@@ -724,7 +724,7 @@ namespace Datadog.Trace.Coverage.Collector
                     else
                     {
                         var folder = Path.GetDirectoryName(_assemblyFilePath);
-                        var pathTest = Path.Combine(folder, name.Name + ".dll");
+                        var pathTest = Path.Combine(folder ?? string.Empty, name.Name + ".dll");
                         _logger.Debug($"Looking for: {pathTest}");
                         if (File.Exists(pathTest))
                         {

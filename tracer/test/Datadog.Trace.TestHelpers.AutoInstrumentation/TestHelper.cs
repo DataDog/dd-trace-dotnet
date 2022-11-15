@@ -233,7 +233,7 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
             }
 
-            exitCode.Should().Be(0);
+            ExitCodeException.ThrowIfNonZero(exitCode);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
@@ -361,6 +361,11 @@ namespace Datadog.Trace.TestHelpers
             return (process, newConfig);
         }
 
+        public void EnableIast(bool enable = true)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString());
+        }
+
         public void SetEnvironmentVariable(string key, string value)
         {
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;
@@ -410,9 +415,14 @@ namespace Datadog.Trace.TestHelpers
             EnvironmentHelper.DebugModeEnabled = true;
         }
 
+        protected void SetServiceName(string serviceName)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.ServiceName, serviceName);
+        }
+
         protected void SetServiceVersion(string serviceVersion)
         {
-            SetEnvironmentVariable("DD_VERSION", serviceVersion);
+            SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, serviceVersion);
         }
 
         protected void SetSecurity(bool security)

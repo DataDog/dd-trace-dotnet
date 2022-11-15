@@ -13,10 +13,12 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.HttpOverStreams;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -235,7 +237,7 @@ namespace Datadog.Trace.Tools.Runner
             return defaultValue;
         }
 
-        public static async Task<bool> CheckAgentConnectionAsync(string agentUrl)
+        public static async Task<AgentConfiguration> CheckAgentConnectionAsync(string agentUrl)
         {
             var env = new NameValueCollection();
             if (!string.IsNullOrWhiteSpace(agentUrl))
@@ -251,30 +253,30 @@ namespace Datadog.Trace.Tools.Runner
 
             var tracerSettings = new TracerSettings(configurationSource);
             var settings = tracerSettings.Build();
-            var discoveryService = DiscoveryService.Create(settings.Exporter);
 
-            var agentWriter = new ApmAgentWriter(settings, new CISampler(), discoveryService);
+            var discoveryService = DiscoveryService.Create(
+                settings.Exporter,
+                tcpTimeout: TimeSpan.FromSeconds(5),
+                initialRetryDelayMs: 10,
+                maxRetryDelayMs: 1000,
+                recheckIntervalMs: int.MaxValue);
 
-            try
-            {
-                if (!await agentWriter.Ping().ConfigureAwait(false))
-                {
-                    WriteError($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                WriteError($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
-                AnsiConsole.WriteException(ex);
-                return false;
-            }
-            finally
-            {
-                await agentWriter.FlushAndCloseAsync().ConfigureAwait(false);
-            }
+            var tcs = new TaskCompletionSource<AgentConfiguration>(TaskCreationOptions.RunContinuationsAsynchronously);
+            discoveryService.SubscribeToChanges(aCfg => tcs.TrySetResult(aCfg));
 
-            return true;
+            var cts = new CancellationTokenSource();
+            cts.CancelAfter(5000);
+            using (cts.Token.Register(
+                       () =>
+                       {
+                           WriteError($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
+                           tcs.TrySetResult(null);
+                       }))
+            {
+                var configuration = await tcs.Task.ConfigureAwait(false);
+                await discoveryService.DisposeAsync().ConfigureAwait(false);
+                return configuration;
+            }
         }
 
         internal static void WriteError(string message)
@@ -381,19 +383,7 @@ namespace Datadog.Trace.Tools.Runner
             }
             else if (platform == Platform.MacOS)
             {
-                if (RuntimeInformation.OSArchitecture == Architecture.X64)
-                {
-                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "osx-x64", "Datadog.Trace.ClrProfiler.Native.dylib"));
-                }
-                else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
-                {
-                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "osx-arm64", "Datadog.Trace.ClrProfiler.Native.dylib"));
-                }
-                else
-                {
-                    WriteError($"Error: macOS {RuntimeInformation.OSArchitecture} architecture is not supported.");
-                    return null;
-                }
+                tracerProfiler64 = FileExists(Path.Combine(tracerHome, "osx", "Datadog.Trace.ClrProfiler.Native.dylib"));
             }
 
             var envVars = new Dictionary<string, string>

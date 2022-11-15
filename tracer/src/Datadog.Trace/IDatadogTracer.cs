@@ -19,8 +19,6 @@ namespace Datadog.Trace
 
         ITraceSampler Sampler { get; }
 
-        ISpanSampler SpanSampler { get; }
-
         ImmutableTracerSettings Settings { get; }
 
         void Write(ArraySegment<Span> span);

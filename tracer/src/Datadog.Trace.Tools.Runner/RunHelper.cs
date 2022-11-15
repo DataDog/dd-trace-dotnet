@@ -7,6 +7,10 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Util;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -46,6 +50,7 @@ namespace Datadog.Trace.Tools.Runner
             // CI Visibility mode is enabled.
             // If the agentless feature flag is enabled, we check for ApiKey
             // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
+            var createTestSession = false;
             if (settings is RunCiSettings ciSettings)
             {
                 var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
@@ -62,6 +67,7 @@ namespace Datadog.Trace.Tools.Runner
                     profilerEnvironmentVariables[Configuration.ConfigurationKeys.ApiKey] = ciSettings.ApiKey;
                 }
 
+                AgentConfiguration agentConfiguration = null;
                 if (agentless)
                 {
                     if (string.IsNullOrWhiteSpace(apiKey))
@@ -70,9 +76,26 @@ namespace Datadog.Trace.Tools.Runner
                         return 1;
                     }
                 }
-                else if (!Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult())
+                else
                 {
-                    return 1;
+                    agentConfiguration = Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult();
+                    if (agentConfiguration is null)
+                    {
+                        return 1;
+                    }
+                }
+
+                if (agentless || !string.IsNullOrEmpty(agentConfiguration.EventPlatformProxyEndpoint))
+                {
+                    createTestSession = true;
+                    if (!agentless)
+                    {
+                        // EVP proxy is enabled.
+                        // By setting the environment variables we avoid the usage of the DiscoveryService in each child process
+                        // to ask for EVP proxy support.
+                        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy] = "1";
+                        EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, "1");
+                    }
                 }
 
                 var enableCodeCoverage = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
@@ -121,22 +144,44 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
-            AnsiConsole.WriteLine("Running: " + string.Join(' ', args));
-
-            if (Program.CallbackForTests != null)
+            var command = string.Join(' ', args);
+            TestSession session = null;
+            if (createTestSession && Program.CallbackForTests is null)
             {
-                Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
-                return 0;
+                session = TestSession.GetOrCreate(command, null, null, null, true);
             }
 
-            var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
-
-            if (args.Count > 1)
+            var exitCode = 0;
+            try
             {
-                processInfo.Arguments = arguments;
-            }
+                AnsiConsole.WriteLine("Running: " + command);
 
-            return Utils.RunProcess(processInfo, applicationContext.TokenSource.Token);
+                if (Program.CallbackForTests != null)
+                {
+                    Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
+                    return 0;
+                }
+
+                var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
+
+                if (args.Count > 1)
+                {
+                    processInfo.Arguments = arguments;
+                }
+
+                exitCode = Utils.RunProcess(processInfo, applicationContext.TokenSource.Token);
+                session?.SetTag(TestTags.CommandExitCode, exitCode);
+                return exitCode;
+            }
+            catch (Exception ex)
+            {
+                session?.SetErrorInfo(ex);
+                throw;
+            }
+            finally
+            {
+                session?.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+            }
         }
 
         /// <summary>

@@ -108,15 +108,17 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return AsyncContext.Value;
             }
 
-            isReEntryToMoveNext = true;
-            var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance);
+            isReEntryToMoveNext = true; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
+            // State machine is null either when we run in Optimized code and the original async method was generic,
+            // in which case the state machine is a generic value type.
+            var stateMachineType = instance == null ? Type.GetTypeFromHandle(typeHandle) : instance.GetType();
+            var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
             if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
             {
-                Log.Error($"{nameof(BeginMethod)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                Log.Warning($"{nameof(BeginMethod)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
             }
 
-            if (!MethodMetadataProvider.TryCreateIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
+            if (!MethodMetadataProvider.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
             {
                 Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadataId = {methodMetadataIndex}");
                 return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
@@ -163,7 +165,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         private static AsyncMethodDebuggerState BeginMethodEndMarker(ref AsyncMethodDebuggerState asyncState)
         {
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
-                                       asyncState.HasArguments;
+                                       asyncState.HasArguments ||
+                                       asyncState.KickoffInvocationTarget != null;
 
             asyncState.HasLocalsOrReturnValue = false;
             asyncState.HasArguments = false;
@@ -240,13 +243,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             asyncState.SnapshotCreator.StartReturn();
             asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+            BeginEndMethodLogArgs(ref asyncState);
             if (exception != null)
             {
                 asyncState.SnapshotCreator.CaptureException(exception);
             }
 
             EndMethodLogLocals(ref asyncState);
-            BeginEndMethodLogArgs(ref asyncState);
 
             return DebuggerReturn.GetDefault();
         }
@@ -274,6 +277,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             asyncState.SnapshotCreator.StartReturn();
             asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+            BeginEndMethodLogArgs(ref asyncState);
             if (exception != null)
             {
                 asyncState.SnapshotCreator.CaptureException(exception);
@@ -285,7 +289,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             EndMethodLogLocals(ref asyncState);
-            BeginEndMethodLogArgs(ref asyncState);
             return new DebuggerReturn<TReturn>(returnValue);
         }
 
@@ -319,7 +322,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
-                                       asyncState.HasArguments;
+                                       asyncState.HasArguments ||
+                                       !asyncState.MethodMetadataInfo.Method.IsStatic;
             asyncState.SnapshotCreator.MethodProbeEndReturn(hasArgumentsOrLocals);
             FinalizeSnapshot(ref asyncState);
             RestoreContext();
@@ -333,6 +337,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException(Exception exception, ref AsyncMethodDebuggerState asyncState)
         {
+            if (!asyncState.IsActive)
+            {
+                // Already encountered `LogException`
+                return;
+            }
+
             Log.Warning(exception, "Error caused by our instrumentation");
             asyncState.IsActive = false;
             RestoreContext();

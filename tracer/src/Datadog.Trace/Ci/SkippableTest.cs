@@ -4,7 +4,6 @@
 // </copyright>
 #nullable enable
 
-using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
@@ -20,15 +19,15 @@ internal readonly struct SkippableTest
     [JsonProperty("parameters")]
     public readonly string? RawParameters;
 
-    [JsonProperty("configuration")]
-    public readonly Dictionary<string, object>? Configuration;
+    [JsonProperty("configurations")]
+    public readonly TestsConfigurations? Configurations;
 
-    public SkippableTest(string name, string suite, string? parameters, Dictionary<string, object>? configuration)
+    public SkippableTest(string name, string suite, string? parameters, TestsConfigurations? configurations)
     {
         Name = name;
         Suite = suite;
         RawParameters = parameters;
-        Configuration = configuration;
+        Configurations = configurations;
     }
 
     public TestParameters? GetParameters()

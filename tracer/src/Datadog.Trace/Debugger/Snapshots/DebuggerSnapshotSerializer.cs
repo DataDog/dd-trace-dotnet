@@ -191,8 +191,6 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             if (currentDepth >= _maximumDepthOfMembersToCopy)
             {
-                jsonWriter.WritePropertyName("type");
-                jsonWriter.WriteValue(type.Name);
                 WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth);
                 return;
             }
@@ -213,10 +211,6 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static void WriteFieldsInternal(object source, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, IEnumerable<MemberInfo> fields, string fieldsObjectName)
         {
-            // According the the debugger snapshot json structure RFC, the "this" value, unlike all other complex types,
-            // should NOT contain a "fields" property, but rather the fields should be serialized directly under the "this" object.
-            bool writeFieldsJsonElement = !jsonWriter.Path.EndsWith(".this.value");
-
             int index = 0;
             foreach (var field in fields)
             {
@@ -233,7 +227,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     continue;
                 }
 
-                if (index == 0 && writeFieldsJsonElement)
+                if (index == 0)
                 {
                     jsonWriter.WritePropertyName(fieldsObjectName);
                     jsonWriter.WriteStartObject();
@@ -255,7 +249,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
             }
 
-            if (index > 0 && writeFieldsJsonElement)
+            if (index > 0)
             {
                 jsonWriter.WriteEndObject();
             }

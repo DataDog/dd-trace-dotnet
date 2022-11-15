@@ -20,7 +20,7 @@ using namespace trace;
 
 namespace debugger
 {
-enum ProbeType {MethodProbeInNonAsyncMethod, MethodProbeInAsyncMethod, LineProbe};
+enum ProbeType {NonAsyncMethodProbe, AsyncMethodProbe, NonAsyncLineProbe, AsyncLineProbe};
 
 /**
  * DEBUGGER CALLTARGET CONSTANTS
@@ -43,6 +43,10 @@ static const WSTRING managed_profiler_debugger_line_type = WStr("Datadog.Trace.D
 static const WSTRING managed_profiler_debugger_linestatetype = WStr("Datadog.Trace.Debugger.Instrumentation.LineDebuggerState");
 static const WSTRING managed_profiler_debugger_beginline_name = WStr("BeginLine");
 static const WSTRING managed_profiler_debugger_endline_name = WStr("EndLine");
+
+// Async line probe
+static const WSTRING managed_profiler_debugger_async_line_type = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncLineDebuggerInvoker");
+static const WSTRING managed_profiler_debugger_async_linestatetype = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncLineDebuggerState");
 
 // Async method probes
 static const WSTRING managed_profiler_debugger_is_first_entry_field_name =WStr("<>dd_liveDebugger_isReEntryToMoveNext");
@@ -68,8 +72,6 @@ private:
     mdMemberRef methodLogArgRef = mdMemberRefNil;
     mdMemberRef methodLogLocalRef = mdMemberRefNil;
     mdMemberRef methodLogExceptionRef = mdMemberRefNil;
-    mdMemberRef beginLineRef = mdMemberRefNil;
-    mdMemberRef endLineRef = mdMemberRefNil;
 
     // Async method probe members:
     mdTypeRef asyncMethodDebuggerStateTypeRef = mdTypeRefNil;
@@ -83,11 +85,22 @@ private:
     mdMemberRef asyncMethodLogLocalRef = mdMemberRefNil;
 
     // Line probe members:
+    mdMemberRef beginLineRef = mdMemberRefNil;
+    mdMemberRef endLineRef = mdMemberRefNil;
     mdMemberRef lineDebuggerStateTypeRef = mdTypeRefNil;
     mdMemberRef lineInvokerTypeRef = mdTypeRefNil;
     mdMemberRef lineLogExceptionRef = mdMemberRefNil;
     mdMemberRef lineLogArgRef = mdMemberRefNil;
     mdMemberRef lineLogLocalRef = mdMemberRefNil;
+
+    // Async line probe members:
+    mdMemberRef asyncBeginLineRef = mdMemberRefNil;
+    mdMemberRef asyncEndLineRef = mdMemberRefNil;
+    mdMemberRef asyncLineDebuggerStateTypeRef = mdTypeRefNil;
+    mdMemberRef asyncLineInvokerTypeRef = mdTypeRefNil;
+    mdMemberRef asyncLineLogExceptionRef = mdMemberRefNil;
+    mdMemberRef asyncLineLogArgRef = mdMemberRefNil;
+    mdMemberRef asyncLineLogLocalRef = mdMemberRefNil;
 
     HRESULT WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeSignature& argOrLocal, ILInstr** instruction,
                                bool isArg, ProbeType probeType);
@@ -96,12 +109,14 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 return callTargetTypeRef;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 return asyncMethodDebuggerInvokerTypeRef;
-            case LineProbe:
+            case NonAsyncLineProbe:
                 return lineInvokerTypeRef;
+            case AsyncLineProbe:
+                return asyncLineInvokerTypeRef;
         }
         return mdTypeRefNil;
     }
@@ -110,12 +125,14 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 return callTargetStateTypeRef;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 return asyncMethodDebuggerStateTypeRef;
-            case LineProbe:
+            case NonAsyncLineProbe:
                 return lineDebuggerStateTypeRef;
+            case AsyncLineProbe:
+                return asyncLineDebuggerStateTypeRef;
         }
         return mdTypeRefNil;
     }
@@ -124,12 +141,14 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 return beginMethodStartMarkerRef;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 return beginAsyncMethodStartMarkerRef;
-            case LineProbe:
+            case NonAsyncLineProbe:
                 return beginLineRef;
+            case AsyncLineProbe:
+                return asyncBeginLineRef;
         }
         return mdTypeRefNil;
     }
@@ -138,15 +157,18 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 beginMethodStartMarkerRef = beginMethodMemberRef;
             break;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 beginAsyncMethodStartMarkerRef = beginMethodMemberRef;
             break;
-            case LineProbe:
+            case NonAsyncLineProbe:
                 beginLineRef = beginMethodMemberRef;
             break;
+            case AsyncLineProbe:
+                asyncBeginLineRef = beginMethodMemberRef;
+                break;
         }
     }
 
@@ -154,15 +176,16 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 return isBegin ? 
                 std::make_tuple(beginMethodEndMarkerRef, managed_profiler_debugger_beginmethod_endmarker_name.data()) : 
                 std::make_tuple(endMethodEndMarkerRef, managed_profiler_debugger_endmethod_endmarker_name.data());
-            case LineProbe:
-                return std::make_tuple(mdMemberRefNil, nullptr);
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 // async invoker has only EndMethodEndMarker
                 return std::make_tuple(endAsyncMethodEndMarkerRef, managed_profiler_debugger_endmethod_endmarker_name.data());
+            case NonAsyncLineProbe:
+            case AsyncLineProbe:
+                return std::make_tuple(mdMemberRefNil, nullptr);
         }
         return std::make_tuple(mdMemberRefNil, nullptr);
     }
@@ -171,13 +194,14 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 (isBegin ? beginMethodEndMarkerRef : endMethodEndMarkerRef) = endMethod;
-            case LineProbe:
-                return;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 // async invoker has only EndMethodEndMarker
                endAsyncMethodEndMarkerRef = endMethod;
+            case NonAsyncLineProbe:
+            case AsyncLineProbe:
+                return;
         }
     }
     
@@ -185,12 +209,14 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 return isVoid ? endVoidMethodStartMarkerRef : endNonVoidMethodEndMarkerRef;
-            case LineProbe:
-                return mdTypeRefNil;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 return isVoid ? endVoidAsyncMethodStartMarkerRef : endNonVoidAsyncMethodEndMarkerRef;
+            case NonAsyncLineProbe:
+                return endLineRef;
+            case AsyncLineProbe:
+                return asyncEndLineRef;
         }
         return mdTypeRefNil;
     }
@@ -199,14 +225,17 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 (isVoid ? endVoidMethodStartMarkerRef : endNonVoidMethodEndMarkerRef) = endMethodMemberRef;
             break;
-            case LineProbe:
-                return;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 (isVoid ? endVoidAsyncMethodStartMarkerRef : endNonVoidAsyncMethodEndMarkerRef) = endMethodMemberRef;
             break;
+            case NonAsyncLineProbe:
+                endLineRef = endMethodMemberRef;
+            case AsyncLineProbe:
+                asyncEndLineRef = endMethodMemberRef;
+                return;
         }
     }
 
@@ -214,12 +243,14 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 return methodLogExceptionRef;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 return asyncMethodLogExceptionRef;
-            case LineProbe:
+            case NonAsyncLineProbe:
                 return lineLogExceptionRef;
+            case AsyncLineProbe:
+                return asyncLineLogExceptionRef;
         }
         return mdTypeRefNil;
     }
@@ -228,14 +259,17 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 methodLogExceptionRef = logExceptionMemberRef;
             break;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 asyncMethodLogExceptionRef = logExceptionMemberRef;
             break;
-            case LineProbe:
+            case NonAsyncLineProbe:
                 lineLogExceptionRef = logExceptionMemberRef;
+            break;
+            case AsyncLineProbe:
+                asyncLineLogExceptionRef = logExceptionMemberRef;
             break;
         }
     }
@@ -244,12 +278,14 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 return methodLogArgRef;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 return asyncMethodLogArgRef;
-            case LineProbe:
+            case NonAsyncLineProbe:
                 return lineLogArgRef;
+            case AsyncLineProbe:
+                return asyncLineLogArgRef;
         }
         return mdTypeRefNil;
     }
@@ -258,14 +294,17 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 methodLogArgRef = logArgMemberRef;
             break;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 asyncMethodLogArgRef = logArgMemberRef;
             break;
-            case LineProbe:
+            case NonAsyncLineProbe:
                 lineLogArgRef = logArgMemberRef;
+            break;
+            case AsyncLineProbe:
+                asyncLineLogArgRef = logArgMemberRef;
             break;
         }
     }
@@ -274,12 +313,14 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 return methodLogLocalRef;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 return asyncMethodLogLocalRef;
-            case LineProbe:
+            case NonAsyncLineProbe:
                 return lineLogLocalRef;
+            case AsyncLineProbe:
+                return asyncLineLogLocalRef;
         }
         return mdTypeRefNil;
     }
@@ -288,15 +329,18 @@ private:
     {
         switch (probeType)
         {
-            case MethodProbeInNonAsyncMethod:
+            case NonAsyncMethodProbe:
                 methodLogLocalRef = logLocalMemberRef;
             break;
-            case MethodProbeInAsyncMethod:
+            case AsyncMethodProbe:
                 asyncMethodLogLocalRef = logLocalMemberRef;
             break;
-            case LineProbe:
+            case NonAsyncLineProbe:
                 lineLogLocalRef = logLocalMemberRef;
             break;
+            case AsyncLineProbe:
+                asyncLineLogLocalRef = logLocalMemberRef;
+                break;
         }
     }
 
@@ -314,7 +358,7 @@ protected:
     const WSTRING& GetCallTargetReturnGenericType() override;
 
     int GetAdditionalLocalsCount() override;
-    void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize) override;
+    void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod) override;
     
 public:
     DebuggerTokens(ModuleMetadata* module_metadata_ptr);
@@ -337,11 +381,10 @@ public:
     HRESULT WriteBeginMethod_EndMarker(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType);
     HRESULT WriteEndMethod_EndMarker(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType);
 
-    HRESULT WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo* currentType, ILInstr** instruction);
-    HRESULT WriteEndLine(void* rewriterWrapperPtr, ILInstr** instruction);
+    HRESULT WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo* currentType, ILInstr** instruction, ProbeType probeType);
+    HRESULT WriteEndLine(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType);
 
-    HRESULT ModifyLocalSigForLineProbe(ILRewriter* reWriter, ULONG* callTargetStateIndex, mdToken* callTargetStateToken);
-    HRESULT GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callTargetStateIndex, mdToken* callTargetStateToken, ULONG* asyncMethodStateIndex);
+    HRESULT GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callTargetStateIndex, mdToken* callTargetStateToken, ULONG* asyncMethodStateIndex, bool isAsyncMethod);
     HRESULT CreateBeginMethodStartMarkerRefSignature(ProbeType probeType, mdMemberRef& beginMethodRef);
 
     HRESULT GetIsFirstEntryToMoveNextFieldToken(mdToken type, mdFieldDef& token);
