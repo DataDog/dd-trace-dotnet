@@ -27,19 +27,17 @@ namespace Datadog.Trace.Propagators
 
             return default;
         }
-#else
+#endif
+
         public static ulong ParseFromHexOrDefault(string value)
         {
-            try
+            if (ulong.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
             {
-                return Convert.ToUInt64(value, 16);
+                return result;
             }
-            catch
-            {
-                return default;
-            }
+
+            return default;
         }
-#endif
 
         public static ulong? ParseUInt64<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter getter, string headerName)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
