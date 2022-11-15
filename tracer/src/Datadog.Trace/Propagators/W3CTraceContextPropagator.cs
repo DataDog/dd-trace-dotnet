@@ -61,6 +61,12 @@ namespace Datadog.Trace.Propagators
                     return false;
                 }
 
+                if (traceParent[0] != '0' || traceParent[1] != '0')
+                {
+                    // we only support traceparent version "00"
+                    return false;
+                }
+
                 char w3cSampled = traceParent[54];
                 if (traceParent[53] != '0' || (w3cSampled != '0' && w3cSampled != '1'))
                 {
