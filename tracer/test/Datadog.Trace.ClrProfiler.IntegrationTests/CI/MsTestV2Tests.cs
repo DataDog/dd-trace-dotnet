@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public MsTestV2Tests(ITestOutputHelper output)
             : base("MSTestTests", output)
         {
+            SetServiceName("mstest-tests");
             SetServiceVersion("1.0.0");
         }
 

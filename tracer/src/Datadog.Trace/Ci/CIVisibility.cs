@@ -18,6 +18,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci
@@ -94,6 +95,9 @@ namespace Datadog.Trace.Ci
                 // Extract repository name from the git url and use it as a default service name.
                 tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
+
+            // Normalize the service name
+            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");

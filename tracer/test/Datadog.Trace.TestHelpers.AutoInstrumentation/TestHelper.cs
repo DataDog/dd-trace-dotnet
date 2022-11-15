@@ -415,9 +415,14 @@ namespace Datadog.Trace.TestHelpers
             EnvironmentHelper.DebugModeEnabled = true;
         }
 
+        protected void SetServiceName(string serviceName)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.ServiceName, serviceName);
+        }
+
         protected void SetServiceVersion(string serviceVersion)
         {
-            SetEnvironmentVariable("DD_VERSION", serviceVersion);
+            SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, serviceVersion);
         }
 
         protected void SetSecurity(bool security)
