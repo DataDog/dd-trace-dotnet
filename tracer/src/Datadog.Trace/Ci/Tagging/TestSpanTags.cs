@@ -19,10 +19,12 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         Name = testName;
         SuiteId = suiteTags.SuiteId;
         Suite = suiteTags.Suite;
+        Environment = suiteTags.Environment;
         Framework = suiteTags.Framework;
         Module = suiteTags.Module;
         Status = suiteTags.Status;
         Type = suiteTags.Type;
+        Version = suiteTags.Version;
         FrameworkVersion = suiteTags.FrameworkVersion;
         GitBranch = suiteTags.GitBranch;
         GitCommit = suiteTags.GitCommit;

@@ -32,17 +32,8 @@ namespace Datadog.Trace
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
-            var settings = tracer?.Settings;
-
-            if (settings is not null)
-            {
-                // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
-                Environment = settings.Environment;
-                ServiceVersion = settings.ServiceVersion;
-            }
-
             Tracer = tracer;
-            Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+            Tags = tags ?? new TraceTagCollection(tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
         public Span RootSpan { get; private set; }
@@ -64,14 +55,8 @@ namespace Datadog.Trace
             get => _samplingPriority;
         }
 
-        public string Environment { get; set; }
-
-        public string ServiceVersion { get; set; }
-
-        public string Origin { get; set; }
-
         /// <summary>
-        /// Gets the IAST context.
+        /// Gets the iast context.
         /// </summary>
         internal IastRequestContext IastRequestContext
         {
@@ -116,11 +101,6 @@ namespace Datadog.Trace
                             SetSamplingPriority(samplingDecision);
                         }
                     }
-
-                    // if the trace's origin is not set and this span has an origin
-                    // (probably propagated from an upstream service),
-                    // copy the span's origin into the trace
-                    Origin ??= span.Context.Origin;
                 }
 
                 _openSpans++;

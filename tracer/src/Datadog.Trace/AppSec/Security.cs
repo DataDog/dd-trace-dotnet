@@ -456,9 +456,10 @@ namespace Datadog.Trace.AppSec
                 span.SetTag(Tags.ActorIp, clientIp);
             }
 
-            if (span.Context.TraceContext is { Origin: null } traceContext)
+            var origin = span.GetTag(Tags.Origin);
+            if (origin == null)
             {
-                traceContext.Origin = "appsec";
+                span.SetTag(Tags.Origin, "appsec");
             }
 
             span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);

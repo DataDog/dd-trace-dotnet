@@ -46,10 +46,6 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _runtimeIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
-        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
-
-        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
-
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
 
         // numeric tags
@@ -192,6 +188,15 @@ namespace Datadog.Trace.Agent.MessagePack
             var countOffset = offset;
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
+            // add "language=dotnet" tag to all spans, except those that
+            // represents a downstream service or external dependency
+            if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
+            }
+
             // Write span tags
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
             span.Tags.EnumerateTags(ref tagWriter);
@@ -212,54 +217,22 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            // add "runtime-id" tag to service-entry (aka top-level) spans
             if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
             {
+                // add "runtime-id" tag to service-entry (aka top-level) spans
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdNameBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
             }
 
             // add "_dd.origin" tag to all spans
-            var originRawBytes = MessagePackStringCache.GetEnvironmentBytes(model.TraceChunk.Origin);
+            string origin = span.Context.Origin;
 
-            if (originRawBytes is not null)
+            if (!string.IsNullOrEmpty(origin))
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, originRawBytes);
-            }
-
-            // add "env" to all spans
-            var envRawBytes = MessagePackStringCache.GetEnvironmentBytes(model.TraceChunk.Environment);
-
-            if (envRawBytes is not null)
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, envRawBytes);
-            }
-
-            // add "language=dotnet" tag to all spans, except those that
-            // represents a downstream service or external dependency
-            if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
-            }
-
-            // add "version" tags to all spans whose service name is the default service name
-            if (string.Equals(span.Context.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
-            {
-                var versionRawBytes = MessagePackStringCache.GetEnvironmentBytes(model.TraceChunk.ServiceVersion);
-
-                if (versionRawBytes is not null)
-                {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, versionRawBytes);
-                }
+                offset += MessagePackBinary.WriteString(ref bytes, offset, origin);
             }
 
             if (count > 0)

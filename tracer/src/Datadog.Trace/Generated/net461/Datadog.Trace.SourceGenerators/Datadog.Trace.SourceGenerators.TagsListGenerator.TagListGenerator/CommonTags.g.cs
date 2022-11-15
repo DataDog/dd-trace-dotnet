@@ -12,7 +12,70 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] SamplingLimitDecisionBytes = new byte[] { 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
         // TracesKeepRateBytes = System.Text.Encoding.UTF8.GetBytes("_dd.tracer_kr");
         private static readonly byte[] TracesKeepRateBytes = new byte[] { 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
+        // EnvironmentBytes = System.Text.Encoding.UTF8.GetBytes("env");
+        private static readonly byte[] EnvironmentBytes = new byte[] { 101, 110, 118 };
+        // VersionBytes = System.Text.Encoding.UTF8.GetBytes("version");
+        private static readonly byte[] VersionBytes = new byte[] { 118, 101, 114, 115, 105, 111, 110 };
 
+        public override string? GetTag(string key)
+        {
+            return key switch
+            {
+                "env" => Environment,
+                "version" => Version,
+                _ => base.GetTag(key),
+            };
+        }
+
+        public override void SetTag(string key, string value)
+        {
+            switch(key)
+            {
+                case "env": 
+                    Environment = value;
+                    break;
+                case "version": 
+                    Version = value;
+                    break;
+                default: 
+                    base.SetTag(key, value);
+                    break;
+            }
+        }
+
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        {
+            if (Environment is not null)
+            {
+                processor.Process(new TagItem<string>("env", Environment, EnvironmentBytes));
+            }
+
+            if (Version is not null)
+            {
+                processor.Process(new TagItem<string>("version", Version, VersionBytes));
+            }
+
+            base.EnumerateTags(ref processor);
+        }
+
+        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
+        {
+            if (Environment is not null)
+            {
+                sb.Append("env (tag):")
+                  .Append(Environment)
+                  .Append(',');
+            }
+
+            if (Version is not null)
+            {
+                sb.Append("version (tag):")
+                  .Append(Version)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalTags(sb);
+        }
         public override double? GetMetric(string key)
         {
             return key switch

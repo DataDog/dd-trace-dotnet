@@ -11,16 +11,12 @@ namespace Datadog.Trace
     public static class Tags
     {
         /// <summary>
-        /// The environment of the instrumented service. It's value is usually constant for the lifetime of a process,
-        /// but can technically change for each trace if the user sets it manually.
-        /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.Environment"/>.
+        /// The environment of the profiled service.
         /// </summary>
         public const string Env = "env";
 
         /// <summary>
-        /// The version of the instrumented service. It's value is usually constant for the lifetime of a process,
-        /// but can technically change for each trace if the user sets it manually.
-        /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.ServiceVersion"/>.
+        /// The version of the profiled service.
         /// </summary>
         public const string Version = "version";
 
@@ -132,8 +128,7 @@ namespace Datadog.Trace
         public const string ManualDrop = "manual.drop";
 
         /// <summary>
-        /// Language tag, applied to all spans that are .NET runtime (e.g. ASP.NET).
-        /// This tag is added during MessagePack serialization. It's value is always "dotnet".
+        /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
         /// </summary>
         public const string Language = "language";
 
@@ -406,8 +401,7 @@ namespace Datadog.Trace
         internal const string AzureFunctionBindingSource = "aas.function.binding";
 
         /// <summary>
-        /// Configures the origin of the trace. This tag is added during MessagePack serialization
-        /// using the value from <see cref="TraceContext.Origin"/>.
+        /// Configures the origin of the trace
         /// </summary>
         internal const string Origin = "_dd.origin";
 

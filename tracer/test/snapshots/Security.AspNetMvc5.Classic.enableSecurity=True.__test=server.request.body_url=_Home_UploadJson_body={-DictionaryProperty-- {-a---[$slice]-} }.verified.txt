@@ -18,8 +18,7 @@
       http.url: http://localhost/Home/UploadJson,
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -84,8 +83,7 @@
       http.url: http://localhost/Home/UploadJson,
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -150,8 +148,7 @@
       http.url: http://localhost/Home/UploadJson,
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -216,8 +213,7 @@
       http.url: http://localhost/Home/UploadJson,
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -282,8 +278,7 @@
       http.url: http://localhost/Home/UploadJson,
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {

@@ -4,11 +4,10 @@
 // </copyright>
 
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
@@ -29,39 +28,106 @@ namespace Datadog.Trace.IntegrationTests
         [SkippableFact]
         public void NormalSpan()
         {
-            using (_ = _tracer.StartActive("root"))
-            {
-                using (_ = _tracer.StartActive("child"))
-                {
-                }
-            }
+            var scope = _tracer.StartActive("Operation");
+            scope.Dispose();
 
-            var traceChunks = _testApi.Wait();
-
-            traceChunks.SelectMany(s => s)
-                       .Should()
-                       .OnlyContain(s => !s.Tags.ContainsKey("_dd.origin"));
+            var traces = _testApi.Wait();
+            Assert.NotEmpty(traces);
+            Assert.NotEmpty(traces[0]);
+            Assert.False(traces[0][0].Tags.ContainsKey(Tags.Origin));
         }
 
         [SkippableFact]
         public void NormalOriginSpan()
         {
-            const string originValue = "test-origin";
+            const string originValue = "ciapp-test";
 
-            using (var scope = (Scope)_tracer.StartActive("root"))
+            using (var scope = _tracer.StartActive("Operation"))
             {
-                scope.Span.Context.TraceContext.Origin = originValue;
+                scope.Span.SetTag(Tags.Origin, originValue);
+            }
 
-                using (_ = _tracer.StartActive("child"))
+            var traces = _testApi.Wait();
+            Assert.NotEmpty(traces);
+            Assert.NotEmpty(traces[0]);
+
+            var span = traces[0][0];
+            Assert.True(span.Tags.ContainsKey(Tags.Origin));
+            Assert.Equal(originValue, span.Tags[Tags.Origin]);
+        }
+
+        [SkippableFact]
+        public void OriginInMultipleSpans()
+        {
+            const string originValue = "ciapp-test";
+
+            using (var scope = _tracer.StartActive("Operation"))
+            {
+                scope.Span.SetTag(Tags.Origin, originValue);
+                using (var cs1 = _tracer.StartActive("Operation2"))
                 {
+                    using var cs01 = _tracer.StartActive("Operation2_01");
+                }
+
+                using (var cs2 = _tracer.StartActive("Operation2"))
+                {
+                    using var cs02 = _tracer.StartActive("Operation2_01");
                 }
             }
 
-            var traceChunks = _testApi.Wait();
+            var traces = _testApi.Wait();
+            Assert.NotEmpty(traces);
+            Assert.NotEmpty(traces[0]);
 
-            traceChunks.SelectMany(s => s)
-                       .Should()
-                       .OnlyContain(s => s.Tags["_dd.origin"] == originValue);
+            foreach (var span in traces[0])
+            {
+                Assert.True(span.Tags.ContainsKey(Tags.Origin));
+                Assert.Equal(originValue, span.Tags[Tags.Origin]);
+            }
+        }
+
+        [SkippableFact]
+        public void MultipleOriginsSpans()
+        {
+            const string originValue = "ciapp-test_";
+            var origins = new List<string>
+            {
+                originValue + "01",
+                originValue + "02",
+                originValue + "02",
+                originValue + "03",
+                originValue + "03"
+            };
+
+            using (var scope = _tracer.StartActive("Operation"))
+            {
+                scope.Span.SetTag(Tags.Origin, originValue + "01");
+
+                using (var cs1 = _tracer.StartActive("Operation2"))
+                {
+                    cs1.Span.SetTag(Tags.Origin, originValue + "02");
+
+                    using var cs01 = _tracer.StartActive("Operation2_01");
+                }
+
+                using (var cs2 = _tracer.StartActive("Operation2"))
+                {
+                    cs2.Span.SetTag(Tags.Origin, originValue + "03");
+
+                    using var cs02 = _tracer.StartActive("Operation2_01");
+                }
+            }
+
+            var traces = _testApi.Wait();
+            Assert.NotEmpty(traces);
+            Assert.NotEmpty(traces[0]);
+
+            foreach (var span in traces[0])
+            {
+                Assert.True(span.Tags.ContainsKey(Tags.Origin));
+                var value = span.Tags[Tags.Origin];
+                Assert.True(origins.Remove(value));
+            }
         }
     }
 }

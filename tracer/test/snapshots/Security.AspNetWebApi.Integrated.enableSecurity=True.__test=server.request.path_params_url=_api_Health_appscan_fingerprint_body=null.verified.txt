@@ -17,8 +17,7 @@
       http.url: http://localhost/api/Health/appscan_fingerprint,
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -81,8 +80,7 @@
       http.url: http://localhost/api/Health/appscan_fingerprint,
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -145,8 +143,7 @@
       http.url: http://localhost/api/Health/appscan_fingerprint,
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -209,8 +206,7 @@
       http.url: http://localhost/api/Health/appscan_fingerprint,
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -273,8 +269,7 @@
       http.url: http://localhost/api/Health/appscan_fingerprint,
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {

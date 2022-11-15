@@ -19,6 +19,8 @@ internal partial class TestModuleSpanTags : TestSessionSpanTags
         SessionId = sessionTags.SessionId;
         Command = sessionTags.Command;
         WorkingDirectory = sessionTags.WorkingDirectory;
+        Environment = sessionTags.Environment;
+        Version = sessionTags.Version;
     }
 
     public ulong ModuleId { get; set; }

@@ -29,15 +29,7 @@ internal readonly struct TraceChunkModel
     //   _hashSet.IsValueCreated == true, we needed the HashSet so we initialized it
     private readonly Lazy<HashSet<ulong>>? _hashSet;
 
-    public readonly string? DefaultServiceName = null;
-
     public readonly int? SamplingPriority = null;
-
-    public readonly string? Environment = null;
-
-    public readonly string? ServiceVersion = null;
-
-    public readonly string? Origin = null;
 
     public readonly TraceTagCollection? Tags = null;
 
@@ -62,11 +54,7 @@ internal readonly struct TraceChunkModel
     {
         if (traceContext is not null)
         {
-            DefaultServiceName = traceContext.Tracer?.DefaultServiceName;
             SamplingPriority = traceContext.SamplingPriority;
-            Environment = traceContext.Environment;
-            ServiceVersion = traceContext.ServiceVersion;
-            Origin = traceContext.Origin;
             Tags = traceContext.Tags;
         }
     }

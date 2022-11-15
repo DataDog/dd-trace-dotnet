@@ -50,7 +50,17 @@ namespace Datadog.Trace.Sampling
                 return defaultRate;
             }
 
-            var env = span.Context.TraceContext.Environment;
+            string env;
+
+            if (span.Tags is CommonTags tags)
+            {
+                env = tags.Environment;
+            }
+            else
+            {
+                env = span.GetTag(Tags.Env);
+            }
+
             var service = span.ServiceName;
 
             var key = new SampleRateKey(service, env);
