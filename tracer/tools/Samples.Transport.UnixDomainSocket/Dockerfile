@@ -88,7 +88,7 @@ ENV DD_DOGSTATSD_SOCKET=/var/run/datadog/dsd.socket
 
 # Configure the transport
 # TODO: None of these work... This is apparently due to a difference in how services are started... need to set those variables differently.
-# DD_APM_RECEIVER_SOCKET as an environment variable is not respected by the agent when installing in a container (https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)
+# DD_APM_RECEIVER_SOCKET as an environment variable is not respected by the agent when installing in a container (https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)
 # Using "service datadog-agent start" does not pick up the environment variable but calling the trace-agent binary directly does work (/opt/datadog-agent/embedded/bin/trace-agent). The DD_APM_RECEIVER_SOCKET is picked up and used per the logs.
 # Using "service datadog-agent start" works when datadog.yaml has the pipe configured: setting `apm_config.receiver_socket: /var/run/datadog/apm.socket` in the yaml is picked up and used per the logs.
 #ENV DD_TRACE_AGENT_URL=/var/run/datadog/apm.socket
@@ -111,7 +111,7 @@ ENV DD_SITE=datadoghq.com
 RUN mkdir /var/run/datadog; \
     chmod -R a+rwX /var/run/datadog
 # RUN chown dd-agent -R /var/run/datadog
-RUN DD_AGENT_MAJOR_VERSION=7 bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)"
+RUN bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
 
 # The environment variables in this dockerfile are only applied to PID 1, whereas the agent runs as a service... 
 # TODO: Set service variables, for now, work around this by modifying the datadog.yaml
