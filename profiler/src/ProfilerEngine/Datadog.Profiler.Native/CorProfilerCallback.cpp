@@ -167,7 +167,9 @@ bool CorProfilerCallback::InitializeServices()
             _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
                 valuesOffset,
                 _pCorProfilerInfo,
+                _pManagedThreadList,
                 _pFrameStore.get(),
+                _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get());

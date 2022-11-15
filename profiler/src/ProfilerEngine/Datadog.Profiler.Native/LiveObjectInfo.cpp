@@ -3,11 +3,43 @@
 
 #include "LiveObjectInfo.h"
 
-LiveObjectInfo::LiveObjectInfo(Sample& sample, uintptr_t address)
+LiveObjectInfo::LiveObjectInfo(Sample&& sample, uintptr_t address)
     : // TODO: we should be able to call _sample(sample) to copy a given Sample into another one
-    _sample(sample.GetTimeStamp(), sample.GetRuntimeId(), sample.GetCallstack().size()),
+    _sample(std::move(sample)),
     _address(address),
     _weakHandle(nullptr)
 {
-    _sample = sample.Copy();
+}
+
+LiveObjectInfo::LiveObjectInfo(LiveObjectInfo&& info) noexcept
+    :
+    _sample(std::move(info._sample))
+{
+    _address = std::move(info._address);
+    _weakHandle = std::move(info._weakHandle);
+}
+
+LiveObjectInfo& LiveObjectInfo::operator=(LiveObjectInfo&& other) noexcept
+{
+    _address = std::move(other._address);
+    _weakHandle = std::move(other._weakHandle);
+    _sample = std::move(other._sample);
+
+    return *this;
+}
+
+void LiveObjectInfo::SetHandle(void** handle)
+{
+    _weakHandle = handle;
+}
+
+void** LiveObjectInfo::GetHandle()
+{
+    return _weakHandle;
+}
+
+
+uintptr_t LiveObjectInfo::GetAddress()
+{
+    return _address;
 }

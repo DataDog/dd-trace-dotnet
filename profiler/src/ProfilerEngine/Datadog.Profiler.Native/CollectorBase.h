@@ -97,33 +97,6 @@ public:
         return TransformRawSamples(input);
     }
 
-protected:
-    uint64_t GetCurrentTimestamp()
-    {
-        return OpSysTools::GetHighPrecisionTimestamp();
-    }
-
-private:
-    std::list<TRawSample> FetchRawSamples()
-    {
-        std::lock_guard<std::mutex> lock(_rawSamplesLock);
-
-        std::list<TRawSample> input = std::move(_collectedSamples); // _collectedSamples is empty now
-        return input;
-    }
-
-    std::list<Sample> TransformRawSamples(const std::list<TRawSample>& input)
-    {
-        std::list<Sample> samples;
-
-        for (auto const& rawSample : input)
-        {
-            samples.push_back(TransformRawSample(rawSample));
-        }
-
-        return samples;
-    }
-
     Sample TransformRawSample(const TRawSample& rawSample)
     {
         auto runtimeId = _pRuntimeIdStore->GetId(rawSample.AppDomainId);
@@ -154,6 +127,33 @@ private:
         rawSample.OnTransform(sample, _valueOffset);
 
         return sample;
+    }
+
+protected:
+    uint64_t GetCurrentTimestamp()
+    {
+        return OpSysTools::GetHighPrecisionTimestamp();
+    }
+
+private:
+    std::list<TRawSample> FetchRawSamples()
+    {
+        std::lock_guard<std::mutex> lock(_rawSamplesLock);
+
+        std::list<TRawSample> input = std::move(_collectedSamples); // _collectedSamples is empty now
+        return input;
+    }
+
+    std::list<Sample> TransformRawSamples(const std::list<TRawSample>& input)
+    {
+        std::list<Sample> samples;
+
+        for (auto const& rawSample : input)
+        {
+            samples.push_back(TransformRawSample(rawSample));
+        }
+
+        return samples;
     }
 
     void SetAppDomainDetails(const TRawSample& rawSample, Sample& sample)

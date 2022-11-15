@@ -8,7 +8,15 @@
 class LiveObjectInfo
 {
 public:
-    LiveObjectInfo(Sample& sample, uintptr_t address);
+    LiveObjectInfo(Sample&& sample, uintptr_t address);
+    LiveObjectInfo& operator=(const LiveObjectInfo& info) = delete;
+    LiveObjectInfo(const LiveObjectInfo&) = delete;
+    LiveObjectInfo(LiveObjectInfo&& info) noexcept;
+    LiveObjectInfo& operator=(LiveObjectInfo&& other) noexcept;
+
+    void SetHandle(void** handle);
+    void** GetHandle();
+    uintptr_t GetAddress();
 
 private:
     Sample _sample;

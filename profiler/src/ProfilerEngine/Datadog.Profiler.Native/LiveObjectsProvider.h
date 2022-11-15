@@ -7,9 +7,12 @@
 #include <mutex>
 
 #include "corprof.h"
+
+#include "AllocationsProvider.h"
 #include "IBatchedSamplesProvider.h"
 #include "ISampledAllocationsListener.h"
 #include "IService.h"
+#include "LiveObjectInfo.h"
 #include "Sample.h"
 
 class IManagedThreadList;
@@ -32,7 +35,9 @@ public:
     LiveObjectsProvider(
         uint32_t valueOffset,
         ICorProfilerInfo4* pCorProfilerInfo,
+        IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
+        IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration);
@@ -53,16 +58,21 @@ public:
     void OnGarbageCollectionFinished();
 
 private:
+    void** CreateWeakHandle(uintptr_t address);
+    bool IsAlive(void** handle);
+
+private:
     uint32_t _valueOffset = 0;
     ICorProfilerInfo4* _pCorProfilerInfo = nullptr;
     IFrameStore* _pFrameStore = nullptr;
     IAppDomainStore* _pAppDomainStore = nullptr;
     IRuntimeIdStore* _pRuntimeIdStore = nullptr;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
+    std::unique_ptr<AllocationsProvider> _pAllocationsProvider;
 
     bool _isTimestampsAsLabelEnabled = false;
 
     std::mutex _samplesLock;
-
-    // std::list<>
+    std::list<LiveObjectInfo> _objectsToMonitor;  // need to wait for the next GC to build a WeakHandle around the address
+    std::list<LiveObjectInfo> _monitoredObjects;  // WeakHandle are checked after each GC
 };

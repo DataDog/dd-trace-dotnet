@@ -247,7 +247,6 @@
     <ClInclude Include="LiveObjectInfo.h" />
     <ClInclude Include="LiveObjectsProvider.h" />
     <ClInclude Include="RawGarbageCollectionSample.h" />
-    <ClInclude Include="RawLiveObjectSample.h" />
     <ClInclude Include="StopTheWorldGCProvider.h" />
     <ClInclude Include="GenericSampler.h" />
     <ClInclude Include="GroupSampler.h" />

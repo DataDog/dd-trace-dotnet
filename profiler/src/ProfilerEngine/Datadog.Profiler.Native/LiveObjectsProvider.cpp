@@ -15,7 +15,9 @@ std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
 LiveObjectsProvider::LiveObjectsProvider(
     uint32_t valueOffset,
     ICorProfilerInfo4* pCorProfilerInfo,
+    IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
+    IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration)
@@ -27,6 +29,16 @@ LiveObjectsProvider::LiveObjectsProvider(
     _pRuntimeIdStore(pRuntimeIdStore),
     _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled())
 {
+    _pAllocationsProvider = std::make_unique<AllocationsProvider>(
+        valueOffset,  // the values (allocation count and size are stored in the live object values, not tha allocation values)
+        pCorProfilerInfo,
+        pManagedThreadList,
+        pFrameStore,
+        pThreadsCpuManager,
+        pAppDomainStore,
+        pRuntimeIdStore,
+        pConfiguration,
+        nullptr);
 }
 
 const char* LiveObjectsProvider::GetName()
@@ -36,9 +48,13 @@ const char* LiveObjectsProvider::GetName()
 
 void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
 {
-    // TODO:
-    // - create the corresponding Sample by transforming the RawAllocationSample
-    // - add it into the objects to monitor list
+    // std::cout << rawSample.AllocationClass << std::endl;
+
+    LiveObjectInfo info(
+        _pAllocationsProvider.get()->TransformRawSample(rawSample),
+        rawSample.Address
+        );
+    _objectsToMonitor.push_back(std::move(info));
 }
 
 std::list<Sample> LiveObjectsProvider::GetSamples()
@@ -49,12 +65,28 @@ std::list<Sample> LiveObjectsProvider::GetSamples()
 
 void LiveObjectsProvider::OnGarbageCollectionStarted()
 {
-    // TODO: create a WeakReference handle for each monitored allocation
+    // address provided during AllocationTick event were not pointing to real objects
+    // so we have to wait for the next garbage collection to create a wrapping weak handle
+    for (auto& info : _objectsToMonitor)
+    {
+        info.SetHandle(CreateWeakHandle(info.GetAddress()));
+    }
+
+    _monitoredObjects.splice(_monitoredObjects.end(), _objectsToMonitor);
+}
+
+void** LiveObjectsProvider::CreateWeakHandle(uintptr_t address)
+{
+    // create WeakHandle with ICorProfilerInfo13
+    return nullptr;
 }
 
 void LiveObjectsProvider::OnGarbageCollectionFinished()
 {
-    // TODO: check monitored WeakReference handles and remove those no more referenced
+    _monitoredObjects.remove_if([this](LiveObjectInfo& info)
+    {
+        return !IsAlive(info.GetHandle());
+    });
 }
 
 bool LiveObjectsProvider::Start()
@@ -65,4 +97,10 @@ bool LiveObjectsProvider::Start()
 bool LiveObjectsProvider::Stop()
 {
     return true;
+}
+
+bool LiveObjectsProvider::IsAlive(void** handle)
+{
+    // TODO: check WeakHandle with ICorProfilerInfo13
+    return false;
 }
