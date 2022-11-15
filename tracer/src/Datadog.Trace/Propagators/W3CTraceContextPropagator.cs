@@ -13,7 +13,7 @@ namespace Datadog.Trace.Propagators
     internal class W3CTraceContextPropagator : IContextInjector, IContextExtractor
     {
         /// <summary>
-        /// W3C TraceParent header
+        /// W3C traceparent header
         /// </summary>
         public const string TraceParent = "traceparent";
 
@@ -40,15 +40,15 @@ namespace Datadog.Trace.Propagators
                 // We found a trace parent (we are reading from the Http Headers)
 
                 /* (https://www.w3.org/TR/trace-context/)
-                    Valid traceparent when caller sampled this request:
 
+                    Valid traceparent when caller sampled this request:
                     Value = 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
                     base16(version) = 00
                     base16(trace-id) = 4bf92f3577b34da6a3ce929d0e0e4736
                     base16(parent-id) = 00f067aa0ba902b7
                     base16(trace-flags) = 01  // sampled
-                    Valid traceparent when caller didn’t sample this request:
 
+                    Valid traceparent when caller didn’t sample this request:
                     Value = 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00
                     base16(version) = 00
                     base16(trace-id) = 4bf92f3577b34da6a3ce929d0e0e4736
