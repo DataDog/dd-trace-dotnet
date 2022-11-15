@@ -254,11 +254,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             }
 
             // add "version" tags to all spans whose service name is the default service name
-            Log.Information(
-                "[ServiceName={sName}, DefaultServiceName={defSName}, ServiceVersion={version}]",
-                span.Context.ServiceName,
-                traceContext?.Tracer.DefaultServiceName,
-                traceContext?.ServiceVersion);
             if (string.Equals(span.Context.ServiceName, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
                 var version = traceContext?.ServiceVersion;
