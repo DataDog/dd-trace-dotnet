@@ -175,7 +175,7 @@ namespace Datadog.Trace
             {
                 // When receiving chunks of spans, the backend checks whether the aas.resource.id tag is present on any of the
                 // span to decide which metric to emit (datadog.apm.host.instance or datadog.apm.azure_resource_instance one).
-                AddAASMetadata(spansToWrite.Array![spansToWrite.Offset]);
+                AddAzureAppServicesMetadata(spansToWrite.Array![spansToWrite.Offset]);
 
                 Tracer.Write(spansToWrite);
             }
@@ -194,7 +194,7 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
-                AddAASMetadata(spansToWrite.Array![spansToWrite.Offset]);
+                AddAzureAppServicesMetadata(spansToWrite.Array![spansToWrite.Offset]);
                 Tracer.Write(spansToWrite);
             }
         }
@@ -242,7 +242,7 @@ namespace Datadog.Trace
             return Elapsed + (_utcStart - date);
         }
 
-        private static void AddAASMetadata(Span span)
+        private static void AddAzureAppServicesMetadata(Span span)
         {
             if (AzureAppServices.Metadata.IsRelevant)
             {
