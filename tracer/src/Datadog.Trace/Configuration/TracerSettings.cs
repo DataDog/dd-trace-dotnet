@@ -12,6 +12,7 @@ using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
@@ -53,6 +54,8 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public TracerSettings(IConfigurationSource source)
         {
+            var commaSeparator = new[] { ',' };
+
             Environment = source?.GetString(ConfigurationKeys.Environment);
 
             ServiceName = source?.GetString(ConfigurationKeys.ServiceName) ??
@@ -145,7 +148,7 @@ namespace Datadog.Trace.Configuration
 
             if (urlSubstringSkips != null)
             {
-                HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), ',').ToArray();
+                HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator);
             }
 
             var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
@@ -187,9 +190,31 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) is { } x and > 0 ? x : 200;
 
-            PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
+            IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
+                                        // default value
+                                        false;
 
-            PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
+            var propagationStyleInject = source?.GetString(ConfigurationKeys.PropagationStyleInject) ??
+                                         source?.GetString("DD_PROPAGATION_STYLE_INJECT") ?? // deprecated setting name
+                                         source?.GetString(ConfigurationKeys.PropagationStyle) ??
+                                         ContextPropagationHeaderStyle.Datadog; // default value
+
+            PropagationStyleInject = TrimSplitString(propagationStyleInject, commaSeparator);
+
+            var propagationStyleExtract = source?.GetString(ConfigurationKeys.PropagationStyleExtract) ??
+                                          source?.GetString("DD_PROPAGATION_STYLE_EXTRACT") ?? // deprecated setting name
+                                          source?.GetString(ConfigurationKeys.PropagationStyle) ??
+                                          ContextPropagationHeaderStyle.Datadog; // default value
+
+            PropagationStyleExtract = TrimSplitString(propagationStyleExtract, commaSeparator);
+
+            // If Activity support is enabled, we must enable the W3C Trace Context propagators.
+            // It's ok to include W3C multiple times, we handle that later.
+            if (IsActivityListenerEnabled)
+            {
+                PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+                PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+            }
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
 
@@ -208,31 +233,13 @@ namespace Datadog.Trace.Configuration
 
             OutgoingTagPropagationHeaderMaxLength = outgoingTagPropagationHeaderMaxLength is >= 0 and <= Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength ? (int)outgoingTagPropagationHeaderMaxLength : Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength;
 
-            IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
-                                        // default value
-                                        false;
-
             IpHeader = source?.GetString(ConfigurationKeys.IpHeader) ?? source?.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
 
             IpHeaderEnabled = source?.GetBool(ConfigurationKeys.IpHeaderEnabled) ?? false;
 
-            if (IsActivityListenerEnabled)
-            {
-                // If the activities support is activated, we must enable W3C propagators
-                if (!Array.Exists(PropagationStyleExtract, key => string.Equals(key, nameof(Propagators.ContextPropagators.Names.W3C), StringComparison.OrdinalIgnoreCase)))
-                {
-                    PropagationStyleExtract = PropagationStyleExtract.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
-                }
-
-                if (!Array.Exists(PropagationStyleInject, key => string.Equals(key, nameof(Propagators.ContextPropagators.Names.W3C), StringComparison.OrdinalIgnoreCase)))
-                {
-                    PropagationStyleInject = PropagationStyleInject.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
-                }
-            }
-
             IsDataStreamsMonitoringEnabled = source?.GetBool(ConfigurationKeys.DataStreamsMonitoring.Enabled) ??
-                                        // default value
-                                        false;
+                                             // default value
+                                             false;
 
             IsRareSamplerEnabled = source?.GetBool(ConfigurationKeys.RareSamplerEnabled) ?? false;
         }
@@ -614,18 +621,25 @@ namespace Datadog.Trace.Configuration
             return headerTags;
         }
 
-        // internal for testing
-        internal static IEnumerable<string> TrimSplitString(string textValues, char separator)
+        internal static string[] TrimSplitString(string textValues, char[] separators)
         {
-            var values = textValues.Split(separator);
-
-            for (var i = 0; i < values.Length; i++)
+            if (string.IsNullOrWhiteSpace(textValues))
             {
-                if (!string.IsNullOrWhiteSpace(values[i]))
+                return Array.Empty<string>();
+            }
+
+            var values = textValues.Split(separators);
+            var list = new List<string>(values.Length);
+
+            foreach (var value in values)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
                 {
-                    yield return values[i].Trim();
+                    list.Add(value.Trim());
                 }
             }
+
+            return list.ToArray();
         }
 
         internal static bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)

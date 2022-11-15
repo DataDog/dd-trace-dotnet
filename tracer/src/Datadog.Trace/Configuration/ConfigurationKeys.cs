@@ -346,14 +346,27 @@ namespace Datadog.Trace.Configuration
         public const string StatsComputationInterval = "_DD_TRACE_STATS_COMPUTATION_INTERVAL";
 
         /// <summary>
-        /// Configuration key for setting the propagation style injection.
+        /// Configuration key for setting the header injection propagation style.
+        /// If <see cref="PropagationStyle"/> is also defined, this value overrides the header injection styles.
         /// </summary>
-        public const string PropagationStyleInject = "DD_PROPAGATION_STYLE_INJECT";
+        /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
+        /// <seealso cref="TracerSettings.PropagationStyleInject"/>
+        public const string PropagationStyleInject = "DD_TRACE_PROPAGATION_STYLE_INJECT";
 
         /// <summary>
-        /// Configuration key for setting the propagation style extraction.
+        /// Configuration key for setting the header extraction propagation style.
+        /// If <see cref="PropagationStyle"/> is also defined, this value overrides the header extraction styles.
         /// </summary>
-        public const string PropagationStyleExtract = "DD_PROPAGATION_STYLE_EXTRACT";
+        /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
+        /// <seealso cref="TracerSettings.PropagationStyleExtract"/>
+        public const string PropagationStyleExtract = "DD_TRACE_PROPAGATION_STYLE_EXTRACT";
+
+        /// <summary>
+        /// Configuration key for setting the propagation style for both header injection and extraction.
+        /// If <see cref="PropagationStyleInject"/> or <see cref="PropagationStyleExtract"/> are also defined,
+        /// they will override any header injections or extraction styled defined here, respectively.
+        /// </summary>
+        public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
         /// <summary>
         /// Configuration key for enabling automatic instrumentation on specified methods.
