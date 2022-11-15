@@ -13,6 +13,7 @@ internal class IastRequestContext
 {
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
+    private TaintedObjects _taintedObjects = new();
 
     public void AddIastVulnerabilitiesToSpan(Span span)
     {
@@ -36,5 +37,11 @@ internal class IastRequestContext
             _vulnerabilityBatch ??= new();
             _vulnerabilityBatch.Add(vulnerability);
         }
+    }
+
+    public void AddRequestParameter(string name, string value)
+    {
+        _taintedObjects.TaintInputString(value, new Source(SourceType.RequestParameterValue.Item1, name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.RequestParameterName.Item1, name, value));
     }
 }
