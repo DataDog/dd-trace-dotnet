@@ -42,7 +42,7 @@ namespace Samples.Probes.SmokeTests
             private static State[][] _stateArray;
 
             [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-            [MethodProbeTestData(skip: true)]
+            [MethodProbeTestData]
             public async Task<string> Method(NestedAsyncGenericClass<T> generic, string input)
             {
                 var list = new List<T> { new T() };

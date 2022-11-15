@@ -4,7 +4,7 @@
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>True</Optimize>
     <Platforms>x86;x64</Platforms>
   </PropertyGroup>
 
