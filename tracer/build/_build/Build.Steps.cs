@@ -2068,6 +2068,11 @@ partial class Build
             {
                 MoveFileToDirectory(dump, BuildDataDirectory / "dumps", FileExistsPolicy.Overwrite);
             }
+
+            foreach (var file in Directory.EnumerateFiles(TempDirectory, "*.dmp", SearchOption.AllDirectories))
+            {
+                CopyFileToDirectory(file, BuildDataDirectory / "dumps", FileExistsPolicy.OverwriteIfNewer);
+            }
         }
 
         foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))
