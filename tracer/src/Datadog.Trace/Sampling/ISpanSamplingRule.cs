@@ -29,16 +29,6 @@ namespace Datadog.Trace.Sampling
         float? MaxPerSecond { get; }
 
         /// <summary>
-        ///     Gets the cached <see cref="SamplingRate"/> string for tagging.
-        /// </summary>
-        string SamplingRateString { get; }
-
-        /// <summary>
-        ///     Gets the cached <see cref="MaxPerSecond"/> string for tagging.
-        /// </summary>
-        string MaxPerSecondString { get; }
-
-        /// <summary>
         ///     Checks whether or not the <paramref name="span"/> matches the glob patterns defined by this rule.
         /// </summary>
         /// <param name="span">The <see cref="Span"/> to check.</param>
