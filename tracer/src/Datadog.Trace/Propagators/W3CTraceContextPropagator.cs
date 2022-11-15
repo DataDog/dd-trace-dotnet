@@ -63,6 +63,7 @@ namespace Datadog.Trace.Propagators
 
                 if (traceParent!.Length != 55 || traceParent[2] != '-' || traceParent[35] != '-' || traceParent[52] != '-')
                 {
+                    // quick format validation
                     return false;
                 }
 
