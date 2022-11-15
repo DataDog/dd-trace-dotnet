@@ -194,7 +194,7 @@ bool CorProfilerCallback::InitializeServices()
             }
         }
 
-        // check for allocations profiling only
+        // check for allocations profiling only (without heap profiling)
         if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
         {
             auto valueTypes = AllocationsProvider::SampleTypeDefinitions;
@@ -321,6 +321,10 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
             _pSamplesCollector->Register(_pAllocationsProvider);
+        }
+
+        if (_pConfiguration->IsHeapProfilingEnabled())
+        {
             _pSamplesCollector->RegisterBatchedProvider(_pLiveObjectsProvider);
         }
 
