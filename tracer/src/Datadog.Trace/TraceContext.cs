@@ -175,7 +175,10 @@ namespace Datadog.Trace
             {
                 // When receiving chunks of spans, the backend checks whether the aas.resource.id tag is present on any of the
                 // span to decide which metric to emit ("datadog.apm.host.instance" or "datadog.apm.azure_resource_instance").
-                AddAzureAppServicesMetadata(spansToWrite);
+                if (AzureAppServices.Metadata.IsRelevant)
+                {
+                    AddAzureAppServicesMetadata(spansToWrite);
+                }
 
                 Tracer.Write(spansToWrite);
             }
@@ -194,7 +197,11 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
-                AddAzureAppServicesMetadata(spansToWrite);
+                if (AzureAppServices.Metadata.IsRelevant)
+                {
+                    AddAzureAppServicesMetadata(spansToWrite);
+                }
+
                 Tracer.Write(spansToWrite);
             }
         }
@@ -244,35 +251,32 @@ namespace Datadog.Trace
 
         private static void AddAzureAppServicesMetadata(ArraySegment<Span> traceChunk)
         {
-            if (AzureAppServices.Metadata.IsRelevant)
+            for (var i = 0; i < traceChunk.Count; i++)
             {
-                for (var i = 0; i < traceChunk.Count; i++)
-                {
-                    var tags = traceChunk.Array![traceChunk.Offset + i].Tags;
+                var tags = traceChunk.Array![traceChunk.Offset + i].Tags;
 
-                    // "aas.site.name" is used by front-end to enable special AAS UI for each span
-                    tags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteName, AzureAppServices.Metadata.SiteName);
+                // "aas.site.name" is used by front-end to enable special AAS UI for each span
+                tags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteName, AzureAppServices.Metadata.SiteName);
 
-                    // "aas.site.type" is used by front-end to differentiate between Azure Function and Azure Web App
-                    tags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteType, AzureAppServices.Metadata.SiteType);
-                }
-
-                var lastSpanTags = traceChunk.Array![traceChunk.Offset + traceChunk.Count - 1].Tags;
-
-                // "aas.resource.id" must appear once per trace chunk for billing purposes
-                lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
-
-                // set the rest of the tags on the last span only. most of the time this will be the root span,
-                // which is a better UX than showing up in a random child span.
-                lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteKind, AzureAppServices.Metadata.SiteKind);
-                lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata.ResourceGroup);
-                lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata.SubscriptionId);
-                lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceId, AzureAppServices.Metadata.InstanceId);
-                lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceName, AzureAppServices.Metadata.InstanceName);
-                lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesOperatingSystem, AzureAppServices.Metadata.OperatingSystem);
-                lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesRuntime, AzureAppServices.Metadata.Runtime);
-                lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, AzureAppServices.Metadata.SiteExtensionVersion);
+                // "aas.site.type" is used by front-end to differentiate between Azure Function and Azure Web App
+                tags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteType, AzureAppServices.Metadata.SiteType);
             }
+
+            var lastSpanTags = traceChunk.Array![traceChunk.Offset + traceChunk.Count - 1].Tags;
+
+            // "aas.resource.id" must appear once per trace chunk for billing purposes
+            lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
+
+            // set the rest of the tags on the last span only. most of the time this will be the root span,
+            // which is a better UX than showing up in a random child span.
+            lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteKind, AzureAppServices.Metadata.SiteKind);
+            lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata.ResourceGroup);
+            lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata.SubscriptionId);
+            lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceId, AzureAppServices.Metadata.InstanceId);
+            lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceName, AzureAppServices.Metadata.InstanceName);
+            lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesOperatingSystem, AzureAppServices.Metadata.OperatingSystem);
+            lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesRuntime, AzureAppServices.Metadata.Runtime);
+            lastSpanTags.SetTag(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, AzureAppServices.Metadata.SiteExtensionVersion);
         }
     }
 }
