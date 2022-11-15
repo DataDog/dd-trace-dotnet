@@ -40,6 +40,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             : base("AspNetCoreMinimalApis", fixture, output, enableRouteTemplateResourceNames)
         {
             _testName = GetTestName(nameof(AspNetCoreMinimalApisTests));
+            SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", "1");
+            SetEnvironmentVariable("COMPlus_DbgMiniDumpType", "4");
         }
 
         [SkippableTheory]

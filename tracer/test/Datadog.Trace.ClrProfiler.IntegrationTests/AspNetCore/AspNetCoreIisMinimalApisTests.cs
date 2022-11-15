@@ -60,6 +60,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected AspNetCoreIisMinimalApisTests(IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
             : base("AspNetCoreMinimalApis", fixture, output, inProcess, enableRouteTemplateResourceNames)
         {
+            SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", "1");
+            SetEnvironmentVariable("COMPlus_DbgMiniDumpType", "4");
             _testName = GetTestName(nameof(AspNetCoreIisMinimalApisTests));
             _iisFixture = fixture;
             _iisFixture.TryStartIis(this, inProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess);
