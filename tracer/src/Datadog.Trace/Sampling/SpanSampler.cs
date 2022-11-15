@@ -57,13 +57,13 @@ internal class SpanSampler : ISpanSampler
     /// <param name="rule">The <see cref="ISpanSamplingRule"/> that contains the tag information.</param>
     private static void AddTags(Span span, ISpanSamplingRule rule)
     {
-        span.Tags.SetMetric(Tags.SingleSpanSampling.RuleRate, rule.SamplingRate);
+        span.Tags.SetMetric(Metrics.SingleSpanSampling.RuleRate, rule.SamplingRate);
 
         if (rule.MaxPerSecond is not null)
         {
-            span.Tags.SetMetric(Tags.SingleSpanSampling.MaxPerSecond, rule.MaxPerSecond);
+            span.Tags.SetMetric(Metrics.SingleSpanSampling.MaxPerSecond, rule.MaxPerSecond);
         }
 
-        span.Tags.SetMetric(Tags.SingleSpanSampling.SamplingMechanism, SamplingMechanism.SpanSamplingRule);
+        span.Tags.SetMetric(Metrics.SingleSpanSampling.SamplingMechanism, SamplingMechanism.SpanSamplingRule);
     }
 }
