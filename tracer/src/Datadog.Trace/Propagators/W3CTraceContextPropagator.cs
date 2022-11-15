@@ -67,7 +67,7 @@ namespace Datadog.Trace.Propagators
 
             if (traceParent!.Length != 55 || traceParent[2] != '-' || traceParent[35] != '-' || traceParent[52] != '-')
             {
-                // quick validation
+                // validate format
                 return false;
             }
 
@@ -85,40 +85,49 @@ namespace Datadog.Trace.Propagators
             }
 
             var samplingPriority = w3cSampled == '0' ? 0 : 1;
+            ulong traceId;
+            ulong parentId;
+            string rawTraceId;
+            string rawSpanId;
 
 #if NETCOREAPP
-                var w3cTraceId = traceParent.AsSpan(3, 32);
-                var w3cSpanId = traceParent.AsSpan(36, 16);
-                var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId.Slice(16));
-                if (traceId == 0)
-                {
-                    return false;
-                }
-
-                var parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
-
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, w3cTraceId.ToString(), w3cSpanId.ToString());
-#else
-            var w3cTraceId = traceParent.Substring(3, 32);
-            var w3cSpanId = traceParent.Substring(36, 16);
-
-            var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId.Substring(16));
+            var w3cTraceId = traceParent.AsSpan(3, 32);
+            var w3cSpanId = traceParent.AsSpan(36, 16);
+            traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId[16..]);
 
             if (traceId == 0)
             {
                 return false;
             }
 
-            var parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
+            parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
 
             if (parentId == 0)
             {
                 return false;
             }
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin: null, w3cTraceId, w3cSpanId);
+            rawTraceId = w3cTraceId.ToString();
+            rawSpanId = w3cSpanId.ToString();
+#else
+            rawTraceId = traceParent.Substring(3, 32);
+            rawSpanId = traceParent.Substring(36, 16);
+            traceId = ParseUtility.ParseFromHexOrDefault(rawTraceId.Substring(16));
+
+            if (traceId == 0)
+            {
+                return false;
+            }
+
+            parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
+
+            if (parentId == 0)
+            {
+                return false;
+            }
 #endif
 
+            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin: null, rawTraceId, rawSpanId);
             return true;
         }
 
