@@ -86,5 +86,29 @@ namespace Datadog.Trace
         /// Float representing the number of rules which failed to load
         /// </summary>
         public const string AppSecWafInitRulesErrorCount = "_dd.appsec.event_rules.error_count";
+
+        /// <summary>
+        /// Contains tag names that are associated with Single Span Sampling.
+        /// </summary>
+        internal static class SingleSpanSampling
+        {
+            /// <summary>
+            /// Contains the <see cref="Sampling.SamplingMechanism"/> by which the individual span was sampled.
+            /// </summary>
+            internal const string SamplingMechanism = "_dd.span_sampling.mechanism";
+
+            /// <summary>
+            /// Contains the configured sampling probability for the <see cref="Sampling.ISpanSamplingRule"/> applied.
+            /// </summary>
+            /// <seealso cref="Sampling.ISpanSamplingRule.SamplingRate"/>
+            internal const string RuleRate = "_dd.span_sampling.rule_rate";
+
+            /// <summary>
+            /// Contains the configured limit of maximum number of sampled spans for the <see cref="Sampling.ISpanSamplingRule"/> applied.
+            /// <para>If there is no configured limit for the matched rule, this tag is omitted.</para>
+            /// </summary>
+            /// <seealso cref="Sampling.ISpanSamplingRule.MaxPerSecond"/>
+            internal const string MaxPerSecond = "_dd.span_sampling.max_per_second";
+        }
     }
 }
