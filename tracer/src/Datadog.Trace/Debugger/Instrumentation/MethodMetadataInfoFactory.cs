@@ -25,13 +25,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
             return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type, method);
         }
 
-        public static MethodMetadataInfo Create<TTarget>(MethodBase method, TTarget targetObject, Type type, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo)
+        public static MethodMetadataInfo Create(MethodBase method, Type type, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo)
         {
             return new MethodMetadataInfo(
                 GetParameterNames(method),
                 GetLocalVariableNames(method),
-                AsyncHelper.GetHoistedLocalsFromStateMachine(targetObject, asyncKickOffInfo),
-                AsyncHelper.GetHoistedArgumentsFromStateMachine(targetObject, GetParameterNames(asyncKickOffInfo.KickoffMethod)),
+                AsyncHelper.GetHoistedLocalsFromStateMachine(type, asyncKickOffInfo),
+                AsyncHelper.GetHoistedArgumentsFromStateMachine(type, GetParameterNames(asyncKickOffInfo.KickoffMethod)),
                 type,
                 method,
                 asyncKickOffInfo.KickoffParentType,

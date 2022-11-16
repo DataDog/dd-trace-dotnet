@@ -98,7 +98,7 @@ private:
                                      int64_t duration,
                                      PROFILING_TYPE profilingType);
     void LogEncounteredStackSnapshotResultStatistics(int64_t thisSampleTimestampNanosecs, bool useStdOutInsteadOfLog = false);
-    int64_t ComputeWallTime(int64_t thisSampleTimestampNanosecs, int64_t prevSampleTimestampNanosecs);
+    int64_t ComputeWallTime(int64_t currentTimestampNs, int64_t prevTimestampNs);
     void UpdateSnapshotInfos(StackSnapshotResultBuffer* const pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp);
     void UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames);
     time_t GetCurrentTimestamp();

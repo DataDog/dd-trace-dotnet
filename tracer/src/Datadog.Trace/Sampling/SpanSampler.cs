@@ -15,8 +15,6 @@ namespace Datadog.Trace.Sampling;
 /// </summary>
 internal class SpanSampler : ISpanSampler
 {
-    private static readonly string SamplingMechanismString = SamplingMechanism.SpanSamplingRule.ToString();
-
     private readonly List<ISpanSamplingRule> _rules;
 
     public SpanSampler(IEnumerable<ISpanSamplingRule> rules)
@@ -59,13 +57,13 @@ internal class SpanSampler : ISpanSampler
     /// <param name="rule">The <see cref="ISpanSamplingRule"/> that contains the tag information.</param>
     private static void AddTags(Span span, ISpanSamplingRule rule)
     {
-        span.Tags.SetTag(Tags.SingleSpanSampling.RuleRate, rule.SamplingRateString);
+        span.Tags.SetMetric(Metrics.SingleSpanSampling.RuleRate, rule.SamplingRate);
 
         if (rule.MaxPerSecond is not null)
         {
-            span.Tags.SetTag(Tags.SingleSpanSampling.MaxPerSecond, rule.MaxPerSecondString);
+            span.Tags.SetMetric(Metrics.SingleSpanSampling.MaxPerSecond, rule.MaxPerSecond);
         }
 
-        span.Tags.SetTag(Tags.SingleSpanSampling.SamplingMechanism, SamplingMechanismString);
+        span.Tags.SetMetric(Metrics.SingleSpanSampling.SamplingMechanism, SamplingMechanism.SpanSamplingRule);
     }
 }

@@ -293,6 +293,10 @@ namespace Datadog.Trace.Ci
             {
                 SetupBitriseEnvironment();
             }
+            else if (EnvironmentHelpers.GetEnvironmentVariable("BUDDY") != null)
+            {
+                SetupBuddyEnvironment(gitInfo);
+            }
             else
             {
                 Branch = gitInfo.Branch;
@@ -804,6 +808,35 @@ namespace Datadog.Trace.Ci
             {
                 CommitterEmail = CommitterName;
             }
+        }
+
+        private void SetupBuddyEnvironment(GitInfo gitInfo)
+        {
+            IsCI = true;
+            Provider = "buddy";
+            Repository = EnvironmentHelpers.GetEnvironmentVariable("BUDDY_SCM_URL");
+            Commit = EnvironmentHelpers.GetEnvironmentVariable("BUDDY_EXECUTION_REVISION");
+            Branch = EnvironmentHelpers.GetEnvironmentVariable("BUDDY_EXECUTION_BRANCH");
+            Tag = EnvironmentHelpers.GetEnvironmentVariable("BUDDY_EXECUTION_TAG");
+
+            PipelineId = string.Format(
+                "{0}/{1}",
+                EnvironmentHelpers.GetEnvironmentVariable("BUDDY_PIPELINE_ID"),
+                EnvironmentHelpers.GetEnvironmentVariable("BUDDY_EXECUTION_ID"));
+            PipelineName = EnvironmentHelpers.GetEnvironmentVariable("BUDDY_PIPELINE_NAME");
+            PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUDDY_EXECUTION_ID");
+            PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("BUDDY_EXECUTION_URL");
+
+            Message = EnvironmentHelpers.GetEnvironmentVariable("BUDDY_EXECUTION_REVISION_MESSAGE");
+            CommitterName = EnvironmentHelpers.GetEnvironmentVariable("BUDDY_EXECUTION_REVISION_COMMITTER_NAME");
+            CommitterEmail = EnvironmentHelpers.GetEnvironmentVariable("BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL");
+            if (string.IsNullOrWhiteSpace(CommitterEmail))
+            {
+                CommitterEmail = CommitterName;
+            }
+
+            SourceRoot = gitInfo.SourceRoot;
+            WorkspacePath = gitInfo.SourceRoot;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

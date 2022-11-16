@@ -17,6 +17,8 @@ namespace Datadog.Trace.Propagators
         /// </summary>
         public const string B3 = "b3";
 
+        public static readonly B3SingleHeaderContextPropagator Instance = new();
+
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
@@ -115,7 +117,7 @@ namespace Datadog.Trace.Propagators
             return false;
         }
 
-        private bool IsValidTraceId([NotNullWhen(true)] string? traceId)
+        private static bool IsValidTraceId([NotNullWhen(true)] string? traceId)
         {
             if (string.IsNullOrEmpty(traceId))
             {
@@ -130,7 +132,7 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        private bool IsValidSpanId([NotNullWhen(true)] string? spanId)
+        private static bool IsValidSpanId([NotNullWhen(true)] string? spanId)
         {
             if (string.IsNullOrEmpty(spanId))
             {

@@ -257,18 +257,29 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
 
 bool ClrEventsParser::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)
 {
-    if (pMetadata == NULL || cbMetadata == 0)
+    if (pMetadata == nullptr || cbMetadata == 0)
     {
         return false;
     }
 
     ULONG offset = 0;
-    Read(id, pMetadata, cbMetadata, offset);
+    if (!Read(id, pMetadata, cbMetadata, offset))
+    {
+        return false;
+    }
 
     // skip the name to read keyword and version
     name = ReadWideString(pMetadata, cbMetadata, &offset);
-    Read(keywords, pMetadata, cbMetadata, offset);
-    Read(version, pMetadata, cbMetadata, offset);
+
+    if (!Read(keywords, pMetadata, cbMetadata, offset))
+    {
+        return false;
+    }
+
+    if (!Read(version, pMetadata, cbMetadata, offset))
+    {
+        return false;
+    }
 
     return true;
 }

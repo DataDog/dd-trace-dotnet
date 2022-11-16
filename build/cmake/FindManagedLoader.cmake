@@ -5,8 +5,8 @@ SET(MANAGED_LOADER_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tracer/src/bin/Profiler
 
 # Set specific custom commands to embed the loader
 if (ISMACOS)
-    SET(PDB_COMMAND touch stub.c && gcc -o stub.o -c stub.c && ld -r -o Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o -sectcreate binary pdb Datadog.Trace.ClrProfiler.Managed.Loader.pdb stub.o)
-    SET(DLL_COMMAND touch stub.c && gcc -o stub.o -c stub.c && ld -r -o Datadog.Trace.ClrProfiler.Managed.Loader.dll.o -sectcreate binary dll Datadog.Trace.ClrProfiler.Managed.Loader.dll stub.o)
+    SET(PDB_COMMAND touch stub.c && gcc -o stub.o -c stub.c -target ${OSX_ARCH}-apple-darwin${CMAKE_HOST_SYSTEM_VERSION} && ld -r -o Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o -sectcreate binary pdb Datadog.Trace.ClrProfiler.Managed.Loader.pdb stub.o)
+    SET(DLL_COMMAND touch stub.c && gcc -o stub.o -c stub.c -target ${OSX_ARCH}-apple-darwin${CMAKE_HOST_SYSTEM_VERSION} && ld -r -o Datadog.Trace.ClrProfiler.Managed.Loader.dll.o -sectcreate binary dll Datadog.Trace.ClrProfiler.Managed.Loader.dll stub.o)
 elseif(ISLINUX)
     SET(DLL_COMMAND ld -r -b binary -o Datadog.Trace.ClrProfiler.Managed.Loader.dll.o Datadog.Trace.ClrProfiler.Managed.Loader.dll)
     SET(PDB_COMMAND ld -r -b binary -o Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o Datadog.Trace.ClrProfiler.Managed.Loader.pdb)

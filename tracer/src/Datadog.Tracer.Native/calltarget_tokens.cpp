@@ -331,7 +331,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
                                          ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                          ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                          mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                         mdToken* callTargetReturnToken)
+                                         mdToken* callTargetReturnToken, bool isAsyncMethod)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -481,7 +481,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
         newSignatureOffset += callTargetReturnSize;
     }
 
-    AddAdditionalLocals(newSignatureBuffer, newSignatureOffset, newSignatureSize);
+    AddAdditionalLocals(newSignatureBuffer, newSignatureOffset, newSignatureSize, isAsyncMethod);
 
     // CallTarget state value
     newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
@@ -752,7 +752,7 @@ int CallTargetTokens::GetAdditionalLocalsCount()
     return 0;
 }
 
-void CallTargetTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize)
+void CallTargetTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod)
 {
 }
 
@@ -791,15 +791,16 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
                                                       ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                                       ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                                       mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                                      mdToken* callTargetReturnToken, ILInstr** firstInstruction)
+                                                      mdToken* callTargetReturnToken, ILInstr** firstInstruction,
+                                                      bool isAsyncMethod)
 {
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
 
     // Modify the Local Var Signature of the method
 
     auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(), methodReturnType, callTargetStateIndex,
-                             exceptionIndex, callTargetReturnIndex, returnValueIndex, callTargetStateToken,
-                             exceptionToken, callTargetReturnToken);
+                             exceptionIndex, callTargetReturnIndex, returnValueIndex, callTargetStateToken, exceptionToken,
+                             callTargetReturnToken, isAsyncMethod);
 
     if (FAILED(hr))
     {

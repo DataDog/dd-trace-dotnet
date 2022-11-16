@@ -269,7 +269,7 @@ bool ManagedThreadList::TryGetThreadInfo(const uint32_t profilerThreadInfoId,
                                          DWORD* pOsThreadId,
                                          HANDLE* pOsThreadHandle,
                                          WCHAR* pThreadNameBuff,
-                                         const uint32_t threadNameBuffSize,
+                                         const uint32_t threadNameBuffLen,
                                          uint32_t* pActualThreadNameLen)
 {
     ManagedThreadInfo* pThreadInfo = FindByProfilerId(profilerThreadInfoId);
@@ -296,9 +296,9 @@ bool ManagedThreadList::TryGetThreadInfo(const uint32_t profilerThreadInfoId,
 
     const shared::WSTRING& tName = pThreadInfo->GetThreadName();
 
-    if (pThreadNameBuff != nullptr && threadNameBuffSize > 0)
+    if (pThreadNameBuff != nullptr && threadNameBuffLen > 0)
     {
-        std::uint32_t copyCharCount = (std::min)(static_cast<std::uint32_t>(tName.size()), threadNameBuffSize - 1);
+        std::uint32_t copyCharCount = (std::min)(static_cast<std::uint32_t>(tName.size()), threadNameBuffLen - 1);
 
         // If a managed thread name was set, we will use it.
         // If a managed thread name was not set, we will attempt to use a potentially set native thread name (or debugger thread description).
@@ -313,7 +313,7 @@ bool ManagedThreadList::TryGetThreadInfo(const uint32_t profilerThreadInfoId,
         }
         else
         {
-            if (false == OpSysTools::GetNativeThreadName(pThreadInfo->GetOsThreadHandle(), pThreadNameBuff, threadNameBuffSize))
+            if (false == OpSysTools::GetNativeThreadName(pThreadInfo->GetOsThreadHandle(), pThreadNameBuff, threadNameBuffLen))
             {
                 pThreadNameBuff[0] = static_cast<WCHAR>(0);
             }

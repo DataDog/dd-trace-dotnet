@@ -55,7 +55,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.19.0";
+    readonly string Version = "2.20.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -389,7 +389,6 @@ partial class Build : NukeBuild
                 DotNetBuild(s => s
                     .SetProjectFile(benchmarksProject)
                     .SetConfiguration(BuildConfiguration)
-                    .SetFramework(TargetFramework.NETCOREAPP3_1)
                     .EnableNoDependencies()
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 );

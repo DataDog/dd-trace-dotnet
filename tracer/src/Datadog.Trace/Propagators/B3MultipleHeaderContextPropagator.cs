@@ -1,4 +1,4 @@
-// <copyright file="B3ContextPropagator.cs" company="Datadog">
+// <copyright file="B3MultipleHeaderContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,11 +7,10 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 
 namespace Datadog.Trace.Propagators
 {
-    internal class B3ContextPropagator : IContextInjector, IContextExtractor
+    internal class B3MultipleHeaderContextPropagator : IContextInjector, IContextExtractor
     {
         /// <summary>
         /// B3 TraceId header
@@ -27,6 +26,8 @@ namespace Datadog.Trace.Propagators
         /// B3 SpanId header
         /// </summary>
         public const string Sampled = "x-b3-sampled";
+
+        public static readonly B3MultipleHeaderContextPropagator Instance = new();
 
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
@@ -49,6 +50,7 @@ namespace Datadog.Trace.Propagators
             var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, TraceId)?.Trim();
             var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanId)?.Trim();
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Sampled);
+
             if (IsValidTraceId(rawTraceId) && IsValidSpanId(rawSpanId))
             {
 #if NETCOREAPP
@@ -75,14 +77,14 @@ namespace Datadog.Trace.Propagators
             return false;
         }
 
-        private bool IsValidTraceId([NotNullWhen(true)] string? traceId)
+        private static bool IsValidTraceId([NotNullWhen(true)] string? traceId)
         {
             if (string.IsNullOrEmpty(traceId))
             {
                 return false;
             }
 
-            if (traceId!.Length != 16 && traceId!.Length != 32)
+            if (traceId!.Length != 16 && traceId.Length != 32)
             {
                 return false;
             }
@@ -90,7 +92,7 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        private bool IsValidSpanId([NotNullWhen(true)] string? spanId)
+        private static bool IsValidSpanId([NotNullWhen(true)] string? spanId)
         {
             if (string.IsNullOrEmpty(spanId))
             {

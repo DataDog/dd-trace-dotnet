@@ -76,8 +76,8 @@ namespace Datadog.Trace
         /// Note that this API does NOT replace the global Tracer instance.
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null, ISpanSampler spanSampler = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, spanSampler))
+        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null))
         {
         }
 
@@ -219,11 +219,6 @@ namespace Datadog.Trace
         /// </summary>
         ITraceSampler IDatadogTracer.Sampler => TracerManager.Sampler;
 
-        /// <summary>
-        /// Gets the <see cref="ISpanSampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
-        /// </summary>
-        ISpanSampler IDatadogTracer.SpanSampler => TracerManager.SpanSampler;
-
         internal static string RuntimeId => DistributedTracer.Instance.GetRuntimeId();
 
         internal static int LiveTracerCount => _liveTracerCount;
@@ -362,12 +357,13 @@ namespace Datadog.Trace
                 if (traceContext == null)
                 {
                     // if traceContext is null, parent was extracted from propagation headers.
-                    // start a new trace and keep the sampling priority and trace tags.
+                    // start a new trace and keep the sampling priority, origin, and trace tags.
                     var traceTags = TagPropagation.ParseHeader(parentSpanContext.PropagatedTags, Settings.OutgoingTagPropagationHeaderMaxLength);
                     traceContext = new TraceContext(this, traceTags);
 
                     var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
                     traceContext.SetSamplingPriority(samplingPriority);
+                    traceContext.Origin = parentSpanContext.Origin;
                 }
             }
             else
@@ -412,24 +408,13 @@ namespace Datadog.Trace
             // Apply any global tags
             if (Settings.GlobalTags.Count > 0)
             {
+                // if DD_TAGS contained "env" and "version", they were used to set
+                // ImmutableTracerSettings.Environment and ImmutableTracerSettings.ServiceVersion
+                // and removed from Settings.GlobalTags
                 foreach (var entry in Settings.GlobalTags)
                 {
                     span.SetTag(entry.Key, entry.Value);
                 }
-            }
-
-            // automatically add the "env" tag if defined, taking precedence over an "env" tag set from a global tag
-            var env = Settings.Environment;
-            if (!string.IsNullOrWhiteSpace(env))
-            {
-                span.SetTag(Tags.Env, env);
-            }
-
-            // automatically add the "version" tag if defined, taking precedence over an "version" tag set from a global tag
-            var version = Settings.ServiceVersion;
-            if (!string.IsNullOrWhiteSpace(version) && string.Equals(spanContext.ServiceName, DefaultServiceName))
-            {
-                span.SetTag(Tags.Version, version);
             }
 
             if (addToTraceContext)
