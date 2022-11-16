@@ -7,6 +7,9 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
 {
@@ -27,12 +30,71 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
+            InjectTraceParent(context, carrier, carrierSetter);
+            InjectTraceState(context, carrier, carrierSetter);
+        }
+
+        internal static void InjectTraceParent<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+            where TCarrierSetter : struct, ICarrierSetter<TCarrier>
+        {
             var traceId = IsValidHexString(context.RawTraceId, length: 32) ? context.RawTraceId : context.TraceId.ToString("x32");
             var spanId = IsValidHexString(context.RawSpanId, length: 16) ? context.RawSpanId : context.SpanId.ToString("x16");
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
             var sampled = samplingPriority > 0 ? "01" : "00";
 
             carrierSetter.Set(carrier, TraceParent, $"00-{traceId}-{spanId}-{sampled}");
+        }
+
+        internal static void InjectTraceState<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+            where TCarrierSetter : struct, ICarrierSetter<TCarrier>
+        {
+            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+
+            var samplingPriorityString = samplingPriority switch
+                                         {
+                                            -1 => "-1",
+                                            0 => "0",
+                                            1 => "1",
+                                            2 => "2",
+                                            null => null,
+                                            not null => samplingPriority.Value.ToString(CultureInfo.InvariantCulture)
+                                         };
+
+            StringBuilder? sb = null;
+
+            try
+            {
+                sb = StringBuilderCache.Acquire(100);
+
+                if (samplingPriorityString != null)
+                {
+                    sb.Append("s:").Append(samplingPriorityString).Append(';');
+                }
+
+                if (!string.IsNullOrWhiteSpace(context.Origin))
+                {
+                    sb.Append("o:").Append(context.Origin).Append(';');
+                }
+
+                if (context.TraceContext?.Tags?.ToArray() is { Length: > 0 } tags)
+                {
+                    foreach (var tag in tags)
+                    {
+                        if (tag.Key.StartsWith("_dd.p.", StringComparison.Ordinal))
+                        {
+                            var key = tag.Key.Substring(6);
+                            sb.Append("t.").Append(key).Append(':').Append(tag.Value).Append(';');
+                        }
+                    }
+                }
+
+                var tracestate = StringBuilderCache.GetStringAndRelease(sb);
+                carrierSetter.Set(carrier, TraceState, tracestate);
+            }
+            finally
+            {
+                StringBuilderCache.Release(sb);
+            }
         }
 
         public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
