@@ -18,13 +18,13 @@
 extern "C"{
 #endif
 
+// Add missing definition in .NET 7
+// no need to #if defined(HOST_ARM64)
+bool g_arm64_atomics_present = false;
 
 #include <rpc.h>
 #include <rpcndr.h>
 
-// Add missing definition in .NET 7
-// no need to #if defined(HOST_ARM64)
-bool g_arm64_atomics_present = false;
 
 #ifdef _MIDL_USE_GUIDDEF_
 
