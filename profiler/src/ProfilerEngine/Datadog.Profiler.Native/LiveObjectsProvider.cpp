@@ -59,8 +59,14 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
 
 std::list<Sample> LiveObjectsProvider::GetSamples()
 {
-    // TODO: return the live object samples
-    return std::list<Sample>();
+    // return the live object samples
+    std::list<Sample> liveObjectsSamples;
+    for (auto const& info : _monitoredObjects)
+    {
+        liveObjectsSamples.push_back(info.GetSample().Copy());
+    }
+
+    return liveObjectsSamples;
 }
 
 void LiveObjectsProvider::OnGarbageCollectionStarted()
@@ -75,7 +81,7 @@ void LiveObjectsProvider::OnGarbageCollectionStarted()
     _monitoredObjects.splice(_monitoredObjects.end(), _objectsToMonitor);
 }
 
-void** LiveObjectsProvider::CreateWeakHandle(uintptr_t address)
+ObjectHandleID LiveObjectsProvider::CreateWeakHandle(uintptr_t address)
 {
     // create WeakHandle with ICorProfilerInfo13
     return nullptr;
@@ -99,7 +105,7 @@ bool LiveObjectsProvider::Stop()
     return true;
 }
 
-bool LiveObjectsProvider::IsAlive(void** handle)
+bool LiveObjectsProvider::IsAlive(ObjectHandleID handle)
 {
     // TODO: check WeakHandle with ICorProfilerInfo13
     return false;

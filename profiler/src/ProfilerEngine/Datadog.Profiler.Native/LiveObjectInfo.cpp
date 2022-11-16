@@ -28,18 +28,22 @@ LiveObjectInfo& LiveObjectInfo::operator=(LiveObjectInfo&& other) noexcept
     return *this;
 }
 
-void LiveObjectInfo::SetHandle(void** handle)
+void LiveObjectInfo::SetHandle(ObjectHandleID handle)
 {
     _weakHandle = handle;
 }
 
-void** LiveObjectInfo::GetHandle()
+ObjectHandleID LiveObjectInfo::GetHandle() const
 {
     return _weakHandle;
 }
 
-
-uintptr_t LiveObjectInfo::GetAddress()
+uintptr_t LiveObjectInfo::GetAddress() const
 {
     return _address;
+}
+
+const Sample& LiveObjectInfo::GetSample() const
+{
+    return _sample;
 }

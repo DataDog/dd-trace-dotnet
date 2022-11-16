@@ -5,22 +5,29 @@
 
 #include "Sample.h"
 
+// wait for .NET 7 IcorProfilerInfo13
+typedef void** ObjectHandleID;
+
 class LiveObjectInfo
 {
 public:
     LiveObjectInfo(Sample&& sample, uintptr_t address);
+
+    // move only class
     LiveObjectInfo& operator=(const LiveObjectInfo& info) = delete;
     LiveObjectInfo(const LiveObjectInfo&) = delete;
     LiveObjectInfo(LiveObjectInfo&& info) noexcept;
     LiveObjectInfo& operator=(LiveObjectInfo&& other) noexcept;
 
-    void SetHandle(void** handle);
-    void** GetHandle();
-    uintptr_t GetAddress();
+    // accessors
+    void SetHandle(ObjectHandleID handle);
+    ObjectHandleID GetHandle() const;
+    uintptr_t GetAddress() const;
+    const Sample& GetSample() const;
 
 private:
     Sample _sample;
     uintptr_t _address;
-    void** _weakHandle;
+    ObjectHandleID _weakHandle;
 
 };
