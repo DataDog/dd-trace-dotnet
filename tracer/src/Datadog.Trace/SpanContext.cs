@@ -325,6 +325,7 @@ namespace Datadog.Trace
                     return true;
 
                 case Keys.PropagatedTags:
+                case HttpHeaderNames.PropagatedTags:
                     // return the value from TraceContext if available
                     value = TraceContext?.Tags.ToPropagationHeader() ?? PropagatedTags;
                     return true;
