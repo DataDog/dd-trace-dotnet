@@ -1,0 +1,37 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet_core.request,
+    Resource: GET /health/params/{id},
+    Service: Samples.Security.AspNetCore5,
+    Type: web,
+    Tags: {
+      aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.HealthController.Params (Samples.Security.AspNetCore5),
+      aspnet_core.route: health/params/{id},
+      component: aspnet_core,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: health/params/{id},
+      http.status_code: 200,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: MyAllowedScanner,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.p.dm: -0,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.appsec.enabled: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  }
+]

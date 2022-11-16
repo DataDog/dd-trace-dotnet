@@ -187,6 +187,7 @@ namespace Datadog.Trace.AppSec
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _settings.Rules == null);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, true);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusions, true);
                 });
         }
 

@@ -130,6 +130,22 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             await VerifySpans(spans1.ToImmutableList(), settings);
         }
+
+        private void CheckAckState(GetRcmRequest request, uint expectedState, string expectedError, string message)
+        {
+            var state = request?.Client?.State?.ConfigStates?.SingleOrDefault(x => x.Product == "ASM_FEATURES");
+
+            state.Should().NotBeNull();
+            state.ApplyState.Should().Be(expectedState, message);
+            state.ApplyError.Should().Be(expectedError, message);
+        }
+
+        private void CheckCapabilities(GetRcmRequest request, uint expectedState, string message)
+        {
+            expectedState = expectedState | RcmCapabilitiesIndices.AsmExclusionsUInt32;
+            var capabilities = new BigInteger(request?.Client?.Capabilities, true, true);
+            capabilities.Should().Be(expectedState, message);
+        }
     }
 }
 #endif
