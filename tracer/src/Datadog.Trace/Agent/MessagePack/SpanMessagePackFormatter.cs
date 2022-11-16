@@ -294,48 +294,83 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 // Done here to work both at runtime and in tests.
                 InitializeAasTags();
+
                 if (model.IsLocalRoot || model.IsChunkOrphan)
                 {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteNameTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteNameBytes);
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteKindTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteKindBytes);
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteTypeTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteTypeBytes);
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasResourceGroupTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasResourceGroupBytes);
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSubscriptionIdTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSubscriptionIdBytes);
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasResourceIdTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasResourceIdBytes);
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasInstanceIdTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasInstanceIdBytes);
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasInstanceNameTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasInstanceNameBytes);
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasOperatingSystemTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasOperatingSystemBytes);
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasRuntimeTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasRuntimeBytes);
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasExtensionVersionTagNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasExtensionVersionBytes);
+                    if (_aasSiteKindBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteKindTagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteKindBytes);
+                    }
+
+                    if (_aasResourceGroupBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasResourceGroupTagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasResourceGroupBytes);
+                    }
+
+                    if (_aasSubscriptionIdBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSubscriptionIdTagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSubscriptionIdBytes);
+                    }
+
+                    if (_aasResourceIdBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasResourceIdTagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasResourceIdBytes);
+                    }
+
+                    if (_aasInstanceIdBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasInstanceIdTagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasInstanceIdBytes);
+                    }
+
+                    if (_aasInstanceNameBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasInstanceNameTagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasInstanceNameBytes);
+                    }
+
+                    if (_aasOperatingSystemBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasOperatingSystemTagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasOperatingSystemBytes);
+                    }
+
+                    if (_aasRuntimeBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasRuntimeTagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasRuntimeBytes);
+                    }
+
+                    if (_aasExtensionVersionBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasExtensionVersionTagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasExtensionVersionBytes);
+                    }
                 }
-                else
+
+                // the front-end identify AAS spans using aas.site.name and aas.site.type, so we need them on all spans
+                if (_aasSiteNameBytes is not null)
                 {
-                    // the front-end identify AAS spans using aas.site.name and aas.site.type, so we need them on all spans
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteNameTagNameBytes);
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteNameBytes);
+                }
+
+                if (_aasSiteTypeBytes is not null)
+                {
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteTypeTagNameBytes);
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteTypeBytes);
@@ -499,19 +534,40 @@ namespace Datadog.Trace.Agent.MessagePack
                 _aasOperatingSystemTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesOperatingSystem);
                 _aasRuntimeTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesRuntime);
                 _aasExtensionVersionTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesExtensionVersion);
-
-                _aasSiteNameBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.SiteName);
-                _aasSiteKindBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.SiteKind);
-                _aasSiteTypeBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.SiteType);
-                _aasResourceGroupBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.ResourceGroup);
-                _aasSubscriptionIdBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.SubscriptionId);
-                _aasResourceIdBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.ResourceId);
-                _aasInstanceIdBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.InstanceId);
-                _aasInstanceNameBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.InstanceName);
-                _aasOperatingSystemBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.OperatingSystem);
-                _aasRuntimeBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.Runtime);
-                _aasExtensionVersionBytes = StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.SiteExtensionVersion);
             }
+
+            if (_aasSiteNameBytes == null)
+            {
+                _aasSiteNameBytes = AzureAppServices.Metadata.SiteName != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.SiteName) : null;
+                _aasSiteKindBytes = AzureAppServices.Metadata.SiteKind != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.SiteKind) : null;
+                _aasSiteTypeBytes = AzureAppServices.Metadata.SiteType != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.SiteType) : null;
+                _aasResourceGroupBytes = AzureAppServices.Metadata.ResourceGroup != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.ResourceGroup) : null;
+                _aasSubscriptionIdBytes = AzureAppServices.Metadata.SubscriptionId != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.SubscriptionId) : null;
+                _aasResourceIdBytes = AzureAppServices.Metadata.ResourceId != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.ResourceId) : null;
+                _aasInstanceIdBytes = AzureAppServices.Metadata.InstanceId != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.InstanceId) : null;
+                _aasInstanceNameBytes = AzureAppServices.Metadata.InstanceName != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.InstanceName) : null;
+                _aasOperatingSystemBytes = AzureAppServices.Metadata.OperatingSystem != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.OperatingSystem) : null;
+                _aasRuntimeBytes = AzureAppServices.Metadata.Runtime != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.Runtime) : null;
+                _aasExtensionVersionBytes = AzureAppServices.Metadata.SiteExtensionVersion != null ? StringEncoding.UTF8.GetBytes(AzureAppServices.Metadata.SiteExtensionVersion) : null;
+            }
+        }
+
+        /// <summary>
+        /// For testing purposes.
+        /// </summary>
+        internal void ResetAasTags()
+        {
+            _aasSiteNameBytes = null;
+            _aasSiteKindBytes = null;
+            _aasSiteTypeBytes = null;
+            _aasResourceGroupBytes = null;
+            _aasSubscriptionIdBytes = null;
+            _aasResourceIdBytes = null;
+            _aasInstanceIdBytes = null;
+            _aasInstanceNameBytes = null;
+            _aasOperatingSystemBytes = null;
+            _aasRuntimeBytes = null;
+            _aasExtensionVersionBytes = null;
         }
 
         internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>

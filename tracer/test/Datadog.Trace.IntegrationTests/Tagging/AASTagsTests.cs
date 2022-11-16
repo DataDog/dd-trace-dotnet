@@ -11,13 +11,12 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Util;
 using FluentAssertions;
-using FluentAssertions.Execution;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.Tagging;
 
+[AzureAppServicesRestorer]
 public class AASTagsTests
 {
     private readonly Tracer _tracer;
@@ -38,18 +37,30 @@ public class AASTagsTests
         var vars = GetMockVariables();
         AzureAppServices.Metadata = new AzureAppServices(vars);
 
-        using (var scope = _tracer.StartActiveInternal("root"))
+        using (_tracer.StartActiveInternal("root"))
         {
-            scope.Span.Context.TraceContext.SetSamplingPriority(2);
         }
 
         await _tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
         var deserializedSpan = traceChunks.Single().Single();
         AssertLocalRootSPan(deserializedSpan);
+    }
 
-        // Teardown
-        AzureAppServices.Metadata = new AzureAppServices(EnvironmentHelpers.GetEnvironmentVariables());
+    [Fact]
+    public async Task NullAasTagsShouldNotCauseIssues()
+    {
+        var vars = GetNullMockVariables();
+        AzureAppServices.Metadata = new AzureAppServices(vars);
+
+        using (_tracer.StartActiveInternal("root"))
+        {
+        }
+
+        await _tracer.FlushAsync();
+        var traceChunks = _testApi.Wait();
+        var deserializedSpan = traceChunks.Single().Single();
+        AssertNoTags(deserializedSpan);
     }
 
     [Fact]
@@ -112,7 +123,8 @@ public class AASTagsTests
            .Should()
            .HaveCount(2)
            .And.OnlyContain(s => s.ParentId == span1.SpanId)
-           .And.Satisfy(s => AssertLocalRootSPan(s));
+            // I don't know why Assume doesn't work in that case but using SatisfyRespectively does the trick
+           .And.SatisfyRespectively(s => AssertLocalRootSPan(s), s => AssertLocalRootSPan(s));
 
         // chunk 0, other spans should only have site name and site type
         traceChunks[0]
@@ -129,9 +141,6 @@ public class AASTagsTests
            .And.OnlyContain(s => s.ParentId == null || s.ParentId == 0)
            .And.OnlyContain(s => s.SpanId == span1.SpanId)
            .And.Satisfy(s => AssertLocalRootSPan(s));
-
-        // Teardown
-        AzureAppServices.Metadata = new AzureAppServices(EnvironmentHelpers.GetEnvironmentVariables());
     }
 
     private bool AssertLocalRootSPan(MockSpan span)
@@ -154,8 +163,8 @@ public class AASTagsTests
     private bool AssertNonRootSPan(MockSpan span)
     {
         span.GetTag(Tags.AzureAppServicesSiteName).Should().Be("SiteName");
-        span.GetTag(Tags.AzureAppServicesSiteKind).Should().BeNull();
         span.GetTag(Tags.AzureAppServicesSiteType).Should().Be("app");
+        span.GetTag(Tags.AzureAppServicesSiteKind).Should().BeNull();
         span.GetTag(Tags.AzureAppServicesResourceGroup).Should().BeNull();
         span.GetTag(Tags.AzureAppServicesSubscriptionId).Should().BeNull();
         span.GetTag(Tags.AzureAppServicesResourceId).Should().BeNull();
@@ -166,6 +175,30 @@ public class AASTagsTests
         span.GetTag(Tags.AzureAppServicesExtensionVersion).Should().BeNull();
 
         return true;
+    }
+
+    private bool AssertNoTags(MockSpan span)
+    {
+        span.GetTag(Tags.AzureAppServicesSiteName).Should().BeNull();
+        span.GetTag(Tags.AzureAppServicesSiteType).Should().BeNull();
+        span.GetTag(Tags.AzureAppServicesSiteKind).Should().BeNull();
+        span.GetTag(Tags.AzureAppServicesResourceGroup).Should().BeNull();
+        span.GetTag(Tags.AzureAppServicesSubscriptionId).Should().BeNull();
+        span.GetTag(Tags.AzureAppServicesResourceId).Should().BeNull();
+        span.GetTag(Tags.AzureAppServicesInstanceId).Should().BeNull();
+        span.GetTag(Tags.AzureAppServicesInstanceName).Should().BeNull();
+        span.GetTag(Tags.AzureAppServicesOperatingSystem).Should().BeNull();
+        span.GetTag(Tags.AzureAppServicesRuntime).Should().BeNull();
+        span.GetTag(Tags.AzureAppServicesExtensionVersion).Should().BeNull();
+
+        return true;
+    }
+
+    private IDictionary GetNullMockVariables()
+    {
+        var vars = Environment.GetEnvironmentVariables();
+        vars.Add(AzureAppServices.AzureAppServicesContextKey, "1");
+        return vars;
     }
 
     private IDictionary GetMockVariables()
