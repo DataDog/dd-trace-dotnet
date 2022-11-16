@@ -66,7 +66,7 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release");
 
             CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel 2 --target all-profiler");
+                arguments: $"--build {NativeBuildDirectory} --parallel --target all-profiler");
 
             if (IsAlpine)
             {
