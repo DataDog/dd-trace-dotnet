@@ -103,6 +103,7 @@ variables:
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
+  slackWebhookUrl: $(SLACK_WEBHOOK_URL)
   isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/'))]
@@ -561,12 +562,6 @@ stages:
 
     - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
-
-    - script: $([[ $(otool -s binary dll $(monitoringHome)/osx-x64/Datadog.Tracer.Native.dylib | wc -c) -gt 50000 ]] && [[ $(otool -s binary pdb $(monitoringHome)/osx-x64/Datadog.Tracer.Native.dylib | wc -c) -gt 40000 ]])
-      displayName: Checking managed loader in the x64 native binary
-
-    - script: $([[ $(otool -s binary dll $(monitoringHome)/osx-arm64/Datadog.Tracer.Native.dylib | wc -c) -gt 50000 ]] && [[ $(otool -s binary pdb $(monitoringHome)/osx-arm64/Datadog.Tracer.Native.dylib | wc -c) -gt 40000 ]])
-      displayName: Checking managed loader in the arm64 native binary
 
     - publish: $(monitoringHome)
       displayName: Uploading macos profiler artifact
@@ -3746,3 +3741,26 @@ stages:
 
     - bash: sleep 20
       displayName: Wait 20 seconds to agent flush before finishing pipeline
+
+- stage: notify_slack_on_failures
+  condition: >
+    and(
+      failed(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(variables['isMainBranch'], true)
+    )
+  dependsOn: trace_pipeline # so it runs last
+  jobs:
+  - job: notify
+    timeoutInMinutes: 10
+    pool:
+      vmImage: ubuntu-20.04
+
+    steps:
+    - bash: |
+        sha=$(echo $(OriginalCommitId) | head -c 7)
+        curl -X POST \
+        -H "Content-Type: application/json" \
+        -d '{"commit": "'$sha'"}' \
+          $(slackWebhookUrl) 
+      displayName: "notify"

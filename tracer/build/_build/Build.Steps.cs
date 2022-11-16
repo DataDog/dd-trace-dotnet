@@ -86,6 +86,12 @@ partial class Build
     [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
     [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
     [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
+    
+    //OSX Tools
+    readonly string[] OsxArchs = { "arm64", "x86_64" }; 
+    [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
+    [LazyPathExecutable(name: "lipo")] readonly Lazy<Tool> Lipo;
+
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -207,23 +213,53 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
-            foreach (var (arch, folder, extension) in GetMacOsArchitectureAndExtension())
+            var lstNativeBinaries = new List<string>();
+            foreach (var arch in OsxArchs)
             {
                 DeleteDirectory(NativeBuildDirectory);
 
                 var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = arch };
                 
+                // Build native
                 CMake.Value(
                     arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release",
                     environmentVariables: envVariables);
                 CMake.Value(
                     arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeTracer}",
                     environmentVariables: envVariables);
+
+                var sourceFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib";
+                var destFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{arch}.dylib";
                 
-                CopyFile(NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
-                         NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{arch}.{extension}",
-                         FileExistsPolicy.Overwrite);
+                // Check section with the manager loader
+                var output = OTool.Value(arguments: $"-s binary dll {sourceFile}", logOutput: false);
+                var outputCount = output.Select(o => o.Type == OutputType.Std).Count();
+                if (outputCount < 1000)
+                {
+                    throw new ApplicationException("Managed loader section doesn't have the enough size > 1000");
+                }
+                
+                // Check the architecture of the build
+                output = Lipo.Value(arguments: $"-archs {sourceFile}", logOutput: false);
+                var strOutput = string.Join('\n', output.Where(o => o.Type == OutputType.Std).Select(o => o.Text));
+                if (!strOutput.Contains(arch, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ApplicationException($"Invalid architecture, expected: '{arch}', actual: '{strOutput}'");
+                }
+                
+                // Copy binary to the temporal destination
+                CopyFile(sourceFile, destFile, FileExistsPolicy.Overwrite);
+                
+                // Add library to the list
+                lstNativeBinaries.Add(destFile);
             }
+            
+            // Create universal shared library with all architectures in a single file
+            var destination = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib";
+            DeleteFile(destination);
+            Console.WriteLine($"Creating universal binary for {destination}");
+            var strNativeBinaries = string.Join(' ', lstNativeBinaries);
+            Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
         });
 
     Target CompileNativeSrc => _ => _
@@ -349,7 +385,7 @@ partial class Build
               var ddwafFileName = $"libddwaf.{ext}";
 
               var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
-              var dest = MonitoringHomeDirectory / sourceArch;
+              var dest = MonitoringHomeDirectory / "osx";
               CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
           }
         });
@@ -392,7 +428,7 @@ partial class Build
                     {
                         var (arch, _) = GetUnixArchitectureAndExtension();
                         var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
-                        var source = MonitoringHomeDirectory / arch;
+                        var source = MonitoringHomeDirectory / (IsOsx ? "osx" : arch);
                         var oldVersionPath = oldVersionTempPath / "runtimes" / archWaf / "native" / $"libddwaf.{ext}";
                         foreach (var fmk in frameworks)
                         {
@@ -486,15 +522,12 @@ partial class Build
         .After(CompileNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
-            foreach (var (arch, folder, extension) in GetMacOsArchitectureAndExtension())
-            {
-                // Copy Native file
-                CopyFile(
-                    NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{arch}.{extension}",
-                    MonitoringHomeDirectory / folder / $"{NativeTracerProject.Name}.{extension}",
-                    FileExistsPolicy.Overwrite,
-                    true);
-            }
+            // Copy the universal binary to the output folder
+            CopyFileToDirectory(
+                NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib",
+                MonitoringHomeDirectory / "osx",
+                FileExistsPolicy.Overwrite,
+                true);
         });
 
     Target PublishNativeTracer => _ => _
@@ -2002,20 +2035,6 @@ partial class Build
             (false, false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
             (false, true) => ($"linux-musl-{UnixArchitectureIdentifier}", "so"),
         };
-
-    private (string Arch, string Folder, string Ext)[] GetMacOsArchitectureAndExtension()
-    {
-        if (IsOsx)
-        {
-            return new (string Arch, string Folder, string Ext)[]
-            {
-                ("arm64", "osx-arm64", "dylib"),
-                ("x86_64", "osx-x64", "dylib"),
-            };
-        }
-
-        return Array.Empty<(string Arch, string Folder, string Ext)>();
-    }
 
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxProfilerDirFudge(string project)

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.MD;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
@@ -68,8 +69,14 @@ namespace Datadog.Trace.Pdb
 
         private bool TryGetSymbolMethodOfAsyncMethod(MethodDef mdMethod, out SymbolMethod symbolMethod)
         {
-            var asyncDebugInfo = mdMethod.CustomDebugInfos.OfType<PdbStateMachineTypeNameCustomDebugInfo>().FirstOrDefault();
-            var moveNextDebugInfo = asyncDebugInfo?.Type.FindMethod("MoveNext").CustomDebugInfos.OfType<PdbAsyncMethodCustomDebugInfo>().FirstOrDefault();
+            // Determine if the given mdMethod is a kickoff of a state machine (aka an async method)
+            // The first step is to check if the method is decorated with the attribute `AsyncStateMachine`
+            var stateMachineAttributeFullName = typeof(AsyncStateMachineAttribute).FullName;
+            var stateMachineAttributeOfMdMethod = mdMethod.CustomAttributes?.FirstOrDefault(ca => ca.TypeFullName == stateMachineAttributeFullName);
+            // Grab the generated inner type state machine from the argument given by the compiler to the AsyncStateMachineAttribute
+            var stateMachineInnerType = (stateMachineAttributeOfMdMethod?.ConstructorArguments.FirstOrDefault().Value as ClassSig)?.TypeDef;
+            // Grab the MoveNext from inside the stateMachine and from there the corresponding debugInfo
+            var moveNextDebugInfo = stateMachineInnerType?.FindMethod("MoveNext")?.CustomDebugInfos.OfType<PdbAsyncMethodCustomDebugInfo>().FirstOrDefault();
             var breakpointMethod = moveNextDebugInfo?.StepInfos.FirstOrDefault();
 
             if (breakpointMethod?.BreakpointMethod == null)

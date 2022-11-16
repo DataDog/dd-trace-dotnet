@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -10,33 +10,19 @@
           "lines": {
             "21": {
               "arguments": {
+                "input": {
+                  "type": "String",
+                  "value": "AsyncInstanceMethod.RunAsync"
+                },
                 "this": {
-                  "fields": {
-                    "<>1__state": {
-                      "type": "Int32",
-                      "value": "-1"
-                    },
-                    "<>4__this": {
-                      "type": "AsyncInstanceMethod",
-                      "value": "AsyncInstanceMethod"
-                    },
-                    "<>dd_liveDebugger_isReEntryToMoveNext": {
-                      "type": "Boolean",
-                      "value": "False"
-                    },
-                    "<>t__builder": "ScrubbedValue",
-                    "<>u__1": "ScrubbedValue",
-                    "<output>5__1": {
-                      "isNull": "true",
-                      "type": "String"
-                    },
-                    "input": {
-                      "type": "String",
-                      "value": "AsyncInstanceMethod.RunAsync"
-                    }
-                  },
-                  "type": "<Method>d__2",
-                  "value": "<Method>d__2"
+                  "type": "AsyncInstanceMethod",
+                  "value": "AsyncInstanceMethod"
+                }
+              },
+              "locals": {
+                "output": {
+                  "isNull": "true",
+                  "type": "String"
                 }
               }
             }
@@ -77,13 +63,13 @@
       }
     },
     "logger": {
-      "method": "MoveNext",
-      "name": "Samples.Probes.SmokeTests.AsyncInstanceMethod+<Method>d__2",
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.AsyncInstanceMethod",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(this=<Method>d__2)",
+    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(input=AsyncInstanceMethod.RunAsync, this=AsyncInstanceMethod)\r\noutput=",
     "service": "Probes"
   }
 ]
