@@ -52,7 +52,7 @@ namespace Datadog.Trace.Util
 
         public static void Release(StringBuilder sb)
         {
-            if (sb.Capacity <= MaxBuilderSize)
+            if (sb?.Capacity <= MaxBuilderSize)
             {
                 _cachedInstance = sb;
             }
