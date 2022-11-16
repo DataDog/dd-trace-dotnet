@@ -58,8 +58,9 @@ public:
     void OnGarbageCollectionFinished();
 
 private:
-    void** CreateWeakHandle(uintptr_t address);
-    bool IsAlive(void** handle);
+    ObjectHandleID CreateWeakHandle(uintptr_t address) const;
+    void CloseWeakHandle(ObjectHandleID handle) const;
+    bool IsAlive(ObjectHandleID handle) const;
 
 private:
     uint32_t _valueOffset = 0;
@@ -72,7 +73,7 @@ private:
 
     bool _isTimestampsAsLabelEnabled = false;
 
-    std::mutex _samplesLock;
+    std::mutex _liveObjectsLock;
     std::list<LiveObjectInfo> _objectsToMonitor;  // need to wait for the next GC to build a WeakHandle around the address
     std::list<LiveObjectInfo> _monitoredObjects;  // WeakHandle are checked after each GC
 };

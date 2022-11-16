@@ -46,21 +46,12 @@ const char* LiveObjectsProvider::GetName()
     return "LiveObjectsProvider";
 }
 
-void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
-{
-    // std::cout << rawSample.AllocationClass << std::endl;
-
-    LiveObjectInfo info(
-        _pAllocationsProvider.get()->TransformRawSample(rawSample),
-        rawSample.Address
-        );
-    _objectsToMonitor.push_back(std::move(info));
-}
-
 std::list<Sample> LiveObjectsProvider::GetSamples()
 {
     // return the live object samples
     std::list<Sample> liveObjectsSamples;
+
+    std::lock_guard<std::mutex> lock(_liveObjectsLock);
     for (auto const& info : _monitoredObjects)
     {
         liveObjectsSamples.push_back(info.GetSample().Copy());
@@ -69,30 +60,83 @@ std::list<Sample> LiveObjectsProvider::GetSamples()
     return liveObjectsSamples;
 }
 
+void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
+{
+    // std::cout << rawSample.AllocationClass << std::endl;
+
+    LiveObjectInfo info(
+        _pAllocationsProvider.get()->TransformRawSample(rawSample),
+        rawSample.Address);
+
+    std::lock_guard<std::mutex> lock(_liveObjectsLock);
+    _objectsToMonitor.push_back(std::move(info));
+}
+
 void LiveObjectsProvider::OnGarbageCollectionStarted()
 {
+    std::lock_guard<std::mutex> lock(_liveObjectsLock);
+
     // address provided during AllocationTick event were not pointing to real objects
     // so we have to wait for the next garbage collection to create a wrapping weak handle
     for (auto& info : _objectsToMonitor)
     {
-        info.SetHandle(CreateWeakHandle(info.GetAddress()));
+        auto handle = CreateWeakHandle(info.GetAddress());
+
+        if (handle != nullptr)
+        {
+            info.SetHandle(handle);
+        }
+        else
+        {
+            // this should never happen
+        }
+
     }
 
     _monitoredObjects.splice(_monitoredObjects.end(), _objectsToMonitor);
 }
 
-ObjectHandleID LiveObjectsProvider::CreateWeakHandle(uintptr_t address)
+void LiveObjectsProvider::OnGarbageCollectionFinished()
 {
-    // create WeakHandle with ICorProfilerInfo13
+    std::lock_guard<std::mutex> lock(_liveObjectsLock);
+
+    // it is now time to check if the monitored allocated objects have been collected or are still alive
+    _monitoredObjects.remove_if([this](LiveObjectInfo& info)
+    {
+        bool hasBeenCollected = !IsAlive(info.GetHandle());
+        if (hasBeenCollected)
+        {
+            CloseWeakHandle(info.GetHandle());
+        }
+        return hasBeenCollected;
+    });
+}
+
+bool LiveObjectsProvider::IsAlive(ObjectHandleID handle) const
+{
+    if (handle == nullptr)
+    {
+        return false;
+    }
+
+    // TODO: check WeakHandle with ICorProfilerInfo13::GetObjectIdFromHandle(handle, &objectId) where objectId == nullptr means not alive
+    return false;
+}
+
+ObjectHandleID LiveObjectsProvider::CreateWeakHandle(uintptr_t address) const
+{
+    // TODO: create WeakHandle with ICorProfilerInfo13::CreateHandle(address, COR_PRF_HANDLE_TYPE::COR_PRF_HANDLE_TYPE_WEAK, &handle)
     return nullptr;
 }
 
-void LiveObjectsProvider::OnGarbageCollectionFinished()
+void LiveObjectsProvider::CloseWeakHandle(ObjectHandleID handle) const
 {
-    _monitoredObjects.remove_if([this](LiveObjectInfo& info)
+    if (handle == nullptr)
     {
-        return !IsAlive(info.GetHandle());
-    });
+        return;
+    }
+
+    // TODO: use ICorProfilerInfo13::DestroyHandle(handle) to delete the handle
 }
 
 bool LiveObjectsProvider::Start()
@@ -103,10 +147,4 @@ bool LiveObjectsProvider::Start()
 bool LiveObjectsProvider::Stop()
 {
     return true;
-}
-
-bool LiveObjectsProvider::IsAlive(ObjectHandleID handle)
-{
-    // TODO: check WeakHandle with ICorProfilerInfo13
-    return false;
 }
