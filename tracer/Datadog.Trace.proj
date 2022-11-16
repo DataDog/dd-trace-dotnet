@@ -11,6 +11,7 @@
     <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj" />
     <CsharpIntegrationTestProject Remove="test\Datadog.Trace.Tools.Runner.IntegrationTests\Datadog.Trace.Tools.Runner.IntegrationTests.csproj" Condition="$(TargetFramework.StartsWith('net4'))" />
     <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
+    <CsharpIntegrationTestDebuggerProject Include="test\Datadog.Trace.Debugger.IntegrationTests\Datadog.Trace.Debugger.IntegrationTests.csproj" />
     <RazorPagesProject Include="test/test-applications/**/Samples.AspNetCoreRazorPages.csproj" />
     <ExcludeExpenseItDemoProject Remove="test/test-applications/regression/**/ExpenseItDemo*.csproj" />
     <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
@@ -18,7 +19,6 @@
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
-    <LiveDebuggerSampleProject Include="test\test-applications\debugger\**\*.csproj" />
     <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" />
     <RegressionSampleLibProject Include="test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
   </ItemGroup>
@@ -61,8 +61,8 @@
     <!-- Filter the sample projects by TargetFramework -->
     <ItemGroup>
       <IntegrationTestProjects Include="@(RazorPagesProject)" Condition="!$(TargetFramework.StartsWith('net4'))" />
-      <IntegrationTestProjects Include="@(LiveDebuggerSampleProject)" />
       <IntegrationTestProjects Include="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeLegacyRedisProject)" />
+      <IntegrationTestProjects Remove="@(CsharpIntegrationTestDebuggerProject)" />
     </ItemGroup>
 
     <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject);@(IntegrationTestProjects)">

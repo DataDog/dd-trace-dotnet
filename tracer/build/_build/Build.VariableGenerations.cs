@@ -33,7 +33,13 @@ partial class Build : NukeBuild
             void GenerateConditionVariables()
             {
                 GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
-                GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[] { "tracer/src/Datadog.Trace/Debugger/Instrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] { });
+                GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
+                {
+                    "tracer/src/Datadog.Trace/Debugger/Instrumentation", 
+                    "tracer/src/Datadog.Tracer.Native", 
+                    "tracer/test/Datadog.Trace.Debugger.IntegrationTests",
+                    "tracer/test/test-applications/debugger",
+                }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src" }, new string[] { });
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
@@ -69,13 +75,14 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsWindowsMatrices()
             {
-                GenerateIntegrationTestsWindowsMatrix(TestingFrameworks);
+                GenerateIntegrationTestsWindowsMatrix(TestingFrameworks, "integration_tests_windows_matrix");
+                GenerateIntegrationTestsWindowsMatrix(TestingFrameworksDebugger, "integration_tests_windows_debugger_matrix");
                 GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET462);
                 GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET462);
                 GenerateIntegrationTestsWindowsAzureFunctionsMatrix();
             }
 
-            void GenerateIntegrationTestsWindowsMatrix(TargetFramework[] targetFrameworks)
+            void GenerateIntegrationTestsWindowsMatrix(TargetFramework[] targetFrameworks, string matrixName)
             {
                 var targetPlatforms = new[] { "x86", "x64" };
                 var matrix = new Dictionary<string, object>();
@@ -90,9 +97,9 @@ partial class Build : NukeBuild
 
                 Logger.Info($"Integration test windows matrix");
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable("integration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
-            }
-
+                AzurePipelines.Instance.SetVariable(matrixName, JsonConvert.SerializeObject(matrix, Formatting.None));
+            }            
+            
             void GenerateIntegrationTestsWindowsAzureFunctionsMatrix()
             {
                 // TODO: test on both x86 and x64?
