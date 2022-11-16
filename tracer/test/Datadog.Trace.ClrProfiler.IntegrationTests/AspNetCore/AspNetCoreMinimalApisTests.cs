@@ -53,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             await Fixture.TryStartApp(this);
 
             var spans = await Fixture.WaitForSpans(path);
+            Fixture.WaitForProcDump();
             ValidateIntegrationSpans(spans, expectedServiceName: "Samples.AspNetCoreMinimalApis", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
