@@ -53,16 +53,9 @@ namespace Datadog.Trace.TestHelpers
 
         public virtual void Dispose()
         {
-            try
+            if (!Process.HasExited)
             {
-                if (!Process.HasExited)
-                {
-                    Process.Kill();
-                }
-            }
-            catch (Exception)
-            {
-                // swallow
+                Process.Kill();
             }
         }
 

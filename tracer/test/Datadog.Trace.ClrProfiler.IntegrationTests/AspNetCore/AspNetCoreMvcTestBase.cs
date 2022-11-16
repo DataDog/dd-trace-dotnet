@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -99,8 +98,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             private readonly HttpClient _httpClient;
             private Process _process;
             private ITestOutputHelper _currentOutput;
-            private Process _procDumpProcess;
-            private ProcessHelper _procDumpHelper;
 
             public AspNetCoreTestFixture()
             {
@@ -144,10 +141,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     }
                 }
 
-                var procDumpExecutable = await DownloadProcdumpZipAndExtract();
-                var args = $"accepteula -ma -e 1 -f \"ACCESSVIOLATION\" {_process.Id}";
-                AttachProcDump(procDumpExecutable, args);
-
                 await EnsureServerStarted();
             }
 
@@ -185,65 +178,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                 await SubmitRequest(path, post);
                 return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
-            }
-
-            public void WaitForProcDump()
-            {
-                using (_procDumpProcess)
-                {
-                    using (_procDumpHelper)
-                    {
-                        _procDumpProcess.WaitForExit(30_000);
-                        _procDumpHelper.Drain();
-                        _currentOutput?.WriteLine($"[dump][stdout] {_procDumpHelper.StandardOutput}");
-                        _currentOutput?.WriteLine($"[dump][stderr] {_procDumpHelper.ErrorOutput}");
-
-                        if (_procDumpProcess.ExitCode == 0)
-                        {
-                            _currentOutput?.WriteLine($"Memory dump successfully captured.");
-                        }
-                        else
-                        {
-                            _currentOutput?.WriteLine($"Failed to capture memory dump - exit code was {_procDumpProcess.ExitCode}.");
-                        }
-                    }
-                }
-            }
-
-            private async Task<string> DownloadProcdumpZipAndExtract()
-            {
-                // We don't know if procdump is available, so download it fresh
-                const string url = @"https://download.sysinternals.com/files/Procdump.zip";
-                var client = new HttpClient();
-                var zipFilePath = Path.GetTempFileName();
-                _currentOutput?.WriteLine($"Downloading Procdump to '{zipFilePath}'");
-                using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
-                {
-                    using var bodyStream = await response.Content.ReadAsStreamAsync();
-                    using Stream streamToWriteTo = File.Open(zipFilePath, FileMode.Create);
-                    await bodyStream.CopyToAsync(streamToWriteTo);
-                }
-
-                var unpackedDirectory = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
-                _currentOutput?.WriteLine($"Procdump downloaded. Unpacking to '{unpackedDirectory}'");
-                System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
-
-                var procDump = Path.Combine(unpackedDirectory, "procdump.exe");
-                return procDump;
-            }
-
-            private void AttachProcDump(string tool, string args)
-            {
-                _currentOutput?.WriteLine($"Attaching procdump using '{tool} {args}'");
-
-                _procDumpProcess = Process.Start(new ProcessStartInfo(tool, args)
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                });
-                _procDumpHelper = new ProcessHelper(_procDumpProcess);
             }
 
             private async Task EnsureServerStarted()
