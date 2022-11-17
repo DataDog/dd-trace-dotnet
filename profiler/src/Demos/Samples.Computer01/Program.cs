@@ -24,7 +24,8 @@ namespace Samples.Computer01
         Iterator,
         GenericsAllocation,
         ContentionGenerator,
-        LinuxSignalHandler
+        LinuxSignalHandler,
+        GarbageCollection
     }
 
     public class Program
@@ -45,9 +46,12 @@ namespace Samples.Computer01
             //  8: start n threads doing iterator calls in constructors
             //  9: start n threads allocating array of Generic<int> in LOH
             // 10: start n threads waiting on the same lock
+            // 11: linux signal handler
+            // 12: start garbage collections of a given generation
+            //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +
-            $"[--scenario <0=all 1=computer 2=generics 3=wall time 4=pi computation 5=compute fibonacci 6=n sleeping threads 7=async calls 8=iterator calls 9=allocate array of Generic<int>> 10=threads competing for a lock] " +
+            $"[--scenario <0=all 1=computer 2=generics 3=wall time 4=pi computation 5=compute fibonacci 6=n sleeping threads 7=async calls 8=iterator calls 9=allocate array of Generic<int>> 10=threads competing for a lock 11=lunix signal handler 12=trigger garbage collections] " +
             $"[--param <any number to pass to the scenario - used for contention duration for example>] " +
             $"[--timeout <duration in seconds> | --run-infinitely]");
             Console.WriteLine();

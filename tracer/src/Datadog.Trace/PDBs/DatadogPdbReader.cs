@@ -74,9 +74,9 @@ namespace Datadog.Trace.Pdb
             var stateMachineAttributeFullName = typeof(AsyncStateMachineAttribute).FullName;
             var stateMachineAttributeOfMdMethod = mdMethod.CustomAttributes?.FirstOrDefault(ca => ca.TypeFullName == stateMachineAttributeFullName);
             // Grab the generated inner type state machine from the argument given by the compiler to the AsyncStateMachineAttribute
-            var stateMachineInnerType = (stateMachineAttributeOfMdMethod?.ConstructorArguments.FirstOrDefault().Value as ClassSig)?.TypeDef;
+            var stateMachineInnerTypeTypeDefOrRefSig = (stateMachineAttributeOfMdMethod?.ConstructorArguments.FirstOrDefault().Value as TypeDefOrRefSig);
             // Grab the MoveNext from inside the stateMachine and from there the corresponding debugInfo
-            var moveNextDebugInfo = stateMachineInnerType?.FindMethod("MoveNext")?.CustomDebugInfos.OfType<PdbAsyncMethodCustomDebugInfo>().FirstOrDefault();
+            var moveNextDebugInfo = stateMachineInnerTypeTypeDefOrRefSig?.TypeDefOrRef?.ResolveTypeDef()?.FindMethod("MoveNext")?.CustomDebugInfos.OfType<PdbAsyncMethodCustomDebugInfo>().FirstOrDefault();
             var breakpointMethod = moveNextDebugInfo?.StepInfos.FirstOrDefault();
 
             if (breakpointMethod?.BreakpointMethod == null)
