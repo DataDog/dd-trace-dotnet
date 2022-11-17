@@ -23,7 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{48d12c26-6e63-419c-bfe2-e668e8550613}</ProjectGuid>
     <RootNamespace>DatadogNativeLoader</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <DOTNET-TRACER-REPO-ROOT-PATH>..\..\..\</DOTNET-TRACER-REPO-ROOT-PATH>
     <SHARED-LIB-PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared/src/native-lib/</SHARED-LIB-PATH>
     <LIB_INCLUDES>$(SHARED-LIB-PATH)coreclr\src\pal\prebuilt\inc</LIB_INCLUDES>
