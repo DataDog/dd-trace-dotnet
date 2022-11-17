@@ -202,7 +202,7 @@ partial class Build
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeTracer}");
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}");
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -225,7 +225,7 @@ partial class Build
                     arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release",
                     environmentVariables: envVariables);
                 CMake.Value(
-                    arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeTracer}",
+                    arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}",
                     environmentVariables: envVariables);
 
                 var sourceFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib";
