@@ -11,9 +11,9 @@ class RawStopTheWorldSample : public GCBaseRawSample
 {
 public:
     // Duration is the suspension time so default sample value
-    void DoAdditionalTransform(Sample& sample, uint32_t valueOffset) const override
+    void DoAdditionalTransform(std::shared_ptr<Sample> sample, uint32_t valueOffset) const override
     {
         // set event type
-        sample.AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeStopTheWorld));
+        sample->AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeStopTheWorld));
     }
 };

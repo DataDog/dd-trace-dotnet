@@ -162,8 +162,8 @@ private:
         // check for null AppDomainId (garbage collection for example)
         if (rawSample.AppDomainId == 0)
         {
-            sample.SetAppDomainName("CLR");
-            sample.SetPid(std::to_string(OpSysTools::GetProcId()));
+            sample->SetAppDomainName("CLR");
+            sample->SetPid(std::to_string(OpSysTools::GetProcId()));
 
             return;
         }
