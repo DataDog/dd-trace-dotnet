@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System;
+
 namespace Datadog.Trace.Iast;
 
 internal class IastRequestContext
@@ -12,19 +14,19 @@ internal class IastRequestContext
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
 
-    public static void AddsIastTagsToSpan(Span span, IastRequestContext? iastRequestContext)
+    public void AddIastVulnerabilitiesToSpan(Span span)
     {
-        span.Tags.SetTag(Trace.Tags.IastEnabled, "1");
+        span.Tags.SetTag(Tags.IastEnabled, "1");
 
-        iastRequestContext?.AddIastVulnerabilitiesToSpan(span);
-    }
-
-    internal void AddIastVulnerabilitiesToSpan(Span span)
-    {
         if (_vulnerabilityBatch != null)
         {
             span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
         }
+    }
+
+    internal bool AddVulnerabilitiesAllowed()
+    {
+        return ((_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < Iast.Instance.Settings.VulnerabilitiesPerRequest);
     }
 
     internal void AddVulnerability(Vulnerability vulnerability)

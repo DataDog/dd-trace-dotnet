@@ -6,8 +6,11 @@
 #if NETCOREAPP3_0_OR_GREATER
 
 using System;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -57,6 +60,56 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             EnableIast(enableIast);
             IncludeAllHttpSpans = true;
             var agent = await RunOnSelfHosted(enableSecurity: false);
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+            settings.AddRegexScrubber(ClientIp, string.Empty);
+            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
+
+        [SkippableTheory]
+        [InlineData(1)]
+        [InlineData(2)]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastWeakHashingRequestVulnerabilitiesPerRequest(int vulnerabilitiesPerRequest)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "true");
+            SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, vulnerabilitiesPerRequest.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
+            var filename = vulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.AspNetCore5.IastEnabled.SingleVulnerability" : "Iast.WeakHashing.AspNetCore5.IastEnabled";
+            EnableIast(true);
+            IncludeAllHttpSpans = true;
+            var agent = await RunOnSelfHosted(enableSecurity: false);
+            await TestWeakHashing(filename, agent);
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastWeakHashingRequestSampling()
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
+            SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
+            SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "50");
+            var filename = "Iast.WeakHashing.AspNetCore5.IastEnabled";
+            EnableIast(true);
+            IncludeAllHttpSpans = true;
+            var agent = await RunOnSelfHosted(enableSecurity: false);
+            await TestWeakHashing(filename, agent);
+
+            filename = "Iast.WeakHashing.AspNetCore5.IastDisabled";
+            await TestWeakHashing(filename, agent);
+
+            filename = "Iast.WeakHashing.AspNetCore5.IastEnabled";
+            await TestWeakHashing(filename, agent);
+        }
+
+        private async Task TestWeakHashing(string filename, MockTracerAgent agent)
+        {
+            var url = "/Iast/WeakHashing";
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
