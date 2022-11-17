@@ -181,7 +181,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     mdToken callTargetStateToken = mdTokenNil;
     mdToken exceptionToken = mdTokenNil;
     mdToken callTargetReturnToken = mdTokenNil;
-    ILInstr* firstInstruction;
+    ILInstr* firstInstruction = nullptr;
     auto returnType = caller->method_signature.GetReturnValue();
     tracerTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, &returnType, &callTargetStateIndex, &exceptionIndex,
                                                   &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
@@ -572,7 +572,12 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                     else
                     {
                         pInstr->m_opcode = CEE_STLOC;
-                        pInstr->m_Arg16 = returnValueIndex;
+                        pInstr->m_Arg16 = static_cast<INT16>(returnValueIndex);
+                        if (pInstr->m_Arg16 < 0) {
+                            // We check if the conversion returned negative numbers.
+                            Logger::Error("The local variable index for the return value ('returnValueIndex') cannot be lower than zero.");
+                            return S_FALSE;
+                        }
 
                         ILInstr* leaveInstr = rewriter.NewILInstr();
                         leaveInstr->m_opcode = CEE_LEAVE_S;
