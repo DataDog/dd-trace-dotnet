@@ -4,11 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Iast.Settings;
+using FluentAssertions.Equivalency.Tracing;
 using Moq;
 using Xunit;
 
@@ -19,16 +22,33 @@ public class MD5Tests
     [Fact]
     public void GivenAMD5_WhenComputeHash_VulnerabilityIsLogged()
     {
-        var path = Environment.GetEnvironmentVariable("COR_PROFILER_PATH");
-        var home = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+        var rrr = Environment.GetEnvironmentVariable("RRR");
         MD5.Create().ComputeHash(new Mock<Stream>().Object);
-        var tracer = Tracer.Instance;
-        var iast = Trace.Iast.Iast.Instance;
         AssertVulnerable();
     }
 
     private void AssertVulnerable(int vulnerabilities = 1)
     {
-        Assert.Equal(vulnerabilities, HashBasedDeduplication.Instance.Count);
+        var spans = GetGeneratedSpans((Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext);
+        Assert.Equal(vulnerabilities, GetIastSpansCount(spans));
+    }
+
+    private int GetIastSpansCount(List<Span> spans)
+    {
+        return spans.Where(x => x.GetTag(Tags.IastEnabled) != null).Count();
+    }
+
+    private List<Span> GetGeneratedSpans(TraceContext context)
+    {
+        var spans = new List<Span>();
+
+        var contextSpans = context.Spans.GetArray();
+
+        foreach (var span in contextSpans)
+        {
+            spans.Add(span);
+        }
+
+        return spans;
     }
 }
