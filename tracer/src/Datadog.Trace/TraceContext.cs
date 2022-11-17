@@ -29,8 +29,11 @@ namespace Datadog.Trace
         private int _openSpans;
         private int? _samplingPriority;
 
-        public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
+        public TraceContext(IDatadogTracer tracer, ulong? traceId = null, TraceTagCollection tags = null)
         {
+            Tracer = tracer;
+            TraceId = traceId ?? SpanIdGenerator.CreateNew();
+
             var settings = tracer?.Settings;
 
             if (settings is not null)
@@ -40,9 +43,10 @@ namespace Datadog.Trace
                 ServiceVersion = settings.ServiceVersion;
             }
 
-            Tracer = tracer;
             Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
+
+        public ulong TraceId { get; }
 
         public Span RootSpan { get; private set; }
 

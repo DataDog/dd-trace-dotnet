@@ -7,7 +7,7 @@ namespace Datadog.Trace
 {
     internal partial class Span : ISpanContext
     {
-        ulong ISpanContext.TraceId => TraceId;
+        ulong ISpanContext.TraceId => TraceContext.TraceId;
 
         ulong ISpanContext.SpanId => SpanId;
 

@@ -38,7 +38,6 @@ namespace Datadog.Trace
             Context = context;
             StartTime = start ?? context.TraceContext.UtcNow;
 
-            TraceId = context.TraceId;
             SpanId = context.SpanId;
             ParentId = context.ParentId;
             ServiceName = context.ServiceName;
@@ -91,7 +90,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the trace's unique identifier.
         /// </summary>
-        internal ulong TraceId { get; }
+        internal ulong TraceId => TraceContext.TraceId;
 
         /// <summary>
         /// Gets the span's unique identifier.
