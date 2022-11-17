@@ -52,7 +52,12 @@ namespace datadog::shared::nativeloader
     CorProfiler* CorProfiler::m_this = nullptr;
 
     CorProfiler::CorProfiler(IDynamicDispatcher* dispatcher) :
-        m_refCount(0), m_dispatcher(dispatcher), m_cpProfiler(nullptr), m_tracerProfiler(nullptr), m_customProfiler(nullptr)
+        m_refCount(0),
+        m_dispatcher(dispatcher),
+        m_cpProfiler(nullptr),
+        m_tracerProfiler(nullptr),
+        m_customProfiler(nullptr),
+        m_info(nullptr)
     {
         Log::Debug("CorProfiler::.ctor");
     }
