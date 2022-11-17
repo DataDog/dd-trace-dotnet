@@ -174,7 +174,7 @@ internal static partial class DotNetSettingsExtensions
             var sb = new StringBuilder();
             foreach (var testToIgnore in testsToIgnore)
             {
-                sb.Append("FullyQualifiedName!~");
+                sb.Append("FullyQualifiedName!=");
                 sb.Append(testToIgnore);
                 sb.Append(value: '&');
             }
