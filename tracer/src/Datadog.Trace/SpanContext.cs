@@ -15,7 +15,7 @@ namespace Datadog.Trace
     /// <summary>
     /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
     /// </summary>
-    public class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
+    public class SpanContext : ISpanContext, IPropagatedSpanContext, IReadOnlyDictionary<string, string>
     {
         private static readonly string[] KeyNames =
         {
@@ -224,6 +224,31 @@ namespace Datadog.Trace
         internal string RawSpanId { get; }
 
         internal PathwayContext? PathwayContext { get; private set; }
+
+        /// <summary>
+        /// Gets the raw trace id.
+        /// </summary>
+        string IPropagatedSpanContext.RawTraceId => RawTraceId;
+
+        /// <summary>
+        /// Gets the raw span id.
+        /// </summary>
+        string IPropagatedSpanContext.RawSpanId => RawSpanId;
+
+        /// <summary>
+        /// Gets the sampling priority.
+        /// </summary>
+        int? IPropagatedSpanContext.SamplingPriority => SamplingPriority;
+
+        /// <summary>
+        /// Gets the origin.
+        /// </summary>
+        string IPropagatedSpanContext.Origin => Origin;
+
+        /// <summary>
+        /// Gets the propagated tags.
+        /// </summary>
+        string IPropagatedSpanContext.PropagatedTags => PropagatedTags;
 
         /// <inheritdoc/>
         int IReadOnlyCollection<KeyValuePair<string, string>>.Count => KeyNames.Length;
