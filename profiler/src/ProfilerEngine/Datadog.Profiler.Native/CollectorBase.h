@@ -92,9 +92,7 @@ public:
 
     inline std::list<std::shared_ptr<Sample>> GetSamples() override
     {
-        std::list<TRawSample> input = FetchRawSamples();
-
-        return TransformRawSamples(input);
+        return TransformRawSamples(FetchRawSamples());
     }
 
 protected:
@@ -112,7 +110,7 @@ private:
         return input;
     }
 
-    std::list<std::shared_ptr<Sample>> TransformRawSamples(const std::list<TRawSample>& input)
+    std::list<std::shared_ptr<Sample>> TransformRawSamples(std::list<TRawSample>&& input)
     {
         std::list<std::shared_ptr<Sample>> samples;
 
