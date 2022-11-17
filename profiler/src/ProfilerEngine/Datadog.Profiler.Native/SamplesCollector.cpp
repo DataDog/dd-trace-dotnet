@@ -127,7 +127,7 @@ void SamplesCollector::CollectSamples()
 
             for (auto const& sample : result)
             {
-                if (!sample.GetCallstack().empty())
+                if (!sample->GetCallstack().empty())
                 {
                     _exporter->Add(sample);
                 }

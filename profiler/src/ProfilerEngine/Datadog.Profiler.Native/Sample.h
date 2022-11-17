@@ -23,9 +23,6 @@ typedef std::pair<std::string_view, std::string> Label;
 typedef std::list<Label> Labels;
 typedef std::vector<std::pair<std::string_view, std::string_view>> CallStack;
 
-/// <summary>
-/// Unfinished class. The purpose, for now, is just to work on the export component.
-/// </summary>
 class Sample
 {
 public:
@@ -34,15 +31,13 @@ public:
 public:
     Sample(std::string_view runtimeId); // only for tests
     Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount);
-    Sample& operator=(const Sample& sample) = delete;
-    Sample(Sample&& sample) noexcept;
-    Sample& operator=(Sample&& other) noexcept;
 
-protected:
-    Sample(const Sample&) = default;
+    Sample(const Sample&) = delete;
+    Sample& operator=(const Sample& sample) = delete;
+    Sample(Sample&& sample) noexcept = delete;
+    Sample& operator=(Sample&& other) noexcept = delete;
 
 public:
-    Sample Copy() const;
     uint64_t GetTimeStamp() const;
     const Values& GetValues() const;
     const CallStack& GetCallstack() const;

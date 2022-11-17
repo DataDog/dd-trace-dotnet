@@ -37,27 +37,6 @@ Sample::Sample(std::string_view runtimeId)
     _runtimeId = runtimeId;
 }
 
-Sample::Sample(Sample&& sample) noexcept
-{
-    *this = std::move(sample);
-}
-
-Sample& Sample::operator=(Sample&& other) noexcept
-{
-    _timestamp = other._timestamp;
-    _callstack = std::move(other._callstack);
-    _values = std::move(other._values);
-    _labels = std::move(other._labels);
-    _runtimeId = other._runtimeId;
-
-    return *this;
-}
-
-Sample Sample::Copy() const
-{
-    return {*this};
-}
-
 uint64_t Sample::GetTimeStamp() const
 {
     return _timestamp;

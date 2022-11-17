@@ -15,6 +15,8 @@
 #include "Sample.h"
 #include "TagsHelper.h"
 
+#include <memory>
+
 class MockConfiguration : public IConfiguration
 {
 public:
@@ -57,7 +59,7 @@ public:
 class MockExporter : public IExporter
 {
 public:
-    MOCK_METHOD(void, Add, (Sample const& sample), (override));
+    MOCK_METHOD(void, Add, (std::shared_ptr<Sample> const& sample), (override));
     MOCK_METHOD(bool, Export, (), (override));
     MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
 };
@@ -71,7 +73,7 @@ public:
 class MockSampleProvider : public ISamplesProvider
 {
 public:
-    MOCK_METHOD(std::list<Sample>, GetSamples, (), (override));
+    MOCK_METHOD(std::list<std::shared_ptr<Sample>>, GetSamples, (), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
 };
 
@@ -137,6 +139,6 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
 
-Sample CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
+std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
 
 std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth);
