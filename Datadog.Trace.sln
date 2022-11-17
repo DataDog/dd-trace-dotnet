@@ -498,6 +498,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Deduplication", "tr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.V4InProcess", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4InProcess\Samples.AzureFunctions.V4InProcess.csproj", "{0F0F7D45-0E13-42B0-A158-8F303BBE8358}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Instrumented.Iast.Unit.Tests", "tracer\test\Datadog.Trace.Instrumented.Iast.Unit.Tests\Datadog.Trace.Instrumented.Iast.Unit.Tests.csproj", "{4D3314A1-5A64-4433-8BE7-C98B01C6E689}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Debugger.IntegrationTests", "tracer\test\Datadog.Trace.Debugger.IntegrationTests\Datadog.Trace.Debugger.IntegrationTests.csproj", "{BB2D2ED3-4378-4B44-974E-8BE80F0021EF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Probes.TestRuns", "tracer\test\test-applications\debugger\dependency-libs\Samples.Probes.TestRuns\Samples.Probes.TestRuns.csproj", "{4F377216-3D76-4169-BE2B-8DA3A653DD5E}"
