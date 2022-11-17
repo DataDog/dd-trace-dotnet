@@ -23,6 +23,8 @@ internal class HashBasedDeduplication
 
     public static HashBasedDeduplication Instance { get; } = new();
 
+    public int Count => vulnerabilityHashes.Count;
+
     public bool Add(Vulnerability vulnerability)
     {
         var hashCode = vulnerability.GetHashCode();
