@@ -60,10 +60,29 @@ public:
     }
 
     // helpers for well known mandatory labels
-    void SetPid(const std::string& pid);
-    void SetAppDomainName(const std::string& name);
-    void SetThreadId(const std::string& tid);
-    void SetThreadName(const std::string& name);
+    template <typename T>
+    void SetPid(T&& pid)
+    {
+        AddLabel(Label{ProcessIdLabel, std::forward<T>(pid)});
+    }
+
+    template <typename T>
+    void SetAppDomainName(T&& name)
+    {
+        AddLabel(Label{AppDomainNameLabel, std::forward<T>(name)});
+    }
+
+    template <typename T>
+    void SetThreadId(T&& tid)
+    {
+        AddLabel(Label{ThreadIdLabel, std::forward<T>(tid)});
+    }
+
+    template <typename T>
+    void SetThreadName(T&& name)
+    {
+        AddLabel(Label{ThreadNameLabel, std::forward<T>(name)});
+    }
 
     // well known labels
 public:
@@ -76,6 +95,7 @@ public:
     static const std::string ExceptionTypeLabel;
     static const std::string ExceptionMessageLabel;
     static const std::string AllocationClassLabel;
+    static const std::string EndTimestampLabel;
 
 private:
     uint64_t _timestamp;

@@ -145,7 +145,7 @@ private:
         {
             // All timestamps give the time when "something" ends and the associated duration
             // happened in the past
-            sample->AddLabel(Label{"end_timestamp_ns", std::to_string(sample->GetTimeStamp())});
+            sample->AddLabel(Label{Sample::EndTimestampLabel, std::to_string(sample->GetTimeStamp())});
         }
 
         // allow inherited classes to add values and specific labels
@@ -167,7 +167,7 @@ private:
             return;
         }
 
-        sample->SetAppDomainName(appDomainName);
+        sample->SetAppDomainName(std::move(appDomainName));
         sample->SetPid(std::to_string(pid));
     }
 

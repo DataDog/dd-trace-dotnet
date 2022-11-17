@@ -13,6 +13,7 @@ const std::string Sample::SpanIdLabel = "span id";
 const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
+const std::string Sample::EndTimestampLabel = "end_timestamp_ns";
 
 
 // TODO: update the values vector size if more than 16 slots are needed
@@ -27,14 +28,13 @@ Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCoun
     _callstack.reserve(framesCount);
 }
 
-Sample::Sample(std::string_view runtimeId)
-    :
-    _values(ValuesCount)
+Sample::Sample(std::string_view runtimeId) :
+    _values(ValuesCount),
+    _timestamp{0},
+    _labels{},
+    _callstack{},
+    _runtimeId{runtimeId}
 {
-    _timestamp = 0;
-    _labels = {};
-    _callstack = {};
-    _runtimeId = runtimeId;
 }
 
 uint64_t Sample::GetTimeStamp() const
@@ -88,24 +88,4 @@ std::string_view Sample::GetRuntimeId() const
 const Labels& Sample::GetLabels() const
 {
     return _labels;
-}
-
-void Sample::SetPid(const std::string& pid)
-{
-    AddLabel(Label{ProcessIdLabel, pid});
-}
-
-void Sample::SetAppDomainName(const std::string& name)
-{
-    AddLabel(Label{AppDomainNameLabel, name});
-}
-
-void Sample::SetThreadId(const std::string& tid)
-{
-    AddLabel(Label{ThreadIdLabel, tid});
-}
-
-void Sample::SetThreadName(const std::string& name)
-{
-    AddLabel(Label{ThreadNameLabel, name});
 }
