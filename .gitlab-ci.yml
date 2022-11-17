@@ -3,7 +3,7 @@ stages:
   - build
   - publish
   - deploy
-  
+
 variables:
   GIT_PROFILER_REF: master
   DEPLOY_TO_REL_ENV:
@@ -12,7 +12,7 @@ variables:
   DOWNSTREAM_BRANCH:
     value: "master"
     description: "Run a specific datadog-reliability-env branch downstream"
-    
+
 build:
   only:
     - master
@@ -49,7 +49,7 @@ publish:
       - $DEPLOY_TO_REL_ENV == "true"
   stage: publish
   tags: ["runner:windows-docker", "windowsversion:1809"]
-  dependencies: 
+  dependencies:
     - build
   script:
     - $result =  aws sts assume-role --role-arn "arn:aws:iam::486234852809:role/ci-datadog-windows-filter" --role-session-name AWSCLI-Session
@@ -89,3 +89,39 @@ deploy_to_reliability_env:
     UPSTREAM_PACKAGE_JOB: build
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
     FORCE_TRIGGER: $DEPLOY_TO_REL_ENV
+
+deploy_to_docker_registries:
+  stage: deploy
+  rules:
+    - if: '$POPULATE_CACHE'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /^v.*/'
+      when: on_success
+    - when: manual
+      allow_failure: true
+  trigger:
+    project: DataDog/public-images
+    branch: main
+    strategy: depend
+  variables:
+    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
+    IMG_DESTINATIONS: dd-lib-dotnet-init:$CI_COMMIT_TAG
+    IMG_SIGNING: "false"
+
+deploy_latest_tag_to_docker_registries:
+  stage: deploy
+  rules:
+    - if: '$POPULATE_CACHE'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /^v.*/'
+      when: on_success
+    - when: manual
+      allow_failure: true
+  trigger:
+    project: DataDog/public-images
+    branch: main
+    strategy: depend
+  variables:
+    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
+    IMG_DESTINATIONS: dd-lib-dotnet-init:latest
+    IMG_SIGNING: "false"
