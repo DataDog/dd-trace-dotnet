@@ -7,6 +7,9 @@ cmake_policy(SET CMP0015 NEW)
 
 project("Datadog.Tracer.Native" VERSION 2.20.0)
 
+option(RUN_ASAN "Build with Clang Address Sanitizer" OFF)
+message(STATUS "Run Clang Address Sanitizer: " ${RUN_ASAN})
+
 # ******************************************************
 # Environment detection
 # ******************************************************
@@ -113,6 +116,11 @@ add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 add_compile_options(-std=c++17 -fPIC -fms-extensions -fvisibility=hidden)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
+
+if (RUN_ASAN)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+endif()
+
 if (ISMACOS)
     add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations)
 elseif(ISLINUX)
@@ -201,6 +209,10 @@ elseif(ISLINUX)
         -static-libgcc
         -static-libstdc++
     )
+endif()
+
+if (RUN_ASAN)
+    target_link_libraries("Datadog.Tracer.Native.static" -fsanitize=address)
 endif()
 
 add_dependencies("Datadog.Tracer.Native.static" fmt-lib coreclr re2-lib spdlog-headers managed-loader-objs)
