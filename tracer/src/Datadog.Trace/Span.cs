@@ -27,37 +27,44 @@ namespace Datadog.Trace
 
         private readonly object _lock = new();
 
-        internal Span(SpanContext context, DateTimeOffset? start)
-            : this(context, start, null)
+        // used only if this Span is not associated to a TraceContext
+        private readonly ulong? _traceId;
+
+        // temporary backwards compatibility shim
+        internal Span(SpanContext context, DateTimeOffset? start, ITags tags = null)
         {
+            Context = context;
+            _traceId = context.TraceId;
+            RawSpanId = context.RawSpanId;
+            SpanId = context.SpanId;
+            TraceContext = context.TraceContext;
+            Parent = context.Parent;
+            StartTime = start ?? context.TraceContext?.UtcNow ?? DateTimeOffset.Now;
+            Tags = tags ?? new CommonTags();
+            ServiceName = context.ServiceName;
+
+            LogSpanStarted(this);
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Span"/> class.
+        /// </summary>
+        internal Span(
+            ulong? spanId,
+            string rawSpanId,
+            TraceContext traceContext,
+            ISpanContext parent,
+            DateTimeOffset? start,
+            ITags tags)
         {
+            SpanId = spanId ?? SpanIdGenerator.CreateNew();
+            RawSpanId = rawSpanId;
+            TraceContext = traceContext;
+            Parent = parent;
+            StartTime = start ?? traceContext.UtcNow;
             Tags = tags ?? new CommonTags();
-            Context = context;
-            StartTime = start ?? context.TraceContext.UtcNow;
 
-            SpanId = context.SpanId;
-            Parent = context.Parent;
-            ServiceName = context.ServiceName;
-            TraceContext = context.TraceContext;
-
-            if (IsLogLevelDebugEnabled)
-            {
-                var tagsType = Tags.GetType();
-
-                Log.Debug(
-                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{tagsType}])",
-                    new object[]
-                    {
-                        SpanId,
-                        ParentId,
-                        TraceId,
-                        Tags,
-                        tagsType
-                    });
-            }
+            LogSpanStarted(this);
         }
 
         internal ISpanContext Parent { get; }
@@ -92,12 +99,14 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the trace's unique identifier.
         /// </summary>
-        internal ulong TraceId => TraceContext.TraceId;
+        internal ulong TraceId => _traceId ?? TraceContext.TraceId;
 
         /// <summary>
         /// Gets the span's unique identifier.
         /// </summary>
         internal ulong SpanId { get; }
+
+        internal string RawSpanId { get; }
 
         internal ulong? ParentId => Parent?.SpanId;
 
@@ -127,6 +136,25 @@ namespace Datadog.Trace
         internal bool IsRootSpan => TraceContext?.RootSpan == this;
 
         internal bool IsTopLevel => Parent == null || Parent.SpanId == 0 || Parent.ServiceName != ServiceName;
+
+        private static void LogSpanStarted(Span span)
+        {
+            if (IsLogLevelDebugEnabled)
+            {
+                var tagsType = span.Tags.GetType();
+
+                Log.Debug(
+                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{tagsType}])",
+                    new object[]
+                    {
+                        span.SpanId,
+                        span.ParentId,
+                        span.TraceId,
+                        span.Tags,
+                        tagsType
+                    });
+            }
+        }
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.
@@ -479,6 +507,20 @@ namespace Datadog.Trace
         internal void SetDuration(TimeSpan duration)
         {
             Duration = duration;
+        }
+
+        internal PropagatedSpanContext GetContextForPropagation()
+        {
+            var propagatedTags = TraceContext.Tags?.ToPropagationHeader();
+
+            return new PropagatedSpanContext(
+                TraceId,
+                SpanId,
+                TraceContext.RawTraceId,
+                RawSpanId,
+                TraceContext.SamplingPriority,
+                TraceContext.Origin,
+                propagatedTags);
         }
     }
 }
