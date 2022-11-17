@@ -23,9 +23,6 @@ typedef std::pair<std::string_view, std::string> Label;
 typedef std::list<Label> Labels;
 typedef std::vector<std::pair<std::string_view, std::string_view>> CallStack;
 
-/// <summary>
-/// Unfinished class. The purpose, for now, is just to work on the export component.
-/// </summary>
 class Sample
 {
 public:
@@ -34,15 +31,13 @@ public:
 public:
     Sample(std::string_view runtimeId); // only for tests
     Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount);
-    Sample& operator=(const Sample& sample) = delete;
-    Sample(Sample&& sample) noexcept;
-    Sample& operator=(Sample&& other) noexcept;
 
-protected:
-    Sample(const Sample&) = default;
+    Sample(const Sample&) = delete;
+    Sample& operator=(const Sample& sample) = delete;
+    Sample(Sample&& sample) noexcept = delete;
+    Sample& operator=(Sample&& other) noexcept = delete;
 
 public:
-    Sample Copy() const;
     uint64_t GetTimeStamp() const;
     const Values& GetValues() const;
     const CallStack& GetCallstack() const;
@@ -65,10 +60,29 @@ public:
     }
 
     // helpers for well known mandatory labels
-    void SetPid(const std::string& pid);
-    void SetAppDomainName(const std::string& name);
-    void SetThreadId(const std::string& tid);
-    void SetThreadName(const std::string& name);
+    template <typename T>
+    void SetPid(T&& pid)
+    {
+        AddLabel(Label{ProcessIdLabel, std::forward<T>(pid)});
+    }
+
+    template <typename T>
+    void SetAppDomainName(T&& name)
+    {
+        AddLabel(Label{AppDomainNameLabel, std::forward<T>(name)});
+    }
+
+    template <typename T>
+    void SetThreadId(T&& tid)
+    {
+        AddLabel(Label{ThreadIdLabel, std::forward<T>(tid)});
+    }
+
+    template <typename T>
+    void SetThreadName(T&& name)
+    {
+        AddLabel(Label{ThreadNameLabel, std::forward<T>(name)});
+    }
 
     // well known labels
 public:
@@ -81,6 +95,7 @@ public:
     static const std::string ExceptionTypeLabel;
     static const std::string ExceptionMessageLabel;
     static const std::string AllocationClassLabel;
+    static const std::string EndTimestampLabel;
     static const std::string GarbageCollectionGenerationLabel;
     static const std::string GarbageCollectionNumberLabel;
     static const std::string TimelineEventTypeLabel;

@@ -12,13 +12,13 @@ public:
     // This base class is in charge of storing garbage collection number and generation as labels
     // and fill up the callstack based on generation.
     // The default value is the Duration field; derived class could override by implementing GetValue()
-    inline void OnTransform(Sample& sample, uint32_t valueOffset) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
     {
         uint32_t durationIndex = valueOffset;
 
-        sample.AddValue(GetValue(), durationIndex);
+        sample->AddValue(GetValue(), durationIndex);
 
-        sample.AddLabel(Label(Sample::GarbageCollectionNumberLabel, std::to_string(Number)));
+        sample->AddLabel(Label(Sample::GarbageCollectionNumberLabel, std::to_string(Number)));
         AddGenerationLabel(sample, Generation);
 
         BuildCallStack(sample, Generation);
@@ -35,7 +35,7 @@ public:
     }
 
     // Derived classes are expected to set the event type + any additional field as label
-    virtual void DoAdditionalTransform(Sample& sample, uint32_t valueOffset) const = 0;
+    virtual void DoAdditionalTransform(std::shared_ptr<Sample> sample, uint32_t valueOffset) const = 0;
 
 
 public:
@@ -44,50 +44,50 @@ public:
     int64_t Duration;
 
 private:
-    inline static void AddGenerationLabel(Sample& sample, uint32_t generation)
+    inline static void AddGenerationLabel(std::shared_ptr<Sample>& sample, uint32_t generation)
     {
         switch (generation)
         {
             case 0:
-                sample.AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen0Value));
+                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen0Value));
                 break;
 
             case 1:
-                sample.AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen1Value));
+                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen1Value));
                 break;
 
             case 2:
-                sample.AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen2Value));
+                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen2Value));
                 break;
 
             default: // this should never happen (only gen0, gen1 or gen2 collections)
-                sample.AddLabel(Label(Sample::GarbageCollectionGenerationLabel, std::to_string(generation)));
+                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, std::to_string(generation)));
                 break;
         }
     }
 
-    inline static void BuildCallStack(Sample& sample, uint32_t generation)
+    inline static void BuildCallStack(std::shared_ptr<Sample>& sample, uint32_t generation)
     {
         // add same root frame
-        sample.AddFrame(EmptyModule, RootFrame);
+        sample->AddFrame(EmptyModule, RootFrame);
 
         // add generation based frame
         switch (generation)
         {
             case 0:
-                sample.AddFrame(EmptyModule, Gen0Frame);
+                sample->AddFrame(EmptyModule, Gen0Frame);
                 break;
 
             case 1:
-                sample.AddFrame(EmptyModule, Gen1Frame);
+                sample->AddFrame(EmptyModule, Gen1Frame);
                 break;
 
             case 2:
-                sample.AddFrame(EmptyModule, Gen2Frame);
+                sample->AddFrame(EmptyModule, Gen2Frame);
                 break;
 
             default:
-                sample.AddFrame(EmptyModule, UnknownGenerationFrame);
+                sample->AddFrame(EmptyModule, UnknownGenerationFrame);
                 break;
         }
     }

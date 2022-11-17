@@ -8,13 +8,13 @@
 class RawContentionSample : public RawSample
 {
 public:
-    void OnTransform(Sample& sample, uint32_t valueOffset) const override
+    void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
     {
         uint32_t contentionCountIndex = valueOffset;
         uint32_t contentionDurationIndex = valueOffset + 1;
 
-        sample.AddValue(1, contentionCountIndex);
-        sample.AddValue(static_cast<std::int64_t>(ContentionDuration), contentionDurationIndex);
+        sample->AddValue(1, contentionCountIndex);
+        sample->AddValue(static_cast<std::int64_t>(ContentionDuration), contentionDurationIndex);
     }
 
     double ContentionDuration;

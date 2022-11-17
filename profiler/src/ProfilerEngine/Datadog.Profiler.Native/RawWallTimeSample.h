@@ -4,15 +4,17 @@
 #pragma once
 #include <cstdint>
 #include "cor.h"
+#include <memory>
+
 #include "RawSample.h"
 
 
 class RawWallTimeSample : public RawSample
 {
 public:
-    inline void OnTransform(Sample& sample, uint32_t valueOffset) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
     {
-        sample.AddValue(Duration, valueOffset);
+        sample->AddValue(Duration, valueOffset);
     }
 
     std::uint64_t  Duration;  // in nanoseconds
