@@ -113,7 +113,6 @@ add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 add_compile_options(-std=c++17 -fPIC -fms-extensions -fvisibility=hidden)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
-
 if (ISMACOS)
     add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations)
 elseif(ISLINUX)
