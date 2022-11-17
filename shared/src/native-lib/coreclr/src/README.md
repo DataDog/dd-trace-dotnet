@@ -11,3 +11,18 @@ and
 
 l.2622    // commented because it conflicts with stdlibc++ 8
 l.2623    //#define __pre
+
+in `corprof_i.cpp`, add before the #include:
+bool g_arm64_atomics_present = false;
+
+in `corhlpr.cpp`, use in debug only
+#ifdef _DEBUG
+    assert(&origBuff[size] == outBuff);
+#endif
+
+in `pal.h`, add the definition of g_arm64_atomics_present after Processor-specific glue
+#if defined(HOST_ARM64)
+// Flag to check if atomics feature is available on
+// the machine
+extern bool g_arm64_atomics_present;
+#endif
