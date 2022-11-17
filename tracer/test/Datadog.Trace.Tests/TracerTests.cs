@@ -399,15 +399,25 @@ namespace Datadog.Trace.Tests
         [InlineData("test")]
         public void SetEnv(string env)
         {
-            var settings = new TracerSettings()
-            {
-                Environment = env,
-            };
-
+            var settings = new TracerSettings { Environment = env };
             var tracer = TracerHelper.Create(settings);
-            ISpan span = tracer.StartSpan("operation");
+            var scope = (Scope)tracer.StartActive("operation");
 
-            Assert.Equal(env, span.GetTag(Tags.Env));
+            scope.Span.GetTag(Tags.Env).Should().Be(env);
+            scope.Span.Context.TraceContext.Environment.Should().Be(env);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("1.2.3")]
+        public void SetVersion(string version)
+        {
+            var settings = new TracerSettings { ServiceVersion = version };
+            var tracer = TracerHelper.Create(settings);
+            var scope = (Scope)tracer.StartActive("operation");
+
+            scope.Span.GetTag(Tags.Version).Should().Be(version);
+            scope.Span.Context.TraceContext.ServiceVersion.Should().Be(version);
         }
 
         [Theory]

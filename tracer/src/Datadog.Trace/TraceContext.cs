@@ -32,8 +32,17 @@ namespace Datadog.Trace
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
+            var settings = tracer?.Settings;
+
+            if (settings is not null)
+            {
+                // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
+                Environment = settings.Environment;
+                ServiceVersion = settings.ServiceVersion;
+            }
+
             Tracer = tracer;
-            Tags = tags ?? new TraceTagCollection(tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+            Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
         public Span RootSpan { get; private set; }
@@ -55,26 +64,29 @@ namespace Datadog.Trace
             get => _samplingPriority;
         }
 
-        /// <summary>
-        /// Gets the iast context.
-        /// </summary>
-        internal IastRequestContext IastRequestContext
-        {
-            get
-            {
-                if (_iastRequestContext == null && Iast.Iast.Instance.Settings.Enabled)
-                {
-                    lock (_syncRoot)
-                    {
-                        _iastRequestContext ??= new();
-                    }
-                }
+        public string Environment { get; set; }
 
-                return _iastRequestContext;
-            }
-        }
+        public string ServiceVersion { get; set; }
+
+        public string Origin { get; set; }
+
+        /// <summary>
+        /// Gets the IAST context.
+        /// </summary>
+        internal IastRequestContext IastRequestContext => _iastRequestContext;
 
         private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
+
+        internal void EnableIastInRequest()
+        {
+            if (_iastRequestContext is null)
+            {
+                lock (_syncRoot)
+                {
+                    _iastRequestContext ??= new();
+                }
+            }
+        }
 
         public void AddSpan(Span span)
         {
@@ -101,6 +113,11 @@ namespace Datadog.Trace
                             SetSamplingPriority(samplingDecision);
                         }
                     }
+
+                    // if the trace's origin is not set and this span has an origin
+                    // (probably propagated from an upstream service),
+                    // copy the span's origin into the trace
+                    Origin ??= span.Context.Origin;
                 }
 
                 _openSpans++;
@@ -118,9 +135,10 @@ namespace Datadog.Trace
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
-                if (Iast.Iast.Instance.Settings.Enabled)
+                if (Iast.Iast.Instance.Settings.Enabled && _iastRequestContext != null)
                 {
-                    IastRequestContext.AddsIastTagsToSpan(span, _iastRequestContext);
+                    _iastRequestContext.AddIastVulnerabilitiesToSpan(span);
+                    OverheadController.Instance.ReleaseRequest();
                 }
             }
 

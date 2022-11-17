@@ -13,7 +13,26 @@ namespace Datadog.Trace.ExtensionMethods
 {
     internal static class DictionaryExtensions
     {
+        // Dictionary<TKey, TValue> implements both IDictionary<TKey, TValue> and IReadOnlyDictionary<TKey, TValue>,
+        // this overload resolved the ambiguity.
+        public static TValue GetValueOrDefault<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key)
+        {
+            return GetValueOrDefault((IDictionary<TKey, TValue>)dictionary, key);
+        }
+
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
+        {
+            if (dictionary == null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
+            }
+
+            return dictionary.TryGetValue(key, out var value)
+                       ? value
+                       : default;
+        }
+
+        public static TValue GetValueOrDefault<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key)
         {
             if (dictionary == null)
             {

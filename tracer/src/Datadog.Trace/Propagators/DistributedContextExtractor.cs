@@ -11,6 +11,8 @@ namespace Datadog.Trace.Propagators
 {
     internal class DistributedContextExtractor : IContextExtractor
     {
+        public static readonly DistributedContextExtractor Instance = new();
+
         public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {

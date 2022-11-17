@@ -5,8 +5,11 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -28,13 +31,18 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData("service:hello,env:world:1", "hello", "world:1", .5f)]
         public void KeyParsing(string key, string expectedService, string expectedEnv, float expectedRate)
         {
+            // create span, setting service and environment
+            var settings = new TracerSettings { ServiceName = expectedService };
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            using var scope = (Scope)tracer.StartActive("root");
+            scope.Span.Context.TraceContext.Environment = expectedEnv;
+
+            // create sampling rule
             var rule = new DefaultSamplingRule();
             rule.SetDefaultSampleRates(new Dictionary<string, float> { { key, .5f } });
 
-            var span = new Span(new SpanContext(1, 1, null, serviceName: expectedService), DateTimeOffset.Now);
-            span.SetTag(Tags.Env, expectedEnv);
-
-            rule.GetSamplingRate(span).Should().Be(expectedRate);
+            // assert that the sampling rate applied to the span is correct
+            rule.GetSamplingRate(scope.Span).Should().Be(expectedRate);
         }
 
         [Fact]
@@ -45,12 +53,20 @@ namespace Datadog.Trace.Tests.Sampling
             const string unconfiguredService = "RogueService";
 
             var rule = new DefaultSamplingRule();
-            var span = new Span(new SpanContext(1, 1, null, serviceName: configuredService), DateTimeOffset.Now);
-            var secondSpan = new Span(new SpanContext(2, 2, null, serviceName: unconfiguredService), DateTimeOffset.Now);
-            span.SetTag(Tags.Env, configuredEnv);
-            secondSpan.SetTag(Tags.Env, configuredEnv);
 
-            rule.GetSamplingRate(span).Should().Be(1f); // as we haven't configured it yet.
+            var settings = new TracerSettings();
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+
+            var firstScope = (Scope)tracer.StartActive("first");
+            var firstSpan = firstScope.Span;
+            firstSpan.ServiceName = configuredService;
+            firstSpan.Context.TraceContext.Environment = configuredEnv;
+
+            var secondScope = (Scope)tracer.StartActive("second");
+            var secondSpan = secondScope.Span;
+            secondSpan.ServiceName = unconfiguredService;
+
+            rule.GetSamplingRate(firstSpan).Should().Be(1f); // as we haven't configured it yet.
 
             rule.SetDefaultSampleRates(new Dictionary<string, float>
             {
@@ -58,7 +74,7 @@ namespace Datadog.Trace.Tests.Sampling
                 { $"service:{configuredService},env:{configuredEnv}", .1f }
             });
 
-            rule.GetSamplingRate(span).Should().Be(.1f);
+            rule.GetSamplingRate(firstSpan).Should().Be(.1f);
             rule.GetSamplingRate(secondSpan).Should().Be(.5f); // as it should use the new default sampling.
         }
     }

@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public NUnitEvpTests(ITestOutputHelper output)
             : base("NUnitTests", output)
         {
+            SetServiceName("nunit-tests-evp");
             SetServiceVersion("1.0.0");
         }
 

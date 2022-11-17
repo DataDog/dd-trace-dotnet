@@ -199,6 +199,12 @@ partial class Build
             throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
+        if (testDescription.Name is global::ExplorationTestName.paket)
+        {
+            Logger.Info("The Exploration Tests: paket, are disabled currently in CI because it fails due to poor environment isolation.");
+            return;
+        }
+
         if (ExplorationTestUseCase == global::ExplorationTestUseCase.Debugger &&
             testDescription.Name is global::ExplorationTestName.protobuf or global::ExplorationTestName.cake or global::ExplorationTestName.paket or global::ExplorationTestName.polly)
         {
@@ -206,22 +212,37 @@ partial class Build
             return;
         }
 
-        DotNetTest(
-            x =>
+        if (Framework == null)
+        {
+            foreach (var targetFramework in testDescription.SupportedFrameworks)
             {
-                x = x
-                   .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, Framework, BuildConfiguration))
-                   .EnableNoRestore()
-                   .EnableNoBuild()
-                   .SetConfiguration(BuildConfiguration)
-                   .When(Framework != null, settings => settings.SetFramework(Framework))
-                   .SetProcessEnvironmentVariables(envVariables)
-                   .SetIgnoreFilter(testDescription.TestsToIgnore)
-                   .WithMemoryDumpAfter(100)
-                    ;
+                Test(targetFramework);
+            }
+        }
+        else
+        {
+            Test(Framework);
+        }
 
-                return x;
-            });
+        void Test(TargetFramework targetFramework)
+        {
+            DotNetTest(
+                x =>
+                {
+                    x = x
+                       .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, targetFramework, BuildConfiguration))
+                       .EnableNoRestore()
+                       .EnableNoBuild()
+                       .SetConfiguration(BuildConfiguration)
+                       .SetFramework(targetFramework)
+                       .SetProcessEnvironmentVariables(envVariables)
+                       .SetIgnoreFilter(testDescription.TestsToIgnore)
+                       .WithMemoryDumpAfter(100)
+                        ;
+
+                    return x;
+                });
+        }
     }
 
     void RunExplorationTestAssertions()

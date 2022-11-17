@@ -14,14 +14,12 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci
 {
@@ -71,17 +69,12 @@ namespace Datadog.Trace.Ci
             {
                 if (!_settings.ForceAgentsEvpProxy)
                 {
-                    discoveryService = new DiscoveryService(
-                        AgentTransportStrategy.Get(
-                            new ImmutableExporterSettings(_settings.TracerSettings.Exporter),
-                            productName: "discovery",
-                            tcpTimeout: TimeSpan.FromSeconds(5),
-                            AgentHttpHeaderNames.MinimalHeaders,
-                            () => new MinimalAgentHeaderHelper(),
-                            uri => uri),
-                        10,
-                        1000,
-                        int.MaxValue);
+                    discoveryService = DiscoveryService.Create(
+                        new ImmutableExporterSettings(_settings.TracerSettings.Exporter),
+                        tcpTimeout: TimeSpan.FromSeconds(5),
+                        initialRetryDelayMs: 10,
+                        maxRetryDelayMs: 1000,
+                        recheckIntervalMs: int.MaxValue);
                 }
                 else
                 {
@@ -102,6 +95,9 @@ namespace Datadog.Trace.Ci
                 // Extract repository name from the git url and use it as a default service name.
                 tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
+
+            // Normalize the service name
+            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
@@ -313,8 +309,8 @@ namespace Datadog.Trace.Ci
                             SynchronizationContext.SetSynchronizationContext(null);
                         }
 
-                        var osxVersion = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")).GetAwaiter().GetResult();
-                        osxVersion = osxVersion?.Trim(' ', '\n');
+                        var osxVersionCommand = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")).GetAwaiter().GetResult();
+                        var osxVersion = osxVersionCommand?.Output.Trim(' ', '\n');
                         if (!string.IsNullOrEmpty(osxVersion))
                         {
                             return osxVersion!;

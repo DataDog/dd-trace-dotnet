@@ -44,9 +44,19 @@ internal class IastModule
 
     private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast)
     {
-        if (!tracer.Settings.IsIntegrationEnabled(integrationId))
+        if (!iast.Settings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
+            return null;
+        }
+
+        var traceContext = (tracer.ActiveScope as Scope)?.Span?.Context?.TraceContext;
+        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
+
+        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
+        {
+            // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
+            // not activated for this particular request
             return null;
         }
 
@@ -63,35 +73,35 @@ internal class IastModule
 
         if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
-            return AddVulnerability(tracer, integrationId, operationName, vulnerability);
+            if (isRequest)
+            {
+                traceContext?.IastRequestContext.AddVulnerability(vulnerability);
+                return null;
+            }
+            else
+            {
+                return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, vulnerability);
+            }
         }
 
         return null;
     }
 
-    private static Scope? AddVulnerability(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
+    private static Scope? AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
     {
-        if (tracer.ActiveScope is Scope { Span.Context.TraceContext: { RootSpan.Type: SpanTypes.Web } traceContext })
-        {
-            traceContext.IastRequestContext?.AddVulnerability(vulnerability);
-            return null;
-        }
-        else
-        {
-            // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
-            var batch = new VulnerabilityBatch();
-            batch.Add(vulnerability);
+        // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
+        var batch = new VulnerabilityBatch();
+        batch.Add(vulnerability);
 
-            var tags = new IastTags()
-            {
-                IastJson = batch.ToString(),
-                IastEnabled = "1"
-            };
+        var tags = new IastTags()
+        {
+            IastJson = batch.ToString(),
+            IastEnabled = "1"
+        };
 
-            var scope = tracer.StartActiveInternal(operationName, tags: tags);
-            tracer?.TracerManager?.Telemetry.IntegrationGeneratedSpan(integrationId);
-            return scope;
-        }
+        var scope = tracer.StartActiveInternal(operationName, tags: tags);
+        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+        return scope;
     }
 
     private static string? GetMethodName(StackFrame? frame)

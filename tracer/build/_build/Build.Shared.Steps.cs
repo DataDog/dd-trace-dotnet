@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Nuke.Common;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
@@ -50,7 +52,7 @@ partial class Build
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory}");
             CMake.Value(
-                arguments: $"--build . --parallel --target {FileNames.NativeLoader}",
+                arguments: $"--build . --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
                 workingDirectory: NativeBuildDirectory);
         });
 
@@ -59,15 +61,54 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            CMake.Value(arguments: $"-B {NativeBuildDirectory} -S {RootDirectory}");
-            CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeLoader}");
+            EnsureExistingDirectory(NativeBuildDirectory);
+
+            var lstNativeBinaries = new List<string>();
+            foreach (var arch in OsxArchs)
+            {
+                DeleteDirectory(NativeBuildDirectory);
+
+                var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = arch };
+                
+                // Build native
+                CMake.Value(
+                    arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release",
+                    environmentVariables: envVariables);
+                CMake.Value(
+                    arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
+                    environmentVariables: envVariables);
+
+                var sourceFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
+                var destFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.dylib";
+
+                // Check the architecture of the build
+                var output = Lipo.Value(arguments: $"-archs {sourceFile}", logOutput: false);
+                var strOutput = string.Join('\n', output.Where(o => o.Type == OutputType.Std).Select(o => o.Text));
+                if (!strOutput.Contains(arch, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ApplicationException($"Invalid architecture, expected: '{arch}', actual: '{strOutput}'");
+                }
+                
+                // Copy binary to the temporal destination
+                CopyFile(sourceFile, destFile, FileExistsPolicy.Overwrite);
+                
+                // Add library to the list
+                lstNativeBinaries.Add(destFile);
+            }
+
+            // Create universal shared library with all architectures in a single file
+            var destination = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
+            DeleteFile(destination);
+            Console.WriteLine($"Creating universal binary for {destination}");
+            var strNativeBinaries = string.Join(' ', lstNativeBinaries);
+            Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
         });
 
     Target PublishNativeLoader => _ => _
         .Unlisted()
         .DependsOn(PublishNativeLoaderWindows)
-        .DependsOn(PublishNativeLoaderUnix);
+        .DependsOn(PublishNativeLoaderUnix)
+        .DependsOn(PublishNativeLoaderOsx);
 
     Target PublishNativeLoaderWindows => _ => _
         .Unlisted()
@@ -99,7 +140,7 @@ partial class Build
 
     Target PublishNativeLoaderUnix => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux || IsOsx)
+        .OnlyWhenStatic(() => IsLinux)
         .After(CompileNativeLoader)
         .Executes(() =>
         {
@@ -109,9 +150,30 @@ partial class Build
             var dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-            source = NativeLoaderProject.Directory / "bin" /
-                         $"{NativeLoaderProject.Name}.{ext}";
+            source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
             dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+        });
+
+    Target PublishNativeLoaderOsx => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsOsx)
+        .After(CompileNativeLoader)
+        .Executes(() =>
+        {
+            var dest = MonitoringHomeDirectory / "osx";
+
+            // Copy loader.conf
+            CopyFileToDirectory(
+                NativeLoaderProject.Directory / "bin" / "loader.conf",
+                dest,
+                FileExistsPolicy.Overwrite);
+            
+            // Copy the universal binary to the output folder
+            CopyFileToDirectory(
+                NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib",
+                dest,
+                FileExistsPolicy.Overwrite,
+                true);
         });
 }

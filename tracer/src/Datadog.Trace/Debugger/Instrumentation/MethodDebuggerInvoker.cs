@@ -40,7 +40,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedDebuggerState();
             }
 
-            if (!MethodMetadataProvider.TryCreateIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
+            if (!MethodMetadataProvider.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
             {
                 Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaId = {methodMetadataIndex}");
                 return CreateInvalidatedDebuggerState();
@@ -241,6 +241,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException(Exception exception, ref MethodDebuggerState state)
         {
+            if (!state.IsActive)
+            {
+                // Already encountered `LogException`
+                return;
+            }
+
             Log.Warning(exception, "Error caused by our instrumentation");
             state.IsActive = false;
         }

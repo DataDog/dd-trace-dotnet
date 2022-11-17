@@ -31,7 +31,7 @@ public:
         IRuntimeIdStore* pRuntimeIdStore);
 
     bool OnModuleLoaded(ModuleID moduleId);
-    bool OnExceptionThrown(ObjectID exception);
+    bool OnExceptionThrown(ObjectID thrownObjectId);
 
 private:
     bool LoadExceptionMetadata();

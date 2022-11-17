@@ -33,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public NUnitTests(ITestOutputHelper output)
             : base("NUnitTests", output)
         {
+            SetServiceName("nunit-tests");
             SetServiceVersion("1.0.0");
         }
 
