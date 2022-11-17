@@ -168,10 +168,8 @@ namespace Datadog.Profiler.IntegrationTests
         public class NamedPipeAgent : MockDatadogAgent
         {
             private readonly PipeServer _namedPipeServer;
-            private readonly Task _tracesListenerTask;
+            private readonly Task _profilerListenerTask;
             private readonly byte[] _responseBytes;
-
-            private int _nbTime = 0;
 
             public NamedPipeAgent(ITestOutputHelper output)
             {
@@ -211,7 +209,7 @@ namespace Datadog.Profiler.IntegrationTests
                     (ss, t) => HandleNamedPipeProfiles(ss, t),
                     x => Output.WriteLine(x));
 
-                _tracesListenerTask = Task.Run(_namedPipeServer.Start);
+                _profilerListenerTask = Task.Run(_namedPipeServer.Start);
             }
 
             public string ProfilesPipeName { get; }
@@ -225,12 +223,9 @@ namespace Datadog.Profiler.IntegrationTests
             // For now just empty the pipe stream
             private async Task HandleNamedPipeProfiles(NamedPipeServerStream ss, CancellationToken cancellationToken)
             {
-                Interlocked.Increment(ref _nbTime);
-
-                var buffer = new byte[1 << 32];
-
-                await ss.ReadAsync(buffer, cancellationToken);
+                // As of today, we do not use the content of the request so just ignore it and returns 200 response
                 await ss.WriteAsync(_responseBytes, cancellationToken);
+                await ss.FlushAsync();
                 NbCallsOnProfilingEndpoint++;
             }
         }

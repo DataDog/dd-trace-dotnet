@@ -26,14 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
         [TestAppFact("Samples.Computer01")]
         public void CheckProfilesSentThroughNamedPipe(string appName, string framework, string appAssembly)
         {
-            if (framework != "netcoreapp3.1")
-            {
-                new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output, TransportType.NamedPipe).RunAndCheck();
-            }
-            else
-            {
-                // TODO: need to figure out issue in netcore3.1 for x86
-            }
+            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output, TransportType.NamedPipe).RunAndCheck();
         }
 
         [TestAppFact("Samples.Computer01")]
