@@ -12,6 +12,9 @@ std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
      {"inuse_space", "bytes"}});
 
 
+const uint32_t MAX_LIVE_OBJECTS = 1024;
+
+
 LiveObjectsProvider::LiveObjectsProvider(
     uint32_t valueOffset,
     ICorProfilerInfo4* pCorProfilerInfo,
@@ -64,12 +67,18 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
 {
     // std::cout << rawSample.AllocationClass << std::endl;
 
+    std::lock_guard<std::mutex> lock(_liveObjectsLock);
+
     LiveObjectInfo info(
         _pAllocationsProvider.get()->TransformRawSample(rawSample),
         rawSample.Address);
 
-    std::lock_guard<std::mutex> lock(_liveObjectsLock);
-    _objectsToMonitor.push_back(std::move(info));
+    // Limit the number of handle to create until the next GC
+    // If _objectsToMonitor is already full, stop adding new objects
+    if (_objectsToMonitor.size() + _monitoredObjects.size() <= MAX_LIVE_OBJECTS)
+    {
+        _objectsToMonitor.push_back(std::move(info));
+    }
 }
 
 void LiveObjectsProvider::OnGarbageCollectionStarted()

@@ -194,7 +194,9 @@ private :
     std::atomic<ULONG> _refCount{0};
     ICorProfilerInfo5* _pCorProfilerInfo = nullptr;
     ICorProfilerInfo12* _pCorProfilerInfoEvents = nullptr;
-    // TODO: wait for .NET 7 - ICorProfilerInfo13* _pCorProfilerInfoLiveObjects = nullptr;
+    // TODO: wait for .NET 7 to be available for build and test
+    // ICorProfilerInfo13* _pCorProfilerInfoLiveHeap = nullptr;
+
     std::unique_ptr<ClrEventsParser> _pClrEventsParser = nullptr;
     EVENTPIPE_SESSION _session{0};
     inline static bool _isNet46OrGreater = false;

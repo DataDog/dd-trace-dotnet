@@ -166,7 +166,7 @@ bool CorProfilerCallback::InitializeServices()
             sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
                 valuesOffset,
-                _pCorProfilerInfo,
+                _pCorProfilerInfo,  // TODO: use _pCorProfilerInfoLiveHeap instead
                 _pManagedThreadList,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
@@ -538,11 +538,18 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
 {
     runtimeMajor = 0;
     runtimeMinor = 0;
-    IUnknown* tstVerProfilerInfo;  // ICorProfilerInfo13 will ship with .NET 7
+    IUnknown* tstVerProfilerInfo;  // TODO: ICorProfilerInfo13 ships with .NET 7
+    //if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&tstVerProfilerInfo))
+    //{
+    //    _isNet46OrGreater = true;
+    //    Log::Info("ICorProfilerInfo13 available. Profiling API compatibility: .NET Core 7.0 or later.");  // could be 6 too
+    //    tstVerProfilerInfo->Release();
+    //}
+    //else
     if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&tstVerProfilerInfo))
     {
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
+        Log::Info("ICorProfilerInfo12 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
@@ -550,7 +557,7 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
         runtimeMajor = 3;
         runtimeMinor = 1;
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.1 or later.");
+        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 3.1 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**)&tstVerProfilerInfo))
@@ -820,6 +827,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         ;
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
+        // TODO: Live heap profiling requires .NET 7+ and ICorProfilerInfo13
+        if (major >= 7)
+        {
+            // HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&_pCorProfilerInfoLiveHeap);
+            // if (FAILED(hr))
+            //{
+            //     Log::Error("Failed to get ICorProfilerInfo13: 0x", std::hex, hr, std::dec, ".");
+            //     _pCorProfilerInfoLiveHeap = nullptr;
+
+            //    // we continue: the live heap profiler will be disabled...
+            //}
+        }
+
         HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
         if (FAILED(hr))
         {
@@ -884,7 +904,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
 
-        if (_pConfiguration->IsAllocationProfilingEnabled())
+        if (
+            _pConfiguration->IsAllocationProfilingEnabled() ||
+            _pConfiguration->IsHeapProfilingEnabled()
+            )
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
 
