@@ -265,7 +265,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add "version" tags to all spans whose service name is the default service name
-            if (string.Equals(span.Context.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(span.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
                 var versionRawBytes = MessagePackStringCache.GetVersionBytes(model.TraceChunk.ServiceVersion);
 

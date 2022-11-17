@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     methodName: method.Name,
                     serviceName: method.ServiceName,
                     startTime: span.StartTime,
-                    parentContext: span.Context.Parent);
+                    parentContext: span.Parent);
 
                 // Add the propagation headers
                 SpanContextPropagator.Instance.Inject(span.Context, collection);
