@@ -33,7 +33,7 @@ namespace Benchmarks.Trace
         public void StartFinishSpan()
         {
             var span = Tracer.StartSpan("operation");
-            span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+            span.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject);
             span.Finish();
         }
 
@@ -45,7 +45,7 @@ namespace Benchmarks.Trace
         {
             using (Scope scope = Tracer.StartActiveInternal("operation"))
             {
-                scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+                scope.Span.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject);
             }
         }
     }
