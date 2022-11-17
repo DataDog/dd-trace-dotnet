@@ -217,6 +217,11 @@ HRESULT ILRewriter::Import()
 
 HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
 {
+    if (m_pOffsetToInstr != nullptr)
+    {
+        delete[] m_pOffsetToInstr;
+    }
+
     m_pOffsetToInstr = new ILInstr*[m_CodeSize + 1];
     IfNullRet(m_pOffsetToInstr);
 

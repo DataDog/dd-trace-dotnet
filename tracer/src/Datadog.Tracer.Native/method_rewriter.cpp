@@ -79,10 +79,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     if (methodHandler == nullptr)
     {
-        Logger::Error("TracerMethodRewriter::Rewrite: methodHandler is null. "
-                     "MethodDef: ",
-                     methodHandler->GetMethodDef());
-
+        Logger::Error("TracerMethodRewriter::Rewrite: methodHandler is null.");
         return S_FALSE;
     }
 
