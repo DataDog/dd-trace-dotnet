@@ -396,7 +396,17 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
+        internal Span StartSpan(
+            string operationName,
+            ITags tags = null,
+            ISpanContext parent = null,
+            string serviceName = null,
+            DateTimeOffset? startTime = null,
+            ulong? traceId = null,
+            ulong? spanId = null,
+            string rawTraceId = null,
+            string rawSpanId = null,
+            bool addToTraceContext = true)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 

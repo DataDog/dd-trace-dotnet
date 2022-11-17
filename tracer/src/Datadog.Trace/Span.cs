@@ -5,7 +5,6 @@
 
 using System;
 using System.Globalization;
-using System.Security.Cryptography;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -26,7 +25,7 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -45,9 +44,16 @@ namespace Datadog.Trace
 
                 Log.Debug(
                     "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{tagsType}])",
-                    new object[] { SpanId, Context.ParentId, TraceId, Tags, tagsType });
+                    new object[]
+                    {
+                        SpanId,
+                        Context.ParentId,
+                        TraceId,
+                        Tags,
+                        tagsType
+                    });
             }
-         }
+        }
 
         /// <summary>
         /// Gets or sets operation name
@@ -285,10 +291,10 @@ namespace Datadog.Trace
                         SetMetric(Trace.Tags.Analytics, 0.0);
                     }
                     else if (double.TryParse(
-                        value,
-                        NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
-                        CultureInfo.InvariantCulture,
-                        out double analyticsSampleRate))
+                                 value,
+                                 NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
+                                 CultureInfo.InvariantCulture,
+                                 out double analyticsSampleRate))
                     {
                         // use specified sample rate
                         SetMetric(Trace.Tags.Analytics, analyticsSampleRate);
@@ -428,7 +434,16 @@ namespace Datadog.Trace
                 {
                     Log.Debug(
                         "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        new object[] { SpanId, Context.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
+                        new object[]
+                        {
+                            SpanId,
+                            Context.ParentId,
+                            TraceId,
+                            ServiceName,
+                            ResourceName,
+                            OperationName,
+                            Tags
+                        });
                 }
             }
         }
