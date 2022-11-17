@@ -118,7 +118,11 @@ ILRewriter::ILRewriter(ICorProfilerInfo* pICorProfilerInfo, ICorProfilerFunction
     m_pEH(nullptr),
     m_pOffsetToInstr(nullptr),
     m_pOutputBuffer(nullptr),
-    m_pIMethodMalloc(nullptr)
+    m_pIMethodMalloc(nullptr),
+    m_maxStack(0),
+    m_flags(CorILMethod_TinyFormat),
+    m_nEH(0),
+    m_CodeSize(0)
 {
     m_IL.m_pNext = &m_IL;
     m_IL.m_pPrev = &m_IL;
@@ -244,7 +248,7 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
             return COR_E_INVALIDPROGRAM;
         }
 
-        if (opcode >= CEE_COUNT)
+        if (opcode >= CEE_COUNT || opcode < 0)
         {
             return COR_E_INVALIDPROGRAM;
         }
