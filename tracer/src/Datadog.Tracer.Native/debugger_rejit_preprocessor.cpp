@@ -157,14 +157,14 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<Mo
     Logger::Debug("RejitHandler::EnqueuePreprocessRejitRequests");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(lineProbes),
-                                    rejitRequests = rejitRequests, promise = promise]() mutable {
+                                    localRejitRequests = rejitRequests, localPromise = promise]() mutable {
         // Process modules for rejit
-        const auto rejitCount = PreprocessLineProbes(modules, definitions, rejitRequests);
+        const auto rejitCount = PreprocessLineProbes(modules, definitions, localRejitRequests);
 
         // Resolve promise
-        if (promise != nullptr)
+        if (localPromise != nullptr)
         {
-            promise->set_value(rejitRequests);
+            localPromise->set_value(localRejitRequests);
         }
     };
 

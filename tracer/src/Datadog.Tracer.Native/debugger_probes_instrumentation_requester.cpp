@@ -139,9 +139,10 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
 DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     std::shared_ptr<trace::RejitHandler> rejit_handler, 
     std::shared_ptr<trace::RejitWorkOffloader> work_offloader) :
-    m_rejit_handler(rejit_handler), m_work_offloader(work_offloader)
+    m_rejit_handler(rejit_handler),
+    m_work_offloader(work_offloader),
+    m_debugger_rejit_preprocessor(std::make_unique<DebuggerRejitPreprocessor>(rejit_handler, work_offloader))
 {
-    m_debugger_rejit_preprocessor = std::make_unique<DebuggerRejitPreprocessor>(rejit_handler, work_offloader);
     is_debugger_enabled = IsDebuggerEnabled();
 }
 
