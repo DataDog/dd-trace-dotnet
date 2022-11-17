@@ -44,6 +44,9 @@ namespace Datadog.Trace
             Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
+        // Gets the spans. For testing only.
+        internal ArrayBuilder<Span> Spans => _spans;
+
         public Span RootSpan { get; private set; }
 
         public DateTimeOffset UtcNow => _utcStart.Add(Elapsed);
