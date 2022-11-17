@@ -70,10 +70,25 @@ namespace Datadog.Trace.ClrProfiler
             {
                 return spanContext;
             }
-            else
+
+            var propagatedSpanContext = SpanContextPropagator.Instance.Extract(values);
+
+            // we cannot make changes to IDistributedTracer without breaking
+            // cross-version tracing (aka version mismatch),
+            // so create a SpanContext from the values in PropagatedSpanContext
+            if (propagatedSpanContext is { } context)
             {
-                return SpanContextPropagator.Instance.Extract(values);
+                return new SpanContext(
+                    context.TraceId,
+                    context.SpanId,
+                    context.SamplingPriority,
+                    serviceName: null,
+                    context.Origin,
+                    context.RawTraceId,
+                    context.RawSpanId);
             }
+
+            return null;
         }
 
         void IDistributedTracer.SetSpanContext(IReadOnlyDictionary<string, string> value)

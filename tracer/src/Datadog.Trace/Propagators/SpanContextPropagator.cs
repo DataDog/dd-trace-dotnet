@@ -118,7 +118,7 @@ namespace Datadog.Trace.Propagators
         /// <param name="headers">The headers that contain the values to be extracted.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
-        public SpanContext? Extract<TCarrier>(TCarrier headers)
+        public IPropagatedSpanContext? Extract<TCarrier>(TCarrier headers)
             where TCarrier : IHeadersCollection
         {
             return Extract(headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
@@ -131,7 +131,7 @@ namespace Datadog.Trace.Propagators
         /// <param name="getter">The function that can extract a list of values for a given header name.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
-        public SpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
+        public IPropagatedSpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (getter is null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Propagators
             return Extract(carrier, new FuncGetter<TCarrier>(getter));
         }
 
-        internal SpanContext? Extract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter)
+        internal IPropagatedSpanContext? Extract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
@@ -160,7 +160,7 @@ namespace Datadog.Trace.Propagators
         /// </summary>
         /// <param name="serializedSpanContext">The serialized dictionary.</param>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from the serialized dictionary.</returns>
-        internal SpanContext? Extract(IReadOnlyDictionary<string, string?>? serializedSpanContext)
+        internal IPropagatedSpanContext? Extract(IReadOnlyDictionary<string, string?>? serializedSpanContext)
         {
             if (serializedSpanContext == null)
             {

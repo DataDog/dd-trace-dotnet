@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
             return scope;
         }
 
-        private static SpanContext? ExtractPropagatedContext(IMetadata? metadata)
+        private static ISpanContext? ExtractPropagatedContext(IMetadata? metadata)
         {
             try
             {

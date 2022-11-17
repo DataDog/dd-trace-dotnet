@@ -13,7 +13,10 @@ namespace Datadog.Trace.Propagators
     {
         public static readonly DistributedContextExtractor Instance = new();
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(
+            TCarrier carrier,
+            TCarrierGetter carrierGetter,
+            out IPropagatedSpanContext? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -24,6 +27,7 @@ namespace Datadog.Trace.Propagators
             }
 
             var traceId = ParseUtility.ParseUInt64(carrier, carrierGetter, SpanContext.Keys.TraceId);
+
             if (traceId is null or 0)
             {
                 // a valid traceId is required to use distributed tracing
@@ -37,10 +41,14 @@ namespace Datadog.Trace.Propagators
             var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.RawSpanId);
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.PropagatedTags);
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId)
-                          {
-                              PropagatedTags = propagatedTraceTags
-                          };
+            spanContext = new PropagatedSpanContext(
+                traceId.Value,
+                parentId,
+                rawTraceId,
+                rawSpanId,
+                samplingPriority,
+                origin,
+                propagatedTraceTags);
 
             return true;
         }

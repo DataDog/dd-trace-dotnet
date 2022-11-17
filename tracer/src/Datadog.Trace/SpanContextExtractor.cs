@@ -23,17 +23,20 @@ namespace Datadog.Trace
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             var spanContext = SpanContextPropagator.Instance.Extract(carrier, getter);
-            if (spanContext is not null
-             && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm
-             && getter(carrier, DataStreamsPropagationHeaders.TemporaryEdgeTags).FirstOrDefault() is { Length: > 0 } edgeTagString)
-            {
-                var base64PathwayContext = getter(carrier, DataStreamsPropagationHeaders.TemporaryBase64PathwayContext).FirstOrDefault();
-                var pathwayContext = TryGetPathwayContext(base64PathwayContext);
 
-                var edgeTags = edgeTagString.Split(',');
-                spanContext.MergePathwayContext(pathwayContext);
-                spanContext.SetCheckpoint(dsm, edgeTags);
-            }
+            // TODO
+            // if (spanContext is not null
+            //  && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm
+            //  && getter(carrier, DataStreamsPropagationHeaders.TemporaryEdgeTags).FirstOrDefault() is { Length: > 0 } edgeTagString)
+            // {
+            //     var base64PathwayContext = getter(carrier, DataStreamsPropagationHeaders.TemporaryBase64PathwayContext).FirstOrDefault();
+            //     var pathwayContext = TryGetPathwayContext(base64PathwayContext);
+            //
+            //     var edgeTags = edgeTagString.Split(',');
+            //
+            //     spanContext.MergePathwayContext(pathwayContext);
+            //     spanContext.SetCheckpoint(dsm, edgeTags);
+            // }
 
             return spanContext;
         }

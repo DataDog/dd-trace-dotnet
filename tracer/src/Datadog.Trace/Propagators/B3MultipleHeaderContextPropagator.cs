@@ -42,7 +42,10 @@ namespace Datadog.Trace.Propagators
             carrierSetter.Set(carrier, Sampled, sampled);
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(
+            TCarrier carrier,
+            TCarrierGetter carrierGetter,
+            out IPropagatedSpanContext? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -70,7 +73,15 @@ namespace Datadog.Trace.Propagators
 
                 var parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
+                spanContext = new PropagatedSpanContext(
+                    traceId,
+                    parentId,
+                    rawTraceId,
+                    rawSpanId,
+                    samplingPriority,
+                    origin: null,
+                    propagatedTags: null);
+
                 return true;
             }
 

@@ -51,7 +51,7 @@ namespace Datadog.Trace.PlatformHelpers
             return $"{httpMethod} {resourceUrl}";
         }
 
-        private SpanContext ExtractPropagatedContext(HttpRequest request)
+        private ISpanContext ExtractPropagatedContext(HttpRequest request)
         {
             try
             {
@@ -105,7 +105,7 @@ namespace Datadog.Trace.PlatformHelpers
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
-            SpanContext propagatedContext = ExtractPropagatedContext(request);
+            var propagatedContext = ExtractPropagatedContext(request);
             var tagsFromHeaders = ExtractHeaderTags(request, tracer);
 
             AspNetCoreTags tags;

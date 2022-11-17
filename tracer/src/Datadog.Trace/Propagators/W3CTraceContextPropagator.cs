@@ -29,7 +29,10 @@ namespace Datadog.Trace.Propagators
             carrierSetter.Set(carrier, TraceParent, $"00-{traceId}-{spanId}-{sampled}");
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(
+            TCarrier carrier,
+            TCarrierGetter carrierGetter,
+            out IPropagatedSpanContext? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -72,7 +75,8 @@ namespace Datadog.Trace.Propagators
 #if NETCOREAPP
                 var w3cTraceId = traceParent.AsSpan(3, 32);
                 var w3cSpanId = traceParent.AsSpan(36, 16);
-                var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId.Slice(16));
+                var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId[16..]);
+
                 if (traceId == 0)
                 {
                     return false;
@@ -80,11 +84,19 @@ namespace Datadog.Trace.Propagators
 
                 var parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, w3cTraceId.ToString(), w3cSpanId.ToString());
+                spanContext = new PropagatedSpanContext(
+                    traceId,
+                    parentId,
+                    w3cTraceId.ToString(),
+                    w3cSpanId.ToString(),
+                    samplingPriority,
+                    origin: null,
+                    propagatedTags: null);
 #else
                 var w3cTraceId = traceParent.Substring(3, 32);
                 var w3cSpanId = traceParent.Substring(36, 16);
                 var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId.Substring(16));
+
                 if (traceId == 0)
                 {
                     return false;
@@ -92,7 +104,14 @@ namespace Datadog.Trace.Propagators
 
                 var parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, w3cTraceId, w3cSpanId);
+                spanContext = new PropagatedSpanContext(
+                    traceId,
+                    parentId,
+                    w3cTraceId,
+                    w3cSpanId,
+                    samplingPriority,
+                    origin: null,
+                    propagatedTags: null);
 #endif
 
                 return true;

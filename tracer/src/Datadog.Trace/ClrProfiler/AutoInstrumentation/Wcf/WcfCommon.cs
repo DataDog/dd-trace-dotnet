@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
             try
             {
-                SpanContext propagatedContext = null;
+                ISpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
                 string host = null;
                 string userAgent = null;

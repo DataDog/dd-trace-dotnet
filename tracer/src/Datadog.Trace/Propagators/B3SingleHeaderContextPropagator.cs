@@ -29,7 +29,10 @@ namespace Datadog.Trace.Propagators
             carrierSetter.Set(carrier, B3, $"{traceId}-{spanId}-{sampled}");
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(
+            TCarrier carrier,
+            TCarrierGetter carrierGetter,
+            out IPropagatedSpanContext? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -50,9 +53,10 @@ namespace Datadog.Trace.Propagators
                 }
 
 #if NETCOREAPP
-                ReadOnlySpan<char> rawTraceId = null;
-                ReadOnlySpan<char> rawSpanId = null;
-                char rawSampled = '0';
+                ReadOnlySpan<char> rawTraceId;
+                ReadOnlySpan<char> rawSpanId;
+                char rawSampled;
+
                 if (brValue.Length > 50 && brValue[32] == '-' && brValue[49] == '-')
                 {
                     // 128 bits trace id
@@ -73,16 +77,30 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var traceId = rawTraceId.Length == 32 ?
-                                  ParseUtility.ParseFromHexOrDefault(rawTraceId.Slice(16)) :
+                                  ParseUtility.ParseFromHexOrDefault(rawTraceId[16..]) :
                                   ParseUtility.ParseFromHexOrDefault(rawTraceId);
+
+                if (traceId == 0)
+                {
+                    return false;
+                }
+
                 var parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString());
+                spanContext = new PropagatedSpanContext(
+                    traceId,
+                    parentId,
+                    rawTraceId.ToString(),
+                    rawSpanId.ToString(),
+                    samplingPriority,
+                    origin: null,
+                    propagatedTags: null);
 #else
-                string? rawTraceId = null;
-                string? rawSpanId = null;
-                char rawSampled = '0';
+                string? rawTraceId;
+                string? rawSpanId;
+                char rawSampled;
+
                 if (brValue.Length > 50 && brValue[32] == '-' && brValue[49] == '-')
                 {
                     // 128 bits trace id
@@ -105,10 +123,23 @@ namespace Datadog.Trace.Propagators
                 var traceId = rawTraceId.Length == 32 ?
                                   ParseUtility.ParseFromHexOrDefault(rawTraceId.Substring(16)) :
                                   ParseUtility.ParseFromHexOrDefault(rawTraceId);
+
+                if (traceId == 0)
+                {
+                    return false;
+                }
+
                 var parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
+                spanContext = new PropagatedSpanContext(
+                    traceId,
+                    parentId,
+                    rawTraceId: rawTraceId,
+                    rawSpanId: rawSpanId,
+                    samplingPriority,
+                    origin: null,
+                    propagatedTags: null);
 #endif
 
                 return true;

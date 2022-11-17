@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 var tracer = Tracer.Instance;
                 var request = controllerContext.Request;
-                SpanContext propagatedContext = null;
+                ISpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
                 tags = new AspNetTags();
 
