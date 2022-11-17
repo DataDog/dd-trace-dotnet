@@ -73,23 +73,20 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the IAST context.
         /// </summary>
-        internal IastRequestContext IastRequestContext
-        {
-            get
-            {
-                if (_iastRequestContext == null && Iast.Iast.Instance.Settings.Enabled)
-                {
-                    lock (_syncRoot)
-                    {
-                        _iastRequestContext ??= new();
-                    }
-                }
-
-                return _iastRequestContext;
-            }
-        }
+        internal IastRequestContext IastRequestContext => _iastRequestContext;
 
         private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
+
+        internal void EnableIastInRequest()
+        {
+            if (_iastRequestContext is null)
+            {
+                lock (_syncRoot)
+                {
+                    _iastRequestContext ??= new();
+                }
+            }
+        }
 
         public void AddSpan(Span span)
         {
@@ -138,9 +135,10 @@ namespace Datadog.Trace
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
-                if (Iast.Iast.Instance.Settings.Enabled)
+                if (Iast.Iast.Instance.Settings.Enabled && _iastRequestContext != null)
                 {
-                    IastRequestContext.AddsIastTagsToSpan(span, _iastRequestContext);
+                    _iastRequestContext.AddIastVulnerabilitiesToSpan(span);
+                    OverheadController.Instance.ReleaseRequest();
                 }
             }
 
