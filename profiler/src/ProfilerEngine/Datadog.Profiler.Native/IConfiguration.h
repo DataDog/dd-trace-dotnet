@@ -49,4 +49,5 @@ public:
     virtual bool IsTimestampsAsLabelEnabled() const = 0;
     virtual int32_t WalltimeThreadsThreshold() const = 0;
     virtual int32_t CpuThreadsThreshold() const = 0;
+    virtual bool IsGarbageCollectionProfilingEnabled() const = 0;
 };
