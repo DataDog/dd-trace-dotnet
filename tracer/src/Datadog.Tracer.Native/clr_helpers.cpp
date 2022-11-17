@@ -928,7 +928,7 @@ HRESULT FunctionMethodSignature::TryParse()
     return S_OK;
 }
 
-bool FindTypeDefByName(const shared::WSTRING instrumentationTargetMethodTypeName, const shared::WSTRING assemblyName,
+bool FindTypeDefByName(const shared::WSTRING& instrumentationTargetMethodTypeName, const shared::WSTRING& assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef)
 {
     mdTypeDef parentTypeDef = mdTypeDefNil;

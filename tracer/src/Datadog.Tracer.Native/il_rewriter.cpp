@@ -248,7 +248,12 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
             return COR_E_INVALIDPROGRAM;
         }
 
-        if (opcode >= CEE_COUNT || opcode < 0)
+        if (opcode >= CEE_COUNT)
+        {
+            return COR_E_INVALIDPROGRAM;
+        }
+
+        if (opcode < 0)
         {
             return COR_E_INVALIDPROGRAM;
         }
