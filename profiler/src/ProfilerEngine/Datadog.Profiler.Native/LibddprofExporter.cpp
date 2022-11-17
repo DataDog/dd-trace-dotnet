@@ -356,7 +356,7 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
 
     // TODO: add timestamps when available
 
-    ddog_Profile_add(profile, ffiSample);
+    auto result = ddog_Profile_add(profile, ffiSample);
     profileInfoScope.profileInfo.samplesCount++;
 }
 
