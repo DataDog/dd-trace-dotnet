@@ -29,10 +29,15 @@ namespace Datadog.Trace
         private int _openSpans;
         private int? _samplingPriority;
 
-        public TraceContext(IDatadogTracer tracer, ulong? traceId = null, TraceTagCollection tags = null)
+        public TraceContext(
+            IDatadogTracer tracer,
+            ulong? traceId = null,
+            string rawTraceId = null,
+            TraceTagCollection tags = null)
         {
             Tracer = tracer;
             TraceId = traceId ?? SpanIdGenerator.CreateNew();
+            RawTraceId = rawTraceId;
 
             var settings = tracer?.Settings;
 
@@ -47,6 +52,8 @@ namespace Datadog.Trace
         }
 
         public ulong TraceId { get; }
+
+        public string RawTraceId { get; }
 
         public Span RootSpan { get; private set; }
 
