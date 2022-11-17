@@ -39,7 +39,7 @@ namespace Datadog.Trace
             StartTime = start ?? context.TraceContext.UtcNow;
 
             SpanId = context.SpanId;
-            ParentId = context.ParentId;
+            Parent = context.Parent;
             ServiceName = context.ServiceName;
             TraceContext = context.TraceContext;
 
@@ -59,6 +59,8 @@ namespace Datadog.Trace
                     });
             }
         }
+
+        internal ISpanContext Parent { get; }
 
         /// <summary>
         /// Gets or sets operation name
@@ -97,7 +99,7 @@ namespace Datadog.Trace
         /// </summary>
         internal ulong SpanId { get; }
 
-        internal ulong? ParentId { get; }
+        internal ulong? ParentId => Parent?.SpanId;
 
         /// <summary>
         /// Gets <i>local root span id</i>, i.e. the <c>SpanId</c> of the span that is the root of the local, non-reentrant
