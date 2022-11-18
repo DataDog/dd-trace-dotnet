@@ -68,7 +68,7 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
 
 # Install CppCheck
 RUN curl -sSL https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/c/cppcheck-2.7-1.el7.x86_64.rpm --output cppcheck-2.7-1.el7.x86_64.rpm \
-    && sudo yum localinstall cppcheck-2.7-1.el7.x86_64.rpm
+    && sudo yum localinstall -y cppcheck-2.7-1.el7.x86_64.rpm
 
 ENV CXX=clang++
 ENV CC=clang
