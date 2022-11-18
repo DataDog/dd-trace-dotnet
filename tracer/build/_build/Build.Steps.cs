@@ -195,7 +195,7 @@ partial class Build
     Target CompileNativeSrcLinux => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
-        .After(CppCheckNativeSrcLinux)
+        .DependsOn(CppCheckNativeSrcLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -278,8 +278,8 @@ partial class Build
         {
             try
             {
-                CppCheck.Value(arguments: $"cppcheck --std=c++17 --platform=unix64 --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/cppcheck-results.xml --xml --enable=warning,performance");
-                CppCheck.Value(arguments: $"cppcheck --std=c++17 --platform=unix64 --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/cppcheck-results.txt --enable=warning,performance");
+                CppCheck.Value(arguments: $"cppcheck --std=c++17 --platform=unix64 --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck.xml --xml --enable=warning,performance");
+                CppCheck.Value(arguments: $"cppcheck --std=c++17 --platform=unix64 --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck.txt --enable=warning,performance");
             }
             catch (Exception ex)
             {
