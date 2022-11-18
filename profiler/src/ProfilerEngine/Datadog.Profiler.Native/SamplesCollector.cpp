@@ -142,7 +142,7 @@ void SamplesCollector::CollectSamples(std::forward_list<std::pair<ISamplesProvid
 
             for (auto const& sample : result)
             {
-                if (!sample.GetCallstack().empty())
+                if (!sample->GetCallstack().empty())
                 {
                     _exporter->Add(sample);
                 }

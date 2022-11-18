@@ -17,7 +17,7 @@ const uint32_t MAX_LIVE_OBJECTS = 1024;
 
 LiveObjectsProvider::LiveObjectsProvider(
     uint32_t valueOffset,
-    ICorProfilerInfo4* pCorProfilerInfo,
+    ICorProfilerInfo13* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
@@ -49,15 +49,15 @@ const char* LiveObjectsProvider::GetName()
     return "LiveObjectsProvider";
 }
 
-std::list<Sample> LiveObjectsProvider::GetSamples()
+std::list<std::shared_ptr<Sample>> LiveObjectsProvider::GetSamples()
 {
     // return the live object samples
-    std::list<Sample> liveObjectsSamples;
+    std::list<std::shared_ptr<Sample>> liveObjectsSamples;
 
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
     for (auto const& info : _monitoredObjects)
     {
-        liveObjectsSamples.push_back(info.GetSample().Copy());
+        liveObjectsSamples.push_back(info.GetSample());
     }
 
     return liveObjectsSamples;

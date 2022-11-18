@@ -17,11 +17,6 @@
 #include <cor.h>
 #include "contract.h"
 
-
-#ifndef lengthof
-# define lengthof(x) (sizeof(x)/sizeof((x)[0]))
-#endif
-
 template<class T> inline T Align4(T p)
 {
     LIMITED_METHOD_CONTRACT;
@@ -31,7 +26,7 @@ template<class T> inline T Align4(T p)
     return (T)i;
 }
 
-typedef ULONG RID;
+typedef uint32_t RID;
 
 // check if a rid is valid or not
 #define     InvalidRid(rid) ((rid) == 0)

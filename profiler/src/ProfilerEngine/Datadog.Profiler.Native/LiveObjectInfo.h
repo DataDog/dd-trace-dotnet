@@ -11,23 +11,22 @@ typedef void** ObjectHandleID;
 class LiveObjectInfo
 {
 public:
-    LiveObjectInfo(Sample&& sample, uintptr_t address);
+    LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address);
 
-    // move only class
-    LiveObjectInfo& operator=(const LiveObjectInfo& info) = delete;
-    LiveObjectInfo(const LiveObjectInfo&) = delete;
-    LiveObjectInfo(LiveObjectInfo&& info) noexcept;
-    LiveObjectInfo& operator=(LiveObjectInfo&& other) noexcept;
+    //// move only class
+    //LiveObjectInfo& operator=(const LiveObjectInfo& info) = delete;
+    //LiveObjectInfo(const LiveObjectInfo&) = delete;
+    //LiveObjectInfo(LiveObjectInfo&& info) noexcept;
+    //LiveObjectInfo& operator=(LiveObjectInfo&& other) noexcept;
 
     // accessors
     void SetHandle(ObjectHandleID handle);
     ObjectHandleID GetHandle() const;
     uintptr_t GetAddress() const;
-    const Sample& GetSample() const;
+    std::shared_ptr<Sample> GetSample() const;
 
 private:
-    Sample _sample;
+    std::shared_ptr<Sample> _sample;
     uintptr_t _address;
     ObjectHandleID _weakHandle;
-
 };

@@ -27,13 +27,13 @@ using ::testing::Throw;
 
 using namespace std::chrono_literals;
 
-std::unique_ptr<IExporter> CreateTransparentExporter(std::list<Sample>& pendingSamples, std::list<Sample>& exportedSamples)
+std::unique_ptr<IExporter> CreateTransparentExporter(std::list<std::shared_ptr<Sample>>& pendingSamples, std::list<std::shared_ptr<Sample>>& exportedSamples)
 {
     auto [exporter, mockExporter] = CreateExporter();
 
     EXPECT_CALL(mockExporter, Add(_))
-        .WillRepeatedly(Invoke([&pendingSamples](const Sample& sample) {
-            pendingSamples.push_back(sample.Copy());
+        .WillRepeatedly(Invoke([&pendingSamples](std::shared_ptr<Sample> const& sample) {
+            pendingSamples.push_back(sample);
         }));
 
     EXPECT_CALL(mockExporter, Export())
@@ -56,10 +56,10 @@ public:
     {
     }
 
-    std::list<Sample> GetSamples() override
+    std::list<std::shared_ptr<Sample>> GetSamples() override
     {
         _calls++;
-        return std::move(CreateSamples(_runtimeId, _nbSamples));
+        return CreateSamples(_runtimeId, _nbSamples);
     }
 
     int GetNbCalls()
@@ -67,21 +67,21 @@ public:
         return _calls;
     }
 
-    Sample CreateSample(std::string_view rid)
+    std::shared_ptr<Sample> CreateSample(std::string_view rid)
     {
         static std::string ModuleName = "My module";
         static std::string FunctionName = "My frame";
 
-        Sample s{rid};
+        auto s = std::make_shared<Sample>(rid);
 
-        s.AddFrame(ModuleName, FunctionName);
+        s->AddFrame(ModuleName, FunctionName);
 
         return s;
     }
 
-    std::list<Sample> CreateSamples(std::string_view runtimeId, int nbSamples)
+    std::list<std::shared_ptr<Sample>> CreateSamples(std::string_view runtimeId, int nbSamples)
     {
-        std::list<Sample> samples;
+        std::list<std::shared_ptr<Sample>> samples;
         for (int i = 0; i < nbSamples; i++)
         {
             samples.push_back(CreateSample(runtimeId));
@@ -89,7 +89,7 @@ public:
         return samples;
     }
 
-    const char* GetName()
+    const char* GetName() override
     {
         return "FakeSamplesProvider";
     }
@@ -114,8 +114,8 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1000s));
 
-    std::list<Sample> pendingSamples;
-    std::list<Sample> exportedSamples;
+    std::list<std::shared_ptr<Sample>> pendingSamples;
+    std::list<std::shared_ptr<Sample>> exportedSamples;
 
     auto exporter = CreateTransparentExporter(pendingSamples, exportedSamples);
     auto metricsSender = MockMetricsSender();
@@ -138,13 +138,13 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
     uint32_t samplesCount1 = 0;
     uint32_t samplesCount2 = 0;
 
-    for (auto& sample : exportedSamples)
+    for (auto const& sample : exportedSamples)
     {
-        if (sample.GetRuntimeId() == runtimeId)
+        if (sample->GetRuntimeId() == runtimeId)
         {
             samplesCount1++;
         }
-        else if (sample.GetRuntimeId() == runtimeId2)
+        else if (sample->GetRuntimeId() == runtimeId2)
         {
             samplesCount2++;
         }
@@ -368,10 +368,10 @@ TEST(SamplesCollectorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
     EXPECT_CALL(mockSamplesProvider, GetSamples())
         .Times(AtLeast(1))
         .WillRepeatedly(InvokeWithoutArgs([runtimeId] {
-            std::list<Sample> samples;
+            std::list<std::shared_ptr<Sample>> samples;
 
             // add sample with empty callstack
-            samples.push_back({runtimeId.c_str()});
+            samples.push_back(std::make_shared<Sample>(runtimeId.c_str()));
             return samples;
         }));
 

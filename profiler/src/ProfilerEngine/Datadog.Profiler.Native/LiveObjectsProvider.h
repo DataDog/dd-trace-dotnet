@@ -34,7 +34,7 @@ public:
 public:
     LiveObjectsProvider(
         uint32_t valueOffset,
-        ICorProfilerInfo4* pCorProfilerInfo,
+        ICorProfilerInfo13* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
         IThreadsCpuManager* pThreadsCpuManager,
@@ -48,7 +48,7 @@ public:
     virtual bool Stop() override;
 
     // Inherited via IBatchedSamplesProvider
-    virtual std::list<Sample> GetSamples() override;
+    virtual std::list<std::shared_ptr<Sample>> GetSamples() override;
     virtual const char* GetName() override;
 
     // Inherited via ISampledAllocationsListener
@@ -64,7 +64,7 @@ private:
 
 private:
     uint32_t _valueOffset = 0;
-    ICorProfilerInfo4* _pCorProfilerInfo = nullptr;
+    ICorProfilerInfo13* _pCorProfilerInfo = nullptr;
     IFrameStore* _pFrameStore = nullptr;
     IAppDomainStore* _pAppDomainStore = nullptr;
     IRuntimeIdStore* _pRuntimeIdStore = nullptr;

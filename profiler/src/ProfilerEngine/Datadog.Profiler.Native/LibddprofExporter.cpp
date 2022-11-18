@@ -314,9 +314,9 @@ LibddprofExporter::ProfileInfoScope LibddprofExporter::GetInfo(std::string_view 
     return profileInfo;
 }
 
-void LibddprofExporter::Add(Sample const& sample)
+void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
 {
-    auto profileInfoScope = GetInfo(sample.GetRuntimeId());
+    auto profileInfoScope = GetInfo(sample->GetRuntimeId());
 
     if (profileInfoScope.profileInfo.profile == nullptr)
     {
@@ -325,7 +325,7 @@ void LibddprofExporter::Add(Sample const& sample)
 
     auto* profile = profileInfoScope.profileInfo.profile;
 
-    auto const& callstack = sample.GetCallstack();
+    auto const& callstack = sample->GetCallstack();
     auto nbFrames = callstack.size();
 
     if (nbFrames > _locationsAndLinesSize)
@@ -360,7 +360,7 @@ void LibddprofExporter::Add(Sample const& sample)
     ffiSample.locations = {_locations.data(), nbFrames};
 
     // Labels
-    auto const& labels = sample.GetLabels();
+    auto const& labels = sample->GetLabels();
     std::vector<ddog_Label> ffiLabels;
     ffiLabels.reserve(labels.size());
 
@@ -371,7 +371,7 @@ void LibddprofExporter::Add(Sample const& sample)
     ffiSample.labels = {ffiLabels.data(), ffiLabels.size()};
 
     // values
-    auto const& values = sample.GetValues();
+    auto const& values = sample->GetValues();
     ffiSample.values = {values.data(), values.size()};
 
     // TODO: add timestamps when available

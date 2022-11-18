@@ -140,9 +140,9 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     provider.Stop();
 
     size_t currentSample = 0;
-    for (const Sample& sample : samples)
+    for (auto const& sample : samples)
     {
-        const auto& currentRuntimeId = sample.GetRuntimeId();
+        const auto& currentRuntimeId = sample->GetRuntimeId();
         if (expectedAppDomainId[currentSample] == 1)
         {
             ASSERT_EQ(currentRuntimeId, firstExpectedRuntimeId);
@@ -160,7 +160,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
         builder2 << expectedAppDomainId[currentSample];
         std::string expectedPid(builder2.str());
 
-        auto labels = sample.GetLabels();
+        auto labels = sample->GetLabels();
         for (const Label& label : labels)
         {
             if (label.first == Sample::AppDomainNameLabel)
@@ -234,10 +234,10 @@ TEST(WallTimeProviderTest, CheckFrames)
         "module #4",
     };
 
-    for (const Sample& sample : samples)
+    for (auto const& sample : samples)
     {
         size_t currentFrame = 0;
-        auto frames = sample.GetCallstack();
+        auto frames = sample->GetCallstack();
         for (auto frame : frames)
         {
             ASSERT_EQ(expectedModules[currentFrame], frame.first);
@@ -277,11 +277,11 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     provider.Stop();
 
     size_t currentSample = 1;
-    for (const Sample& sample : samples)
+    for (auto const& sample : samples)
     {
-        ASSERT_EQ(currentSample * 1000, sample.GetTimeStamp());
+        ASSERT_EQ(currentSample * 1000, sample->GetTimeStamp());
 
-        auto values = sample.GetValues();
+        auto values = sample->GetValues();
         ASSERT_EQ(values.size(), 1);
         for (size_t current = 0; current < values.size(); current++)
         {
@@ -318,11 +318,11 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     provider.Stop();
 
     size_t currentSample = 1;
-    for (const Sample& sample : samples)
+    for (auto const& sample : samples)
     {
-        ASSERT_EQ(currentSample * 1000, sample.GetTimeStamp());
+        ASSERT_EQ(currentSample * 1000, sample->GetTimeStamp());
 
-        auto values = sample.GetValues();
+        auto values = sample->GetValues();
         ASSERT_EQ(values.size(), 1);
         for (size_t current = 0; current < values.size(); current++)
         {

@@ -161,38 +161,44 @@ bool CorProfilerCallback::InitializeServices()
         // live objects profiling requires allocations profiling
         if (_pConfiguration->IsHeapProfilingEnabled())
         {
-            // TODO: need to check that _pCorProfilerInfoLiveObjects is not null and log a warning if null
-            auto valueTypes = LiveObjectsProvider::SampleTypeDefinitions;
-            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
-            _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
-                valuesOffset,
-                _pCorProfilerInfo,  // TODO: use _pCorProfilerInfoLiveHeap instead
-                _pManagedThreadList,
-                _pFrameStore.get(),
-                _pThreadsCpuManager,
-                _pAppDomainStore.get(),
-                pRuntimeIdStore,
-                _pConfiguration.get());
-            valuesOffset += static_cast<uint32_t>(valueTypes.size());
-
-            valueTypes = AllocationsProvider::SampleTypeDefinitions;
-            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
-            _pAllocationsProvider = RegisterService<AllocationsProvider>(
-                valuesOffset,
-                _pCorProfilerInfo,
-                _pManagedThreadList,
-                _pFrameStore.get(),
-                _pThreadsCpuManager,
-                _pAppDomainStore.get(),
-                pRuntimeIdStore,
-                _pConfiguration.get(),
-                _pLiveObjectsProvider
-                );
-            valuesOffset += static_cast<uint32_t>(valueTypes.size());
-
-            if (!_pConfiguration->IsAllocationProfilingEnabled())
+            if (_pCorProfilerInfoLiveHeap != nullptr)
             {
-                Log::Warn("Allocations profiling is enabled due to activated live objects profiling.");
+                auto valueTypes = LiveObjectsProvider::SampleTypeDefinitions;
+                sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+                _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
+                    valuesOffset,
+                    _pCorProfilerInfoLiveHeap,
+                    _pManagedThreadList,
+                    _pFrameStore.get(),
+                    _pThreadsCpuManager,
+                    _pAppDomainStore.get(),
+                    pRuntimeIdStore,
+                    _pConfiguration.get());
+                valuesOffset += static_cast<uint32_t>(valueTypes.size());
+
+                valueTypes = AllocationsProvider::SampleTypeDefinitions;
+                sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+                _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                    valuesOffset,
+                    _pCorProfilerInfo,
+                    _pManagedThreadList,
+                    _pFrameStore.get(),
+                    _pThreadsCpuManager,
+                    _pAppDomainStore.get(),
+                    pRuntimeIdStore,
+                    _pConfiguration.get(),
+                    _pLiveObjectsProvider
+                    );
+                valuesOffset += static_cast<uint32_t>(valueTypes.size());
+
+                if (!_pConfiguration->IsAllocationProfilingEnabled())
+                {
+                    Log::Warn("Allocations profiling is enabled due to activated live objects profiling.");
+                }
+            }
+            else
+            {
+                Log::Warn("Live Heap profiling requires .NET 7+ so it is disabled.");
             }
         }
 
@@ -538,14 +544,14 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
 {
     runtimeMajor = 0;
     runtimeMinor = 0;
-    IUnknown* tstVerProfilerInfo;  // TODO: ICorProfilerInfo13 ships with .NET 7
-    //if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&tstVerProfilerInfo))
-    //{
-    //    _isNet46OrGreater = true;
-    //    Log::Info("ICorProfilerInfo13 available. Profiling API compatibility: .NET Core 7.0 or later.");  // could be 6 too
-    //    tstVerProfilerInfo->Release();
-    //}
-    //else
+    IUnknown* tstVerProfilerInfo;
+    if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&tstVerProfilerInfo))
+    {
+        _isNet46OrGreater = true;
+        Log::Info("ICorProfilerInfo13 available. Profiling API compatibility: .NET Core 7.0 or later.");  // could be 6 too
+        tstVerProfilerInfo->Release();
+    }
+    else
     if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&tstVerProfilerInfo))
     {
         _isNet46OrGreater = true;
@@ -827,17 +833,17 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         ;
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
-        // TODO: Live heap profiling requires .NET 7+ and ICorProfilerInfo13
+        // Live heap profiling requires .NET 7+ and ICorProfilerInfo13
         if (major >= 7)
         {
-            // HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&_pCorProfilerInfoLiveHeap);
-            // if (FAILED(hr))
-            //{
-            //     Log::Error("Failed to get ICorProfilerInfo13: 0x", std::hex, hr, std::dec, ".");
-            //     _pCorProfilerInfoLiveHeap = nullptr;
+             HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&_pCorProfilerInfoLiveHeap);
+             if (FAILED(hr))
+            {
+                 Log::Error("Failed to get ICorProfilerInfo13: 0x", std::hex, hr, std::dec, ".");
+                 _pCorProfilerInfoLiveHeap = nullptr;
 
-            //    // we continue: the live heap profiler will be disabled...
-            //}
+                // we continue: the live heap profiler will be disabled...
+            }
         }
 
         HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);

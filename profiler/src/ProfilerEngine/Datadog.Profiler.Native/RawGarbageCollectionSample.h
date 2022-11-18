@@ -16,14 +16,14 @@ public:
         return TotalDuration;
     }
 
-    inline void DoAdditionalTransform(Sample& sample, uint32_t valueOffset) const override
+    inline void DoAdditionalTransform(std::shared_ptr<Sample> sample, uint32_t valueOffset) const override
     {
-        sample.AddLabel(Label(Sample::GarbageCollectionReasonLabel, std::to_string(Reason)));
-        sample.AddLabel(Label(Sample::GarbageCollectionTypeLabel, std::to_string(Type)));
-        sample.AddLabel(Label(Sample::GarbageCollectionCompactingLabel, (IsCompacting ? "true" : "false")));
+        sample->AddLabel(Label(Sample::GarbageCollectionReasonLabel, std::to_string(Reason)));
+        sample->AddLabel(Label(Sample::GarbageCollectionTypeLabel, std::to_string(Type)));
+        sample->AddLabel(Label(Sample::GarbageCollectionCompactingLabel, (IsCompacting ? "true" : "false")));
 
         // set event type
-        sample.AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeGarbageCollection));
+        sample->AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeGarbageCollection));
     }
 
 public:

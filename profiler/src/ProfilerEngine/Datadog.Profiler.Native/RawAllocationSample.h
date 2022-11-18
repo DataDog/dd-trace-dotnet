@@ -9,14 +9,14 @@
 class RawAllocationSample : public RawSample
 {
 public:
-    inline void OnTransform(Sample& sample, uint32_t valueOffset) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
     {
         uint32_t allocationCountIndex = valueOffset;
         uint32_t allocationSizeIndex = valueOffset + 1;
 
-        sample.AddValue(1, allocationCountIndex);
-        sample.AddValue(AllocationSize, allocationSizeIndex);
-        sample.AddLabel(Label(Sample::AllocationClassLabel, AllocationClass));
+        sample->AddValue(1, allocationCountIndex);
+        sample->AddValue(AllocationSize, allocationSizeIndex);
+        sample->AddLabel(Label(Sample::AllocationClassLabel, AllocationClass));
     }
 
     std::string AllocationClass;

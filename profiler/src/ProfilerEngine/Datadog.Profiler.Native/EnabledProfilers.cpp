@@ -39,6 +39,8 @@ EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListen
             _enabledProfilers |= RuntimeProfiler::GC;
         }
 
+        // TODO: we also need to check if .NET version is >= 7
+        // --> pass .NET version to the constructor
         if (pConfiguration->IsHeapProfilingEnabled())
         {
             _enabledProfilers |= RuntimeProfiler::Heap;

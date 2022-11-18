@@ -3,30 +3,30 @@
 
 #include "LiveObjectInfo.h"
 
-LiveObjectInfo::LiveObjectInfo(Sample&& sample, uintptr_t address)
-    : // TODO: we should be able to call _sample(sample) to copy a given Sample into another one
-    _sample(std::move(sample)),
+LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address)
+    :
     _address(address),
     _weakHandle(nullptr)
 {
+    _sample = sample;
 }
 
-LiveObjectInfo::LiveObjectInfo(LiveObjectInfo&& info) noexcept
-    :
-    _sample(std::move(info._sample))
-{
-    _address = std::move(info._address);
-    _weakHandle = std::move(info._weakHandle);
-}
-
-LiveObjectInfo& LiveObjectInfo::operator=(LiveObjectInfo&& other) noexcept
-{
-    _address = std::move(other._address);
-    _weakHandle = std::move(other._weakHandle);
-    _sample = std::move(other._sample);
-
-    return *this;
-}
+//LiveObjectInfo::LiveObjectInfo(LiveObjectInfo&& info) noexcept
+//    :
+//    _sample(std::move(info._sample))
+//{
+//    _address = std::move(info._address);
+//    _weakHandle = std::move(info._weakHandle);
+//}
+//
+//LiveObjectInfo& LiveObjectInfo::operator=(LiveObjectInfo&& other) noexcept
+//{
+//    _address = std::move(other._address);
+//    _weakHandle = std::move(other._weakHandle);
+//    _sample = std::move(other._sample);
+//
+//    return *this;
+//}
 
 void LiveObjectInfo::SetHandle(ObjectHandleID handle)
 {
@@ -43,7 +43,7 @@ uintptr_t LiveObjectInfo::GetAddress() const
     return _address;
 }
 
-const Sample& LiveObjectInfo::GetSample() const
+std::shared_ptr<Sample> LiveObjectInfo::GetSample() const
 {
     return _sample;
 }
