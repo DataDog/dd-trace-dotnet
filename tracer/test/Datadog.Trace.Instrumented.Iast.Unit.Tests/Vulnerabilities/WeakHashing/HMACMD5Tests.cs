@@ -1,4 +1,4 @@
-// <copyright file="HMACMD5AspectTests.cs" company="Datadog">
+// <copyright file="HMACMD5Tests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities.WeakHashing;
-public class HMACMD5AspectTests : InstrumentationTestsBase
+public class HMACMD5Tests : InstrumentationTestsBase
 {
     [Fact]
     public void GivenAHMACMD5_WhenComputeHash_VulnerabilityIsLogged()
@@ -35,7 +35,7 @@ public class HMACMD5AspectTests : InstrumentationTestsBase
     [Fact]
     public void GivenAHMACMD5_WhenComputeHashNullStream_ExceptionIsThrown2()
     {
-        Assert.Throws<NullReferenceException>(() => new HMACMD5().ComputeHash(((Stream)null)));
+        Assert.Throws<NullReferenceException>(() => new HMACMD5().ComputeHash((Stream)null));
     }
 
     [Fact]
@@ -49,5 +49,26 @@ public class HMACMD5AspectTests : InstrumentationTestsBase
     public void GivenANewHMACMD5_WhenComputeHash_ExceptionIsThrown()
     {
         Assert.Throws<ArgumentException>(() => new HMACMD5().ComputeHash(new byte[] { 5, 5, 5 }, 10, 2));
+    }
+
+    [Fact]
+    public void GivenAHMACMD5_WhenComputeHashByte3Args_VulnerabilityIsLogged3()
+    {
+        HMAC.Create("HMACMD5").ComputeHash(new byte[] { 5, 5, 5 }, 0, 2);
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAHMACMD5_WhenComputeHashStream_VulnerabilityIsLogged()
+    {
+        HMAC.Create("HMACMD5").ComputeHash(new Mock<Stream>().Object);
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAHMACMD5_WhenComputeHashByte_VulnerabilityIsLogged()
+    {
+        HMAC.Create("HMACMD5").ComputeHash(new byte[] { });
+        AssertVulnerable();
     }
 }
