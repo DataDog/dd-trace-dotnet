@@ -13,7 +13,10 @@ namespace Datadog.Trace.Propagators
     {
         public static readonly DatadogContextPropagator Instance = new();
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(
+            IPropagatedSpanContext context,
+            TCarrier carrier,
+            TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             var invariantCulture = CultureInfo.InvariantCulture;
@@ -21,32 +24,32 @@ namespace Datadog.Trace.Propagators
             carrierSetter.Set(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(invariantCulture));
             carrierSetter.Set(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(invariantCulture));
 
-            if (context.Origin != null)
+            if (!string.IsNullOrWhiteSpace(context.Origin))
             {
-                carrierSetter.Set(carrier, HttpHeaderNames.Origin, context.Origin);
+                carrierSetter.Set(carrier, HttpHeaderNames.Origin, context.Origin!);
             }
 
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+            var samplingPriority = context.SamplingPriority switch
+                                   {
+                                       -1 => "-1",
+                                       0 => "0",
+                                       1 => "1",
+                                       2 => "2",
+                                       var priority => priority?.ToString(invariantCulture)
+                                   };
 
             if (samplingPriority != null)
             {
-                var samplingPriorityString = samplingPriority.Value switch
-                                             {
-                                                 -1 => "-1",
-                                                 0 => "0",
-                                                 1 => "1",
-                                                 2 => "2",
-                                                 _ => samplingPriority.Value.ToString(invariantCulture)
-                                             };
-
-                carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriorityString);
+                carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriority);
             }
 
-            var propagatedTraceTags = context.TraceContext?.Tags.ToPropagationHeader() ?? context.PropagatedTags;
+            var propagatedTags = context is SpanContext { TraceContext.Tags: { } tags } ?
+                                     tags.ToPropagationHeader() :
+                                     context.PropagatedTags;
 
-            if (!string.IsNullOrEmpty(propagatedTraceTags))
+            if (!string.IsNullOrWhiteSpace(propagatedTags))
             {
-                carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTraceTags);
+                carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTags!);
             }
         }
 

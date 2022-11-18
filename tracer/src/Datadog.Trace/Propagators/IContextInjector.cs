@@ -9,7 +9,10 @@ namespace Datadog.Trace.Propagators
 {
     internal interface IContextInjector
     {
-        void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        void Inject<TCarrier, TCarrierSetter>(
+            IPropagatedSpanContext context,
+            TCarrier carrier,
+            TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>;
     }
 

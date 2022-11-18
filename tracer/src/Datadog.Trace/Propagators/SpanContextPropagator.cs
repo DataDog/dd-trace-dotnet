@@ -77,7 +77,7 @@ namespace Datadog.Trace.Propagators
         /// <param name="context">A <see cref="SpanContext"/> value that will be propagated into <paramref name="headers"/>.</param>
         /// <param name="headers">A <see cref="IHeadersCollection"/> to add new headers to.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
-        public void Inject<TCarrier>(SpanContext context, TCarrier headers)
+        public void Inject<TCarrier>(IPropagatedSpanContext context, TCarrier headers)
             where TCarrier : IHeadersCollection
         {
             Inject(context, headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Propagators
         /// <param name="carrier">The headers to add to.</param>
         /// <param name="setter">The action that can set a header in the carrier.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
-        public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
+        public void Inject<TCarrier>(IPropagatedSpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
             if (context is null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Propagators
             Inject(context, carrier, new ActionSetter<TCarrier>(setter));
         }
 
-        internal void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        internal void Inject<TCarrier, TCarrierSetter>(IPropagatedSpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             if (context is null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }

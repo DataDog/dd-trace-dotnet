@@ -19,13 +19,16 @@ namespace Datadog.Trace.Propagators
 
         public static readonly W3CTraceContextPropagator Instance = new();
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(
+            IPropagatedSpanContext context,
+            TCarrier carrier,
+            TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             var traceId = IsValidTraceId(context.RawTraceId) ? context.RawTraceId : context.TraceId.ToString("x32");
             var spanId = IsValidSpanId(context.RawSpanId) ? context.RawSpanId : context.SpanId.ToString("x16");
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
-            var sampled = samplingPriority > 0 ? "01" : "00";
+            var sampled = context.SamplingPriority > 0 ? "01" : "00";
+
             carrierSetter.Set(carrier, TraceParent, $"00-{traceId}-{spanId}-{sampled}");
         }
 
