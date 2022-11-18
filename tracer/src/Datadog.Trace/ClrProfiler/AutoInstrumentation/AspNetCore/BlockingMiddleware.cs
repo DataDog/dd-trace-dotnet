@@ -5,23 +5,23 @@
 
 #nullable enable
 #if !NETFRAMEWORK
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Transports;
+using Datadog.Trace.AppSec.Coordinator;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 
 internal class BlockingMiddleware
 {
-    private readonly bool _runSecurity;
     private readonly bool _endPipeline;
     private readonly RequestDelegate? _next;
 
-    internal BlockingMiddleware(RequestDelegate? next = null, bool runSecurity = false, bool endPipeline = false)
+    internal BlockingMiddleware(RequestDelegate? next = null, bool endPipeline = false)
     {
         _next = next;
-        _runSecurity = runSecurity;
         _endPipeline = endPipeline;
     }
 
@@ -39,22 +39,41 @@ internal class BlockingMiddleware
             httpResponse.Headers.Clear();
             httpResponse.StatusCode = 403;
             var template = settings.BlockedJsonTemplate;
-            if (context.Request.Headers["Accept"].ToString().Contains("text/html"))
+            httpResponse.ContentType = "application/json";
+
+            foreach (var header in context.Request.Headers)
             {
-                httpResponse.ContentType = "text/html";
-                template = settings.BlockedHtmlTemplate;
-            }
-            else
-            {
-                httpResponse.ContentType = "application/json";
+                if (header.Key == "Accept")
+                {
+                    var textHtmlContentType = "text/html";
+                    foreach (var value in header.Value)
+                    {
+                        if (value.Contains(textHtmlContentType))
+                        {
+                            httpResponse.ContentType = textHtmlContentType;
+                            template = settings.BlockedHtmlTemplate;
+                            break;
+                        }
+                    }
+
+                    break;
+                }
             }
 
             endedResponse = true;
             return httpResponse.WriteAsync(template);
         }
 
-        context.Response.Body.Dispose();
-        endedResponse = true;
+        try
+        {
+            context.Abort();
+            endedResponse = true;
+        }
+        catch (Exception)
+        {
+            endedResponse = false;
+        }
+
         return Task.CompletedTask;
     }
 
@@ -64,51 +83,46 @@ internal class BlockingMiddleware
         var endedResponse = false;
         if (security.Settings.Enabled)
         {
-            var securityTransport = new SecurityTransport(security, context, Tracer.Instance.ActiveScope.Span as Span);
-            if (_runSecurity)
+            var securityCoordinator = new SecurityCoordinator(security, context, (Span)Tracer.Instance.ActiveScope.Span);
+            if (_endPipeline && !context.Response.HasStarted)
             {
-                if (_endPipeline && !context.Response.HasStarted)
-                {
-                    context.Response.StatusCode = 404;
-                }
-
-                using var result = securityTransport.ShouldBlock();
-                if (result.ShouldBeReported)
-                {
-                    if (result.Block)
-                    {
-                        await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
-                        securityTransport.MarkBlocked();
-                    }
-
-                    securityTransport.Report(result, endedResponse);
-                }
+                context.Response.StatusCode = 404;
             }
 
-            if (_next != null && !endedResponse)
+            using var result = securityCoordinator.Scan();
+            if (result?.ShouldBeReported is true)
             {
-                // unlikely that security is disabled and there's a blockexception, but might happen as race condition
-                try
-                {
-                    await _next(context).ConfigureAwait(false);
-                }
-                catch (BlockException e)
+                if (result.Block)
                 {
                     await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
-                    if (!e.Reported)
-                    {
-                        securityTransport.Report(e.Result, endedResponse);
-                    }
-
-                    securityTransport.Cleanup();
+                    securityCoordinator.MarkBlocked();
                 }
+
+                securityCoordinator.Report(result, endedResponse);
+                // security will be disposed in endrequest of diagnostic observer in any case
             }
         }
-        else
+
+        if (_next != null && !endedResponse)
         {
-            if (_next != null)
+            // unlikely that security is disabled and there's a block exception, but might happen as race condition
+            try
             {
                 await _next(context).ConfigureAwait(false);
+            }
+            catch (BlockException e)
+            {
+                var securityCoordinator = new SecurityCoordinator(security, context, (Span)Tracer.Instance.ActiveScope.Span);
+                await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
+                if (security.Settings.Enabled)
+                {
+                    if (!e.Reported)
+                    {
+                        securityCoordinator.Report(e.Result, endedResponse);
+                    }
+
+                    securityCoordinator.Cleanup();
+                }
             }
         }
     }

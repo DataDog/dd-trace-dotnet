@@ -1,9 +1,10 @@
-// <copyright file="SecurityTransport.cs" company="Datadog">
+// <copyright file="SecurityCoordinator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
+#pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
@@ -12,24 +13,17 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.AppSec.Transports;
+namespace Datadog.Trace.AppSec.Coordinator;
 
 /// <summary>
 /// Bridge class between security components and http transport classes, that calls security and is responsible for reporting
 /// </summary>
-internal partial class SecurityTransport : ISecurityTransport
+internal readonly partial struct SecurityCoordinator
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecurityTransport>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecurityCoordinator>();
     private readonly Security _security;
     private readonly Span _localRootSpan;
     private readonly HttpTransportBase _httpTransport;
-
-    private SecurityTransport(Span span, HttpTransportBase httpTransport, Security security)
-    {
-        _security = security;
-        _localRootSpan = TryGetRoot(span);
-        _httpTransport = httpTransport;
-    }
 
     public bool Blocked => _httpTransport.Blocked;
 
@@ -48,21 +42,16 @@ internal partial class SecurityTransport : ISecurityTransport
         }
     }
 
-    public IResult ShouldBlock()
+    public IResult? Scan()
     {
-        if (_httpTransport.Blocked)
-        {
-            return new NullOkResult();
-        }
-
         var args = GetBasicRequestArgsForWaf();
         return RunWaf(args);
     }
 
-    public IResult RunWaf(Dictionary<string, object> args)
+    public IResult? RunWaf(Dictionary<string, object> args)
     {
-        LogAddressIfDebugEnabled(args);
-        IResult result = new NullOkResult();
+        SecurityCoordinator.LogAddressIfDebugEnabled(args);
+        IResult? result = null;
         try
         {
             var additiveContext = _httpTransport.GetAdditiveContext();

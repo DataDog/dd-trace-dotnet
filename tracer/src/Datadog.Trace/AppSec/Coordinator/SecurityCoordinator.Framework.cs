@@ -1,4 +1,4 @@
-// <copyright file="SecurityTransport.Framework.cs" company="Datadog">
+// <copyright file="SecurityCoordinator.Framework.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,14 +14,14 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.AppSec.Transports;
+namespace Datadog.Trace.AppSec.Coordinator;
 
-internal partial class SecurityTransport
+internal readonly partial struct SecurityCoordinator
 {
     private static readonly bool? UsingIntegratedPipeline;
-    private readonly HttpContext _context;
+    private readonly HttpContext _context = null;
 
-    static SecurityTransport()
+    static SecurityCoordinator()
     {
         if (UsingIntegratedPipeline == null)
         {
@@ -37,8 +37,13 @@ internal partial class SecurityTransport
         }
     }
 
-    internal SecurityTransport(Security security, HttpContext context, Span span)
-        : this(span, new HttpTransport(context), security) => _context = context;
+    internal SecurityCoordinator(Security security, HttpContext context, Span span)
+    {
+        _context = context;
+        _security = security;
+        _localRootSpan = TryGetRoot(span);
+        _httpTransport = new HttpTransport(context);
+    }
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
 
@@ -50,7 +55,7 @@ internal partial class SecurityTransport
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static bool TryGetUsingIntegratedPipelineBool() => HttpRuntime.UsingIntegratedPipeline;
 
-    internal Dictionary<string, object> GetBodyFromFormData()
+    internal Dictionary<string, object> GetBodyFromRequest()
     {
         var formData = new Dictionary<string, object>(_context.Request.Form.Keys.Count);
         foreach (string key in _context.Request.Form.Keys)
@@ -64,11 +69,12 @@ internal partial class SecurityTransport
     internal IDictionary<string, object> GetPathParams() => _context.Request.RequestContext.RouteData.Values.ToDictionary(c => c.Key, c => c.Value);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Transports.SecurityTransport"/> class.
+    /// Initializes a new instance of the <see cref="Coordinator.SecurityCoordinator"/> class.
     /// framework can do it all at once, but framework only unfortunately
     /// </summary>
-    public void CheckAndBlock(IResult result)
+    internal void CheckAndBlock(Dictionary<string, object> args)
     {
+        using var result = RunWaf(args);
         if (result.ShouldBeReported)
         {
             var blocked = false;
@@ -184,7 +190,7 @@ internal partial class SecurityTransport
             }
         }
 
-        var dict = new Dictionary<string, object>(capacity: 6)
+        var dict = new Dictionary<string, object>(capacity: 7)
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
             { AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri },
@@ -198,7 +204,7 @@ internal partial class SecurityTransport
         return dict;
     }
 
-    private class HttpTransport : HttpTransportBase
+    internal class HttpTransport : HttpTransportBase
     {
         private const string WafKey = "waf";
 

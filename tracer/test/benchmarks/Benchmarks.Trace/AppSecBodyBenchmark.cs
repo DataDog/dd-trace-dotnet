@@ -1,18 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
-using System.Security.Claims;
-using System.Threading;
-using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Configuration;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using SecurityTransport = Datadog.Trace.AppSec.Transports.SecurityTransport;
+using Datadog.Trace.AppSec.Coordinator;
+using SecurityCoordinator = Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
 #if NETFRAMEWORK
 using System.Web;
 
@@ -70,13 +65,14 @@ namespace Benchmarks.Trace
 
         private void ExecuteCycle(object body)
         {
-            var securityTransport = new SecurityTransport(security, httpContext, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
 #if !NETFRAMEWORK
-            var bodyData = securityTransport.ShouldBlockBody(body);
+            security.CheckBody(httpContext, span, body);
             var context = httpContext.Features.Get<IContext>();
             context?.Dispose();
             httpContext.Features.Set<IContext>(null);
 #else
+            var securityTransport = new SecurityCoordinator(security, httpContext, span);
             using var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, BodyExtractor.Extract(body) } });
             var context = httpContext.Items["waf"] as IContext;
             context?.Dispose();

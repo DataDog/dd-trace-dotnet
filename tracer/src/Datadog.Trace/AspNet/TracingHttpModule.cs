@@ -11,7 +11,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -19,7 +19,6 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
-using SecurityTransport = Datadog.Trace.AppSec.Transports.SecurityTransport;
 
 namespace Datadog.Trace.AspNet
 {
@@ -174,21 +173,20 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
-                    var securityTransport = new SecurityTransport(security, httpContext, scope.Span);
-                    securityTransport.ReportWafInitInfoOnce();
+                    SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
+                    var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
 
                     // request args
-                    var args = securityTransport.GetBasicRequestArgsForWaf();
+                    var args = securityCoordinator.GetBasicRequestArgsForWaf();
 
                     // body args
                     if (httpRequest.ContentType.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
-                        var bodyArgs = securityTransport.GetBodyFromFormData();
+                        var bodyArgs = securityCoordinator.GetBodyFromRequest();
                         args.Add(AddressesConstants.RequestBody, bodyArgs);
                     }
 
-                    var result = securityTransport.RunWaf(args);
-                    securityTransport.CheckAndBlock(result);
+                    securityCoordinator.CheckAndBlock(args);
                 }
             }
             catch (Exception ex)
@@ -268,17 +266,16 @@ namespace Datadog.Trace.AspNet
                         var security = Security.Instance;
                         if (security.Settings.Enabled)
                         {
-                            var securityTransport = new SecurityTransport(security, app.Context, rootSpan);
-                            if (!securityTransport.Blocked)
+                            var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
+                            if (!securityCoordinator.Blocked)
                             {
                                 // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
-                                var basicRequestArgsForWaf = securityTransport.GetBasicRequestArgsForWaf();
-                                basicRequestArgsForWaf.Add(AddressesConstants.RequestPathParams, securityTransport.GetPathParams());
-                                using var result = securityTransport.RunWaf(basicRequestArgsForWaf);
-                                securityTransport.CheckAndBlock(result);
+                                var args = securityCoordinator.GetBasicRequestArgsForWaf();
+                                args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
+                                securityCoordinator.CheckAndBlock(args);
                             }
 
-                            securityTransport.Cleanup();
+                            securityCoordinator.Cleanup();
                         }
 
                         scope.Dispose();

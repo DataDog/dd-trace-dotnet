@@ -7,7 +7,7 @@
 
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Transports;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
                         if (defaultModelBindingContext.BindingSource.Id == "Body")
                         {
-                            MightBlock(security, defaultModelBindingContext, span);
+                            security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
                         }
                         else
                         {
@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                                 {
                                     if (prov.BindingSource.Id is "Form" or "Body")
                                     {
-                                        MightBlock(security, defaultModelBindingContext, span);
+                                        security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
                                         break;
                                     }
                                 }
@@ -84,13 +84,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             }
 
             return CallTargetReturn.GetDefault();
-        }
-
-        private static void MightBlock(Security security, DefaultModelBindingContext defaultModelBindingContext, Span span)
-        {
-            var securityTransport = new SecurityTransport(security, defaultModelBindingContext.HttpContext, span);
-            var result = securityTransport.ShouldBlockBody(defaultModelBindingContext.Result.Model);
-            securityTransport.CheckAndBlock(result);
         }
     }
 }

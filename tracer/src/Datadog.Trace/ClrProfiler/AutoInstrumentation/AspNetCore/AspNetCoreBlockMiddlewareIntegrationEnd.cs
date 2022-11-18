@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         MethodName = "Build",
         ReturnTypeName = "Microsoft.AspNetCore.Http.RequestDelegate",
         MinimumVersion = Major3,
-        MaximumVersion = Major6,
+        MaximumVersion = Major7,
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [InstrumentMethod(
         AssemblyName = AssemblyName,
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     {
         private const string Major2 = "2";
         private const string Major3 = "3";
-        private const string Major6 = "6";
+        private const string Major7 = "7";
         private const string AssemblyName = "Microsoft.AspNetCore.Http";
 
         private const string ApplicationBuilder = "Microsoft.AspNetCore.Builder.ApplicationBuilder";
@@ -54,17 +54,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : IApplicationBuilder
         {
-            instance.Components.Insert(0, rd => new BlockingMiddleware(rd, runSecurity: true).Invoke);
-
-            // var componentsCount = instance.Components.Count;
-            // for (var i = 2; i < componentsCount; i += 2)
-            // {
-            //     instance.Components.Insert(i, rd => new BlockingMiddleware(rd).Invoke);
-            //     componentsCount++;
-            // }
-
-            instance.Components.Add(rd => new BlockingMiddleware(rd, runSecurity: true, endPipeline: true).Invoke);
-
+            instance.Components.Insert(0, rd => new BlockingMiddleware(rd).Invoke);
+            instance.Components.Add(rd => new BlockingMiddleware(rd, endPipeline: true).Invoke);
             return default;
         }
     }

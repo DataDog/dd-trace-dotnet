@@ -18,7 +18,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         string Data { get; }
 
-        IList<string> Actions { get; }
+        List<string> Actions { get; }
 
         ulong AggregatedTotalRuntime { get; }
 

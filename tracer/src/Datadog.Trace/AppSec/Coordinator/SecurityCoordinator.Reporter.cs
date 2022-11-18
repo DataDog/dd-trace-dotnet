@@ -1,4 +1,4 @@
-﻿// <copyright file="SecurityTransport.Reporter.cs" company="Datadog">
+﻿// <copyright file="SecurityCoordinator.Reporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,9 +12,9 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.AppSec.Transports;
+namespace Datadog.Trace.AppSec.Coordinator;
 
-internal partial class SecurityTransport
+internal readonly partial struct SecurityCoordinator
 {
     private static readonly Dictionary<string, string?> RequestHeaders = new()
     {
@@ -100,29 +100,30 @@ internal partial class SecurityTransport
         AddHeaderTags(_localRootSpan, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
     }
 
+    internal static void ReportWafInitInfoOnce(Security security, Span span)
+    {
+        if (!security.WafInitResult.Reported)
+        {
+            span = TryGetRoot(span);
+            security.WafInitResult.Reported = true;
+            span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+            span.SetMetric(Metrics.AppSecWafInitRulesLoaded, security.WafInitResult.LoadedRules);
+            span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, security.WafInitResult.FailedToLoadRules);
+            if (security.WafInitResult.HasErrors)
+            {
+                span.SetTag(Tags.AppSecWafInitRuleErrors, security.WafInitResult.ErrorMessage);
+            }
+
+            span.SetTag(Tags.AppSecWafVersion, security.DdlibWafVersion);
+        }
+    }
+
     private void TryAddEndPoint()
     {
         var route = _localRootSpan.GetTag(Tags.AspNetCoreRoute) ?? _localRootSpan.GetTag(Tags.AspNetRoute);
         if (route != null)
         {
             _localRootSpan.SetTag(Tags.HttpEndpoint, route);
-        }
-    }
-
-    internal void ReportWafInitInfoOnce()
-    {
-        if (!_security.WafInitResult.Reported)
-        {
-            _security.WafInitResult.Reported = true;
-            _localRootSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-            _localRootSpan.SetMetric(Metrics.AppSecWafInitRulesLoaded, _security.WafInitResult.LoadedRules);
-            _localRootSpan.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _security.WafInitResult.FailedToLoadRules);
-            if (_security.WafInitResult.HasErrors)
-            {
-                _localRootSpan.SetTag(Tags.AppSecWafInitRuleErrors, _security.WafInitResult.ErrorMessage);
-            }
-
-            _localRootSpan.SetTag(Tags.AppSecWafVersion, _security.DdlibWafVersion);
         }
     }
 }

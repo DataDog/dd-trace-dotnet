@@ -12,7 +12,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Transports;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -428,8 +428,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
                     if (shouldSecure)
                     {
-                        var securityTransport = new SecurityTransport(security, httpContext, scope.Span);
-                        securityTransport.ReportWafInitInfoOnce();
+                        SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
                     }
                 }
             }
@@ -559,14 +558,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     span.SetTag(Tags.HttpRoute, normalizedRoute);
                 }
 
-                var security = CurrentSecurity;
-                var shouldSecure = security.Settings.Enabled;
-                if (shouldSecure)
-                {
-                    var securityTransport = new SecurityTransport(Security.Instance, httpContext, span);
-                    var result = securityTransport.ShouldBlockPathParams(routeValues);
-                    securityTransport.CheckAndBlock(result);
-                }
+                CurrentSecurity.CheckPathParams(httpContext, span, routeValues);
             }
         }
 
@@ -605,24 +597,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
-                // in core 2.1 no routing endpoint so need to do it here too
-                if (shouldSecure && typedArg.ActionDescriptor?.Parameters != null)
-                {
-                    var pathParams = typedArg.ActionDescriptor.Parameters;
-                    var routeValues = new Dictionary<string, object>(pathParams.Count);
-                    for (var i = 0; i < pathParams.Count; i++)
-                    {
-                        var p = typedArg.ActionDescriptor.Parameters[i];
-                        if (typedArg.RouteData.Values.ContainsKey(p.Name))
-                        {
-                            routeValues.Add(p.Name, typedArg.RouteData.Values[p.Name]);
-                        }
-                    }
-
-                    var securityTransport = new SecurityTransport(Security.Instance, httpContext, span);
-                    var result = securityTransport.ShouldBlockPathParams(routeValues);
-                    securityTransport.CheckAndBlock(result);
-                }
+                CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
             }
         }
 
@@ -704,7 +679,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 var security = CurrentSecurity;
                 if (security.Settings.Enabled)
                 {
-                    var transport = new SecurityTransport(security, httpContext, span);
+                    var transport = new SecurityCoordinator(security, httpContext, span);
                     transport.Cleanup();
                 }
 
@@ -735,16 +710,10 @@ namespace Datadog.Trace.DiagnosticListeners
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
 
-                var security = CurrentSecurity;
                 if (unhandledStruct.Exception is not BlockException)
                 {
                     span.SetException(unhandledStruct.Exception);
-                    if (security.Settings.Enabled)
-                    {
-                        var securityTransport = new SecurityTransport(security, unhandledStruct.HttpContext, span);
-                        var result = securityTransport.ShouldBlock();
-                        securityTransport.CheckAndBlock(result);
-                    }
+                    CurrentSecurity.CheckAndBlock(unhandledStruct.HttpContext, span);
                 }
             }
         }

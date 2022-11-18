@@ -1,54 +1,37 @@
-// <copyright file="SecurityTransport.Core.cs" company="Datadog">
+// <copyright file="SecurityCoordinator.Core.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+#pragma warning disable CS0282
 #if !NETFRAMEWORK
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 
-namespace Datadog.Trace.AppSec.Transports;
+namespace Datadog.Trace.AppSec.Coordinator;
 
-internal partial class SecurityTransport
+internal readonly partial struct SecurityCoordinator
 {
     private readonly HttpContext _context;
 
-    internal SecurityTransport(Security security, HttpContext context, Span span)
-        : this(span, new HttpTransport(context), security) => _context = context;
-
-    private bool CanAccessHeaders => true;
-
-    internal IResult ShouldBlockPathParams(IDictionary<string, object> pathParams)
+    internal SecurityCoordinator(Security security, HttpContext context, Span span, HttpTransport? transport = null)
     {
-        if (_httpTransport.Blocked)
-        {
-            return new NullOkResult();
-        }
-
-        var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
-        return RunWaf(args);
+        _context = context;
+        _security = security;
+        _localRootSpan = TryGetRoot(span);
+        _httpTransport = transport ?? new HttpTransport(context);
     }
 
-    internal IResult ShouldBlockBody(object body)
-    {
-        if (_httpTransport.Blocked)
-        {
-            return new NullOkResult();
-        }
+    private static bool CanAccessHeaders => true;
 
-        var keysAndValues = BodyExtractor.Extract(body);
-        var args = new Dictionary<string, object> { { AddressesConstants.RequestBody, keysAndValues } };
-        return RunWaf(args);
-    }
-
-    public void CheckAndBlock(IResult result)
+    internal void CheckAndBlock(IResult? result)
     {
-        if (result.ShouldBeReported)
+        if (result?.ShouldBeReported is true)
         {
             // todo, report from the filter exception / exception middleware, after exception has been thrown, as theoretically at this point, request hasn't been blocked yet
             Report(result, result.Block);
@@ -59,7 +42,7 @@ internal partial class SecurityTransport
         }
     }
 
-    public Dictionary<string, object> GetBasicRequestArgsForWaf()
+    private Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _context.Request;
         var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
@@ -97,7 +80,7 @@ internal partial class SecurityTransport
             }
             else
             {
-                value.Add(cookie.Value);
+                value?.Add(cookie.Value);
             }
         }
 
@@ -132,7 +115,7 @@ internal partial class SecurityTransport
         return dict;
     }
 
-    private class HttpTransport : HttpTransportBase
+    internal class HttpTransport : HttpTransportBase
     {
         private readonly HttpContext _context;
 
