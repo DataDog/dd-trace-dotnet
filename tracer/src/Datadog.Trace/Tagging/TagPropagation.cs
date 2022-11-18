@@ -136,6 +136,11 @@ internal static class TagPropagation
     /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
     public static string ToHeader(TraceTagCollection tagsCollection, int maxOutgoingHeaderLength)
     {
+        if (tagsCollection.Count == 0)
+        {
+            return string.Empty;
+        }
+
         if (maxOutgoingHeaderLength == 0)
         {
             // propagation is disabled,
