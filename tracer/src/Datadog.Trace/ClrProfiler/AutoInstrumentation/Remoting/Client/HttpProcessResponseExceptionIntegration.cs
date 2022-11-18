@@ -1,4 +1,4 @@
-// <copyright file="ProcessResponseExceptionIntegration.cs" company="Datadog">
+// <copyright file="HttpProcessResponseExceptionIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,10 +8,10 @@ using System.ComponentModel;
 using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
 {
     /// <summary>
-    /// System.Runtime.Remoting.Channels.Http.HttpClientTransportSink.SetupWebRequest calltarget instrumentation
+    /// System.Runtime.Remoting.Channels.Http.HttpClientTransportSink.ProcessResponseException calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Remoting",
@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class ProcessResponseExceptionIntegration
+    public class HttpProcessResponseExceptionIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

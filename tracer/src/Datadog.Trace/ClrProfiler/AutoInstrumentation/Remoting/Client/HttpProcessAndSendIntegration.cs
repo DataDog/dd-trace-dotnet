@@ -1,4 +1,4 @@
-// <copyright file="ProcessAndSendIntegration.cs" company="Datadog">
+// <copyright file="HttpProcessAndSendIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,10 +14,10 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
 {
     /// <summary>
-    /// System.Runtime.Remoting.Channels.Http.HttpClientTransportSink.SetupWebRequest calltarget instrumentation
+    /// System.Runtime.Remoting.Channels.Http.HttpClientTransportSink.ProcessAndSend calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Remoting",
@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class ProcessAndSendIntegration
+    public class HttpProcessAndSendIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

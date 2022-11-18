@@ -1,4 +1,4 @@
-// <copyright file="HttpClientTransportSinkIntegration.cs" company="Datadog">
+// <copyright file="HttpProcessMessageIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,23 +14,12 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
 {
     /// <summary>
-    /// System.Runtime.Remoting.Channels.SoapClientFormatterSink.SyncProcessMessage calltarget instrumentation
+    /// System.Runtime.Remoting.Channels.IClientChannelSink.ProcessMessage calltarget instrumentation
     /// </summary>
-    /*
-    [InstrumentMethod(
-        AssemblyName = "System.Runtime.Remoting",
-        TypeName = "System.Runtime.Remoting.Channels.SoapServerFormatterSink",
-        MethodName = "ProcessMessage",
-        ReturnTypeName = "System.Runtime.Remoting.Channels.ServerProcessing",
-        ParameterTypeNames = new[] { "System.Runtime.Remoting.Channels.IServerChannelSinkStack", "System.Runtime.Remoting.Messaging.IMessage", "System.Runtime.Remoting.Channels.ITransportHeaders", "System.IO.Stream", "System.Runtime.Remoting.Messaging.IMessage&", "System.Runtime.Remoting.Channels.ITransportHeaders&", "System.IO.Stream&", },
-        MinimumVersion = RemotingIntegration.Major4,
-        MaximumVersion = RemotingIntegration.Major4,
-        IntegrationName = RemotingIntegration.IntegrationName)] */
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Remoting",
         TypeName = "System.Runtime.Remoting.Channels.Http.HttpClientTransportSink",
@@ -40,11 +29,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
         MinimumVersion = RemotingIntegration.Major4,
         MaximumVersion = RemotingIntegration.Major4,
         IntegrationName = RemotingIntegration.IntegrationName)]
-
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class HttpClientTransportSinkIntegration
+    public class HttpProcessMessageIntegration
     {
         internal const IntegrationId WebRequestIntegrationId = Configuration.IntegrationId.WebRequest;
 

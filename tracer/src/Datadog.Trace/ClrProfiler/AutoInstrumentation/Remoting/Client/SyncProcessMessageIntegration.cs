@@ -9,7 +9,7 @@ using System.ComponentModel;
 using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
 {
     /// <summary>
     /// System.Runtime.Remoting.Messaging.IMessageSink.SyncProcessMessage calltarget instrumentation

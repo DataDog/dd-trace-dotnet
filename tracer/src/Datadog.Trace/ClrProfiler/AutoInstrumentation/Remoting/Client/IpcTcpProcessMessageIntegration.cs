@@ -1,4 +1,4 @@
-// <copyright file="TcpClientTransportSinkIntegration.cs" company="Datadog">
+// <copyright file="IpcTcpProcessMessageIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,10 +12,10 @@ using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Propagators;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
 {
     /// <summary>
-    /// System.Runtime.Remoting.Channels.Tcp.TcpClientTransportSink.ProcessMessage calltarget instrumentation
+    /// System.Runtime.Remoting.Channels.IClientChannelSink.ProcessMessage calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Remoting",
@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class TcpClientTransportSinkIntegration
+    public class IpcTcpProcessMessageIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

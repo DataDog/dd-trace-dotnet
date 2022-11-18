@@ -1,4 +1,4 @@
-// <copyright file="BinaryServerFormatterSink_SerializeResponseIntegration.cs" company="Datadog">
+// <copyright file="SoapSerializeResponseIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,27 +14,26 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
 {
     /// <summary>
-    /// SerializeResponse calltarget instrumentation
+    /// System.Runtime.Remoting.Channels.SoapServerFormatterSink.SerializeResponse calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Remoting",
-        TypeName = "System.Runtime.Remoting.Channels.BinaryServerFormatterSink",
+        TypeName = "System.Runtime.Remoting.Channels.SoapServerFormatterSink",
         MethodName = "SerializeResponse",
         ReturnTypeName = ClrNames.Void,
-        ParameterTypeNames = new[] { "System.Runtime.Remoting.Channels.IServerResponseChannelSinkStack", "System.Runtime.Remoting.Messaging.IMessage", "System.Runtime.Remoting.Channels.ITransportHeaders&", "System.IO.Stream&", },
+        ParameterTypeNames = new[] { "System.Runtime.Remoting.Channels.IServerResponseChannelSinkStack", "System.Runtime.Remoting.Messaging.IMessage", ClrNames.Bool, "System.Runtime.Remoting.Channels.ITransportHeaders&", "System.IO.Stream&", },
         MinimumVersion = RemotingIntegration.Major4,
         MaximumVersion = RemotingIntegration.Major4,
         IntegrationName = RemotingIntegration.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class BinaryServerFormatterSink_SerializeResponseIntegration
+    public class SoapSerializeResponseIntegration
     {
         internal const IntegrationId WebRequestIntegrationId = Configuration.IntegrationId.WebRequest;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SoapServerFormatterSinkIntegration));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -43,10 +42,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="sinkStack">The sink stack instance</param>
         /// <param name="msg">The incoming request message instance</param>
+        /// <param name="clientIsClr">Flag that sets the __ClientIsClr field</param>
         /// <param name="headers">The headers for the outgoing response message</param>
         /// <param name="stream">The stream for the outgoing response message</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IServerResponseChannelSinkStack sinkStack, IMessage msg, ref ITransportHeaders headers, ref Stream stream)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IServerResponseChannelSinkStack sinkStack, IMessage msg, bool clientIsClr, ref ITransportHeaders headers, ref Stream stream)
         {
             if (msg is IMethodReturnMessage methodReturnMessage)
             {
