@@ -5,7 +5,8 @@
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <Platforms>x86;x64</Platforms>
+    <Platforms>x86;x64;AnyCPU</Platforms>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
   <PropertyGroup>
