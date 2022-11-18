@@ -20,7 +20,7 @@ RUN apk update \
         xz-dev \
     && gem install --version 1.6.0 --user-install git \
     && gem install --version 2.7.6 dotenv \
-    && gem install --minimal-deps --no-document fpm
+    && gem install --version 1.14.2 --minimal-deps --no-document fpm
 
 ENV IsAlpine=true
 
