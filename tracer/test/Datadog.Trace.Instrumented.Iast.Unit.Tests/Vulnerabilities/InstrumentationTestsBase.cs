@@ -17,6 +17,11 @@ public class InstrumentationTestsBase
         Assert.Equal(vulnerabilities, GetIastSpansCount(spans));
     }
 
+    protected void AssertNotVulnerable()
+    {
+        AssertVulnerable(0);
+    }
+
     private int GetIastSpansCount(List<Span> spans)
     {
         return spans.Where(x => x.GetTag(Tags.IastEnabled) != null).Count();
@@ -25,7 +30,6 @@ public class InstrumentationTestsBase
     private List<Span> GetGeneratedSpans(TraceContext context)
     {
         var spans = new List<Span>();
-
         var contextSpans = context.Spans.GetArray();
 
         foreach (var span in contextSpans)
