@@ -44,8 +44,7 @@ RUN yum update -y \
         rpm-build \
         expect \
         sudo \
-        gawk \
-        cppcheck
+        gawk
 
 # Install newer version of fpm and specific version of dotenv 
 RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \
@@ -66,6 +65,10 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
 # Trigger first run experience by running arbitrary cmd
     && dotnet help
+
+# Install CppCheck
+RUN curl -sSL https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/c/cppcheck-2.7-1.el7.x86_64.rpm --output cppcheck-2.7-1.el7.x86_64.rpm \
+    && sudo yum localinstall cppcheck-2.7-1.el7.x86_64.rpm
 
 ENV CXX=clang++
 ENV CC=clang
