@@ -195,7 +195,6 @@ partial class Build
     Target CompileNativeSrcLinux => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
-        .DependsOn(CppCheckNativeSrcLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -288,6 +287,11 @@ partial class Build
             }
         });
 
+    Target CppCheckNativeSrc => _ => _
+        .Unlisted()
+        .Description("Runs CppCheck over the native tracer project")
+        .DependsOn(CppCheckNativeSrcLinux);
+    
     Target CompileManagedSrc => _ => _
         .Unlisted()
         .Description("Compiles the managed code in the src directory")

@@ -44,7 +44,6 @@ partial class Build
 
     Target CompileNativeLoaderLinux => _ => _
         .Unlisted()
-        .DependsOn(CppCheckNativeLoaderLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -105,6 +104,11 @@ partial class Build
             Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
         });
 
+    Target CppCheckNativeLoader => _ => _
+        .Unlisted()
+        .Description("Runs CppCheck over the native loader")
+        .DependsOn(CppCheckNativeLoaderLinux);
+    
     Target CppCheckNativeLoaderLinux => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
