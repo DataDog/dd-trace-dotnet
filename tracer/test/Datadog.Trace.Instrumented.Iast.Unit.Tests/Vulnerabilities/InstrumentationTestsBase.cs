@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -11,6 +12,13 @@ namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities;
 
 public class InstrumentationTestsBase
 {
+    protected void AssertSpanGenerated(string operationName, int spansGenerated = 1)
+    {
+        var spans = GetGeneratedSpans((Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext);
+        spans = spans.Where(x => x.OperationName == operationName).ToList();
+        Assert.Equal(spansGenerated, spans.Count);
+    }
+
     protected void AssertVulnerable(int vulnerabilities = 1)
     {
         var spans = GetGeneratedSpans((Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext);
