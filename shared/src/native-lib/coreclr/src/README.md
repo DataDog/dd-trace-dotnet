@@ -1,13 +1,6 @@
-The files here were copied from https://github.com/dotnet/runtime/tree/v5.0.5/src/coreclr/src.
+The files here were copied from https://github.com/dotnet/runtime/tree/v7.0.0/src/coreclr/src.
 
 This is to allow using the runtime's Platform Adaptation Layer.
-
-Add back the definition of g_tkCorEncodeToken in cor.h l.2096:
-
-replace
-extern const mdToken g_tkCorEncodeToken[];
-by
-const mdToken g_tkCorEncodeToken[4] = { mdtTypeDef, mdtTypeRef, mdtTypeSpec, mdtBaseType };
 
 Commented #define statements because there is naming conflicts when compiling with the stdlibc++ 8 (+ C++17)
 in `dotnet-runtime-coreclr\pal\inc\rt\sal.h`
@@ -18,3 +11,18 @@ and
 
 l.2622    // commented because it conflicts with stdlibc++ 8
 l.2623    //#define __pre
+
+in `corprof_i.cpp`, add before the #include:
+bool g_arm64_atomics_present = false;
+
+in `corhlpr.cpp`, use in debug only
+#ifdef _DEBUG
+    assert(&origBuff[size] == outBuff);
+#endif
+
+in `pal.h`, add the definition of g_arm64_atomics_present after Processor-specific glue
+#if defined(HOST_ARM64)
+// Flag to check if atomics feature is available on
+// the machine
+extern bool g_arm64_atomics_present;
+#endif

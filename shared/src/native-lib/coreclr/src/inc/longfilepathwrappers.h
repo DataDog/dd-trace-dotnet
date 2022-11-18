@@ -39,17 +39,7 @@ DeleteFileWrapper(
     _In_ LPCWSTR lpFileName
     );
 
-HANDLE
-FindFirstFileExWrapper(
-    _In_ LPCWSTR lpFileName,
-    _In_ FINDEX_INFO_LEVELS fInfoLevelId,
-    _Out_writes_bytes_(sizeof(WIN32_FIND_DATAW)) LPVOID lpFindFileData,
-    _In_ FINDEX_SEARCH_OPS fSearchOp,
-    _Reserved_ LPVOID lpSearchFilter,
-    _In_ DWORD dwAdditionalFlags
-    );
-
-#ifndef TARGET_UNIX
+#ifndef HOST_UNIX
 BOOL
 CopyFileExWrapper(
     _In_        LPCWSTR lpExistingFileName,
@@ -60,14 +50,7 @@ CopyFileExWrapper(
     _Inout_opt_ LPBOOL pbCancel,
     _In_        DWORD dwCopyFlags
     );
-#endif //TARGET_UNIX
-
-BOOL
-MoveFileExWrapper(
-    _In_     LPCWSTR lpExistingFileName,
-    _In_opt_ LPCWSTR lpNewFileName,
-    _In_     DWORD    dwFlags
-    );
+#endif //HOST_UNIX
 
 DWORD
 SearchPathWrapper(
@@ -77,14 +60,6 @@ SearchPathWrapper(
     _In_ BOOL getPath,
     SString& lpBuffer,
     _Out_opt_ LPWSTR * lpFilePart
-    );
-
-
-UINT WINAPI GetTempFileNameWrapper(
-    _In_  LPCTSTR lpPathName,
-    _In_  LPCTSTR lpPrefixString,
-    _In_  UINT    uUnique,
-    SString&  lpTempFileName
     );
 
 DWORD WINAPI GetTempPathWrapper(
@@ -105,8 +80,6 @@ DWORD WINAPI GetEnvironmentVariableWrapper(
     _In_opt_  LPCTSTR lpName,
     _Out_opt_ SString&  lpBuffer
     );
-
-BOOL PAL_GetPALDirectoryWrapper(SString& pbuffer);
 
 #endif //_WIN_PATH_APIS_WRAPPER_
 
