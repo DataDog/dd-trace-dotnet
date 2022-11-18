@@ -86,7 +86,8 @@ partial class Build
     [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
     [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
     [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
-    
+    [LazyPathExecutable(name: "cppcheck")] readonly Lazy<Tool> CppCheck;
+
     //OSX Tools
     readonly string[] OsxArchs = { "arm64", "x86_64" }; 
     [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
@@ -194,6 +195,7 @@ partial class Build
     Target CompileNativeSrcLinux => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
+        .After(CppCheckNativeSrcLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -268,6 +270,22 @@ partial class Build
         .DependsOn(CompileNativeSrcWindows)
         .DependsOn(CompileNativeSrcMacOs)
         .DependsOn(CompileNativeSrcLinux);
+
+    Target CppCheckNativeSrcLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            try
+            {
+                CppCheck.Value(arguments: $"cppcheck --std=c++17 --platform=unix64 --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/cppcheck-results.xml --xml --enable=warning,performance");
+                CppCheck.Value(arguments: $"cppcheck --std=c++17 --platform=unix64 --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/cppcheck-results.txt --enable=warning,performance");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("CppCheck cannot be run: {0}", ex.Message);
+            }
+        });
 
     Target CompileManagedSrc => _ => _
         .Unlisted()
