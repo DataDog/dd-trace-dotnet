@@ -107,11 +107,11 @@ partial class Build
     Target CppCheckNativeLoader => _ => _
         .Unlisted()
         .Description("Runs CppCheck over the native loader")
-        .DependsOn(CppCheckNativeLoaderLinux);
+        .DependsOn(CppCheckNativeLoaderUnix);
     
-    Target CppCheckNativeLoaderLinux => _ => _
+    Target CppCheckNativeLoaderUnix => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux)
+        .OnlyWhenStatic(() => IsLinux || IsOsx)
         .Executes(() =>
         {
             try

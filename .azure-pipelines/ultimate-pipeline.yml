@@ -560,7 +560,10 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
+    - script: brew install cppcheck
+      displayName: Installing CppCheck
+
+    - script: ./tracer/build.sh CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader
       displayName: Build tracer home
 
     - publish: $(monitoringHome)

@@ -270,9 +270,9 @@ partial class Build
         .DependsOn(CompileNativeSrcMacOs)
         .DependsOn(CompileNativeSrcLinux);
 
-    Target CppCheckNativeSrcLinux => _ => _
+    Target CppCheckNativeSrcUnix => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux)
+        .OnlyWhenStatic(() => IsLinux || IsOsx)
         .Executes(() =>
         {
             try
@@ -290,7 +290,7 @@ partial class Build
     Target CppCheckNativeSrc => _ => _
         .Unlisted()
         .Description("Runs CppCheck over the native tracer project")
-        .DependsOn(CppCheckNativeSrcLinux);
+        .DependsOn(CppCheckNativeSrcUnix);
     
     Target CompileManagedSrc => _ => _
         .Unlisted()
