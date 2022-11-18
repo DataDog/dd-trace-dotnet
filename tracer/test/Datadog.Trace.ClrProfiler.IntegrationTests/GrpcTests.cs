@@ -416,11 +416,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var telemetry = this.ConfigureTelemetry();
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Grpc)}_ENABLED", "false");
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0);
-            var spans = agent.WaitForSpans(1, timeoutInMilliseconds: 500).Where(s => s.Type == "grpc.request").ToList();
+            ProcessResult processResult = null;
+            try
+            {
+                using (processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
+                {
+                    var spans = agent.WaitForSpans(1, timeoutInMilliseconds: 500).Where(s => s.Type == "grpc.request").ToList();
 
-            Assert.Empty(spans);
-            telemetry.AssertIntegrationDisabled(IntegrationId.Grpc);
+                    Assert.Empty(spans);
+                    telemetry.AssertIntegrationDisabled(IntegrationId.Grpc);
+                }
+            }
+            catch (ExitCodeException)
+            {
+                // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
+                // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
+                if ((string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version("2.43.0"))
+                    && processResult is not null
+                    && processResult.StandardError.Contains("ObjectDisposedException"))
+                {
+                    throw new SkipException("Hit race condition in GRPC deadline exceeded");
+                }
+            }
         }
 
         protected void GuardAlpine()
