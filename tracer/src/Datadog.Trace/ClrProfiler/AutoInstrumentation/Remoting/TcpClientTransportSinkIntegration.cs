@@ -19,6 +19,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Remoting",
+        TypeName = "System.Runtime.Remoting.Channels.Ipc.IpcClientTransportSink",
+        MethodName = "ProcessMessage",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { "System.Runtime.Remoting.Messaging.IMessage", "System.Runtime.Remoting.Channels.ITransportHeaders", "System.IO.Stream", "System.Runtime.Remoting.Channels.ITransportHeaders&", "System.IO.Stream&", },
+        MinimumVersion = RemotingIntegration.Major4,
+        MaximumVersion = RemotingIntegration.Major4,
+        IntegrationName = RemotingIntegration.IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = "System.Runtime.Remoting",
         TypeName = "System.Runtime.Remoting.Channels.Tcp.TcpClientTransportSink",
         MethodName = "ProcessMessage",
         ReturnTypeName = ClrNames.Void,
@@ -26,7 +35,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
         MinimumVersion = RemotingIntegration.Major4,
         MaximumVersion = RemotingIntegration.Major4,
         IntegrationName = RemotingIntegration.IntegrationName)]
-
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
