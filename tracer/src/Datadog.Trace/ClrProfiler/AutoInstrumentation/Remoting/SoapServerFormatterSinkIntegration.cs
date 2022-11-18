@@ -89,7 +89,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
         /// <returns>A response value</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            state.Scope?.DisposeWithException(exception);
+            // Do not close the span here
+            // The span will be closed when the message response is written
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

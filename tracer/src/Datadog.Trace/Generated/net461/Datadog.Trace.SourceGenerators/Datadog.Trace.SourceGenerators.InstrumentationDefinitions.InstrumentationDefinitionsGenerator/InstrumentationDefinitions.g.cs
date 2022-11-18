@@ -302,6 +302,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Runtime.Remoting", "System.Runtime.Remoting.Channels.Http.HttpClientTransportSink", "ProcessResponseException",  new[] { "System.Void", "System.Net.WebException", "System.Net.HttpWebResponse&" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.ProcessResponseExceptionIntegration"),
                new ("System.Runtime.Remoting", "System.Runtime.Remoting.Channels.Http.HttpClientTransportSink", "ReceiveAndProcess",  new[] { "System.Void", "System.Net.HttpWebResponse", "System.Runtime.Remoting.Channels.ITransportHeaders&", "System.IO.Stream&" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.ReceiveAndProcessIntegration"),
                new ("System.Runtime.Remoting", "System.Runtime.Remoting.Channels.SoapClientFormatterSink", "SyncProcessMessage",  new[] { "System.Runtime.Remoting.Messaging.IMessage", "System.Runtime.Remoting.Messaging.IMessage" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.SoapClientFormatterSinkIntegration"),
+               new ("System.Runtime.Remoting", "System.Runtime.Remoting.Channels.SoapServerFormatterSink", "SerializeResponse",  new[] { "System.Void", "System.Runtime.Remoting.Channels.IServerResponseChannelSinkStack", "System.Runtime.Remoting.Messaging.IMessage", "System.Boolean", "System.Runtime.Remoting.Channels.ITransportHeaders&", "System.IO.Stream&" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.SerializeResponseIntegration"),
 
                 // Serilog
                new ("Serilog", "Serilog.Core.Logger", "Dispatch",  new[] { "System.Void", "Serilog.Events.LogEvent" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"),
@@ -743,6 +744,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.ProcessResponseExceptionIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.ReceiveAndProcessIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.SoapClientFormatterSinkIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.SerializeResponseIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Remoting,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"
