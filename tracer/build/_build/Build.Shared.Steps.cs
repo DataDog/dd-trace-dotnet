@@ -44,6 +44,7 @@ partial class Build
 
     Target CompileNativeLoaderLinux => _ => _
         .Unlisted()
+        .DependsOn(CppCheckNativeLoaderLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -102,6 +103,23 @@ partial class Build
             Console.WriteLine($"Creating universal binary for {destination}");
             var strNativeBinaries = string.Join(' ', lstNativeBinaries);
             Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
+        });
+
+    Target CppCheckNativeLoaderLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            try
+            {
+                var (arch, ext) = GetUnixArchitectureAndExtension();
+                CppCheck.Value(arguments: $"cppcheck --platform=unix64 --project={NativeLoaderProject.Path} --output-file={BuildDataDirectory}/{NativeLoaderProject.Name}-cppcheck-{arch}.xml --xml --enable=warning,performance");
+                CppCheck.Value(arguments: $"cppcheck --platform=unix64 --project={NativeLoaderProject.Path} --output-file={BuildDataDirectory}/{NativeLoaderProject.Name}-cppcheck-{arch}.txt --enable=warning,performance");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("CppCheck cannot be run: {0}", ex.Message);
+            }
         });
 
     Target PublishNativeLoader => _ => _
