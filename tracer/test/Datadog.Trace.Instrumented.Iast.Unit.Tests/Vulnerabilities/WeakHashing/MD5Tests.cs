@@ -14,10 +14,55 @@ namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities.WeakHashing
 public class MD5Tests : InstrumentationTestsBase
 {
     [Fact]
+    public void GivenAMD5_WhenCreating_VulnerabilityIsNotLogged()
+    {
+        MD5.Create();
+        AssertNotVulnerable();
+    }
+
+    [Fact]
+    public void GivenAMD5_WhenCreatingAlgortihm_VulnerabilityIsNotLogged()
+    {
+        MD5.Create("alg");
+        AssertNotVulnerable();
+    }
+
+    [Fact]
+    public void GivenAMD5_WhenCreatingNull_ExceptionIsThrown()
+    {
+        Assert.Throws<ArgumentNullException>(() => MD5.Create(null));
+    }
+
+    [Fact]
     public void GivenAMD5_WhenComputeHash_VulnerabilityIsLogged()
     {
-        var rrr = Environment.GetEnvironmentVariable("RRR");
         MD5.Create().ComputeHash(new Mock<Stream>().Object);
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAMD5_WhenComputeHash_VulnerabilityIsLogged2()
+    {
+        MD5.Create().ComputeHash(new byte[] { });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAMD5_WhenComputeHash_ExceptionIsThrown()
+    {
+        Assert.Throws<ArgumentException>(() => MD5.Create().ComputeHash(new byte[] { }, 10, 10));
+    }
+
+    [Fact]
+    public void GivenAMD5_WhenComputeHash_ExceptionIsThrown2()
+    {
+        Assert.Throws<NullReferenceException>(() => MD5.Create().ComputeHash(((Stream)null)));
+    }
+
+    [Fact]
+    public void GivenAMD5_WhenComputeHash_VulnerabilityIsLogged3()
+    {
+        MD5.Create().ComputeHash(new byte[] { 5, 5, 5 }, 0, 2);
         AssertVulnerable();
     }
 }
