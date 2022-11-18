@@ -624,6 +624,10 @@ namespace Datadog.Trace
         internal const string CouchbaseOperationBucket = "couchbase.operation.bucket";
         internal const string CouchbaseOperationKey = "couchbase.operation.key";
 
+        internal const string RpcMethod = "rpc.method";
+        internal const string RpcService = "rpc.service";
+        internal const string RpcSystem = "rpc.system";
+
         internal const string GrpcMethodKind = "grpc.method.kind";
         internal const string GrpcMethodPath = "grpc.method.path";
         internal const string GrpcMethodPackage = "grpc.method.package";
