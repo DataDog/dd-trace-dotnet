@@ -1,4 +1,4 @@
-// <copyright file="SoapClientFormatterSinkIntegration.cs" company="Datadog">
+// <copyright file="SyncProcessMessageIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,8 +12,17 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 {
     /// <summary>
-    /// System.Runtime.Remoting.Channels.SoapClientFormatterSink.SyncProcessMessage calltarget instrumentation
+    /// System.Runtime.Remoting.Messaging.IMessageSink.SyncProcessMessage calltarget instrumentation
     /// </summary>
+    [InstrumentMethod(
+        AssemblyName = "System.Runtime.Remoting",
+        TypeName = "System.Runtime.Remoting.Channels.BinaryClientFormatterSink",
+        MethodName = "SyncProcessMessage",
+        ReturnTypeName = "System.Runtime.Remoting.Messaging.IMessage",
+        ParameterTypeNames = new[] { "System.Runtime.Remoting.Messaging.IMessage", },
+        MinimumVersion = RemotingIntegration.Major4,
+        MaximumVersion = RemotingIntegration.Major4,
+        IntegrationName = RemotingIntegration.IntegrationName)]
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Remoting",
         TypeName = "System.Runtime.Remoting.Channels.SoapClientFormatterSink",
@@ -23,11 +32,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
         MinimumVersion = RemotingIntegration.Major4,
         MaximumVersion = RemotingIntegration.Major4,
         IntegrationName = RemotingIntegration.IntegrationName)]
-
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class SoapClientFormatterSinkIntegration
+    public class SyncProcessMessageIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

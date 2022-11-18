@@ -16,7 +16,7 @@ using Datadog.Trace.Propagators;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 {
     /// <summary>
-    /// System.Runtime.Remoting.Channels.SoapClientFormatterSink.SyncProcessMessage calltarget instrumentation
+    /// System.Runtime.Remoting.Channels.SoapClientFormatterSink.ProcessMessage calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Remoting",
@@ -27,7 +27,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
         MinimumVersion = RemotingIntegration.Major4,
         MaximumVersion = RemotingIntegration.Major4,
         IntegrationName = RemotingIntegration.IntegrationName)]
-
+    [InstrumentMethod(
+        AssemblyName = "System.Runtime.Remoting",
+        TypeName = "System.Runtime.Remoting.Channels.SoapServerFormatterSink",
+        MethodName = "ProcessMessage",
+        ReturnTypeName = "System.Runtime.Remoting.Channels.ServerProcessing",
+        ParameterTypeNames = new[] { "System.Runtime.Remoting.Channels.IServerChannelSinkStack", "System.Runtime.Remoting.Messaging.IMessage", "System.Runtime.Remoting.Channels.ITransportHeaders", "System.IO.Stream", "System.Runtime.Remoting.Messaging.IMessage&", "System.Runtime.Remoting.Channels.ITransportHeaders&", "System.IO.Stream&", },
+        MinimumVersion = RemotingIntegration.Major4,
+        MaximumVersion = RemotingIntegration.Major4,
+        IntegrationName = RemotingIntegration.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
@@ -51,6 +59,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TServerSinkStack>(TTarget instance, TServerSinkStack sinkStack, IMessage requestMsg, ITransportHeaders requestHeaders, Stream requestStream, ref IMessage responseMsg, ref ITransportHeaders responseHeaders, ref Stream responseStream)
         {
+            if (requestMsg is null)
+            {
+                return CallTargetState.GetDefault();
+            }
+
             // Extract span context
             SpanContext propagatedContext = null;
             try
