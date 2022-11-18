@@ -98,12 +98,13 @@ namespace Datadog.Trace.Activity.Handlers
                     // in the context propagation, and we will keep the entire trace.
 
                     // TraceId
-                    w3cActivity.TraceId = string.IsNullOrWhiteSpace(span.Context.RawTraceId) ?
-                                              span.TraceId.ToString("x32") : span.Context.RawTraceId;
+                    var traceContext = span.TraceContext;
+                    w3cActivity.TraceId = string.IsNullOrWhiteSpace(traceContext.RawTraceId) ?
+                                              traceContext.TraceId.ToString("x32") : traceContext.RawTraceId;
 
                     // SpanId
-                    w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(span.Context.RawSpanId) ?
-                                                   span.SpanId.ToString("x16") : span.Context.RawSpanId;
+                    w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(span.RawSpanId) ?
+                                                   span.SpanId.ToString("x16") : span.RawSpanId;
 
                     // We clear internals Id and ParentId values to force recalculation.
                     w3cActivity.RawId = null;

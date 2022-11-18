@@ -38,7 +38,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
 
         using (var scope1 = _tracer.StartActive("1", settings))
         {
-            ((Span)scope1.Span).Context.TraceContext.SetSamplingPriority(SamplingPriorityValue);
+            ((Span)scope1.Span).TraceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (_ = _tracer.StartActive("1.1"))
             {
@@ -89,7 +89,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         {
             span1 = scope1.Span;
 
-            var traceContext = ((Scope)scope1).Span.Context.TraceContext;
+            var traceContext = ((Scope)scope1).Span.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (var scope11 = _tracer.StartActive("1.1"))
@@ -163,7 +163,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         {
             span1 = scope1.Span;
 
-            var traceContext = ((Scope)scope1).Span.Context.TraceContext;
+            var traceContext = ((Scope)scope1).Span.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (var scope11 = _tracer.StartActive("1.1"))
@@ -236,7 +236,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         {
             span1 = scope1.Span;
 
-            var traceContext = ((Scope)scope1).Span.Context.TraceContext;
+            var traceContext = ((Scope)scope1).Span.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (var scope11 = _tracer.StartActive("1.1"))
@@ -309,7 +309,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         {
             span1 = scope1.Span;
 
-            var traceContext = ((Scope)scope1).Span.Context.TraceContext;
+            var traceContext = ((Scope)scope1).Span.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (var scope11 = _tracer.StartActive("1.1"))

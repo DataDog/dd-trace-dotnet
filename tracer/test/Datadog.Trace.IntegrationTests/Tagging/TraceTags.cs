@@ -41,7 +41,7 @@ public class TraceTags
     {
         using (var scope = _tracer.StartActiveInternal("root"))
         {
-            var traceContext = scope.Span.Context.TraceContext;
+            var traceContext = scope.Span.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, samplingMechanism);
         }
 

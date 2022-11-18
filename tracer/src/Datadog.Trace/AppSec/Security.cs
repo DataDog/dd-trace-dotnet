@@ -189,7 +189,7 @@ namespace Datadog.Trace.AppSec
 
         private static Span GetLocalRootSpan(Span span)
         {
-            var localRootSpan = span.Context.TraceContext?.RootSpan;
+            var localRootSpan = span.TraceContext?.RootSpan;
             return localRootSpan ?? span;
         }
 
@@ -456,7 +456,7 @@ namespace Datadog.Trace.AppSec
                 span.SetTag(Tags.ActorIp, clientIp);
             }
 
-            if (span.Context.TraceContext is { Origin: null } traceContext)
+            if (span.TraceContext is { Origin: null } traceContext)
             {
                 traceContext.Origin = "appsec";
             }
@@ -474,11 +474,11 @@ namespace Datadog.Trace.AppSec
             {
                 // NOTE: setting DD_APPSEC_KEEP_TRACES=false means "drop all traces by setting AutoReject".
                 // It does _not_ mean "stop setting UserKeep (do nothing)". It should only be used for testing.
-                span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.Asm);
+                span.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.Asm);
             }
             else if (_rateLimiter.Allowed(span))
             {
-                span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+                span.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             }
         }
 
@@ -566,8 +566,8 @@ namespace Datadog.Trace.AppSec
         private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
-            var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
-            span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+            var span = e.RelatedSpan.TraceContext.RootSpan ?? e.RelatedSpan;
+            span.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _waf.InitializationResult.FailedToLoadRules);
             if (_waf.InitializationResult.HasErrors)

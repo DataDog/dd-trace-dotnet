@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     {
                         if (setSamplingPriority)
                         {
-                            scope.Span.Context.TraceContext.SetSamplingPriority(spanContext.SamplingPriority.Value);
+                            scope.Span.TraceContext.SetSamplingPriority(spanContext.SamplingPriority.Value);
                         }
 
                         // add distributed tracing headers to the HTTP request

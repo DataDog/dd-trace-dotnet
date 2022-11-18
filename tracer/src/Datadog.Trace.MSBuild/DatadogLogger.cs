@@ -10,12 +10,10 @@ using System.IO;
 using System.Text;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
 
@@ -108,7 +106,7 @@ namespace Datadog.Trace.MSBuild
                 _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
                 _buildSpan.SetMetric(Tags.Analytics, 1.0d);
 
-                if (_buildSpan.Context.TraceContext is { } traceContext)
+                if (_buildSpan.TraceContext is { } traceContext)
                 {
                     traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
                     traceContext.Origin = TestTags.CIAppTestOriginName;
@@ -181,14 +179,14 @@ namespace Datadog.Trace.MSBuild
                 string projectName = Path.GetFileName(e.ProjectFile);
 
                 string targetName = string.IsNullOrEmpty(e.TargetNames) ? "build" : e.TargetNames?.ToLowerInvariant();
-                Span projectSpan = _tracer.StartSpan($"msbuild.{targetName}", parent: parentSpan.Context);
+                Span projectSpan = _tracer.StartSpan($"msbuild.{targetName}", parent: parentSpan);
 
                 if (projectName != null)
                 {
                     projectSpan.ServiceName = projectName;
                 }
 
-                projectSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+                projectSpan.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
                 projectSpan.Type = SpanTypes.Build;
 
                 string targetFramework = null;
@@ -367,7 +365,7 @@ namespace Datadog.Trace.MSBuild
             {
                 _level = level;
                 _message = message;
-                _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.Context.Origin);
+                _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.TraceContext.Origin);
             }
 
             public override void Format(StringBuilder sb, LogFormatter formatter)

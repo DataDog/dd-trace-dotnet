@@ -35,10 +35,11 @@ public sealed class Test
             tags: tags,
             startTime: startDate);
 
-        scope.Span.Type = SpanTypes.Test;
-        scope.Span.ResourceName = $"{suite.Name}.{name}";
-        scope.Span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
-        scope.Span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
+        var span = scope.Span;
+        span.Type = SpanTypes.Test;
+        span.ResourceName = $"{suite.Name}.{name}";
+        span.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
+        span.TraceContext.Origin = TestTags.CIAppTestOriginName;
 
         _scope = scope;
 
@@ -53,7 +54,7 @@ public sealed class Test
         if (startDate is null)
         {
             // If a test doesn't have a fixed start time we reset it before running the test code
-            scope.Span.ResetStartTime();
+            span.ResetStartTime();
         }
     }
 
@@ -215,7 +216,7 @@ public sealed class Test
         var tags = (TestSpanTags)scope.Span.Tags;
 
         // Calculate duration beforehand
-        duration ??= _scope.Span.Context.TraceContext.ElapsedSince(scope.Span.StartTime);
+        duration ??= _scope.Span.TraceContext.ElapsedSince(scope.Span.StartTime);
 
         // Set coverage
         if (CIVisibility.Settings.CodeCoverageEnabled == true && Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.CoveragePayload coveragePayload)

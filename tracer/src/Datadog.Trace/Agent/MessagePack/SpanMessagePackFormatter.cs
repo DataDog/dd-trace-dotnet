@@ -127,7 +127,7 @@ namespace Datadog.Trace.Agent.MessagePack
             // It should be the number of members of the object to be serialized.
             var len = 8;
 
-            if (span.Context.ParentId > 0)
+            if (span.ParentId > 0)
             {
                 len++;
             }
@@ -144,10 +144,10 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, span.Context.TraceId);
+            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, span.TraceId);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, span.Context.SpanId);
+            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, span.SpanId);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, span.OperationName);
@@ -167,10 +167,10 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _durationBytes);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, span.Duration.ToNanoseconds());
 
-            if (span.Context.ParentId > 0)
+            if (span.ParentId > 0)
             {
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, (ulong)span.Context.ParentId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, (ulong)span.ParentId);
             }
 
             if (span.Error)
@@ -180,7 +180,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             ITagProcessor[] tagProcessors = null;
-            if (span.Context.TraceContext?.Tracer is Tracer tracer)
+            if (span.TraceContext?.Tracer is Tracer tracer)
             {
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }

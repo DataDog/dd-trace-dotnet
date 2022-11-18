@@ -35,7 +35,7 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     {
         using (var rootScope = _tracer.StartActive("1"))
         {
-            ((Span)rootScope.Span).Context.TraceContext.SetSamplingPriority(SamplingPriorityValue);
+            ((Span)rootScope.Span).TraceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (_ = _tracer.StartActive("1.1"))
             {
@@ -83,7 +83,7 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         {
             span1 = scope1.Span;
 
-            var traceContext = ((Scope)scope1).Span.Context.TraceContext;
+            var traceContext = ((Scope)scope1).Span.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (var scope11 = _tracer.StartActive("1.1"))
@@ -154,7 +154,7 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         {
             span1 = scope1.Span;
 
-            var traceContext = ((Scope)scope1).Span.Context.TraceContext;
+            var traceContext = ((Scope)scope1).Span.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (var scope11 = _tracer.StartActive("1.1"))
@@ -224,7 +224,7 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         {
             span1 = scope1.Span;
 
-            var traceContext = ((Scope)scope1).Span.Context.TraceContext;
+            var traceContext = ((Scope)scope1).Span.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (var scope11 = _tracer.StartActive("1.1"))
@@ -294,7 +294,7 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
         {
             span1 = scope1.Span;
 
-            var traceContext = ((Scope)scope1).Span.Context.TraceContext;
+            var traceContext = ((Scope)scope1).Span.TraceContext;
             traceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (var scope11 = _tracer.StartActive("1.1"))

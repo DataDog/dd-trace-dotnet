@@ -30,7 +30,7 @@ namespace Datadog.Trace.Activity.Handlers
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
         {
-            var activeSpan = (Span?)Tracer.Instance.ActiveScope?.Span;
+            var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
 
             // Propagate Trace and Parent Span ids
             ulong? traceId = null;
@@ -50,12 +50,13 @@ namespace Datadog.Trace.Activity.Handlers
                     if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
                     {
                         // TraceId
-                        w3cActivity.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
-                                                  activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
+                        var traceContext = activeSpan.TraceContext;
+                        w3cActivity.TraceId = string.IsNullOrWhiteSpace(traceContext.RawTraceId) ?
+                                                  traceContext.TraceId.ToString("x32") : traceContext.RawTraceId;
 
                         // SpanId
-                        w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
-                                                       activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
+                        w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.RawSpanId) ?
+                                                       activeSpan.SpanId.ToString("x16") : activeSpan.RawSpanId;
 
                         // We clear internals Id and ParentId values to force recalculation.
                         w3cActivity.RawId = null;
