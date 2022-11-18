@@ -349,7 +349,7 @@ public sealed class TestSession
         };
 
         SpanContextPropagator.Instance.Inject(
-            span.Context,
+            span.GetContextForPropagation(),
             (IDictionary)environmentVariables,
             new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 
