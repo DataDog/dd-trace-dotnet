@@ -44,7 +44,8 @@ RUN yum update -y \
         rpm-build \
         expect \
         sudo \
-        gawk
+        gawk \
+        cppcheck
 
 # Install newer version of fpm and specific version of dotenv 
 RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \
