@@ -2,14 +2,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
   </ItemGroup>
-
-
+  
   <PropertyGroup>
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.runsettings</RunSettingsFilePath>
   </PropertyGroup>
-
 
   <ItemGroup>
     <None Update="Properties\launchSettings.json">
