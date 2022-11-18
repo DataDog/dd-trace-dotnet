@@ -41,6 +41,8 @@ namespace Datadog.Trace
         /// </summary>
         public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: 0, spanId: 0, serviceName: null);
 
+        private readonly int? _samplingPriority;
+
         private string _origin;
 
         /// <summary>
@@ -71,7 +73,7 @@ namespace Datadog.Trace
             : this(traceId, serviceName)
         {
             SpanId = spanId;
-            SamplingPriority = samplingPriority;
+            _samplingPriority = samplingPriority;
             Origin = origin;
         }
 
@@ -170,7 +172,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Gets or sets the origin of the trace.
-        /// For local contexts, this property delegates to TraceContext.Origin.
+        /// For local contexts, this property delegates to <see cref="Datadog.Trace.TraceContext.Origin"/>.
         /// This is a temporary work around because we use SpanContext
         /// for all local spans and also for propagation.
         /// </summary>
@@ -201,10 +203,15 @@ namespace Datadog.Trace
         internal TraceContext TraceContext { get; }
 
         /// <summary>
-        /// Gets the sampling priority for contexts created from incoming propagated context.
-        /// Returns null for local contexts.
+        /// Gets the sampling priority of the trace.
+        /// For local contexts, this property returns <see cref="Datadog.Trace.TraceContext.SamplingPriority"/>.
+        /// This is a temporary work around because we use SpanContext
+        /// for all local spans and also for propagation.
         /// </summary>
-        internal int? SamplingPriority { get; }
+        internal int? SamplingPriority
+        {
+            get => TraceContext?.SamplingPriority ?? _samplingPriority;
+        }
 
         /// <summary>
         /// Gets the raw traceId (to support > 64bits)
@@ -301,9 +308,7 @@ namespace Datadog.Trace
 
                 case Keys.SamplingPriority:
                 case HttpHeaderNames.SamplingPriority:
-                    // return the value from TraceContext if available
-                    var samplingPriority = TraceContext?.SamplingPriority ?? SamplingPriority;
-                    value = samplingPriority?.ToString(invariant);
+                    value = SamplingPriority?.ToString(invariant);
                     return true;
 
                 case Keys.Origin:
