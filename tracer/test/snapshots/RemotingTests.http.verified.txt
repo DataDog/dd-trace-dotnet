@@ -1,0 +1,155 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: remoting.message,
+    Resource: SetString,
+    Service: Samples.Remoting-remoting,
+    Tags: {
+      component: Remoting,
+      env: integration_tests,
+      rpc.method: SetString,
+      rpc.system: dotnet_remoting,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: remoting.message,
+    Resource: SetString,
+    Service: Samples.Remoting-remoting,
+    Tags: {
+      component: Remoting,
+      env: integration_tests,
+      rpc.method: SetString,
+      rpc.system: dotnet_remoting,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: http.request,
+    Resource: POST localhost:00000/RemoteServer,
+    Service: Samples.Remoting-http-client,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/RemoteServer,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_6,
+    Name: http.request,
+    Resource: POST localhost:00000/RemoteServer,
+    Service: Samples.Remoting-http-client,
+    Type: http,
+    ParentId: Id_4,
+    Error: 1,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.GetResponse(),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/RemoteServer,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_7,
+    Name: remoting.message,
+    Resource: SetString,
+    Service: Samples.Remoting,
+    ParentId: Id_5,
+    Tags: {
+      component: Remoting,
+      env: integration_tests,
+      language: dotnet,
+      rpc.method: SetString,
+      rpc.system: dotnet_remoting,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_8,
+    Name: remoting.message,
+    Resource: SetString,
+    Service: Samples.Remoting,
+    ParentId: Id_6,
+    Error: 1,
+    Tags: {
+      component: Remoting,
+      env: integration_tests,
+      error.msg:
+Value cannot be null.
+Parameter name: input,
+      error.stack:
+System.ArgumentNullException: Value cannot be null.
+Parameter name: input
+at Samples.Remoting.RemoteClass.SetString(String input),
+      error.type: System.ArgumentNullException,
+      language: dotnet,
+      rpc.method: SetString,
+      rpc.system: dotnet_remoting,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 {
     internal static class RemotingIntegration
     {
-        internal const IntegrationId IntegrationId = Configuration.IntegrationId.MongoDb;
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.Remoting;
         internal const string IntegrationName = nameof(Configuration.IntegrationId.Remoting);
 
         internal const string Major4 = "4";
