@@ -217,11 +217,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             if (!string.IsNullOrEmpty(userAgent) && _httpClient.DefaultRequestHeaders.GetValues("user-agent").All(c => c != userAgent))
             {
-                if (_httpClient.DefaultRequestHeaders.GetValues("user-agent").Any())
-                {
-                    _httpClient.DefaultRequestHeaders.Remove("user-agent");
-                }
-
+                // don't remove the default user-agent, seems our code can handle multiple user agents and the verify files rely on it being there.
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
             }
 

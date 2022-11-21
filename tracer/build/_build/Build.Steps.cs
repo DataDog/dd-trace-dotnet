@@ -60,7 +60,8 @@ partial class Build
 
     const string LibDdwafVersion = "1.6.0-alpha0";
 
-    const string OlderLibDdwafVersion = "1.5.1";
+    // used in WafCompatibilityTests.ShouldNotInitialize, needs to be a version before the interface change
+    const string OlderLibDdwafVersion = "1.4.0";
 
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
