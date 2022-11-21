@@ -133,37 +133,13 @@ partial class Build
 
     Target CreateRequiredDirectories => _ => _
         .Unlisted()
+        .After(Clean)
         .Executes(() =>
         {
             EnsureExistingDirectory(MonitoringHomeDirectory);
             EnsureExistingDirectory(ArtifactsDirectory);
             EnsureExistingDirectory(BuildDataDirectory);
             EnsureExistingDirectory(SymbolsDirectory);
-        });
-
-    Target Restore => _ => _
-        .After(Clean)
-        .Unlisted()
-        .Executes(() =>
-        {
-            if (IsWin)
-            {
-                NuGetTasks.NuGetRestore(s => s
-                    .SetTargetPath(Solution)
-                    .SetVerbosity(NuGetVerbosity.Normal)
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackagesDirectory(NugetPackageDirectory)));
-            }
-            else
-            {
-                DotNetRestore(s => s
-                    .SetProjectFile(Solution)
-                    .SetVerbosity(DotNetVerbosity.Normal)
-                    // .SetTargetPlatform(Platform) // necessary to ensure we restore every project
-                    .SetProperty("configuration", BuildConfiguration.ToString())
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackageDirectory(NugetPackageDirectory)));
-            }
         });
 
     Target CompileNativeSrcWindows => _ => _
@@ -185,7 +161,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetMSBuildPath()
                 .SetTargets("BuildCppSrc")
-                .DisableRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
@@ -273,7 +249,6 @@ partial class Build
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
         .After(CreateRequiredDirectories)
-        .After(Restore)
         .Executes(() =>
         {
             // Always AnyCPU
@@ -281,7 +256,7 @@ partial class Build
                 .SetTargetPath(MsBuildProject)
                 .SetTargetPlatformAnyCPU()
                 .SetConfiguration(BuildConfiguration)
-                .DisableRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                 .SetTargets("BuildCsharpSrc")
             );
         });
@@ -305,7 +280,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetMSBuildPath()
                 .SetTargets("BuildCppTests")
-                .DisableRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
@@ -764,51 +739,54 @@ partial class Build
 
     Target CompileInstrumentationVerificationLibrary => _ => _
         .Unlisted()
-        .After(Restore, CompileManagedSrc)
+        .After(CompileManagedSrc)
         .Executes(() =>
         {
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
+            var projects = GlobFiles(SourceDirectory / "**" / "Datadog.InstrumentedAssembly*.csproj");
+            DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
-                .SetProperty("BuildProjectReferences", true)
-                .SetTargets("BuildInstrumentationVerificationLibrary"));
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                .EnableNoDependencies()
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .CombineWith(projects, (x, project) => x
+                    .SetProjectFile(project)));
         });
 
     Target CompileManagedTestHelpers => _ => _
         .Unlisted()
         .DependsOn(CompileInstrumentationVerificationLibrary)
-        .After(Restore)
         .After(CompileManagedSrc)
         .Executes(() =>
         {
-            // Always AnyCPU
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
+            var projects = GlobFiles(TestsDirectory / "**" / "*.TestHelpers*.csproj");
+            DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
-                .DisableRestore()
-                .SetProperty("BuildProjectReferences", false)
-                .SetTargets("BuildCsharpTestHelpers"));
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                .EnableNoDependencies()
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .CombineWith(projects, (x, project) => x
+                    .SetProjectFile(project)));
         });
 
     Target CompileManagedUnitTests => _ => _
         .Unlisted()
-        .After(Restore)
         .After(CompileManagedSrc)
         .After(BuildRunnerTool)
         .DependsOn(CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CompileManagedTestHelpers)
         .Executes(() =>
         {
-            // Always AnyCPU
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
+            var projects = GlobFiles(TestsDirectory / "**" / "*.Tests.csproj");
+            DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
-                .DisableRestore()
-                .SetProperty("BuildProjectReferences", false)
-                .SetTargets("BuildCsharpUnitTests"));
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                .EnableNoDependencies()
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .CombineWith(projects, (x, project) => x
+                    .SetProjectFile(project)));
         });
 
     Target RunManagedUnitTests => _ => _
@@ -880,7 +858,6 @@ partial class Build
 
     Target CompileDependencyLibs => _ => _
         .Unlisted()
-        .After(Restore)
         .After(CompileManagedSrc)
         .Executes(() =>
         {
@@ -889,7 +866,7 @@ partial class Build
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
-                .DisableRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                 .EnableNoDependencies()
                 .SetTargets("BuildDependencyLibs")
             );
@@ -900,7 +877,7 @@ partial class Build
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
-                .EnableNoRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 .EnableNoDependencies()
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(debuggerProjects, (x, project) => x
@@ -909,7 +886,7 @@ partial class Build
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
-                .EnableNoRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 .EnableNoDependencies()
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(debuggerProjects, (x, project) => x
@@ -918,7 +895,6 @@ partial class Build
 
     Target CompileRegressionDependencyLibs => _ => _
         .Unlisted()
-        .After(Restore)
         .After(CompileManagedSrc)
         .Executes(() =>
         {
@@ -928,7 +904,7 @@ partial class Build
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
                 .SetTargetPlatformAnyCPU()
-                .DisableRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(platform)
@@ -938,7 +914,6 @@ partial class Build
 
     Target CompileRegressionSamples => _ => _
         .Unlisted()
-        .After(Restore)
         .After(CreatePlatformlessSymlinks)
         .After(CompileRegressionDependencyLibs)
         .Requires(() => Framework)
@@ -961,10 +936,7 @@ partial class Build
                     }
                   );
 
-            // Allow restore here, otherwise things go wonky with runtime identifiers
-            // in some target frameworks. No, I don't know why
             DotNetBuild(x => x
-                // .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
@@ -990,7 +962,7 @@ partial class Build
             MSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .SetMSBuildPath()
-                .DisableRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
@@ -1012,7 +984,7 @@ partial class Build
             DotNetMSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .SetProperty("TargetFramework", Framework.ToString())
-                .DisableRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 // Including this apparently breaks the integration tests when running against with the .NET 7 SDK
@@ -1086,7 +1058,7 @@ partial class Build
 
             MSBuild(x => x
                 .SetMSBuildPath()
-                // .DisableRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
@@ -1462,7 +1434,6 @@ partial class Build
 
             // Always AnyCPU
             DotNetBuild(x => x
-                    // .EnableNoRestore()
                     .EnableNoDependencies()
                     .SetConfiguration(BuildConfiguration)
                     .SetFramework(Framework)
@@ -1547,7 +1518,6 @@ partial class Build
             // Build the actual integration test projects for Any CPU
             var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
             DotNetBuild(x => x
-                    // .EnableNoRestore()
                     .EnableNoDependencies()
                     .SetConfiguration(BuildConfiguration)
                     .SetFramework(Framework)
@@ -1678,7 +1648,7 @@ partial class Build
               DotNetBuild(x => x
                   .SetProjectFile(Solution.GetProject(Projects.ToolArtifactsTests))
                   .EnableNoDependencies()
-                  .EnableNoRestore()
+                  .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                   .SetConfiguration(BuildConfiguration)
                   .SetNoWarnDotNetCore3());
           });

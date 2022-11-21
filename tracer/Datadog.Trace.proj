@@ -6,8 +6,6 @@
 
   <ItemGroup>
     <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj;src/Datadog.Trace.Tools.Runner/*.csproj;src\**\Datadog.InstrumentedAssembly*.csproj" />
-    <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
-    <CsharpInstrumentationVerificationLibrary Include="src\**\Datadog.InstrumentedAssembly*.csproj"/>
     <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj" />
     <CsharpIntegrationTestProject Remove="test\Datadog.Trace.Tools.Runner.IntegrationTests\Datadog.Trace.Tools.Runner.IntegrationTests.csproj" Condition="$(TargetFramework.StartsWith('net4'))" />
     <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
@@ -29,28 +27,11 @@
 
   <!--  Used by CompileManagedSrc-->
   <Target Name="BuildCsharpSrc">
+    <MSBuild Targets="Restore" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+
     <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileManagedTestHelpers-->
-  <Target Name="BuildInstrumentationVerificationLibrary">
-    <MSBuild Targets="Build" Projects="@(CsharpInstrumentationVerificationLibrary)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileManagedTestHelpers-->
-  <Target Name="BuildCsharpTestHelpers">
-    <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileManagedUnitTests-->
-  <Target Name="BuildCsharpUnitTests">
-    <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject);@(CsharpUnitTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -64,6 +45,10 @@
       <IntegrationTestProjects Include="@(LiveDebuggerSampleProject)" />
       <IntegrationTestProjects Include="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeLegacyRedisProject)" />
     </ItemGroup>
+
+    <MSBuild Targets="Restore" Projects="@(CsharpTestHelperProject);@(IntegrationTestProjects)" Properties="Platform=AnyCPU">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
 
     <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject);@(IntegrationTestProjects)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
@@ -79,6 +64,10 @@
 
   <!--  Used by CompileDependencyLibs-->
   <Target Name="BuildDependencyLibs">
+    <MSBuild Targets="Restore" Projects="@(SampleLibProject);@(VbSampleLibProject)" Properties="Platform=AnyCPU">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+    
     <MSBuild Targets="Build" Projects="@(SampleLibProject);@(VbSampleLibProject);">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>

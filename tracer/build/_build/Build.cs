@@ -86,7 +86,7 @@ partial class Build : NukeBuild
 
     Target Info => _ => _
         .Description("Describes the current configuration")
-        .Before(Clean, Restore, BuildTracerHome)
+        .Before(Clean, BuildTracerHome)
         .Executes(() =>
         {
             Logger.Info($"Configuration: {BuildConfiguration}");
@@ -146,7 +146,6 @@ partial class Build : NukeBuild
         .Description("Builds the native and managed src, and publishes the tracer home directory")
         .After(Clean)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedTracer)
         .DependsOn(CompileNativeSrc)
@@ -308,7 +307,7 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.Tool))
-                .EnableNoRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
