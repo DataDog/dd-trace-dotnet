@@ -58,6 +58,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
         private readonly Tracer _tracer;
         private readonly Security _security;
+        private readonly Iast.Iast _iast;
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
         private string _mvcAfterActionEventKey;
@@ -67,14 +68,15 @@ namespace Datadog.Trace.DiagnosticListeners
         private string _routingEndpointMatchedKey;
 
         public AspNetCoreDiagnosticObserver()
-            : this(null, null)
+            : this(null, null, null)
         {
         }
 
-        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security)
+        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast)
         {
             _tracer = tracer;
             _security = security;
+            _iast = iast;
         }
 
         protected override string ListenerName => DiagnosticListenerName;
@@ -82,6 +84,8 @@ namespace Datadog.Trace.DiagnosticListeners
         private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
 
         private Security CurrentSecurity => _security ?? Security.Instance;
+
+        private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
 
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
@@ -572,6 +576,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
+            var iast = CurrentIast;
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.Settings.Enabled;
