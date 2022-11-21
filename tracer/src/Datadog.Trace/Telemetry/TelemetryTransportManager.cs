@@ -22,12 +22,15 @@ internal class TelemetryTransportManager
     private int _initialFatalCount = 0;
     private int _failureCount = 0;
     private int _currentTransport = 0;
+    internal const int DefaultMaxTransientErrors = 5;
+    private readonly int _maxFatalErrors;
+    private readonly int _maxTransientErrors;
 
-    public TelemetryTransportManager(ITelemetryTransport[] transports, int maxFatalErrors = 2, int maxTransientErrors = 5)
+    public TelemetryTransportManager(ITelemetryTransport[] transports, int maxFatalErrors = 2, int maxTransientErrors = DefaultMaxTransientErrors)
     {
         _transports = transports ?? throw new ArgumentNullException(nameof(transports));
-        MaxFatalErrors = maxFatalErrors;
-        MaxTransientErrors = maxTransientErrors;
+        _maxFatalErrors = maxFatalErrors;
+        _maxTransientErrors = maxTransientErrors;
         if (transports.Length > 0 && Log.IsEnabled(LogEventLevel.Debug))
         {
             var firstTransport = transports[0];
@@ -44,10 +47,6 @@ internal class TelemetryTransportManager
         TransientError,
         FatalError
     }
-
-    internal int MaxFatalErrors { get; private set; }
-
-    internal int MaxTransientErrors { get; private set; }
 
     public bool HasSentSuccessfully { get; private set; }
 
@@ -115,7 +114,7 @@ internal class TelemetryTransportManager
         else if (result == TelemetryPushResult.FatalError && !HasSentSuccessfully)
         {
             _initialFatalCount++;
-            if (_initialFatalCount >= MaxFatalErrors)
+            if (_initialFatalCount >= _maxFatalErrors)
             {
                 // we've had MaxFatalErrors 404s, 1 minute apart, prob never going to work, so try next transport
                 return ConfigureNextTransport();
@@ -124,7 +123,7 @@ internal class TelemetryTransportManager
         else
         {
             _failureCount++;
-            if (_failureCount >= MaxTransientErrors)
+            if (_failureCount >= _maxTransientErrors)
             {
                 // we've had MaxTransientErrors in a row, 1 minute apart, probably something bigger wrong
                 return ConfigureNextTransport();
