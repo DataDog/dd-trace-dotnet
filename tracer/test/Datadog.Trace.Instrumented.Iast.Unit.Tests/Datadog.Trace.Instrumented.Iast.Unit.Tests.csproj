@@ -9,10 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="Properties\launchSettings.json">
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </None>
     <None Update="wrong-tags-rule-set.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
