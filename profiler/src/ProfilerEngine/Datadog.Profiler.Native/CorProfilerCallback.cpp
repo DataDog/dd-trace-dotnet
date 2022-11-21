@@ -331,7 +331,9 @@ bool CorProfilerCallback::InitializeServices()
             _pSamplesCollector->Register(_pAllocationsProvider);
         }
 
-        if (_pConfiguration->IsHeapProfilingEnabled())
+        // Live heap profiling required .NET 7+ and ICorProfilerInfo13 in _pCorProfilerInfoLiveHeap
+        // --> _pLiveObjectsProvider is null otherwise
+        if (_pConfiguration->IsHeapProfilingEnabled() && (_pLiveObjectsProvider != nullptr))
         {
             _pSamplesCollector->RegisterBatchedProvider(_pLiveObjectsProvider);
         }
