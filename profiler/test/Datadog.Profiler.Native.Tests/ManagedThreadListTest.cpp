@@ -29,15 +29,15 @@ TEST(ManagedThreadListTest, CheckRemove)
     ASSERT_EQ(threads.Count(), 3);
 
     bool found = false;
-    ManagedThreadInfo* pInfo = nullptr;
+    std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
 
     // ok to remove an existing thread
-    found = threads.UnregisterThread(1, &pInfo);
+    found = threads.UnregisterThread(1, pInfo);
     ASSERT_TRUE(found);
     ASSERT_NE(pInfo, nullptr);
 
     // fail to remove an unknown thread
-    found = threads.UnregisterThread(4, &pInfo);
+    found = threads.UnregisterThread(4, pInfo);
     ASSERT_FALSE(found);
 }
 
@@ -51,7 +51,7 @@ TEST(ManagedThreadListTest, CheckLoopNext)
     threads.GetOrCreateThread(3);
 
     // check iterator
-    ManagedThreadInfo* pInfo = nullptr;
+    std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
     pInfo = threads.LoopNext(iterator);
     ASSERT_TRUE(pInfo != nullptr);
     ASSERT_EQ(pInfo->GetClrThreadId(), 1);
@@ -81,7 +81,7 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenAdd)
     threads.GetOrCreateThread(3);
 
     // add during iteration
-    ManagedThreadInfo* pInfo = nullptr;
+    std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
     pInfo = threads.LoopNext(iterator);
     pInfo = threads.LoopNext(iterator);
     threads.GetOrCreateThread(4);
@@ -104,7 +104,7 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemove)
     threads.GetOrCreateThread(4);
     threads.GetOrCreateThread(5);
 
-    ManagedThreadInfo* pInfo = nullptr;
+    std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
     pInfo = threads.LoopNext(iterator);
     ASSERT_TRUE(pInfo != nullptr);
     ASSERT_EQ(pInfo->GetClrThreadId(), 1);
@@ -114,7 +114,7 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemove)
     //        ^
 
     // after current position --> 2
-    threads.UnregisterThread(3, &pInfo);
+    threads.UnregisterThread(3, pInfo);
     //    1   2   x   4   5
     pInfo = threads.LoopNext(iterator);
     ASSERT_TRUE(pInfo != nullptr);
@@ -123,7 +123,7 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemove)
     //                ^
 
     // current position --> 5
-    threads.UnregisterThread(4, &pInfo);
+    threads.UnregisterThread(4, pInfo);
     //    1   2   x   x   5
     pInfo = threads.LoopNext(iterator);
     ASSERT_TRUE(pInfo != nullptr);
@@ -135,7 +135,7 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemove)
     pInfo = threads.LoopNext(iterator);
     //    1   2   x   x   5
     //        ^
-    threads.UnregisterThread(1, &pInfo);
+    threads.UnregisterThread(1, pInfo);
     pInfo = threads.LoopNext(iterator);
     ASSERT_TRUE(pInfo != nullptr);
     ASSERT_EQ(pInfo->GetClrThreadId(), 2);
@@ -151,7 +151,7 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemoveLastThread)
     threads.GetOrCreateThread(2);
     threads.GetOrCreateThread(3);
 
-    ManagedThreadInfo* pInfo = nullptr;
+    std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
     pInfo = threads.LoopNext(iterator);
     pInfo = threads.LoopNext(iterator);
     //
@@ -160,7 +160,7 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemoveLastThread)
     //            ^
 
     // remove last position --> 0
-    threads.UnregisterThread(3, &pInfo);
+    threads.UnregisterThread(3, pInfo);
     //    1   2   x
     //    ^
     pInfo = threads.LoopNext(iterator);
@@ -185,7 +185,7 @@ public:
 
 void WorkOnIterator(MultipleIteratorsParams* parameters)
 {
-    ManagedThreadInfo* pInfo = nullptr;
+    std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
     auto& threads = parameters->Threads;
     auto iterator = parameters->Iterator;
 

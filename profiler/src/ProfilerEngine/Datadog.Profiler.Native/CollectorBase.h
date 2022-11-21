@@ -208,9 +208,6 @@ private:
 
         sample->SetThreadId(rawSample.ThreadInfo->GetProfileThreadId());
         sample->SetThreadName(rawSample.ThreadInfo->GetProfileThreadName());
-
-        // don't forget to release the ManagedThreadInfo
-        rawSample.ThreadInfo->Release();
     }
 
     void SetStack(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)

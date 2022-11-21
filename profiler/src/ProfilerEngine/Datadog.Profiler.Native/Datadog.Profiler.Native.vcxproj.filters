@@ -107,9 +107,6 @@
     <ClInclude Include="OpSysTools.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="RefCountingObject.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="ScopeFinalizer.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -293,9 +290,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="RefCountingObject.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="HResultConverter.cpp">
