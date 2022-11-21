@@ -128,13 +128,30 @@ bool LiveObjectsProvider::IsAlive(ObjectHandleID handle) const
         return false;
     }
 
-    // TODO: check WeakHandle with ICorProfilerInfo13::GetObjectIdFromHandle(handle, &objectId) where objectId == nullptr means not alive
+    ObjectID object = NULL;
+    auto hr = _pCorProfilerInfo->GetObjectIDFromHandle(handle, &object);
+    if (SUCCEEDED(hr))
+    {
+        return object != NULL;
+    }
+
     return false;
 }
 
 ObjectHandleID LiveObjectsProvider::CreateWeakHandle(uintptr_t address) const
 {
-    // TODO: create WeakHandle with ICorProfilerInfo13::CreateHandle(address, COR_PRF_HANDLE_TYPE::COR_PRF_HANDLE_TYPE_WEAK, &handle)
+    if (address == NULL)
+    {
+        return nullptr;
+    }
+
+    ObjectHandleID handle = nullptr;
+    auto hr = _pCorProfilerInfo->CreateHandle(address, COR_PRF_HANDLE_TYPE::COR_PRF_HANDLE_TYPE_WEAK, &handle);
+    if (SUCCEEDED(hr))
+    {
+        return handle;
+    }
+
     return nullptr;
 }
 
@@ -146,6 +163,7 @@ void LiveObjectsProvider::CloseWeakHandle(ObjectHandleID handle) const
     }
 
     // TODO: use ICorProfilerInfo13::DestroyHandle(handle) to delete the handle
+    _pCorProfilerInfo->DestroyHandle(handle);
 }
 
 bool LiveObjectsProvider::Start()

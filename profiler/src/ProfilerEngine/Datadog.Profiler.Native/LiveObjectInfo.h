@@ -3,21 +3,15 @@
 
 #pragma once
 
-#include "Sample.h"
+#include "cor.h"
+#include "corprof.h"
 
-// wait for .NET 7 IcorProfilerInfo13
-typedef void** ObjectHandleID;
+#include "Sample.h"
 
 class LiveObjectInfo
 {
 public:
     LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address);
-
-    //// move only class
-    //LiveObjectInfo& operator=(const LiveObjectInfo& info) = delete;
-    //LiveObjectInfo(const LiveObjectInfo&) = delete;
-    //LiveObjectInfo(LiveObjectInfo&& info) noexcept;
-    //LiveObjectInfo& operator=(LiveObjectInfo&& other) noexcept;
 
     // accessors
     void SetHandle(ObjectHandleID handle);
