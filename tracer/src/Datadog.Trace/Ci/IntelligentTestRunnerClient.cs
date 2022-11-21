@@ -267,18 +267,7 @@ internal class IntelligentTestRunnerClient
         async Task<SettingsResponse> InternalGetSettingsAsync(byte[] state, bool finalTry)
         {
             var request = _apiRequestFactory.Create(_settingsUrl);
-            request.AddHeader(HttpHeaderNames.TraceId, _id);
-            request.AddHeader(HttpHeaderNames.ParentId, _id);
-            if (_useEvpProxy)
-            {
-                request.AddHeader(EvpSubdomainHeader, "api");
-                request.AddHeader(EvpNeedsApplicationKeyHeader, "true");
-            }
-            else
-            {
-                request.AddHeader(ApiKeyHeader, _settings.ApiKey);
-                request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
-            }
+            SetRequestHeader(request, useApplicationHeader: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -287,15 +276,7 @@ internal class IntelligentTestRunnerClient
 
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
-            {
-                if (finalTry)
-                {
-                    Log.Error<int, string>("Failed to get settings with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
-                }
-
-                throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
-            }
+            CheckResponseStatusCode(response, responseContent, finalTry);
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
             var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(responseContent);
@@ -344,18 +325,7 @@ internal class IntelligentTestRunnerClient
         async Task<SkippableTest[]> InternalGetSkippableTestsAsync(byte[] state, bool finalTry)
         {
             var request = _apiRequestFactory.Create(_skippableTestsUrl);
-            request.AddHeader(HttpHeaderNames.TraceId, _id);
-            request.AddHeader(HttpHeaderNames.ParentId, _id);
-            if (_useEvpProxy)
-            {
-                request.AddHeader(EvpSubdomainHeader, "api");
-                request.AddHeader(EvpNeedsApplicationKeyHeader, "true");
-            }
-            else
-            {
-                request.AddHeader(ApiKeyHeader, _settings.ApiKey);
-                request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
-            }
+            SetRequestHeader(request, useApplicationHeader: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -364,15 +334,7 @@ internal class IntelligentTestRunnerClient
 
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
-            {
-                if (finalTry)
-                {
-                    Log.Error<int, string>("Failed to get skippable tests with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
-                }
-
-                throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
-            }
+            CheckResponseStatusCode(response, responseContent, finalTry);
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent);
@@ -453,16 +415,7 @@ internal class IntelligentTestRunnerClient
         async Task<string[]> InternalSearchCommitAsync(byte[] state, bool finalTry)
         {
             var request = _apiRequestFactory.Create(_searchCommitsUrl);
-            request.AddHeader(HttpHeaderNames.TraceId, _id);
-            request.AddHeader(HttpHeaderNames.ParentId, _id);
-            if (_useEvpProxy)
-            {
-                request.AddHeader(EvpSubdomainHeader, "api");
-            }
-            else
-            {
-                request.AddHeader(ApiKeyHeader, _settings.ApiKey);
-            }
+            SetRequestHeader(request, useApplicationHeader: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -471,22 +424,7 @@ internal class IntelligentTestRunnerClient
 
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            if (response.StatusCode is < 200 or >= 300)
-            {
-                if (finalTry)
-                {
-                    try
-                    {
-                        Log.Error<int, string>("Failed to submit events with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
-                    }
-                }
-
-                throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
-            }
+            CheckResponseStatusCode(response, responseContent, finalTry);
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
@@ -566,41 +504,16 @@ internal class IntelligentTestRunnerClient
         async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
         {
             var request = _apiRequestFactory.Create(_packFileUrl);
-            request.AddHeader(HttpHeaderNames.TraceId, _id);
-            request.AddHeader(HttpHeaderNames.ParentId, _id);
-            if (_useEvpProxy)
-            {
-                request.AddHeader(EvpSubdomainHeader, "api");
-            }
-            else
-            {
-                request.AddHeader(ApiKeyHeader, _settings.ApiKey);
-            }
+            SetRequestHeader(request, useApplicationHeader: false);
 
             var multipartRequest = (IMultipartApiRequest)request;
-
             using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
             using var response = await multipartRequest.PostAsync(
                 new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
                 new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
             .ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            if (response.StatusCode is < 200 or >= 300)
-            {
-                if (finalTry)
-                {
-                    try
-                    {
-                        Log.Error<int, string>("Failed to submit events with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
-                    }
-                }
-
-                throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
-            }
+            CheckResponseStatusCode(response, responseContent, finalTry);
 
             return new FileInfo(packFile).Length;
         }
@@ -680,6 +593,55 @@ internal class IntelligentTestRunnerClient
         return new ObjectPackFilesResult(lstFiles.ToArray(), temporaryFolder);
     }
 
+    private void SetRequestHeader(IApiRequest request, bool useApplicationHeader)
+    {
+        request.AddHeader(HttpHeaderNames.TraceId, _id);
+        request.AddHeader(HttpHeaderNames.ParentId, _id);
+        if (_useEvpProxy)
+        {
+            request.AddHeader(EvpSubdomainHeader, "api");
+            if (useApplicationHeader)
+            {
+                request.AddHeader(EvpNeedsApplicationKeyHeader, "true");
+            }
+        }
+        else
+        {
+            request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+            if (useApplicationHeader)
+            {
+                request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
+            }
+        }
+    }
+
+    private void CheckResponseStatusCode(IApiResponse response, string responseContent, bool finalTry)
+    {
+        // Check if the rate limit header was received.
+        if (response.StatusCode == 429 &&
+            response.GetHeader("x-ratelimit-reset") is { } strRateLimitDurationInSeconds &&
+            int.TryParse(strRateLimitDurationInSeconds, out var rateLimitDurationInSeconds))
+        {
+            if (rateLimitDurationInSeconds > 30)
+            {
+                // If 'x-ratelimit-reset' is > 30 seconds we cancel the request.
+                throw new RateLimitException();
+            }
+
+            throw new RateLimitException(rateLimitDurationInSeconds);
+        }
+
+        if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
+        {
+            if (finalTry)
+            {
+                Log.Error<int, string>("Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+            }
+
+            throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
+        }
+    }
+
     private async Task<T> WithRetries<T, TState>(Func<TState, bool, Task<T>> sendDelegate, TState state, int numOfRetries)
     {
         var retryCount = 1;
@@ -703,17 +665,18 @@ internal class IntelligentTestRunnerClient
             // Error handling block
             if (exceptionDispatchInfo is not null)
             {
+                var sourceException = exceptionDispatchInfo.SourceException;
+
                 if (isFinalTry)
                 {
                     // stop retrying
-                    Log.Error<int>(exceptionDispatchInfo.SourceException, "An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
+                    Log.Error<int>(sourceException, "An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
                     exceptionDispatchInfo.Throw();
                 }
 
-                // Before retry delay
-                bool isSocketException = false;
-                Exception? innerException = exceptionDispatchInfo.SourceException;
-
+                // Before retry
+                var isSocketException = false;
+                var innerException = sourceException;
                 while (innerException != null)
                 {
                     if (innerException is SocketException)
@@ -730,11 +693,25 @@ internal class IntelligentTestRunnerClient
                     Log.Debug(exceptionDispatchInfo.SourceException, "Unable to communicate with the server");
                 }
 
-                // Execute retry delay
-                await Task.Delay(sleepDuration).ConfigureAwait(false);
-                retryCount++;
-                sleepDuration *= 2;
+                if (sourceException is RateLimitException rlException)
+                {
+                    if (rlException?.DelayTimeInSeconds is { } delayTimeInSeconds)
+                    {
+                        await Task.Delay(delayTimeInSeconds).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        exceptionDispatchInfo.Throw();
+                    }
+                }
+                else
+                {
+                    // Execute retry delay
+                    await Task.Delay(sleepDuration).ConfigureAwait(false);
+                    sleepDuration *= 2;
+                }
 
+                retryCount++;
                 continue;
             }
 
@@ -905,5 +882,22 @@ internal class IntelligentTestRunnerClient
         public string[] Files { get; }
 
         public string TemporaryFolder { get; }
+    }
+
+    private class RateLimitException : Exception
+    {
+        public RateLimitException()
+            : base("Server rate limiting response received. Cancelling request.")
+        {
+            DelayTimeInSeconds = null;
+        }
+
+        public RateLimitException(int delayTimeInSeconds)
+            : base($"Server rate limiting response received. Waiting for {delayTimeInSeconds} seconds")
+        {
+            DelayTimeInSeconds = delayTimeInSeconds;
+        }
+
+        public int? DelayTimeInSeconds { get; private set; }
     }
 }
