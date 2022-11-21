@@ -42,6 +42,6 @@ internal class IastRequestContext
     public void AddRequestParameter(string name, string value)
     {
         _taintedObjects.TaintInputString(value, new Source(SourceType.RequestParameterValue.Item1, name, value));
-        _taintedObjects.TaintInputString(name, new Source(SourceType.RequestParameterName.Item1, name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.RequestParameterName.Item1, name, null));
     }
 }
