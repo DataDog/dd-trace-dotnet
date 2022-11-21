@@ -697,7 +697,7 @@ internal class IntelligentTestRunnerClient
                 {
                     if (rlException?.DelayTimeInSeconds is { } delayTimeInSeconds)
                     {
-                        await Task.Delay(delayTimeInSeconds).ConfigureAwait(false);
+                        await Task.Delay(TimeSpan.FromSeconds(delayTimeInSeconds)).ConfigureAwait(false);
                     }
                     else
                     {
