@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.Propagators
             ulong traceId = 123456789;
             ulong spanId = 987654321;
             var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: "rum");
             var headers = new Mock<IHeadersCollection>();
 
             Propagator.Inject(context, headers.Object);
@@ -43,21 +43,28 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("x-datadog-trace-id", "123456789"), Times.Once());
             headers.Verify(h => h.Set("x-datadog-parent-id", "987654321"), Times.Once());
             headers.Verify(h => h.Set("x-datadog-sampling-priority", "2"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-origin", "rum"), Times.Once());
+
             headers.Verify(h => h.Set("x-b3-traceid", "00000000075bcd15"), Times.Once());
             headers.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
+
             headers.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
+
             headers.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-1"), Times.Once());
+
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum"), Times.Once());
+
             headers.VerifyNoOtherCalls();
         }
 
         [Fact]
         public void Inject_All_CarrierAndDelegate()
         {
-            ulong traceId = 123456789;
-            ulong spanId = 987654321;
-            var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            const ulong traceId = 123456789;
+            const ulong spanId = 987654321;
+            const int samplingPriority = SamplingPriorityValues.UserKeep;
+            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: "rum");
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
@@ -67,11 +74,17 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("x-datadog-trace-id", "123456789"), Times.Once());
             headers.Verify(h => h.Set("x-datadog-parent-id", "987654321"), Times.Once());
             headers.Verify(h => h.Set("x-datadog-sampling-priority", "2"), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-origin", "rum"), Times.Once());
+
             headers.Verify(h => h.Set("x-b3-traceid", "00000000075bcd15"), Times.Once());
             headers.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
             headers.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
+
             headers.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-1"), Times.Once());
+
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum"), Times.Once());
+
             headers.VerifyNoOtherCalls();
         }
 
@@ -124,16 +137,21 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
-        public void Extract_W3C_IHeadersCollection()
+        public void Extract_W3C_IHeadersCollection_traceparent()
         {
             var headers = new Mock<IHeadersCollection>();
+
             headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
 
             var result = Propagator.Extract(headers.Object);
 
             headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.Once());
+
             result.Should()
+                  .NotBeNull()
+                  .And
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
@@ -141,6 +159,39 @@ namespace Datadog.Trace.Tests.Propagators
                            SpanId = 987654321,
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
+                       });
+        }
+
+        [Fact]
+        public void Extract_W3C_IHeadersCollection_traceparent_tracestate()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:2;o:rum;t.dm:-4;t.usr.id:12345" });
+
+            var result = Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.Once());
+            headers.VerifyNoOtherCalls();
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId = 123456789,
+                           SpanId = 987654321,
+                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           Origin = "rum",
+                           PropagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345",
+                           Parent = null,
+                           ParentId = null,
                        });
         }
 
@@ -160,7 +211,10 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues("x-datadog-trace-id"), Times.Once());
             headers.Verify(h => h.GetValues("x-datadog-parent-id"), Times.Once());
             headers.Verify(h => h.GetValues("x-datadog-sampling-priority"), Times.Once());
+
             result.Should()
+                  .NotBeNull()
+                  .And
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
