@@ -25,8 +25,13 @@ public abstract class ModuleCoverageMetadata
     internal int GetTotalTypes() => Metadata.Length;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetTotalMethodsOfType(int type) => Metadata[type].Length;
+    internal int GetTotalSequencePointsOfMethod(int type, int method) => Metadata[type][method];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetTotalSequencePointsOfMethod(int type, int method) => Metadata[type][method];
+    internal void GetTotalMethodsAndSequencePointsOfMethod(int type, int method, out int totalMethods, out int totalSequencePoints)
+    {
+        var typeMeta = Metadata[type];
+        totalMethods = typeMeta.Length;
+        totalSequencePoints = typeMeta[method];
+    }
 }

@@ -7,8 +7,6 @@
 using System;
 using System.ComponentModel;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
 #pragma warning disable SA1649 // File name must match first type name
 
@@ -25,14 +23,13 @@ public static class CoverageReporter<TMeta>
 {
     private static readonly TMeta Metadata;
     private static readonly Module Module;
-    private static readonly AsyncLocal<Tuple<ModuleValue, CoverageContextContainer>?> ModuleContainer;
+    private static ModuleValue? _cachedModuleValue;
 
     static CoverageReporter()
     {
         Metadata = new TMeta();
         Module = typeof(TMeta).Module;
-        ModuleContainer = new();
-        CoverageContextContainer.AddAsyncLocal(ModuleContainer);
+        CoverageReporter.Handler.AddContextContainerChangeAction(() => _cachedModuleValue = null);
     }
 
     /// <summary>
@@ -44,42 +41,43 @@ public static class CoverageReporter<TMeta>
     /// <returns>True if the coverage is enabled and the scope is available; otherwise, false.</returns>
     public static bool TryGetScope(int typeIndex, int methodIndex, out int[]? counters)
     {
-        ModuleValue module;
-        if (ModuleContainer.Value is { } moduleContainer)
+        var module = _cachedModuleValue;
+        if (module is null)
         {
-            if (!moduleContainer.Item2.Enabled)
+            var container = CoverageReporter.Container;
+            if (container is null)
             {
+                _cachedModuleValue = null;
                 counters = default;
                 return false;
             }
 
-            module = moduleContainer.Item1;
-        }
-        else
-        {
-            if (CoverageReporter.Container is not { Enabled: true } container)
+            module = container.GetModuleValue(Module);
+            if (module is null)
             {
-                counters = default;
-                return false;
+                module = new ModuleValue(Module, Metadata.GetTotalTypes());
+                container.Add(module);
             }
 
-            module = new ModuleValue(Module, Metadata.GetTotalTypes());
-            container.TryAdd(module);
-            ModuleContainer.Value = new Tuple<ModuleValue, CoverageContextContainer>(module, container);
+            _cachedModuleValue = module;
         }
 
-        if (module.Types[typeIndex] is not { } type)
+        ref var type = ref module.Types[typeIndex];
+        if (type is null)
         {
-            type = new TypeValues(Metadata.GetTotalMethodsOfType(typeIndex));
-            module.Types[typeIndex] = type;
+            Metadata.GetTotalMethodsAndSequencePointsOfMethod(typeIndex, methodIndex, out var totalMethods, out var totalSequencePoints);
+
+            type = new TypeValues(totalMethods);
+
+            var typeMethod = new MethodValues(totalSequencePoints);
+            type.Methods[methodIndex] = typeMethod;
+
+            counters = typeMethod.SequencePoints;
+            return true;
         }
 
-        if (type.Methods[methodIndex] is not { } method)
-        {
-            method = new MethodValues(Metadata.GetTotalSequencePointsOfMethod(typeIndex, methodIndex));
-            type.Methods[methodIndex] = method;
-        }
-
+        ref var method = ref type.Methods[methodIndex];
+        method ??= new MethodValues(Metadata.GetTotalSequencePointsOfMethod(typeIndex, methodIndex));
         counters = method.SequencePoints;
         return true;
     }

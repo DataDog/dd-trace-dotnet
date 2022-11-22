@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -14,7 +16,14 @@ namespace Datadog.Trace.Ci.Coverage;
 /// </summary>
 internal abstract class CoverageEventHandler
 {
-    private readonly AsyncLocal<CoverageContextContainer?> _asyncContext = new();
+    private readonly AsyncLocal<CoverageContextContainer?> _asyncContext;
+    private readonly List<Action> _coverageContextContainerChangeActions;
+
+    protected CoverageEventHandler()
+    {
+        _coverageContextContainerChangeActions = new();
+        _asyncContext = new(ValueChangedHandler);
+    }
 
     /// <summary>
     /// Gets the coverage global container
@@ -28,46 +37,6 @@ internal abstract class CoverageEventHandler
     public void StartSession()
     {
         _asyncContext.Value = new CoverageContextContainer();
-    }
-
-    /// <summary>
-    /// Gets if there is an active session for the current context
-    /// </summary>
-    /// <returns>True if a session is active; otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsSessionActiveForCurrentContext()
-    {
-        return _asyncContext.Value?.Enabled ?? false;
-    }
-
-    /// <summary>
-    /// Enable coverage for current context (An active coverage session is required)
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryEnableCoverageForCurrentContext()
-    {
-        if (_asyncContext.Value is { } contextContainer)
-        {
-            contextContainer.Enabled = true;
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Disable coverage for current context (An active coverage session is required)
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryDisableCoverageForCurrentContext()
-    {
-        if (_asyncContext.Value is { } contextContainer)
-        {
-            contextContainer.Enabled = false;
-            return true;
-        }
-
-        return false;
     }
 
     /// <summary>
@@ -86,10 +55,29 @@ internal abstract class CoverageEventHandler
         return null;
     }
 
+    internal void AddContextContainerChangeAction(Action action)
+    {
+        lock (_coverageContextContainerChangeActions)
+        {
+            _coverageContextContainerChangeActions.Add(action);
+        }
+    }
+
     /// <summary>
     /// Method called when a session is finished to process all coverage raw data.
     /// </summary>
     /// <param name="modules">Coverage raw data</param>
     /// <returns>Instance of the final coverage report</returns>
     protected abstract object? OnSessionFinished(ModuleValue[] modules);
+
+    private void ValueChangedHandler(AsyncLocalValueChangedArgs<CoverageContextContainer?> obj)
+    {
+        lock (_coverageContextContainerChangeActions)
+        {
+            foreach (var action in _coverageContextContainerChangeActions)
+            {
+                action();
+            }
+        }
+    }
 }
