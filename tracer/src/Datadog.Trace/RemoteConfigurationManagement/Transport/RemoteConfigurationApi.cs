@@ -11,6 +11,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -21,6 +22,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
 
         private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly string _containerId;
         private string _configEndpoint = null;
 
         private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -31,6 +33,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 {
                     _configEndpoint = config.ConfigurationEndpoint;
                 });
+
+            _containerId = ContainerMetadata.GetContainerId();
         }
 
         public static RemoteConfigurationApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -53,6 +57,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var requestContent = JsonConvert.SerializeObject(request);
             var bytes = Encoding.UTF8.GetBytes(requestContent);
             var payload = new ArraySegment<byte>(bytes);
+
+            if (_containerId != null)
+            {
+                apiRequest.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
+            }
 
             using var apiResponse = await apiRequest.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
             var isRcmDisabled = apiResponse.StatusCode == 404;
