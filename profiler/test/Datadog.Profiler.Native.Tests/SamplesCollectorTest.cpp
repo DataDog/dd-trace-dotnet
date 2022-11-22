@@ -179,8 +179,8 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1000s));
 
-    std::list<Sample> pendingSamples;
-    std::list<Sample> exportedSamples;
+    std::list<std::shared_ptr<Sample>> pendingSamples;
+    std::list<std::shared_ptr<Sample>> exportedSamples;
 
     auto exporter = CreateTransparentExporter(pendingSamples, exportedSamples);
     auto metricsSender = MockMetricsSender();
@@ -206,11 +206,11 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
 
     for (auto& sample : exportedSamples)
     {
-        if (sample.GetRuntimeId() == runtimeId)
+        if (sample->GetRuntimeId() == runtimeId)
         {
             samplesCount1++;
         }
-        else if (sample.GetRuntimeId() == runtimeId2)
+        else if (sample->GetRuntimeId() == runtimeId2)
         {
             samplesCount2++;
         }
@@ -245,9 +245,6 @@ TEST(SamplesCollectorTest, MustStopCollectingSamples)
 
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1000s));
-
-    std::list<Sample> pendingSamples;
-    std::list<Sample> exportedSamples;
 
     auto [exporter, mockExporter] = CreateExporter();
     auto metricsSender = MockMetricsSender();
