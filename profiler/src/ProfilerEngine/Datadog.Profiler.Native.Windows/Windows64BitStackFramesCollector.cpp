@@ -74,15 +74,10 @@ void UnsafeLogDebugIfEnabledDuringStackwalk(const Args... args)
 
 Windows64BitStackFramesCollector::NtQueryInformationThreadDelegate_t Windows64BitStackFramesCollector::s_ntQueryInformationThreadDelegate = nullptr;
 
-Windows64BitStackFramesCollector::Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
-    _pCorProfilerInfo(_pCorProfilerInfo)
+Windows64BitStackFramesCollector::Windows64BitStackFramesCollector(ICorProfilerInfo4* const pCorProfilerInfo) :
+    _pCorProfilerInfo()
 {
-    _pCorProfilerInfo->AddRef();
-}
-
-Windows64BitStackFramesCollector::~Windows64BitStackFramesCollector()
-{
-    _pCorProfilerInfo->Release();
+    _pCorProfilerInfo.Copy(pCorProfilerInfo);
 }
 
 bool Windows64BitStackFramesCollector::ValidatePointerInStack(DWORD64 pointerValue,

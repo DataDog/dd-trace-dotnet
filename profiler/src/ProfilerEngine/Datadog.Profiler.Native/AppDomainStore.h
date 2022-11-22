@@ -2,6 +2,8 @@
 
 #include "IAppDomainStore.h"
 
+#include "shared/src/native-src/com_ptr.h"
+
 class AppDomainStore : public IAppDomainStore
 {
 public:
@@ -12,5 +14,5 @@ public:
     bool GetInfo(AppDomainID appDomainId, ProcessID& pid, std::string& appDomainName) override;
 
 private:
-    ICorProfilerInfo4* _pProfilerInfo;
+    ComPtr<ICorProfilerInfo4> _pProfilerInfo;
 };

@@ -93,7 +93,7 @@ private:  // global helpers
     static void ConcatUnknownGenericType(std::stringstream& builder, bool isEncoded);
 
 private:
-    ICorProfilerInfo4* _pCorProfilerInfo;
+    ComPtr<ICorProfilerInfo4> _pCorProfilerInfo;
 
     std::mutex _methodsLock;
     std::mutex _typesLock;

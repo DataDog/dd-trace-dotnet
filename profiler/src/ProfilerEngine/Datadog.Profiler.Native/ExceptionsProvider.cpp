@@ -28,7 +28,7 @@ ExceptionsProvider::ExceptionsProvider(
     IRuntimeIdStore* pRuntimeIdStore)
     :
     CollectorBase<RawExceptionSample>("ExceptionsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
-    _pCorProfilerInfo(pCorProfilerInfo),
+    _pCorProfilerInfo(),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
     _messageFieldOffset(),
@@ -39,6 +39,7 @@ ExceptionsProvider::ExceptionsProvider(
     _loggedMscorlibError(false),
     _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval())
 {
+    _pCorProfilerInfo.Copy(pCorProfilerInfo);
 }
 
 bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
@@ -51,7 +52,7 @@ bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
     // Check if it's mscorlib. In that case, locate the System.Exception type
     std::string assemblyName;
 
-    if (!FrameStore::GetAssemblyName(_pCorProfilerInfo, moduleId, assemblyName))
+    if (!FrameStore::GetAssemblyName(_pCorProfilerInfo.Get(), moduleId, assemblyName))
     {
         Log::Warn("Failed to retrieve assembly name for module ", moduleId);
         return false;
@@ -132,7 +133,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
 
     uint32_t hrCollectStack = E_FAIL;
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo.Get());
 
     pStackFramesCollector->PrepareForNextCollection();
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo, &hrCollectStack);
@@ -144,7 +145,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     }
 
     result->SetUnixTimeUtc(GetCurrentTimestamp());
-    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
+    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo.Get());
 
     RawExceptionSample rawSample;
 

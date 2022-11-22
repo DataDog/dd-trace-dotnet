@@ -12,6 +12,8 @@
 #include "StackFramesCollectorBase.h"
 #include <winternl.h>
 
+#include "shared/src/native-src/com_ptr.h"
+
 class StackSnapshotResultReusableBuffer;
 struct ManagedThreadInfo;
 class IManagedThreadList;
@@ -24,7 +26,7 @@ class Windows64BitStackFramesCollector : public StackFramesCollectorBase
 
 public:
     explicit Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo);
-    ~Windows64BitStackFramesCollector() override;
+    ~Windows64BitStackFramesCollector() override = default;
 
     bool SuspendTargetThreadImplementation(ManagedThreadInfo* pThreadInfo,
                                            bool* pIsTargetThreadSuspended) override;
@@ -37,7 +39,7 @@ private:
     typedef NTSTATUS(__stdcall* NtQueryInformationThreadDelegate_t)(HANDLE ThreadHandle, THREADINFOCLASS ThreadInformationClass, PVOID ThreadInformation, ULONG ThreadInformationLength, PULONG ReturnLength);
 
 private:
-    ICorProfilerInfo4* const _pCorProfilerInfo;
+    ComPtr<ICorProfilerInfo4> _pCorProfilerInfo;
 
 private:
     static bool ValidatePointerInStack(DWORD64 pointerValue, DWORD64 lowStackLimit, DWORD64 highStackLimit, const char* pointerMoniker);

@@ -13,6 +13,8 @@
 #include "OsSpecificApi.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
+#include "shared/src/native-src/com_ptr.h"
+
 class ExceptionsProvider
     : public CollectorBase<RawExceptionSample>
 {
@@ -38,7 +40,7 @@ private:
     bool GetExceptionType(ClassID classId, std::string& exceptionType);
 
 private:
-    ICorProfilerInfo4* _pCorProfilerInfo;
+    ComPtr<ICorProfilerInfo4> _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
     COR_FIELD_OFFSET _messageFieldOffset;

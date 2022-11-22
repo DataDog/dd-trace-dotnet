@@ -35,12 +35,13 @@ ClrEventsParser::ClrEventsParser(
     IGCSuspensionsListener* pGCSuspensionsListener,
     IGarbageCollectionsListener* pGarbageCollectionsListener)
     :
-    _pCorProfilerInfo{pCorProfilerInfo},
+    _pCorProfilerInfo{},
     _pAllocationListener{pAllocationListener},
     _pContentionListener{pContentionListener},
     _pGCSuspensionsListener{pGCSuspensionsListener},
     _pGarbageCollectionsListener{pGarbageCollectionsListener}
 {
+    _pCorProfilerInfo.Copy(pCorProfilerInfo);
     ClearCollections();
 }
 

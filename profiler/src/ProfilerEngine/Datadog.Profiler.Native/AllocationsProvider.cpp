@@ -33,12 +33,13 @@ AllocationsProvider::AllocationsProvider(
     IConfiguration* pConfiguration)
     :
     CollectorBase<RawAllocationSample>("AllocationsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
-    _pCorProfilerInfo(pCorProfilerInfo),
+    _pCorProfilerInfo(),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval())
 {
+    _pCorProfilerInfo.Copy(pCorProfilerInfo);
 }
 
 
@@ -58,7 +59,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     ManagedThreadInfo* threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo.Get());
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
@@ -70,7 +71,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     }
 
     result->SetUnixTimeUtc(GetCurrentTimestamp());
-    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
+    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo.Get());
 
     RawAllocationSample rawSample;
     rawSample.Timestamp = result->GetUnixTimeUtc();

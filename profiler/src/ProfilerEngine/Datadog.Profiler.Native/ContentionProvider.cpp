@@ -30,12 +30,13 @@ ContentionProvider::ContentionProvider(
     IConfiguration* pConfiguration)
     :
     CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
-    _pCorProfilerInfo{pCorProfilerInfo},
+    _pCorProfilerInfo{},
     _pManagedThreadList{pManagedThreadList},
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval()),
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
     _sampleLimit{pConfiguration->ContentionSampleLimit()}
 {
+    _pCorProfilerInfo.Copy(pCorProfilerInfo);
 }
 
 void ContentionProvider::OnContention(double contentionDuration)
@@ -56,7 +57,7 @@ void ContentionProvider::OnContention(double contentionDuration)
     ManagedThreadInfo* threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo.Get());
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
@@ -68,7 +69,7 @@ void ContentionProvider::OnContention(double contentionDuration)
     }
 
     result->SetUnixTimeUtc(GetCurrentTimestamp());
-    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
+    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo.Get());
 
     RawContentionSample rawSample;
     rawSample.Timestamp = result->GetUnixTimeUtc();

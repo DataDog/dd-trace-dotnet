@@ -25,6 +25,8 @@
 #include "StopTheWorldGCProvider.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
+
+#include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
@@ -191,8 +193,8 @@ private :
     std::unique_ptr<IClrLifetime> _pClrLifetime = nullptr;
 
     std::atomic<ULONG> _refCount{0};
-    ICorProfilerInfo5* _pCorProfilerInfo = nullptr;
-    ICorProfilerInfo12* _pCorProfilerInfoEvents = nullptr;
+    ComPtr<ICorProfilerInfo5> _pCorProfilerInfo;
+    ComPtr<ICorProfilerInfo12> _pCorProfilerInfoEvents;
     std::unique_ptr<ClrEventsParser> _pClrEventsParser = nullptr;
     EVENTPIPE_SESSION _session{0};
     inline static bool _isNet46OrGreater = false;

@@ -18,7 +18,9 @@
 #include "IGarbageCollectionsListener.h"
 #include "IGCSuspensionsListener.h"
 
+#include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
+
 #include "assert.h"
 
 
@@ -196,7 +198,7 @@ private:
     }
 
 private:
-    ICorProfilerInfo12* _pCorProfilerInfo = nullptr;
+    ComPtr<ICorProfilerInfo12> _pCorProfilerInfo;
     IAllocationsListener* _pAllocationListener = nullptr;
     IContentionListener* _pContentionListener = nullptr;
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;

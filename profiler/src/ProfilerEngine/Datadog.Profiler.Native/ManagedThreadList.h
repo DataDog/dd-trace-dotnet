@@ -13,7 +13,9 @@
 // end
 
 #include "ManagedThreadInfo.h"
+#include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
+
 #include "IManagedThreadList.h"
 
 
@@ -82,7 +84,7 @@ private:
     // that corresponds to the id. If the thread is dead, it will no longer be in the table.
     std::unordered_map<std::uint32_t, ManagedThreadInfo*> _lookupByProfilerThreadInfoId;
 
-    ICorProfilerInfo4* _pCorProfilerInfo;
+    ComPtr<ICorProfilerInfo4> _pCorProfilerInfo;
 
 private:
     void UpdateIterators(uint32_t pos);

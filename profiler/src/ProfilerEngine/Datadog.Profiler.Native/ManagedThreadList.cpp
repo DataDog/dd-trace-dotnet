@@ -10,17 +10,12 @@ const std::uint32_t ManagedThreadList::MinBufferSize = 50;
 
 
 ManagedThreadList::ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo) :
-    _pCorProfilerInfo{pCorProfilerInfo}
+    _pCorProfilerInfo{}
 {
+    _pCorProfilerInfo.Copy(pCorProfilerInfo);
     _threads.reserve(MinBufferSize);
     _lookupByClrThreadId.reserve(MinBufferSize);
     _lookupByProfilerThreadInfoId.reserve(MinBufferSize);
-
-    // in case of tests, this could be null
-    if (_pCorProfilerInfo != nullptr)
-    {
-        _pCorProfilerInfo->AddRef();
-    }
 }
 
 ManagedThreadList::~ManagedThreadList()
@@ -30,13 +25,6 @@ ManagedThreadList::~ManagedThreadList()
     for (auto* pInfo: _threads)
     {
         pInfo->Release();
-    }
-
-    ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
-    if (pCorProfilerInfo != nullptr)
-    {
-        pCorProfilerInfo->Release();
-        _pCorProfilerInfo = nullptr;
     }
 }
 
@@ -332,7 +320,7 @@ bool ManagedThreadList::TryGetThreadInfo(const uint32_t profilerThreadInfoId,
 HRESULT ManagedThreadList::TryGetCurrentThreadInfo(ManagedThreadInfo** ppThreadInfo)
 {
     // in case of tests, no ICorProfilerInfo is provided
-    if (_pCorProfilerInfo == nullptr)
+    if (_pCorProfilerInfo.Get() == nullptr)
     {
         return E_FAIL;
     }

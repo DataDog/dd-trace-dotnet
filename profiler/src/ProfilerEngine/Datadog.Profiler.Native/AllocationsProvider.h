@@ -8,6 +8,8 @@
 #include "IAllocationsListener.h"
 #include "RawAllocationSample.h"
 
+#include "shared/src/native-src/com_ptr.h"
+
 class IManagedThreadList;
 class IFrameStore;
 class IThreadsCpuManager;
@@ -41,7 +43,7 @@ public:
                       uint64_t ObjectSize) override;
 
 private:
-    ICorProfilerInfo4* _pCorProfilerInfo;
+    ComPtr<ICorProfilerInfo4> _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
     GroupSampler<ClassID> _sampler;

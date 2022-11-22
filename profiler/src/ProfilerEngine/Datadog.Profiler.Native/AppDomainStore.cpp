@@ -9,8 +9,9 @@
 
 AppDomainStore::AppDomainStore(ICorProfilerInfo4* pProfilerInfo)
     :
-    _pProfilerInfo{pProfilerInfo}
+    _pProfilerInfo{}
 {
+    _pProfilerInfo.Copy(pProfilerInfo);
 }
 
 

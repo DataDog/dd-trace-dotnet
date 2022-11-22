@@ -13,6 +13,8 @@
 #include "corprof.h"
 // end
 
+#include "shared/src/native-src/com_ptr.h"
+
 #include "IMetricsSender.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -190,7 +192,7 @@ private:
 
 private:
     const char* _serviceName = "StackSamplerLoopManager";
-    ICorProfilerInfo4* _pCorProfilerInfo;
+    ComPtr<ICorProfilerInfo4> _pCorProfilerInfo;
     IConfiguration* _pConfiguration = nullptr;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;

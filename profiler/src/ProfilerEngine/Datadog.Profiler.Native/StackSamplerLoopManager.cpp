@@ -33,7 +33,7 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     ICollector<RawWallTimeSample>* pWallTimeCollector,
     ICollector<RawCpuSample>* pCpuTimeCollector
     ) :
-    _pCorProfilerInfo{pCorProfilerInfo},
+    _pCorProfilerInfo{},
     _pConfiguration{pConfiguration},
     _pStackFramesCollector{nullptr},
     _pStackSamplerLoop{nullptr},
@@ -56,8 +56,8 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _pCpuTimeCollector{pCpuTimeCollector},
     _deadlockInterventionInProgress{0}
 {
-    _pCorProfilerInfo->AddRef();
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    _pCorProfilerInfo.Copy(pCorProfilerInfo);
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo.Get());
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();
@@ -67,13 +67,6 @@ StackSamplerLoopManager::~StackSamplerLoopManager()
 {
     // Just in case it was not called explicitely
     Stop();
-
-    ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
-    if (pCorProfilerInfo != nullptr)
-    {
-        pCorProfilerInfo->Release();
-        _pCorProfilerInfo = nullptr;
-    }
 }
 
 const char* StackSamplerLoopManager::GetName()
@@ -112,7 +105,7 @@ void StackSamplerLoopManager::RunStackSampling()
         assert(_pStackFramesCollector != nullptr);
 
         stackSamplerLoop = new StackSamplerLoop(
-            _pCorProfilerInfo,
+            _pCorProfilerInfo.Get(),
             _pConfiguration,
             _pStackFramesCollector.get(),
             this,

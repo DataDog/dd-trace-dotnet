@@ -8,6 +8,8 @@
 #include "RawContentionSample.h"
 #include "GenericSampler.h"
 
+#include "shared/src/native-src/com_ptr.h"
+
 class IManagedThreadList;
 class IFrameStore;
 class IThreadsCpuManager;
@@ -34,7 +36,7 @@ public:
     void OnContention(double contentionDuration) override;
 
 private:
-    ICorProfilerInfo4* _pCorProfilerInfo;
+    ComPtr<ICorProfilerInfo4> _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     GenericSampler _sampler;
     int32_t _contentionDurationThreshold;

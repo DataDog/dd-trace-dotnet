@@ -13,9 +13,10 @@
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
 FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration) :
-    _pCorProfilerInfo{pCorProfilerInfo},
+    _pCorProfilerInfo{},
     _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()}
 {
+    _pCorProfilerInfo.Copy(pCorProfilerInfo);
 }
 
 std::tuple<bool, std::string_view, std::string_view> FrameStore::GetFrame(uintptr_t instructionPointer)
@@ -257,13 +258,13 @@ bool FrameStore::GetTypeDesc(
     bool isEncoded)
 {
     // 1. Get the assembly from the module
-    if (!GetAssemblyName(_pCorProfilerInfo, moduleId, typeDesc.Assembly))
+    if (!GetAssemblyName(_pCorProfilerInfo.Get(), moduleId, typeDesc.Assembly))
     {
         return false;
     }
 
     // 2. Look for the type name including namespace (need to take into account nested types and generic types)
-    auto [ns, ct] = GetManagedTypeName(_pCorProfilerInfo, pMetadataImport, moduleId, classId, mdTokenType, isEncoded);
+    auto [ns, ct] = GetManagedTypeName(_pCorProfilerInfo.Get(), pMetadataImport, moduleId, classId, mdTokenType, isEncoded);
     typeDesc.Namespace = ns;
     typeDesc.Type = ct;
 
@@ -388,7 +389,7 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
     builder << "{";
     for (ULONG32 i = 0; i < genericParametersCount; i++)
     {
-        auto [ns, typeName] = GetManagedTypeName(_pCorProfilerInfo, genericParameters[i]);
+        auto [ns, typeName] = GetManagedTypeName(_pCorProfilerInfo.Get(), genericParameters[i]);
 
         // deal with System.__Canon case
         if (typeName == "__Canon")

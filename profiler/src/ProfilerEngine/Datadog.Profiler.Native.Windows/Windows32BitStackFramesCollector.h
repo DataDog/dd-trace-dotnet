@@ -8,6 +8,8 @@
 #include "corprof.h"
 // end
 
+#include "shared/src/native-src/com_ptr.h"
+
 #include "StackFramesCollectorBase.h"
 
 class StackSnapshotResultReusableBuffer;
@@ -18,7 +20,7 @@ class Windows32BitStackFramesCollector : public StackFramesCollectorBase
 {
 public:
     Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo);
-    ~Windows32BitStackFramesCollector() override;
+    ~Windows32BitStackFramesCollector() override = default;
 
     void OnDeadlock() override;
 
@@ -28,7 +30,7 @@ protected:
                                                                 bool selfCollect) override;
 
 private:
-    ICorProfilerInfo4* const _pCorProfilerInfo;
+    ComPtr<ICorProfilerInfo4> _pCorProfilerInfo;
 
 private:
     friend HRESULT STDMETHODCALLTYPE StackSnapshotCallbackHandlerImpl(FunctionID funcId, UINT_PTR ip, COR_PRF_FRAME_INFO frameInfo, ULONG32 contextSize, BYTE context[], void* clientData);

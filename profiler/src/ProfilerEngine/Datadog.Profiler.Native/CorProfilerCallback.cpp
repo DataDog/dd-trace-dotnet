@@ -105,14 +105,14 @@ bool CorProfilerCallback::InitializeServices()
 {
     _metricsSender = IMetricsSenderFactory::Create();
 
-    _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo);
+    _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo.Get());
 
-    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get());
+    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo.Get(), _pConfiguration.get());
 
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
 
-    _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
+    _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo.Get());
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
@@ -145,7 +145,7 @@ bool CorProfilerCallback::InitializeServices()
         sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
         _pExceptionsProvider = RegisterService<ExceptionsProvider>(
             valuesOffset,
-            _pCorProfilerInfo,
+            _pCorProfilerInfo.Get(),
             _pManagedThreadList,
             _pFrameStore.get(),
             _pConfiguration.get(),
@@ -156,7 +156,7 @@ bool CorProfilerCallback::InitializeServices()
     }
 
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
-    if (_pCorProfilerInfoEvents != nullptr)
+    if (_pCorProfilerInfoEvents.Get() != nullptr)
     {
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
@@ -164,7 +164,7 @@ bool CorProfilerCallback::InitializeServices()
             sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
                 valuesOffset,
-                _pCorProfilerInfo,
+                _pCorProfilerInfo.Get(),
                 _pManagedThreadList,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
@@ -181,7 +181,7 @@ bool CorProfilerCallback::InitializeServices()
             sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pContentionProvider = RegisterService<ContentionProvider>(
                 valuesOffset,
-                _pCorProfilerInfo,
+                _pCorProfilerInfo.Get(),
                 _pManagedThreadList,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
@@ -223,7 +223,7 @@ bool CorProfilerCallback::InitializeServices()
 
         // TODO: add new CLR events-based providers to the event parser
         _pClrEventsParser = std::make_unique<ClrEventsParser>(
-            _pCorProfilerInfoEvents,
+            _pCorProfilerInfoEvents.Get(),
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
@@ -236,10 +236,10 @@ bool CorProfilerCallback::InitializeServices()
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
     // compute enabled profilers based on configuration and receivable CLR events
-    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr);
+    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents.Get() != nullptr);
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
-        _pCorProfilerInfo,
+        _pCorProfilerInfo.Get(),
         _pConfiguration.get(),
         _metricsSender,
         _pClrLifetime.get(),
@@ -278,7 +278,7 @@ bool CorProfilerCallback::InitializeServices()
 
     // CLR events-based providers require ICorProfilerInfo12 (stored in _pCorProfilerInfoEvents).
     // If not set, no need to even check the configuration
-    if (_pCorProfilerInfoEvents != nullptr)
+    if (_pCorProfilerInfoEvents.Get() != nullptr)
     {
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
@@ -398,25 +398,18 @@ void CorProfilerCallback::DisposeInternal(void)
         DisposeServices();
 
         // Don't forget to stop the CLR events session if any
-        auto* pInfo = _pCorProfilerInfoEvents;
-        if (pInfo != nullptr)
+        if (_pCorProfilerInfoEvents.Get() != nullptr)
         {
             if (_session != 0)
             {
-                pInfo->EventPipeStopSession(_session);
+                _pCorProfilerInfoEvents->EventPipeStopSession(_session);
                 _session = 0;
             }
 
-            pInfo->Release();
-            _pCorProfilerInfoEvents = nullptr;
+            _pCorProfilerInfoEvents.Reset();
         }
 
-        ICorProfilerInfo5* pCorProfilerInfo = _pCorProfilerInfo;
-        if (pCorProfilerInfo != nullptr)
-        {
-            pCorProfilerInfo->Release();
-            _pCorProfilerInfo = nullptr;
-        }
+        _pCorProfilerInfo.Reset();
 
         // So we are about to turn off the Native Profiler Engine.
         // We signaled that to the anyone who is interested (e.g. the TraceContextTracking library) using ProfilerEngineStatus::WriteIsProfilerEngineActive(..),
@@ -752,7 +745,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     USHORT major = 0;
     USHORT minor = 0;
     COR_PRF_RUNTIME_TYPE runtimeType;
-    CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor, runtimeType);
+    CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo.Get(), major, minor, runtimeType);
 
     // for .NET Core 2.1, 3.0 and 3.1, from https://github.com/dotnet/runtime/issues/11555#issuecomment-727037353,
     // it is needed to check ICorProfilerInfo11 for 3.1, 10 for 3.0 and 9 for 2.1 since major and minor will be 4.0
@@ -779,7 +772,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         if (FAILED(hr))
         {
             Log::Error("Failed to get ICorProfilerInfo12: 0x", std::hex, hr, std::dec, ".");
-            _pCorProfilerInfoEvents = nullptr;
+            _pCorProfilerInfoEvents.Reset();
 
             // we continue: the CLR events won't be received so no contention/memory profilers...
         }
@@ -819,7 +812,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_MONITOR_MODULE_LOADS;
     }
 
-    if (_pCorProfilerInfoEvents != nullptr)
+    if (_pCorProfilerInfoEvents.Get() != nullptr)
     {
         // listen to CLR events via ICorProfilerCallback
         DWORD highMask = COR_PRF_HIGH_MONITOR_EVENT_PIPE;
