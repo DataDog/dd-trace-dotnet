@@ -2096,6 +2096,12 @@ partial class Build
 
     private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings)
     {
+        if (Framework == TargetFramework.NET461)
+        {
+            // Coverlet apparently breaks .NET Framework when running on the .NET 7 SDK.
+            // TODO: Fix it
+            return settings;
+        }
         var strongNameKeyPath = Solution.Directory / "Datadog.Trace.snk";
 
         return settings.SetDataCollector("XPlat Code Coverage")
