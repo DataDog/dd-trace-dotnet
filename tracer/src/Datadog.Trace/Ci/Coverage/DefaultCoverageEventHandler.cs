@@ -19,8 +19,13 @@ internal sealed class DefaultCoverageEventHandler : CoverageEventHandler
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultCoverageEventHandler));
 
-    protected override object? OnSessionFinished(ModuleValue[] modules)
+    protected override void OnSessionStart(CoverageContextContainer context)
     {
+    }
+
+    protected override object? OnSessionFinished(CoverageContextContainer context)
+    {
+        var modules = context.CloseContext();
         const int HIDDEN = 0xFEEFEE;
         Dictionary<string, FileCoverage>? fileDictionary = null;
         foreach (var moduleValue in modules)

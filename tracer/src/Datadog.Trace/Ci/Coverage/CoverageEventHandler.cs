@@ -36,7 +36,9 @@ internal abstract class CoverageEventHandler
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void StartSession()
     {
-        _asyncContext.Value = new CoverageContextContainer();
+        var context = new CoverageContextContainer();
+        _asyncContext.Value = context;
+        OnSessionStart(context);
     }
 
     /// <summary>
@@ -49,7 +51,7 @@ internal abstract class CoverageEventHandler
         if (_asyncContext.Value is { } context)
         {
             _asyncContext.Value = null;
-            return OnSessionFinished(context.CloseContext());
+            return OnSessionFinished(context);
         }
 
         return null;
@@ -64,11 +66,17 @@ internal abstract class CoverageEventHandler
     }
 
     /// <summary>
+    /// Method called when a session is started
+    /// </summary>
+    /// <param name="context">Coverage context container</param>
+    protected abstract void OnSessionStart(CoverageContextContainer context);
+
+    /// <summary>
     /// Method called when a session is finished to process all coverage raw data.
     /// </summary>
-    /// <param name="modules">Coverage raw data</param>
+    /// <param name="context">Coverage context container</param>
     /// <returns>Instance of the final coverage report</returns>
-    protected abstract object? OnSessionFinished(ModuleValue[] modules);
+    protected abstract object? OnSessionFinished(CoverageContextContainer context);
 
     private void ValueChangedHandler(AsyncLocalValueChangedArgs<CoverageContextContainer?> obj)
     {

@@ -47,7 +47,6 @@ public static class CoverageReporter<TMeta>
             var container = CoverageReporter.Container;
             if (container is null)
             {
-                _cachedModuleValue = null;
                 counters = default;
                 return false;
             }
