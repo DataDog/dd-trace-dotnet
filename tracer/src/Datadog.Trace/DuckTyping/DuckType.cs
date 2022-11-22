@@ -294,6 +294,8 @@ namespace Datadog.Trace.DuckTyping
                     // Create Methods
                     CreateReverseProxyMethods(proxyTypeBuilder, typeToDeriveFrom, typeToDelegateTo, instanceField);
 
+                    AddCustomAttributes(proxyTypeBuilder, typeToDelegateTo, dryRun);
+
                     if (dryRun)
                     {
                         // Dry run
@@ -478,6 +480,47 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return instanceField;
+        }
+
+        private static void AddCustomAttributes(TypeBuilder? proxyTypeBuilder, Type targetType, bool isDryRun)
+        {
+            foreach (var customAttributeData in targetType.GetCustomAttributesData())
+            {
+                var attributeType = customAttributeData.AttributeType;
+                if (attributeType == typeof(DuckAttribute)
+                 || attributeType == typeof(DuckCopyAttribute)
+                 || attributeType == typeof(DuckFieldAttribute)
+                 || attributeType == typeof(DuckIgnoreAttribute)
+                 || attributeType == typeof(DuckIncludeAttribute)
+                 || attributeType == typeof(DuckReverseMethodAttribute))
+                {
+                    continue;
+                }
+
+                // Don't support named arguments for now
+                if (customAttributeData.NamedArguments?.Count > 0)
+                {
+                    DuckTypeCustomAttributeHasNamedArgumentsException.Throw(targetType, customAttributeData);
+                }
+
+                var args = Array.Empty<object?>();
+                if (customAttributeData.ConstructorArguments.Count > 0)
+                {
+                    args = new object[customAttributeData.ConstructorArguments.Count];
+                    for (var i = 0; i < customAttributeData.ConstructorArguments.Count; i++)
+                    {
+                        var arg = customAttributeData.ConstructorArguments[i];
+                        args[i] = arg.Value;
+                    }
+                }
+
+                var attributeBuilder = new CustomAttributeBuilder(customAttributeData.Constructor, constructorArgs: args);
+
+                if (!isDryRun)
+                {
+                    proxyTypeBuilder?.SetCustomAttribute(attributeBuilder);
+                }
+            }
         }
 
         /// <summary>
