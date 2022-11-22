@@ -478,4 +478,22 @@ namespace Datadog.Trace.DuckTyping
             throw new DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(implementationMethod, targetMethod);
         }
     }
+
+    /// <summary>
+    /// DuckType property or field not found
+    /// </summary>
+    internal class DuckTypeCustomAttributeHasNamedArgumentsException : DuckTypeException
+    {
+        private DuckTypeCustomAttributeHasNamedArgumentsException(string attributeName, string type)
+            : base($"The attribute '{attributeName}' applied to '{type}' uses named arguments. Named arguments are not supported for custom attributes.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(Type type, CustomAttributeData attributeData)
+        {
+            throw new DuckTypeCustomAttributeHasNamedArgumentsException(attributeData.AttributeType?.FullName ?? "Null", type?.FullName ?? type?.Name ?? "NULL");
+        }
+    }
 }
