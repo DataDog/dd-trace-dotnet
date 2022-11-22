@@ -55,6 +55,7 @@ namespace Datadog.Trace.AppSec.Waf
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
             InitializationResult initializationResult;
+
             if (!string.IsNullOrEmpty(rulesJson))
             {
                 initializationResult = wafConfigurator.ConfigureFromRemoteConfig(rulesJson, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
