@@ -143,7 +143,7 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
             // iterators might need to be updated
             UpdateIterators(pos);
 
-            // NOTE: make a copy so the caller can do additional operation before releasing
+            // NOTE: move the instance so the caller can do additional operation before releasing
             pThreadInfo = std::move(pInfo);
 
             return true;
