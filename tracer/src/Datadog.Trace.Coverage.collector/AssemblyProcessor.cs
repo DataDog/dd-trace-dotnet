@@ -47,6 +47,7 @@ namespace Datadog.Trace.Coverage.Collector
         private readonly ICollectorLogger _logger;
         private readonly string _tracerHome;
         private readonly string _assemblyFilePath;
+        private readonly bool _enableCallCount;
 
         private byte[]? _strongNameKeyBlob;
 
@@ -56,6 +57,7 @@ namespace Datadog.Trace.Coverage.Collector
             _logger = logger ?? new ConsoleCollectorLogger();
             _ciVisibilitySettings = ciVisibilitySettings;
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
+            _enableCallCount = false; // Current code coverage version only requires to know if a line was executed (not the actual call count).
 
             if (!File.Exists(_assemblyFilePath))
             {
@@ -438,13 +440,25 @@ namespace Datadog.Trace.Coverage.Collector
                                 currentInstruction.OpCode = OpCodes.Ldloc;
                                 currentInstruction.Operand = countersVariable;
                                 instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, i));
-                                instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
-                                instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Dup));
-                                instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldind_I4));
-                                instructions.Insert(currentInstructionIndex + 5, Instruction.Create(OpCodes.Ldc_I4_1));
-                                instructions.Insert(currentInstructionIndex + 6, Instruction.Create(OpCodes.Add));
-                                instructions.Insert(currentInstructionIndex + 7, Instruction.Create(OpCodes.Stind_I4));
-                                instructions.Insert(currentInstructionIndex + 8, currentInstructionClone);
+
+                                if (_enableCallCount)
+                                {
+                                    // Increments items in the counters array (to have the number of times a line was executed)
+                                    instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
+                                    instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Dup));
+                                    instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldind_I4));
+                                    instructions.Insert(currentInstructionIndex + 5, Instruction.Create(OpCodes.Ldc_I4_1));
+                                    instructions.Insert(currentInstructionIndex + 6, Instruction.Create(OpCodes.Add));
+                                    instructions.Insert(currentInstructionIndex + 7, Instruction.Create(OpCodes.Stind_I4));
+                                    instructions.Insert(currentInstructionIndex + 8, currentInstructionClone);
+                                }
+                                else
+                                {
+                                    // Set the items to 1 in the counters array (to check if the line was touched)
+                                    instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldc_I4, 1));
+                                    instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Stelem_I4));
+                                    instructions.Insert(currentInstructionIndex + 4, currentInstructionClone);
+                                }
                             }
 
                             isDirty = true;
