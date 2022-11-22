@@ -40,6 +40,7 @@ namespace Datadog.Trace.Ci.Configuration
             // Code coverage
             CodeCoverageEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage);
             CodeCoverageSnkFilePath = source?.GetString(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile);
+            CodeCoverageMode = source?.GetString(ConfigurationKeys.CIVisibility.CodeCoverageMode);
 
             // Git upload
             GitUploadEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.GitUploadEnabled) ?? false;
@@ -107,6 +108,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the snk filepath to re-signing assemblies after the code coverage modification.
         /// </summary>
         public string? CodeCoverageSnkFilePath { get; }
+
+        /// <summary>
+        /// Gets the Code Coverage Mode.
+        /// </summary>
+        public string? CodeCoverageMode { get; }
 
         /// <summary>
         /// Gets a value indicating whether the Git Upload metadata is going to be used.

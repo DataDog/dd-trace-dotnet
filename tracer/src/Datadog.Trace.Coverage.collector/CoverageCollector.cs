@@ -115,6 +115,12 @@ namespace Datadog.Trace.Coverage.Collector
             var processedDirectories = new HashSet<string>();
             var numAssemblies = 0;
             var tracerAssemblyName = typeof(Tracer).Assembly.GetName().Name;
+            var coverageMode = CoverageMode.LineExecution;
+            if (_ciVisibilitySettings?.CodeCoverageMode is { } strCoverageMode &&
+                Enum.TryParse<CoverageMode>(strCoverageMode, true, out var parsedCoverageMode))
+            {
+                coverageMode = parsedCoverageMode;
+            }
 
             // Process assemblies in parallel.
             Parallel.ForEach(
@@ -136,7 +142,7 @@ namespace Datadog.Trace.Coverage.Collector
                         {
                             try
                             {
-                                var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
+                                var asmProcessor = new AssemblyProcessor(file, _tracerHome, coverageMode, _logger, _ciVisibilitySettings);
                                 asmProcessor.Process();
 
                                 lock (processedDirectories)

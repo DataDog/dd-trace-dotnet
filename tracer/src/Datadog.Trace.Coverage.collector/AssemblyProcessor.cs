@@ -47,17 +47,17 @@ namespace Datadog.Trace.Coverage.Collector
         private readonly ICollectorLogger _logger;
         private readonly string _tracerHome;
         private readonly string _assemblyFilePath;
-        private readonly bool _enableCallCount;
+        private readonly CoverageMode _coverageMode;
 
         private byte[]? _strongNameKeyBlob;
 
-        public AssemblyProcessor(string filePath, string tracerHome, ICollectorLogger? logger = null, CIVisibilitySettings? ciVisibilitySettings = null)
+        public AssemblyProcessor(string filePath, string tracerHome, CoverageMode coverageMode, ICollectorLogger? logger = null, CIVisibilitySettings? ciVisibilitySettings = null)
         {
             _tracerHome = tracerHome;
             _logger = logger ?? new ConsoleCollectorLogger();
             _ciVisibilitySettings = ciVisibilitySettings;
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
-            _enableCallCount = false; // Current code coverage version only requires to know if a line was executed (not the actual call count).
+            _coverageMode = coverageMode;
 
             if (!File.Exists(_assemblyFilePath))
             {
@@ -441,23 +441,26 @@ namespace Datadog.Trace.Coverage.Collector
                                 currentInstruction.Operand = countersVariable;
                                 instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, i));
 
-                                if (_enableCallCount)
+                                switch (_coverageMode)
                                 {
-                                    // Increments items in the counters array (to have the number of times a line was executed)
-                                    instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
-                                    instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Dup));
-                                    instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldind_I4));
-                                    instructions.Insert(currentInstructionIndex + 5, Instruction.Create(OpCodes.Ldc_I4_1));
-                                    instructions.Insert(currentInstructionIndex + 6, Instruction.Create(OpCodes.Add));
-                                    instructions.Insert(currentInstructionIndex + 7, Instruction.Create(OpCodes.Stind_I4));
-                                    instructions.Insert(currentInstructionIndex + 8, currentInstructionClone);
-                                }
-                                else
-                                {
-                                    // Set the items to 1 in the counters array (to check if the line was touched)
-                                    instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldc_I4, 1));
-                                    instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Stelem_I4));
-                                    instructions.Insert(currentInstructionIndex + 4, currentInstructionClone);
+                                    case CoverageMode.LineCallCount:
+                                        // Increments items in the counters array (to have the number of times a line was executed)
+                                        instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
+                                        instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Dup));
+                                        instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldind_I4));
+                                        instructions.Insert(currentInstructionIndex + 5, Instruction.Create(OpCodes.Ldc_I4_1));
+                                        instructions.Insert(currentInstructionIndex + 6, Instruction.Create(OpCodes.Add));
+                                        instructions.Insert(currentInstructionIndex + 7, Instruction.Create(OpCodes.Stind_I4));
+                                        instructions.Insert(currentInstructionIndex + 8, currentInstructionClone);
+                                        break;
+                                    case CoverageMode.LineExecution:
+                                        // Set the items to 1 in the counters array (to check if the line was touched)
+                                        instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldc_I4, 1));
+                                        instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Stelem_I4));
+                                        instructions.Insert(currentInstructionIndex + 4, currentInstructionClone);
+                                        break;
+                                    default:
+                                        throw new Exception("Coverage mode not supported.");
                                 }
                             }
 
