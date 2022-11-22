@@ -104,7 +104,6 @@ public:
     static const std::string GarbageCollectionReasonLabel;
     static const std::string GarbageCollectionTypeLabel;
     static const std::string GarbageCollectionCompactingLabel;
-    static const std::string ObjectAllocationTimeLabel;
 
 private:
     uint64_t _timestamp;

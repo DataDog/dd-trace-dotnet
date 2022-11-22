@@ -550,7 +550,7 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
     if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&tstVerProfilerInfo))
     {
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo13 available. Profiling API compatibility: .NET Core 7.0 or later.");  // could be 6 too
+        Log::Info("ICorProfilerInfo13 available. Profiling API compatibility: .NET Core 7.0 or later.");
         tstVerProfilerInfo->Release();
     }
     else

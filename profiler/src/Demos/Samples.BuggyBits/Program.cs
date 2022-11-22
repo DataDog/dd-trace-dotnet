@@ -22,7 +22,7 @@ namespace BuggyBits
         Parallel,           // using parallel code
         Async,              // using async code
         FormatExceptions,   // generating FormatExceptions for prices
-        MemoryLeak          // keep a controller in memory due to instance callback passed to a cache
+        MemoryLeak // keep a controller in memory due to instance callback passed to a cache
     }
 
     public class Program

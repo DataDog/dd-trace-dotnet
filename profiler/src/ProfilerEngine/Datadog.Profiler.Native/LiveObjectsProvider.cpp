@@ -162,7 +162,6 @@ void LiveObjectsProvider::CloseWeakHandle(ObjectHandleID handle) const
         return;
     }
 
-    // TODO: use ICorProfilerInfo13::DestroyHandle(handle) to delete the handle
     _pCorProfilerInfo->DestroyHandle(handle);
 }
 
