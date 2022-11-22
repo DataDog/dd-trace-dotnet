@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -17,7 +17,7 @@
       http.route: health/params/{id},
       http.status_code: 200,
       http.url: http://localhost:00000/health/params/appscan_fingerprint,
-      http.useragent: MyAllowedScanner,
+      http.useragent: Mistake Not... MyAllowedScanner,
       language: dotnet,
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
