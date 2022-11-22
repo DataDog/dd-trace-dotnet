@@ -926,7 +926,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [tracer, security]
+      jobs: [tracer]
 
   - job: tracer
     timeoutInMinutes: 60 #default value
@@ -972,6 +972,17 @@ stages:
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
+
+- stage: integration_tests_windows_iis_security
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [security]
 
   - job: security
     timeoutInMinutes: 60 #default value
@@ -2776,6 +2787,7 @@ stages:
   dependsOn: 
     - integration_tests_windows
     - integration_tests_windows_iis
+    - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
@@ -3772,6 +3784,7 @@ stages:
     - unit_tests_arm64
     - integration_tests_windows
     - integration_tests_windows_iis
+    - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
