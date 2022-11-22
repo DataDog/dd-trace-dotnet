@@ -251,16 +251,39 @@ partial class Build
         .After(CreateRequiredDirectories)
         .Executes(() =>
         {
-            // Always AnyCPU
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
-                .SetTargetPlatformAnyCPU()
-                .SetConfiguration(BuildConfiguration)
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
-                .SetTargets("BuildCsharpSrc")
-            );
-        });
+            var sln = "Datadog.Trace.Build";
+            var slnPath = RootDirectory / $"{sln}.sln";
+            try
+            {
+                DeleteFile(slnPath);
+                DotNet($"new sln -n {sln} -o \"{RootDirectory}\"");
 
+                SourceDirectory.GlobFiles("**/*.csproj")
+                    .Where(x => Path.GetFileNameWithoutExtension(x) != "Datadog.Trace.Bundle"
+                            && Path.GetFileNameWithoutExtension(x) != "Datadog.Trace.Tools.Runner")
+                    .ForEach(path => DotNet($"sln \"{slnPath}\" add \"{path}\""));
+
+                TestsDirectory.GlobFiles("*/*.IntegrationTests.csproj")
+                    .Concat(TestsDirectory.GlobFiles("**/Datadog.Trace.TestHelpers*.csproj"))
+                    .Concat(TestsDirectory.GlobFiles("**/regression/*.IntegrationTests.csproj"))
+                    .Concat(TestsDirectory.GlobFiles("**/Samples.AspNetCoreRazorPages.csproj"))
+                    .Concat(TestsDirectory.GlobFiles("test-applications/debugger/**/*.csproj"))
+                    .Where(x => !Path.GetFileNameWithoutExtension(x).StartsWith("Datadog.Trace.Tools.Runner"))
+                    .ForEach(path => DotNet($"sln \"{slnPath}\" add \"{path}\""));
+
+                DotNetBuild(x => x
+                    .SetProjectFile(slnPath)
+                    .SetConfiguration(BuildConfiguration)
+                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
+                );
+            }
+            finally
+            {
+                DeleteFile(slnPath);
+            }
+        });
 
     Target CompileNativeTestsWindows => _ => _
         .Unlisted()
@@ -579,7 +602,6 @@ partial class Build
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
         .After(CompileManagedSrc)
-        .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
         .After(BuildRunnerTool)
         .Executes(() =>
@@ -736,38 +758,20 @@ partial class Build
                 workingDirectory / versionedName);
         });
 
-
-    Target CompileInstrumentationVerificationLibrary => _ => _
-        .Unlisted()
-        .After(CompileManagedSrc)
-        .Executes(() =>
-        {
-            var projects = GlobFiles(SourceDirectory / "**" / "Datadog.InstrumentedAssembly*.csproj");
-            DotNetBuild(config => config
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                .EnableNoDependencies()
-                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .CombineWith(projects, (x, project) => x
-                    .SetProjectFile(project)));
-        });
-
     Target CompileManagedTestHelpers => _ => _
         .Unlisted()
-        .DependsOn(CompileInstrumentationVerificationLibrary)
         .After(CompileManagedSrc)
         .Executes(() =>
         {
-            var projects = GlobFiles(TestsDirectory / "**" / "*.TestHelpers*.csproj");
-            DotNetBuild(config => config
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                .EnableNoDependencies()
-                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .CombineWith(projects, (x, project) => x
-                    .SetProjectFile(project)));
+            // var projects = GlobFiles(TestsDirectory / "**" / "*.TestHelpers*.csproj");
+            // DotNetBuild(config => config
+            //     .SetConfiguration(BuildConfiguration)
+            //     .SetTargetPlatformAnyCPU()
+            //     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+            //     .EnableNoDependencies()
+            //     .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+            //     .CombineWith(projects, (x, project) => x
+            //         .SetProjectFile(project)));
         });
 
     Target CompileManagedUnitTests => _ => _
@@ -858,14 +862,14 @@ partial class Build
 
     Target CompileDependencyLibs => _ => _
         .Unlisted()
-        .After(CompileManagedSrc)
+        .After(CompileManagedSrc, CreatePlatformlessSymlinks)
         .Executes(() =>
         {
             // Always AnyCPU
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
+                .SetTargetPlatform(TargetPlatform)
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                 .EnableNoDependencies()
                 .SetTargets("BuildDependencyLibs")
@@ -981,18 +985,43 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
-            DotNetMSBuild(s => s
-                .SetTargetPath(MsBuildProject)
-                .SetProperty("TargetFramework", Framework.ToString())
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
-                .EnableNoDependencies()
-                .SetConfiguration(BuildConfiguration)
-                // Including this apparently breaks the integration tests when running against with the .NET 7 SDK
-                // as dotnet test doesn't look in the right folder. No, I don't understand it either
-                // .SetTargetPlatform(TargetPlatform)
-                .SetTargetPlatformAnyCPU()
-                .SetTargets("BuildCsharpIntegrationTests")
-                .SetMaxCpuCount(null));
+
+            var sln = "Datadog.Trace.Build";
+            var slnPath = RootDirectory / $"{sln}.sln";
+            try
+            {
+                DeleteFile(slnPath);
+                DotNet($"new sln -n {sln} -o \"{RootDirectory}\"");
+
+                var testProjects = TestsDirectory.GlobFiles("**/*.IntegrationTests.csproj")
+                    .Concat(TestsDirectory.GlobFiles("**/regression/*.IntegrationTests.csproj"))
+                    .Concat(TestsDirectory.GlobFiles("**/Samples.AspNetCoreRazorPages.csproj"))
+                    .Concat(TestsDirectory.GlobFiles("test-applications/debugger/**/*.csproj"));
+
+                // this is pretty horrible, but here we are
+                foreach(var path in testProjects)
+                {
+                    if(Framework == TargetFramework.NET461 
+                        && (Path.GetFileNameWithoutExtension(path) == "Samples.AspNetCoreRazorPages" 
+                            || Path.GetFileNameWithoutExtension(path) == "Datadog.Trace.Tools.Runner.IntegrationTests"))
+                    {
+                        continue;
+                    }
+                    DotNet($"sln \"{slnPath}\" add \"{path}\"");
+                }
+
+                DotNetBuild(x => x
+                    .SetProjectFile(slnPath)
+                    .SetConfiguration(BuildConfiguration)
+                    .EnableNoDependencies()
+                    .SetProperty("TargetFramework", Framework.ToString())
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
+                );
+            }
+            finally
+            {
+                // DeleteFile(slnPath);
+            }
         });
 
     Target CompileSamplesWindows => _ => _
@@ -1516,19 +1545,19 @@ partial class Build
         .Executes(() =>
         {
             // Build the actual integration test projects for Any CPU
-            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
-            DotNetBuild(x => x
-                    .EnableNoDependencies()
-                    .SetConfiguration(BuildConfiguration)
-                    .SetFramework(Framework)
-                    // .SetTargetPlatform(Platform)
-                    .SetNoWarnDotNetCore3()
-                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackageDirectory(NugetPackageDirectory))
-                    .CombineWith(integrationTestProjects, (c, project) => c
-                        .SetProjectFile(project)));
+            // var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
+            // DotNetBuild(x => x
+            //         .EnableNoDependencies()
+            //         .SetConfiguration(BuildConfiguration)
+            //         .SetFramework(Framework)
+            //         // .SetTargetPlatform(Platform)
+            //         .SetNoWarnDotNetCore3()
+            //         .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+            //         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+            //         .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+            //             o.SetPackageDirectory(NugetPackageDirectory))
+            //         .CombineWith(integrationTestProjects, (c, project) => c
+            //             .SetProjectFile(project)));
 
             IntegrationTestLinuxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
             IntegrationTestLinuxProfilerDirFudge(Projects.AppSecIntegrationTests);

@@ -194,10 +194,8 @@ partial class Build : NukeBuild
         .Requires(() => IsWin)
         .Description("Builds the integration tests for Windows")
         .DependsOn(CompileDependencyLibs)
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileSamplesWindows)
-        .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAspNetIntegrationTests => _ => _
@@ -205,21 +203,17 @@ partial class Build : NukeBuild
         .Requires(() => IsWin)
         .Description("Builds the ASP.NET integration tests for Windows")
         .DependsOn(CompileDependencyLibs)
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
-        .DependsOn(PublishIisSamples)
-        .DependsOn(CompileIntegrationTests);
+        .DependsOn(PublishIisSamples);
 
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the regression tests for Windows")
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileRegressionSamples)
-        .DependsOn(CompileFrameworkReproductions)
-        .DependsOn(CompileIntegrationTests);
+        .DependsOn(CompileFrameworkReproductions);
 
     Target BuildAndRunWindowsIntegrationTests => _ => _
         .Requires(() => IsWin)
@@ -236,11 +230,9 @@ partial class Build : NukeBuild
     Target BuildAndRunWindowsAzureFunctionsTests => _ => _
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows Azure Functions tests")
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileAzureFunctionsSamplesWindows)
         .DependsOn(BuildRunnerTool)
-        .DependsOn(CompileIntegrationTests)
         .DependsOn(RunWindowsAzureFunctionsTests);
 
     Target BuildLinuxIntegrationTests => _ => _
@@ -248,7 +240,6 @@ partial class Build : NukeBuild
         .Description("Builds the linux integration tests")
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileRegressionDependencyLibs)
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileSamplesLinux)
         .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxIntegrationTests)

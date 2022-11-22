@@ -357,5 +357,8 @@ shared/src/Datadog.Trace.ClrProfiler.Native/cmake-build-debug/
 #profiler build files
 profiler/_build/
 
+# temporary nuke build solution
+Datadog.Trace.Build.sln
+
 .ionide/
 /devenv.bat

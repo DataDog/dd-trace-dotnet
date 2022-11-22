@@ -5,7 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj;src/Datadog.Trace.Tools.Runner/*.csproj;src\**\Datadog.InstrumentedAssembly*.csproj" />
     <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj" />
     <CsharpIntegrationTestProject Remove="test\Datadog.Trace.Tools.Runner.IntegrationTests\Datadog.Trace.Tools.Runner.IntegrationTests.csproj" Condition="$(TargetFramework.StartsWith('net4'))" />
     <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
@@ -24,17 +23,6 @@
   <ItemGroup>
     <FrameworkReproduction Include="test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
   </ItemGroup>
-
-  <!--  Used by CompileManagedSrc-->
-  <Target Name="BuildCsharpSrc">
-    <MSBuild Targets="Restore" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-
-    <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
 
   <!-- Used by CompileIntegrationTests-->
   <Target Name="BuildCsharpIntegrationTests">
@@ -75,6 +63,10 @@
 
   <!--  Used by CompileRegressionDependencyLibs-->
   <Target Name="BuildRegressionDependencyLibs">
+    <MSBuild Targets="Restore" Projects="@(RegressionSampleLibProject)" Properties="Platform=AnyCPU">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+
     <MSBuild Targets="Build" Projects="@(RegressionSampleLibProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
