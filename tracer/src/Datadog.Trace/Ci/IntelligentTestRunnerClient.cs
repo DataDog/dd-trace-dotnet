@@ -415,7 +415,7 @@ internal class IntelligentTestRunnerClient
         async Task<string[]> InternalSearchCommitAsync(byte[] state, bool finalTry)
         {
             var request = _apiRequestFactory.Create(_searchCommitsUrl);
-            SetRequestHeader(request, useApplicationHeader: true);
+            SetRequestHeader(request, useApplicationHeader: false);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -651,7 +651,7 @@ internal class IntelligentTestRunnerClient
         {
             T response = default!;
             ExceptionDispatchInfo? exceptionDispatchInfo = null;
-            bool isFinalTry = retryCount >= numOfRetries;
+            var isFinalTry = retryCount >= numOfRetries;
 
             try
             {
@@ -667,7 +667,7 @@ internal class IntelligentTestRunnerClient
             {
                 var sourceException = exceptionDispatchInfo.SourceException;
 
-                if (isFinalTry)
+                if (isFinalTry || sourceException is RateLimitException { DelayTimeInSeconds: null })
                 {
                     // stop retrying
                     Log.Error<int>(sourceException, "An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
@@ -690,19 +690,13 @@ internal class IntelligentTestRunnerClient
 
                 if (isSocketException)
                 {
-                    Log.Debug(exceptionDispatchInfo.SourceException, "Unable to communicate with the server");
+                    Log.Debug(sourceException, "Unable to communicate with the server");
                 }
 
-                if (sourceException is RateLimitException rlException)
+                if (sourceException is RateLimitException { DelayTimeInSeconds: { } delayTimeInSeconds })
                 {
-                    if (rlException?.DelayTimeInSeconds is { } delayTimeInSeconds)
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(delayTimeInSeconds)).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        exceptionDispatchInfo.Throw();
-                    }
+                    // Execute rate limit retry delay
+                    await Task.Delay(TimeSpan.FromSeconds(delayTimeInSeconds)).ConfigureAwait(false);
                 }
                 else
                 {
