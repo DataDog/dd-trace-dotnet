@@ -4,8 +4,6 @@
 // </copyright>
 #nullable enable
 
-using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -17,12 +15,10 @@ namespace Datadog.Trace.Ci.Coverage;
 internal abstract class CoverageEventHandler
 {
     private readonly AsyncLocal<CoverageContextContainer?> _asyncContext;
-    private readonly List<Action> _coverageContextContainerChangeActions;
 
     protected CoverageEventHandler()
     {
-        _coverageContextContainerChangeActions = new();
-        _asyncContext = new(ValueChangedHandler);
+        _asyncContext = new(obj => CoverageReporter.FireContextContainerChangeAction(obj.CurrentValue));
     }
 
     /// <summary>
@@ -57,14 +53,6 @@ internal abstract class CoverageEventHandler
         return null;
     }
 
-    internal void AddContextContainerChangeAction(Action action)
-    {
-        lock (_coverageContextContainerChangeActions)
-        {
-            _coverageContextContainerChangeActions.Add(action);
-        }
-    }
-
     /// <summary>
     /// Method called when a session is started
     /// </summary>
@@ -77,15 +65,4 @@ internal abstract class CoverageEventHandler
     /// <param name="context">Coverage context container</param>
     /// <returns>Instance of the final coverage report</returns>
     protected abstract object? OnSessionFinished(CoverageContextContainer context);
-
-    private void ValueChangedHandler(AsyncLocalValueChangedArgs<CoverageContextContainer?> obj)
-    {
-        lock (_coverageContextContainerChangeActions)
-        {
-            foreach (var action in _coverageContextContainerChangeActions)
-            {
-                action();
-            }
-        }
-    }
 }

@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
 #pragma warning disable SA1649 // File name must match first type name
 
@@ -23,13 +24,19 @@ public static class CoverageReporter<TMeta>
 {
     private static readonly TMeta Metadata;
     private static readonly Module Module;
+    private static CoverageContextContainer? _currentCoverageContextContainer;
     private static ModuleValue? _cachedModuleValue;
 
     static CoverageReporter()
     {
         Metadata = new TMeta();
         Module = typeof(TMeta).Module;
-        CoverageReporter.Handler.AddContextContainerChangeAction(() => _cachedModuleValue = null);
+        _currentCoverageContextContainer = CoverageReporter.Container;
+        CoverageReporter.AddContextContainerChangeAction(ctx =>
+        {
+            Volatile.Write(ref _cachedModuleValue, null);
+            Volatile.Write(ref _currentCoverageContextContainer, ctx);
+        });
     }
 
     /// <summary>
@@ -44,7 +51,7 @@ public static class CoverageReporter<TMeta>
         var module = _cachedModuleValue;
         if (module is null)
         {
-            var container = CoverageReporter.Container;
+            var container = Volatile.Read(ref _currentCoverageContextContainer);
             if (container is null)
             {
                 counters = default;
