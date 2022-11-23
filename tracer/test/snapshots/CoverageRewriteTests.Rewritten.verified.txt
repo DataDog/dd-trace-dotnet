@@ -63,6 +63,7 @@ namespace CoverageRewriterAssembly
 				Console.WriteLine(MyProperty);
 				return;
 			}
+			_ = counters[10];
 			counters[0]++;
 			counters[1]++;
 			Console.WriteLine("Main Method");
