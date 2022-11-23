@@ -258,11 +258,6 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
             return COR_E_INVALIDPROGRAM;
         }
 
-        if (opcode < 0)
-        {
-            return COR_E_INVALIDPROGRAM;
-        }
-
         BYTE flags = s_OpCodeFlags[opcode];
 
         int size = (flags & OPCODEFLAGS_SizeMask);

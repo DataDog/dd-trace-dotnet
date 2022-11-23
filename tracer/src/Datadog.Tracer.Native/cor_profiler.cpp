@@ -1105,10 +1105,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         const auto appDomainId = moduleInfo.assembly.app_domain_id;
 
         // remove appdomain id from managed_profiler_loaded_app_domains set
-        if (managed_profiler_loaded_app_domains.find(appDomainId) != managed_profiler_loaded_app_domains.end())
-        {
-            managed_profiler_loaded_app_domains.erase(appDomainId);
-        }
+        managed_profiler_loaded_app_domains.erase(appDomainId);
     }
 
     return S_OK;
