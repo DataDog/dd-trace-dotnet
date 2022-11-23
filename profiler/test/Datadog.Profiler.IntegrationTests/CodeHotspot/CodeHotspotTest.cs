@@ -32,10 +32,15 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         }
 
         [TestAppFact("Samples.BuggyBits")]
-        public void CheckSpanContextAreAttached(string appName, string framework, string appAssembly)
+        public void CheckTraceContextAreAttachedForWalltimeProfilerHumberOfThreads(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 6 --with-idle-threads 1000");
             // By default, the codehotspot feature is activated
+
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            // reduce the sampling rate to ensure that if the optimization is not present we will miss trace context
+            runner.Environment.SetVariable("DD_INTERNAL_PROFILING_SAMPLING_RATE", "100");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -68,8 +73,101 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             Assert.Equal(profilerRuntimeId, tracerRuntimeId);
 
-            var profileTracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
-            Assert.NotEmpty(profileTracingContexts);
+            // Ensure that all pprof files have tracing context
+            foreach (var file in Directory.EnumerateFiles(runner.Environment.PprofDir, "*.pprof", SearchOption.AllDirectories))
+            {
+                Assert.NotEmpty(ExtractTracingContext(file));
+            }
+        }
+
+        [TestAppFact("Samples.BuggyBits")]
+        public void CheckSpanContextAreAttachedForWalltimeProfiler(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 6");
+            // By default, the codehotspot feature is activated
+
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            var profilerRuntimeIds = new List<string>();
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                profilerRuntimeIds.Add(ExtractRuntimeIdFromProfilerRequest(ctx.Value.Request));
+            };
+
+            var tracerRuntimeIds = new List<string>();
+            agent.TracerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                tracerRuntimeIds.AddRange(ExtractRuntimeIdsFromTracerRequest(ctx.Value.Request));
+            };
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            Assert.Single(profilerRuntimeIds.Distinct());
+            Assert.Single(tracerRuntimeIds.Distinct());
+
+            var profilerRuntimeId = profilerRuntimeIds.First();
+            Assert.NotNull(profilerRuntimeId);
+            Assert.NotEmpty(profilerRuntimeId);
+
+            var tracerRuntimeId = tracerRuntimeIds.First();
+            Assert.NotNull(tracerRuntimeId);
+            Assert.NotEmpty(tracerRuntimeId);
+
+            Assert.Equal(profilerRuntimeId, tracerRuntimeId);
+
+            foreach (var file in Directory.EnumerateFiles(runner.Environment.PprofDir, "*.pprof", SearchOption.AllDirectories))
+            {
+                Assert.NotEmpty(ExtractTracingContext(file));
+            }
+        }
+
+        [TestAppFact("Samples.BuggyBits")]
+        public void CheckSpanContextAreAttachedForCpuProfiler(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 6");
+            // By default, the codehotspot feature is activated
+
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            var profilerRuntimeIds = new List<string>();
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                profilerRuntimeIds.Add(ExtractRuntimeIdFromProfilerRequest(ctx.Value.Request));
+            };
+
+            var tracerRuntimeIds = new List<string>();
+            agent.TracerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                tracerRuntimeIds.AddRange(ExtractRuntimeIdsFromTracerRequest(ctx.Value.Request));
+            };
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            Assert.Single(profilerRuntimeIds.Distinct());
+            Assert.Single(tracerRuntimeIds.Distinct());
+
+            var profilerRuntimeId = profilerRuntimeIds.First();
+            Assert.NotNull(profilerRuntimeId);
+            Assert.NotEmpty(profilerRuntimeId);
+
+            var tracerRuntimeId = tracerRuntimeIds.First();
+            Assert.NotNull(tracerRuntimeId);
+            Assert.NotEmpty(tracerRuntimeId);
+
+            Assert.Equal(profilerRuntimeId, tracerRuntimeId);
+
+            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            Assert.NotEmpty(tracingContexts);
 
             // In the first versions of this test, we extracted span ids from Tracer requests and ensured that the ones collected by the
             // profiler was a subset. But this makes the test flacky: not flushed when the application is closing.

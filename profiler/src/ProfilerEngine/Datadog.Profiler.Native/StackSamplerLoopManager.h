@@ -74,6 +74,7 @@ public:
         IClrLifetime const* clrLifetime,
         IThreadsCpuManager* pThreadsCpuManager,
         IManagedThreadList* pManagedThreadList,
+        IManagedThreadList* pCodeHotspotThreadList,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
         ICollector<RawCpuSample>* pCpuTimeCollector
         );
@@ -194,6 +195,7 @@ private:
     IConfiguration* _pConfiguration = nullptr;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
+    IManagedThreadList* _pCodeHotspotThreadList = nullptr;
     ICollector<RawWallTimeSample>* _pWallTimeCollector = nullptr;
     ICollector<RawCpuSample>* _pCpuTimeCollector = nullptr;
 

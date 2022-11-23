@@ -373,3 +373,24 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::FindByClrId(ThreadID clrTh
         return elem->second;
     }
 }
+
+bool ManagedThreadList::RegisterThread(ManagedThreadInfo* pThreadInfo)
+{
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+    pThreadInfo->AddRef();
+
+    auto it = _lookupByClrThreadId.find(pThreadInfo->GetClrThreadId());
+    if (it == _lookupByClrThreadId.cend())
+    {
+        // not registered yet
+
+        _threads.push_back(pThreadInfo);
+        _lookupByClrThreadId[pThreadInfo->GetClrThreadId()] = pThreadInfo;
+        _lookupByProfilerThreadInfoId[pThreadInfo->GetProfilerThreadInfoId()] = pThreadInfo;
+
+        return true;
+    }
+
+    pThreadInfo->Release();
+    return false;
+}

@@ -50,6 +50,7 @@ public:
         StackSamplerLoopManager* pManager,
         IThreadsCpuManager* pThreadsCpuManager,
         IManagedThreadList* pManagedThreadList,
+        IManagedThreadList* pCodeHotspotThreadList,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
         ICollector<RawCpuSample>* pCpuTimeCollector
         );
@@ -67,6 +68,7 @@ private:
     IConfiguration* _pConfiguration;
     IThreadsCpuManager* _pThreadsCpuManager;
     IManagedThreadList* _pManagedThreadList;
+    IManagedThreadList* _pCodeHotspotThreadList;
     ICollector<RawWallTimeSample>* _pWallTimeCollector;
     ICollector<RawCpuSample>* _pCpuTimeCollector;
 
@@ -76,6 +78,7 @@ private:
     std::shared_ptr<ManagedThreadInfo> _targetThread;
     uint32_t _iteratorWallTime;
     uint32_t _iteratorCpuTime;
+    uint32_t _iteratorCodeHotspot;
     int32_t _walltimeThreadsThreshold;
     int32_t _cpuThreadsThreshold;
 
@@ -88,11 +91,12 @@ private:
     std::chrono::nanoseconds _samplingPeriod;
 
 private:
-    void MainLoop(void);
-    void WaitOnePeriod(void);
-    void MainLoopIteration(void);
-    void CpuProfilingIteration(void);
-    void WalltimeProfilingIteration(void);
+    void MainLoop();
+    void WaitOnePeriod();
+    void MainLoopIteration();
+    void CpuProfilingIteration();
+    void WalltimeProfilingIteration();
+    void CodeHotspotIteration();
     void CollectOneThreadStackSample(std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
                                      int64_t thisSampleTimestampNanosecs,
                                      int64_t duration,

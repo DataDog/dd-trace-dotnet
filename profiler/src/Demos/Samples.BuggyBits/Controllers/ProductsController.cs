@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using BuggyBits.Models;
 using Microsoft.AspNetCore.Http;
@@ -186,6 +187,20 @@ namespace BuggyBits.Controllers
 
             ViewData["ElapsedTimeInMs"] = sw.ElapsedMilliseconds;
             ViewData["ProductsTable"] = productsTable;
+            return View("Index");
+        }
+
+        // GET: Products on sale
+        [Route("Products/MyRequest")]
+        public IActionResult MyRequest()
+        {
+            var sw = new Stopwatch();
+            sw.Start();
+            Thread.Sleep(TimeSpan.FromMilliseconds(20));
+            sw.Stop();
+
+            ViewData["ElapsedTimeInMs"] = sw.ElapsedMilliseconds;
+            ViewData["ProductsTable"] = "hello boy";
             return View("Index");
         }
     }
