@@ -783,17 +783,17 @@ jobs:
 
       - name: Run CppCheck
         run: |
-          cppcheck --enable=all --project=__build/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list=profiler/cppcheck-suppressions.txt --output-file=$CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.txt
+          cppcheck --enable=all --project=__build/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list=profiler/cppcheck-suppressions.txt --xml --output-file=$CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.xml
 
       - name: Run clang-tidy
         run: run-clang-tidy -p __build &> $CI_ANALYSIS_RESULTS_FOLDER/clang-tidy-results.txt
 
       - name: Checking for errors in the result files
         run: |
-          [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "cppcheck-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains CppCheck result file(s)" && exit 1)
+          [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "cppcheck-results.xml" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains CppCheck result file(s)" && exit 1)
           [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "clang-tidy-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains clang-tidy result file(s)" && exit 1)
 
-          errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.txt || true)
+          errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.xml || true)
           if [ ! -z "$errors" ]
           then
               echo $errors
