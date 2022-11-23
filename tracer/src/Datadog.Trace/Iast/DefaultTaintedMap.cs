@@ -81,7 +81,7 @@ internal class DefaultTaintedMap : ITaintedMap
     /// <param name="entry">Tainted object</param>
     public void Put(ITaintedObject entry)
     {
-        if (entry is null || (entry.Value as string == string.Empty))
+        if (entry is null || (entry.Value is null or ""))
         {
             return;
         }
