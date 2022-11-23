@@ -41,7 +41,7 @@ AssemblyReference* AssemblyReference::GetFromCache(const shared::WSTRING& str)
     return aref;
 }
 
-std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const TypeReference integration_type,
+std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const TypeReference& integration_type,
                                                                                 const shared::WSTRING& configuration_string)
 {
     std::vector<IntegrationDefinition> integrationDefinitions;
@@ -113,14 +113,14 @@ namespace
         auto pos = name.find(WStr(','));
         if (pos != shared::WSTRING::npos)
         {
-            name = name.substr(0, pos);
+            name.resize(pos);
         }
 
         // strip spaces
         pos = name.rfind(WStr(' '));
         if (pos != shared::WSTRING::npos)
         {
-            name = name.substr(0, pos);
+            name.resize(pos);
         }
 
         return name;

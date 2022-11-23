@@ -60,9 +60,9 @@ private:
     HRESULT ApplyMethodProbe(CorProfiler* corProfiler, ModuleID module_id, ModuleMetadata& module_metadata,
                           FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken function_token,
                           TypeSignature retFuncArg, bool isVoid, bool isStatic,
-                          std::vector<TypeSignature> methodArguments,
+                          const std::vector<TypeSignature>& methodArguments,
                           int numArgs, const shared::WSTRING& methodProbeId, ILRewriter& rewriter,
-                          std::vector<TypeSignature>& methodLocals, int numLocals, ILRewriterWrapper& rewriterWrapper,
+                          const std::vector<TypeSignature>& methodLocals, int numLocals, ILRewriterWrapper& rewriterWrapper,
                           ULONG callTargetStateIndex, ULONG exceptionIndex, ULONG callTargetReturnIndex,
                           ULONG returnValueIndex, mdToken callTargetReturnToken, ILInstr* firstInstruction,
                              int instrumentedMethodIndex, ILInstr* const& beforeLineProbe, std::vector<EHClause>& newClauses) const;

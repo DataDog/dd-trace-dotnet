@@ -13,11 +13,12 @@ namespace datadog::shared::nativeloader
     // public
     //
 
-    DynamicInstanceImpl::DynamicInstanceImpl(std::string filePath, std::string clsid) : m_mainLibrary{filePath, Log::Instance}
+    DynamicInstanceImpl::DynamicInstanceImpl(const std::string& filePath, const std::string& clsid) :
+        m_mainLibrary{filePath, Log::Instance},
+        m_clsid(guid_parse::make_guid(clsid)),
+        m_classFactory(nullptr),
+        m_corProfilerCallback(nullptr)
     {
-        m_clsid = guid_parse::make_guid(clsid);
-        m_classFactory = nullptr;
-        m_corProfilerCallback = nullptr;
         m_loaded = m_mainLibrary.Load();
     }
 
