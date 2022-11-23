@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -98,6 +99,7 @@ namespace Datadog.Trace.Coverage.Collector
                 var avoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
                 var coveredAssemblyAttributeFullName = typeof(CoveredAssemblyAttribute).FullName;
                 var internalsVisibleToAttributeFullName = typeof(InternalsVisibleToAttribute).FullName;
+                var debuggableAttributeFullName = typeof(DebuggableAttribute).FullName;
                 var hasInternalsVisibleAttribute = false;
                 foreach (var cAttr in assemblyDefinition.CustomAttributes)
                 {
@@ -115,6 +117,24 @@ namespace Datadog.Trace.Coverage.Collector
                     }
 
                     hasInternalsVisibleAttribute |= attrFullName == internalsVisibleToAttributeFullName;
+
+                    // We check for the Debuggable attribute to enable jit optimizations and improve coverage performance.
+                    if (attrFullName == debuggableAttributeFullName)
+                    {
+                        // If the attribute is using the .ctor: DebuggableAttribute(DebuggableAttribute+DebuggingModes)
+                        // We change it to `Default (1)` to enable jit optimizations.
+                        if (cAttr.ConstructorArguments.Count == 1)
+                        {
+                            cAttr.ConstructorArguments[0] = new CustomAttributeArgument(cAttr.ConstructorArguments[0].Type, 1);
+                        }
+
+                        // If the attribute is using the .ctor: DebuggableAttribute(Boolean, Boolean)
+                        // We change the `isJITOptimizerDisabled` second argument to `false` to enable jit optimizations.
+                        if (cAttr.ConstructorArguments.Count == 2)
+                        {
+                            cAttr.ConstructorArguments[1] = new CustomAttributeArgument(cAttr.ConstructorArguments[1].Type, false);
+                        }
+                    }
                 }
 
                 // Gets the Datadog.Trace target framework
