@@ -108,14 +108,13 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
         bool isTypeIsByRefLike = false;
         const auto argOrLocalTok = argOrLocal.GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
         HRESULT hr = IsTypeByRefLike(moduleMetadata, argOrLocalTok,isTypeIsByRefLike);
+
         if (FAILED(hr))
         {
             Logger::Warn("DebuggerRewriter: Failed to determine if ", isArgs ? "argument" : "local", " index = ", argOrLocalIndex,
                          " is By-Ref like.");
-            continue;
         }
-
-        if (isTypeIsByRefLike)
+        else if (isTypeIsByRefLike)
         {
             Logger::Warn("DebuggerRewriter: Skipped ", isArgs ? "argument" : "local",
                          " index = ", argOrLocalIndex, " because it's By-Ref like.");
@@ -1385,9 +1384,11 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         const auto methodReturnTypeTok = methodReturnType.GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
         hr = IsTypeByRefLike(module_metadata, methodReturnTypeTok, isTypeIsByRefLike);
 
-        IfFailRet(hr);
-
-        if (isTypeIsByRefLike)
+        if (FAILED(hr))
+        {
+            Logger::Warn("DebuggerRewriter: Failed to determine if the return value is By-Ref like.");
+        }
+        else if (isTypeIsByRefLike)
         {
             return E_NOTIMPL;
         }
@@ -1396,9 +1397,11 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     bool isTypeIsByRefLike = false;
     hr = IsTypeByRefLike(module_metadata, caller->type.id, isTypeIsByRefLike);
 
-    IfFailRet(hr);
-
-    if (isTypeIsByRefLike)
+    if (FAILED(hr))
+    {
+        Logger::Warn("DebuggerRewriter: Failed to determine if the type we are instrumenting is By-Ref like.");
+    }
+    else if (isTypeIsByRefLike)
     {
         return E_NOTIMPL;
     }
@@ -1563,8 +1566,9 @@ HRESULT DebuggerMethodRewriter::IsTypeByRefLike(
 
     if (!IsTokenSane(typeDefOrRefOrSpecToken))
     {
+        // Do nothing for now.
         isTypeIsByRefLike = false;
-        return E_FAIL;
+        return S_OK;
     }
 
     // Get open type from type spec
@@ -1590,7 +1594,7 @@ HRESULT DebuggerMethodRewriter::IsTypeByRefLike(
         {
             // For now we ignore issues with resolving types.
             isTypeIsByRefLike = false;
-            return E_FAIL;
+            return S_OK;
         }
     }
 
