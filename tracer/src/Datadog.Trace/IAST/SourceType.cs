@@ -7,6 +7,8 @@
 
 namespace Datadog.Trace.Iast;
 
+// Defined in https://github.com/DataDog/experimental/blob/main/teams/asm/vulnerability_schema/vulnerability_schema.json
+
 internal static class SourceType
 {
     internal static byte GetByte(SourceTypeName value)
