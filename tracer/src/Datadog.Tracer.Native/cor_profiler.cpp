@@ -68,6 +68,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto process_command_line = shared::GetCurrentProcessCommandLine();
     Logger::Info("Process CommandLine: ", process_command_line);
 
+    if (process_name == WStr("dd-trace") || process_name == WStr("dd-trace.exe"))
+    {
+        Logger::Info("Profiler disabled - monitoring the dd-trace tool is not supported.");
+        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+    }
+
     // CI visibility checks
     if (!process_command_line.empty())
     {

@@ -96,7 +96,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public sealed class AspNetCoreTestFixture : IDisposable
         {
             private readonly HttpClient _httpClient;
-            private Process _process;
             private ITestOutputHelper _currentOutput;
 
             public AspNetCoreTestFixture()
@@ -107,6 +106,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 _httpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
                 _httpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
             }
+
+            public Process Process { get; private set; }
 
             public MockTracerAgent.TcpUdpAgent Agent { get; private set; }
 
@@ -122,14 +123,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             public async Task TryStartApp(TestHelper helper)
             {
-                if (_process is not null)
+                if (Process is not null)
                 {
                     return;
                 }
 
                 lock (this)
                 {
-                    if (_process is null)
+                    if (Process is null)
                     {
                         var initialAgentPort = TcpPortProvider.GetOpenPort();
                         HttpPort = TcpPortProvider.GetOpenPort();
@@ -137,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                         Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
                         WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
-                        _process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
+                        Process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
                     }
                 }
 
@@ -149,15 +150,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
                 request.GetResponse().Close();
 
-                if (_process is not null)
+                if (Process is not null)
                 {
                     try
                     {
-                        if (!_process.HasExited)
+                        if (!Process.HasExited)
                         {
-                            if (!_process.WaitForExit(5000))
+                            if (!Process.WaitForExit(5000))
                             {
-                                _process.Kill();
+                                Process.Kill();
                             }
                         }
                     }
@@ -166,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                         // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
                     }
 
-                    _process.Dispose();
+                    Process.Dispose();
                 }
 
                 Agent?.Dispose();
@@ -184,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-                _process.OutputDataReceived += (sender, args) =>
+                Process.OutputDataReceived += (sender, args) =>
                 {
                     if (args.Data != null)
                     {
@@ -196,9 +197,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                         WriteToOutput($"[webserver][stdout] {args.Data}");
                     }
                 };
-                _process.BeginOutputReadLine();
+                Process.BeginOutputReadLine();
 
-                _process.ErrorDataReceived += (sender, args) =>
+                Process.ErrorDataReceived += (sender, args) =>
                 {
                     if (args.Data != null)
                     {
@@ -206,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     }
                 };
 
-                _process.BeginErrorReadLine();
+                Process.BeginErrorReadLine();
 
                 wh.WaitOne(5000);
 

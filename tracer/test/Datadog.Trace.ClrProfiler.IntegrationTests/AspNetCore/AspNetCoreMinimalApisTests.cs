@@ -45,9 +45,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(Data))]
         public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
         {
+            SetInstrumentationVerification();
+
             await Fixture.TryStartApp(this);
 
             var spans = await Fixture.WaitForSpans(path);
@@ -61,6 +64,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             await Verifier.Verify(spans, settings)
                           .UseMethodName("_")
                           .UseTypeName(_testName);
+
+            VerifyInstrumentation(Fixture.Process);
         }
     }
 }
