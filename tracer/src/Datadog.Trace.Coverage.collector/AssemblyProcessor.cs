@@ -49,6 +49,7 @@ namespace Datadog.Trace.Coverage.Collector
         private readonly string _tracerHome;
         private readonly string _assemblyFilePath;
         private readonly CoverageMode _coverageMode;
+        private readonly bool _enableJitOptimizations;
 
         private byte[]? _strongNameKeyBlob;
 
@@ -59,6 +60,7 @@ namespace Datadog.Trace.Coverage.Collector
             _ciVisibilitySettings = ciVisibilitySettings;
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _coverageMode = coverageMode;
+            _enableJitOptimizations = ciVisibilitySettings?.CodeCoverageEnableJitOptimizations ?? true;
 
             if (!File.Exists(_assemblyFilePath))
             {
@@ -118,21 +120,27 @@ namespace Datadog.Trace.Coverage.Collector
 
                     hasInternalsVisibleAttribute |= attrFullName == internalsVisibleToAttributeFullName;
 
-                    // We check for the Debuggable attribute to enable jit optimizations and improve coverage performance.
-                    if (attrFullName == debuggableAttributeFullName)
+                    // Enable Jit Optimizations
+                    if (_enableJitOptimizations)
                     {
-                        // If the attribute is using the .ctor: DebuggableAttribute(DebuggableAttribute+DebuggingModes)
-                        // We change it to `Default (1)` to enable jit optimizations.
-                        if (cAttr.ConstructorArguments.Count == 1)
+                        // We check for the Debuggable attribute to enable jit optimizations and improve coverage performance.
+                        if (attrFullName == debuggableAttributeFullName)
                         {
-                            cAttr.ConstructorArguments[0] = new CustomAttributeArgument(cAttr.ConstructorArguments[0].Type, 1);
-                        }
+                            _logger.Debug($"Modifying the DebuggableAttribute to enable jit optimizations");
 
-                        // If the attribute is using the .ctor: DebuggableAttribute(Boolean, Boolean)
-                        // We change the `isJITOptimizerDisabled` second argument to `false` to enable jit optimizations.
-                        if (cAttr.ConstructorArguments.Count == 2)
-                        {
-                            cAttr.ConstructorArguments[1] = new CustomAttributeArgument(cAttr.ConstructorArguments[1].Type, false);
+                            // If the attribute is using the .ctor: DebuggableAttribute(DebuggableAttribute+DebuggingModes)
+                            // We change it to `Default (1)` to enable jit optimizations.
+                            if (cAttr.ConstructorArguments.Count == 1)
+                            {
+                                cAttr.ConstructorArguments[0] = new CustomAttributeArgument(cAttr.ConstructorArguments[0].Type, 1);
+                            }
+
+                            // If the attribute is using the .ctor: DebuggableAttribute(Boolean, Boolean)
+                            // We change the `isJITOptimizerDisabled` second argument to `false` to enable jit optimizations.
+                            if (cAttr.ConstructorArguments.Count == 2)
+                            {
+                                cAttr.ConstructorArguments[1] = new CustomAttributeArgument(cAttr.ConstructorArguments[1].Type, false);
+                            }
                         }
                     }
                 }

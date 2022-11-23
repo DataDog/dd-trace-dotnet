@@ -41,6 +41,7 @@ namespace Datadog.Trace.Ci.Configuration
             CodeCoverageEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage);
             CodeCoverageSnkFilePath = source?.GetString(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile);
             CodeCoverageMode = source?.GetString(ConfigurationKeys.CIVisibility.CodeCoverageMode);
+            CodeCoverageEnableJitOptimizations = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations) ?? true;
 
             // Git upload
             GitUploadEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.GitUploadEnabled) ?? false;
@@ -113,6 +114,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the Code Coverage Mode.
         /// </summary>
         public string? CodeCoverageMode { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the Code Coverage Jit Optimizations should be enabled
+        /// </summary>
+        public bool CodeCoverageEnableJitOptimizations { get; }
 
         /// <summary>
         /// Gets a value indicating whether the Git Upload metadata is going to be used.

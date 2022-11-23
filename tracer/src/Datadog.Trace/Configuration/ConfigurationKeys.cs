@@ -445,6 +445,11 @@ namespace Datadog.Trace.Configuration
             public const string CodeCoverageMode = "DD_CIVISIBILITY_CODE_COVERAGE_MODE";
 
             /// <summary>
+            /// Configuration key for enabling or disabling jit optimizations in the Code Coverage
+            /// </summary>
+            public const string CodeCoverageEnableJitOptimizations = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS";
+
+            /// <summary>
             /// Configuration key for enabling or disabling Uploading Git Metadata in CI Visibility
             /// Default Value is false (disabled)
             /// </summary>
