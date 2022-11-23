@@ -19,11 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         {
         }
 
-#if NET7_0
-        [SkippableFact(Skip = "Flaky in .NET 7 on linux")]
-#else
         [SkippableFact]
-#endif
         public void SubmitTraces()
         {
             // 1 manual span + 2 http spans
