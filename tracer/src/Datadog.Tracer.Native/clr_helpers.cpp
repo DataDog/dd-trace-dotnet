@@ -1021,4 +1021,298 @@ HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataIm
     hasAsyncAttribute = pcbData > 0 ? true : false;
     return hr;
 }
+
+HRESULT IsByRefLike(const ComPtr<IMetaDataImport2>& metadataImport, const mdTypeDef typeDefToken, bool& hasByRefLikeAttribute)
+{
+    const void* ppData = nullptr;
+    ULONG pcbData = 0;
+    auto hr = metadataImport->GetCustomAttributeByName(
+        typeDefToken, WStr("System.Runtime.CompilerServices.IsByRefLikeAttribute"), &ppData, &pcbData);
+
+    IfFailRet(hr);
+    hasByRefLikeAttribute = pcbData > 0 ? true : false;
+    return hr;
+}
+
+HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
+                            const std::vector<ModuleID>& loadedModules,
+                            const std::vector<WCHAR>& refTypeName,
+                            const mdToken parentToken,
+                            const shared::WSTRING& resolutionScopeName, mdTypeDef& resolvedTypeDefToken,
+                            ComPtr<IMetaDataImport2>& resolvedTypeDefMetadataImport)
+{
+    mdAssembly candidateAssembly;
+    auto isModuleFound = false;
+
+    if (Logger::IsDebugEnabled())
+    {
+        Logger::Debug("[ResolveTypeInternal] Trying to resolve type ref to type def for: ", shared::WSTRING(refTypeName.data()));
+    }
+
+    // iterate over all the loaded modules and search for the correct one that matches the assemblyRef (resolutionScope)
+    for (auto& moduleId : loadedModules)
+    {
+        if (moduleId == 0) continue;
+
+        ComPtr<IUnknown> metadata_interfaces;
+        auto hr = info->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                            metadata_interfaces.GetAddressOf());
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveTypeInternal] GetModuleMetaData has failed with: ", shared::WSTRING(refTypeName.data()));
+            continue;
+        }
+
+        const auto& candidateAssemblyImport =
+            metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const auto& candidateMetadataImport = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+
+        hr = candidateAssemblyImport->GetAssemblyFromScope(&candidateAssembly);
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveTypeInternal] GetAssemblyFromScope has failed with: ", shared::WSTRING(refTypeName.data()));
+            continue;
+        }
+
+        const auto& assemblyMetadata = GetAssemblyImportMetadata(candidateAssemblyImport);
+
+        if (assemblyMetadata.name == shared::EmptyWStr)
+        {
+            Logger::Warn("[ResolveTypeInternal] GetAssemblyImportMetadata has failed with: ", shared::WSTRING(refTypeName.data()));
+            continue;
+        }
+
+        const auto& candidateResolutionScopeName = assemblyMetadata.name;
+
+        // TODO DEBUGGING BREAKPOINT
+        if (resolutionScopeName == candidateResolutionScopeName)
+        {
+            hr = candidateMetadataImport->FindTypeDefByName(refTypeName.data(), parentToken, &resolvedTypeDefToken);
+            if (hr == S_OK)
+            {
+                resolvedTypeDefMetadataImport = candidateMetadataImport;
+                isModuleFound = true;
+                break;
+            }
+            else
+            {
+                // look for exported type with the same name of the given TypeRef
+                mdExportedType exportedType;
+                hr = candidateAssemblyImport->FindExportedTypeByName(refTypeName.data(), parentToken, &exportedType);
+                if (FAILED(hr))
+                {
+                    Logger::Warn("[ResolveTypeInternal] FindExportedTypeByName has failed with: ", shared::WSTRING(refTypeName.data()));
+                    continue;
+                }
+
+                if (hr == S_OK)
+                {
+                    WCHAR szName[kNameMaxSize];
+                    ULONG pchName;
+                    mdToken exportedTypeContainerToken; // will hold mdAssemblyRef / mdExportedType  / mdFile
+                    mdTypeDef exportedTypeTypeDef;
+                    DWORD exportedTypeFlags;
+
+                    hr = candidateAssemblyImport->GetExportedTypeProps(exportedType, szName, kNameMaxSize, &pchName,
+                                                                       &exportedTypeContainerToken,
+                                                                       &exportedTypeTypeDef, &exportedTypeFlags);
+                    if (FAILED(hr))
+                    {
+                        Logger::Warn("[ResolveTypeInternal] GetExportedTypeProps [1] has failed with: ", shared::WSTRING(refTypeName.data()));
+                        continue;
+                    }
+
+                    while (exportedTypeContainerToken != mdExportedTypeNil &&
+                           TypeFromToken(exportedTypeContainerToken) == mdtExportedType &&
+                           IsTdNestedPublic(exportedTypeFlags))
+                    {
+                        hr = candidateAssemblyImport->GetExportedTypeProps(
+                            exportedTypeContainerToken, szName, kNameMaxSize, &pchName, &exportedTypeContainerToken,
+                            &exportedTypeTypeDef, &exportedTypeFlags);
+                        if (FAILED(hr))
+                        {
+                            Logger::Warn("[ResolveTypeInternal] GetExportedTypeProps [2] has failed with: ", shared::WSTRING(refTypeName.data()));
+                            continue;
+                        }
+                    }
+
+                    if (TypeFromToken(exportedTypeContainerToken) == mdtAssemblyRef)
+                    {
+                        const auto& assemblyRefMetadata =
+                            GetReferencedAssemblyMetadata(candidateAssemblyImport, exportedTypeContainerToken);
+                        if (assemblyRefMetadata.name == shared::EmptyWStr)
+                        {
+                            Logger::Warn(
+                                "[ResolveTypeInternal] GetResolutionScopeNameForAssemblyRefTok has failed with: ", shared::WSTRING(refTypeName.data()));
+                            continue;
+                        }
+
+                        hr = ResolveTypeInternal(info, loadedModules, refTypeName, mdExportedTypeNil, assemblyRefMetadata.name,
+                                                resolvedTypeDefToken, resolvedTypeDefMetadataImport);
+                        if (FAILED(hr))
+                        {
+                            Logger::Warn(
+                                "[ResolveTypeInternal] Recursive call to ResolveTypeInternal has failed with: ", shared::WSTRING(refTypeName.data()));
+                            continue;
+                        }
+
+                        return hr;
+                    }
+                }
+            }
+        }
+    }
+
+    if (isModuleFound)
+    {
+        return S_OK;
+    }
+    
+    resolvedTypeDefToken = mdTokenNil;
+    Logger::Error("[ResolveTypeInternal] ResolveTypeInternal has failed. Reason: Module not found in the loaded modules for type name: ", shared::WSTRING(refTypeName.data()));
+    return E_NOTIMPL;
+}
+
+/**
+ Resolves TypeRef to TypeDef.
+ Note: If the module where the TypeRef is defined is not loaded, E_FAIL will return.
+ */
+HRESULT ResolveType(ICorProfilerInfo4* info,
+                    const ComPtr<IMetaDataImport2>& metadata_import,
+                    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+                    const mdTypeRef typeRefToken,
+                    mdTypeDef& resolvedTypeDefToken,
+                    ComPtr<IMetaDataImport2>& resolvedMetadataImport)
+{
+    mdToken resolutionScope = mdTokenNil; // will hold either AssemblyRef or ModuleRef token
+    mdToken enclosingType = mdTokenNil;
+    ULONG nameSize = 0;
+
+    auto hr = metadata_import->GetTypeRefProps(typeRefToken, &resolutionScope, nullptr, 0, &nameSize);
+    if (FAILED(hr) || resolutionScope == mdTokenNil)
+    {
+        Logger::Error("[ResolveType] GetTypeRefProps [1] has failed. typeRefToken: ", typeRefToken);
+        return E_FAIL;
+    }
+    // get the type name & resolution scope
+    std::vector<WCHAR> refTypeName(nameSize, 0);
+    hr = metadata_import->GetTypeRefProps(typeRefToken, &resolutionScope, refTypeName.data(),
+                                                          kNameMaxSize, &nameSize);
+    if (FAILED(hr) || resolutionScope == mdTokenNil)
+    {
+        Logger::Error("[ResolveType] GetTypeRefProps [2] has failed. typeRefToken: ", typeRefToken);
+    }
+    IfFailRet(hr);
+    mdToken tempToken = mdTokenNil;
+    int resolvingTryoutsCount = 1000;
+    while (resolvingTryoutsCount-- > 0 && 
+        TypeFromToken(resolutionScope) != mdtAssemblyRef && 
+        TypeFromToken(resolutionScope) != mdtModuleRef &&
+        resolutionScope != mdTokenNil)
+    {
+        tempToken = resolutionScope;
+        if (enclosingType == mdTokenNil)
+        {
+            enclosingType = tempToken;
+        }
+        hr = metadata_import->GetTypeRefProps(tempToken, &resolutionScope, nullptr, 0, &nameSize);
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveType] GetTypeRefProps [3] has failed. typeRefToken: ", typeRefToken);
+        }
+        IfFailRet(hr);
+    }
+
+    if (resolvingTryoutsCount == 0)
+    {
+        Logger::Warn(
+            "[ResolveType] Reached the maximum amount of tryouts of resolving the resolution scope. typeRefToken: ",
+            typeRefToken);
+        return E_FAIL;
+    }
+
+    if (resolutionScope == mdTokenNil)
+    {
+        Logger::Warn("[ResolveType] resolutionScope is nil. typeRefToken: ", typeRefToken);
+        return E_FAIL;
+    }
+
+    const auto& assemblyMetadata = GetReferencedAssemblyMetadata(assembly_import, resolutionScope);
+    if (assemblyMetadata.name == shared::EmptyWStr)
+    {
+        Logger::Warn("[ResolveType] GetReferencedAssemblyMetadata has failed. typeRefToken: ", typeRefToken);
+        return E_FAIL;
+    }
+
+    ICorProfilerModuleEnum* moduleEnum;
+    hr = info->EnumModules(&moduleEnum);
+    if (FAILED(hr))
+    {
+        Logger::Warn("[ResolveType] EnumModules has failed. typeRefToken: ", typeRefToken);
+    }
+    IfFailRet(hr);
+
+    std::vector<ModuleID> loadedModules;
+    size_t resultIndex = 0;
+
+    // iterate over the loaded modules enumeration and collect the module ids into loadedModules
+    while (true)
+    {
+        const ULONG valueToRetrieve = 20;
+        ULONG valueRetrieved = 0;
+
+        std::vector<ModuleID> tempValues(valueToRetrieve, 0);
+        hr = moduleEnum->Next(valueToRetrieve, tempValues.data(), &valueRetrieved);
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveType] EnumModules.Next has failed. typeRefToken: ", typeRefToken);
+        }
+        IfFailRet(hr);
+
+        if (valueRetrieved == 0)
+        {
+            break;
+        }
+
+        loadedModules.resize(loadedModules.size() + valueToRetrieve);
+        for (size_t k = 0; k < valueRetrieved; ++k)
+        {
+            loadedModules[resultIndex] = tempValues[k];
+            ++resultIndex;
+        }
+    }
+
+    const auto& resolutionScopeName = assemblyMetadata.name;
+
+    resolvedTypeDefToken = mdTokenNil;
+    if (enclosingType != mdTokenNil)
+    {
+        // LOG_DEBUG("ResolveType: Found enclosing type, try to get parent token");
+        hr = metadata_import->GetTypeRefProps(enclosingType, &resolutionScope, nullptr, 0, &nameSize);
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveType] GetTypeRefProps [1] has failed. typeRefToken: ", typeRefToken);
+        }
+        IfFailRet(hr);
+        std::vector<WCHAR> enclosingRefTypeName(nameSize, 0);
+        hr = metadata_import->GetTypeRefProps(enclosingType, &resolutionScope,
+                                                              enclosingRefTypeName.data(), kNameMaxSize, &nameSize);
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveType] GetTypeRefProps [2] has failed. typeRefToken: ", typeRefToken);
+        }
+        IfFailRet(hr);
+
+        hr = ResolveTypeInternal(info, loadedModules, enclosingRefTypeName, mdTokenNil, resolutionScopeName,
+                                 resolvedTypeDefToken, resolvedMetadataImport);
+        IfFailRet(hr);
+    }
+
+    hr = ResolveTypeInternal(info, loadedModules, refTypeName, resolvedTypeDefToken, resolutionScopeName,
+                             resolvedTypeDefToken, resolvedMetadataImport);
+    IfFailRet(hr);
+
+    return hr;
+}
+
 } // namespace trace

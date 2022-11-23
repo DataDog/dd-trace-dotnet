@@ -12,6 +12,8 @@
 namespace debugger
 {
 
+thread_local mdToken SpecSanityToken;
+
 int DebuggerMethodRewriter::GetNextInstrumentedMethodIndex()
 {
     return std::atomic_fetch_add(&_nextInstrumentedMethodIndex, 1);
@@ -84,6 +86,7 @@ HRESULT DebuggerMethodRewriter::LoadLocal(CorProfiler* corProfiler, const ILRewr
 }
 
 HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
+    ModuleMetadata& moduleMetadata,
     CorProfiler* corProfiler, 
     DebuggerTokens* debuggerTokens, 
     bool isStatic, 
@@ -98,7 +101,26 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
     for (auto argOrLocalIndex = 0; argOrLocalIndex < numArgsOrLocals; argOrLocalIndex++)
     {
         const auto argOrLocal = methodArgsOrLocals[argOrLocalIndex];
-        HRESULT hr;
+
+        const auto [elementType, argTypeFlags] = argOrLocal.GetElementTypeAndFlags();
+        
+        auto emit = moduleMetadata.metadata_emit;
+        bool isTypeIsByRefLike = false;
+        const auto argOrLocalTok = argOrLocal.GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
+        HRESULT hr = IsTypeByRefLike(moduleMetadata, argOrLocalTok,isTypeIsByRefLike);
+        if (FAILED(hr))
+        {
+            Logger::Warn("DebuggerRewriter: Failed to determine if ", isArgs ? "argument" : "local", " index = ", argOrLocalIndex,
+                         " is By-Ref like.");
+            continue;
+        }
+
+        if (isTypeIsByRefLike)
+        {
+            Logger::Warn("DebuggerRewriter: Skipped ", isArgs ? "argument" : "local",
+                         " index = ", argOrLocalIndex, " because it's By-Ref like.");
+            continue;
+        }
 
         if (isArgs)
         {
@@ -124,11 +146,11 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
 
         if (isArgs)
         {
-            hr = debuggerTokens->WriteLogArg(&rewriterWrapper, methodArgsOrLocals[argOrLocalIndex], beginCallInstruction, probeType);
+            hr = debuggerTokens->WriteLogArg(&rewriterWrapper, argOrLocal, beginCallInstruction, probeType);
         }
         else
         {
-            hr = debuggerTokens->WriteLogLocal(&rewriterWrapper, methodArgsOrLocals[argOrLocalIndex], beginCallInstruction, probeType);
+            hr = debuggerTokens->WriteLogLocal(&rewriterWrapper, argOrLocal, beginCallInstruction, probeType);
         }
 
         if (FAILED(hr))
@@ -141,22 +163,26 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
 }
 
 HRESULT
-DebuggerMethodRewriter::WriteCallsToLogArg(CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
+DebuggerMethodRewriter::WriteCallsToLogArg(ModuleMetadata& moduleMetadata, CorProfiler* corProfiler,
+                                           DebuggerTokens* debuggerTokens, bool isStatic,
                                              const std::vector<TypeSignature>& args,
                                              int numArgs, ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
                                            ILInstr** beginCallInstruction, ProbeType probeType)
 {
-    return WriteCallsToLogArgOrLocal(corProfiler, debuggerTokens, isStatic, args, numArgs, rewriterWrapper,
+    return WriteCallsToLogArgOrLocal(moduleMetadata, corProfiler, debuggerTokens, isStatic, args, numArgs,
+                                     rewriterWrapper,
                                      callTargetStateIndex, beginCallInstruction, /* IsArgs */ true, probeType);
 }
 
 HRESULT
-DebuggerMethodRewriter::WriteCallsToLogLocal(CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
+DebuggerMethodRewriter::WriteCallsToLogLocal(ModuleMetadata& moduleMetadata, CorProfiler* corProfiler,
+                                             DebuggerTokens* debuggerTokens, bool isStatic,
                                              const std::vector<TypeSignature>& locals,
                                              int numLocals, ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
                                              ILInstr** beginCallInstruction, ProbeType probeType)
 {
-    return WriteCallsToLogArgOrLocal(corProfiler, debuggerTokens, isStatic, locals, numLocals, rewriterWrapper,
+    return WriteCallsToLogArgOrLocal(moduleMetadata, corProfiler, debuggerTokens, isStatic, locals, numLocals,
+                                     rewriterWrapper,
                                      callTargetStateIndex, beginCallInstruction, /* IsArgs */ false, probeType);
 }
 
@@ -407,7 +433,8 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     rewriterWrapper.StLocal(lineProbeCallTargetStateIndex);
 
     // *** Emit LogLocal call(s)
-    hr = WriteCallsToLogLocal(corProfiler, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
+    hr = WriteCallsToLogLocal(module_metadata, corProfiler, debuggerTokens, isStatic, methodLocals, numLocals,
+                              rewriterWrapper,
                               lineProbeCallTargetStateIndex, &beginLineCallInstruction, probeType);
 
     IfFailRet(hr);
@@ -415,7 +442,8 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     if (probeType == NonAsyncLineProbe) // The signature of MoveNext is without arguments.
     {
         // *** Emit LogArg call(s)
-        hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
+        hr = WriteCallsToLogArg(module_metadata, corProfiler, debuggerTokens, isStatic, methodArguments,
+                                numArgs, rewriterWrapper,
                                 lineProbeCallTargetStateIndex, &beginLineCallInstruction, probeType);   
     }
 
@@ -561,7 +589,8 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     rewriterWrapper.StLocal(callTargetStateIndex);
 
     // *** Emit LogArg call(s)
-    hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
+    hr = WriteCallsToLogArg(module_metadata, corProfiler, debuggerTokens, isStatic, methodArguments,
+                            numArgs, rewriterWrapper,
                             callTargetStateIndex, &beginCallInstruction, NonAsyncMethodProbe);
 
     IfFailRet(hr);
@@ -641,13 +670,15 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     rewriterWrapper.StLocal(callTargetReturnIndex);
 
     // *** Emit LogLocal call(s)
-    hr = WriteCallsToLogLocal(corProfiler, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
+    hr = WriteCallsToLogLocal(module_metadata, corProfiler, debuggerTokens, isStatic, methodLocals,
+                              numLocals, rewriterWrapper,
                               callTargetStateIndex, &endMethodCallInstr, NonAsyncMethodProbe);
 
     IfFailRet(hr);
     
     // *** Emit LogArg call(s)
-    hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
+    hr = WriteCallsToLogArg(module_metadata, corProfiler, debuggerTokens, isStatic, methodArguments,
+                            numArgs, rewriterWrapper,
                             callTargetStateIndex, &endMethodCallInstr, NonAsyncMethodProbe);
 
     IfFailRet(hr);
@@ -828,8 +859,8 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
             {
                 rewriterWrapper.LoadNull(); // return value
                 auto emit = moduleMetadata.metadata_emit;
-                auto returnTypeToken = methodReturnType->GetTypeTok(emit, moduleMetadata.GetDebuggerTokens()->GetCorLibAssemblyRef());
-                if (returnTypeToken ==  mdTokenNil)
+                auto returnTypeToken = methodReturnType->GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
+                if (returnTypeToken ==  mdTokenNil || !IsTokenSane(returnTypeToken))
                 {
                     Logger::Error("Fail to get return type token. Element type is  ", elementType, " Method is: ", caller->type.name, ".", caller->name);
                     return E_FAIL;
@@ -858,7 +889,8 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
         rewriterWrapper.StLocal(callTargetReturnIndex);
 
         // call LogLocal
-        hr = WriteCallsToLogLocal(corProfiler, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
+        hr = WriteCallsToLogLocal(moduleMetadata, corProfiler, debuggerTokens, isStatic, methodLocals,
+                                  numLocals, rewriterWrapper,
                                        callTargetStateIndex, &endMethodCallInstr, AsyncMethodProbe);
         IfFailRet(hr);
 
@@ -1301,6 +1333,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                       "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
     }
 
+    module_metadata.metadata_emit->GetTokenFromTypeSpec(NullSignature, 0x0, &SpecSanityToken);
+
     // *** Create the rewriter wrapper helper
     ILRewriterWrapper rewriterWrapper(&rewriter);
     rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
@@ -1340,6 +1374,33 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         // Error message is already written in ModifyLocalSigAndInitialize
         return S_FALSE; // TODO https://datadoghq.atlassian.net/browse/DEBUG-706
+    }
+
+    if (!isAsyncMethod)
+    {
+        // Async methods can't have Task<T> where T is byref like, because byref like can't exist as a generic param.
+        // thus we only perform this check here.
+        auto emit = module_metadata.metadata_emit;
+        bool isTypeIsByRefLike = false;
+        const auto methodReturnTypeTok = methodReturnType.GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
+        hr = IsTypeByRefLike(module_metadata, methodReturnTypeTok, isTypeIsByRefLike);
+
+        IfFailRet(hr);
+
+        if (isTypeIsByRefLike)
+        {
+            return E_NOTIMPL;
+        }
+    }
+
+    bool isTypeIsByRefLike = false;
+    hr = IsTypeByRefLike(module_metadata, caller->type.id, isTypeIsByRefLike);
+
+    IfFailRet(hr);
+
+    if (isTypeIsByRefLike)
+    {
+        return E_NOTIMPL;
     }
 
     ULONG lineProbeCallTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
@@ -1486,6 +1547,54 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     Logger::Info("*** DebuggerMethodRewriter::Rewrite() Finished: ", caller->type.name, ".", caller->name,
                  "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
     return S_OK;
+}
+
+bool DebuggerMethodRewriter::IsTokenSane(mdToken token)
+{
+    return token < SpecSanityToken;
+}
+
+HRESULT DebuggerMethodRewriter::IsTypeByRefLike(
+    const ModuleMetadata& module_metadata, 
+    mdToken typeDefOrRefOrSpecToken, 
+    bool& isTypeIsByRefLike)
+{
+    ComPtr<IMetaDataImport2> metaDataImportOfTypeDef = module_metadata.metadata_import;
+
+    if (!IsTokenSane(typeDefOrRefOrSpecToken))
+    {
+        isTypeIsByRefLike = false;
+        return E_FAIL;
+    }
+
+    // Get open type from type spec
+    if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeSpec)
+    {
+        // VAR | MVAR Number
+        // or GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
+
+        // Generics are not supported for now. Assuming we are not dealing with by-ref like.
+
+        isTypeIsByRefLike = false;
+        return S_OK;
+    }
+
+    if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeRef)
+    {
+        const auto& metadata_import = module_metadata.metadata_import;
+        const auto& assembly_import = module_metadata.assembly_import;
+
+        auto hr = ResolveType(trace::profiler->info_, metadata_import, assembly_import, typeDefOrRefOrSpecToken, typeDefOrRefOrSpecToken,metaDataImportOfTypeDef);
+
+        if (FAILED(hr))
+        {
+            // For now we ignore issues with resolving types.
+            isTypeIsByRefLike = false;
+            return E_FAIL;
+        }
+    }
+
+    return IsByRefLike(metaDataImportOfTypeDef, typeDefOrRefOrSpecToken, isTypeIsByRefLike);
 }
 
 void DebuggerMethodRewriter::AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr,
