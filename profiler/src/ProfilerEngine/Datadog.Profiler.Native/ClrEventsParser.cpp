@@ -32,16 +32,24 @@ ClrEventsParser::ClrEventsParser(
     ICorProfilerInfo12* pCorProfilerInfo,
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
-    IGCSuspensionsListener* pGCSuspensionsListener,
-    IGarbageCollectionsListener* pGarbageCollectionsListener)
+    IGCSuspensionsListener* pGCSuspensionsListener)
     :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pAllocationListener{pAllocationListener},
     _pContentionListener{pContentionListener},
-    _pGCSuspensionsListener{pGCSuspensionsListener},
-    _pGarbageCollectionsListener{pGarbageCollectionsListener}
+    _pGCSuspensionsListener{pGCSuspensionsListener}
 {
     ClearCollections();
+}
+
+void ClrEventsParser::Register(IGarbageCollectionsListener* pGarbageCollectionsListener)
+{
+    if (pGarbageCollectionsListener == nullptr)
+    {
+        return;
+    }
+
+    _pGarbageCollectionsListeners.push_back(pGarbageCollectionsListener);
 }
 
 void ClrEventsParser::ParseEvent(
@@ -154,11 +162,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
     }
 
     // the rest of events are related to garbage collections lifetime
-    if (_pGCSuspensionsListener == nullptr)
-    {
-        return;
-    }
-
+    //
     if (id == EVENT_GC_TRIGGERED)
     {
         LOG_GC_EVENT("OnGCTriggered");
@@ -292,7 +296,15 @@ void ClrEventsParser::NotifySuspension(uint32_t number, uint32_t generation, uin
     }
 }
 
-void ClrEventsParser::NotifyGarbageCollection(
+void ClrEventsParser::NotifyGarbageCollectionStarted(int32_t number, uint32_t generation, GCReason reason, GCType type)
+{
+    for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
+    {
+        pGarbageCollectionsListener->OnGarbageCollectionStart(number, generation, reason, type);
+    }
+}
+
+void ClrEventsParser::NotifyGarbageCollectionEnd(
     int32_t number,
     uint32_t generation,
     GCReason reason,
@@ -303,9 +315,9 @@ void ClrEventsParser::NotifyGarbageCollection(
     uint64_t endTimestamp
     )
 {
-    if (_pGarbageCollectionsListener != nullptr)
+    for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
-        _pGarbageCollectionsListener->OnGarbageCollection(
+        pGarbageCollectionsListener->OnGarbageCollectionEnd(
             number,
             generation,
             reason,
@@ -364,6 +376,13 @@ void ClrEventsParser::OnGCTriggered()
 
 void ClrEventsParser::OnGCStart(GCStartPayload& payload)
 {
+    NotifyGarbageCollectionStarted(
+        payload.Count,
+        payload.Depth,
+        static_cast<GCReason>(payload.Reason),
+        static_cast<GCType>(payload.Type)
+        );
+
     // If a BCG is already started, FGC (0/1) are possible and will finish before the BGC
     //
     if ((payload.Depth == 2) && (payload.Type == GCType::BackgroundGC))
@@ -419,7 +438,7 @@ void ClrEventsParser::OnGCRestartEEEnd()
     if ((gc.Generation < 2) || (gc.Type == GCType::NonConcurrentGC))
     {
         auto endTimestamp = GetCurrentTimestamp();
-        NotifyGarbageCollection(
+        NotifyGarbageCollectionEnd(
             gc.Number,
             gc.Generation,
             gc.Reason,
@@ -447,7 +466,7 @@ void ClrEventsParser::OnGCHeapStats()
     if ((_currentBGC.Number != -1) && (gc.Generation < 2))
     {
         auto endTimestamp = GetCurrentTimestamp();
-        NotifyGarbageCollection(
+        NotifyGarbageCollectionEnd(
             gc.Number,
             gc.Generation,
             gc.Reason,
@@ -485,7 +504,7 @@ void ClrEventsParser::OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload)
         }
 
         auto endTimestamp = GetCurrentTimestamp();
-        NotifyGarbageCollection(
+        NotifyGarbageCollectionEnd(
             gc.Number,
             gc.Generation,
             gc.Reason,

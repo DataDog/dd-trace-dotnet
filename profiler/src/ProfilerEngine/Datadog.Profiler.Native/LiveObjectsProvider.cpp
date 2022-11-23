@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "GarbageCollection.h"
 #include "IConfiguration.h"
 #include "LiveObjectsProvider.h"
 #include "Sample.h"
@@ -49,39 +50,12 @@ const char* LiveObjectsProvider::GetName()
     return "LiveObjectsProvider";
 }
 
-std::list<std::shared_ptr<Sample>> LiveObjectsProvider::GetSamples()
-{
-    // return the live object samples
-    std::list<std::shared_ptr<Sample>> liveObjectsSamples;
-
-    std::lock_guard<std::mutex> lock(_liveObjectsLock);
-    for (auto const& info : _monitoredObjects)
-    {
-        liveObjectsSamples.push_back(info.GetSample());
-    }
-
-    return liveObjectsSamples;
-}
-
-void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
-{
-    // std::cout << rawSample.AllocationClass << std::endl;
-
-    std::lock_guard<std::mutex> lock(_liveObjectsLock);
-
-    LiveObjectInfo info(
-        _pAllocationsProvider.get()->TransformRawSample(rawSample),
-        rawSample.Address);
-
-    // Limit the number of handle to create until the next GC
-    // If _objectsToMonitor is already full, stop adding new objects
-    if (_objectsToMonitor.size() + _monitoredObjects.size() <= MAX_LIVE_OBJECTS)
-    {
-        _objectsToMonitor.push_back(std::move(info));
-    }
-}
-
-void LiveObjectsProvider::OnGarbageCollectionStarted()
+void LiveObjectsProvider::OnGarbageCollectionStart(
+    int32_t number,
+    uint32_t generation,
+    GCReason reason,
+    GCType type
+    )
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
@@ -99,19 +73,26 @@ void LiveObjectsProvider::OnGarbageCollectionStarted()
         {
             // this should never happen
         }
-
     }
 
     _monitoredObjects.splice(_monitoredObjects.end(), _objectsToMonitor);
 }
 
-void LiveObjectsProvider::OnGarbageCollectionFinished()
+void LiveObjectsProvider::OnGarbageCollectionEnd(
+    int32_t number,
+    uint32_t generation,
+    GCReason reason,
+    GCType type,
+    bool isCompacting,
+    uint64_t pauseDuration,
+    uint64_t totalDuration,
+    uint64_t endTimestamp
+    )
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
     // it is now time to check if the monitored allocated objects have been collected or are still alive
-    _monitoredObjects.remove_if([this](LiveObjectInfo& info)
-    {
+    _monitoredObjects.remove_if([this](LiveObjectInfo& info) {
         bool hasBeenCollected = !IsAlive(info.GetHandle());
         if (hasBeenCollected)
         {
@@ -119,6 +100,45 @@ void LiveObjectsProvider::OnGarbageCollectionFinished()
         }
         return hasBeenCollected;
     });
+}
+
+std::list<std::shared_ptr<Sample>> LiveObjectsProvider::GetSamples()
+{
+    // return the live object samples
+    std::list<std::shared_ptr<Sample>> liveObjectsSamples;
+
+    std::lock_guard<std::mutex> lock(_liveObjectsLock);
+    for (auto const& info : _monitoredObjects)
+    {
+        liveObjectsSamples.push_back(info.GetSample());
+    }
+
+    return liveObjectsSamples;
+}
+
+void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
+{
+    //std::cout << rawSample.AllocationClass << std::endl;
+
+    std::lock_guard<std::mutex> lock(_liveObjectsLock);
+
+    // !! Don't forget to increment the ref count on the thread info !!
+    // --> TransformRawSample is releasing it in SetThreadDetails()
+    if (rawSample.ThreadInfo != nullptr)
+    {
+        rawSample.ThreadInfo->AddRef();
+    }
+
+    LiveObjectInfo info(
+        _pAllocationsProvider.get()->TransformRawSample(rawSample),
+        rawSample.Address);
+
+    // Limit the number of handle to create until the next GC
+    // If _objectsToMonitor is already full, stop adding new objects
+    if (_objectsToMonitor.size() + _monitoredObjects.size() <= MAX_LIVE_OBJECTS)
+    {
+        _objectsToMonitor.push_back(std::move(info));
+    }
 }
 
 bool LiveObjectsProvider::IsAlive(ObjectHandleID handle) const

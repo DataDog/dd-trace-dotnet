@@ -10,6 +10,7 @@
 
 #include "AllocationsProvider.h"
 #include "IBatchedSamplesProvider.h"
+#include "IGarbageCollectionsListener.h"
 #include "ISampledAllocationsListener.h"
 #include "IService.h"
 #include "LiveObjectInfo.h"
@@ -23,10 +24,10 @@ class IRuntimeIdStore;
 class IConfiguration;
 class ISampledAllocationsListener;
 
-
 class LiveObjectsProvider : public IService,
                             public IBatchedSamplesProvider,
-                            public ISampledAllocationsListener
+                            public ISampledAllocationsListener,
+                            public IGarbageCollectionsListener
 {
 public:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -54,8 +55,21 @@ public:
     // Inherited via ISampledAllocationsListener
     virtual void OnAllocation(RawAllocationSample& rawSample) override;
 
-    void OnGarbageCollectionStarted();
-    void OnGarbageCollectionFinished();
+    // Inherited via IGarbageCollectionsListener
+    virtual void OnGarbageCollectionStart(
+        int32_t number,
+        uint32_t generation,
+        GCReason reason,
+        GCType type) override;
+    virtual void OnGarbageCollectionEnd(
+        int32_t number,
+        uint32_t generation,
+        GCReason reason,
+        GCType type,
+        bool isCompacting,
+        uint64_t pauseDuration,
+        uint64_t totalDuration,
+        uint64_t endTimestamp) override;
 
 private:
     ObjectHandleID CreateWeakHandle(uintptr_t address) const;
@@ -75,5 +89,6 @@ private:
 
     std::mutex _liveObjectsLock;
     std::list<LiveObjectInfo> _objectsToMonitor;  // need to wait for the next GC to build a WeakHandle around the address
-    std::list<LiveObjectInfo> _monitoredObjects;  // WeakHandle are checked after each GC
+    std::list<LiveObjectInfo> _monitoredObjects;
+    // WeakHandle are checked after each GC
 };

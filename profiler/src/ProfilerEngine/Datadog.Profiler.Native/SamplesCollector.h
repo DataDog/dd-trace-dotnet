@@ -55,7 +55,7 @@ private:
     std::forward_list<std::pair<ISamplesProvider*, uint64_t>> _batchedSamplesProviders;
     std::thread _workerThread;
     std::thread _exporterThread;
-    std::mutex _exportLock;
+    std::recursive_mutex _exportLock;
     std::promise<void> _exporterThreadPromise;
     std::promise<void> _workerThreadPromise;
     IMetricsSender* _metricsSender;

@@ -272,9 +272,18 @@ bool CorProfilerCallback::InitializeServices()
             _pCorProfilerInfoEvents,
             _pAllocationsProvider,
             _pContentionProvider,
-            _pStopTheWorldProvider,
-            _pGarbageCollectionProvider
+            _pStopTheWorldProvider
             );
+
+        if (_pGarbageCollectionProvider != nullptr)
+        {
+            _pClrEventsParser->Register(_pGarbageCollectionProvider);
+        }
+        if (_pLiveObjectsProvider != nullptr)
+        {
+            _pClrEventsParser->Register(_pLiveObjectsProvider);
+        }
+        // TODO: register any provider that needs to get notified when GCs start and end
     }
 
     // Avoid iterating twice on all providers in order to inject this value in each constructor
@@ -829,6 +838,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // If no such provider is enabled, no need to trigger it.
     // TODO: update the test when a new CLR events-based profiler is added (contention, GC, ...)
     bool AreEventBasedProfilersEnabled =
+        _pConfiguration->IsHeapProfilingEnabled() ||
         _pConfiguration->IsAllocationProfilingEnabled() ||
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled()
@@ -838,11 +848,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         // Live heap profiling requires .NET 7+ and ICorProfilerInfo13
         if (major >= 7)
         {
-             HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&_pCorProfilerInfoLiveHeap);
-             if (FAILED(hr))
+            HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&_pCorProfilerInfoLiveHeap);
+            if (FAILED(hr))
             {
-                 Log::Error("Failed to get ICorProfilerInfo13: 0x", std::hex, hr, std::dec, ".");
-                 _pCorProfilerInfoLiveHeap = nullptr;
+                Log::Error("Failed to get ICorProfilerInfo13: 0x", std::hex, hr, std::dec, ".");
+                _pCorProfilerInfoLiveHeap = nullptr;
 
                 // we continue: the live heap profiler will be disabled...
             }
@@ -1479,11 +1489,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherExecute(void)
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionStarted(int cGenerations, BOOL generationCollected[], COR_PRF_GC_REASON reason)
 {
-    if (_pLiveObjectsProvider != nullptr)
-    {
-        _pLiveObjectsProvider->OnGarbageCollectionStarted();
-    }
-
     return S_OK;
 }
 
@@ -1494,11 +1499,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::SurvivingReferences(ULONG cSurviv
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionFinished(void)
 {
-    if (_pLiveObjectsProvider != nullptr)
-    {
-        _pLiveObjectsProvider->OnGarbageCollectionFinished();
-    }
-
     return S_OK;
 }
 
