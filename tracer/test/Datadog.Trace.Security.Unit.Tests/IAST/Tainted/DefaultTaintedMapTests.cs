@@ -268,6 +268,29 @@ public class DefaultTaintedMapTests
         map.Get(testString).Should().BeNull();
     }
 
+    [Fact]
+    public void GivenATaintedObjectMap_WhenHasCausesPurge_IsPurged()
+    {
+        DefaultTaintedMap map = new();
+
+        for (int i = 0; i < 10; i++)
+        {
+            var testString = new StringForTest(Guid.NewGuid().ToString());
+            testString.Hash = 1;
+            var tainted = new TaintedForTest(testString, null);
+            map.Put(tainted);
+            tainted.SetAlive(false);
+            map.Get(testString).Should().NotBeNull();
+        }
+
+        map.GetListValues().Should().HaveCount(10);
+        var testStringNew = new StringForTest(Guid.NewGuid().ToString());
+        testStringNew.Hash = 0;
+        var taintedObject = new TaintedForTest(testStringNew, null);
+        map.Put(taintedObject);
+        map.GetListValues().Should().HaveCount(1);
+    }
+
     [Theory]
     [InlineData(4, 0)]
     [InlineData(4, 1)]

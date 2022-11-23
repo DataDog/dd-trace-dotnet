@@ -44,6 +44,7 @@ internal class DefaultTaintedMap : ITaintedMap
 
     /// <summary>
     /// Gets a value indicating whether flat mode is enabled or not. Once this is set to true, it is not set to false again unless clear() is called.
+    /// The get accessor is only intended for testing purposes.
     /// </summary>
     public bool IsFlat { get; private set; } = false;
 
