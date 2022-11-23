@@ -69,7 +69,7 @@ private:
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
-    AssemblyReference* managed_profiler_assembly_reference;
+    AssemblyReference* managed_profiler_assembly_reference = nullptr;
 
     //
     // OpCodes helper

@@ -243,8 +243,8 @@ struct AssemblyInfo
     {
     }
 
-    AssemblyInfo(AssemblyID id, shared::WSTRING name, ModuleID manifest_module_id, AppDomainID app_domain_id,
-                 shared::WSTRING app_domain_name) :
+    AssemblyInfo(AssemblyID id, const shared::WSTRING& name, ModuleID manifest_module_id, AppDomainID app_domain_id,
+                 const shared::WSTRING& app_domain_name) :
         id(id),
         name(name),
         manifest_module_id(manifest_module_id),
@@ -270,7 +270,7 @@ struct AssemblyMetadata
     {
     }
 
-    AssemblyMetadata(ModuleID module_id, shared::WSTRING name, mdAssembly assembly_token, USHORT major, USHORT minor,
+    AssemblyMetadata(ModuleID module_id, const shared::WSTRING& name, mdAssembly assembly_token, USHORT major, USHORT minor,
                      USHORT build, USHORT revision) :
         module_id(module_id),
         name(name),
@@ -303,7 +303,7 @@ struct AssemblyProperty
     {
     }
 
-    AssemblyProperty(shared::WSTRING szName, void* ppbPublicKey, ULONG pcbPublicKey, ULONG pulHashAlgId, DWORD assemblyFlags) :
+    AssemblyProperty(const shared::WSTRING& szName, void* ppbPublicKey, ULONG pcbPublicKey, ULONG pulHashAlgId, DWORD assemblyFlags) :
         szName(szName),
         ppbPublicKey(ppbPublicKey),
         pcbPublicKey(pcbPublicKey),
@@ -334,7 +334,7 @@ struct ModuleInfo
     ModuleInfo() : id(0), path(shared::EmptyWStr), assembly({}), flags(0)
     {
     }
-    ModuleInfo(ModuleID id, shared::WSTRING path, AssemblyInfo assembly, DWORD flags) :
+    ModuleInfo(ModuleID id, const shared::WSTRING& path, const AssemblyInfo& assembly, DWORD flags) :
         id(id), path(path), assembly(assembly), flags(flags)
     {
     }
@@ -393,7 +393,7 @@ struct TypeInfo
         scopeToken(0)
     {
     }
-    TypeInfo(mdToken id, shared::WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, std::shared_ptr<TypeInfo> extend_from,
+    TypeInfo(mdToken id, const shared::WSTRING& name, mdTypeSpec type_spec, ULONG32 token_type, std::shared_ptr<TypeInfo> extend_from,
              bool valueType, bool isGeneric, bool isAbstract, bool isSealed, std::shared_ptr<TypeInfo> parent_type, mdToken scopeToken) :
         id(id),
         name(name),
@@ -454,10 +454,8 @@ public:
     FunctionMethodSignature() : pbBase(nullptr), len(0)
     {
     }
-    FunctionMethodSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer)
+    FunctionMethodSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer) : pbBase(pb), len(cbBuffer)
     {
-        pbBase = pb;
-        len = cbBuffer;
     };
     ULONG NumberOfTypeArguments() const
     {
@@ -548,9 +546,9 @@ struct FunctionInfo
     {
     }
 
-    FunctionInfo(mdToken id, shared::WSTRING name, TypeInfo type, MethodSignature signature,
-                 MethodSignature function_spec_signature, mdToken method_def_id,
-                 FunctionMethodSignature method_signature) :
+    FunctionInfo(mdToken id, const shared::WSTRING& name, const TypeInfo& type, const MethodSignature& signature,
+                 const MethodSignature& function_spec_signature, mdToken method_def_id,
+                 const FunctionMethodSignature& method_signature) :
         id(id),
         name(name),
         type(type),
@@ -562,8 +560,8 @@ struct FunctionInfo
     {
     }
 
-    FunctionInfo(mdToken id, shared::WSTRING name, TypeInfo type, MethodSignature signature,
-                 FunctionMethodSignature method_signature) :
+    FunctionInfo(mdToken id, const shared::WSTRING& name, const TypeInfo& type, const MethodSignature& signature,
+                 const FunctionMethodSignature& method_signature) :
         id(id),
         name(name),
         type(type),
@@ -601,7 +599,7 @@ mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_im
 HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, AssemblyProperty& corAssemblyProperty,
                              mdAssemblyRef* corlib_ref);
 
-bool FindTypeDefByName(const shared::WSTRING instrumentationTargetMethodTypeName, const shared::WSTRING assemblyName,
+bool FindTypeDefByName(const shared::WSTRING& instrumentationTargetMethodTypeName, const shared::WSTRING& assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef);
 
 HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, const mdMethodDef methodDefToken, bool& hasAsyncAttribute);
