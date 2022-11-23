@@ -190,16 +190,16 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
     collector.RegisterBatchedProvider(&batchedSamplesProvider);
 
     collector.Start();
-    // wait for more than process interval so that ProcessSamples() is called multiple times for the SamplesProvider
-    // but only once for the BatchedSamplesProvider (at export time)
+
+    // wait for more than process interval so that ProcessSamples() is called at least once for the SamplesProvider
     std::this_thread::sleep_for(90ms);
 
     collector.Stop();
 
     auto exportsCount = samplesProvider.GetNbCalls();
-    ASSERT_GE(exportsCount, 2);
+    ASSERT_EQ(exportsCount, 2);  // 1 at work time + 1 at stop time
     auto exportsCount2 = batchedSamplesProvider.GetNbCalls();
-    ASSERT_GE(exportsCount2, 1);  // only 1 at export time
+    ASSERT_EQ(exportsCount2, 2); // 1 at stop time + 1 at export time
 
     uint32_t samplesCount1 = 0;
     uint32_t samplesCount2 = 0;
@@ -224,15 +224,11 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
     ASSERT_EQ(samplesCount1, exportsCount);
     ASSERT_EQ(samplesCount2, exportsCount2 * 2);
 
-    // GetSamples is called at least 2 times on samples provider
-    // and only once for the batched provider that returns twice as many samples
-    ASSERT_GE(samplesCount1, samplesCount2);
-
     exportedSamples.clear();
 
     collector.Export();
 
-    ASSERT_EQ(exportedSamples.size(), 0);
+    ASSERT_EQ(exportedSamples.size(), 2);  // the BatchedSamplesProvider is called once in export
     ASSERT_EQ(pendingSamples.size(), 0);
 }
 
