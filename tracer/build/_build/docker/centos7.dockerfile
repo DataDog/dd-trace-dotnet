@@ -63,7 +63,7 @@ RUN curl -sSL https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages
 # Install the .NET SDK
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
     && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh --version 6.0.100 --install-dir /usr/share/dotnet \
+    && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
 # Trigger first run experience by running arbitrary cmd
@@ -94,6 +94,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 

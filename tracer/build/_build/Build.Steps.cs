@@ -909,6 +909,27 @@ partial class Build
                 .EnableNoDependencies()
                 .SetTargets("BuildDependencyLibs")
             );
+
+            // The live debugger dependency lib _sometimes_ has to be x86/x64, and _sometimes_ has to be AnyCPU apparently
+            // so try building it with both...
+            var debuggerProjects = GlobFiles(TestsDirectory / "test-applications" / "debugger" / "dependency-libs" / "**" / "*.csproj");
+            DotNetBuild(config => config
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .CombineWith(debuggerProjects, (x, project) => x
+                    .SetProjectFile(project)));
+
+            DotNetBuild(config => config
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatform(TargetPlatform)
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .CombineWith(debuggerProjects, (x, project) => x
+                    .SetProjectFile(project)));
         });
 
     Target CompileRegressionDependencyLibs => _ => _
@@ -1010,7 +1031,10 @@ partial class Build
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(TargetPlatform)
+                // Including this apparently breaks the integration tests when running against with the .NET 7 SDK
+                // as dotnet test doesn't look in the right folder. No, I don't understand it either
+                // .SetTargetPlatform(TargetPlatform)
+                .SetTargetPlatformAnyCPU()
                 .SetTargets("BuildCsharpIntegrationTests")
                 .SetMaxCpuCount(null));
         });
@@ -1433,12 +1457,12 @@ partial class Build
                         "Samples.AspNetCoreMvc21" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
-                        "Samples.AspNetCoreMinimalApis" => Framework == TargetFramework.NET6_0,
+                        "Samples.AspNetCoreMinimalApis" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NET6_0,
                         "Samples.Security.AspNetCore2" => Framework == TargetFramework.NETCOREAPP2_1,
-                        "Samples.Security.AspNetCore5" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
-                        "Samples.Security.AspNetCoreBare" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
-                        "Samples.GraphQL4" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
-                        "Samples.HotChocolate" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
+                        "Samples.Security.AspNetCore5" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
+                        "Samples.Security.AspNetCoreBare" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
+                        "Samples.GraphQL4" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
+                        "Samples.HotChocolate" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
@@ -1755,6 +1779,8 @@ partial class Build
 
             // profiler occasionally throws this if shutting down
             knownPatterns.Add(new(@".*LinuxStackFramesCollector::CollectStackSampleImplementation: Unable to send signal .*Error code: No such process", RegexOptions.Compiled));
+            // profiler throws this on .NET 7 - currently allowed
+            knownPatterns.Add(new(@".*Profiler call failed with result Unspecified-Failure \(80131351\): pInfo..GetModuleInfo\(moduleId, nullptr, 0, nullptr, nullptr, .assemblyId\)", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
@@ -2086,6 +2112,12 @@ partial class Build
 
     private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings)
     {
+        if (Framework == TargetFramework.NET461)
+        {
+            // Coverlet apparently breaks .NET Framework when running on the .NET 7 SDK.
+            // TODO: Fix it
+            return settings;
+        }
         var strongNameKeyPath = Solution.Directory / "Datadog.Trace.snk";
 
         return settings.SetDataCollector("XPlat Code Coverage")

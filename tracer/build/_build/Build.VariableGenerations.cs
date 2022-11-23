@@ -290,6 +290,7 @@ partial class Build : NukeBuild
                         "debian",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
@@ -310,6 +311,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "35-5.0"),
                             (publishFramework: TargetFramework.NET5_0, "34-5.0"),
@@ -330,6 +332,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
+                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
@@ -347,6 +351,7 @@ partial class Build : NukeBuild
                         "centos",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "7-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "7-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
@@ -362,6 +367,7 @@ partial class Build : NukeBuild
                         "rhel",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "8-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "8-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "8-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
@@ -376,6 +382,7 @@ partial class Build : NukeBuild
                         "centos-stream",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            // (publishFramework: TargetFramework.NET7_0, "9-7.0"), Not updated from RC1 yet
                             (publishFramework: TargetFramework.NET6_0, "9-6.0"),
                             (publishFramework: TargetFramework.NET6_0, "8-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "8-5.0"),
@@ -391,6 +398,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "15-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "15-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "15-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
@@ -415,6 +423,7 @@ partial class Build : NukeBuild
                         "debian",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
@@ -464,6 +473,7 @@ partial class Build : NukeBuild
                         "debian",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
@@ -479,6 +489,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "33-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
@@ -494,6 +505,7 @@ partial class Build : NukeBuild
                         "alpine",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
@@ -509,6 +521,7 @@ partial class Build : NukeBuild
                         "centos",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "7-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "7-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
@@ -524,6 +537,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "15-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "15-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "15-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
@@ -548,6 +562,7 @@ partial class Build : NukeBuild
                         "debian",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
@@ -597,6 +612,7 @@ partial class Build : NukeBuild
                         "debian",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
@@ -611,6 +627,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "33-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
@@ -625,6 +642,7 @@ partial class Build : NukeBuild
                         "alpine",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
@@ -639,6 +657,7 @@ partial class Build : NukeBuild
                         "centos",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "7-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "7-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
@@ -653,6 +672,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "15-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "15-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "15-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
@@ -676,6 +696,7 @@ partial class Build : NukeBuild
                         "debian",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
@@ -699,6 +720,7 @@ partial class Build : NukeBuild
                         "debian",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye"),
                         },
@@ -711,6 +733,7 @@ partial class Build : NukeBuild
                         "alpine",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.15"),
                         },
@@ -757,8 +780,8 @@ partial class Build : NukeBuild
                     };
                     var runtimeImages = new (string publishFramework, string runtimeTag)[]
                     {
-                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2019"),
-                        (publishFramework: TargetFramework.NET5_0, "5.0-windowsservercore-ltsc2019"),
+                        (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
+                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
                     };
 
                     var matrix = (
@@ -766,7 +789,7 @@ partial class Build : NukeBuild
                                      from image in runtimeImages
                                      let dockerTag = $"{platform.platform}_{image.runtimeTag.Replace('.', '_')}_{(platform.enable32Bit ? "32bit" : "64bit")}"
                                      let channel32Bit = platform.enable32Bit
-                                                                       ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
+                                                                       ? GetInstallerChannel(image.publishFramework)
                                                                        : string.Empty
                                      select new
                                      {
@@ -789,8 +812,8 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new (string publishFramework, string runtimeTag)[]
                     {
-                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2019"),
-                        (publishFramework: TargetFramework.NET5_0, "5.0-windowsservercore-ltsc2019"),
+                        (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
+                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
                     };
 
                     var matrix = (
@@ -798,7 +821,7 @@ partial class Build : NukeBuild
                                      from image in runtimeImages
                                      let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
                                      let channel32Bit = platform == MSBuildTargetPlatform.x86
-                                                                       ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
+                                                                       ? GetInstallerChannel(image.publishFramework)
                                                                        : string.Empty
                                      select new
                                      {
@@ -822,8 +845,8 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new (string publishFramework, string runtimeTag)[]
                     {
-                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2019"),
-                        (publishFramework: TargetFramework.NET5_0, "5.0-windowsservercore-ltsc2019"),
+                        (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
+                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
                     };
 
                     var matrix = (
@@ -831,7 +854,7 @@ partial class Build : NukeBuild
                                      from image in runtimeImages
                                      let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
                                      let channel32Bit = platform == MSBuildTargetPlatform.x86
-                                                                       ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
+                                                                       ? GetInstallerChannel(image.publishFramework)
                                                                        : string.Empty
                                      select new
                                      {
@@ -855,8 +878,8 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new (string publishFramework, string runtimeTag)[]
                     {
-                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2019"),
-                        (publishFramework: TargetFramework.NET5_0, "5.0-windowsservercore-ltsc2019"),
+                        (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
+                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
                     };
 
                     var matrix = (
@@ -864,7 +887,7 @@ partial class Build : NukeBuild
                                      from image in runtimeImages
                                      let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
                                      let channel32Bit = platform == MSBuildTargetPlatform.x86
-                                                                       ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
+                                                                       ? GetInstallerChannel(image.publishFramework)
                                                                        : string.Empty
                                      select new
                                      {
@@ -879,6 +902,10 @@ partial class Build : NukeBuild
                     Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("dotnet_tool_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
+
+                static string GetInstallerChannel(string publishFramework) =>
+                    publishFramework.Replace("netcoreapp", string.Empty)
+                                    .Replace("net", string.Empty);
             }
         };
 

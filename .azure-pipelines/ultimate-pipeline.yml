@@ -95,7 +95,7 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 6.0.100
+  dotnetCoreSdkLatestVersion: 7.0.100
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -201,7 +201,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -226,7 +226,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -255,7 +255,7 @@ stages:
 
   - job: build
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -580,7 +580,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    name: azure-windows-scale-set
+    name: azure-windows-scale-set-3
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -625,7 +625,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    name: azure-windows-scale-set
+    name: azure-windows-scale-set-3
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -863,7 +863,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -929,14 +929,14 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [tracer, security]
+      jobs: [tracer]
 
   - job: tracer
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -976,12 +976,23 @@ stages:
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
+- stage: integration_tests_windows_iis_security
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [security]
+
   - job: security
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1036,7 +1047,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -1108,7 +1119,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1821,7 +1832,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
 
     # Enable the Datadog Agent service for this job
     services:
@@ -2006,7 +2017,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ Windows ]
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -2079,7 +2090,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -2220,7 +2231,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -2779,6 +2790,7 @@ stages:
   dependsOn: 
     - integration_tests_windows
     - integration_tests_windows_iis
+    - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
@@ -2797,7 +2809,7 @@ stages:
       timeoutInMinutes: 30
 
       pool:
-        vmImage: windows-2019
+        vmImage: windows-2022
 
       steps:
       - template: steps/clone-repo.yml
@@ -3519,7 +3531,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3588,7 +3600,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3653,7 +3665,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3718,7 +3730,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3775,6 +3787,7 @@ stages:
     - unit_tests_arm64
     - integration_tests_windows
     - integration_tests_windows_iis
+    - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
