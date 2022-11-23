@@ -467,25 +467,39 @@ namespace Datadog.Trace.Coverage.Collector
 
                                 currentInstruction.OpCode = OpCodes.Ldloc;
                                 currentInstruction.Operand = countersVariable;
-                                instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, i));
+
+                                var optIdx = 0;
+                                if (i == 0 && _enableJitOptimizations && clonedInstructionsWithSequencePoints.Count > 1)
+                                {
+                                    // If the jit optimizations are enabled and instructions count is >= 2,
+                                    // we do a `_ = counters[{lastIndex}];` at the first report.
+                                    // This will remove later counters bound checks improving the overall performance.
+                                    instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, clonedInstructionsWithSequencePoints.Count - 1));
+                                    instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelem_I4));
+                                    instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Pop));
+                                    instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldloc, countersVariable));
+                                    optIdx = 4;
+                                }
 
                                 switch (_coverageMode)
                                 {
                                     case CoverageMode.LineCallCount:
                                         // Increments items in the counters array (to have the number of times a line was executed)
-                                        instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
-                                        instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Dup));
-                                        instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldind_I4));
-                                        instructions.Insert(currentInstructionIndex + 5, Instruction.Create(OpCodes.Ldc_I4_1));
-                                        instructions.Insert(currentInstructionIndex + 6, Instruction.Create(OpCodes.Add));
-                                        instructions.Insert(currentInstructionIndex + 7, Instruction.Create(OpCodes.Stind_I4));
-                                        instructions.Insert(currentInstructionIndex + 8, currentInstructionClone);
+                                        instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, i));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 3, Instruction.Create(OpCodes.Dup));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 4, Instruction.Create(OpCodes.Ldind_I4));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 5, Instruction.Create(OpCodes.Ldc_I4_1));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 6, Instruction.Create(OpCodes.Add));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 7, Instruction.Create(OpCodes.Stind_I4));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 8, currentInstructionClone);
                                         break;
                                     case CoverageMode.LineExecution:
                                         // Set the items to 1 in the counters array (to check if the line was touched)
-                                        instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldc_I4, 1));
-                                        instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Stelem_I4));
-                                        instructions.Insert(currentInstructionIndex + 4, currentInstructionClone);
+                                        instructions.Insert(currentInstructionIndex + optIdx + 1, Instruction.Create(OpCodes.Ldc_I4, i));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 2, Instruction.Create(OpCodes.Ldc_I4, 1));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 3, Instruction.Create(OpCodes.Stelem_I4));
+                                        instructions.Insert(currentInstructionIndex + optIdx + 4, currentInstructionClone);
                                         break;
                                     default:
                                         throw new Exception("Coverage mode not supported.");
