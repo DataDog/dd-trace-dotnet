@@ -251,7 +251,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
                         continue;
                     }
 
-                    if (module.Name == "DataDog.Trace.dll") // We don't instrument ourselves
+                    if (module.Name == "Datadog.Trace.dll") // We don't instrument ourselves
                     {
                         continue;
                     }
