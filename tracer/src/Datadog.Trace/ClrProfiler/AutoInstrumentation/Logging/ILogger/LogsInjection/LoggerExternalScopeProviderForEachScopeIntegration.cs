@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { "System.Action`2[System.Object,!!0]", "!!0" },
         MinimumVersion = "2.0.0",
-        MaximumVersion = "6.*.*",
+        MaximumVersion = "7.*.*",
         IntegrationName = LoggerIntegrationCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

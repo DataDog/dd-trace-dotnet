@@ -24,6 +24,7 @@ namespace Honeypot
             NugetPackages.Add("System.Messaging", new string[] { });
             NugetPackages.Add("System", new string[] { });
             NugetPackages.Add("System.Diagnostics.Process", new string[] { });
+            NugetPackages.Add("System.Security.Cryptography", new string[] { });
             NugetPackages.Add("System.Security.Cryptography.Primitives", new string[] { });
 
             NugetPackages.Add("Oracle.DataAccess", new string[] { });

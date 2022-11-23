@@ -109,11 +109,12 @@
     "SampleProjectName": "Samples.Npgsql",
     "NugetPackageSearchName": "Npgsql",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
     "SpecificVersions": [
       "4.*.*",
       "5.*.*",
-      "6.*.*"
+      "6.*.*",
+      "7.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "6.0.0",
@@ -227,12 +228,13 @@
     "SampleProjectName": "Samples.Microsoft.Data.Sqlite",
     "NugetPackageSearchName": "Microsoft.Data.Sqlite",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
     "SpecificVersions": [
       "2.*.*",
       "3.*.*",
       "5.*.*",
-      "6.*.*"
+      "6.*.*",
+      "7.*.*"
     ]
   },
   {
