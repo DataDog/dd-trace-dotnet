@@ -345,6 +345,7 @@ bool CorProfilerCallback::DisposeServices()
     _pThreadsCpuManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
     _pManagedThreadList = nullptr;
+    _pCodeHotspotThreadList = nullptr;
     _pApplicationStore = nullptr;
 
     return result;
