@@ -36,7 +36,7 @@ namespace Samples.WeakHashing
             testHashAlgorithm(SHA256.Create());
             testHashAlgorithm(new HMACSHA256());
 
-#if NET461
+#if NETFRAMEWORK
             testHashAlgorithm(new HMACRIPEMD160(new byte[] { 4, 4 }));
             testHashAlgorithm(RIPEMD160Managed.Create());
             testHashAlgorithm(new MACTripleDES());
