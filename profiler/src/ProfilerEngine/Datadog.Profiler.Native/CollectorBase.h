@@ -172,7 +172,7 @@ private:
         if (!_pAppDomainStore->GetInfo(rawSample.AppDomainId, pid, appDomainName))
         {
             sample->SetAppDomainName("");
-            sample->SetPid("0");
+            sample->SetPid(std::to_string(OpSysTools::GetProcId()));
 
             return;
         }

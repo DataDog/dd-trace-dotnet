@@ -59,6 +59,19 @@ public:
         _labels.push_back(std::forward<T>(label));
     }
 
+    // used to replace the last label (for lifetime)
+    template<typename T>
+    void ReplaceLastLabel(T&& label)
+    {
+        _labels.pop_back();
+        _labels.push_back(std::forward<T>(label));
+    }
+
+    void ReplaceLastLabel(std::string&& text)
+    {
+        _labels.end()->second = std::move(text);
+    }
+
     // helpers for well known mandatory labels
     template <typename T>
     void SetPid(T&& pid)
@@ -104,6 +117,7 @@ public:
     static const std::string GarbageCollectionReasonLabel;
     static const std::string GarbageCollectionTypeLabel;
     static const std::string GarbageCollectionCompactingLabel;
+    static const std::string ObjectLifetimeLabel;
 
 private:
     uint64_t _timestamp;

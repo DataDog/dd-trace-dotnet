@@ -1,11 +1,13 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include <string>
 #include <vector>
 
 #include "GarbageCollection.h"
 #include "IConfiguration.h"
 #include "LiveObjectsProvider.h"
+#include "OpSysTools.h"
 #include "Sample.h"
 
 std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
@@ -113,13 +115,18 @@ std::list<std::shared_ptr<Sample>> LiveObjectsProvider::GetSamples()
         liveObjectsSamples.push_back(info.GetSample());
     }
 
+    // update samples lifetime
+    int64_t currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
+    for (auto& sample : liveObjectsSamples)
+    {
+        sample->ReplaceLastLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(sample->GetTimeStamp() - currentTimestamp)});
+    }
+
     return liveObjectsSamples;
 }
 
 void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
 {
-    //std::cout << rawSample.AllocationClass << std::endl;
-
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
     // !! Don't forget to increment the ref count on the thread info !!
@@ -130,12 +137,13 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
     }
 
     LiveObjectInfo info(
-        _pAllocationsProvider.get()->TransformRawSample(rawSample),
-        rawSample.Address);
+        _pAllocationsProvider->TransformRawSample(rawSample),
+        rawSample.Address,
+        rawSample.Timestamp);
 
     // Limit the number of handle to create until the next GC
     // If _objectsToMonitor is already full, stop adding new objects
-    if (_objectsToMonitor.size() + _monitoredObjects.size() <= MAX_LIVE_OBJECTS)
+    if (_objectsToMonitor.size() + _monitoredObjects.size() < MAX_LIVE_OBJECTS)
     {
         _objectsToMonitor.push_back(std::move(info));
     }

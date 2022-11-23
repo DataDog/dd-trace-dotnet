@@ -13,7 +13,7 @@
 class LiveObjectInfo
 {
 public:
-    LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address);
+    LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, int64_t timestamp);
 
     // accessors
     void SetHandle(ObjectHandleID handle);
@@ -25,4 +25,5 @@ private:
     std::shared_ptr<Sample> _sample;
     uintptr_t _address;
     ObjectHandleID _weakHandle;
+    int64_t _timestamp;
 };

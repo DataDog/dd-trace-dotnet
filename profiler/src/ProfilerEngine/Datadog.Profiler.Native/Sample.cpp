@@ -25,6 +25,9 @@ const std::string Sample::TimelineEventTypeLabel = "event";
 const std::string Sample::GarbageCollectionGenerationLabel = "gc generation";
 const std::string Sample::GarbageCollectionNumberLabel = "gc number";
 
+// life object related labels
+const std::string Sample::ObjectLifetimeLabel = "object lifetime";
+
 
 // TODO: update the values vector size if more than 16 slots are needed
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created

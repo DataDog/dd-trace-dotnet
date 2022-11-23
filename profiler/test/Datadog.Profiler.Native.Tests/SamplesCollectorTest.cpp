@@ -199,7 +199,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
     auto exportsCount = samplesProvider.GetNbCalls();
     ASSERT_EQ(exportsCount, 2);  // 1 at work time + 1 at stop time
     auto exportsCount2 = batchedSamplesProvider.GetNbCalls();
-    ASSERT_EQ(exportsCount2, 2); // 1 at stop time + 1 at export time
+    ASSERT_EQ(exportsCount2, 1); // 1 at export time
 
     uint32_t samplesCount1 = 0;
     uint32_t samplesCount2 = 0;

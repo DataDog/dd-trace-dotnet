@@ -57,7 +57,6 @@ bool SamplesCollector::Stop()
 
     // Export the leftover samples
     CollectSamples(_samplesProviders);
-    CollectSamples(_batchedSamplesProviders);
     Export();
 
     return true;

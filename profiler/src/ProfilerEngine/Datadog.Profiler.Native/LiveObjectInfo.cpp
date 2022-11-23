@@ -3,11 +3,13 @@
 
 #include "LiveObjectInfo.h"
 
-LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address)
+LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, int64_t timestamp)
     :
     _address(address),
-    _weakHandle(nullptr)
+    _weakHandle(nullptr),
+    _timestamp(timestamp)
 {
+    sample->AddLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(0)});
     _sample = sample;
 }
 
