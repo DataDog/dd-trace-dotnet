@@ -278,8 +278,8 @@ partial class Build
             try
             {
                 var (arch, ext) = GetUnixArchitectureAndExtension();
-                CppCheck.Value(arguments: $"cppcheck --platform=unix64 --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.xml --xml --enable=warning,performance");
-                CppCheck.Value(arguments: $"cppcheck --platform=unix64 --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.txt --enable=warning,performance");
+                CppCheck.Value(arguments: $"cppcheck --inconclusive --std=c++11 --platform=native --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.xml --xml --enable=warning,performance,portability");
+                CppCheck.Value(arguments: $"cppcheck --inconclusive --std=c++11 --platform=native --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.txt --enable=warning,performance,portability");
             }
             catch (Exception ex)
             {

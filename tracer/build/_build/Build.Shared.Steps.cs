@@ -117,8 +117,8 @@ partial class Build
             try
             {
                 var (arch, ext) = GetUnixArchitectureAndExtension();
-                CppCheck.Value(arguments: $"cppcheck --platform=unix64 --project={NativeLoaderProject.Path} --output-file={BuildDataDirectory}/{NativeLoaderProject.Name}-cppcheck-{arch}.xml --xml --enable=warning,performance");
-                CppCheck.Value(arguments: $"cppcheck --platform=unix64 --project={NativeLoaderProject.Path} --output-file={BuildDataDirectory}/{NativeLoaderProject.Name}-cppcheck-{arch}.txt --enable=warning,performance");
+                CppCheck.Value(arguments: $"cppcheck --inconclusive --std=c++11 --project={NativeLoaderProject.Path} --output-file={BuildDataDirectory}/{NativeLoaderProject.Name}-cppcheck-{arch}.xml --xml --enable=warning,performance,portability");
+                CppCheck.Value(arguments: $"cppcheck --inconclusive --std=c++11 --project={NativeLoaderProject.Path} --output-file={BuildDataDirectory}/{NativeLoaderProject.Name}-cppcheck-{arch}.txt --enable=warning,performance,portability");
             }
             catch (Exception ex)
             {
