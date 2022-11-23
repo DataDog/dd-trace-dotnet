@@ -1018,7 +1018,7 @@ HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataIm
         methodDefToken, WStr("System.Runtime.CompilerServices.AsyncStateMachineAttribute"), &ppData, &pcbData);
 
     IfFailRet(hr);
-    hasAsyncAttribute = pcbData > 0 ? true : false;
+    hasAsyncAttribute = pcbData > 0;
     return hr;
 }
 
@@ -1030,7 +1030,7 @@ HRESULT IsByRefLike(const ComPtr<IMetaDataImport2>& metadataImport, const mdType
         typeDefToken, WStr("System.Runtime.CompilerServices.IsByRefLikeAttribute"), &ppData, &pcbData);
 
     IfFailRet(hr);
-    hasByRefLikeAttribute = pcbData > 0 ? true : false;
+    hasByRefLikeAttribute = pcbData > 0;
     return hr;
 }
 
@@ -1084,7 +1084,6 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
 
         const auto& candidateResolutionScopeName = assemblyMetadata.name;
 
-        // TODO DEBUGGING BREAKPOINT
         if (resolutionScopeName == candidateResolutionScopeName)
         {
             hr = candidateMetadataImport->FindTypeDefByName(refTypeName.data(), parentToken, &resolvedTypeDefToken);
@@ -1122,7 +1121,9 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
                         continue;
                     }
 
-                    while (exportedTypeContainerToken != mdExportedTypeNil &&
+                    int tryoutsCount = 1000; // To avoid falling into an infinite loop
+                    while (tryoutsCount-- > 0 && 
+                           exportedTypeContainerToken != mdExportedTypeNil &&
                            TypeFromToken(exportedTypeContainerToken) == mdtExportedType &&
                            IsTdNestedPublic(exportedTypeFlags))
                     {
@@ -1132,8 +1133,13 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
                         if (FAILED(hr))
                         {
                             Logger::Warn("[ResolveTypeInternal] GetExportedTypeProps [2] has failed with: ", shared::WSTRING(refTypeName.data()));
-                            continue;
                         }
+                    }
+
+                    if (tryoutsCount == 0)
+                    {
+                        Logger::Warn("[ResolveTypeInternal] Reached the maximum amount of tryouts of trying to grab the exported type with: ", shared::WSTRING(refTypeName.data()));
+                        return E_FAIL;
                     }
 
                     if (TypeFromToken(exportedTypeContainerToken) == mdtAssemblyRef)
@@ -1204,8 +1210,10 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
     }
     IfFailRet(hr);
     mdToken tempToken = mdTokenNil;
-    int resolvingTryoutsCount = 1000;
-    while (resolvingTryoutsCount-- > 0 && 
+    // To avoid ending up in an infinite loop, I'm limiting the execution to 1000 (arbitrary large number that will be
+    // well beyond enough)
+    int tryoutsCount = 1000;
+    while (tryoutsCount-- > 0 && 
         TypeFromToken(resolutionScope) != mdtAssemblyRef && 
         TypeFromToken(resolutionScope) != mdtModuleRef &&
         resolutionScope != mdTokenNil)
@@ -1223,7 +1231,7 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
         IfFailRet(hr);
     }
 
-    if (resolvingTryoutsCount == 0)
+    if (tryoutsCount == 0)
     {
         Logger::Warn(
             "[ResolveType] Reached the maximum amount of tryouts of resolving the resolution scope. typeRefToken: ",
@@ -1255,8 +1263,9 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
     std::vector<ModuleID> loadedModules;
     size_t resultIndex = 0;
 
+    tryoutsCount = 1000;
     // iterate over the loaded modules enumeration and collect the module ids into loadedModules
-    while (true)
+    while (tryoutsCount-- > 0)
     {
         const ULONG valueToRetrieve = 20;
         ULONG valueRetrieved = 0;
@@ -1280,6 +1289,14 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
             loadedModules[resultIndex] = tempValues[k];
             ++resultIndex;
         }
+    }
+
+    if (tryoutsCount == 0)
+    {
+        Logger::Warn(
+            "[ResolveType] Reached the maximum amount of tryouts of enumerating the loaded modules. typeRefToken: ",
+            typeRefToken);
+        return E_FAIL;
     }
 
     const auto& resolutionScopeName = assemblyMetadata.name;
