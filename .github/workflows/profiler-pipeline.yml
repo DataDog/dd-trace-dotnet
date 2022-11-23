@@ -749,11 +749,11 @@ jobs:
     steps:
       - name: Install CppCheck
         run: |
-          wget https://github.com/danmar/cppcheck/archive/refs/tags/2.5.tar.gz \
-          && CPPCHECK_SHA256="dc27154d799935c96903dcc46653c526c6f4148a6912b77d3a50cb35dabd82e1" \
-          && (printf "${CPPCHECK_SHA256}  2.5.tar.gz" | sha256sum --check --strict --status) \
-          && tar xvfz 2.5.tar.gz \
-          && cd cppcheck-2.5 \
+          wget https://github.com/danmar/cppcheck/archive/refs/tags/2.9.tar.gz \
+          && CPPCHECK_SHA256="56aee8b5bdf936ab7adc9ab43903ba2052f088695c80f047682024a1ed0ef3f3" \
+          && (printf "${CPPCHECK_SHA256}  2.9.tar.gz" | sha256sum --check --strict --status) \
+          && tar xvfz 2.9.tar.gz \
+          && cd cppcheck-2.9 \
           && mkdir build \
           && cd build \
           && cmake ../ \
