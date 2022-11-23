@@ -59,13 +59,15 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly string _testName;
 
         public AspNetWebForms(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-            : base("WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet")
+            : base("WebForms", output, null, @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
-            _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
+
+            _iisFixture = iisFixture;
+            _iisFixture.ShutdownPath = "/home/shutdown";
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetWebForms)
                      + (classicMode ? ".Classic" : ".Integrated")

@@ -98,11 +98,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly bool _enableSecurity;
 
         public AspNetMvc5RateLimiter(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity, int? traceRateLimit)
-            : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
+            : base(nameof(AspNetMvc5), output, null, @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
             _iisFixture = iisFixture;
+            _iisFixture.ShutdownPath = "/home/shutdown";
             _enableSecurity = enableSecurity;
             if (traceRateLimit.HasValue)
             {
