@@ -757,7 +757,7 @@ jobs:
           && mkdir build \
           && cd build \
           && cmake ../ \
-          && cmake --build .  \
+          && cmake --build . --parallel $(nproc)  \
           && sudo make install
 
       - name: Install clang-tidy
