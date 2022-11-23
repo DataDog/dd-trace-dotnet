@@ -15,21 +15,10 @@ parameters:
     default: true
 
 steps:
-  - bash: |
-      if [ -n "$CHANNEL" ] && [ -n "$SDKVERSION" ]; then
-        echo "##vso[task.logissue type=error;]You can't provide both \"channel\" and \"sdkVersion\". Pick one."
-        echo "##vso[task.complete result=Failed;]"
-      elif [ -z "$CHANNEL" ] && [ -z "$SDKVERSION" ]; then
-        echo "##vso[task.logissue type=error;]You must provide either \"channel\" or \"sdkVersion\"."
-        echo "##vso[task.complete result=Failed;]"
-      fi
-    env:
-      CHANNEL: ${{ parameters.channel }}
-      SDKVERSION: ${{ parameters.sdkVersion }}
-    displayName: Validate parameters
-    retryCountOnTaskFailure: 5
-
   - powershell: |
+      $channel = "${{ parameters.channel }}"
+      $sdkVersion = "${{ parameters.sdkVersion }}"
+
       echo "Downloading dotnet-install.ps1"
       Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
 
@@ -49,10 +38,10 @@ steps:
 
       echo "Installing dotnet ($arch) to $path"
 
-      if("${{ parameters.sdkVersion }}") {
-        ./dotnet-install.ps1 -Version ${{ parameters.sdkVersion }} -Architecture $arch -NoPath:$True -InstallDir $path
+      if($sdkVersion) {
+        ./dotnet-install.ps1 -Version $sdkVersion -Architecture $arch -NoPath:$True -InstallDir $path
       } else {
-        ./dotnet-install.ps1 -Channel ${{ parameters.channel }} -Architecture $arch -NoPath:$True -InstallDir $path
+        ./dotnet-install.ps1 -Channel $channel -Architecture $arch -NoPath:$True -InstallDir $path
       }
 
       rm ./dotnet-install.ps1
