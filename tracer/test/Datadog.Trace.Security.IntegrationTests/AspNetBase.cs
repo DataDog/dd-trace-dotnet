@@ -98,6 +98,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             base.Dispose();
 
             var request = WebRequest.CreateHttp($"http://localhost:{_httpPort}{_shutdownPath}");
+            request.Timeout = 10_000;
             request.GetResponse().Close();
 
             if (_process is not null)

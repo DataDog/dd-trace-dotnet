@@ -35,7 +35,8 @@ namespace Benchmarks.Trace
         public CallTargetReturn RunOnMethodBegin()
         {
             var state = TraceAnnotationsIntegration.OnMethodBegin<object>(null, MethodHandle, TypeHandle);
-            return TraceAnnotationsIntegration.OnMethodEnd<object>(null, null, state);
+            TraceAnnotationsIntegration.OnMethodEnd<object>(null, null, in state);
+            return CallTargetReturn.GetDefault();
         }
 
         public int InstrumentedMethod()

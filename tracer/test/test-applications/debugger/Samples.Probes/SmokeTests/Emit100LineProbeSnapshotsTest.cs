@@ -3,7 +3,7 @@ using Samples.Probes.Shared;
 
 namespace Samples.Probes.SmokeTests;
 
-[LineProbeTestData(lineNumber: 14, unlisted: true, skipOnFramework: new []{ "net6.0" })]
+[LineProbeTestData(lineNumber: 14, unlisted: true, skipOnFramework: new []{ "net6.0", "net7.0" })]
 public class Emit100LineProbeSnapshotsTest : IRun
 {
     public void Run()
