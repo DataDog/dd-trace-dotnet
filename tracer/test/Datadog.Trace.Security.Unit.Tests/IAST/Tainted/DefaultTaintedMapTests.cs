@@ -23,8 +23,8 @@ public class DefaultTaintedMapTests
         var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
         map.Put(tainted);
         var tainted2 = map.Get(testString);
-        Assert.NotNull(tainted2);
-        Assert.Equal(testString, tainted2.Value);
+        tainted2.Should().NotBeNull();
+        tainted2.Value.Should().Be(testString);
     }
 
     [Fact]
