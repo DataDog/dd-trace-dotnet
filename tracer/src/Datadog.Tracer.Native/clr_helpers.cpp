@@ -364,7 +364,6 @@ std::tuple<unsigned, int> TypeSignature::GetElementTypeAndFlags() const
 
     if (*pbCur == ELEMENT_TYPE_VOID)
     {
-        elementType = ELEMENT_TYPE_VOID;
         typeFlags |= TypeFlagVoid;
     }
 
