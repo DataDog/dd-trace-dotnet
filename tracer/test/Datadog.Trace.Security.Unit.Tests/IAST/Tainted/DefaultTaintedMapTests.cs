@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Iast;
+using FluentAssertions;
 using Xunit;
 using Range = Datadog.Trace.Iast.Range;
 
@@ -35,8 +36,8 @@ public class DefaultTaintedMapTests
         var tainted = new TaintedObject(stringObject, null);
         map.Put(tainted);
         var tainted2 = map.Get(stringObject);
-        Assert.NotNull(tainted2);
-        Assert.Equal(stringObject, tainted2.Value);
+        tainted2.Should().NotBeNull();
+        stringObject.Should().Be(tainted2.Value);
     }
 
     [Fact]
@@ -47,8 +48,8 @@ public class DefaultTaintedMapTests
         var tainted = new TaintedObject(text, null);
         map.Put(tainted);
         var tainted2 = map.Get(text);
-        Assert.NotNull(tainted2);
-        Assert.Equal(text, tainted2.Value);
+        tainted2.Should().NotBeNull();
+        text.Should().Be(tainted2.Value);
     }
 
     [Fact]
@@ -60,7 +61,7 @@ public class DefaultTaintedMapTests
         var testString2 = testGuid.ToString();
         map.Put(new TaintedObject(testString, null));
         var tainted2 = map.Get(testString2);
-        Assert.Null(tainted2);
+        tainted2.Should().BeNull();
     }
 
     [Fact]
@@ -78,7 +79,7 @@ public class DefaultTaintedMapTests
         DefaultTaintedMap map = new();
         var tainted = new TaintedObject(null, null);
         map.Put(tainted);
-        Assert.Empty(map.GetListValues());
+        map.GetListValues().Should().BeEmpty();
     }
 
     [Fact]
@@ -86,14 +87,14 @@ public class DefaultTaintedMapTests
     {
         DefaultTaintedMap map = new();
         map.Put(null);
-        Assert.Empty(map.GetListValues());
+        map.GetListValues().Should().BeEmpty();
     }
 
     [Fact]
     public void GivenATaintedObjectMap_WhenGetNull_NoExceptionIsThrown()
     {
         DefaultTaintedMap map = new();
-        Assert.Null(map.Get(null));
+        map.Get(null).Should().BeNull();
     }
 
     [Fact]
@@ -105,8 +106,8 @@ public class DefaultTaintedMapTests
         map.Put(tainted);
         map.Purge();
         var tainted2 = map.Get(testObject);
-        Assert.NotNull(tainted2);
-        Assert.Equal(tainted.Value, tainted2.Value);
+        tainted2.Should().NotBeNull();
+        tainted.Value.Should().Be(tainted2.Value);
     }
 
     [Fact]
@@ -117,10 +118,10 @@ public class DefaultTaintedMapTests
         var source = new Source(12, "name", "value");
         var tainted = new TaintedObject(testObject, new Range[] { new Range(1, 2, source) });
         map.Put(tainted);
-        Assert.NotNull(map.Get(testObject));
+        map.Get(testObject).Should().NotBeNull();
         map.Clear();
-        Assert.Null(map.Get(testObject));
-        Assert.Empty(map.GetListValues());
+        map.Get(testObject).Should().BeNull();
+        map.GetListValues().Should().BeEmpty();
     }
 
     [Fact]
@@ -135,8 +136,8 @@ public class DefaultTaintedMapTests
             var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
             map.Put(tainted);
             var tainted2 = map.Get(testString);
-            Assert.NotNull(tainted2);
-            Assert.Equal(tainted.Value, tainted2.Value);
+            tainted2.Should().NotBeNull();
+            tainted.Value.Should().Be(tainted2.Value);
         }
     }
 
@@ -153,13 +154,13 @@ public class DefaultTaintedMapTests
             var source = new Source(12, "name", "value");
             var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
             map.Put(tainted);
-            Assert.NotNull(map.Get(testString));
+            map.Get(testString).Should().NotBeNull();
             objects.Add(testString);
         }
 
         map.Purge();
-        Assert.Equal(iterations, map.GetListValues().Count);
-        Assert.False(map.IsFlat);
+        iterations.Should().Be(map.GetListValues().Count);
+        map.IsFlat.Should().BeFalse();
         AssertContained(map, objects);
     }
 
@@ -172,7 +173,7 @@ public class DefaultTaintedMapTests
 
         foreach (var itemInMap in map.GetListValues())
         {
-            Assert.Contains((itemInMap as TaintedObject).Value, objects);
+            objects.Should().Contain((itemInMap as TaintedObject).Value as string);
         }
     }
 
@@ -187,14 +188,14 @@ public class DefaultTaintedMapTests
         testString.Hash = 10;
         map.Put(new TaintedForTest(testString, null));
 
-        Assert.NotNull(map.Get(testString));
+        map.Get(testString).Should().NotBeNull();
 
         var testString2 = new StringForTest(Guid.NewGuid().ToString());
         testString2.Hash = 10;
         map.Put(new TaintedForTest(testString2, null));
 
-        Assert.NotNull(map.Get(testString2));
-        Assert.Null(map.Get(testString));
+        map.Get(testString2).Should().NotBeNull();
+        map.Get(testString).Should().BeNull();
     }
 
     [Fact]
@@ -208,7 +209,7 @@ public class DefaultTaintedMapTests
         {
             var testString = new StringForTest(Guid.NewGuid().ToString());
             map.Put(new TaintedForTest(testString, null));
-            Assert.NotNull(map.Get(testString));
+            map.Get(testString).Should().NotBeNull();
         }
     }
 
@@ -249,9 +250,9 @@ public class DefaultTaintedMapTests
         var testString = Guid.NewGuid().ToString();
         var tainted = new TaintedForTest(testString, null);
         map.Put(tainted);
-        Assert.NotNull(map.Get(testString));
+        map.Get(testString).Should().NotBeNull();
         map.Purge();
-        Assert.NotNull(map.Get(testString));
+        map.Get(testString).Should().NotBeNull();
     }
 
     [Fact]
@@ -261,10 +262,10 @@ public class DefaultTaintedMapTests
         var testString = Guid.NewGuid().ToString();
         var tainted = new TaintedForTest(testString, null);
         map.Put(tainted);
-        Assert.NotNull(map.Get(testString));
+        map.Get(testString).Should().NotBeNull();
         (map.Get(testString) as TaintedForTest).SetAlive(false);
         map.Purge();
-        Assert.Null(map.Get(testString));
+        map.Get(testString).Should().BeNull();
     }
 
     [Theory]
@@ -296,11 +297,11 @@ public class DefaultTaintedMapTests
         {
             if (i == disposedIndex)
             {
-                Assert.Null(map.Get(addedObjects[i]));
+                map.Get(addedObjects[i]).Should().BeNull();
             }
             else
             {
-                Assert.NotNull(map.Get(addedObjects[i]));
+                map.Get(addedObjects[i]).Should().NotBeNull();
             }
         }
     }
@@ -309,7 +310,7 @@ public class DefaultTaintedMapTests
     {
         foreach (var item in objects)
         {
-            Assert.Null(map.Get(item));
+            map.Get(item).Should().BeNull();
         }
     }
 
@@ -317,7 +318,7 @@ public class DefaultTaintedMapTests
     {
         foreach (var item in objects)
         {
-            Assert.NotNull(map.Get(item));
+            map.Get(item).Should().NotBeNull();
         }
     }
 
@@ -332,6 +333,6 @@ public class DefaultTaintedMapTests
             objects.Add(testString);
         }
 
-        Assert.True(map.IsFlat);
+        map.IsFlat.Should().BeTrue();
     }
 }
