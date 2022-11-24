@@ -414,7 +414,13 @@ public class ProbesTests : TestHelper, IDisposable
                                 }
 
                                 // Scrub MoveNext methods from `stack` in the snapshot as it varies between Windows/Linux.
-                                if (item.Key == "function" && value.Contains(".MoveNext"))
+                                if (value.Contains(".MoveNext"))
+                                {
+                                    item.Value.Replace(string.Empty);
+                                }
+
+                                // Scrub generated DisplayClass from stack in the snapshot as it varies between .net frameworks
+                                if (value.Contains("<>c__DisplayClass"))
                                 {
                                     item.Value.Replace(string.Empty);
                                 }

@@ -145,7 +145,7 @@ public:
 
     static bool IsLoadLocalDirectInstruction(unsigned opcode);
 
-    static int GetLocalIndexFromOpcode(const ILInstr* pInstr);
+    static unsigned GetLocalIndexFromOpcode(const ILInstr* pInstr);
 
     static bool IsLoadConstantInstruction(unsigned opcode);
 };

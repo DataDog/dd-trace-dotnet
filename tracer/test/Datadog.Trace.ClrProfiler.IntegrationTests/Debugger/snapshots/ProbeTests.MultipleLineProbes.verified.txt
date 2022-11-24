@@ -7,89 +7,6 @@
     "debugger": {
       "snapshot": {
         "captures": {
-          "entry": {
-            "arguments": {
-              "callerName": {
-                "type": "String",
-                "value": "Run"
-              },
-              "this": {
-                "type": "MultipleLineProbes",
-                "value": "MultipleLineProbes"
-              }
-            }
-          },
-          "return": {
-            "arguments": {
-              "callerName": {
-                "type": "String",
-                "value": "Run"
-              },
-              "this": {
-                "type": "MultipleLineProbes",
-                "value": "MultipleLineProbes"
-              }
-            },
-            "locals": {
-              "a": {
-                "type": "Int32",
-                "value": "6"
-              }
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "MethodToInstrument",
-            "type": "Samples.Probes.SmokeTests.MultipleLineProbes"
-          }
-        },
-        "stack": [
-          {
-            "fileName": "MultipleLineProbes.cs",
-            "function": "Samples.Probes.SmokeTests.MultipleLineProbes.MethodToInstrument",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "MultipleLineProbes.cs",
-            "function": "Samples.Probes.SmokeTests.MultipleLineProbes.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "MethodToInstrument",
-      "name": "Samples.Probes.SmokeTests.MultipleLineProbes",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run, this=MultipleLineProbes)\r\na=6",
-    "service": "Probes"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "ddtags": "Unknown",
-    "debugger": {
-      "snapshot": {
-        "captures": {
           "lines": {
             "21": {
               "arguments": {
@@ -130,17 +47,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "MultipleLineProbes.cs",
-            "function": "Samples.Probes.SmokeTests.MultipleLineProbes.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -205,17 +112,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "MultipleLineProbes.cs",
-            "function": "Samples.Probes.SmokeTests.MultipleLineProbes.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -280,17 +177,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "MultipleLineProbes.cs",
-            "function": "Samples.Probes.SmokeTests.MultipleLineProbes.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -355,17 +242,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "MultipleLineProbes.cs",
-            "function": "Samples.Probes.SmokeTests.MultipleLineProbes.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -430,17 +307,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "MultipleLineProbes.cs",
-            "function": "Samples.Probes.SmokeTests.MultipleLineProbes.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],

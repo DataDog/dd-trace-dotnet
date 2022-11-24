@@ -1462,12 +1462,12 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
         if (isAsyncMethod)
         {
-            Logger::Info("Async method probe is disabled");
-            //Logger::Info("Applying Async Method Probe instrumentation with probeId.", methodProbeId);
-            // hr = ApplyAsyncMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
-            //                           isStatic, &methodReturnType, methodProbeId, methodLocals, numLocals, rewriterWrapper, asyncMethodStateIndex, callTargetReturnIndex,
-            //                           returnValueIndex, callTargetReturnToken, firstInstruction, instrumentedMethodIndex, beforeLineProbe,
-            //                           newClauses);
+            Logger::Info("Applying Async Method Probe instrumentation with probeId.", methodProbeId);
+            hr = ApplyAsyncMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
+                                       isStatic, &methodReturnType, methodProbeId, methodLocals, numLocals,
+                                       rewriterWrapper, asyncMethodStateIndex, callTargetReturnIndex, returnValueIndex,
+                                       callTargetReturnToken, firstInstruction, instrumentedMethodIndex,
+                                       beforeLineProbe, newClauses);
         }
         else
         {

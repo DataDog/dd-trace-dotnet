@@ -56,10 +56,6 @@
                 {
                   "function": "Samples.Probes.SmokeTests.SimpleTypeNameTest.MethodToInstrument",
                   "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.SimpleTypeNameTest.Run",
-                  "lineNumber": "ScrubbedValue"
                 }
               ],
               "type": "Samples.Probes.Shared.IntentionalDebuggerException"
@@ -83,17 +79,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "SimpleTypeNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.SimpleTypeNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],

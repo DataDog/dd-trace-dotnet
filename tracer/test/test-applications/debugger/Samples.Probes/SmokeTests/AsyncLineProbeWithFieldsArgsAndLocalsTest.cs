@@ -39,7 +39,7 @@ namespace Samples.Probes.SmokeTests
             }
 
             [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* Async Method Probes are disabled for now. */)]
+            [MethodProbeTestData()]
             public async Task<string> Method(Generic someGenericObject, string input, Person goodPerson)
             {
                 var output = goodPerson.ToString() + someGenericObject.ToString() + goodPerson.Name;

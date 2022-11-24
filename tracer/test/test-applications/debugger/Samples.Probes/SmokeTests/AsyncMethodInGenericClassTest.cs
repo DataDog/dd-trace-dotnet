@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Samples.Probes.Shared;
 
@@ -20,6 +18,8 @@ namespace Samples.Probes.SmokeTests
 
     internal class GenericClass<T>
     {
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodProbeTestData]
         public async Task Run(T t)
         {
             var def = default(T);

@@ -96,11 +96,6 @@
           {
             "function": "Program.RunTest",
             "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
           }
         ],
         "timestamp": "ScrubbedValue"
@@ -204,11 +199,6 @@
           },
           {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -570,11 +560,6 @@
           {
             "function": "Program.RunTest",
             "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
           }
         ],
         "timestamp": "ScrubbedValue"
@@ -652,11 +637,6 @@
           },
           {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -820,11 +800,6 @@
           {
             "function": "Program.RunTest",
             "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
           }
         ],
         "timestamp": "ScrubbedValue"
@@ -902,11 +877,6 @@
           },
           {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -986,11 +956,6 @@
           {
             "function": "Program.RunTest",
             "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
           }
         ],
         "timestamp": "ScrubbedValue"
@@ -1055,10 +1020,6 @@
                   "lineNumber": "ScrubbedValue"
                 },
                 {
-                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_2",
-                  "lineNumber": "ScrubbedValue"
-                },
-                {
                   "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
                   "lineNumber": "ScrubbedValue"
                 }
@@ -1085,11 +1046,6 @@
           },
           {
             "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_2",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
             "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
             "lineNumber": "ScrubbedValue"
           },
@@ -1100,11 +1056,6 @@
           },
           {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -1183,11 +1134,6 @@
           },
           {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],

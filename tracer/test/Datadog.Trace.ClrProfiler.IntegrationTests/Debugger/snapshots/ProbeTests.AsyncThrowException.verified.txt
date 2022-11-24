@@ -10,22 +10,18 @@
           "entry": {
             "arguments": {
               "caller": {
-                "fields": null,
                 "type": "String",
                 "value": "RunAsync"
               }
-            },
-            "fields": null
+            }
           },
           "return": {
             "arguments": {
               "caller": {
-                "fields": null,
                 "type": "String",
                 "value": "RunAsync"
               }
             },
-            "fields": null,
             "throwable": {
               "message": "Exception from RunAsync.Method",
               "stacktrace": [],

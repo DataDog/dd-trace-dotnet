@@ -55,17 +55,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "LineProbesWithRevertTest.cs",
-            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -138,17 +128,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "LineProbesWithRevertTest.cs",
-            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -221,17 +201,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "LineProbesWithRevertTest.cs",
-            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -304,17 +274,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "LineProbesWithRevertTest.cs",
-            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],

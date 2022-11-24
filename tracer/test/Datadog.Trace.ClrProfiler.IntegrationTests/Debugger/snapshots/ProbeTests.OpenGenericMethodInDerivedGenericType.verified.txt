@@ -114,11 +114,6 @@
           {
             "function": "Program.RunTest",
             "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
           }
         ],
         "timestamp": "ScrubbedValue"

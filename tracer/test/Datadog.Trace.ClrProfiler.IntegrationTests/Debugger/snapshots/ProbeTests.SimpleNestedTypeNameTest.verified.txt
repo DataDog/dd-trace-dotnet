@@ -56,10 +56,6 @@
                 {
                   "function": "Samples.Probes.SmokeTests.SimpleNestedTypeNameTest+NestedType.MethodToInstrument",
                   "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.SimpleNestedTypeNameTest.Run",
-                  "lineNumber": "ScrubbedValue"
                 }
               ],
               "type": "Samples.Probes.Shared.IntentionalDebuggerException"
@@ -83,17 +79,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "SimpleNestedTypeNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.SimpleNestedTypeNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],

@@ -102,6 +102,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
             }
 
+            // State machine is null in case is a nested struct inside a generic parent.
+            // This can happen if we operate in optimized code and the original async method was inside a generic class
+            // or in case the original async method was generic, in which case the state machine is a generic value type
+            // See more here: https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L70
+            if (instance == null)
+            {
+                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+            }
+
             if (isReEntryToMoveNext)
             {
                 // we are in a continuation, return the current state
@@ -109,9 +118,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             isReEntryToMoveNext = true; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
-            // State machine is null either when we run in Optimized code and the original async method was generic,
-            // in which case the state machine is a generic value type.
-            var stateMachineType = instance == null ? Type.GetTypeFromHandle(typeHandle) : instance.GetType();
+
+            var stateMachineType = instance.GetType();
             var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
             if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
             {
@@ -140,7 +148,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.SnapshotCreator.StartSnapshot();
             asyncState.SnapshotCreator.StartCaptures();
             asyncState.SnapshotCreator.StartEntry();
-            asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+            asyncState.SnapshotCreator.CaptureStaticFields(asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -151,7 +159,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
             for (var index = 0; index < kickOffMethodArguments.Length; index++)
             {
                 ref var argument = ref kickOffMethodArguments[index];
-                if (argument == default)
+                if (argument == default ||
+                    argument.FieldType.ContainsGenericParameters ||
+                    argument.FieldType.DeclaringType?.ContainsGenericParameters == true)
                 {
                     continue;
                 }
@@ -164,6 +174,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static AsyncMethodDebuggerState BeginMethodEndMarker(ref AsyncMethodDebuggerState asyncState)
         {
+            asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
                                        asyncState.HasArguments ||
                                        asyncState.KickoffInvocationTarget != null;
@@ -242,8 +254,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             asyncState.SnapshotCreator.StartReturn();
-            asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
-            BeginEndMethodLogArgs(ref asyncState);
+            asyncState.SnapshotCreator.CaptureStaticFields(asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+
             if (exception != null)
             {
                 asyncState.SnapshotCreator.CaptureException(exception);
@@ -276,8 +288,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             asyncState.SnapshotCreator.StartReturn();
-            asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
-            BeginEndMethodLogArgs(ref asyncState);
+            asyncState.SnapshotCreator.CaptureStaticFields(asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+
             if (exception != null)
             {
                 asyncState.SnapshotCreator.CaptureException(exception);
@@ -304,6 +316,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
             for (var index = 0; index < kickOffMethodLocalsValues.Length; index++)
             {
                 ref var local = ref kickOffMethodLocalsValues[index];
+                if (local == default ||
+                    local.Field.FieldType.ContainsGenericParameters ||
+                    local.Field.FieldType.DeclaringType?.ContainsGenericParameters == true)
+                {
+                    continue;
+                }
+
                 var localValue = local.Field.GetValue(asyncState.MoveNextInvocationTarget);
                 LogLocal(ref localValue, local.Field.FieldType, local.SanitizedName, index, ref asyncState);
             }
@@ -320,6 +339,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
             {
                 return;
             }
+
+            asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+            BeginEndMethodLogArgs(ref asyncState);
 
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
                                        asyncState.HasArguments ||

@@ -56,10 +56,6 @@
                 {
                   "function": "SimpleTypeNameInGlobalNamespaceTest.MethodToInstrument",
                   "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "SimpleTypeNameInGlobalNamespaceTest.Run",
-                  "lineNumber": "ScrubbedValue"
                 }
               ],
               "type": "Samples.Probes.Shared.IntentionalDebuggerException"
@@ -83,17 +79,7 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "fileName": "SimpleTypeNameInGlobalNamespaceTest.cs",
-            "function": "SimpleTypeNameInGlobalNamespaceTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
             "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
