@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
@@ -313,6 +314,12 @@ public sealed class TestModule
         span.Finish(duration.Value);
 
         Current = null;
+
+        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
+        {
+            coverageHandler.GetCodeCoverage();
+        }
+
         CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
         CIVisibility.FlushSpans();
     }

@@ -62,6 +62,19 @@ internal sealed class CoverageContextContainer
     }
 
     /// <summary>
+    /// Clear context data
+    /// </summary>
+    internal void Clear()
+    {
+        var container = _container;
+        lock (container)
+        {
+            container.Clear();
+            _currentModuleValue = null;
+        }
+    }
+
+    /// <summary>
     /// Gets modules data from the context
     /// </summary>
     /// <returns>Instruction array from the context</returns>
@@ -72,7 +85,6 @@ internal sealed class CoverageContextContainer
         lock (container)
         {
             var data = container.ToArray();
-            container.Clear();
             _currentModuleValue = null;
             return data;
         }

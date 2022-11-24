@@ -1,4 +1,4 @@
-// <copyright file="DefaultCoverageEventHandler.cs" company="Datadog">
+// <copyright file="DefaultWithGlobalCoverageEventHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,7 +7,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Ci.Coverage.Models;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -15,20 +14,47 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci.Coverage;
 
-internal class DefaultCoverageEventHandler : CoverageEventHandler
+internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandler
 {
-    protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultCoverageEventHandler));
+    private readonly List<CoverageContextContainer> _coverages = new();
 
     protected override void OnSessionStart(CoverageContextContainer context)
     {
+        _coverages.Add(context);
+        base.OnSessionStart(context);
     }
 
-    protected override object? OnSessionFinished(CoverageContextContainer context)
+    public void Clear()
     {
-        var modules = context.CloseContext();
+        foreach (var coverage in _coverages)
+        {
+            coverage.Clear();
+        }
+
+        _coverages.Clear();
+        GlobalContainer.Clear();
+    }
+
+    public object? GetCodeCoverage()
+    {
+        Log.Warning("Global GetCodeCoverage.");
+
+        // Get all ModuleValues
+        var lstModulesInstances = new List<ModuleValue>();
+        lstModulesInstances.AddRange(GlobalContainer.CloseContext());
+        foreach (var coverage in _coverages)
+        {
+            lstModulesInstances.AddRange(coverage.CloseContext());
+            coverage.Clear();
+        }
+
+        GlobalContainer.Clear();
+
         const int HIDDEN = 0xFEEFEE;
         Dictionary<string, FileCoverage>? fileDictionary = null;
-        foreach (var moduleValue in modules)
+
+        // Group by Modules
+        foreach (var moduleValue in lstModulesInstances)
         {
             var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValue.Module);
             if (moduleDef is null)
@@ -109,7 +135,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
-            Log.Debug("Coverage payload: {payload}", JsonConvert.SerializeObject(payload));
+            Log.Debug("Global GetCodeCoverage: {payload}", JsonConvert.SerializeObject(payload));
         }
 
         return payload;

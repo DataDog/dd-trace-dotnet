@@ -19,7 +19,7 @@ namespace Datadog.Trace.Ci.Coverage;
 public static class CoverageReporter
 {
     private static readonly List<Action<CoverageContextContainer?>> CoverageContextContainerChangeActions = new();
-    private static CoverageEventHandler _handler = new DefaultCoverageEventHandler();
+    private static CoverageEventHandler _handler = new DefaultWithGlobalCoverageEventHandler();
 
     /// <summary>
     /// Gets or sets coverage handler

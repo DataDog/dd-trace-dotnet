@@ -40,8 +40,8 @@ internal abstract class CoverageEventHandler
     public void StartSession()
     {
         var context = new CoverageContextContainer();
-        _asyncContext.Value = context;
         OnSessionStart(context);
+        _asyncContext.Value = context;
     }
 
     /// <summary>
