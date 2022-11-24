@@ -84,7 +84,7 @@ public:
     const char* GetName() override;
     bool Start() override;
     bool Stop() override;
-    bool AllowStackWalk(ManagedThreadInfo* pThreadInfo) override;
+    bool AllowStackWalk(std::shared_ptr<ManagedThreadInfo> pThreadInfo) override;
     void NotifyThreadState(bool isSuspended) override;
     void NotifyCollectionStart() override;
     void NotifyCollectionEnd() override;
@@ -206,7 +206,7 @@ private:
 
     std::mutex _watcherActivityLock;
 
-    ManagedThreadInfo* _pTargetThread;
+    std::shared_ptr<ManagedThreadInfo> _pTargetThread;
     std::int64_t _collectionStartNs;
     FILETIME _kernelTime, _userTime;
 
