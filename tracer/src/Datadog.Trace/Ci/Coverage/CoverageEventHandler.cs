@@ -15,16 +15,23 @@ namespace Datadog.Trace.Ci.Coverage;
 internal abstract class CoverageEventHandler
 {
     private readonly AsyncLocal<CoverageContextContainer?> _asyncContext;
+    private readonly CoverageContextContainer _globalContainer;
 
     protected CoverageEventHandler()
     {
         _asyncContext = new(obj => CoverageReporter.FireContextContainerChangeAction(obj.CurrentValue));
+        _globalContainer = new CoverageContextContainer();
     }
+
+    /// <summary>
+    /// Gets the coverage local container
+    /// </summary>
+    internal CoverageContextContainer? Container => _asyncContext.Value;
 
     /// <summary>
     /// Gets the coverage global container
     /// </summary>
-    internal CoverageContextContainer? Container => _asyncContext.Value;
+    internal CoverageContextContainer GlobalContainer => _globalContainer;
 
     /// <summary>
     /// Start session

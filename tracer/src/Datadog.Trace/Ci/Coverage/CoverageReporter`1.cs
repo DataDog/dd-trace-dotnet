@@ -27,7 +27,8 @@ public static class CoverageReporter<TMeta>
     private static readonly TMeta Metadata;
     private static readonly Module Module;
     private static CoverageContextContainer? _currentCoverageContextContainer;
-    private static ModuleValue? _cachedModuleValue;
+    private static ModuleValue? _currentModuleValue;
+    private static ModuleValue _globalModuleValue;
 
     static CoverageReporter()
     {
@@ -36,9 +37,19 @@ public static class CoverageReporter<TMeta>
         _currentCoverageContextContainer = CoverageReporter.Container;
         CoverageReporter.AddContextContainerChangeAction(ctx =>
         {
-            Volatile.Write(ref _cachedModuleValue, null);
+            Volatile.Write(ref _currentModuleValue, null);
             Volatile.Write(ref _currentCoverageContextContainer, ctx);
         });
+
+        var globalCoverageContextContainer = CoverageReporter.GlobalContainer;
+        var globalModuleValue = globalCoverageContextContainer.GetModuleValue(Module);
+        if (globalModuleValue is null)
+        {
+            globalModuleValue = new ModuleValue(Module, Metadata.GetTotalTypes());
+            globalCoverageContextContainer.Add(globalModuleValue);
+        }
+
+        _globalModuleValue = globalModuleValue;
     }
 
     /// <summary>
@@ -50,24 +61,25 @@ public static class CoverageReporter<TMeta>
     /// <returns>True if the coverage is enabled and the scope is available; otherwise, false.</returns>
     public static bool TryGetScope(int typeIndex, int methodIndex, out int[]? counters)
     {
-        var module = _cachedModuleValue;
+        var module = _currentModuleValue;
         if (module is null)
         {
             var container = _currentCoverageContextContainer;
             if (container is null)
             {
-                counters = default;
-                return false;
+                module = _globalModuleValue;
             }
-
-            module = container.GetModuleValue(Module);
-            if (module is null)
+            else
             {
-                module = new ModuleValue(Module, Metadata.GetTotalTypes());
-                container.Add(module);
-            }
+                module = container.GetModuleValue(Module);
+                if (module is null)
+                {
+                    module = new ModuleValue(Module, Metadata.GetTotalTypes());
+                    container.Add(module);
+                }
 
-            _cachedModuleValue = module;
+                _currentModuleValue = module;
+            }
         }
 
         ref var type = ref module.Types.FastGetReference(typeIndex);

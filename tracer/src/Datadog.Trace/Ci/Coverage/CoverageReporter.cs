@@ -35,6 +35,8 @@ public static class CoverageReporter
 
     internal static CoverageContextContainer? Container => _handler.Container;
 
+    internal static CoverageContextContainer GlobalContainer => _handler.GlobalContainer;
+
     internal static void AddContextContainerChangeAction(Action<CoverageContextContainer?> action)
     {
         lock (CoverageContextContainerChangeActions)
