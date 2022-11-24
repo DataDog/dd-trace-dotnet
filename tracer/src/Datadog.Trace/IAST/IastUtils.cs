@@ -72,7 +72,7 @@ internal static class IastUtils
 
     private static int GetHash<T>(T element)
        => ((element is Array array)
-            ? GetHashCodeForArray(array)
+            ? GetHashCodeForArray(array, 1)
             : element?.GetHashCode() ?? 0);
 
     public static int IdentityHashCode(object item)

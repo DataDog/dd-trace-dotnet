@@ -41,6 +41,14 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         public void GivenAHashCalcutation_WhenGetHashCodeAndGetHashCodeForArray_ResultsAreTheSame4()
         {
             var elem3 = new object[1];
+            elem3[0] = 33;
+            IastUtils.GetHashCode(elem3).Should().Be(IastUtils.GetHashCodeForArray(new object[] { elem3 }));
+        }
+
+        [Fact]
+        public void GivenAHashCalcutation_WhenGetHashCodeAndGetHashCodeForArray_ResultsAreTheSame5()
+        {
+            var elem3 = new object[1];
             elem3[0] = elem3;
             IastUtils.GetHashCode(elem3).Should().Be(IastUtils.GetHashCodeForArray(new object[] { elem3 }));
         }
