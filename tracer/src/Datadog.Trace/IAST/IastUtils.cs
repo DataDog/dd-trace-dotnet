@@ -11,13 +11,23 @@ namespace Datadog.Trace.Iast;
 
 internal static class IastUtils
 {
-    public static int GetHashCode(Array objects)
+    private const int StartHash = 17;
+
+    // Avoid infinite loops
+    private const int MaxDepth = 5;
+
+    public static int GetHashCodeForArray(Array objects, int actualDepth = 0)
     {
         int hash = 17;
 
+        if (actualDepth >= MaxDepth)
+        {
+            return objects?.GetHashCode() ?? 0;
+        }
+
         foreach (var element in objects)
         {
-            var hashCode = (element is Array array) ? GetHashCode(array) : element?.GetHashCode();
+            var hashCode = (element is Array array) ? GetHashCodeForArray(array, actualDepth + 1) : element?.GetHashCode();
             unchecked
             {
                 hash = (hash * 23) + (hashCode ?? 0);
@@ -26,6 +36,44 @@ internal static class IastUtils
 
         return hash;
     }
+
+    public static int GetHashCode<T>(T value)
+    {
+        unchecked
+        {
+            return (StartHash * 23) + GetHash(value);
+        }
+    }
+
+    public static int GetHashCode<T1, T2>(T1 value1, T2 value2)
+    {
+        var hash = StartHash;
+        unchecked
+        {
+            hash = (hash * 23) + GetHash(value1);
+            hash = (hash * 23) + GetHash(value2);
+        }
+
+        return hash;
+    }
+
+    public static int GetHashCode<T1, T2, T3>(T1 value1, T2 value2, T3 value3)
+    {
+        var hash = StartHash;
+        unchecked
+        {
+            hash = (hash * 23) + GetHash(value1);
+            hash = (hash * 23) + GetHash(value2);
+            hash = (hash * 23) + GetHash(value3);
+        }
+
+        return hash;
+    }
+
+    private static int GetHash<T>(T element)
+       => ((element is Array array)
+            ? GetHashCodeForArray(array)
+            : element?.GetHashCode() ?? 0);
 
     public static int IdentityHashCode(object item)
     {
