@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: ./.github/actions/run-in-docker
         name: Build Monitoring Home in Docker
@@ -53,7 +53,7 @@ jobs:
           command: "RunProfilerNativeUnitTestsLinux"
 
       - name: Publish artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
           name: monitoring-home.Linux.Release.x64
@@ -86,7 +86,7 @@ jobs:
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: actions/setup-dotnet@v2
         with:
@@ -96,13 +96,13 @@ jobs:
             7.0.100
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Linux.Release.x64
           path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.16.8
 
@@ -135,7 +135,7 @@ jobs:
         run: sleep 20
 
       - name: Publish artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
           name: Benchmark.tests.linux.${{ matrix.framework }}.logs
@@ -168,16 +168,16 @@ jobs:
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Linux.Release.x64
           path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.16.8
 
@@ -210,7 +210,7 @@ jobs:
         run: sleep 20
 
       - name: Publish artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
           name: Benchmark.clrevents.linux.${{ matrix.framework }}.logs
@@ -228,7 +228,7 @@ jobs:
         run: sudo apt-get install -y libasan6
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build Native Profiler Engine
         run: |
@@ -268,7 +268,7 @@ jobs:
           ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -288,7 +288,7 @@ jobs:
         run: sudo apt-get install -y libubsan1
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build Native Profiler Engine
         run: |
@@ -327,7 +327,7 @@ jobs:
           UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -361,7 +361,7 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build Monitoring home
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader BuildProfilerHome PublishNativeSymbolsWindows CompileProfilerNativeTestsWindows --build-configuration ${{matrix.configuration}}
@@ -373,7 +373,7 @@ jobs:
         run: .\tracer\build.cmd RunProfilerNativeUnitTestsWindows --build-configuration ${{matrix.configuration}} --TargetPlatform x86
 
       - name: Publish artifact monitoring-home
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
           name: 'monitoring-home.Windows.${{matrix.configuration}}'
@@ -381,7 +381,7 @@ jobs:
           retention-days: 7
 
       - name: Publish monitoring-home symbols
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
           name: 'monitoring-home.Windows.Symbols.${{matrix.configuration}}'
@@ -417,10 +417,10 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Windows.${{matrix.configuration}}
           path: shared/bin/monitoring-home
@@ -469,7 +469,7 @@ jobs:
           reporter: dotnet-trx
 
       - name: 'Publish Test results, Logs and PProf files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -517,16 +517,16 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Windows.Release
           path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.16.8
 
@@ -558,7 +558,7 @@ jobs:
         run: Start-Sleep -s 20
 
       - name: 'Publish Benchmark log files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -603,16 +603,16 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Windows.Release
           path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.16.8
 
@@ -644,7 +644,7 @@ jobs:
         run: Start-Sleep -s 20
 
       - name: 'Publish Benchmark log files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -660,10 +660,10 @@ jobs:
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Windows.Release
           path: DDProf-Deploy
@@ -716,7 +716,7 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
@@ -764,7 +764,7 @@ jobs:
           Samples.Computer01.exe --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -796,7 +796,7 @@ jobs:
           sudo apt-get -y install clang-tidy
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare environment to run the application
         run: |
           mkdir analyzers_results
@@ -840,7 +840,7 @@ jobs:
           fi
 
       - name: Publish Analyzers Results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -870,7 +870,7 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
@@ -919,7 +919,7 @@ jobs:
           }
 
       - name: Publish Analyzers Results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -934,10 +934,10 @@ jobs:
     needs: [build_windows, build_linux_release_x64]
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
          
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Linux.Release.x64
           path: monitoring-home-linux
@@ -955,10 +955,10 @@ jobs:
     needs: [build_windows, build_linux_release_x64]
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Windows.Release
           path: monitoring-home-windows
