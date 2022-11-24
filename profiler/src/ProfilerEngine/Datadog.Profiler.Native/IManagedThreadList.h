@@ -14,7 +14,7 @@ class IManagedThreadList : public IService
 {
 public:
     virtual bool GetOrCreateThread(ThreadID clrThreadId) = 0;
-    virtual bool RegisterThread(ManagedThreadInfo* pThreadInfo) = 0;
+    virtual bool RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThreadInfo) = 0;
     virtual bool UnregisterThread(ThreadID clrThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) = 0;
     virtual bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) = 0;
     virtual bool SetThreadName(ThreadID clrThreadId, const shared::WSTRING& threadName) = 0;
