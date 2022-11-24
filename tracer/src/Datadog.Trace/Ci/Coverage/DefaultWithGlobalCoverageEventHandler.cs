@@ -50,6 +50,18 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
         GlobalContainer.Clear();
 
+        // Process
+        foreach (var moduleValues in lstModulesInstances.GroupBy(i => i.Module))
+        {
+            var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValues.Key);
+            if (moduleDef is null)
+            {
+                continue;
+            }
+
+        }
+        
+        // ***********************************************************
         const int HIDDEN = 0xFEEFEE;
         Dictionary<string, FileCoverage>? fileDictionary = null;
 
