@@ -6,6 +6,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Ci.Coverage.Util;
 
 namespace Datadog.Trace.Ci.Coverage.Metadata;
 
@@ -25,13 +26,26 @@ public abstract class ModuleCoverageMetadata
     internal int GetTotalTypes() => Metadata.Length;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetTotalSequencePointsOfMethod(int type, int method) => Metadata[type][method];
+    internal int GetTotalSequencePointsOfMethod(int type, int method)
+    {
+#if NETCOREAPP3_0_OR_GREATER
+        return Metadata.FastGetReference(type).FastGetReference(method);
+#else
+        return Metadata[type][method];
+#endif
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void GetTotalMethodsAndSequencePointsOfMethod(int type, int method, out int totalMethods, out int totalSequencePoints)
     {
+#if NETCOREAPP3_0_OR_GREATER
+        var typeMeta = Metadata.FastGetReference(type);
+        totalMethods = typeMeta.Length;
+        totalSequencePoints = typeMeta.FastGetReference(method);
+#else
         var typeMeta = Metadata[type];
         totalMethods = typeMeta.Length;
         totalSequencePoints = typeMeta[method];
+#endif
     }
 }

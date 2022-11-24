@@ -7,10 +7,10 @@
 using System;
 using System.ComponentModel;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.Ci.Coverage.Util;
+
 #pragma warning disable SA1649 // File name must match first type name
 
 namespace Datadog.Trace.Ci.Coverage;
@@ -70,36 +70,19 @@ public static class CoverageReporter<TMeta>
             _cachedModuleValue = module;
         }
 
-#if NET5_0_OR_GREATER
-        // Avoid bound checks
-        ref var type = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(module.Types), typeIndex);
-#else
-        ref var type = ref module.Types[typeIndex];
-#endif
+        ref var type = ref module.Types.FastGetReference(typeIndex);
         if (type is null)
         {
             Metadata.GetTotalMethodsAndSequencePointsOfMethod(typeIndex, methodIndex, out var totalMethods, out var totalSequencePoints);
 
             type = new TypeValues(totalMethods);
-
             var typeMethod = new MethodValues(totalSequencePoints);
-#if NET5_0_OR_GREATER
-            // Avoid bound checks
-            Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(type.Methods), methodIndex) = typeMethod;
-#else
-            type.Methods[methodIndex] = typeMethod;
-#endif
-
+            type.Methods.FastGetReference(methodIndex) = typeMethod;
             counters = typeMethod.SequencePoints;
             return true;
         }
 
-#if NET5_0_OR_GREATER
-        // Avoid bound checks
-        ref var method = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(type.Methods), methodIndex);
-#else
-        ref var method = ref type.Methods[methodIndex];
-#endif
+        ref var method = ref type.Methods.FastGetReference(methodIndex);
         method ??= new MethodValues(Metadata.GetTotalSequencePointsOfMethod(typeIndex, methodIndex));
         counters = method.SequencePoints;
         return true;
