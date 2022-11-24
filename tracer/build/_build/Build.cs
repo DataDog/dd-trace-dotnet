@@ -84,6 +84,9 @@ partial class Build : NukeBuild
     [Parameter("Should we build and run tests that require docker. true = only docker integration tests, false = no docker integration tests, null = all", List = false)]
     readonly bool? IncludeTestsRequiringDocker;
 
+    [Parameter("Should we build and run tests against _all_ target frameworks, or just the reduced set. Defaults to false, set to true in CI on main branch only", List = false)]
+    readonly bool IncludeAllTestFrameworks;
+
     Target Info => _ => _
         .Description("Describes the current configuration")
         .Before(Clean, Restore, BuildTracerHome)
@@ -96,6 +99,7 @@ partial class Build : NukeBuild
             Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
             Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
             Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
+            Logger.Info($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
             Logger.Info($"IsAlpine: {IsAlpine}");
             Logger.Info($"Version: {Version}");
         });
