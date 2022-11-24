@@ -14,6 +14,8 @@ internal class IastRequestContext
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
     private TaintedObjects _taintedObjects = new();
+    private bool _routedParametersAdded = false;
+    private bool _queryPathParametersAdded = false;
 
     internal void AddIastVulnerabilitiesToSpan(Span span)
     {
@@ -62,12 +64,17 @@ internal class IastRequestContext
 
     private void AddRouteData(IDictionary<string, object> routeData)
     {
-        foreach (var item in routeData)
+        if (!_routedParametersAdded)
         {
-            if (item.Value is string valueAsString)
+            foreach (var item in routeData)
             {
-                AddRoutedParameter(item.Key, valueAsString);
+                if (item.Value is string valueAsString)
+                {
+                    AddRoutedParameter(item.Key, valueAsString);
+                }
             }
+
+            _routedParametersAdded = true;
         }
     }
 
@@ -79,17 +86,21 @@ internal class IastRequestContext
 #if NETFRAMEWORK
     internal void AddRequestData(System.Web.HttpRequest request)
     {
-        if (request.QueryString != null)
+        if (!_queryPathParametersAdded)
         {
-            foreach (var key in request.QueryString.AllKeys)
+            if (request.QueryString != null)
             {
-                AddRequestParameter(key, request.QueryString[key]);
+                foreach (var key in request.QueryString.AllKeys)
+                {
+                    AddRequestParameter(key, request.QueryString[key]);
+                }
+
+                AddQueryStringRaw(request.QueryString.ToString());
             }
 
-            AddQueryStringRaw(request.QueryString.ToString());
+            AddQueryPath(request.Path);
+            _queryPathParametersAdded = true;
         }
-
-        AddQueryPath(request.Path);
     }
 
     internal void AddRequestData(System.Web.HttpRequest request, IDictionary<string, object> routeData)
@@ -102,16 +113,20 @@ internal class IastRequestContext
     {
         AddRouteData(routeParameters);
 
-        if (request.Query != null)
+        if (!_queryPathParametersAdded)
         {
-            foreach (var item in request.Query)
+            if (request.Query != null)
             {
-                AddRequestParameter(item.Key, item.Value);
+                foreach (var item in request.Query)
+                {
+                    AddRequestParameter(item.Key, item.Value);
+                }
             }
-        }
 
-        AddQueryPath(request.Path);
-        AddQueryStringRaw(request.QueryString.Value);
+            AddQueryPath(request.Path);
+            AddQueryStringRaw(request.QueryString.Value);
+            _queryPathParametersAdded = true;
+        }
     }
 #endif
 }

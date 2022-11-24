@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -187,6 +188,13 @@ namespace Datadog.Trace.AspNet
                     }
 
                     securityCoordinator.CheckAndBlock(args);
+                }
+
+                if (Iast.Iast.Instance.Settings.Enabled && OverheadController.Instance.AcquireRequest())
+                {
+                    scope?.Span?.Context?.TraceContext?.EnableIastInRequest();
+                    var iastContext = scope?.Span?.Context?.TraceContext?.IastRequestContext;
+                    iastContext?.AddRequestData(httpRequest);
                 }
             }
             catch (Exception ex)

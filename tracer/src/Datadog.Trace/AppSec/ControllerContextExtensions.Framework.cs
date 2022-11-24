@@ -10,6 +10,7 @@ using System.Linq;
 using System.Web;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
+using Datadog.Trace.Iast;
 
 namespace Datadog.Trace.AppSec
 {
@@ -24,6 +25,14 @@ namespace Datadog.Trace.AppSec
 
             var security = Security.Instance;
             var context = HttpContext.Current;
+            var iast = Iast.Iast.Instance;
+            Scope scope = null;
+
+            if (security.Settings.Enabled || iast.Settings.Enabled)
+            {
+                scope = SharedItems.TryPeekScope(context, peekScopeKey);
+            }
+
             if (context != null && security.Settings.Enabled)
             {
                 var bodyDic = new Dictionary<string, object>(parameters.Count);
@@ -46,6 +55,13 @@ namespace Datadog.Trace.AppSec
                 {
                     securityTransport.CheckAndBlock(new Dictionary<string, object> { { AddressesConstants.RequestBody, BodyExtractor.Extract(bodyDic) }, { AddressesConstants.RequestPathParams, pathParamsDic } });
                 }
+            }
+
+            if (iast.Settings.Enabled && OverheadController.Instance.AcquireRequest())
+            {
+                scope?.Span?.Context?.TraceContext?.EnableIastInRequest();
+                var iastContext = scope?.Span?.Context?.TraceContext?.IastRequestContext;
+                iastContext?.AddRequestData(context.Request, controllerContext.RouteData.Values);
             }
         }
     }
