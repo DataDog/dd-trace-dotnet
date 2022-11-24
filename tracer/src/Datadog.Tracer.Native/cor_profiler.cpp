@@ -233,11 +233,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
-    if (runtime_information_.major_version == 6 && runtime_information_.minor_version == 0 && runtime_information_.build_version <= 11)
-    {
-        disableTieredCompilation = true;
-    }
-
     auto pInfo = info10 != nullptr ? info10 : this->info_;
     auto work_offloader = std::make_shared<RejitWorkOffloader>(pInfo);
 
