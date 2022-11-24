@@ -45,6 +45,19 @@ internal static partial class DotNetSettingsExtensions
             : settings.SetProperty("Platform", GetTargetPlatform(platform));
     }
 
+    public static T SetTestFrameworksProperty<T>(this T settings, bool includeAllTestFrameworks)
+        where T: MSBuildSettings
+            => includeAllTestFrameworks ? settings.SetProperty("IncludeAllTestFrameworks", "true") : settings;
+
+    public static DotNetBuildSettings SetTestFrameworksProperty(this DotNetBuildSettings settings, bool includeAllTestFrameworks) 
+        => includeAllTestFrameworks ? settings.SetProperty("IncludeAllTestFrameworks", "true") : settings;
+
+    public static DotNetTestSettings SetTestFrameworksProperty(this DotNetTestSettings settings, bool includeAllTestFrameworks) 
+        => includeAllTestFrameworks ? settings.SetProperty("IncludeAllTestFrameworks", "true") : settings;
+
+    public static DotNetPublishSettings SetTestFrameworksProperty(this DotNetPublishSettings settings, bool includeAllTestFrameworks) 
+        => includeAllTestFrameworks ? settings.SetProperty("IncludeAllTestFrameworks", "true") : settings;
+
     private static string GetTargetPlatform(MSBuildTargetPlatform platform) =>
         platform == MSBuildTargetPlatform.MSIL ? "AnyCPU" : platform.ToString();
 

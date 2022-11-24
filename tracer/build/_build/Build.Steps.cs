@@ -123,6 +123,11 @@ partial class Build
         Solution.GetProject(Projects.ToolIntegrationTests)
     };
 
+    TargetFramework[] TestingFrameworks =>
+        IncludeAllTestFrameworks
+            ? TargetFramework.GetFrameworks(except: TargetFramework.NETSTANDARD2_0)
+            : new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
+
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
     {
         TargetFramework.NET461,
@@ -151,6 +156,7 @@ partial class Build
                 NuGetTasks.NuGetRestore(s => s
                     .SetTargetPath(Solution)
                     .SetVerbosity(NuGetVerbosity.Normal)
+                    .When(IncludeAllTestFrameworks, x => x.SetProcessEnvironmentVariable("IncludeAllTestFrameworks", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
             }
@@ -159,6 +165,7 @@ partial class Build
                 DotNetRestore(s => s
                     .SetProjectFile(Solution)
                     .SetVerbosity(DotNetVerbosity.Normal)
+                    .When(IncludeAllTestFrameworks, x => x.SetProperty("IncludeAllTestFrameworks", "true"))
                     // .SetTargetPlatform(Platform) // necessary to ensure we restore every project
                     .SetProperty("configuration", BuildConfiguration.ToString())
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
@@ -802,6 +809,7 @@ partial class Build
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 .DisableRestore()
                 .SetProperty("BuildProjectReferences", false)
                 .SetTargets("BuildCsharpTestHelpers"));
@@ -820,6 +828,7 @@ partial class Build
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 .SetTargetPlatformAnyCPU()
                 .DisableRestore()
                 .SetProperty("BuildProjectReferences", false)
@@ -848,6 +857,7 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
                     .SetDDEnvironmentVariables("dd-tracer-dotnet")
+                    .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                     .EnableCrashDumps()
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -904,6 +914,7 @@ partial class Build
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetTargets("BuildDependencyLibs")
@@ -917,6 +928,7 @@ partial class Build
                 .SetTargetPlatformAnyCPU()
                 .EnableNoRestore()
                 .EnableNoDependencies()
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(debuggerProjects, (x, project) => x
                     .SetProjectFile(project)));
@@ -926,6 +938,7 @@ partial class Build
                 .SetTargetPlatform(TargetPlatform)
                 .EnableNoRestore()
                 .EnableNoDependencies()
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(debuggerProjects, (x, project) => x
                     .SetProjectFile(project)));
@@ -945,6 +958,7 @@ partial class Build
                 .SetTargetPlatformAnyCPU()
                 .DisableRestore()
                 .EnableNoDependencies()
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(platform)
                 .SetTargets("BuildRegressionDependencyLibs")
@@ -983,6 +997,7 @@ partial class Build
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 .SetFramework(Framework)
                 .SetNoWarnDotNetCore3()
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
@@ -1007,6 +1022,7 @@ partial class Build
                 .SetMSBuildPath()
                 .DisableRestore()
                 .EnableNoDependencies()
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
                 .SetTargets("BuildFrameworkReproductions")
@@ -1030,6 +1046,7 @@ partial class Build
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 // Including this apparently breaks the integration tests when running against with the .NET 7 SDK
                 // as dotnet test doesn't look in the right folder. No, I don't understand it either
                 // .SetTargetPlatform(TargetPlatform)
@@ -1076,6 +1093,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
                 .EnableNoDependencies()
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 .SetProperty("BuildInParallel", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(projects, (s, project) => s
@@ -1139,6 +1157,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
+                    .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
@@ -1159,6 +1178,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
+                    .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions")
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
@@ -1268,6 +1288,7 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
+                    .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions")
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
@@ -1317,6 +1338,7 @@ partial class Build
                                 .SetFramework(Framework)
                                 .EnableNoRestore()
                                 .EnableNoBuild()
+                                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                                 .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True&Category!=AzureFunctions")
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .SetLogsDirectory(TestLogsDirectory)
@@ -1353,6 +1375,7 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
+                    .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                     .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True&Category!=AzureFunctions")
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
@@ -1483,6 +1506,7 @@ partial class Build
                     .SetFramework(Framework)
                     // .SetTargetPlatform(Platform)
                     .SetNoWarnDotNetCore3()
+                    .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
@@ -1498,6 +1522,7 @@ partial class Build
                     .SetFramework(Framework)
                     // .SetTargetPlatform(Platform)
                     .SetNoWarnDotNetCore3()
+                    .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
@@ -1531,6 +1556,7 @@ partial class Build
                     .SetTargets(target)
                     .SetConfiguration(BuildConfiguration)
                     .EnableNoDependencies()
+                    .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                     .SetProperty("TargetFramework", Framework.ToString())
                     .SetProperty("BuildInParallel", "true")
                     .SetProperty("CheckEolTargetFramework", "false")
@@ -1568,6 +1594,7 @@ partial class Build
                     .SetFramework(Framework)
                     // .SetTargetPlatform(Platform)
                     .SetNoWarnDotNetCore3()
+                    .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
@@ -1619,6 +1646,7 @@ partial class Build
                         //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                         .EnableCrashDumps()
                         .SetFilter(filter)
+                        .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                         .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                         .SetLogsDirectory(TestLogsDirectory)
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
@@ -1641,6 +1669,7 @@ partial class Build
 					 //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableCrashDumps()
                     .SetFilter(filter)
+                    .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
@@ -1694,6 +1723,7 @@ partial class Build
                   .SetProjectFile(Solution.GetProject(Projects.ToolArtifactsTests))
                   .EnableNoDependencies()
                   .EnableNoRestore()
+                  .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                   .SetConfiguration(BuildConfiguration)
                   .SetNoWarnDotNetCore3());
           });
@@ -1710,6 +1740,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoRestore()
                 .EnableNoBuild()
+                .SetTestFrameworksProperty(IncludeAllTestFrameworks)
                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                 .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
                 .SetLogsDirectory(TestLogsDirectory)
