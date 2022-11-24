@@ -7,7 +7,8 @@ LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address
     :
     _address(address),
     _weakHandle(nullptr),
-    _timestamp(timestamp)
+    _timestamp(timestamp),
+    _gcCount(0)
 {
     sample->AddLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(0)});
     _sample = sample;
@@ -31,4 +32,14 @@ uintptr_t LiveObjectInfo::GetAddress() const
 std::shared_ptr<Sample> LiveObjectInfo::GetSample() const
 {
     return _sample;
+}
+
+void LiveObjectInfo::IncrementGC()
+{
+    _gcCount++;
+}
+
+bool LiveObjectInfo::IsGen2() const
+{
+    return _gcCount >= 2;
 }

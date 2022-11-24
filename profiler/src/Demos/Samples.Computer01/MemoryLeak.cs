@@ -30,7 +30,7 @@ namespace Samples.Computer01
 
         private void AllocateWithLeak()
         {
-            List<byte[]> root = new List<byte[]>(_objectsToAllocateCount);
+            List<byte[]> root = new List<byte[]>();
             int count = 0;
 
             while (!IsEventSet() && (count <= _objectsToAllocateCount))

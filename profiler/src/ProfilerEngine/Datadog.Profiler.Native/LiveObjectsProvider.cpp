@@ -100,6 +100,10 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
         {
             CloseWeakHandle(info.GetHandle());
         }
+        else
+        {
+            info.IncrementGC();
+        }
         return hasBeenCollected;
     });
 }
@@ -112,7 +116,11 @@ std::list<std::shared_ptr<Sample>> LiveObjectsProvider::GetSamples()
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
     for (auto const& info : _monitoredObjects)
     {
-        liveObjectsSamples.push_back(info.GetSample());
+        // only gen2 objects are candidates for leaking: gen0 and gen1 could be transient
+        if (info.IsGen2())
+        {
+            liveObjectsSamples.push_back(info.GetSample());
+        }
     }
 
     // update samples lifetime

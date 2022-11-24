@@ -354,11 +354,7 @@ namespace Samples.Computer01
 
         private void StartMemoryLeak(int parameter)
         {
-            if (parameter == int.MaxValue)
-            {
-                // 100 objects by default
-                parameter = 100;
-            }
+            // by default, no limit to allocations
 
             _memoryLeak = new MemoryLeak(parameter);
             _memoryLeak.Start();

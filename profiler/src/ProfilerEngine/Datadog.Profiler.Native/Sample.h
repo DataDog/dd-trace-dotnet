@@ -67,11 +67,6 @@ public:
         _labels.push_back(std::forward<T>(label));
     }
 
-    void ReplaceLastLabel(std::string&& text)
-    {
-        _labels.end()->second = std::move(text);
-    }
-
     // helpers for well known mandatory labels
     template <typename T>
     void SetPid(T&& pid)

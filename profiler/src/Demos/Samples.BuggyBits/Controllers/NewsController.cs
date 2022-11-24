@@ -21,6 +21,7 @@ namespace BuggyBits.Controllers
         public NewsController(IMemoryCache cache)
         {
             this.cache = cache;
+            GC.Collect();
         }
 
         public IActionResult Index()

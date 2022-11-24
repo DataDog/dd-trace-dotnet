@@ -20,10 +20,13 @@ public:
     ObjectHandleID GetHandle() const;
     uintptr_t GetAddress() const;
     std::shared_ptr<Sample> GetSample() const;
+    void IncrementGC();
+    bool IsGen2() const;
 
 private:
     std::shared_ptr<Sample> _sample;
     uintptr_t _address;
     ObjectHandleID _weakHandle;
     int64_t _timestamp;
+    uint64_t _gcCount;
 };
