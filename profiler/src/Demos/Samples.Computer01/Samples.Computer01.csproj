@@ -8,6 +8,7 @@
 
     <!--This is required for smoke test assembly discovery-->
     <AssemblyName>Samples.Computer01</AssemblyName>
+    <TargetFrameworks>net45;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">

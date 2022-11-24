@@ -24,6 +24,7 @@
 
   <PropertyGroup>
     <RootNamespace>Samples.ExceptionGenerator</RootNamespace>
+    <TargetFrameworks>net45;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

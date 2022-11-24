@@ -152,9 +152,11 @@ jobs:
       matrix:
         framework:
           - net60
+          - net70
         scenario:
           - Allocations
           - Contention
+          - LiveHeap
     services:
       dd-agent:
         image: 'datadog/agent:latest'
@@ -559,9 +561,11 @@ jobs:
       matrix:
         framework:
           - net60
+          - net70
         scenario:
           - Allocations
           - Contention
+          - LiveHeap
     steps:
 
       - uses: actions/setup-dotnet@v2

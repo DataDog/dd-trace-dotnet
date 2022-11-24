@@ -28,21 +28,6 @@ namespace Samples.Computer01
             _objectsToAllocateCount = parameter;
         }
 
-        private void AllocateWithLeak()
-        {
-            List<byte[]> root = new List<byte[]>();
-            int count = 0;
-
-            while (!IsEventSet() && (count <= _objectsToAllocateCount))
-            {
-                root.Add(new byte[BufferSize]);
-                GC.Collect();
-
-                Thread.Sleep(100);
-                count++;
-            }
-        }
-
         public void Start()
         {
             if (_stopEvent != null)
@@ -73,6 +58,20 @@ namespace Samples.Computer01
             _stopEvent.Dispose();
             _stopEvent = null;
             _activeTasks = null;
+        }
+
+        private void AllocateWithLeak()
+        {
+            List<byte[]> root = new List<byte[]>();
+            int count = 0;
+
+            while (!IsEventSet() && (count <= _objectsToAllocateCount))
+            {
+                root.Add(new byte[BufferSize]);
+                GC.Collect();
+
+                count++;
+            }
         }
 
         private List<Task> CreateThreads()
