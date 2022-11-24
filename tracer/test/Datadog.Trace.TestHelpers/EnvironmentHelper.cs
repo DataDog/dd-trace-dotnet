@@ -189,7 +189,6 @@ namespace Datadog.Trace.TestHelpers
         {
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = MonitoringHome;
-            environmentVariables["COMPlus_TieredCompilation"] = "0";
 
             // Everything should be using the native loader now
             var nativeLoaderPath = GetNativeLoaderPath();
