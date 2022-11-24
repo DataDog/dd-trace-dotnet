@@ -96,7 +96,7 @@ internal class DefaultTaintedMap : ITaintedMap
             _map.TryGetValue(index, out var existingValue);
             entry.Next = existingValue;
 
-            // If there's two callers calling Put on the same map and the objects have the same index and we are not flat,
+            // If there are two callers calling Put on the same map and the objects have the same index and we are not flat,
             // then one of the ITaintedObjects could potentially be lost because of racing conditions.
             // We assume that the corresponding lock mechanism benefits would not compensate the performance loss.
 
