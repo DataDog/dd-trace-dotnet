@@ -120,6 +120,8 @@ variables:
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
+  # Include all test frameworks when variable is set OR (running on master/release/hotfix and NOT scheduled build),
+  IncludeAllTestFrameworks: $[or(eq(variables['run_all_test_frameworks'], 'true'), and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/')), not(eq(variables['Build.Reason'], 'Schedule'))))]
   # Logger variables
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
@@ -1036,6 +1038,7 @@ stages:
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    IncludeAllTestFrameworks: true; # always need to include all FX as azure functions only runs on a couple of FX
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -2848,6 +2851,7 @@ stages:
   dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    IncludeAllTestFrameworks: true; # always need to include all FX as benchmarks only runs on a couple of FX
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
