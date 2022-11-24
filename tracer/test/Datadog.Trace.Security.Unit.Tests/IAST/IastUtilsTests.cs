@@ -34,7 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             var elem1 = new Range();
             var elem2 = 33;
             var elem3 = new object[] { elem1, elem2 };
-            IastUtils.GetHashCode(elem1, elem2, elem3).Should().Be(IastUtils.GetHashCodeForArray(new object[] { elem1, elem2, elem3 }));
+            IastUtils.GetHashCode(elem1, elem3).Should().Be(IastUtils.GetHashCodeForArray(new object[] { elem1, elem3 }));
         }
 
         [Fact]
