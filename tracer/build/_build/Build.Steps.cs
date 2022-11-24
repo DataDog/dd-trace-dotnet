@@ -123,6 +123,11 @@ partial class Build
         Solution.GetProject(Projects.ToolIntegrationTests)
     };
 
+    TargetFramework[] TestingFrameworks =>
+        IncludeAllTestFrameworks
+            ? TargetFramework.GetFrameworks(except: TargetFramework.NETSTANDARD2_0)
+            : new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
+
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
     {
         TargetFramework.NET461,
@@ -839,23 +844,41 @@ partial class Build
 
             testProjects.ForEach(EnsureResultsDirectory);
             var filter = string.IsNullOrEmpty(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
+            List<Exception> exceptions = new();
             try
             {
-                DotNetTest(x => x
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetFilter(filter)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatformAnyCPU()
-                    .SetDDEnvironmentVariables("dd-tracer-dotnet")
-                    .EnableCrashDumps()
-                    .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
-                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
-                    .CombineWith(testProjects, (x, project) => x
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
-                        .SetProjectFile(project)));
+                foreach (var targetFramework in TestingFrameworks)
+                {
+                    try
+                    {
+                        DotNetTest(x => x
+                           .EnableNoRestore()
+                           .EnableNoBuild()
+                           .SetFilter(filter)
+                           .SetConfiguration(BuildConfiguration)
+                           .SetTargetPlatformAnyCPU()
+                           .SetDDEnvironmentVariables("dd-tracer-dotnet")
+                           .SetFramework(targetFramework)
+                           .EnableCrashDumps()
+                           .SetLogsDirectory(TestLogsDirectory)
+                           .When(CodeCoverage, ConfigureCodeCoverage)
+                           .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
+                           .CombineWith(testProjects, (x, project) => x
+                                 .EnableTrxLogOutput(GetResultsDirectory(project))
+                                 .WithDatadogLogger()
+                                 .SetProjectFile(project)));
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Error testing {targetFramework}");
+                        exceptions.Add(ex);
+                    }
+                }
+
+                if (exceptions.Any())
+                {
+                    throw new AggregateException("Error in one or more test runs", exceptions);
+                }
             }
             finally
             {
