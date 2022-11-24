@@ -1,5 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <!-- Used in execution benchmarks, so need to include net6.0 in reduced set  -->
+    <TargetFrameworks Condition="'$(IncludeAllTestFrameworks)' != 'true'">netcoreapp2.1;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;$(TargetFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Net.Http" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />

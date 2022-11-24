@@ -1,5 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <!-- Always build help lib for all test fx, as needed by some specific apps, e.g. Azure Functions -->
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;$(TargetFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />
     <ProjectReference Include="..\..\src\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />

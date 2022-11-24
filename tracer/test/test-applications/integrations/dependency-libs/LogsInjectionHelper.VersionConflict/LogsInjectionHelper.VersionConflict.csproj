@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks Condition="'$(IncludeAllTestFrameworks)' == 'true'">net461;netcoreapp2.1;netcoreapp3.0;</TargetFrameworks>
-    <TargetFrameworks Condition="'$(IncludeAllTestFrameworks)' != 'true'">net461;netcoreapp2.1;</TargetFrameworks>
+    <TargetFrameworks Condition="'$(IncludeAllTestFrameworks)' != 'true'">net461;netcoreapp2.1;netcoreapp3.1;</TargetFrameworks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
