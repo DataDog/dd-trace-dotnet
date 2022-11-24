@@ -7,6 +7,7 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace Datadog.Trace.Iast;
@@ -158,7 +159,7 @@ internal class DefaultTaintedMap : ITaintedMap
         List<int> deadKeys = new();
         ITaintedObject? previous;
 
-        foreach (var key in _map.Keys)
+        foreach (var key in _map.Keys.ToArray())
         {
             var current = _map[key];
             previous = null;
