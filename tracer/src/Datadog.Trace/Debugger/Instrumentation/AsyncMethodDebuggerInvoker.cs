@@ -6,12 +6,10 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.RateLimiting;
-using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -161,7 +159,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
             for (var index = 0; index < kickOffMethodArguments.Length; index++)
             {
                 ref var argument = ref kickOffMethodArguments[index];
-                if (!DebuggerSnapshotSerializer.CanGetValue(argument))
+                if (argument == default ||
+                    argument.FieldType.ContainsGenericParameters ||
+                    argument.FieldType.DeclaringType?.ContainsGenericParameters == true)
                 {
                     continue;
                 }
@@ -317,7 +317,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             {
                 ref var local = ref kickOffMethodLocalsValues[index];
                 if (local == default ||
-                    !DebuggerSnapshotSerializer.CanGetValue(local.Field))
+                    local.Field.FieldType.ContainsGenericParameters ||
+                    local.Field.FieldType.DeclaringType?.ContainsGenericParameters == true)
                 {
                     continue;
                 }

@@ -11,7 +11,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
-using Datadog.Trace.Debugger.Instrumentation;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
@@ -377,7 +376,9 @@ namespace Datadog.Trace.Debugger.Snapshots
                 {
                     case FieldInfo field:
                         {
-                            if (!CanGetValue(field))
+                            if (field.FieldType.ContainsGenericParameters ||
+                                field.DeclaringType?.ContainsGenericParameters == true ||
+                                field.ReflectedType?.ContainsGenericParameters == true)
                             {
                                 return false;
                             }
@@ -417,14 +418,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             return false;
-        }
-
-        internal static bool CanGetValue(FieldInfo field)
-        {
-            return field != null &&
-                   !field.FieldType.ContainsGenericParameters &&
-                   field.FieldType.DeclaringType?.ContainsGenericParameters == false &&
-                   field.FieldType.ReflectedType?.ContainsGenericParameters == false;
         }
 
         private static CancellationTokenSource CreateCancellationTimeout()
