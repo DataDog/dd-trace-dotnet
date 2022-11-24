@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        [SkippableFact(Skip = "Flaky in .NET 7 upgrade")]
+        [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
