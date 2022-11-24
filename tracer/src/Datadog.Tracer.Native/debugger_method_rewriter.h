@@ -17,8 +17,6 @@ class DebuggerMethodRewriter : public MethodRewriter, public shared::Singleton<D
     friend class shared::Singleton<DebuggerMethodRewriter>;
 
 private:
-    const PCCOR_SIGNATURE NullSignature = nullptr;
-
     DebuggerMethodRewriter(){}
 
     // Holds incremental index that is used on the managed side for grabbing an InstrumentedMethodInfo instance (per instrumented method)
@@ -69,7 +67,7 @@ private:
                           ULONG returnValueIndex, mdToken callTargetReturnToken, ILInstr* firstInstruction,
                              int instrumentedMethodIndex, ILInstr* const& beforeLineProbe, std::vector<EHClause>& newClauses) const;
     static HRESULT EndAsyncMethodProbe(CorProfiler* corProfiler, ILRewriterWrapper& rewriterWrapper,
-                                       ModuleMetadata& moduleMetadata,
+                                       ModuleMetadata& module_metadata,
                                        DebuggerTokens* debuggerTokens, FunctionInfo* caller, bool isStatic, TypeSignature* methodReturnType,
                                        const std::vector<TypeSignature>& methodLocals, int numLocals, ULONG callTargetStateIndex,
                                        ULONG callTargetReturnIndex, std::vector<EHClause>& newClauses,
@@ -89,8 +87,7 @@ private:
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
                                                         MethodProbeDefinitions& methodProbes,
                                                         LineProbeDefinitions& lineProbes) const;
-    static bool IsTokenSane(mdToken token);
-    static HRESULT IsTypeByRefLike(const ModuleMetadata& module_metadata, mdToken typeDefOrRefOrSpecToken, bool& isTypeIsByRefLike);
+    static HRESULT IsTypeByRefLike(ModuleMetadata& module_metadata, mdToken typeDefOrRefOrSpecToken, bool& isTypeIsByRefLike);
     static std::vector<ILInstr*> GetBranchTargets(ILRewriter* pRewriter);
     static void AdjustBranchTargets(ILInstr* pFromInstr, ILInstr* pToInstr, const std::vector<ILInstr*>& branchTargets);
     static void AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr, ILRewriter* pRewriter);

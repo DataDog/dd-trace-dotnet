@@ -25,6 +25,7 @@ private:
     std::unique_ptr<TracerTokens> tracerTokens = nullptr;
     std::unique_ptr<debugger::DebuggerTokens> debuggerTokens = nullptr;
     std::unique_ptr<std::vector<IntegrationDefinition>> integrations = nullptr;
+    mdTypeSpec moduleSpecSanityToken = mdTypeSpecNil;
 
 public:
     const ComPtr<IMetaDataImport2> metadata_import{};
@@ -121,6 +122,27 @@ public:
             debuggerTokens = std::make_unique<debugger::DebuggerTokens>(this);
         }
         return debuggerTokens.get();
+    }
+
+    void EnsureInitSanityTypeSpecToken()
+    {
+        if (moduleSpecSanityToken == mdTokenNil)
+        {
+            const PCCOR_SIGNATURE NullSignature = nullptr;
+            metadata_emit->GetTokenFromTypeSpec(NullSignature, 0x0, &moduleSpecSanityToken);
+        }
+    }
+
+    bool IsTypeSpecTokenSane(mdTypeSpec typeSpec)
+    {
+        EnsureInitSanityTypeSpecToken();
+
+        if (TypeFromToken(typeSpec) != mdtTypeSpec)
+        {
+            return true;
+        }
+
+        return typeSpec < moduleSpecSanityToken;
     }
 };
 

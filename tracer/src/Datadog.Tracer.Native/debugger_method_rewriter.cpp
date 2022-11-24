@@ -12,8 +12,6 @@
 namespace debugger
 {
 
-thread_local mdToken SpecSanityToken;
-
 int DebuggerMethodRewriter::GetNextInstrumentedMethodIndex()
 {
     return std::atomic_fetch_add(&_nextInstrumentedMethodIndex, 1);
@@ -789,7 +787,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
 HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
                                                     ILRewriterWrapper& rewriterWrapper,
-                                                    ModuleMetadata& moduleMetadata,
+                                                    ModuleMetadata& module_metadata,
                                                     DebuggerTokens* debuggerTokens, FunctionInfo* caller, bool isStatic,
                                                     TypeSignature* methodReturnType,
                                                     const std::vector<TypeSignature>& methodLocals, int numLocals,
@@ -810,7 +808,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
             continue;
         }
 
-        auto functionInfo = GetFunctionInfo(moduleMetadata.metadata_import, pInstr->m_Arg32);
+        auto functionInfo = GetFunctionInfo(module_metadata.metadata_import, pInstr->m_Arg32);
         if (functionInfo.name != WStr("SetResult") && functionInfo.name != WStr("SetException"))
         {
             continue;
@@ -857,9 +855,9 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
             if (elementType != ELEMENT_TYPE_VOID)
             {
                 rewriterWrapper.LoadNull(); // return value
-                auto emit = moduleMetadata.metadata_emit;
+                auto emit = module_metadata.metadata_emit;
                 auto returnTypeToken = methodReturnType->GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
-                if (returnTypeToken ==  mdTokenNil || !IsTokenSane(returnTypeToken))
+                if (returnTypeToken == mdTokenNil || !module_metadata.IsTypeSpecTokenSane(returnTypeToken))
                 {
                     Logger::Error("Fail to get return type token. Element type is  ", elementType, " Method is: ", caller->type.name, ".", caller->name);
                     return E_FAIL;
@@ -888,7 +886,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
         rewriterWrapper.StLocal(callTargetReturnIndex);
 
         // call LogLocal
-        hr = WriteCallsToLogLocal(moduleMetadata, corProfiler, debuggerTokens, isStatic, methodLocals,
+        hr = WriteCallsToLogLocal(module_metadata, corProfiler, debuggerTokens, isStatic, methodLocals,
                                   numLocals, rewriterWrapper,
                                        callTargetStateIndex, &endMethodCallInstr, AsyncMethodProbe);
         IfFailRet(hr);
@@ -1275,6 +1273,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     int numArgs = caller->method_signature.NumberOfArguments();
+    module_metadata.EnsureInitSanityTypeSpecToken();
 
     if (retTypeFlags & TypeFlagByRef || caller->name == WStr(".ctor") || caller->name == WStr(".cctor"))
     {
@@ -1331,8 +1330,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         Logger::Debug("*** DebuggerMethodRewriter::Rewrite() Start: ", caller->type.name, ".", caller->name,
                       "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
     }
-
-    module_metadata.metadata_emit->GetTokenFromTypeSpec(NullSignature, 0x0, &SpecSanityToken);
 
     // *** Create the rewriter wrapper helper
     ILRewriterWrapper rewriterWrapper(&rewriter);
@@ -1552,24 +1549,12 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     return S_OK;
 }
 
-bool DebuggerMethodRewriter::IsTokenSane(mdToken token)
-{
-    return token < SpecSanityToken;
-}
-
 HRESULT DebuggerMethodRewriter::IsTypeByRefLike(
-    const ModuleMetadata& module_metadata, 
+    ModuleMetadata& module_metadata, 
     mdToken typeDefOrRefOrSpecToken, 
     bool& isTypeIsByRefLike)
 {
     ComPtr<IMetaDataImport2> metaDataImportOfTypeDef = module_metadata.metadata_import;
-
-    if (!IsTokenSane(typeDefOrRefOrSpecToken))
-    {
-        // Do nothing for now.
-        isTypeIsByRefLike = false;
-        return S_OK;
-    }
 
     // Get open type from type spec
     if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeSpec)
