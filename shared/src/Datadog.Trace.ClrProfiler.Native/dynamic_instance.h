@@ -39,7 +39,7 @@ namespace datadog::shared::nativeloader
         ICorProfilerCallback10* m_corProfilerCallback;
 
     public:
-        DynamicInstanceImpl(std::string filePath, std::string clsid);
+        DynamicInstanceImpl(const std::string& filePath, const std::string& clsid);
         virtual ~DynamicInstanceImpl() override;
         virtual HRESULT LoadClassFactory(REFIID riid) override;
         virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;

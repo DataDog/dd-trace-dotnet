@@ -61,7 +61,7 @@ jobs:
           retention-days: 7
 
   benchmark_linux_x64:
-    name: BMmark Linux Profiler (x64, Release)
+    name: BMark Linux Profiler (x64, Release)
     runs-on: ubuntu-latest
     needs: build_linux_release_x64
     strategy:
@@ -87,6 +87,13 @@ jobs:
     steps:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            3.1.x
+            6.0.100
+            7.0.100
 
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
@@ -136,7 +143,7 @@ jobs:
           retention-days: 7
 
   benchmark_ClrEvents_linux_x64:
-    name: BMmark ClrEvents Linux Profiler (x64, Release)
+    name: BMark ClrEvents Linux Profiler (x64, Release)
     runs-on: ubuntu-latest
     needs: build_linux_release_x64
     strategy:
@@ -455,7 +462,7 @@ jobs:
           retention-days: 7
 
   benchmark_windows_x64:
-    name: BMmark Windows Profiler x64
+    name: BMark Windows Profiler x64
     runs-on: windows-2022
     needs: build_windows
     strategy:
@@ -543,7 +550,7 @@ jobs:
           retention-days: 7
 
   benchmark_ClrEvents_windows_x64:
-    name: BMmark ClrEvents Windows Profiler x64
+    name: BMark ClrEvents Windows Profiler x64
     runs-on: windows-2022
     needs: build_windows
     strategy:
@@ -755,15 +762,15 @@ jobs:
     steps:
       - name: Install CppCheck
         run: |
-          wget https://github.com/danmar/cppcheck/archive/refs/tags/2.5.tar.gz \
-          && CPPCHECK_SHA256="dc27154d799935c96903dcc46653c526c6f4148a6912b77d3a50cb35dabd82e1" \
-          && (printf "${CPPCHECK_SHA256}  2.5.tar.gz" | sha256sum --check --strict --status) \
-          && tar xvfz 2.5.tar.gz \
-          && cd cppcheck-2.5 \
+          wget https://github.com/danmar/cppcheck/archive/refs/tags/2.9.tar.gz \
+          && CPPCHECK_SHA256="56aee8b5bdf936ab7adc9ab43903ba2052f088695c80f047682024a1ed0ef3f3" \
+          && (printf "${CPPCHECK_SHA256}  2.9.tar.gz" | sha256sum --check --strict --status) \
+          && tar xvfz 2.9.tar.gz \
+          && cd cppcheck-2.9 \
           && mkdir build \
           && cd build \
           && cmake ../ \
-          && cmake --build .  \
+          && cmake --build . --parallel $(nproc)  \
           && sudo make install
 
       - name: Install clang-tidy
@@ -789,17 +796,17 @@ jobs:
 
       - name: Run CppCheck
         run: |
-          cppcheck --enable=all --project=__build/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list=profiler/cppcheck-suppressions.txt --output-file=$CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.txt
+          cppcheck --enable=all --project=__build/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list=profiler/cppcheck-suppressions.txt --xml --output-file=$CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.xml
 
       - name: Run clang-tidy
         run: run-clang-tidy -p __build &> $CI_ANALYSIS_RESULTS_FOLDER/clang-tidy-results.txt
 
       - name: Checking for errors in the result files
         run: |
-          [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "cppcheck-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains CppCheck result file(s)" && exit 1)
+          [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "cppcheck-results.xml" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains CppCheck result file(s)" && exit 1)
           [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "clang-tidy-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains clang-tidy result file(s)" && exit 1)
 
-          errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.txt || true)
+          errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.xml || true)
           if [ ! -z "$errors" ]
           then
               echo $errors
