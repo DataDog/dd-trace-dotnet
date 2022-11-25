@@ -77,6 +77,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (!Tracer.Instance.Settings.KafkaCreateConsumerScopeEnabled)
                 {
                     // Close and dispose the scope immediately
+                    if (scope is not null)
+                    {
+                        // But first, replace the current headers with the current scope.
+                        // This is done mainly to have spans of the current consumer as childs of this scope
+                        // in the case where users would do context propagation manually.
+                        KafkaHelper.ReplaceHeaders(scope.Span.Context, consumeResult.Message);
+                    }
+
                     scope.DisposeWithException(exception);
                 }
                 else if (exception is not null)

@@ -298,5 +298,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 Log.Warning(ex, "There was a problem injecting headers into the Kafka record. Disabling Headers injection");
             }
         }
+
+        /// <summary>
+        /// Try to replace the properties from the headers.
+        /// This method is meant to be used on the consumer side
+        /// </summary>
+        /// <param name="context">The Span context to propagate</param>
+        /// <param name="message">The duck-typed Kafka Message object</param>
+        internal static void ReplaceHeaders(SpanContext context, IMessage message)
+        {
+            // As this method is used in the consumer side, getting/setting this value won't interfere with the producing side.
+            if (!_headersInjectionEnabled)
+            {
+                return;
+            }
+
+            try
+            {
+                if (message.Headers is null)
+                {
+                    return;
+                }
+
+                var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
+                SpanContextPropagator.Instance.Inject(context, adapter);
+            }
+            catch (Exception ex)
+            {
+                // don't keep trying if we run into problems
+                _headersInjectionEnabled = false;
+                Log.Warning(ex, "There was a problem replacing headers into the Kafka record. Disabling Headers injection");
+            }
+        }
     }
 }
