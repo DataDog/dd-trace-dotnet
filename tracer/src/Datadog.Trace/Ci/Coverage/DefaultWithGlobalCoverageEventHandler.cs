@@ -63,7 +63,10 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             {
                 var typeDef = moduleDef.Types[i];
                 var fullName = typeDef.FullName;
-                var typeValues = moduleValues.Where(m => m.Types[i] != null).Select(m => m.Types[i]!).ToList();
+                var typeValues = moduleValues
+                                .Where(m => i < m.Types.Length && m.Types[i] != null)
+                                .Select(m => m.Types[i]!)
+                                .ToList();
                 if (typeValues.Count == 0)
                 {
                     Log.Warning("GCov: [Type] {typeName} doesn't got covered", fullName);
@@ -74,7 +77,10 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                 {
                     var methodDef = typeDef.Methods[j];
                     var methodName = methodDef.Name;
-                    var methodValues = typeValues.Where(t => t.Methods[j] != null).Select(t => t.Methods[j]).ToList();
+                    var methodValues = typeValues
+                                      .Where(t => i < t.Methods.Length && t.Methods[j] != null)
+                                      .Select(t => t.Methods[j])
+                                      .ToList();
                     if (methodValues.Count == 0)
                     {
                         Log.Warning("GCov: [Method] {typeName}.{methodName} doesn't got covered", fullName, methodName);
