@@ -454,6 +454,12 @@ jobs:
           cd profiler/test/Datadog.Profiler.IntegrationTests &&
           dotnet test -c ${{matrix.configuration}} -p:Platform=${{matrix.platform}} --filter "Category!=LinuxOnly" --logger "console;verbosity=detailed" --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
 
+      - name: Cleanup environment
+        shell: pwsh
+        run: |
+          # Uninstall Procdump
+          .\Procdump\procdump.exe -u
+
       - name: Generate tests report
         uses: dorny/test-reporter@v1
         if: '${{ always() }}'
