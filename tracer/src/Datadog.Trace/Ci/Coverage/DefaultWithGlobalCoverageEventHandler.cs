@@ -59,8 +59,31 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                 continue;
             }
 
+            for (var i = 0; i < moduleDef.Types.Count; i++)
+            {
+                var typeDef = moduleDef.Types[i];
+                var fullName = typeDef.FullName;
+                var typeValues = moduleValues.Where(m => m.Types[i] != null).Select(m => m.Types[i]!).ToList();
+                if (typeValues.Count == 0)
+                {
+                    Log.Warning("GCov: [Type] {typeName} doesn't got covered", fullName);
+                    continue;
+                }
+
+                for (var j = 0; j < typeDef.Methods.Count; j++)
+                {
+                    var methodDef = typeDef.Methods[j];
+                    var methodName = methodDef.Name;
+                    var methodValues = typeValues.Where(t => t.Methods[j] != null).Select(t => t.Methods[j]).ToList();
+                    if (methodValues.Count == 0)
+                    {
+                        Log.Warning("GCov: [Method] {typeName}.{methodName} doesn't got covered", fullName, methodName);
+                        continue;
+                    }
+                }
+            }
         }
-        
+
         // ***********************************************************
         const int HIDDEN = 0xFEEFEE;
         Dictionary<string, FileCoverage>? fileDictionary = null;
