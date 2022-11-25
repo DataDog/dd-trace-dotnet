@@ -303,7 +303,6 @@
     <ClInclude Include="RawExceptionSample.h" />
     <ClInclude Include="RawSample.h" />
     <ClInclude Include="RawStopTheWorldSample.h" />
-    <ClInclude Include="RefCountingObject.h" />
     <ClInclude Include="RuntimeIdStore.h" />
     <ClInclude Include="RuntimeInfo.h" />
     <ClInclude Include="Sample.h" />
@@ -358,7 +357,6 @@
     <ClCompile Include="ProfilerEngineStatus.cpp" />
     <ClCompile Include="RawExceptionSample.cpp" />
     <ClCompile Include="RawSample.cpp" />
-    <ClCompile Include="RefCountingObject.cpp" />
     <ClCompile Include="RuntimeIdStore.cpp" />
     <ClCompile Include="RuntimeInfo.cpp" />
     <ClCompile Include="Sample.cpp" />

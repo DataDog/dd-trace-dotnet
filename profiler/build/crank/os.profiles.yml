@@ -12,11 +12,10 @@ profiles:
           - "{{ windowsEndpoint }}"
         environmentVariables:
           COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          COR_PROFILER_PATH: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\monitoring-home-windows\\Datadog.AutoInstrumentation.NativeLoader.x64.dll"
+          COR_PROFILER_PATH: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\monitoring-home-windows\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          CORECLR_PROFILER_PATH: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\monitoring-home-windows\\Datadog.AutoInstrumentation.NativeLoader.x64.dll"
-          DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\monitoring-home-windows\\tracer"
-          DD_DOTNET_PROFILER_HOME: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\monitoring-home-windows\\continousprofiler"
+          CORECLR_PROFILER_PATH: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\monitoring-home-windows\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
+          DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\monitoring-home-windows"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_ENABLED: 0
@@ -41,7 +40,6 @@ profiles:
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
           CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux"
-          DD_DOTNET_PROFILER_HOME: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/linux-x64"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_ENABLED: 0

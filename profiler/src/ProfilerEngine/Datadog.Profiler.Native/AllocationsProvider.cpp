@@ -58,14 +58,14 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
 
     // create a sample from the allocation
 
-    ManagedThreadInfo* threadInfo;
-    CALL(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
+    std::shared_ptr<ManagedThreadInfo> threadInfo;
+    CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
     const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
-    const auto result = pStackFramesCollector->CollectStackSample(threadInfo, &hrCollectStack);
+    const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
     if (result->GetFramesCount() == 0)
     {
         Log::Warn("Failed to walk stack for sampled allocation: ", HResultConverter::ToStringWithCode(hrCollectStack));
@@ -82,7 +82,6 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     rawSample.AppDomainId = result->GetAppDomainId();
     result->CopyInstructionPointers(rawSample.Stack);
     rawSample.ThreadInfo = threadInfo;
-    threadInfo->AddRef();
     rawSample.AllocationSize = objectSize;
     rawSample.Address = address;
 

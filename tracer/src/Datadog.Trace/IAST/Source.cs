@@ -24,6 +24,6 @@ internal readonly struct Source
 
     public override int GetHashCode()
     {
-        return IastUtils.GetHashCode(new object[] { Origin, Name, Value });
+        return IastUtils.GetHashCode(Origin, Name, Value);
     }
 }

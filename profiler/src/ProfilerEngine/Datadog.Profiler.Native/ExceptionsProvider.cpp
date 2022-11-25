@@ -127,15 +127,15 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         }
     }
 
-    ManagedThreadInfo* threadInfo;
+    std::shared_ptr<ManagedThreadInfo> threadInfo;
 
-    INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
+    INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
     uint32_t hrCollectStack = E_FAIL;
     const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
 
     pStackFramesCollector->PrepareForNextCollection();
-    const auto result = pStackFramesCollector->CollectStackSample(threadInfo, &hrCollectStack);
+    const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
 
     if (result->GetFramesCount() == 0)
     {
@@ -154,7 +154,6 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     rawSample.AppDomainId = result->GetAppDomainId();
     result->CopyInstructionPointers(rawSample.Stack);
     rawSample.ThreadInfo = threadInfo;
-    threadInfo->AddRef();
     rawSample.ExceptionMessage = std::move(message);
     rawSample.ExceptionType = std::move(name);
     Add(std::move(rawSample));

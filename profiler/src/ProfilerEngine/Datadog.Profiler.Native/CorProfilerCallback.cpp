@@ -1195,13 +1195,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         return S_OK;
     }
 
-    ManagedThreadInfo* pThreadInfo;
-    if (_pManagedThreadList->UnregisterThread(threadId, &pThreadInfo))
+    std::shared_ptr<ManagedThreadInfo> pThreadInfo;
+    if (_pManagedThreadList->UnregisterThread(threadId, pThreadInfo))
     {
         // The docs require that we do not allow to destroy a thread while it is being stack-walked.
         // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
         pThreadInfo->SetThreadDestroyed();
-        pThreadInfo->Release();
     }
 
     return S_OK;
