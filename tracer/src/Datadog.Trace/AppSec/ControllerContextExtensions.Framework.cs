@@ -57,11 +57,9 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            if (iast.Settings.Enabled && OverheadController.Instance.AcquireRequest())
+            if (iast.Settings.Enabled)
             {
-                scope?.Span?.Context?.TraceContext?.EnableIastInRequest();
-                var iastContext = scope?.Span?.Context?.TraceContext?.IastRequestContext;
-                iastContext?.AddRequestData(context.Request, controllerContext.RouteData.Values);
+                scope?.Span?.Context?.TraceContext?.IastRequestContext?.AddRequestData(context.Request, controllerContext.RouteData.Values);
             }
         }
     }
