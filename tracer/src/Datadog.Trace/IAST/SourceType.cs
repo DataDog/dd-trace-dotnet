@@ -11,17 +11,17 @@ namespace Datadog.Trace.Iast;
 
 internal static class SourceType
 {
-    public static Tuple<byte, string> RequestBody { get; } = new Tuple<byte, string>(1, "http.request.body");
+    public static Tuple<byte, string> RequestBody { get; } = new(1, "http.request.body");
 
-    public static Tuple<byte, string> RequestPath { get; } = new Tuple<byte, string>(2, "http.request.path");
+    public static Tuple<byte, string> RequestPath { get; } = new(2, "http.request.path");
 
-    public static Tuple<byte, string> RequestParameterName { get; } = new Tuple<byte, string>(3, "http.request.parameter.name");
+    public static Tuple<byte, string> RequestParameterName { get; } = new(3, "http.request.parameter.name");
 
-    public static Tuple<byte, string> RequestParameterValue { get; } = new Tuple<byte, string>(4, "http.request.parameter.value");
+    public static Tuple<byte, string> RequestParameterValue { get; } = new(4, "http.request.parameter.value");
 
-    public static Tuple<byte, string> RoutedParameterValue { get; } = new Tuple<byte, string>(5, "http.request.path.parameter");
+    public static Tuple<byte, string> RoutedParameterValue { get; } = new(5, "http.request.path.parameter");
 
-    public static Tuple<byte, string> RequestHeader { get; } = new Tuple<byte, string>(6, "http.request.header");
+    public static Tuple<byte, string> RequestHeader { get; } = new(6, "http.request.header");
 
-    public static Tuple<byte, string> RequestQueryString { get; } = new Tuple<byte, string>(2, "http.request.querystring");
+    public static Tuple<byte, string> RequestQueryString { get; } = new(2, "http.request.querystring");
 }
