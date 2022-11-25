@@ -14,12 +14,6 @@ namespace Samples.AspNetMvc5
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }
             );
-
-            routes.MapRoute(
-                name: "WeakHashing",
-                url: "Iast/WeakHashing/{delay1}",
-                defaults: new { controller = "Iast", action = "WeakHashing", delay1 = UrlParameter.Optional }
-            );
         }
     }
 }
