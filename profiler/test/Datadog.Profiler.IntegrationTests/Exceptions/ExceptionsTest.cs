@@ -79,7 +79,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total += sample.Count;
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
-                sample.Stacktrace.Should().Be(expectedStack);
+                Assert.True(sample.Stacktrace.EndWith(expectedStack));
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
