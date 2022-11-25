@@ -44,7 +44,7 @@
     }
   ],
   "processName": "dotnet",
-  "processArguments": "Samples.Computer01.dll --scenario 13 --iterations 150 --param 500",
+  "processArguments": "Samples.Computer01.dll --scenario 13 --iterations 25 --param 500",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)/../_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net7.0",
   "environmentVariables": {

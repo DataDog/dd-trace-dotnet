@@ -45,6 +45,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
                     new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |fn:StartCallback"));
             }
+            else if (framework == "net7.0")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions")
+                    );
+            }
             else
             {
                 expectedStack = new StackTrace(

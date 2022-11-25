@@ -137,13 +137,6 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
-    // !! Don't forget to increment the ref count on the thread info !!
-    // --> TransformRawSample is releasing it in SetThreadDetails()
-    if (rawSample.ThreadInfo != nullptr)
-    {
-        rawSample.ThreadInfo->AddRef();
-    }
-
     LiveObjectInfo info(
         _pAllocationsProvider->TransformRawSample(rawSample),
         rawSample.Address,
