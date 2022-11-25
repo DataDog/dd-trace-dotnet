@@ -157,6 +157,9 @@ jobs:
           - Allocations
           - Contention
           - LiveHeap
+        exclude:
+          - framework: net60
+            version: LiveHeap
     services:
       dd-agent:
         image: 'datadog/agent:latest'
@@ -566,6 +569,9 @@ jobs:
           - Allocations
           - Contention
           - LiveHeap
+        exclude:
+          - framework: net60
+            version: LiveHeap
     steps:
 
       - uses: actions/setup-dotnet@v2
