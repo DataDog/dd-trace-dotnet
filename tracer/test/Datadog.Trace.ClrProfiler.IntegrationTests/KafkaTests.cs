@@ -7,15 +7,18 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     [Collection(nameof(KafkaTestsCollection))]
     [Trait("RequiresDockerDependency", "true")]
     public class KafkaTests : TracingIntegrationTest
@@ -34,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                                  + ExpectedErrorProducerSpans;
 
         private const string ErrorProducerResourceName = "Produce Topic INVALID-TOPIC";
+        private static readonly Regex QueueDuration = new(@"message\.queue_time_ms: \d+\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public KafkaTests(ITestOutputHelper output)
             : base("Kafka", output)
@@ -48,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.Kafka), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion)
         {
             var topic = $"sample-topic-{TestPrefix}-{packageVersion}".Replace('.', '-');
 
@@ -149,6 +153,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.Kafka);
+
+            // using span verifier to add all the default scrubbers
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
+            settings.AddSimpleScrubber(TestPrefix, "TestPrefix");
+            settings.AddRegexScrubber(QueueDuration, "message.queue_time_ms: 0");
+
+            await VerifyHelper.VerifySpans(allSpans, settings)
+                          .UseFileName($"{nameof(KafkaTests)}.{nameof(SubmitsTraces)}.{packageVersion}")
+                          .DisableRequireUniquePrefix();
         }
 
         private void VerifyProducerSpanProperties(List<MockSpan> producerSpans, string resourceName, int expectedCount)

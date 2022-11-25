@@ -1,0 +1,5006 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Error: 1,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      error.msg: Subscribed topic not available: sample-topic-Release-net5-0-1-9-3: Broker: Unknown topic or partition,
+      error.stack:
+Confluent.Kafka.ConsumeException: Subscribed topic not available: sample-topic-Release-net5-0-1-9-3: Broker: Unknown topic or partition
+at Confluent.Kafka.Consumer`2.Consume(Int32 millisecondsTimeout),
+      error.type: Confluent.Kafka.ConsumeException,
+      kafka.group: Samples.Kafka.FailingConsumer1,
+      kafka.offset: Unset [-1001],
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_10,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_12,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_14,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_16,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_18,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_20,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_21,
+    SpanId: Id_22,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_23,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_18,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 0,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_21,
+    SpanId: Id_24,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_22,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 1,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_25,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_4,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 0,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_26,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_6,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 1,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_27,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_8,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 2,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_28,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_10,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 3,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_29,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_12,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 4,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_30,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_14,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 0,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_31,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_16,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 1,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_32,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_20,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 2,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_33,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_18,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 0,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_21,
+    SpanId: Id_34,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_22,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 1,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_35,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_4,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 0,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_36,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_6,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 1,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_37,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_8,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 2,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_38,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_10,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 3,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_39,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_12,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 4,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_40,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_14,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 0,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_41,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_16,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 1,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_42,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_20,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 2,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_43,
+    SpanId: Id_44,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_45,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 2,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_43,
+    SpanId: Id_46,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_45,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 2,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_47,
+    SpanId: Id_48,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_49,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 3,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_50,
+    SpanId: Id_51,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_52,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 3,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_54,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_55,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 4,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_56,
+    SpanId: Id_57,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_58,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 5,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_60,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_61,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 6,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_62,
+    SpanId: Id_63,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_64,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 7,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_66,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_67,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 5,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_68,
+    SpanId: Id_69,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_70,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 6,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_71,
+    SpanId: Id_72,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_73,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 7,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_47,
+    SpanId: Id_74,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_49,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 3,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_75,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_67,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 5,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_68,
+    SpanId: Id_76,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_70,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 6,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_71,
+    SpanId: Id_77,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_73,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 7,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_50,
+    SpanId: Id_78,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_52,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 3,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_79,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_55,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 4,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_56,
+    SpanId: Id_80,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_58,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 5,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_81,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_61,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 6,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_62,
+    SpanId: Id_82,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_64,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 7,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_43,
+    SpanId: Id_45,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 2,
+      kafka.partition: [0],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_47,
+    SpanId: Id_49,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 3,
+      kafka.partition: [0],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_67,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 5,
+      kafka.partition: [1],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_68,
+    SpanId: Id_70,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 6,
+      kafka.partition: [1],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_71,
+    SpanId: Id_73,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 7,
+      kafka.partition: [1],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_50,
+    SpanId: Id_52,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 3,
+      kafka.partition: [2],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_55,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 4,
+      kafka.partition: [2],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_56,
+    SpanId: Id_58,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 5,
+      kafka.partition: [2],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_61,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 6,
+      kafka.partition: [2],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_62,
+    SpanId: Id_64,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 7,
+      kafka.partition: [2],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_83,
+    SpanId: Id_84,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_85,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 4,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_83,
+    SpanId: Id_86,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_85,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 4,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_83,
+    SpanId: Id_85,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 4,
+      kafka.partition: [0],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_87,
+    SpanId: Id_88,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_89,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 8,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_87,
+    SpanId: Id_90,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_89,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 8,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_87,
+    SpanId: Id_89,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 8,
+      kafka.partition: [1],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_91,
+    SpanId: Id_92,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_93,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 5,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_91,
+    SpanId: Id_93,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 5,
+      kafka.partition: [0],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_91,
+    SpanId: Id_94,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_93,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 5,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_95,
+    SpanId: Id_96,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 8,
+      kafka.partition: [2],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_95,
+    SpanId: Id_97,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_96,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 8,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_95,
+    SpanId: Id_98,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_96,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 8,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_100,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 9,
+      kafka.partition: [2],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_101,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_100,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 9,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_102,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_100,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 9,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_103,
+    SpanId: Id_104,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 6,
+      kafka.partition: [0],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_103,
+    SpanId: Id_105,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_104,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 6,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_103,
+    SpanId: Id_106,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_104,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 6,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_107,
+    SpanId: Id_108,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 7,
+      kafka.partition: [0],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_107,
+    SpanId: Id_109,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_108,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 7,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_107,
+    SpanId: Id_110,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_108,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 7,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_111,
+    SpanId: Id_112,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 10,
+      kafka.partition: [2],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_111,
+    SpanId: Id_113,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_112,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 10,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_111,
+    SpanId: Id_114,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_112,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 10,
+      kafka.partition: [2],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_115,
+    SpanId: Id_116,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 8,
+      kafka.partition: [0],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_115,
+    SpanId: Id_117,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_116,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 8,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_115,
+    SpanId: Id_118,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_116,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 8,
+      kafka.partition: [0],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_119,
+    SpanId: Id_120,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_121,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 9,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_119,
+    SpanId: Id_121,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 9,
+      kafka.partition: [1],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_119,
+    SpanId: Id_122,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_121,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 9,
+      kafka.partition: [1],
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_123,
+    SpanId: Id_124,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_125,
+    SpanId: Id_126,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_127,
+    SpanId: Id_128,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_129,
+    SpanId: Id_130,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_131,
+    SpanId: Id_132,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_133,
+    SpanId: Id_134,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_135,
+    SpanId: Id_136,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_137,
+    SpanId: Id_138,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_139,
+    SpanId: Id_140,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_141,
+    SpanId: Id_142,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_123,
+    SpanId: Id_143,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_124,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 9,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_125,
+    SpanId: Id_144,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_126,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 10,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_129,
+    SpanId: Id_145,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_130,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 11,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_135,
+    SpanId: Id_146,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_136,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 12,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_139,
+    SpanId: Id_147,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_140,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 13,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_127,
+    SpanId: Id_148,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_128,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 10,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_131,
+    SpanId: Id_149,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_132,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 11,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_133,
+    SpanId: Id_150,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_134,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 12,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_137,
+    SpanId: Id_151,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_138,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 11,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_141,
+    SpanId: Id_152,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_142,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 12,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_123,
+    SpanId: Id_153,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_124,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 9,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_125,
+    SpanId: Id_154,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_126,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 10,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_129,
+    SpanId: Id_155,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_130,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 11,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_135,
+    SpanId: Id_156,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_136,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 12,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_139,
+    SpanId: Id_157,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_140,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 13,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_127,
+    SpanId: Id_158,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_128,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 10,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_131,
+    SpanId: Id_159,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_132,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 11,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_133,
+    SpanId: Id_160,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_134,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 12,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_137,
+    SpanId: Id_161,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_138,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 11,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_141,
+    SpanId: Id_162,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_142,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 12,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_163,
+    SpanId: Id_164,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 14,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_163,
+    SpanId: Id_165,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_164,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 14,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_166,
+    SpanId: Id_167,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_168,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 15,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_169,
+    SpanId: Id_170,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_171,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 16,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_163,
+    SpanId: Id_172,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_164,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 14,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_173,
+    SpanId: Id_174,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_175,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 13,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_166,
+    SpanId: Id_168,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 15,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_176,
+    SpanId: Id_177,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 13,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_178,
+    SpanId: Id_179,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_180,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 14,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_181,
+    SpanId: Id_182,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 14,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_173,
+    SpanId: Id_175,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 13,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_178,
+    SpanId: Id_180,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 14,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_183,
+    SpanId: Id_184,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 15,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_185,
+    SpanId: Id_186,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 16,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_187,
+    SpanId: Id_188,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 17,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_166,
+    SpanId: Id_189,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_168,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 15,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_183,
+    SpanId: Id_190,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_184,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 15,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_169,
+    SpanId: Id_171,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 16,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_169,
+    SpanId: Id_191,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_171,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 16,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_185,
+    SpanId: Id_192,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_186,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 16,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_173,
+    SpanId: Id_193,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_175,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 13,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_178,
+    SpanId: Id_194,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_180,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 14,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_187,
+    SpanId: Id_195,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_188,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 17,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_176,
+    SpanId: Id_196,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_177,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 13,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_181,
+    SpanId: Id_197,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_182,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 14,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_183,
+    SpanId: Id_198,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_184,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 15,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_185,
+    SpanId: Id_199,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_186,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 16,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_187,
+    SpanId: Id_200,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_188,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 17,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_176,
+    SpanId: Id_201,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_177,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 13,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_181,
+    SpanId: Id_202,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_182,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 14,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_203,
+    SpanId: Id_204,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_205,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 18,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_203,
+    SpanId: Id_205,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 18,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_203,
+    SpanId: Id_206,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_205,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 18,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_207,
+    SpanId: Id_208,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 15,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_207,
+    SpanId: Id_209,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_208,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 15,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_207,
+    SpanId: Id_210,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_208,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 15,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_211,
+    SpanId: Id_212,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 17,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_211,
+    SpanId: Id_213,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_212,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 17,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_211,
+    SpanId: Id_214,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_212,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 17,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_215,
+    SpanId: Id_216,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 16,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_215,
+    SpanId: Id_217,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_216,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 16,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_215,
+    SpanId: Id_218,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_216,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 16,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_219,
+    SpanId: Id_220,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 17,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_219,
+    SpanId: Id_221,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_220,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 17,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_219,
+    SpanId: Id_222,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_220,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 17,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_223,
+    SpanId: Id_224,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 19,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_223,
+    SpanId: Id_225,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_224,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 19,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_223,
+    SpanId: Id_226,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_224,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 19,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_227,
+    SpanId: Id_228,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 18,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_227,
+    SpanId: Id_229,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_228,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 18,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_227,
+    SpanId: Id_230,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_228,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 18,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_231,
+    SpanId: Id_232,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 20,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_231,
+    SpanId: Id_233,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_232,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 20,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_231,
+    SpanId: Id_234,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_232,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 20,
+      kafka.partition: [2],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_235,
+    SpanId: Id_236,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 19,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_235,
+    SpanId: Id_237,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_236,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 19,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_235,
+    SpanId: Id_238,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_236,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 19,
+      kafka.partition: [0],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_239,
+    SpanId: Id_240,
+    Name: kafka.produce,
+    Resource: Produce Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.offset: 18,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_239,
+    SpanId: Id_241,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_240,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.AutoCommitConsumer1,
+      kafka.offset: 18,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_239,
+    SpanId: Id_242,
+    Name: kafka.consume,
+    Resource: Consume Topic sample-topic-Release-net5-0-1-9-3,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    ParentId: Id_240,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      kafka.group: Samples.Kafka.ManualCommitConsumer2,
+      kafka.offset: 18,
+      kafka.partition: [1],
+      kafka.tombstone: true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      message.queue_time_ms: 0,
+      process_id: 0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_243,
+    SpanId: Id_244,
+    Name: kafka.produce,
+    Resource: Produce Topic INVALID-TOPIC,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Error: 1,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      error.msg: Broker: Unknown topic or partition,
+      error.stack:
+System.Exception: Broker: Unknown topic or partition
+,
+      error.type: System.Exception,
+      kafka.partition: [Any],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_245,
+    SpanId: Id_246,
+    Name: kafka.produce,
+    Resource: Produce Topic INVALID-TOPIC,
+    Service: Samples.Kafka-kafka,
+    Type: queue,
+    Error: 1,
+    Tags: {
+      component: kafka,
+      env: integration_tests,
+      error.msg: Broker: Unknown topic or partition,
+      error.stack:
+Confluent.Kafka.ProduceException`2[System.String,System.String]: Broker: Unknown topic or partition
+at Confluent.Kafka.Producer`2.ProduceAsync(TopicPartition topicPartition, Message`2 message, CancellationToken cancellationToken),
+      error.type: Confluent.Kafka.ProduceException`2[System.String,System.String],
+      kafka.offset: Unset [-1001],
+      kafka.partition: [Any],
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]
