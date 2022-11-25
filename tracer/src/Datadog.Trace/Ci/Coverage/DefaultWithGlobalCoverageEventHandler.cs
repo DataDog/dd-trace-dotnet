@@ -59,12 +59,14 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                 continue;
             }
 
-            for (var i = 0; i < moduleDef.Types.Count; i++)
+            var moduleMetadata = moduleValues.First().Metadata;
+            var totalTypesCount = moduleMetadata.GetTotalTypes();
+            for (var i = 0; i < totalTypesCount; i++)
             {
                 var typeDef = moduleDef.Types[i];
                 var fullName = typeDef.FullName;
                 var typeValues = moduleValues
-                                .Where(m => i < m.Types.Length && m.Types[i] != null)
+                                .Where(m => m.Types[i] != null)
                                 .Select(m => m.Types[i]!)
                                 .ToList();
                 if (typeValues.Count == 0)
@@ -73,12 +75,13 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                     continue;
                 }
 
-                for (var j = 0; j < typeDef.Methods.Count; j++)
+                var totalMethodsCount = moduleMetadata.GetTotalMethodsOfType(i);
+                for (var j = 0; j < totalMethodsCount; j++)
                 {
                     var methodDef = typeDef.Methods[j];
                     var methodName = methodDef.Name;
                     var methodValues = typeValues
-                                      .Where(t => i < t.Methods.Length && t.Methods[j] != null)
+                                      .Where(t => t.Methods[j] != null)
                                       .Select(t => t.Methods[j])
                                       .ToList();
                     if (methodValues.Count == 0)

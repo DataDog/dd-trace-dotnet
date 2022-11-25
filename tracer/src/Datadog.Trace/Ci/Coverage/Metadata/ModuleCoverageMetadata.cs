@@ -26,6 +26,16 @@ public abstract class ModuleCoverageMetadata
     internal int GetTotalTypes() => Metadata.Length;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal int GetTotalMethodsOfType(int type)
+    {
+#if NETCOREAPP3_0_OR_GREATER
+        return Metadata.FastGetReference(type).Length;
+#else
+        return Metadata[type].Length;
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetTotalSequencePointsOfMethod(int type, int method)
     {
 #if NETCOREAPP3_0_OR_GREATER

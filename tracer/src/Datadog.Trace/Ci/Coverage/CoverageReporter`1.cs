@@ -45,7 +45,7 @@ public static class CoverageReporter<TMeta>
         var globalModuleValue = globalCoverageContextContainer.GetModuleValue(Module);
         if (globalModuleValue is null)
         {
-            globalModuleValue = new ModuleValue(Module, Metadata.GetTotalTypes());
+            globalModuleValue = new ModuleValue(Metadata, Module, Metadata.GetTotalTypes());
             globalCoverageContextContainer.Add(globalModuleValue);
         }
 
@@ -74,7 +74,7 @@ public static class CoverageReporter<TMeta>
                 module = container.GetModuleValue(Module);
                 if (module is null)
                 {
-                    module = new ModuleValue(Module, Metadata.GetTotalTypes());
+                    module = new ModuleValue(Metadata, Module, Metadata.GetTotalTypes());
                     container.Add(module);
                 }
 

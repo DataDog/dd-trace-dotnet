@@ -7,17 +7,21 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Ci.Coverage.Metadata;
 
 namespace Datadog.Trace.Ci.Coverage;
 
 internal class ModuleValue
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ModuleValue(Module module, int maxTypes)
+    public ModuleValue(ModuleCoverageMetadata metadata, Module module, int maxTypes)
     {
+        Metadata = metadata;
         Module = module;
         Types = maxTypes == 0 ? Array.Empty<TypeValues>() : new TypeValues[maxTypes];
     }
+
+    public ModuleCoverageMetadata Metadata { get; }
 
     public Module Module { get; }
 
