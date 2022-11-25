@@ -4,14 +4,11 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Datadog.Trace.Iast;
 
 internal interface ITaintedMap
-    {
+{
     public void Put(ITaintedObject tainted);
 
     public ITaintedObject Get(object obj);
