@@ -62,6 +62,7 @@ internal class IastRequestContext
         _taintedObjects.TaintInputString(path, new Source(SourceType.RequestPath.Item1, path, null));
     }
 
+    // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     private void AddRouteData(IDictionary<string, object> routeData)
     {
         if (!_routedParametersAdded)
@@ -84,6 +85,7 @@ internal class IastRequestContext
     }
 
 #if NETFRAMEWORK
+    // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(System.Web.HttpRequest request)
     {
         if (!_queryPathParametersAdded)
@@ -109,6 +111,7 @@ internal class IastRequestContext
         AddRequestData(request);
     }
 #else
+    // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(Microsoft.AspNetCore.Http.HttpRequest request, IDictionary<string, object> routeParameters)
     {
         AddRouteData(routeParameters);

@@ -25,10 +25,10 @@ namespace Datadog.Trace.AppSec
 
             var security = Security.Instance;
             var context = HttpContext.Current;
-            var iast = Iast.Iast.Instance;
+            var iastEnabled = Iast.Iast.Instance.Settings.Enabled == true;
             Scope scope = null;
 
-            if ((context != null && security.Settings.Enabled) || iast.Settings.Enabled)
+            if ((context != null && security.Settings.Enabled) || iastEnabled)
             {
                 scope = SharedItems.TryPeekScope(context, peekScopeKey);
             }
@@ -57,7 +57,7 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            if (iast.Settings.Enabled)
+            if (iastEnabled)
             {
                 scope?.Span?.Context?.TraceContext?.IastRequestContext?.AddRequestData(context.Request, controllerContext.RouteData.Values);
             }
