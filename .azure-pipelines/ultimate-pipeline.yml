@@ -121,6 +121,10 @@ variables:
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
   # Include all test frameworks when variable is set OR (running on master/release/hotfix and NOT scheduled build),
+  IncludeAllTestFrameworks1: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/'))]
+  IncludeAllTestFrameworks2: $[not(eq(variables['Build.Reason'], 'Schedule'))]
+  IncludeAllTestFrameworks3: $[and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/')), not(eq(variables['Build.Reason'], 'Schedule')))]
+  IncludeAllTestFrameworks4: $[eq(variables['run_all_test_frameworks'], 'true'))]
   IncludeAllTestFrameworks: $[or(eq(variables['run_all_test_frameworks'], 'true'), and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/')), not(eq(variables['Build.Reason'], 'Schedule'))))]
   # Logger variables
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
@@ -179,6 +183,11 @@ stages:
     steps:
     - checkout: none
     - bash: |
+        echo "IncludeAllTestFrameworks1: $IncludeAllTestFrameworks1"
+        echo "IncludeAllTestFrameworks2: $IncludeAllTestFrameworks2"
+        echo "IncludeAllTestFrameworks3: $IncludeAllTestFrameworks3"
+        echo "IncludeAllTestFrameworks4: $IncludeAllTestFrameworks4"
+        echo "IncludeAllTestFrameworks: $IncludeAllTestFrameworks"
         rm -rf ./s
         git clone --quiet --no-checkout --depth 1 --branch master $BUILD_REPOSITORY_URI ./s
         cd s
