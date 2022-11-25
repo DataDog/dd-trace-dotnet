@@ -861,7 +861,7 @@ partial class Build
                            .SetFramework(targetFramework)
                            .EnableCrashDumps()
                            .SetLogsDirectory(TestLogsDirectory)
-                           .When(CodeCoverage, ConfigureCodeCoverage)
+                           .When(CodeCoverage, x => ConfigureCodeCoverage(x, targetFramework))
                            .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                            .CombineWith(testProjects, (x, project) => x
                                  .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -2132,9 +2132,17 @@ partial class Build
         }
     }
 
-    private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings)
+    private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings) 
+        => ConfigureCodeCoverage(settings, Framework);
+
+    private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings, TargetFramework framework)
     {
-        if (Framework == TargetFramework.NET461)
+        if(framework is null)
+        {
+            throw new InvalidOperationException("No test framework provided. You must define the framework as code coverage breaks on net461");
+        }
+
+        if (framework == TargetFramework.NET461)
         {
             // Coverlet apparently breaks .NET Framework when running on the .NET 7 SDK.
             // TODO: Fix it
