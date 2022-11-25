@@ -854,41 +854,23 @@ partial class Build
 
             testProjects.ForEach(EnsureResultsDirectory);
             var filter = string.IsNullOrEmpty(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
-            List<Exception> exceptions = new();
             try
             {
-                foreach (var targetFramework in TestingFrameworks)
-                {
-                    try
-                    {
-                        DotNetTest(x => x
-                           .EnableNoRestore()
-                           .EnableNoBuild()
-                           .SetFilter(filter)
-                           .SetConfiguration(BuildConfiguration)
-                           .SetTargetPlatformAnyCPU()
-                           .SetDDEnvironmentVariables("dd-tracer-dotnet")
-                           .SetFramework(targetFramework)
-                           .EnableCrashDumps()
-                           .SetLogsDirectory(TestLogsDirectory)
-                           .When(CodeCoverage, x => ConfigureCodeCoverage(x, targetFramework))
-                           .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
-                           .CombineWith(testProjects, (x, project) => x
-                                 .EnableTrxLogOutput(GetResultsDirectory(project))
-                                 .WithDatadogLogger()
-                                 .SetProjectFile(project)));
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error($"Error testing {targetFramework}");
-                        exceptions.Add(ex);
-                    }
-                }
-
-                if (exceptions.Any())
-                {
-                    throw new AggregateException("Error in one or more test runs", exceptions);
-                }
+                DotNetTest(x => x
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetFilter(filter)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatformAnyCPU()
+                    .SetDDEnvironmentVariables("dd-tracer-dotnet")
+                    .EnableCrashDumps()
+                    .SetLogsDirectory(TestLogsDirectory)
+                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
+                    .CombineWith(testProjects, (x, project) => x
+                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithDatadogLogger()
+                        .SetProjectFile(project)));
             }
             finally
             {
@@ -2143,21 +2125,7 @@ partial class Build
     }
 
     private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings) 
-        => ConfigureCodeCoverage(settings, Framework);
-
-    private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings, TargetFramework framework)
     {
-        if(framework is null)
-        {
-            throw new InvalidOperationException("No test framework provided. You must define the framework as code coverage breaks on net461");
-        }
-
-        if (framework == TargetFramework.NET461)
-        {
-            // Coverlet apparently breaks .NET Framework when running on the .NET 7 SDK.
-            // TODO: Fix it
-            return settings;
-        }
         var strongNameKeyPath = Solution.Directory / "Datadog.Trace.snk";
 
         return settings.SetDataCollector("XPlat Code Coverage")
