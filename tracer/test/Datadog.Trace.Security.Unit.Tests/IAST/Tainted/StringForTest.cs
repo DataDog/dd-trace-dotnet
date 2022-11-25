@@ -1,26 +1,25 @@
-// <copyright file="Location.cs" company="Datadog">
+// <copyright file="StringForTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Security.Unit.Tests.Iast.Tainted;
 
-internal readonly struct Location
+public class StringForTest
 {
-    public Location(string? path, int? line)
+    public StringForTest(string value)
     {
-        this.Path = path;
-        this.Line = line;
+        Value = value;
     }
 
-    public string? Path { get; }
+    public int Hash { get; set; }
 
-    public int? Line { get; }
+    public string Value { get; private set; }
 
     public override int GetHashCode()
     {
-        return IastUtils.GetHashCode(Path, Line);
+        return Hash;
     }
 }
