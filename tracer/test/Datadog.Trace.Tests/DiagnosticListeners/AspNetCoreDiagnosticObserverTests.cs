@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var testServer = new TestServer(builder);
             var client = testServer.CreateClient();
             var tracer = GetTracer();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security: null, iast: null) };
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security: null) };
             string retValue = null;
 
             using (var diagnosticManager = new DiagnosticManager(observers))
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             var tracer = GetTracer();
 
-            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, null, null);
+            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, null);
 
             var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
 

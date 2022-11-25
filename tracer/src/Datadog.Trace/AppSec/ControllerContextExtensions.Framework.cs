@@ -28,7 +28,7 @@ namespace Datadog.Trace.AppSec
             var iast = Iast.Iast.Instance;
             Scope scope = null;
 
-            if (security.Settings.Enabled || iast.Settings.Enabled)
+            if ((context != null && security.Settings.Enabled) || iast.Settings.Enabled)
             {
                 scope = SharedItems.TryPeekScope(context, peekScopeKey);
             }

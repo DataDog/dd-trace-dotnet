@@ -68,15 +68,14 @@ namespace Datadog.Trace.DiagnosticListeners
         private string _routingEndpointMatchedKey;
 
         public AspNetCoreDiagnosticObserver()
-            : this(null, null, null)
+            : this(null, null)
         {
         }
 
-        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast)
+        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security)
         {
             _tracer = tracer;
             _security = security;
-            _iast = iast;
         }
 
         protected override string ListenerName => DiagnosticListenerName;
@@ -84,8 +83,6 @@ namespace Datadog.Trace.DiagnosticListeners
         private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
 
         private Security CurrentSecurity => _security ?? Security.Instance;
-
-        private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
 
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
@@ -571,11 +568,9 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
-            var iast = CurrentIast;
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.Settings.Enabled;
-            var iastEnabled = iast.Settings.Enabled;
 
             if (!shouldTrace && !shouldSecure)
             {

@@ -192,9 +192,9 @@ namespace Datadog.Trace.AspNet
 
                 if (Iast.Iast.Instance.Settings.Enabled && OverheadController.Instance.AcquireRequest())
                 {
-                    scope?.Span?.Context?.TraceContext?.EnableIastInRequest();
-                    var iastContext = scope?.Span?.Context?.TraceContext?.IastRequestContext;
-                    iastContext?.AddRequestData(httpRequest);
+                    var traceContext = scope?.Span?.Context?.TraceContext;
+                    traceContext?.EnableIastInRequest();
+                    traceContext?.IastRequestContext?.AddRequestData(httpRequest);
                 }
             }
             catch (Exception ex)
