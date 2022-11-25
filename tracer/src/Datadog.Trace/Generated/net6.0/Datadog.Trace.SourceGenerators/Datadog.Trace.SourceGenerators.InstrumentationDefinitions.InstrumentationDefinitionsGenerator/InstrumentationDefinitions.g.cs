@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler
         static InstrumentationDefinitions()
         {
             Payload payload = default;
+
                 // root types for InstrumentationCategory Tracing
                 payload = new Payload
                 {
