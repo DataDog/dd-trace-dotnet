@@ -44,7 +44,7 @@ public class AASTagsTests
         await _tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
         var deserializedSpan = traceChunks.Single().Single();
-        AssertLocalRootSPan(deserializedSpan);
+        AssertLocalRootSpan(deserializedSpan);
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class AASTagsTests
            .HaveCount(2)
            .And.OnlyContain(s => s.ParentId == span1.SpanId)
             // I don't know why Assume doesn't work in that case but using SatisfyRespectively does the trick
-           .And.SatisfyRespectively(s => AssertLocalRootSPan(s), s => AssertLocalRootSPan(s));
+           .And.SatisfyRespectively(s => AssertLocalRootSpan(s), s => AssertLocalRootSpan(s));
 
         // chunk 0, other spans should only have site name and site type
         traceChunks[0]
@@ -132,7 +132,7 @@ public class AASTagsTests
            .Should()
            .HaveCount(1)
            .And.OnlyContain(s => s.ParentId == span12.SpanId)
-           .And.Satisfy(s => AssertNonRootSPan(s));
+           .And.Satisfy(s => AssertNonRootSpan(s));
 
         // chunk 1, root span should have the sampling priority
         traceChunks[1]
@@ -140,10 +140,10 @@ public class AASTagsTests
            .HaveCount(1)
            .And.OnlyContain(s => s.ParentId == null || s.ParentId == 0)
            .And.OnlyContain(s => s.SpanId == span1.SpanId)
-           .And.Satisfy(s => AssertLocalRootSPan(s));
+           .And.Satisfy(s => AssertLocalRootSpan(s));
     }
 
-    private bool AssertLocalRootSPan(MockSpan span)
+    private bool AssertLocalRootSpan(MockSpan span)
     {
         span.GetTag(Tags.AzureAppServicesSiteName).Should().Be("SiteName");
         span.GetTag(Tags.AzureAppServicesSiteKind).Should().Be("app");
@@ -160,7 +160,7 @@ public class AASTagsTests
         return true;
     }
 
-    private bool AssertNonRootSPan(MockSpan span)
+    private bool AssertNonRootSpan(MockSpan span)
     {
         span.GetTag(Tags.AzureAppServicesSiteName).Should().Be("SiteName");
         span.GetTag(Tags.AzureAppServicesSiteType).Should().Be("app");
