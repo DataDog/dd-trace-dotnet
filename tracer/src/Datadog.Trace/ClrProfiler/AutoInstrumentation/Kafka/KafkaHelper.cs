@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging;
@@ -300,12 +301,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         }
 
         /// <summary>
-        /// Try to replace the properties from the headers.
+        /// Try to replace the produce parent id from the headers with the current spanId
         /// This method is meant to be used on the consumer side
         /// </summary>
         /// <param name="context">The Span context to propagate</param>
         /// <param name="message">The duck-typed Kafka Message object</param>
-        internal static void ReplaceHeaders(SpanContext context, IMessage message)
+        internal static void ReplaceParentIdInHeaders(SpanContext context, IMessage message)
         {
             // As this method is used in the consumer side, getting/setting this value won't interfere with the producing side.
             if (!_headersInjectionEnabled)
@@ -315,13 +316,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
-                if (message.Headers is null)
+                if (message?.Headers is null)
                 {
                     return;
                 }
 
                 var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
-                SpanContextPropagator.Instance.Inject(context, adapter);
+
+                // remove any leftover junk they may be left in the headers
+                adapter.Remove(HttpHeaderNames.ParentId);
+                adapter.Add(HttpHeaderNames.ParentId, context.SpanId.ToString(CultureInfo.InvariantCulture));
             }
             catch (Exception ex)
             {

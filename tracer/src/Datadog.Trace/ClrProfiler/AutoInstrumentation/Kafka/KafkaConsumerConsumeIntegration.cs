@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // This sets the span as active and either disposes it immediately
                 // or disposes it on the next call to Consumer.Consume()
                 var tracer = Tracer.Instance;
-                Scope scope = KafkaHelper.CreateConsumerScope(
+                var scope = KafkaHelper.CreateConsumerScope(
                     tracer,
                     tracer.TracerManager.DataStreamsManager,
                     instance,
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         // But first, replace the current headers with the current scope.
                         // This is done mainly to have spans of the current consumer as childs of this scope
                         // in the case where users would do context propagation manually.
-                        KafkaHelper.ReplaceHeaders(scope.Span.Context, consumeResult.Message);
+                        KafkaHelper.ReplaceParentIdInHeaders(scope.Span.Context, consumeResult.Message);
                     }
 
                     scope.DisposeWithException(exception);
