@@ -7,12 +7,13 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace Datadog.Trace.Iast;
 
-    internal class DefaultTaintedMap : ITaintedMap
-    {
+internal class DefaultTaintedMap : ITaintedMap
+{
     // Default capacity. It MUST be a power of 2.
     public const int DefaultCapacity = 1 << 14;
     // Default flat mode threshold.
@@ -32,25 +33,14 @@ namespace Datadog.Trace.Iast;
     private object _purgingLock = new();
     // Number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
     private int _entriesCount;
-        /* Number of elements in the hash table before switching to flat mode. */
+    /* Number of elements in the hash table before switching to flat mode. */
     private int _flatModeThreshold;
 
-        /*
-         * Default constructor. Uses {@link #DEFAULT_CAPACITY} and {@link #DEFAULT_FLAT_MODE_THRESHOLD}.
-         */
-        public DefaultTaintedMap()
-        {
-    /// <summary>
-        _lengthMask = DefaultCapacity - 1;
-        _flatModeThreshold = DefaultFlatModeThresold;
-        }
-    /// <param name="flatModeThreshold">Limit of entries before switching to flat mode.</param>
-    /// <returns>The retrieved tainted object or null</returns>
-    private DefaultTaintedMap(int capacity, int flatModeThreshold)
+    public DefaultTaintedMap()
     {
         _map = new ConcurrentDictionary<int, ITaintedObject>();
-        _lengthMask = capacity - 1;
-        _flatModeThreshold = flatModeThreshold;
+        _lengthMask = DefaultCapacity - 1;
+        _flatModeThreshold = DefaultFlatModeThresold;
     }
 
     /// <summary>
@@ -65,7 +55,7 @@ namespace Datadog.Trace.Iast;
     /// <param name="objectToFind">The object that should be found in the map</param>
     /// <returns>The retrieved tainted object or null</returns>
     public ITaintedObject? Get(object objectToFind)
-        {
+    {
         if (objectToFind is null)
         {
             return null;
@@ -73,15 +63,15 @@ namespace Datadog.Trace.Iast;
 
         _map.TryGetValue(IndexObject(objectToFind), out var entry);
 
-            while (entry != null)
-            {
+        while (entry != null)
+        {
             if (objectToFind == entry.Value)
-                {
-                    return entry;
-                }
+            {
+                return entry;
+            }
 
             entry = entry.Next;
-            }
+        }
 
         return null;
     }
@@ -91,8 +81,16 @@ namespace Datadog.Trace.Iast;
     /// </summary>
     /// <param name="entry">Tainted object</param>
     public void Put(ITaintedObject entry)
-        {
+    {
         if (entry is null || (entry.Value is null or ""))
+        {
+            return;
+        }
+
+        var index = Index(entry.PositiveHashCode);
+
+        if (!IsFlat)
+        {
             // By default, add the new entry to the head of the chain.
             // We do not control duplicate entries.
             _map.TryGetValue(index, out var existingValue);
@@ -106,39 +104,15 @@ namespace Datadog.Trace.Iast;
             Interlocked.Increment(ref _entriesCount);
         }
 
-                // If we flipped to flat mode:
-                // - Always override elements ignoring chaining.
-                // - Stop updating the estimated size.
+        // If we flipped to flat mode:
+        // - Always override elements ignoring chaining.
+        // - Stop updating the estimated size.
 
         _map[index] = entry;
 
         if ((entry.PositiveHashCode & PurgeMask) == 0)
-                {
-                    Purge();
-                }
-            }
-            else
-            {
-                // By default, add the new entry to the head of the chain.
-                // We do not control duplicate keys (although we expect they are generally not used).
-                entry.next = table[index];
-                table[index] = entry;
-                if ((entry.positiveHashCode & PURGE_MASK) == 0)
-                {
-                    // To mitigate the cost of maintaining an atomic counter, we only update the size every
-                    // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
-                    // if it was a random number generator, and we assume duplicate keys are rarely inserted.
-                    estimatedSize.addAndGet(PURGE_COUNT);
-                    Purge();
-                }
-            }
-        }
-                // To mitigate the cost of maintaining a thread safe counter, we only update the size every
-                // <PURGE_COUNT> puts. This is just an approximation, we rely on key's identity hash code as
-                // if it was a random number generator.
-                Interlocked.Add(ref _estimatedSize, purgeCount);
-                Purge();
-            }
+        {
+            Purge();
         }
     }
 
@@ -147,8 +121,8 @@ namespace Datadog.Trace.Iast;
     /// allowed, further concurrent calls will be ignored.
     /// </summary>
     internal void Purge()
-        {
-            // Ensure we enter only once concurrently.
+    {
+        // Ensure we enter only once concurrently.
         lock (_purgingLock)
         {
             if (_isPurging)
@@ -157,44 +131,40 @@ namespace Datadog.Trace.Iast;
             }
 
             _isPurging = true;
-                {
-                // We only count the entries if we are not in flat mode
-                if (Interlocked.Add(ref _entriesCount, -removedCount) > _flatModeThreshold)
-                    {
-            {
-                // Remove GC'd entries.
+        }
+
+        try
+        {
+            // Remove GC'd entries.
             var removedCount = RemoveDeadKeys();
 
             if (!IsFlat)
             {
-                if (Interlocked.Add(ref _estimatedSize, -removedCount) > _flatModeThreshold)
+                // We only count the entries if we are not in flat mode
+                if (Interlocked.Add(ref _entriesCount, -removedCount) > _flatModeThreshold)
                 {
                     IsFlat = true;
                 }
-
-                if (estimatedSize.addAndGet(-removedCount) > flatModeThreshold)
-                {
-                    isFlat = true;
-                }
             }
-            finally
-            {
-                // Reset purging flag.
+        }
+        finally
+        {
+            // Reset purging flag.
             lock (_purgingLock)
             {
                 _isPurging = false;
             }
-            }
         }
+    }
 
     private int RemoveDeadKeys()
-            {
+    {
         var removed = 0;
         List<int> deadKeys = new();
         ITaintedObject? previous;
 
         foreach (var key in _map.Keys.ToArray())
-            {
+        {
             var current = _map[key];
             previous = null;
 
@@ -203,30 +173,27 @@ namespace Datadog.Trace.Iast;
                 if (!current.IsAlive)
                 {
                     if (previous is null)
-            {
+                    {
                         // We can delete the map key
                         if (current.Next is null)
-                {
+                        {
                             deadKeys.Add(key);
-                }
+                        }
                         else
                         {
                             _map[key] = current.Next;
-            }
-
-            // If we reach this point, the entry was already removed or put was lost.
-            return 0;
-        }
+                        }
+                    }
                     else
-            {
+                    {
                         previous.Next = current.Next;
-            }
+                    }
 
                     current = current.Next;
                     removed++;
-        }
+                }
                 else
-        {
+                {
                     previous = current;
                     current = current.Next;
                 }
@@ -239,47 +206,45 @@ namespace Datadog.Trace.Iast;
         }
 
         return removed;
-        }
+    }
 
     public void Clear()
-        {
+    {
         IsFlat = false;
         Interlocked.Exchange(ref _entriesCount, 0);
         _map.Clear();
-        }
+    }
 
     private int IndexObject(object objectStored)
-            {
+    {
         return Index(PositiveHashCode(objectStored.GetHashCode()));
     }
 
     private int PositiveHashCode(int hash)
-                {
+    {
         return hash & PositiveMask;
-                }
+    }
 
     public int Index(int hash)
-                    {
+    {
         return hash & _lengthMask;
-            }
+    }
 
     // For testing only
     public List<ITaintedObject> GetListValues()
-                {
+    {
         List<ITaintedObject> list = new();
 
         foreach (var value in _map.Values)
-                {
+        {
             var copy = value;
             while (copy != null)
-                    {
+            {
                 list.Add(copy);
                 copy = copy.Next;
-    }
+            }
+        }
 
         return (list);
     }
-
-        return (list);
-}
 }
