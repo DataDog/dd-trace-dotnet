@@ -27,6 +27,11 @@ function ExecSafe([scriptblock] $cmd) {
 # If dotnet CLI is installed globally and it matches requested version, use for execution
 $env:DOTNET_EXE = (Get-Command "dotnet").Path
 
+# Some commands apparently break unless this is set
+# e.g. "/property:Platform=AnyCPU" gives
+# No se reconoce el comando o el argumento "/property:Platform=AnyCPU"
+$env:DOTNET_CLI_UI_LANGUAGE="en"
+
 Write-Output "Microsoft (R) .NET Core SDK version $(& $env:DOTNET_EXE --version)"
 
 ExecSafe { & $env:DOTNET_EXE build $BuildProjectFile /nodeReuse:false /p:UseSharedCompilation=false -nologo -clp:NoSummary --verbosity quiet }
