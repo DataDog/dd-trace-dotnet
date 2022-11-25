@@ -201,7 +201,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -226,7 +226,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -255,7 +255,7 @@ stages:
 
   - job: build
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -580,7 +580,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    name: azure-windows-scale-set-3
+    name: azure-windows-scale-set-2
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -625,7 +625,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    name: azure-windows-scale-set-3
+    name: azure-windows-scale-set-2
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -863,7 +863,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -936,7 +936,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -992,7 +992,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1047,7 +1047,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1055,7 +1055,7 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
- 
+
     - script: |
         $(runtimeInstall)
         func
@@ -1119,7 +1119,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1245,8 +1245,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-    
-    - script: |      
+
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1344,7 +1344,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
-    - script: |      
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1513,7 +1513,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
-    - script: |      
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1832,7 +1832,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
 
     # Enable the Datadog Agent service for this job
     services:
@@ -2090,7 +2090,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2231,7 +2231,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2253,13 +2253,13 @@ stages:
       inputs:
         artifact: runner-standalone-win-$(targetPlatform)
         path: $(Agent.TempDirectory)/runner
-    
+
     - task: ExtractFiles@1
       inputs:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.zip'
         destinationFolder: $(runnerStandalone)
         cleanDestinationFolder: false
-        
+
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test tool
       env:
@@ -2336,7 +2336,7 @@ stages:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.tar.gz'
         destinationFolder: $(runnerStandalone)
         cleanDestinationFolder: false
-        
+
     - script: |
         ls $(runnerStandalone)
         chmod +x $(runnerStandalone)/dd-trace
@@ -2514,13 +2514,13 @@ stages:
           inputs:
             artifact: linux-profiler-symbols-alpine
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler CentOS7 symbols
           inputs:
             artifact: linux-profiler-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler Arm64 symbols
           inputs:
@@ -2532,13 +2532,13 @@ stages:
           inputs:
             artifact: linux-tracer-symbols-alpine
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer CentOS7 symbols
           inputs:
             artifact: linux-tracer-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer Arm64 symbols
           inputs:
@@ -2787,7 +2787,7 @@ stages:
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: 
+  dependsOn:
     - integration_tests_windows
     - integration_tests_windows_iis
     - integration_tests_windows_iis_security
@@ -2969,12 +2969,12 @@ stages:
         displayName: Run tests over UDS
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-        
+
       - publish: system-tests/logs_uds
         condition: always()
         displayName: System tests UDS logs
         artifact: system-tests-uds_$(System.JobAttempt)
-        
+
       - script: ./run.sh REMOTE_CONFIG_MOCKED_BACKEND_LIVE_DEBUGGING
         workingDirectory: system-tests
         displayName: Run RCM tests
@@ -3101,7 +3101,7 @@ stages:
           nuget-smoke-tests
       env:
         dockerTag: $(dockerTag)
-      displayName: docker-compose build nuget-smoke-tests 
+      displayName: docker-compose build nuget-smoke-tests
       retryCountOnTaskFailure: 3
 
     - template: steps/run-snapshot-test.yml
@@ -3366,7 +3366,7 @@ stages:
             dockerTag: $(dockerTag)
           displayName: docker-compose build smoke-tests
           retryCountOnTaskFailure: 3
-    
+
         - template: steps/run-snapshot-test.yml
           parameters:
             target: 'smoke-tests'
@@ -3554,7 +3554,7 @@ stages:
         mkdir -p tracer/build_data/snapshots
         mkdir -p tracer/build_data/logs
       displayName: create test data directories
-    
+
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
@@ -3620,7 +3620,7 @@ stages:
         mkdir -f -p $(smokeTestAppDir)/artifacts
         mv $(Agent.TempDirectory)/*.zip $(smokeTestAppDir)/artifacts/dd-trace-win.zip
       displayName: Create test data directories
-      
+
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
@@ -3855,5 +3855,5 @@ stages:
         curl -X POST \
         -H "Content-Type: application/json" \
         -d '{"commit": "'$sha'"}' \
-          $(slackWebhookUrl) 
+          $(slackWebhookUrl)
       displayName: "notify"
