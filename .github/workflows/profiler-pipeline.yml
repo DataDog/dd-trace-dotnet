@@ -571,7 +571,7 @@ jobs:
           - LiveHeap
         exclude:
           - framework: net60
-            version: LiveHeap
+            scenario: LiveHeap
     steps:
 
       - uses: actions/setup-dotnet@v2

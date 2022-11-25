@@ -113,6 +113,7 @@ public:
     static const std::string GarbageCollectionTypeLabel;
     static const std::string GarbageCollectionCompactingLabel;
     static const std::string ObjectLifetimeLabel;
+    static const std::string ObjectIdLabel;
 
 private:
     uint64_t _timestamp;

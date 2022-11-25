@@ -3,6 +3,9 @@
 
 #include "LiveObjectInfo.h"
 
+std::atomic<uint64_t> LiveObjectInfo::s_nextObjectId = 1;
+
+
 LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, int64_t timestamp)
     :
     _address(address),
@@ -10,6 +13,10 @@ LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address
     _timestamp(timestamp),
     _gcCount(0)
 {
+    auto id = s_nextObjectId++;
+    sample->AddLabel(Label{Sample::ObjectIdLabel, std::to_string(id)});
+
+    // !! this must be the last label !!
     sample->AddLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(0)});
     _sample = sample;
 }

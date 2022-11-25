@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 
 #include "cor.h"
@@ -29,4 +30,6 @@ private:
     ObjectHandleID _weakHandle;
     int64_t _timestamp;
     uint64_t _gcCount;
+
+    static std::atomic<uint64_t> s_nextObjectId;
 };
