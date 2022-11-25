@@ -124,9 +124,19 @@ partial class Build
     };
 
     TargetFramework[] TestingFrameworks =>
-        IncludeAllTestFrameworks
+        IncludeAllTestFrameworks || HaveIntegrationsChanged
             ? TargetFramework.GetFrameworks(except: TargetFramework.NETSTANDARD2_0)
             : new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
+
+    bool HaveIntegrationsChanged => 
+        GetGitChangedFiles(baseBranch: "origin/master")
+           .Any(s => new []
+            {
+                "tracer/src/Datadog.Trace/Generated/net461/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
+                "tracer/src/Datadog.Trace/Generated/netstandard2.0/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
+                "tracer/src/Datadog.Trace/Generated/netcoreapp3.1/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
+                "tracer/src/Datadog.Trace/Generated/net6.0/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
+            }.Any(s.Contains));
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
     {
