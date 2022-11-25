@@ -8,9 +8,11 @@
 #include "cor.h"
 #include "corprof.h"
 
-#include "RefCountingObject.h"
 #include "Semaphore.h"
 #include "shared/src/native-src/string.h"
+
+#include <atomic>
+#include <memory>
 
 
 static constexpr int32_t MinFieldAlignRequirement = 8;
@@ -24,7 +26,7 @@ public:
     std::uint64_t _currentSpanId;
 };
 
-struct ManagedThreadInfo : public RefCountingObject
+struct ManagedThreadInfo
 {
 private:
     ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle, shared::WSTRING pThreadName);
@@ -32,7 +34,7 @@ private:
 
 public:
     explicit ManagedThreadInfo(ThreadID clrThreadId);
-    ~ManagedThreadInfo() override = default;
+    ~ManagedThreadInfo() = default;
 
     inline std::uint32_t GetProfilerThreadInfoId(void) const;
 

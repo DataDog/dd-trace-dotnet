@@ -9,7 +9,7 @@
 class IStackSamplerLoopManager : public IService
 {
 public:
-    virtual bool AllowStackWalk(ManagedThreadInfo* pThreadInfo) = 0;
+    virtual bool AllowStackWalk(std::shared_ptr<ManagedThreadInfo> pThreadInfo) = 0;
     virtual void NotifyThreadState(bool isSuspended) = 0;
     virtual void NotifyCollectionStart() = 0;
     virtual void NotifyCollectionEnd() = 0;
