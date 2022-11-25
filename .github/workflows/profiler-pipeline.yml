@@ -159,7 +159,7 @@ jobs:
           - LiveHeap
         exclude:
           - framework: net60
-            version: LiveHeap
+            scenario: LiveHeap
     services:
       dd-agent:
         image: 'datadog/agent:latest'
