@@ -1373,8 +1373,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     if (!isAsyncMethod)
     {
-        // Async methods can't have Task<T> where T is byref like, because byref like can't exist as a generic param.
-        // thus we only perform this check here.
+        // In async methods, the return value can't be byref-like (it can't be Task<T> where T is byref-like, because
+        // byref-like can't exist as a generic param). Therefore, we only need to worry about non-async methods.
         auto emit = module_metadata.metadata_emit;
         bool isTypeIsByRefLike = false;
         const auto methodReturnTypeTok = methodReturnType.GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
