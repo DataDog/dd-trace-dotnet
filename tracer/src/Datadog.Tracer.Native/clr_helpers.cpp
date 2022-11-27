@@ -1042,7 +1042,7 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
                             ComPtr<IMetaDataImport2>& resolvedTypeDefMetadataImport)
 {
     mdAssembly candidateAssembly;
-    auto isModuleFound = false;
+    auto foundModule = false;
 
     if (Logger::IsDebugEnabled())
     {
@@ -1090,7 +1090,7 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
             if (hr == S_OK)
             {
                 resolvedTypeDefMetadataImport = candidateMetadataImport;
-                isModuleFound = true;
+                foundModule = true;
                 break;
             }
             else
@@ -1121,8 +1121,8 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
                         continue;
                     }
 
-                    int tryoutsCount = 1000; // To avoid falling into an infinite loop
-                    while (tryoutsCount-- > 0 && 
+                    int retryCount = 1000; // To avoid falling into an infinite loop
+                    while (retryCount-- > 0 && 
                            exportedTypeContainerToken != mdExportedTypeNil &&
                            TypeFromToken(exportedTypeContainerToken) == mdtExportedType &&
                            IsTdNestedPublic(exportedTypeFlags))
@@ -1136,7 +1136,7 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
                         }
                     }
 
-                    if (tryoutsCount == 0)
+                    if (retryCount == 0)
                     {
                         Logger::Warn("[ResolveTypeInternal] Reached the maximum amount of tryouts of trying to grab the exported type with: ", shared::WSTRING(refTypeName.data()));
                         return E_FAIL;
@@ -1169,7 +1169,7 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
         }
     }
 
-    if (isModuleFound)
+    if (foundModule)
     {
         return S_OK;
     }
@@ -1193,27 +1193,21 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
     mdToken resolutionScope = mdTokenNil; // will hold either AssemblyRef or ModuleRef token
     mdToken enclosingType = mdTokenNil;
     ULONG nameSize = 0;
+    std::vector<WCHAR> refTypeName(kNameMaxSize);
 
-    auto hr = metadata_import->GetTypeRefProps(typeRefToken, &resolutionScope, nullptr, 0, &nameSize);
+    // get the type name & resolution scope
+    auto hr = metadata_import->GetTypeRefProps(typeRefToken, &resolutionScope, refTypeName.data(), kNameMaxSize, &nameSize);
     if (FAILED(hr) || resolutionScope == mdTokenNil)
     {
         Logger::Error("[ResolveType] GetTypeRefProps [1] has failed. typeRefToken: ", typeRefToken);
         return E_FAIL;
     }
-    // get the type name & resolution scope
-    std::vector<WCHAR> refTypeName(nameSize, 0);
-    hr = metadata_import->GetTypeRefProps(typeRefToken, &resolutionScope, refTypeName.data(),
-                                                          kNameMaxSize, &nameSize);
-    if (FAILED(hr) || resolutionScope == mdTokenNil)
-    {
-        Logger::Error("[ResolveType] GetTypeRefProps [2] has failed. typeRefToken: ", typeRefToken);
-    }
-    IfFailRet(hr);
+
     mdToken tempToken = mdTokenNil;
     // To avoid ending up in an infinite loop, I'm limiting the execution to 1000 (arbitrary large number that will be
     // well beyond enough)
-    int tryoutsCount = 1000;
-    while (tryoutsCount-- > 0 && 
+    int retryCount = 1000;
+    while (retryCount-- > 0 && 
         TypeFromToken(resolutionScope) != mdtAssemblyRef && 
         TypeFromToken(resolutionScope) != mdtModuleRef &&
         resolutionScope != mdTokenNil)
@@ -1226,12 +1220,12 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
         hr = metadata_import->GetTypeRefProps(tempToken, &resolutionScope, nullptr, 0, &nameSize);
         if (FAILED(hr))
         {
-            Logger::Warn("[ResolveType] GetTypeRefProps [3] has failed. typeRefToken: ", typeRefToken);
+            Logger::Warn("[ResolveType] GetTypeRefProps [2] has failed. typeRefToken: ", typeRefToken);
         }
         IfFailRet(hr);
     }
 
-    if (tryoutsCount == 0)
+    if (retryCount == 0)
     {
         Logger::Warn(
             "[ResolveType] Reached the maximum amount of tryouts of resolving the resolution scope. typeRefToken: ",
@@ -1263,9 +1257,9 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
     std::vector<ModuleID> loadedModules;
     size_t resultIndex = 0;
 
-    tryoutsCount = 1000;
+    retryCount = 1000;
     // iterate over the loaded modules enumeration and collect the module ids into loadedModules
-    while (tryoutsCount-- > 0)
+    while (retryCount-- > 0)
     {
         const ULONG valueToRetrieve = 20;
         ULONG valueRetrieved = 0;
@@ -1291,7 +1285,7 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
         }
     }
 
-    if (tryoutsCount == 0)
+    if (retryCount == 0)
     {
         Logger::Warn(
             "[ResolveType] Reached the maximum amount of tryouts of enumerating the loaded modules. typeRefToken: ",
@@ -1304,19 +1298,13 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
     resolvedTypeDefToken = mdTokenNil;
     if (enclosingType != mdTokenNil)
     {
-        // LOG_DEBUG("ResolveType: Found enclosing type, try to get parent token");
-        hr = metadata_import->GetTypeRefProps(enclosingType, &resolutionScope, nullptr, 0, &nameSize);
+        Logger::Debug("ResolveType: Found enclosing type, try to get parent token");
+        std::vector<WCHAR> enclosingRefTypeName(kNameMaxSize);
+        hr = metadata_import->GetTypeRefProps(enclosingType, &resolutionScope, enclosingRefTypeName.data(),
+                                              kNameMaxSize, &nameSize);
         if (FAILED(hr))
         {
-            Logger::Warn("[ResolveType] GetTypeRefProps [1] has failed. typeRefToken: ", typeRefToken);
-        }
-        IfFailRet(hr);
-        std::vector<WCHAR> enclosingRefTypeName(nameSize, 0);
-        hr = metadata_import->GetTypeRefProps(enclosingType, &resolutionScope,
-                                                              enclosingRefTypeName.data(), kNameMaxSize, &nameSize);
-        if (FAILED(hr))
-        {
-            Logger::Warn("[ResolveType] GetTypeRefProps [2] has failed. typeRefToken: ", typeRefToken);
+            Logger::Warn("[ResolveType] GetTypeRefProps [3] has failed. typeRefToken: ", typeRefToken);
         }
         IfFailRet(hr);
 
@@ -1325,11 +1313,8 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
         IfFailRet(hr);
     }
 
-    hr = ResolveTypeInternal(info, loadedModules, refTypeName, resolvedTypeDefToken, resolutionScopeName,
+    return ResolveTypeInternal(info, loadedModules, refTypeName, resolvedTypeDefToken, resolutionScopeName,
                              resolvedTypeDefToken, resolvedMetadataImport);
-    IfFailRet(hr);
-
-    return hr;
 }
 
 } // namespace trace
