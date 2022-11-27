@@ -123,27 +123,6 @@ public:
         }
         return debuggerTokens.get();
     }
-
-    void EnsureInitSanityTypeSpecToken()
-    {
-        if (moduleSpecSanityToken == mdTokenNil)
-        {
-            const PCCOR_SIGNATURE NullSignature = nullptr;
-            metadata_emit->GetTokenFromTypeSpec(NullSignature, 0x0, &moduleSpecSanityToken);
-        }
-    }
-
-    bool IsTypeSpecTokenSane(mdTypeSpec typeSpec)
-    {
-        EnsureInitSanityTypeSpecToken();
-
-        if (TypeFromToken(typeSpec) != mdtTypeSpec)
-        {
-            return true;
-        }
-
-        return typeSpec < moduleSpecSanityToken;
-    }
 };
 
 } // namespace trace

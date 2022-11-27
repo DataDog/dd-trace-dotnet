@@ -857,7 +857,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(CorProfiler* corProfiler,
                 rewriterWrapper.LoadNull(); // return value
                 auto emit = module_metadata.metadata_emit;
                 auto returnTypeToken = methodReturnType->GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
-                if (returnTypeToken == mdTokenNil || !module_metadata.IsTypeSpecTokenSane(returnTypeToken))
+                if (returnTypeToken == mdTokenNil)
                 {
                     Logger::Error("Fail to get return type token. Element type is  ", elementType, " Method is: ", caller->type.name, ".", caller->name);
                     return E_FAIL;
@@ -1273,7 +1273,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     int numArgs = caller->method_signature.NumberOfArguments();
-    module_metadata.EnsureInitSanityTypeSpecToken();
 
     if (retTypeFlags & TypeFlagByRef || caller->name == WStr(".ctor") || caller->name == WStr(".cctor"))
     {
