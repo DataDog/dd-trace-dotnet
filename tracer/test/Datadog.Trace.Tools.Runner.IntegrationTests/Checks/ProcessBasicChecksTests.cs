@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Checks;
+using Datadog.Trace.Tools.Runner.DumpAnalysis;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Moq;
@@ -43,6 +44,23 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         public ProcessBasicChecksTests(ITestOutputHelper output)
             : base(output)
         {
+        }
+
+        [Fact]
+        [Trait("RunOnWindows", "True")]
+        public async Task DetectCrash()
+        {
+            using var helper = await StartConsole(enableProfiler: false);
+            var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+
+            processInfo.Should().NotBeNull();
+
+            using var console = ConsoleHelper.Redirect();
+
+            int processInfoId = processInfo.Id;
+            ProcessMemoryAnalyzer.Analyze(processInfoId);
+
+            console.Output.Should().Contain("System.Threading.Thread.Sleep");
         }
 
         [SkippableFact]
