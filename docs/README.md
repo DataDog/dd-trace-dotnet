@@ -8,7 +8,8 @@ This repository contains the sources for the client-side components of the Datad
 
 This library powers [Distributed Tracing](https://docs.datadoghq.com/tracing/),
 [Application Security Management](https://docs.datadoghq.com/tracing/profiler/connect_traces_and_profiles/),
-[Continuous Integration Visibility](https://docs.datadoghq.com/continuous_integration/) and more.
+[Continuous Integration Visibility](https://docs.datadoghq.com/continuous_integration/),
+[Dynamic Instrumentation](https://www.datadoghq.com/blog/dash-2022-new-feature-roundup/#send-critical-metrics-traces-and-logs-with-no-code-changes-using-dynamic-instrumentation) and more.
 
 **[Datadog .NET Continuous Profiler](https://github.com/DataDog/dd-trace-dotnet/tree/master/profiler)**: Libraries that automatically profile your application. [Documentation](https://docs.datadoghq.com/tracing/profiler/).
 
