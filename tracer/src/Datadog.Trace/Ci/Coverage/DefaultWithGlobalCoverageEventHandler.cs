@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -112,7 +113,8 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
         Log.Warning("GCov: Total Sequence Points: {totalSequencePoints}", totalSequencePoints);
         Log.Warning("GCov: Executed Sequence Points: {executedSequencePoints}", executedSequencePoints);
-        Log.Warning("GCov: Percentage: {percentage}%", (executedSequencePoints / totalSequencePoints) * 100);
+        var coveragePercentage = Math.Round(((double)totalSequencePoints / executedSequencePoints) * 100, 2);
+        Log.Warning("GCov: Percentage: {percentage}%", coveragePercentage);
 
         // ***********************************************************
         const int HIDDEN = 0xFEEFEE;
