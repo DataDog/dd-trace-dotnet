@@ -130,8 +130,8 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                                               moduleValues.Key.Name,
                                               fullName,
                                               methodDef.FullName,
-                                              totalTypeSequencePoints,
-                                              executedTypeSequencePoints));
+                                              totalMethodSequencePoints,
+                                              executedMethodSequencePoints));
                 }
 
                 lstCoverageValues.Add(new CoveragePercentages(
