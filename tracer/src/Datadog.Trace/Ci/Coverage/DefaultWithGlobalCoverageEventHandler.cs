@@ -113,7 +113,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
         Log.Warning("GCov: Total Sequence Points: {totalSequencePoints}", totalSequencePoints);
         Log.Warning("GCov: Executed Sequence Points: {executedSequencePoints}", executedSequencePoints);
-        var coveragePercentage = Math.Round(((double)totalSequencePoints / executedSequencePoints) * 100, 2);
+        var coveragePercentage = Math.Round(((double)executedSequencePoints / totalSequencePoints) * 100, 2);
         Log.Warning("GCov: Percentage: {percentage}%", coveragePercentage);
 
         // ***********************************************************
