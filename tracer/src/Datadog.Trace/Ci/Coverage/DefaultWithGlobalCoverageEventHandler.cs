@@ -358,12 +358,13 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         public MethodCoverageInfo(string name)
             : base(name)
         {
+            Segments = Array.Empty<int[]>();
         }
 
         [JsonProperty("filename", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public string? FileName { get; set; }
 
         [JsonProperty("segments", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public int[][]? Segments { get; set; }
+        public int[][] Segments { get; set; } 
     }
 }
