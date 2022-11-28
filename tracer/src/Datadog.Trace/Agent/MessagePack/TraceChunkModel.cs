@@ -48,7 +48,7 @@ internal readonly struct TraceChunkModel
 
     public readonly bool HasUpstreamService = false;
 
-    public readonly bool InAzureAppService = false;
+    public readonly bool IsRunningInAzureAppService = false;
 
     public readonly ImmutableAzureAppServiceSettings? AzureAppServiceSettings = null;
 
@@ -73,7 +73,7 @@ internal readonly struct TraceChunkModel
             ServiceVersion = traceContext.ServiceVersion;
             Origin = traceContext.Origin;
             Tags = traceContext.Tags;
-            InAzureAppService = traceContext.Tracer?.Settings?.IsRunningInAzureAppService ?? false;
+            IsRunningInAzureAppService = traceContext.Tracer?.Settings?.IsRunningInAzureAppService ?? false;
             AzureAppServiceSettings = traceContext.Tracer?.Settings?.AzureAppServiceMetadata ?? null;
         }
     }

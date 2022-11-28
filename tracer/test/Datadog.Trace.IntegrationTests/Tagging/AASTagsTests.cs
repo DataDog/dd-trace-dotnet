@@ -124,8 +124,8 @@ public class AASTagsTests
            .Should()
            .HaveCount(2)
            .And.OnlyContain(s => s.ParentId == span1.SpanId)
-            // I don't know why Assume doesn't work in that case but using SatisfyRespectively does the trick
-           .And.SatisfyRespectively(s => AssertLocalRootSpan(s), s => AssertLocalRootSpan(s));
+            // I don't know why Satisfy doesn't work in that case but using SatisfyRespectively does the trick
+           .And.SatisfyRespectively(firstSpan => AssertLocalRootSpan(firstSpan), secondSpan => AssertLocalRootSpan(secondSpan));
 
         // chunk 0, other spans should only have site name and site type
         traceChunks[0]

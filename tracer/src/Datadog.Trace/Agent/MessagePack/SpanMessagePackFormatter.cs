@@ -113,13 +113,13 @@ namespace Datadog.Trace.Agent.MessagePack
                 // or if its parent can also be found in the same chunk, so we use SpanModel
                 // to pass that information to the serializer
                 var spanModel = traceChunk.GetSpanModel(i);
-                offset += Serialize(ref bytes, offset, in spanModel, traceChunk.InAzureAppService, traceChunk.AzureAppServiceSettings);
+                offset += Serialize(ref bytes, offset, in spanModel);
             }
 
             return offset - originalOffset;
         }
 
-        private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel, bool inAzureAppService, ImmutableAzureAppServiceSettings azureAppServiceSettings)
+        private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel)
         {
             var span = spanModel.Span;
 
@@ -185,7 +185,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }
 
-            offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors, inAzureAppService, azureAppServiceSettings);
+            offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors);
             offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
             return offset - originalOffset;
@@ -193,7 +193,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         // TAGS
 
-        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, ITagProcessor[] tagProcessors, bool inAzureAppService, ImmutableAzureAppServiceSettings azureAppServiceSettings)
+        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, ITagProcessor[] tagProcessors)
         {
             var span = model.Span;
             int originalOffset = offset;
@@ -279,7 +279,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // AAS tags need to be set on any span for the backend to properly handle the billing.
             // That said, it's more intuitive to find it on the local root for the customer.
-            if (inAzureAppService && azureAppServiceSettings is not null)
+            if (model.TraceChunk.IsRunningInAzureAppService && model.TraceChunk.AzureAppServiceSettings is { } azureAppServiceSettings)
             {
                 // Done here to avoid initializing in most cases
                 InitializeAasTags();
