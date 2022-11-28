@@ -8,14 +8,14 @@ namespace Samples.Probes.SmokeTests
     {
         public string Prop { get; } = nameof(GenericMethodWithArguments);
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             var p = new Person("Alfred Hitchcock", 30, new Address { HomeType = BuildingType.Duplex, Number = 5, Street = "Elsewhere" }, System.Guid.NewGuid(), null);
             Method(p);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData("System.String", new[] { "!!0" }, skip: true /* Will be returned in the next PR - fix an issue when putting method probe and line probe one same method */)]
         public string Method<T>(T genericParam)
         {

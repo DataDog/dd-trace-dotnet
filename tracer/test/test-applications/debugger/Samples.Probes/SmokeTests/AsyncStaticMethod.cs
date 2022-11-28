@@ -7,13 +7,13 @@ namespace Samples.Probes.SmokeTests
     {
         public static string ClassName = "AsyncStaticMethod";
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
         {
             await Method(nameof(RunAsync));
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData]
         public static async Task<string> Method(string input)
         {

@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Debugger.Helpers;
@@ -375,7 +376,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             using (asyncState.SnapshotCreator)
             {
-                var stackFrames = new StackTrace(skipFrames: 2, true).GetFrames();
+                var stackFrames = (new StackTrace(true).GetFrames() ?? Array.Empty<StackFrame>())
+                                                      .SkipWhile(
+                                                           frame =>
+                                                           {
+                                                               var method = frame.GetMethod().Name;
+                                                               return method is nameof(FinalizeSnapshot) or nameof(EndMethod_EndMarker);
+                                                           }).ToArray();
+
                 var methodName = asyncState.MethodMetadataInfo.KickoffMethod?.Name;
                 var typeFullName = asyncState.MethodMetadataInfo.KickoffInvocationTargetType?.FullName;
 

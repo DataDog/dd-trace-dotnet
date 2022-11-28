@@ -5,7 +5,7 @@ namespace Samples.Probes.SmokeTests
     [LineProbeTestData(lineNumber: 23)]
     public class StaticType : IRun
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             StaticTypeInner.Method("Last name");
@@ -16,7 +16,7 @@ namespace Samples.Probes.SmokeTests
             public static string _staticField = "Static Field";
             public static string StaticProperty { get; } = "Static Property";
 
-            [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+            [MethodImpl(MethodImplOptions.NoInlining)]
             [MethodProbeTestData("System.String", new[] { "System.String" }, skip: true /* Will be returned in the next PR - fix an issue when putting method probe and line probe one same method */)]
             public static string Method(string lastName)
             {

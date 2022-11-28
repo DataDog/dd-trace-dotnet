@@ -7,23 +7,28 @@ namespace Samples.Probes.SmokeTests
     {
         private int _chain;
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
         {
             _chain++;
             await Async1(_chain);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData]
         public async Task<int> Async1(int chain)
         {
             chain++;
             var result = await Async2(chain);
+            if (result > chain.ToString().Length + 10)
+            {
+                return result - 2;
+            }
+
             return result;
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData]
         public async Task<int> Async2(int chain)
         {

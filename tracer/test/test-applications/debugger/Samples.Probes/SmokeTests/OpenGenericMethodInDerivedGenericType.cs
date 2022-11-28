@@ -7,7 +7,7 @@ namespace Samples.Probes.SmokeTests
 {
     internal class OpenGenericMethodInDerivedGenericType : IRun
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             new Test2<OpenGenericMethodInDerivedGenericType>().Method(new Generic(), new OpenGenericMethodInDerivedGenericType(), new Generic());
@@ -15,14 +15,21 @@ namespace Samples.Probes.SmokeTests
 
         public class Test2<Generic2> : HasVarAndMvar.Test<Generic>
         {
-            [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+            [MethodImpl(MethodImplOptions.NoInlining)]
             [MethodProbeTestData("System.String", new[] { "!!0", "!0", "Samples.Probes.Shared.Generic" })]
             public string Method<K>(K k, Generic2 gen2, Generic gen)
             {
                 var kToString = k.ToString();
                 var gen2ToString = gen2.ToString();
                 var genToString = gen.ToString();
-                return kToString + gen2ToString + genToString;
+                if (kToString.Length + gen2ToString.Length + genToString.Length > 5)
+                {
+                    return kToString + gen2ToString + genToString;
+                }
+                else
+                {
+                    return genToString + gen2ToString + kToString;
+                }
             }
         }
     }

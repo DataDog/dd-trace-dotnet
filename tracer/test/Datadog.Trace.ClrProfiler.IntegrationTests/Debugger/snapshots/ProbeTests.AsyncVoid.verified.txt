@@ -34,7 +34,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncVoid"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -45,7 +45,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncVoid+<VoidMethod>d__2.MoveNext(caller=VoidTaskMethod)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -89,7 +89,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncVoid"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -100,7 +100,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncVoid+<VoidTaskMethod>d__1.MoveNext(this=AsyncVoid)\r\ne=",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

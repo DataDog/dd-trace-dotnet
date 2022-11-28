@@ -18,7 +18,7 @@ namespace Samples.Probes.SmokeTests
 
     internal class GenericClass<T>
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData]
         public async Task Run(T t)
         {

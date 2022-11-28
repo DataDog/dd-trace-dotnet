@@ -90,22 +90,7 @@
             "type": "Samples.Probes.SmokeTests.HasVarAndMvar+Test`1"
           }
         },
-        "stack": [
-          {
-            "fileName": "HasVarAndMvar.cs",
-            "function": "Samples.Probes.SmokeTests.HasVarAndMvar+Test`1.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "HasVarAndMvar.cs",
-            "function": "Samples.Probes.SmokeTests.HasVarAndMvar.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -116,7 +101,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasVarAndMvar+Test`1.Method(k=Generic, this=Test`1): count: 1\r\n@return=count: 1, kk=count: 1, string=Samples.Probes.Shared.Generic, tt=count: 1",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

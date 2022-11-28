@@ -60,22 +60,7 @@
             "type": "Samples.Probes.SmokeTests.HasArgumentsAndLocals"
           }
         },
-        "stack": [
-          {
-            "fileName": "HasArgumentsAndLocals.cs",
-            "function": "Samples.Probes.SmokeTests.HasArgumentsAndLocals.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "HasArgumentsAndLocals.cs",
-            "function": "Samples.Probes.SmokeTests.HasArgumentsAndLocals.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -86,7 +71,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasArgumentsAndLocals.Method(lastName=Last, this=HasArgumentsAndLocals): First Last\r\n@return=First Last",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

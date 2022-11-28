@@ -64,22 +64,7 @@
             "type": "Samples.Probes.SmokeTests.HasLocalsAndReturnValue"
           }
         },
-        "stack": [
-          {
-            "fileName": "HasLocalsAndReturnValue.cs",
-            "function": "Samples.Probes.SmokeTests.HasLocalsAndReturnValue.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "HasLocalsAndReturnValue.cs",
-            "function": "Samples.Probes.SmokeTests.HasLocalsAndReturnValue.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -90,7 +75,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasLocalsAndReturnValue.Method(num=7, this=HasLocalsAndReturnValue): 00:00:07\r\n@return=00:00:07, timeSpan=00:00:07",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -136,17 +121,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "HasLocalsAndReturnValue.cs",
-            "function": "Samples.Probes.SmokeTests.HasLocalsAndReturnValue.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -157,7 +132,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasLocalsAndReturnValue.Run(this=HasLocalsAndReturnValue)\r\nresult=",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -203,17 +178,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "HasLocalsAndReturnValue.cs",
-            "function": "Samples.Probes.SmokeTests.HasLocalsAndReturnValue.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -224,7 +189,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasLocalsAndReturnValue.Run(this=HasLocalsAndReturnValue)\r\nresult=00:00:07",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -274,22 +239,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "HasLocalsAndReturnValue.cs",
-            "function": "Samples.Probes.SmokeTests.HasLocalsAndReturnValue.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "HasLocalsAndReturnValue.cs",
-            "function": "Samples.Probes.SmokeTests.HasLocalsAndReturnValue.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -300,7 +250,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasLocalsAndReturnValue.Method(num=7, this=HasLocalsAndReturnValue)\r\ntimeSpan=00:00:07",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

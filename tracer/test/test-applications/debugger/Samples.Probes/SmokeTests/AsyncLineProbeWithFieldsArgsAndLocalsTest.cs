@@ -17,7 +17,7 @@ namespace Samples.Probes.SmokeTests
     [LineProbeTestData(47)]
     internal class AsyncLineProbeWithFieldsArgsAndLocalsTest : IAsyncRun
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
         {
             var place = new Place { @Type = PlaceType.City, Name = "New York" };
@@ -38,7 +38,7 @@ namespace Samples.Probes.SmokeTests
                 _person = person;
             }
 
-            [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+            [MethodImpl(MethodImplOptions.NoInlining)]
             [MethodProbeTestData()]
             public async Task<string> Method(Generic someGenericObject, string input, Person goodPerson)
             {

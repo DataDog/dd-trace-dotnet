@@ -48,17 +48,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "LineProbesWithRevertTest.cs",
-            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -69,7 +59,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run, this=LineProbesWithRevertTest)\r\na=3, i=4, sum=18",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -121,17 +111,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "LineProbesWithRevertTest.cs",
-            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -142,7 +122,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run, this=LineProbesWithRevertTest)\r\na=3, i=2, sum=3",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -194,17 +174,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "LineProbesWithRevertTest.cs",
-            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -215,7 +185,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run, this=LineProbesWithRevertTest)\r\na=3, i=3, sum=6",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -267,17 +237,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "LineProbesWithRevertTest.cs",
-            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -288,7 +248,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run, this=LineProbesWithRevertTest)\r\na=7, i=5, sum=72",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

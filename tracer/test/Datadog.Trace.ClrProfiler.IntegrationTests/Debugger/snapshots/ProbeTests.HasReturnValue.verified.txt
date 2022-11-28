@@ -52,22 +52,7 @@
             "type": "Samples.Probes.SmokeTests.HasReturnValue"
           }
         },
-        "stack": [
-          {
-            "fileName": "HasReturnValue.cs",
-            "function": "Samples.Probes.SmokeTests.HasReturnValue.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "HasReturnValue.cs",
-            "function": "Samples.Probes.SmokeTests.HasReturnValue.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -78,7 +63,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasReturnValue.Method(this=HasReturnValue): 7\r\n@return=7",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

@@ -8,13 +8,13 @@ namespace Samples.Probes.SmokeTests
     {
         private const string ClassName = "AsyncInstanceMethod";
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
         {
             await Method($"{ClassName}.{nameof(RunAsync)}");
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData]
         public async Task<string> Method(string input)
         {

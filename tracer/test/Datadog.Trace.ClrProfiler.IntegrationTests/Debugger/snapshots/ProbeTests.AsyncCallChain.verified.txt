@@ -64,7 +64,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncCallChain"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -75,7 +75,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncCallChain+<Async1>d__2.MoveNext(chain=1, this=AsyncCallChain): 3\r\n@return=3, result=3",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -119,7 +119,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncCallChain"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -130,7 +130,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncCallChain+<Async2>d__3.MoveNext(chain=2): 3\r\n@return=3",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

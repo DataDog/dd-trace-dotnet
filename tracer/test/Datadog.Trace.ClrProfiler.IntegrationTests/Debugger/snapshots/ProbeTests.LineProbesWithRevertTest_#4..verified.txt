@@ -48,17 +48,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "LineProbesWithRevertTest.cs",
-            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -69,7 +59,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run, this=LineProbesWithRevertTest)\r\na=3, i=5, sum=72",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

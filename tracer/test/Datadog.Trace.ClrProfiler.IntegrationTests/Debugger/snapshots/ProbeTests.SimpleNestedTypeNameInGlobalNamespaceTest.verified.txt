@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -72,17 +72,7 @@
             "type": "SimpleNestedTypeNameInGlobalNamespaceTest+NestedType"
           }
         },
-        "stack": [
-          {
-            "fileName": "SimpleNestedTypeNameInGlobalNamespaceTest.cs",
-            "function": "SimpleNestedTypeNameInGlobalNamespaceTest+NestedType.MethodToInstrument",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -93,7 +83,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MethodToInstrument(callerName=Run, this=NestedType)\r\narr=count: 3",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

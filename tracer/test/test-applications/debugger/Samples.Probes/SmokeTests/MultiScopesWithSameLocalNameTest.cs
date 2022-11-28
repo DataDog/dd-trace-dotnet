@@ -15,7 +15,7 @@ namespace Samples.Probes.SmokeTests;
 [LineProbeTestData(lineNumber: 32, expectedNumberOfSnapshots: 2)]
 public class MultiScopesWithSameLocalNameTest : IRun
 {
-    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public void Run()
     {
         for (int i = 0; i < 2; i++)

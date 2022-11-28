@@ -56,7 +56,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncStaticMethod"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -67,7 +67,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncStaticMethod+<Method>d__2.MoveNext(input=RunAsync): AsyncStaticMethod.RunAsync.Method\r\n@return=AsyncStaticMethod.RunAsync.Method, output=",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

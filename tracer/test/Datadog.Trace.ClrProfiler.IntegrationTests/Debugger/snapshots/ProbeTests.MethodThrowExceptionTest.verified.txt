@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -54,10 +54,6 @@
                 {
                   "function": "Samples.Probes.SmokeTests.MethodThrowExceptionTest.Method",
                   "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.MethodThrowExceptionTest.Run",
-                  "lineNumber": "ScrubbedValue"
                 }
               ],
               "type": "System.InvalidOperationException"
@@ -74,22 +70,7 @@
             "type": "Samples.Probes.SmokeTests.MethodThrowExceptionTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "MethodThrowExceptionTest.cs",
-            "function": "Samples.Probes.SmokeTests.MethodThrowExceptionTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "MethodThrowExceptionTest.cs",
-            "function": "Samples.Probes.SmokeTests.MethodThrowExceptionTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -100,7 +81,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MethodThrowExceptionTest.Method(this=MethodThrowExceptionTest, toSet=2147483647)\r\nnumberSnapshot=7",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -150,22 +131,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "MethodThrowExceptionTest.cs",
-            "function": "Samples.Probes.SmokeTests.MethodThrowExceptionTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "MethodThrowExceptionTest.cs",
-            "function": "Samples.Probes.SmokeTests.MethodThrowExceptionTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -176,7 +142,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MethodThrowExceptionTest.Method(this=MethodThrowExceptionTest, toSet=2147483647)\r\nnumberSnapshot=7",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

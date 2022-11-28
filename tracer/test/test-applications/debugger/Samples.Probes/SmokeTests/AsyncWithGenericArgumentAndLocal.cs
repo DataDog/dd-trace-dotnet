@@ -9,7 +9,7 @@ namespace Samples.Probes.SmokeTests
 {
     internal class AsyncWithGenericArgumentAndLocal : IAsyncRun
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
         {
             await new AsyncWithGenericArgumentAndLocal.NestedAsyncGenericClass<Generic>().Method(new NestedAsyncGenericClass<Generic> { Generic = new Generic() { Message = nameof(AsyncWithGenericArgumentAndLocal) } }, $".{nameof(RunAsync)}");
@@ -41,7 +41,7 @@ namespace Samples.Probes.SmokeTests
             // array that gives a new state based on the current state an the token being written
             private static State[][] _stateArray;
 
-            [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+            [MethodImpl(MethodImplOptions.NoInlining)]
             [MethodProbeTestData(expectedNumberOfSnapshots: 0 /*in optimize code this will create a nested struct inside generic parent*/)]
             public async Task<string> Method(NestedAsyncGenericClass<T> generic, string input)
             {

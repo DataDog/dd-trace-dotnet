@@ -44,18 +44,6 @@
                 {
                   "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.ThrowException",
                   "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
-                  "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_1",
-                  "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
-                  "lineNumber": "ScrubbedValue"
                 }
               ],
               "type": "System.NotImplementedException"
@@ -72,32 +60,7 @@
             "type": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_1",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -108,7 +71,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "OverloadAndSimpleNameTest.Method(a=-2147483648, b=2147483647, this=OverloadAndSimpleNameTest)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -148,18 +111,6 @@
                 {
                   "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.ThrowException",
                   "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
-                  "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_0",
-                  "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
-                  "lineNumber": "ScrubbedValue"
                 }
               ],
               "type": "System.NotImplementedException"
@@ -176,32 +127,7 @@
             "type": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_0",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -212,7 +138,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "OverloadAndSimpleNameTest.Method(a=-2147483648, this=OverloadAndSimpleNameTest)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -546,22 +472,7 @@
             "type": "OuterType+OverloadAndSimpleNameTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "OuterType+OverloadAndSimpleNameTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -572,7 +483,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "Method(a=Person, b=Person, this=OverloadAndSimpleNameTest): Person\r\n@return=Person, isEqual=False",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -624,22 +535,7 @@
             "type": "OuterType+OverloadAndSimpleNameTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "OuterType+OverloadAndSimpleNameTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -650,7 +546,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "Method(a=Marty McFly, this=OverloadAndSimpleNameTest): OuterType+OverloadAndSimpleNameTest.Method[Marty McFly]\r\n@return=OuterType+OverloadAndSimpleNameTest.Method[Marty McFly]",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -786,22 +682,7 @@
             "type": "Spicing.Things.Up.OverloadAndSimpleNameTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Spicing.Things.Up.OverloadAndSimpleNameTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -812,7 +693,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "OverloadAndSimpleNameTest.Method(adr=Address, this=OverloadAndSimpleNameTest): Address\r\n@return=Address",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -864,22 +745,7 @@
             "type": "Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -890,7 +756,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "OuterType+OverloadAndSimpleNameTest.Method(c=@, this=OverloadAndSimpleNameTest): Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest.Method.@\r\n@return=Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest.Method.@",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -942,22 +808,7 @@
             "type": "Spicing.Things.Up.OverloadAndSimpleNameTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Spicing.Things.Up.OverloadAndSimpleNameTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -968,7 +819,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "OverloadAndSimpleNameTest.Method(c=@, this=OverloadAndSimpleNameTest): Spicing.Things.Up.OverloadAndSimpleNameTest.Method.@\r\n@return=Spicing.Things.Up.OverloadAndSimpleNameTest.Method.@",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1014,14 +865,6 @@
                 {
                   "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.ThrowException",
                   "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
-                  "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
-                  "lineNumber": "ScrubbedValue"
                 }
               ],
               "type": "System.NotImplementedException"
@@ -1038,27 +881,7 @@
             "type": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1069,7 +892,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "OverloadAndSimpleNameTest.Method(c=@, this=OverloadAndSimpleNameTest)\r\nlocal=Method@",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1121,22 +944,7 @@
             "type": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "OverloadAndSimpleNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1147,7 +955,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "OverloadAndSimpleNameTest.Method(callerName=First Call, this=OverloadAndSimpleNameTest)\r\na=13",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

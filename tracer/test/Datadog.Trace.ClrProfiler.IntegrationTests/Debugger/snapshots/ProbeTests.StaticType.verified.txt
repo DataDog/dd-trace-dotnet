@@ -40,22 +40,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "StaticType.cs",
-            "function": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "StaticType.cs",
-            "function": "Samples.Probes.SmokeTests.StaticType.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -66,7 +51,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "StaticType+StaticTypeInner.Method(lastName=Last name)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

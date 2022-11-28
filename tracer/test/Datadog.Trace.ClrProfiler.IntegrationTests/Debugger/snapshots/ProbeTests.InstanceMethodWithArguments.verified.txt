@@ -34,22 +34,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "InstanceMethodWithArguments.cs",
-            "function": "Samples.Probes.SmokeTests.InstanceMethodWithArguments.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "InstanceMethodWithArguments.cs",
-            "function": "Samples.Probes.SmokeTests.InstanceMethodWithArguments.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -60,7 +45,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "InstanceMethodWithArguments.Method(lastName=Last, this=InstanceMethodWithArguments)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

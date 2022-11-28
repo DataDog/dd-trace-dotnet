@@ -5,13 +5,13 @@ namespace Samples.Probes.SmokeTests
 {
     internal class AsyncRecursiveCall : IAsyncRun
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
         {
             await Recursive(0);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(expectedNumberOfSnapshots:3)]
         public async Task<int> Recursive(int i)
         {

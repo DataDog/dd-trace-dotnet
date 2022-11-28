@@ -40,17 +40,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "MultiScopesWithSameLocalNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -61,7 +51,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=0, localInFor=0",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -105,17 +95,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "MultiScopesWithSameLocalNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -126,7 +106,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=0, localInFor=0",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -170,17 +150,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "MultiScopesWithSameLocalNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -191,7 +161,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=0, localInFor=9",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -235,17 +205,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "MultiScopesWithSameLocalNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -256,7 +216,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=1, localInFor=10",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -41,7 +41,7 @@
             "locals": {
               "@return": {
                 "type": "String",
-                "value": "Hello GenericInstantiation! (36)!"
+                "value": "Hello GenericInstantiation!Lucy (36)!"
               },
               "children": {
                 "elements": [
@@ -167,11 +167,11 @@
               },
               "genericVarToString": {
                 "type": "String",
-                "value": "GenericInstantiation!"
+                "value": "GenericInstantiation!Simon"
               },
               "newT": {
                 "type": "String",
-                "value": "GenericInstantiation!"
+                "value": "GenericInstantiation!Lucy"
               },
               "p": {
                 "fields": {
@@ -325,7 +325,7 @@
                   },
                   "Name": {
                     "type": "String",
-                    "value": "GenericInstantiation!"
+                    "value": "GenericInstantiation!Lucy"
                   }
                 },
                 "type": "Person",
@@ -460,22 +460,7 @@
             "type": "Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1"
           }
         },
-        "stack": [
-          {
-            "fileName": "HasLocalsAndArgumentsInGenericType.cs",
-            "function": "Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "HasLocalsAndArgumentsInGenericType.cs",
-            "function": "Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -486,7 +471,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasLocalsAndArgumentsInGenericNestedType+Test`1.Method(age=36, genericVar=GenericInstantiation, this=Test`1): Hello GenericInstantiation! (36)!\r\n@return=Hello GenericInstantiation! (36)!, children=count: 2, genericVarToString=GenericInstantiation!, newT=GenericInstantiation!, p=Person, p2=Person, p3=Person",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

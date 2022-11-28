@@ -450,7 +450,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -461,7 +461,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct+<Method>d__2.MoveNext(goodPerson=Person, someGenericObject=Generic, this=NestedAsyncGenericStruct): Ralph (99)Samples.Probes.Shared.GenericRalphMethod99Ralph\r\n@return=Ralph (99)Samples.Probes.Shared.GenericRalphMethod99Ralph, output=",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -545,16 +545,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -565,7 +556,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext()\r\naddress=Address, children=, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -649,16 +640,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -669,7 +651,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext()\r\naddress=Address, children=, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -753,16 +735,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -773,7 +746,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext()\r\naddress=Address, children=, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -858,16 +831,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -878,7 +842,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext()\r\naddress=Address, children=count: 0, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1022,16 +986,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1042,7 +997,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext()\r\naddress=Address, children=count: 1, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1291,16 +1246,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1311,7 +1257,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext()\r\naddress=Address, children=count: 1, person=Person, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1554,20 +1500,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1578,7 +1511,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct+<Method>d__2.MoveNext(goodPerson=Person, someGenericObject=Generic, this=NestedAsyncGenericStruct)\r\noutput=",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1821,20 +1754,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1845,7 +1765,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct+<Method>d__2.MoveNext(goodPerson=Person, someGenericObject=Generic, this=NestedAsyncGenericStruct)\r\noutput=Ralph (99)Samples.Probes.Shared.GenericRalph",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -2088,7 +2008,7 @@
             ]
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -2099,7 +2019,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct+<Method>d__2.MoveNext(goodPerson=Person, someGenericObject=Generic, this=NestedAsyncGenericStruct)\r\noutput=Ralph (99)Samples.Probes.Shared.GenericRalph",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

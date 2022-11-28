@@ -48,7 +48,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncRecursiveCall"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -59,7 +59,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncRecursiveCall+<Recursive>d__1.MoveNext(i=0, this=AsyncRecursiveCall): 3\r\n@return=3",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -111,7 +111,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncRecursiveCall"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -122,7 +122,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncRecursiveCall+<Recursive>d__1.MoveNext(i=1, this=AsyncRecursiveCall): 3\r\n@return=3",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -174,12 +174,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncRecursiveCall"
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncRecursiveCall.Recursive",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -190,7 +185,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncRecursiveCall+<Recursive>d__1.MoveNext(i=2, this=AsyncRecursiveCall): 3\r\n@return=3",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

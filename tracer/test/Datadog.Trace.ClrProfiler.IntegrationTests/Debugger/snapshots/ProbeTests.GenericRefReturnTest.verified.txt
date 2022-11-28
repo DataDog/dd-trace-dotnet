@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -55,6 +55,16 @@
                 "type": "Address",
                 "value": "Address"
               }
+            },
+            "throwable": {
+              "message": "Object reference not set to an instance of an object.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.SmokeTests.GenericRefReturnTest.CallMe",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NullReferenceException"
             }
           }
         },
@@ -68,17 +78,7 @@
             "type": "Samples.Probes.SmokeTests.GenericRefReturnTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericRefReturnTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericRefReturnTest.CallMe",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -89,7 +89,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericRefReturnTest.CallMe(this=GenericRefReturnTest)\r\nwhatever=Address",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

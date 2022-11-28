@@ -56,7 +56,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncInstanceMethod"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -67,7 +67,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(input=AsyncInstanceMethod.RunAsync): AsyncInstanceMethod.RunAsync.Method\r\n@return=AsyncInstanceMethod.RunAsync.Method, output=",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -107,20 +107,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncInstanceMethod.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncInstanceMethod.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -131,7 +118,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(input=AsyncInstanceMethod.RunAsync)\r\noutput=",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

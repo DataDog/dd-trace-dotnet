@@ -34,22 +34,7 @@
             "type": "Samples.Probes.SmokeTests.StaticVoidMethod"
           }
         },
-        "stack": [
-          {
-            "fileName": "StaticVoidMethod.cs",
-            "function": "Samples.Probes.SmokeTests.StaticVoidMethod.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "StaticVoidMethod.cs",
-            "function": "Samples.Probes.SmokeTests.StaticVoidMethod.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -60,7 +45,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "StaticVoidMethod.Method()",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

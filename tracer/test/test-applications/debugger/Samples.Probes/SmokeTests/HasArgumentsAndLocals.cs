@@ -6,13 +6,13 @@ namespace Samples.Probes.SmokeTests
     {
         public string FirstName { get; set; }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             Method("Last");
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData("System.String", new[] { "System.String" })]
         public string Method(string lastName)
         {

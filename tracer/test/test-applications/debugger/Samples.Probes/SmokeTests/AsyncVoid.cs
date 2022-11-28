@@ -19,7 +19,7 @@ namespace Samples.Probes.SmokeTests
             }
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData]
         private async Task VoidTaskMethod()
         {
@@ -31,12 +31,19 @@ namespace Samples.Probes.SmokeTests
             }
             catch (AccessViolationException e)
             {
-                Console.WriteLine(e);
+                if (e.Message.Contains("Something"))
+                {
+                    Console.WriteLine(e.Message);
+                }
+                else
+                {
+                    Console.WriteLine(e);
+                }
                 throw;
             }
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData]
         private async void VoidMethod(string caller)
         {
