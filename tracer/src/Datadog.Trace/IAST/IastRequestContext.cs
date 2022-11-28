@@ -54,12 +54,12 @@ internal class IastRequestContext
 
     private void AddQueryStringRaw(string queryString)
     {
-        _taintedObjects.TaintInputString(queryString, new Source(SourceType.RequestQueryString.Item1, queryString, null));
+        _taintedObjects.TaintInputString(queryString, new Source(SourceType.RequestQueryString.Item1, null, queryString));
     }
 
     private void AddQueryPath(string path)
     {
-        _taintedObjects.TaintInputString(path, new Source(SourceType.RequestPath.Item1, path, null));
+        _taintedObjects.TaintInputString(path, new Source(SourceType.RequestPath.Item1, null, path));
     }
 
     private void AddRouteData(IDictionary<string, object> routeData)
