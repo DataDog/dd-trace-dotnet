@@ -187,4 +187,70 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             Log.Debug("**************************************************************");
         }
     }
+
+    public abstract class CoverageInfo
+    {
+        [JsonProperty("data", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public double[]? Data { get; }
+    }
+
+    public abstract class NamedCoverageInfo : CoverageInfo
+    {
+        public NamedCoverageInfo(string name)
+        {
+            Name = name;
+        }
+
+        [JsonProperty("name", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string Name { get; }
+    }
+
+    public sealed class GlobalCoverageInfo : CoverageInfo
+    {
+        public GlobalCoverageInfo()
+        {
+            Modules = new List<ModuleCoverageInfo>();
+        }
+
+        [JsonProperty("modules", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public List<ModuleCoverageInfo> Modules { get; }
+    }
+
+    public sealed class ModuleCoverageInfo : NamedCoverageInfo
+    {
+        public ModuleCoverageInfo(string name)
+            : base(name)
+        {
+            Types = new List<TypeCoverageInfo>();
+        }
+
+        [JsonProperty("types", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public List<TypeCoverageInfo> Types { get; }
+    }
+
+    public sealed class TypeCoverageInfo : NamedCoverageInfo
+    {
+        public TypeCoverageInfo(string name)
+            : base(name)
+        {
+            Methods = new List<MethodCoverageInfo>();
+        }
+
+        [JsonProperty("methods", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public List<MethodCoverageInfo> Methods { get; }
+    }
+
+    public sealed class MethodCoverageInfo : NamedCoverageInfo
+    {
+        public MethodCoverageInfo(string name)
+            : base(name)
+        {
+        }
+
+        [JsonProperty("filename", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string? FileName { get; set; }
+
+        [JsonProperty("segments", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int[][]? Segments { get; set; }
+    }
 }
