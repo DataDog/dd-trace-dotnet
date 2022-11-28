@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -16,48 +17,46 @@ using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.Tagging;
 
-[AzureAppServicesRestorer]
 public class AASTagsTests
 {
-    private readonly Tracer _tracer;
     private readonly MockApi _testApi;
 
     public AASTagsTests()
     {
         _testApi = new MockApi();
-
-        var settings = new TracerSettings();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Fact]
     public async Task AasTagsShouldBeSerialized()
     {
-        var vars = GetMockVariables();
-        AzureAppServices.Metadata = new AzureAppServices(vars);
+        var source = GetMockVariables();
+        var settings = new TracerSettings(source);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
+        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
-        using (_tracer.StartActiveInternal("root"))
+        using (tracer.StartActiveInternal("root"))
         {
         }
 
-        await _tracer.FlushAsync();
+        await tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
         var deserializedSpan = traceChunks.Single().Single();
         AssertLocalRootSpan(deserializedSpan);
     }
 
     [Fact]
-    public async Task NullAasTagsShouldNotCauseIssues()
+    public async Task NoAasTagsIfNotInAASContext()
     {
-        var vars = GetNullMockVariables();
-        AzureAppServices.Metadata = new AzureAppServices(vars);
+        var source = GetNullMockVariables();
+        var settings = new TracerSettings(source);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
+        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
-        using (_tracer.StartActiveInternal("root"))
+        using (tracer.StartActiveInternal("root"))
         {
         }
 
-        await _tracer.FlushAsync();
+        await tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
         var deserializedSpan = traceChunks.Single().Single();
         AssertNoTags(deserializedSpan);
@@ -72,30 +71,32 @@ public class AASTagsTests
         // The first chunk will contain multiple spans
         // Each non local root spans should contain only aas.site.name and aas.site.type tags
 
-        var vars = GetMockVariables();
-        AzureAppServices.Metadata = new AzureAppServices(vars);
+        var source = GetMockVariables();
+        var settings = new TracerSettings(source);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
+        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         ISpan span1;
         ISpan span11;
         ISpan span12;
         ISpan span121;
 
-        using (var scope1 = _tracer.StartActive("1"))
+        using (var scope1 = tracer.StartActive("1"))
         {
             span1 = scope1.Span;
 
             var traceContext = ((Scope)scope1).Span.Context.TraceContext;
 
-            using (var scope11 = _tracer.StartActive("1.1"))
+            using (var scope11 = tracer.StartActive("1.1"))
             {
                 span11 = scope11.Span;
             }
 
-            using (var scope12 = _tracer.StartActive("1.2"))
+            using (var scope12 = tracer.StartActive("1.2"))
             {
                 span12 = scope12.Span;
 
-                using (var scope121 = _tracer.StartActive("1.2.1"))
+                using (var scope121 = tracer.StartActive("1.2.1"))
                 {
                     span121 = scope121.Span;
                 }
@@ -106,7 +107,7 @@ public class AASTagsTests
         }
 
         // send the remaining spans as another trace chunk
-        await _tracer.FlushAsync();
+        await tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
 
         // expected chunks:
@@ -194,21 +195,27 @@ public class AASTagsTests
         return true;
     }
 
-    private IDictionary GetNullMockVariables()
+    private IConfigurationSource GetNullMockVariables()
     {
         var vars = Environment.GetEnvironmentVariables();
-        vars.Add(AzureAppServices.AzureAppServicesContextKey, "1");
-        return vars;
+
+        var collection = new NameValueCollection();
+        foreach (DictionaryEntry kvp in vars)
+        {
+            collection.Add(kvp.Key as string, kvp.Value as string);
+        }
+
+        return new NameValueConfigurationSource(collection);
     }
 
-    private IDictionary GetMockVariables()
+    private IConfigurationSource GetMockVariables()
     {
         var vars = Environment.GetEnvironmentVariables();
 
-        if (vars.Contains(AzureAppServices.InstanceNameKey))
+        if (vars.Contains(ConfigurationKeys.AzureAppService.InstanceNameKey))
         {
             // This is the COMPUTERNAME key which we'll remove for consistent testing
-            vars.Remove(AzureAppServices.InstanceNameKey);
+            vars.Remove(ConfigurationKeys.AzureAppService.InstanceNameKey);
         }
 
         if (vars.Contains(ConfigurationKeys.DebugEnabled))
@@ -222,13 +229,21 @@ public class AASTagsTests
             vars.Add(ConfigurationKeys.ApiKey, "1");
         }
 
-        vars.Add(AzureAppServices.AzureAppServicesContextKey, "1");
-        vars.Add(AzureAppServices.WebsiteOwnerNameKey, $"SubscriptionId+ResourceGroup-EastUSwebspace");
-        vars.Add(AzureAppServices.ResourceGroupKey, "SiteResourceGroup");
-        vars.Add(AzureAppServices.SiteNameKey, "SiteName");
-        vars.Add(AzureAppServices.OperatingSystemKey, "windows");
-        vars.Add(AzureAppServices.InstanceIdKey, "InstanceId");
-        vars.Add(AzureAppServices.InstanceNameKey, "InstanceName");
-        return vars;
+        vars.Add(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1");
+        vars.Add(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, $"SubscriptionId+ResourceGroup-EastUSwebspace");
+        vars.Add(ConfigurationKeys.AzureAppService.ResourceGroupKey, "SiteResourceGroup");
+        vars.Add(ConfigurationKeys.AzureAppService.SiteNameKey, "SiteName");
+        vars.Add(ConfigurationKeys.AzureAppService.OperatingSystemKey, "windows");
+        vars.Add(ConfigurationKeys.AzureAppService.InstanceIdKey, "InstanceId");
+        vars.Add(ConfigurationKeys.AzureAppService.InstanceNameKey, "InstanceName");
+
+        var collection = new NameValueCollection();
+
+        foreach (DictionaryEntry kvp in vars)
+        {
+            collection.Add(kvp.Key as string, kvp.Value as string);
+        }
+
+        return new NameValueConfigurationSource(collection);
     }
 }

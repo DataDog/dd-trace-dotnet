@@ -18,7 +18,6 @@ using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
-    [Collection(nameof(AzureAppServicesTestCollection))]
     public class AzureAppServicesTests
     {
         internal static readonly string DeploymentId = "AzureExampleSiteName";

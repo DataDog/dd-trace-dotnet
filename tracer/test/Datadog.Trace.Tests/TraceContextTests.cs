@@ -16,7 +16,6 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-    [Collection(nameof(AzureAppServicesTestCollection))]
     public class TraceContextTests
     {
         private readonly Mock<IDatadogTracer> _tracerMock = new Mock<IDatadogTracer>();
@@ -173,56 +172,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void ChunksSentAfterRootSpanShouldContainAASMetadataAndSamplingPriority()
-        {
-            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.CreateNew()), DateTimeOffset.UtcNow);
-
-            var tracer = new Mock<IDatadogTracer>();
-
-            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
-            {
-                Exporter = new Trace.Configuration.ExporterSettings()
-                {
-                    PartialFlushEnabled = false,
-                },
-                IsRunningInAzureAppService = inAASContext,
-                AzureAppServiceMetadata = inAASContext ? BuildAAsSettings() : null
-            }.Build());
-
-            ArraySegment<Span>? spans = null;
-
-            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
-                  .Callback<ArraySegment<Span>>(s => spans = s);
-
-            var traceContext = new TraceContext(tracer.Object);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
-
-            var rootSpan = CreateSpan();
-            traceContext.AddSpan(rootSpan);
-
-            var span = CreateSpan();
-            traceContext.AddSpan(span);
-            traceContext.CloseSpan(span);
-
-            traceContext.CloseSpan(rootSpan);
-
-            spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered");
-            rootSpan.GetMetric(Metrics.SamplingPriority).Should().BeNull("because sampling priority is not added until serialization");
-
-            // Now test the case where a span gets opened when the root has been sent (It can happen)
-            spans = null;
-            var newSpan = CreateSpan();
-            var aSecondSpan = CreateSpan();
-            traceContext.AddSpan(newSpan);
-            traceContext.AddSpan(aSecondSpan);
-            traceContext.CloseSpan(aSecondSpan);
-            traceContext.CloseSpan(newSpan);
-
-            spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered containing the new span");
-            spans.Value.Should().OnlyContain(s => s.GetMetric(Metrics.SamplingPriority) == null, "because sampling priority is not added until serialization");
-        }
-
-        [Fact]
         public void PartialFlushShouldPropagateMetadata()
         {
             const int partialFlushThreshold = 2;
@@ -238,8 +187,6 @@ namespace Datadog.Trace.Tests
                     PartialFlushEnabled = true,
                     PartialFlushMinSpans = partialFlushThreshold
                 },
-                IsRunningInAzureAppService = inAASContext,
-                AzureAppServiceMetadata = inAASContext ? BuildAAsSettings() : null
             }.Build());
 
             ArraySegment<Span>? spans = null;
