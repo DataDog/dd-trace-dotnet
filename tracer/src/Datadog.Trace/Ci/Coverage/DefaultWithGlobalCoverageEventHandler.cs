@@ -37,10 +37,8 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         GlobalContainer.Clear();
     }
 
-    public double? GetCodeCoveragePercentage()
+    public IReadOnlyList<CoveragePercentages> GetCodeCoveragePercentage()
     {
-        Log.Warning("Global GetCodeCoverage.");
-
         // Get all ModuleValues
         var lstModulesInstances = new List<ModuleValue>();
         lstModulesInstances.AddRange(GlobalContainer.CloseContext());
@@ -52,9 +50,11 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
         GlobalContainer.Clear();
 
+        var lstCoverageValues = new List<CoveragePercentages>();
+
         // Process
-        var totalSequencePoints = 0L;
-        var executedSequencePoints = 0L;
+        var totalGlobalSequencePoints = 0L;
+        var executedGlobalSequencePoints = 0L;
         foreach (var moduleValues in lstModulesInstances.GroupBy(i => i.Module))
         {
             var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValues.Key);
@@ -64,7 +64,11 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             }
 
             var moduleMetadata = moduleValues.First().Metadata;
-            totalSequencePoints += moduleMetadata.TotalInstructions;
+
+            var totalModuleSequencePoints = moduleMetadata.TotalInstructions;
+            var executedModuleSequencePoints = 0L;
+            totalGlobalSequencePoints += totalModuleSequencePoints;
+
             var totalTypesCount = moduleMetadata.GetTotalTypes();
             for (var i = 0; i < totalTypesCount; i++)
             {
@@ -102,19 +106,49 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                         {
                             if (methodValue.SequencePoints[seqPointIdx] != 0)
                             {
-                                executedSequencePoints++;
+                                executedGlobalSequencePoints++;
+                                executedModuleSequencePoints++;
                                 break;
                             }
                         }
                     }
                 }
             }
+
+            lstCoverageValues.Add(new CoveragePercentages(
+                                      moduleValues.Key.Name,
+                                      Math.Round(((double)executedModuleSequencePoints / totalModuleSequencePoints) * 100, 2),
+                                      totalModuleSequencePoints,
+                                      executedModuleSequencePoints));
         }
 
-        Log.Debug("GCov: Total Sequence Points: {totalSequencePoints}", totalSequencePoints);
-        Log.Debug("GCov: Executed Sequence Points: {executedSequencePoints}", executedSequencePoints);
-        var coveragePercentage = Math.Round(((double)executedSequencePoints / totalSequencePoints) * 100, 2);
-        Log.Debug("GCov: Percentage: {percentage}%", coveragePercentage);
-        return coveragePercentage;
+        lstCoverageValues.Insert(0, new CoveragePercentages(
+                                     string.Empty,
+                                     Math.Round(((double)executedGlobalSequencePoints / totalGlobalSequencePoints) * 100, 2),
+                                     totalGlobalSequencePoints,
+                                     executedGlobalSequencePoints));
+        return lstCoverageValues.AsReadOnly();
+    }
+
+    public readonly struct CoveragePercentages
+    {
+        public readonly string ModuleName;
+        public readonly double Percentage;
+        public readonly double TotalSequencePoints;
+        public readonly double ExecutedSequencePoints;
+
+        public CoveragePercentages(string moduleName, double percentage, double totalSequencePoints, double executedSequencePoints)
+        {
+            ModuleName = moduleName;
+            Percentage = percentage;
+            TotalSequencePoints = totalSequencePoints;
+            ExecutedSequencePoints = executedSequencePoints;
+
+            Log.Debug("**************************************************************");
+            Log.Debug("GCov: Module: {moduleName}", moduleName);
+            Log.Debug("GCov: Total Sequence Points: {totalSequencePoints}", totalSequencePoints);
+            Log.Debug("GCov: Executed Sequence Points: {executedSequencePoints}", executedSequencePoints);
+            Log.Debug("GCov: Percentage: {percentage}%", percentage);
+        }
     }
 }
