@@ -242,7 +242,7 @@ namespace Datadog.Trace
 
         private void AddAASMetadata(Span span)
         {
-            if (Tracer.Settings.InAzureAppService)
+            if (Tracer.Settings.IsRunningInAzureAppService)
             {
                 span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteName, Tracer.Settings.AzureAppServiceMetadata.SiteName);
                 span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteKind, Tracer.Settings.AzureAppServiceMetadata.SiteKind);

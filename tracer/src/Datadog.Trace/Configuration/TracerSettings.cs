@@ -228,8 +228,8 @@ namespace Datadog.Trace.Configuration
 
             IsRareSamplerEnabled = source?.GetBool(ConfigurationKeys.RareSamplerEnabled) ?? false;
 
-            InAzureAppService = source?.GetString(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)?.ToBoolean() ?? false;
-            if (InAzureAppService)
+            IsRunningInAzureAppService = source?.GetString(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)?.ToBoolean() ?? false;
+            if (IsRunningInAzureAppService)
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source);
                 if (AzureAppServiceMetadata.IsUnsafeToTrace)
@@ -240,7 +240,7 @@ namespace Datadog.Trace.Configuration
 
             var urlSubstringSkips = source?.GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings) ??
                                     // default value
-                                    (InAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
+                                    (IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
                                      Serverless.Metadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : null);
 
             if (urlSubstringSkips != null)
@@ -537,7 +537,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets a value indicating whether the tracer is running in AAS
         /// </summary>
-        internal bool InAzureAppService { get; set; }
+        internal bool IsRunningInAzureAppService { get; set; }
 
         /// <summary>
         /// Gets or sets the AAS settings

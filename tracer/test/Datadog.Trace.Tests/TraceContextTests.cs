@@ -187,7 +187,7 @@ namespace Datadog.Trace.Tests
                 {
                     PartialFlushEnabled = false,
                 },
-                InAzureAppService = inAASContext,
+                IsRunningInAzureAppService = inAASContext,
                 AzureAppServiceMetadata = inAASContext ? BuildAAsSettings() : null
             }.Build());
 
@@ -246,7 +246,7 @@ namespace Datadog.Trace.Tests
                     PartialFlushEnabled = true,
                     PartialFlushMinSpans = partialFlushThreshold
                 },
-                InAzureAppService = inAASContext,
+                IsRunningInAzureAppService = inAASContext,
                 AzureAppServiceMetadata = inAASContext ? BuildAAsSettings() : null
             }.Build());
 

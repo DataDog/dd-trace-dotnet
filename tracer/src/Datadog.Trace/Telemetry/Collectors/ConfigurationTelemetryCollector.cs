@@ -121,7 +121,7 @@ namespace Datadog.Trace.Telemetry
 
             var settings = _settings.Settings;
 
-            var data = new List<TelemetryValue>(settings.InAzureAppService ? 31 : 26)
+            var data = new List<TelemetryValue>(settings.IsRunningInAzureAppService ? 31 : 26)
             {
                 new(ConfigTelemetryData.Platform, value: FrameworkDescription.Instance.ProcessArchitecture),
                 new(ConfigTelemetryData.Enabled, value: settings.TraceEnabled),
@@ -153,7 +153,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.SpanSamplingRules, value: settings.SpanSamplingRules),
             };
 
-            if (settings.InAzureAppService)
+            if (settings.IsRunningInAzureAppService)
             {
                 data.Add(new(ConfigTelemetryData.AasConfigurationError, value: settings.AzureAppServiceMetadata.IsUnsafeToTrace));
                 data.Add(new(name: ConfigTelemetryData.CloudHosting, "Azure"));

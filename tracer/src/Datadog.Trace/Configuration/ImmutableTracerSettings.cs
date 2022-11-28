@@ -131,7 +131,7 @@ namespace Datadog.Trace.Configuration
             QueryStringReportingEnabled = settings.QueryStringReportingEnabled;
             ObfuscationQueryStringRegexTimeout = settings.ObfuscationQueryStringRegexTimeout;
 
-            InAzureAppService = settings.InAzureAppService;
+            IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
         }
 
@@ -395,7 +395,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether the tracer is running in AAS
         /// </summary>
-        internal bool InAzureAppService { get; }
+        internal bool IsRunningInAzureAppService { get; }
 
         /// <summary>
         /// Gets the AAS settings

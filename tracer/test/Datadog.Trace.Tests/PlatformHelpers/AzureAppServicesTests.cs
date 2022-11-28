@@ -86,7 +86,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             var vars = GetMockVariables(null, null, null, null);
             var settings = new TracerSettings(vars);
-            Assert.True(settings.InAzureAppService);
+            Assert.True(settings.IsRunningInAzureAppService);
         }
 
         [Fact]
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             var vars = GetMockVariables(null, null, null, null, addContextKey: false);
             var metadata = new TracerSettings(vars);
-            Assert.False(metadata.InAzureAppService);
+            Assert.False(metadata.IsRunningInAzureAppService);
         }
 
         [Theory]

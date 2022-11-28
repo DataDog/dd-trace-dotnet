@@ -271,7 +271,7 @@ namespace Datadog.Trace
             // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
             // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
             // Also disable if tracing is not enabled (as likely to be in an environment where agent is not available)
-            if (instanceSettings.TraceEnabled && !instanceSettings.InAzureAppService)
+            if (instanceSettings.TraceEnabled && !instanceSettings.IsRunningInAzureAppService)
             {
                 try
                 {

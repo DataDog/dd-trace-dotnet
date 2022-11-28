@@ -109,7 +109,7 @@ namespace Datadog.Trace
 
             if (settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer)
             {
-                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName), TimeSpan.FromSeconds(10), settings.InAzureAppService);
+                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName), TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
             }
 
             logSubmissionManager = DirectLogSubmissionManager.Create(
@@ -280,7 +280,7 @@ namespace Datadog.Trace
         {
             try
             {
-                if (settings.InAzureAppService)
+                if (settings.IsRunningInAzureAppService)
                 {
                     return settings.AzureAppServiceMetadata.SiteName;
                 }
