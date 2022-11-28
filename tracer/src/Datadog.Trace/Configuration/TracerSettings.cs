@@ -240,7 +240,7 @@ namespace Datadog.Trace.Configuration
 
             var urlSubstringSkips = source?.GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings) ??
                                     // default value
-                                    (InAzureAppService ? AzureAppServiceMetadata.DefaultHttpClientExclusions :
+                                    (InAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
                                      Serverless.Metadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : null);
 
             if (urlSubstringSkips != null)

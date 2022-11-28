@@ -22,6 +22,8 @@ namespace Datadog.Trace.Configuration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ImmutableAzureAppServiceSettings));
 
+        public static readonly string DefaultHttpClientExclusions = "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin, /azure-webjobs-hosts/".ToUpperInvariant();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableAzureAppServiceSettings"/> class with default values.
         /// </summary>
@@ -131,8 +133,6 @@ namespace Datadog.Trace.Configuration
         public string OperatingSystem { get; }
 
         public string Runtime { get; }
-
-        public string DefaultHttpClientExclusions { get; } = "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin, /azure-webjobs-hosts/".ToUpperInvariant();
 
         private static bool ShouldSkipClientSpanWithinFunctions(Scope scope)
         {
