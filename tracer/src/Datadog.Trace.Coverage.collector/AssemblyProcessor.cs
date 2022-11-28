@@ -199,6 +199,9 @@ namespace Datadog.Trace.Coverage.Collector
                     MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.RTSpecialName,
                     module.TypeSystem.Void);
 
+                // Get TotalInstructions field
+                var moduleCoverageMetadataImplTotalInstructionsField = new FieldReference("TotalInstructions", module.TypeSystem.Int64, moduleCoverageMetadataTypeReference);
+
                 // Create number of types array
                 var moduleCoverageMetadataImplMetadataField = new FieldReference("Metadata", new ArrayType(new ArrayType(module.TypeSystem.Int32)), moduleCoverageMetadataTypeReference);
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
@@ -219,6 +222,7 @@ namespace Datadog.Trace.Coverage.Collector
                 reportTryGetScopeMethod.Parameters.Add(new ParameterDefinition(module.TypeSystem.Int32) { Name = "methodIndex" });
                 reportTryGetScopeMethod.Parameters.Add(new ParameterDefinition(new ByReferenceType(new ArrayType(module.TypeSystem.Int32))) { Name = "scope", IsOut = true });
 
+                long totalSequencePoints = 0;
                 GenericInstanceMethod? arrayEmptyOfIntMethodReference = null;
                 for (var typeIndex = 0; typeIndex < moduleTypes.Count; typeIndex++)
                 {
@@ -451,6 +455,7 @@ namespace Datadog.Trace.Coverage.Collector
                             moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, methodIndex));
                             moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, clonedInstructionsWithSequencePoints.Count));
                             moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stelem_I4));
+                            totalSequencePoints += clonedInstructionsWithSequencePoints.Count;
 
                             instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, typeIndex));
                             instructions.Insert(1, Instruction.Create(OpCodes.Ldc_I4, methodIndex));
@@ -512,6 +517,20 @@ namespace Datadog.Trace.Coverage.Collector
                 }
 
                 moduleTypes.Add(moduleCoverageMetadataImplTypeDef);
+
+                // Sets the TotalInstructions field
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                if (totalSequencePoints > int.MaxValue)
+                {
+                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I8, totalSequencePoints));
+                }
+                else
+                {
+                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)totalSequencePoints));
+                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Conv_I8));
+                }
+
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplTotalInstructionsField));
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
 
                 // Change attributes to drop native bits

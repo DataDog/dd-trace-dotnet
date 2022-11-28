@@ -22,6 +22,13 @@ public abstract class ModuleCoverageMetadata
     protected readonly int[][] Metadata = Array.Empty<int[]>();
 #pragma warning restore SA1401
 
+    /// <summary>
+    /// Gets the total instructions number
+    /// </summary>
+#pragma warning disable SA1401
+    protected readonly long TotalInstructions;
+#pragma warning restore SA1401
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetTotalTypes() => Metadata.Length;
 
