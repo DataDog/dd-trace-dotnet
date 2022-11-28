@@ -72,6 +72,15 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             var totalTypesCount = moduleMetadata.GetTotalTypes();
             for (var i = 0; i < totalTypesCount; i++)
             {
+                var totalTypeSequencePoints = 0L;
+                var executedTypeSequencePoints = 0L;
+
+                var totalMethodsCount = moduleMetadata.GetTotalMethodsOfType(i);
+                for (var typeMethodIdx = 0; typeMethodIdx < totalMethodsCount; typeMethodIdx++)
+                {
+                    totalTypeSequencePoints += moduleMetadata.GetTotalSequencePointsOfMethod(i, typeMethodIdx);
+                }
+
                 var typeDef = moduleDef.Types[i];
                 var fullName = typeDef.FullName;
                 var typeValues = moduleValues
@@ -80,13 +89,15 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                                 .ToList();
                 if (typeValues.Count == 0)
                 {
-                    Log.Debug("GCov: [Type] {typeName} doesn't have coverage", fullName);
+                    // Log.Debug("GCov: [Type] {typeName} doesn't have coverage", fullName);
                     continue;
                 }
 
-                var totalMethodsCount = moduleMetadata.GetTotalMethodsOfType(i);
                 for (var j = 0; j < totalMethodsCount; j++)
                 {
+                    var totalMethodSequencePoints = moduleMetadata.GetTotalSequencePointsOfMethod(i, j);
+                    var executedMethodSequencePoints = 0L;
+
                     var methodDef = typeDef.Methods[j];
                     var methodName = methodDef.Name;
                     var methodValues = typeValues
@@ -95,7 +106,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                                       .ToList();
                     if (methodValues.Count == 0)
                     {
-                        Log.Debug("GCov: [Method] {typeName}.{methodName} doesn't have coverage", fullName, methodName);
+                        // Log.Debug("GCov: [Method] {typeName}.{methodName} doesn't have coverage", fullName, methodName);
                         continue;
                     }
 
@@ -108,23 +119,41 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                             {
                                 executedGlobalSequencePoints++;
                                 executedModuleSequencePoints++;
+                                executedTypeSequencePoints++;
+                                executedMethodSequencePoints++;
                                 break;
                             }
                         }
                     }
+
+                    lstCoverageValues.Add(new CoveragePercentages(
+                                              moduleValues.Key.Name,
+                                              fullName,
+                                              methodDef.FullName,
+                                              totalTypeSequencePoints,
+                                              executedTypeSequencePoints));
                 }
+
+                lstCoverageValues.Add(new CoveragePercentages(
+                                          moduleValues.Key.Name,
+                                          fullName,
+                                          null,
+                                          totalTypeSequencePoints,
+                                          executedTypeSequencePoints));
             }
 
             lstCoverageValues.Add(new CoveragePercentages(
                                       moduleValues.Key.Name,
-                                      Math.Round(((double)executedModuleSequencePoints / totalModuleSequencePoints) * 100, 2),
+                                      null,
+                                      null,
                                       totalModuleSequencePoints,
                                       executedModuleSequencePoints));
         }
 
         lstCoverageValues.Insert(0, new CoveragePercentages(
-                                     string.Empty,
-                                     Math.Round(((double)executedGlobalSequencePoints / totalGlobalSequencePoints) * 100, 2),
+                                     null,
+                                     null,
+                                     null,
                                      totalGlobalSequencePoints,
                                      executedGlobalSequencePoints));
         return lstCoverageValues.AsReadOnly();
@@ -132,23 +161,30 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
     public readonly struct CoveragePercentages
     {
-        public readonly string ModuleName;
+        public readonly string? ModuleName;
+        public readonly string? TypeName;
+        public readonly string? MethodName;
         public readonly double Percentage;
         public readonly double TotalSequencePoints;
         public readonly double ExecutedSequencePoints;
 
-        public CoveragePercentages(string moduleName, double percentage, double totalSequencePoints, double executedSequencePoints)
+        public CoveragePercentages(string? moduleName, string? typeName, string? methodName, double totalSequencePoints, double executedSequencePoints)
         {
             ModuleName = moduleName;
-            Percentage = percentage;
+            TypeName = typeName;
+            MethodName = methodName;
+            Percentage = Math.Round((executedSequencePoints / totalSequencePoints) * 100, 2);
             TotalSequencePoints = totalSequencePoints;
             ExecutedSequencePoints = executedSequencePoints;
 
             Log.Debug("**************************************************************");
-            Log.Debug("GCov: Module: {moduleName}", moduleName);
-            Log.Debug("GCov: Total Sequence Points: {totalSequencePoints}", totalSequencePoints);
-            Log.Debug("GCov: Executed Sequence Points: {executedSequencePoints}", executedSequencePoints);
-            Log.Debug("GCov: Percentage: {percentage}%", percentage);
+            Log.Debug("   GCov: Module: {moduleName}", moduleName);
+            Log.Debug("   GCov: Type: {typeName}", typeName);
+            Log.Debug("   GCov: Method: {methodName}", methodName);
+            Log.Debug("   GCov: Total Sequence Points: {totalSequencePoints}", totalSequencePoints);
+            Log.Debug("   GCov: Executed Sequence Points: {executedSequencePoints}", executedSequencePoints);
+            Log.Debug("   GCov: Percentage: {percentage}%", Percentage);
+            Log.Debug("**************************************************************");
         }
     }
 }
