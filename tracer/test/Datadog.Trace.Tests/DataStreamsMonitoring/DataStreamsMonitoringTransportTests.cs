@@ -106,7 +106,7 @@ public class DataStreamsMonitoringTransportTests
 
     private StatsPoint CreateStatsPoint()
         => new StatsPoint(
-            edgeTags: new[] { "type:internal" },
+            edgeTags: new[] { "direction:out", "type:kafka" },
             hash: new PathwayHash((ulong)Math.Abs(ThreadSafeRandom.Next(int.MaxValue))),
             parentHash: new PathwayHash((ulong)Math.Abs(ThreadSafeRandom.Next(int.MaxValue))),
             timestampNs: DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
