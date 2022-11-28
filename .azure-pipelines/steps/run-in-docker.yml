@@ -42,6 +42,7 @@ steps:
         --env DD_INSTRUMENTATION_TELEMETRY_ENABLED \
         --env Verify_DisableClipboard=true \
         --env DiffEngine_Disabled=true \
+        --env IncludeAllTestFrameworks \
         --env TestAllPackageVersions=$(TestAllPackageVersions) \
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
@@ -49,6 +50,7 @@ steps:
         --env DD_LOGGER_DD_API_KEY="$(DD_LOGGER_DD_API_KEY)" \
         --env DD_LOGGER_DD_SERVICE \
         --env DD_LOGGER_DD_ENV \
+        --env DD_LOGGER_ENABLED \
         --env DD_LOGGER_TF_BUILD=True \
         --env DD_LOGGER_BUILD_BUILDID \
         --env DD_LOGGER_BUILD_DEFINITIONNAME \

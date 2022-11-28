@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  
+
   <ItemGroup>
-    <PackageReference Include="Datadog.Trace" Version="2.255.246" />
+    <PackageReference Include="Datadog.Trace" Version="255.1.4-dev2.20.0-build01-net7" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 

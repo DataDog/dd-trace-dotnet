@@ -66,6 +66,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         }
 
         internal static void AddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory)
+            => AddDirectSubmissionLoggerProvider(loggerFactory, scopeProvider: null);
+
+        internal static void AddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, IExternalScopeProvider? scopeProvider)
         {
             if (ProviderInterfaces is null)
             {
@@ -75,7 +78,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 
             var provider = new DirectSubmissionLoggerProvider(
                 TracerManager.Instance.DirectLogSubmission.Sink,
-                TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel);
+                TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel,
+                scopeProvider);
 
             AddDirectSubmissionLoggerProvider(loggerFactory, provider);
         }

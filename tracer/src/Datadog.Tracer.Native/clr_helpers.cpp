@@ -364,7 +364,6 @@ std::tuple<unsigned, int> TypeSignature::GetElementTypeAndFlags() const
 
     if (*pbCur == ELEMENT_TYPE_VOID)
     {
-        elementType = ELEMENT_TYPE_VOID;
         typeFlags |= TypeFlagVoid;
     }
 
@@ -928,7 +927,7 @@ HRESULT FunctionMethodSignature::TryParse()
     return S_OK;
 }
 
-bool FindTypeDefByName(const shared::WSTRING instrumentationTargetMethodTypeName, const shared::WSTRING assemblyName,
+bool FindTypeDefByName(const shared::WSTRING& instrumentationTargetMethodTypeName, const shared::WSTRING& assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef)
 {
     mdTypeDef parentTypeDef = mdTypeDefNil;

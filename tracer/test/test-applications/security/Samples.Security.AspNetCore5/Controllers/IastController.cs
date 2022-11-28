@@ -12,9 +12,10 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("Ok\n");
         }
 
-        [HttpGet("WeakHashing")]
-        public IActionResult WeakHashing()
+        [HttpGet("WeakHashing/{delayInAnswerMs:int?}")]
+        public IActionResult WeakHashing(int delayInAnswerMs = 0)
         {
+            System.Threading.Thread.Sleep(delayInAnswerMs);
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             var byteArg = new byte[] { 3, 5, 6 };
             MD5.Create().ComputeHash(byteArg);

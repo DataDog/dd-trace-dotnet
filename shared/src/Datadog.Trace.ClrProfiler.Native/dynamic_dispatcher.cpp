@@ -70,11 +70,11 @@ namespace datadog::shared::nativeloader
     // public
     //
 
-    DynamicDispatcherImpl::DynamicDispatcherImpl()
+    DynamicDispatcherImpl::DynamicDispatcherImpl() :
+        m_continuousProfilerInstance(nullptr), 
+        m_tracerInstance(nullptr), 
+        m_customInstance(nullptr)
     {
-        m_continuousProfilerInstance = nullptr;
-        m_tracerInstance = nullptr;
-        m_customInstance = nullptr;
     }
 
     void DynamicDispatcherImpl::LoadConfiguration(fs::path&& configFilePath)

@@ -13,6 +13,7 @@ namespace Samples.WeakHashing
         private static void Main()
         {
             //Vulnerable section
+#pragma warning disable SYSLIB0045 // HMAC.Create(string)' is obsolete: 'Cryptographic factory methods accepting an algorithm name are obsolete. Use the parameterless Create factory method on the algorithm type instead
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             testHashAlgorithm(new HMACMD5(new byte[] { 4, 4 }));
             testHashAlgorithm(new MD5CryptoServiceProvider());

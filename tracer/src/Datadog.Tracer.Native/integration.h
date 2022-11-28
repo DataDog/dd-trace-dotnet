@@ -218,11 +218,11 @@ public:
 
     bool ReturnTypeIsObject() const
     {
-        if (data.size() > 2 && (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
+        if (data.size() > 3 && (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
         {
             return data[3] == ELEMENT_TYPE_OBJECT;
         }
-        if (data.size() > 1)
+        if (data.size() > 2)
         {
             return data[2] == ELEMENT_TYPE_OBJECT;
         }
@@ -270,7 +270,7 @@ struct TypeReference
     {
     }
 
-    TypeReference(const shared::WSTRING& assembly_name, shared::WSTRING type_name, Version min_version, Version max_version) :
+    TypeReference(const shared::WSTRING& assembly_name, const shared::WSTRING& type_name, const Version& min_version, const Version& max_version) :
         assembly(*AssemblyReference::GetFromCache(assembly_name)),
         name(type_name),
         min_version(min_version),
@@ -301,8 +301,8 @@ struct MethodReference
     {
     }
 
-    MethodReference(const shared::WSTRING& assembly_name, shared::WSTRING type_name, shared::WSTRING method_name, Version min_version,
-                    Version max_version, const std::vector<shared::WSTRING>& signature_types) :
+    MethodReference(const shared::WSTRING& assembly_name, const shared::WSTRING& type_name, const shared::WSTRING& method_name, const Version& min_version,
+                    const Version& max_version, const std::vector<shared::WSTRING>& signature_types) :
         type(assembly_name, type_name, min_version, max_version),
         method_name(method_name),
         signature_types(signature_types)
@@ -336,7 +336,7 @@ struct IntegrationDefinition
     {
     }
 
-    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, bool isDerived,
+    IntegrationDefinition(const MethodReference& target_method, const TypeReference& integration_type, bool isDerived,
                           bool is_interface, bool is_exact_signature_match) :
         target_method(target_method),
         integration_type(integration_type),
@@ -410,7 +410,7 @@ namespace
 
 } // namespace
 
-    std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const TypeReference integration_type,
+    std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const TypeReference& integration_type,
                                                                                     const shared::WSTRING& configuration_string);
 
 } // namespace trace

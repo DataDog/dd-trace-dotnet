@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         [Fact]
         public void CanReverseDuckTypeILoggerProvider()
         {
-            var loggerProvider = new DirectSubmissionLoggerProvider(_sink, _formatter, DirectSubmissionLogLevel.Debug);
+            var loggerProvider = new DirectSubmissionLoggerProvider(_sink, _formatter, DirectSubmissionLogLevel.Debug, scopeProvider: null);
             var proxyProvider = (ILoggerProvider)loggerProvider.DuckImplement(_iloggerProviderType);
 
             var logger = proxyProvider.CreateLogger("Some category");
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         public void CanDuckTypeExternalScopeProviderAndUseWithProxyProvider()
         {
             var scopeProvider = new LoggerExternalScopeProvider();
-            var loggerProvider = new DirectSubmissionLoggerProvider(new NullDatadogSink(), LogSettingsHelper.GetFormatter(), DirectSubmissionLogLevel.Debug);
+            var loggerProvider = new DirectSubmissionLoggerProvider(new NullDatadogSink(), LogSettingsHelper.GetFormatter(), DirectSubmissionLogLevel.Debug, scopeProvider: null);
             var proxyProvider = (ISupportExternalScope)loggerProvider.DuckImplement(_iloggerProviderType);
             proxyProvider.SetScopeProvider(scopeProvider);
 
@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         public void CanSetProviderUsingHelper()
         {
             var factory = new LoggerFactory();
-            var loggerProvider = new DirectSubmissionLoggerProvider(new NullDatadogSink(), LogSettingsHelper.GetFormatter(), DirectSubmissionLogLevel.Debug);
+            var loggerProvider = new DirectSubmissionLoggerProvider(new NullDatadogSink(), LogSettingsHelper.GetFormatter(), DirectSubmissionLogLevel.Debug, scopeProvider: null);
             LoggerFactoryIntegrationCommon<LoggerFactory>.AddDirectSubmissionLoggerProvider(factory, loggerProvider);
         }
 

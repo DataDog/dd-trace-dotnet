@@ -66,6 +66,7 @@ Error("unknown platform");
 #define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.Profiler.Native" LIBRARY_FILE_EXTENSION)
 #endif
 
+
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
     return _pClrLifetime.get();
@@ -191,8 +192,43 @@ bool CorProfilerCallback::InitializeServices()
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
 
+        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+        {
+            // Use the same value type for timeline
+            auto valueTypes = GarbageCollectionProvider::SampleTypeDefinitions;
+            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+            _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
+                valuesOffset,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore,
+                _pConfiguration.get()
+                );
+            _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
+                valuesOffset,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore,
+                _pConfiguration.get()
+                );
+            valuesOffset += static_cast<uint32_t>(valueTypes.size());
+        }
+        else
+        {
+            _pStopTheWorldProvider = nullptr;
+            _pGarbageCollectionProvider = nullptr;
+        }
+
         // TODO: add new CLR events-based providers to the event parser
-        _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider, _pContentionProvider);
+        _pClrEventsParser = std::make_unique<ClrEventsParser>(
+            _pCorProfilerInfoEvents,
+            _pAllocationsProvider,
+            _pContentionProvider,
+            _pStopTheWorldProvider,
+            _pGarbageCollectionProvider
+            );
     }
 
     // Avoid iterating twice on all providers in order to inject this value in each constructor
@@ -252,6 +288,12 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
             _pSamplesCollector->Register(_pContentionProvider);
+        }
+
+        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+        {
+            _pSamplesCollector->Register(_pStopTheWorldProvider);
+            _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
     }
 
@@ -662,6 +704,10 @@ void CorProfilerCallback::ConfigureDebugLog(void)
     }
 }
 
+// CLR event verbosity definition
+const uint32_t InformationalVerbosity = 4;
+const uint32_t VerboseVerbosity = 5;
+
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerInfoUnk)
 {
     Log::Info("CorProfilerCallback is initializing.");
@@ -722,7 +768,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
     // If no such provider is enabled, no need to trigger it.
     // TODO: update the test when a new CLR events-based profiler is added (contention, GC, ...)
-    bool AreEventBasedProfilersEnabled = _pConfiguration->IsAllocationProfilingEnabled() || _pConfiguration->IsContentionProfilingEnabled();
+    bool AreEventBasedProfilersEnabled =
+        _pConfiguration->IsAllocationProfilingEnabled() ||
+        _pConfiguration->IsContentionProfilingEnabled() ||
+        _pConfiguration->IsGarbageCollectionProfilingEnabled()
+        ;
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
         HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
@@ -784,10 +834,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         // Listen to interesting events:
         //  - AllocationTick_V4
         //  - ContentionStop_V1
+        //  - GC related events
 
         UINT64 activatedKeywords = 0;
+        uint32_t verbosity = InformationalVerbosity;
 
         if (_pConfiguration->IsAllocationProfilingEnabled())
+        {
+            activatedKeywords |= ClrEventsParser::KEYWORD_GC;
+
+            // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+            verbosity = VerboseVerbosity;
+        }
+        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
         }
@@ -801,7 +860,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                 {
                     WStr("Microsoft-Windows-DotNETRuntime"),
                     activatedKeywords,
-                    5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+                    verbosity,
                     NULL
                 }
             };
@@ -867,6 +926,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     if (_pContentionProvider != nullptr)
     {
         _pContentionProvider->Stop();
+    }
+
+    if (_pStopTheWorldProvider != nullptr)
+    {
+        _pStopTheWorldProvider->Stop();
+    }
+
+    if (_pGarbageCollectionProvider != nullptr)
+    {
+        _pGarbageCollectionProvider->Stop();
     }
 
     // dump all threads time
@@ -1034,13 +1103,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         return S_OK;
     }
 
-    ManagedThreadInfo* pThreadInfo;
-    if (_pManagedThreadList->UnregisterThread(threadId, &pThreadInfo))
+    std::shared_ptr<ManagedThreadInfo> pThreadInfo;
+    if (_pManagedThreadList->UnregisterThread(threadId, pThreadInfo))
     {
         // The docs require that we do not allow to destroy a thread while it is being stack-walked.
         // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
         pThreadInfo->SetThreadDestroyed();
-        pThreadInfo->Release();
     }
 
     return S_OK;

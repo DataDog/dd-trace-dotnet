@@ -516,11 +516,11 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     TypeSignature retFuncArg, 
     bool isVoid, 
     bool isStatic, 
-    std::vector<TypeSignature> methodArguments, 
+    const std::vector<TypeSignature>& methodArguments, 
     int numArgs, 
     const shared::WSTRING& methodProbeId, 
     ILRewriter& rewriter, 
-    std::vector<TypeSignature>& methodLocals, 
+    const std::vector<TypeSignature>& methodLocals, 
     int numLocals, 
     ILRewriterWrapper& rewriterWrapper, 
     ULONG callTargetStateIndex, 
@@ -1361,7 +1361,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     // BEGIN LINE PROBES PART
     // ***
 
-    const auto& beforeLineProbe = rewriterWrapper.GetCurrentILInstr();
+    const auto beforeLineProbe = rewriterWrapper.GetCurrentILInstr();
 
     // TODO support multiple line probes & multiple line probes on the same bytecode offset (by deduplicating the probe ids)
 
@@ -1491,7 +1491,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 void DebuggerMethodRewriter::AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr,
                                                             ILRewriter* pRewriter)
 {
-    const auto& ehClauses = pRewriter->GetEHPointer();
+    const auto ehClauses = pRewriter->GetEHPointer();
     const auto ehCount = pRewriter->GetEHCount();
 
     for (unsigned ehIndex = 0; ehIndex < ehCount; ehIndex++)

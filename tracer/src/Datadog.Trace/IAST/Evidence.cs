@@ -21,6 +21,6 @@ internal readonly struct Evidence
 
     public override int GetHashCode()
     {
-        return IastUtils.GetHashCode(new object?[] { Value, Ranges });
+        return IastUtils.GetHashCode(Value, Ranges);
     }
 }

@@ -13,6 +13,9 @@ internal class IastSettings
 {
     public static readonly string WeakCipherAlgorithmsDefault = "DES,TRIPLEDES,RC2";
     public static readonly string WeakHashAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
+    public static readonly int VulnerabilitiesPerRequestDefault = 2;
+    public static readonly int MaxConcurrentRequestDefault = 2;
+    public static readonly int RequestSamplingDefault = 30;
 
     public IastSettings(IConfigurationSource source)
     {
@@ -23,6 +26,12 @@ internal class IastSettings
         Enabled = (source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false) &&
             (WeakHashAlgorithmsArray.Length > 0 || WeakCipherAlgorithmsArray.Length > 0);
         DeduplicationEnabled = source?.GetBool(ConfigurationKeys.Iast.IsIastDeduplicationEnabled) ?? true;
+        RequestSampling = source?.GetInt32(ConfigurationKeys.Iast.RequestSampling) is { } requestSampling and > 0 and <= 100
+            ? requestSampling : RequestSamplingDefault;
+        MaxConcurrentRequests = source?.GetInt32(ConfigurationKeys.Iast.MaxConcurrentRequests) is { } concurrentRequests and > 0
+            ? concurrentRequests : MaxConcurrentRequestDefault;
+        VulnerabilitiesPerRequest = source?.GetInt32(ConfigurationKeys.Iast.VulnerabilitiesPerRequest) is { } vulnerabilities and > 0
+            ? vulnerabilities : VulnerabilitiesPerRequestDefault;
     }
 
     public bool Enabled { get; set; }
@@ -36,6 +45,12 @@ internal class IastSettings
     public string[] WeakCipherAlgorithmsArray { get; }
 
     public string WeakCipherAlgorithms { get; }
+
+    public int RequestSampling { get; }
+
+    public int MaxConcurrentRequests { get; }
+
+    public int VulnerabilitiesPerRequest { get; }
 
     public static IastSettings FromDefaultSources()
     {

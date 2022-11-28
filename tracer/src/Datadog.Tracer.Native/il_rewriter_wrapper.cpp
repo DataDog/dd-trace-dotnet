@@ -76,7 +76,7 @@ ILInstr* ILRewriterWrapper::LoadArgument(const UINT16 index) const
 
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
 
-    if (index >= 0 && index <= 3)
+    if (index <= 3)
     {
         pNewInstr->m_opcode = opcodes[index];
     }

@@ -24,7 +24,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{0831386b-1a96-443f-b02b-c1d2b65fd845}</ProjectGuid>
     <RootNamespace>DatadogAutoInstrumentationProfilerNative</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup>
@@ -238,6 +238,12 @@
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
+    <ClInclude Include="GarbageCollection.h" />
+    <ClInclude Include="GCBaseRawSample.h" />
+    <ClInclude Include="GarbageCollectionProvider.h" />
+    <ClInclude Include="IGarbageCollectionsListener.h" />
+    <ClInclude Include="RawGarbageCollectionSample.h" />
+    <ClInclude Include="StopTheWorldGCProvider.h" />
     <ClInclude Include="GenericSampler.h" />
     <ClInclude Include="GroupSampler.h" />
     <ClInclude Include="IAllocationsListener.h" />
@@ -267,6 +273,7 @@
     <ClInclude Include="IFrameStore.h" />
     <ClInclude Include="HResultConverter.h" />
     <ClInclude Include="IClrLifetime.h" />
+    <ClInclude Include="IGCSuspensionsListener.h" />
     <ClInclude Include="IManagedThreadList.h" />
     <ClInclude Include="IMetricsSender.h" />
     <ClInclude Include="IMetricsSenderFactory.h" />
@@ -291,7 +298,7 @@
     <ClInclude Include="RawCpuSample.h" />
     <ClInclude Include="RawExceptionSample.h" />
     <ClInclude Include="RawSample.h" />
-    <ClInclude Include="RefCountingObject.h" />
+    <ClInclude Include="RawStopTheWorldSample.h" />
     <ClInclude Include="RuntimeIdStore.h" />
     <ClInclude Include="RuntimeInfo.h" />
     <ClInclude Include="Sample.h" />
@@ -331,6 +338,8 @@
     <ClCompile Include="ExceptionsProvider.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
+    <ClCompile Include="GarbageCollectionProvider.cpp" />
+    <ClCompile Include="StopTheWorldGCProvider.cpp" />
     <ClCompile Include="GenericSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />
     <ClCompile Include="IMetricsSenderFactory.cpp" />
@@ -342,7 +351,6 @@
     <ClCompile Include="ProfilerEngineStatus.cpp" />
     <ClCompile Include="RawExceptionSample.cpp" />
     <ClCompile Include="RawSample.cpp" />
-    <ClCompile Include="RefCountingObject.cpp" />
     <ClCompile Include="RuntimeIdStore.cpp" />
     <ClCompile Include="RuntimeInfo.cpp" />
     <ClCompile Include="Sample.cpp" />

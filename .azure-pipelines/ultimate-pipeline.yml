@@ -95,7 +95,7 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 6.0.100
+  dotnetCoreSdkLatestVersion: 7.0.100
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -120,6 +120,8 @@ variables:
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
+  # Include all test frameworks when (variable is set) OR ((running on master/release/hotfix) and (NOT scheduled build)),
+  IncludeAllTestFrameworks: $[or(eq(variables['run_all_test_frameworks'], 'true'), and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/')), not(eq(variables['Build.Reason'], 'Schedule'))))]
   # Logger variables
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
@@ -201,7 +203,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -226,7 +228,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -255,7 +257,7 @@ stages:
 
   - job: build
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -303,7 +305,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
+        command: "Clean CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader ExtractDebugInfoLinux"
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
@@ -439,7 +441,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
+        command: "Clean CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader ExtractDebugInfoLinux"
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
@@ -560,7 +562,10 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
+    - script: brew install cppcheck
+      displayName: Installing CppCheck
+
+    - script: ./tracer/build.sh CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader
       displayName: Build tracer home
 
     - publish: $(monitoringHome)
@@ -577,7 +582,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    name: azure-windows-scale-set
+    name: azure-windows-scale-set-3
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -622,7 +627,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    name: azure-windows-scale-set
+    name: azure-windows-scale-set-3
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -860,7 +865,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -926,14 +931,14 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [tracer, security]
+      jobs: [tracer]
 
   - job: tracer
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -973,12 +978,23 @@ stages:
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
+- stage: integration_tests_windows_iis_security
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [security]
+
   - job: security
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1033,7 +1049,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -1105,7 +1121,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1818,7 +1834,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
 
     # Enable the Datadog Agent service for this job
     services:
@@ -2003,7 +2019,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ Windows ]
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -2076,7 +2092,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -2217,7 +2233,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -2776,6 +2792,7 @@ stages:
   dependsOn: 
     - integration_tests_windows
     - integration_tests_windows_iis
+    - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
@@ -2794,7 +2811,7 @@ stages:
       timeoutInMinutes: 30
 
       pool:
-        vmImage: windows-2019
+        vmImage: windows-2022
 
       steps:
       - template: steps/clone-repo.yml
@@ -3232,7 +3249,83 @@ stages:
         build: true
         baseImage: alpine
         command: "CheckSmokeTestsForErrors"
-        
+
+- stage: dotnet_tool_self_instrument_smoke_tests_linux
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [linux]
+
+  - job: linux
+    timeoutInMinutes: 45 # should take ~5 mins
+    variables:
+      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+      publishFramework: net6.0
+      platformSuffix: linux-x64
+      dockerTag: debian_net6
+      runtimeImage: "mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim"
+      installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
+      linuxArtifacts: "linux-packages-centos7"
+    pool:
+      vmImage: ubuntu-20.04
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download artifacts to smoke test directory
+      inputs:
+        artifact: $(linuxArtifacts)
+        path: $(smokeTestAppDir)/artifacts
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tool runner-standalone-$(platformSuffix)
+      inputs:
+        artifact: runner-standalone-$(platformSuffix)
+        patterns: "*.tar.gz"
+        path: $(Agent.TempDirectory)
+
+    - script: |
+        mkdir -p tracer/build_data/snapshots
+        mkdir -p tracer/build_data/logs
+        tar -xf $(Agent.TempDirectory)/dd-trace-$(platformSuffix).tar.gz -C $(smokeTestAppDir)/artifacts
+        chmod +x $(smokeTestAppDir)/artifacts/dd-trace
+      displayName: create test data directories and extract tool
+
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg INSTALL_CMD="$(installCmd)" \
+          dotnet-tool-self-instrument-smoke-tests
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build dotnet-tool-self-instrument-smoke-tests
+      retryCountOnTaskFailure: 3
+
+    - template: steps/run-snapshot-test.yml
+      parameters:
+        target: 'dotnet-tool-self-instrument-smoke-tests'
+        snapshotPrefix: "smoke_test"
+
+    - publish: tracer/build_data
+      artifact: dotnet-tool-smoke-test-self-instrument-logs_$(dockerTag)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: alpine
+        command: "CheckSmokeTestsForErrors"
+
 - stage: installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_arm64, generate_variables, master_commit_id]
@@ -3440,7 +3533,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3509,7 +3602,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3574,7 +3667,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3639,7 +3732,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3696,6 +3789,7 @@ stages:
     - unit_tests_arm64
     - integration_tests_windows
     - integration_tests_windows_iis
+    - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
@@ -3718,6 +3812,7 @@ stages:
     - nuget_installer_smoke_tests_windows
     - dotnet_tool_nuget_smoke_tests_linux
     - dotnet_tool_smoke_tests_linux
+    - dotnet_tool_self_instrument_smoke_tests_linux
     - dotnet_tool_smoke_tests_arm64
     - dotnet_tool_smoke_tests_windows
     - msi_installer_smoke_tests

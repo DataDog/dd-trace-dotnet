@@ -66,7 +66,7 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release");
 
             CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel --target all-profiler");
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
 
             if (IsAlpine)
             {
@@ -209,7 +209,7 @@ partial class Build
                     // .EnableNoRestore()
                     .EnableNoDependencies()
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(MSBuildTargetPlatform.x64)
+                    // .SetTargetPlatform(MSBuildTargetPlatform.x64)
                     .SetNoWarnDotNetCore3()
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))

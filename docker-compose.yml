@@ -288,6 +288,7 @@ services:
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
+      - DD_LOGGER_ENABLED
       - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
       - DD_LOGGER_BUILD_BUILDID
       - DD_LOGGER_BUILD_DEFINITIONNAME
@@ -315,7 +316,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunProfilerLinuxIntegrationTests
     volumes:
@@ -333,6 +334,7 @@ services:
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
+      - DD_LOGGER_ENABLED
       - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
       - DD_LOGGER_BUILD_BUILDID
       - DD_LOGGER_BUILD_DEFINITIONNAME
@@ -361,7 +363,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage
     volumes:
@@ -379,6 +381,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
+      - IncludeAllTestFrameworks
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
@@ -401,6 +404,7 @@ services:
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
+      - DD_LOGGER_ENABLED
       - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
       - DD_LOGGER_BUILD_BUILDID
       - DD_LOGGER_BUILD_DEFINITIONNAME
@@ -465,9 +469,11 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - CONTAINER_HOSTNAME=http://integrationtests
+      - IncludeAllTestFrameworks
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
+      - DD_LOGGER_ENABLED
       - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
       - DD_LOGGER_BUILD_BUILDID
       - DD_LOGGER_BUILD_DEFINITIONNAME
@@ -496,7 +502,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage
     volumes:
@@ -510,10 +516,12 @@ services:
       - explorationTestUseCase=${explorationTestUseCase:-debugger}
       - explorationTestName=${explorationTestName:-eshoponweb}
       - baseImage=${baseImage:-default}
+      - IncludeAllTestFrameworks
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
+      - DD_LOGGER_ENABLED
       - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
       - DD_LOGGER_BUILD_BUILDID
       - DD_LOGGER_BUILD_DEFINITIONNAME
@@ -564,7 +572,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
@@ -582,6 +590,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
       - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379
@@ -597,6 +606,7 @@ services:
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
+      - DD_LOGGER_ENABLED
       - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
       - DD_LOGGER_BUILD_BUILDID
       - DD_LOGGER_BUILD_DEFINITIONNAME
@@ -715,6 +725,26 @@ services:
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-tester
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    environment:
+    - dockerTag=${dockerTag:-unset}
+    - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+    - test-agent
+
+  dotnet-tool-self-instrument-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.dotnet-tool.self-instrument.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - INSTALL_CMD=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-self-instrument-tester
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet

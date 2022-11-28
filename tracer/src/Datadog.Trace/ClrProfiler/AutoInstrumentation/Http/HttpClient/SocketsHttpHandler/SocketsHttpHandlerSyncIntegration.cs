@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
         ReturnTypeName = ClrNames.HttpResponseMessage,
         ParameterTypeNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
         MinimumVersion = "5.0.0",
-        MaximumVersion = "6.*.*",
+        MaximumVersion = "7.*.*",
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

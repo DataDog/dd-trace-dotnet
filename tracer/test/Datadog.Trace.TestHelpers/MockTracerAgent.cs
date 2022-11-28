@@ -104,7 +104,7 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public bool ShouldDeserializeTraces { get; set; } = true;
 
-        public static TcpUdpAgent Create(ITestOutputHelper output, int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false, AgentConfiguration agentConfiguration = null)
+        public static TcpUdpAgent Create(ITestOutputHelper output, int? port = null, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false, AgentConfiguration agentConfiguration = null)
             => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output, Configuration = agentConfiguration ?? new() };
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -870,13 +870,14 @@ namespace Datadog.Trace.TestHelpers
             private readonly Task _tracesListenerTask;
             private readonly Task _statsdTask;
 
-            public TcpUdpAgent(int port, int retries, bool useStatsd, bool doNotBindPorts, int? requestedStatsDPort, bool useTelemetry)
+            public TcpUdpAgent(int? port, int retries, bool useStatsd, bool doNotBindPorts, int? requestedStatsDPort, bool useTelemetry)
                 : base(useTelemetry, TestTransports.Tcp)
             {
+                port ??= TcpPortProvider.GetOpenPort();
                 if (doNotBindPorts)
                 {
                     // This is for any tests that want to use a specific port but never actually bind
-                    Port = port;
+                    Port = port.Value;
                     return;
                 }
 
@@ -938,7 +939,7 @@ namespace Datadog.Trace.TestHelpers
                         listener.Start();
 
                         // successfully listening
-                        Port = port;
+                        Port = port.Value;
                         _listener = listener;
 
                         listeners.Add($"Traces at port {Port}");

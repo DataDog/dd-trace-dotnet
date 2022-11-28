@@ -42,6 +42,9 @@
     <Filter Include="Contention">
       <UniqueIdentifier>{bb4d04f1-ed7e-48db-b2e0-99b56d4f258a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="GarbageCollections">
+      <UniqueIdentifier>{c07c8635-c021-4796-bfac-48f7ee78bf65}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -102,9 +105,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="OpSysTools.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="RefCountingObject.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="ScopeFinalizer.h">
@@ -263,12 +263,33 @@
     <ClInclude Include="GroupSampler.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="IGCSuspensionsListener.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="StopTheWorldGCProvider.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="RawStopTheWorldSample.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="IGarbageCollectionsListener.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="GarbageCollection.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="GarbageCollectionProvider.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="RawGarbageCollectionSample.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
+    <ClInclude Include="GCBaseRawSample.h">
+      <Filter>GarbageCollections</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="RefCountingObject.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="HResultConverter.cpp">
@@ -393,6 +414,12 @@
     </ClCompile>
     <ClCompile Include="GenericSampler.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="StopTheWorldGCProvider.cpp">
+      <Filter>GarbageCollections</Filter>
+    </ClCompile>
+    <ClCompile Include="GarbageCollectionProvider.cpp">
+      <Filter>GarbageCollections</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

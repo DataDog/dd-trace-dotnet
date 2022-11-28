@@ -68,6 +68,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto process_command_line = shared::GetCurrentProcessCommandLine();
     Logger::Info("Process CommandLine: ", process_command_line);
 
+    if (process_name == WStr("dd-trace") || process_name == WStr("dd-trace.exe"))
+    {
+        Logger::Info("Profiler disabled - monitoring the dd-trace tool is not supported.");
+        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+    }
+
     // CI visibility checks
     if (!process_command_line.empty())
     {
@@ -1099,10 +1105,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         const auto appDomainId = moduleInfo.assembly.app_domain_id;
 
         // remove appdomain id from managed_profiler_loaded_app_domains set
-        if (managed_profiler_loaded_app_domains.find(appDomainId) != managed_profiler_loaded_app_domains.end())
-        {
-            managed_profiler_loaded_app_domains.erase(appDomainId);
-        }
+        managed_profiler_loaded_app_domains.erase(appDomainId);
     }
 
     return S_OK;
@@ -1339,11 +1342,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
 HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
-    if (!is_attached_)
-    {
-        return S_OK;
-    }
-
     // take this lock so we block until the
     // module metadata is not longer being used
     std::lock_guard<std::mutex> guard(module_ids_lock_);
@@ -2223,8 +2221,8 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
     orig_sstream << rewriter->GetMaxStackValue();
     orig_sstream << ")" << std::endl;
 
-    const auto& ehCount = rewriter->GetEHCount();
-    const auto& ehPtr = rewriter->GetEHPointer();
+    const auto ehCount = rewriter->GetEHCount();
+    const auto ehPtr = rewriter->GetEHPointer();
     int indent = 1;
 
     PCCOR_SIGNATURE originalSignature = nullptr;
