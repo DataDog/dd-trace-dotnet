@@ -3,25 +3,27 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-
 namespace Datadog.Trace.Iast;
-
-// Defined in https://github.com/DataDog/experimental/blob/main/teams/asm/vulnerability_schema/vulnerability_schema.json
 
 internal static class SourceType
 {
-    public static Tuple<byte, string> RequestBody { get; } = new(1, "http.request.body");
+    internal static byte GetByte(SourceTypeName value)
+    {
+        return (byte)value;
+    }
 
-    public static Tuple<byte, string> RequestPath { get; } = new(2, "http.request.path");
+    // Defined in https://github.com/DataDog/experimental/blob/main/teams/asm/vulnerability_schema/vulnerability_schema.json
 
-    public static Tuple<byte, string> RequestParameterName { get; } = new(3, "http.request.parameter.name");
-
-    public static Tuple<byte, string> RequestParameterValue { get; } = new(4, "http.request.parameter.value");
-
-    public static Tuple<byte, string> RoutedParameterValue { get; } = new(5, "http.request.path.parameter");
-
-    public static Tuple<byte, string> RequestHeader { get; } = new(6, "http.request.header");
-
-    public static Tuple<byte, string> RequestQueryString { get; } = new(2, "http.request.querystring");
+    internal static string GetString(SourceTypeName value)
+        => value switch
+        {
+            SourceTypeName.RequestBody => "http.request.body",
+            SourceTypeName.RequestPath => "http.request.path",
+            SourceTypeName.RequestParameterName => "http.request.parameter.name",
+            SourceTypeName.RequestParameterValue => "http.request.parameter.value",
+            SourceTypeName.RoutedParameterValue => "http.request.path.parameter",
+            SourceTypeName.RequestHeader => "http.request.header",
+            SourceTypeName.RequestQueryString => "http.request.querystring",
+            _ => string.Empty
+        };
 }

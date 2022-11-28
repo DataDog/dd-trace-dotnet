@@ -25,7 +25,7 @@ namespace Datadog.Trace.AppSec
 
             var security = Security.Instance;
             var context = HttpContext.Current;
-            var iastEnabled = Iast.Iast.Instance.Settings.Enabled == true;
+            var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
             Scope scope = null;
 
             if ((context != null && security.Settings.Enabled) || iastEnabled)

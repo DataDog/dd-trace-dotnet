@@ -43,23 +43,23 @@ internal class IastRequestContext
 
     private void AddRequestParameter(string name, string value)
     {
-        _taintedObjects.TaintInputString(value, new Source(SourceType.RequestParameterValue.Item1, name, value));
-        _taintedObjects.TaintInputString(name, new Source(SourceType.RequestParameterName.Item1, name, null));
+        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestParameterValue), name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestParameterName), name, null));
     }
 
     private void AddRoutedParameter(string name, string value)
     {
-        _taintedObjects.TaintInputString(value, new Source(SourceType.RoutedParameterValue.Item1, name, value));
+        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RoutedParameterValue), name, value));
     }
 
     private void AddQueryStringRaw(string queryString)
     {
-        _taintedObjects.TaintInputString(queryString, new Source(SourceType.RequestQueryString.Item1, null, queryString));
+        _taintedObjects.TaintInputString(queryString, new Source(SourceType.GetByte(SourceTypeName.RequestQueryString), null, queryString));
     }
 
     private void AddQueryPath(string path)
     {
-        _taintedObjects.TaintInputString(path, new Source(SourceType.RequestPath.Item1, null, path));
+        _taintedObjects.TaintInputString(path, new Source(SourceType.GetByte(SourceTypeName.RequestPath), null, path));
     }
 
     private void AddRouteData(IDictionary<string, object> routeData)
