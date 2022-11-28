@@ -76,7 +76,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                                 .ToList();
                 if (typeValues.Count == 0)
                 {
-                    Log.Debug("GCov: [Type] {typeName} doesn't got covered", fullName);
+                    Log.Debug("GCov: [Type] {typeName} doesn't have coverage", fullName);
                     continue;
                 }
 
@@ -91,7 +91,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                                       .ToList();
                     if (methodValues.Count == 0)
                     {
-                        Log.Debug("GCov: [Method] {typeName}.{methodName} doesn't got covered", fullName, methodName);
+                        Log.Debug("GCov: [Method] {typeName}.{methodName} doesn't have coverage", fullName, methodName);
                         continue;
                     }
 
