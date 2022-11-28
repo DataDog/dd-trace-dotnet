@@ -22,11 +22,21 @@
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
+    <!-- Note that we're using a custom version of coverlet from the Azure feed that supports StrongNaming -->
+    <PackageReference Include="coverlet.collector" Version="3.2.1-preview.4.g46dda4ea49">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'">
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+    <!-- Note that we're using a custom version of coverlet from the Azure feed that supports StrongNaming -->
+    <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <!-- This property ensures NuGet packages are copied to the bin folder. This happens automatically in netcoreapp3.0+ -->
