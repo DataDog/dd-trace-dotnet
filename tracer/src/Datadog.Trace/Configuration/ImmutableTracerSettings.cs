@@ -130,6 +130,9 @@ namespace Datadog.Trace.Configuration
             ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
             QueryStringReportingEnabled = settings.QueryStringReportingEnabled;
             ObfuscationQueryStringRegexTimeout = settings.ObfuscationQueryStringRegexTimeout;
+
+            InAzureAppService = settings.InAzureAppService;
+            AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
         }
 
         /// <summary>
@@ -388,6 +391,16 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the rare sampler is enabled
         /// </summary>
         internal bool IsRareSamplerEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in AAS
+        /// </summary>
+        internal bool InAzureAppService { get; }
+
+        /// <summary>
+        /// Gets the AAS settings
+        /// </summary>
+        internal ImmutableAzureAppServiceSettings AzureAppServiceMetadata { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

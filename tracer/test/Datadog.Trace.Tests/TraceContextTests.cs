@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
@@ -15,7 +17,6 @@ using Xunit;
 namespace Datadog.Trace.Tests
 {
     [Collection(nameof(AzureAppServicesTestCollection))]
-    [AzureAppServicesRestorer]
     public class TraceContextTests
     {
         private readonly Mock<IDatadogTracer> _tracerMock = new Mock<IDatadogTracer>();
@@ -185,7 +186,9 @@ namespace Datadog.Trace.Tests
                 Exporter = new Trace.Configuration.ExporterSettings()
                 {
                     PartialFlushEnabled = false,
-                }
+                },
+                InAzureAppService = inAASContext,
+                AzureAppServiceMetadata = inAASContext ? BuildAAsSettings() : null
             }.Build());
 
             ArraySegment<Span>? spans = null;
@@ -193,7 +196,6 @@ namespace Datadog.Trace.Tests
             tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
-            SetAASContext(inAASContext);
             var traceContext = new TraceContext(tracer.Object);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
 
@@ -243,15 +245,15 @@ namespace Datadog.Trace.Tests
                 {
                     PartialFlushEnabled = true,
                     PartialFlushMinSpans = partialFlushThreshold
-                }
+                },
+                InAzureAppService = inAASContext,
+                AzureAppServiceMetadata = inAASContext ? BuildAAsSettings() : null
             }.Build());
 
             ArraySegment<Span>? spans = null;
 
             tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
                   .Callback<ArraySegment<Span>>((s) => spans = s);
-
-            SetAASContext(inAASContext);
 
             var traceContext = new TraceContext(tracer.Object);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
@@ -289,18 +291,15 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        private void SetAASContext(bool inAASContext)
+        private ImmutableAzureAppServiceSettings BuildAAsSettings()
         {
-            Dictionary<string, string> vars = new();
+            var vars = new NameValueCollection();
 
-            if (inAASContext)
-            {
-                vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
-                vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
-                vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
-            }
+            vars.Add(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "true");
+            vars.Add(ConfigurationKeys.AzureAppService.ResourceGroupKey, "ThisIsAResourceGroup");
+            vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
 
-            AzureAppServices.Metadata = new AzureAppServices(vars);
+            return new ImmutableAzureAppServiceSettings(new NameValueConfigurationSource(vars));
         }
     }
 }

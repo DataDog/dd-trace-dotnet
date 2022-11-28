@@ -23,13 +23,11 @@ namespace Datadog.Trace.Telemetry
         private volatile IastSettings _iastSettings;
         private volatile Profiler _profiler;
         private volatile bool _isTracerInitialized = false;
-        private AzureAppServices _azureApServicesMetadata;
         private HostTelemetryData _hostData = null;
 
         public void RecordTracerSettings(
             ImmutableTracerSettings tracerSettings,
-            string defaultServiceName,
-            AzureAppServices appServicesMetadata)
+            string defaultServiceName)
         {
             // Increment number of times this has been called
             var reconfigureCount = Interlocked.Increment(ref _tracerInstanceCount);
@@ -53,7 +51,6 @@ namespace Datadog.Trace.Telemetry
                 return;
             }
 
-            _azureApServicesMetadata = appServicesMetadata;
             var host = HostMetadata.Instance;
             _hostData = new HostTelemetryData
             {
@@ -124,7 +121,7 @@ namespace Datadog.Trace.Telemetry
 
             var settings = _settings.Settings;
 
-            var data = new List<TelemetryValue>(_azureApServicesMetadata.IsRelevant ? 27 : 23)
+            var data = new List<TelemetryValue>(settings.InAzureAppService ? 31 : 26)
             {
                 new(ConfigTelemetryData.Platform, value: FrameworkDescription.Instance.ProcessArchitecture),
                 new(ConfigTelemetryData.Enabled, value: settings.TraceEnabled),
@@ -142,7 +139,6 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.RoutetemplateExpansionEnabled, value: settings.ExpandRouteTemplatesEnabled),
                 new(ConfigTelemetryData.PartialflushEnabled, value: settings.Exporter.PartialFlushEnabled),
                 new(ConfigTelemetryData.PartialflushMinspans, value: settings.Exporter.PartialFlushMinSpans),
-                new(ConfigTelemetryData.AasConfigurationError, value: _azureApServicesMetadata.IsUnsafeToTrace),
                 new(ConfigTelemetryData.TracerInstanceCount, value: _tracerInstanceCount),
                 new(ConfigTelemetryData.SecurityEnabled, value: _securitySettings?.Enabled),
                 new(ConfigTelemetryData.IastEnabled, value: _iastSettings?.Enabled),
@@ -157,12 +153,13 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.SpanSamplingRules, value: settings.SpanSamplingRules),
             };
 
-            if (_azureApServicesMetadata.IsRelevant)
+            if (settings.InAzureAppService)
             {
+                data.Add(new(ConfigTelemetryData.AasConfigurationError, value: settings.AzureAppServiceMetadata.IsUnsafeToTrace));
                 data.Add(new(name: ConfigTelemetryData.CloudHosting, "Azure"));
-                data.Add(new(name: ConfigTelemetryData.AasSiteExtensionVersion, _azureApServicesMetadata.SiteExtensionVersion));
-                data.Add(new(name: ConfigTelemetryData.AasAppType, _azureApServicesMetadata.SiteType));
-                data.Add(new(name: ConfigTelemetryData.AasFunctionsRuntimeVersion, _azureApServicesMetadata.FunctionsExtensionVersion));
+                data.Add(new(name: ConfigTelemetryData.AasSiteExtensionVersion, settings.AzureAppServiceMetadata.SiteExtensionVersion));
+                data.Add(new(name: ConfigTelemetryData.AasAppType, settings.AzureAppServiceMetadata.SiteType));
+                data.Add(new(name: ConfigTelemetryData.AasFunctionsRuntimeVersion, settings.AzureAppServiceMetadata.FunctionsExtensionVersion));
             }
 
             // data.Configuration["agent_reachable"] = agentError == null;

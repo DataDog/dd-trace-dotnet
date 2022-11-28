@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             listener.Setup(l => l.Refresh())
                 .Callback(() => mutex.Set());
 
-            using (new RuntimeMetricsWriter(Mock.Of<IDogStatsd>(), TimeSpan.FromMilliseconds(10), (statsd, timeSpan) => listener.Object))
+            using (new RuntimeMetricsWriter(Mock.Of<IDogStatsd>(), TimeSpan.FromMilliseconds(10), false, (statsd, timeSpan, inAppContext) => listener.Object))
             {
                 Assert.True(mutex.Wait(10000), "Method Refresh() wasn't called on the listener");
             }
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         [Fact]
         public void ShouldSwallowFactoryExceptions()
         {
-            var writer = new RuntimeMetricsWriter(Mock.Of<IDogStatsd>(), TimeSpan.FromMilliseconds(10), (statsd, timeSpan) => throw new InvalidOperationException("This exception should be caught"));
+            var writer = new RuntimeMetricsWriter(Mock.Of<IDogStatsd>(), TimeSpan.FromMilliseconds(10), false, (statsd, timeSpan, inAppContext) => throw new InvalidOperationException("This exception should be caught"));
             writer.Dispose();
         }
 
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             var statsd = new Mock<IDogStatsd>();
             var listener = new Mock<IRuntimeMetricsListener>();
 
-            using (var writer = new RuntimeMetricsWriter(statsd.Object, TimeSpan.FromMilliseconds(Timeout.Infinite), (statsd, timeSpan) => listener.Object))
+            using (var writer = new RuntimeMetricsWriter(statsd.Object, TimeSpan.FromMilliseconds(Timeout.Infinite), false, (statsd, timeSpan, inAppContext) => listener.Object))
             {
                 for (int i = 0; i < 10; i++)
                 {
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             var statsd = new Mock<IDogStatsd>();
             var listener = new Mock<IRuntimeMetricsListener>();
 
-            var writer = new RuntimeMetricsWriter(statsd.Object, TimeSpan.FromMilliseconds(Timeout.Infinite), (statsd, timeSpan) => listener.Object);
+            var writer = new RuntimeMetricsWriter(statsd.Object, TimeSpan.FromMilliseconds(Timeout.Infinite), false, (statsd, timeSpan, inAppContext) => listener.Object);
             writer.Dispose();
 
             listener.Verify(l => l.Dispose(), Times.Once);

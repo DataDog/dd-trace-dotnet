@@ -95,7 +95,7 @@ namespace Datadog.Trace
             settings ??= ImmutableTracerSettings.FromDefaultSources();
 
             var defaultServiceName = settings.ServiceName ??
-                                     GetApplicationName() ??
+                                     GetApplicationName(settings) ??
                                      UnknownServiceName;
 
             discoveryService ??= GetDiscoveryService(settings);
@@ -109,7 +109,7 @@ namespace Datadog.Trace
 
             if (settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer)
             {
-                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName), TimeSpan.FromSeconds(10));
+                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName), TimeSpan.FromSeconds(10), settings.InAzureAppService);
             }
 
             logSubmissionManager = DirectLogSubmissionManager.Create(
@@ -120,7 +120,7 @@ namespace Datadog.Trace
                 settings.ServiceVersion);
 
             telemetry ??= TelemetryFactory.CreateTelemetryController(settings);
-            telemetry.RecordTracerSettings(settings, defaultServiceName, AzureAppServices.Metadata);
+            telemetry.RecordTracerSettings(settings, defaultServiceName);
             telemetry.RecordSecuritySettings(Security.Instance.Settings);
             telemetry.RecordIastSettings(Datadog.Trace.Iast.Iast.Instance.Settings);
             telemetry.RecordProfilerSettings(Profiler.Instance);
@@ -276,13 +276,13 @@ namespace Datadog.Trace
         /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.
         /// </summary>
         /// <returns>The default service name.</returns>
-        private static string GetApplicationName()
+        private static string GetApplicationName(ImmutableTracerSettings settings)
         {
             try
             {
-                if (AzureAppServices.Metadata.IsRelevant)
+                if (settings.InAzureAppService)
                 {
-                    return AzureAppServices.Metadata.SiteName;
+                    return settings.AzureAppServiceMetadata.SiteName;
                 }
 
                 if (Serverless.Metadata is { IsRunningInLambda: true, ServiceName: var serviceName })

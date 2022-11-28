@@ -28,7 +28,6 @@ namespace Datadog.Trace.Tests.Telemetry
     public class ConfigurationTelemetryCollectorTests
     {
         private const string ServiceName = "serializer-test-app";
-        private static readonly AzureAppServices EmptyAasSettings = new(new Dictionary<string, string>());
 
         [Fact]
         public void HasChangesAfterEachTracerSettingsAdded()
@@ -37,7 +36,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             var collector = new ConfigurationTelemetryCollector();
 
-            collector.RecordTracerSettings(settings, ServiceName, EmptyAasSettings);
+            collector.RecordTracerSettings(settings, ServiceName);
 
             collector.HasChanges().Should().BeTrue();
             var data = collector.GetConfigurationData()
@@ -45,7 +44,7 @@ namespace Datadog.Trace.Tests.Telemetry
             data[ConfigTelemetryData.TracerInstanceCount] = 1;
             collector.HasChanges().Should().BeFalse();
 
-            collector.RecordTracerSettings(settings, ServiceName, EmptyAasSettings);
+            collector.RecordTracerSettings(settings, ServiceName);
             collector.HasChanges().Should().BeTrue();
 
             data = collector.GetConfigurationData().ToDictionary(x => x.Name, x => x.Value);
@@ -62,7 +61,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             var collector = new ConfigurationTelemetryCollector();
 
-            collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, EmptyAasSettings);
+            collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
 
             var data = collector.GetApplicationData();
 
@@ -83,7 +82,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var collector = new ConfigurationTelemetryCollector();
 
-            collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName, EmptyAasSettings);
+            collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName);
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
                 { ConfigurationKeys.AppSec.Enabled, enabled.ToString() },
@@ -103,7 +102,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var collector = new ConfigurationTelemetryCollector();
 
-            collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName, EmptyAasSettings);
+            collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName);
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
                 { ConfigurationKeys.Iast.Enabled, enabled.ToString() },
@@ -121,18 +120,18 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string env = "serializer-tests";
             const string serviceVersion = "1.2.3";
-            var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion };
-            var aas = new AzureAppServices(new Dictionary<string, string>
-            {
-                { ConfigurationKeys.ApiKey, "SomeValue" },
-                { AzureAppServices.AzureAppServicesContextKey, "1" },
-                { AzureAppServices.SiteExtensionVersionKey, "1.5.0" },
-                { AzureAppServices.FunctionsExtensionVersionKey, "~3" },
-            });
+            var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion, InAzureAppService = true };
+            settings.AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(new NameValueConfigurationSource(new NameValueCollection
+                {
+                    { ConfigurationKeys.ApiKey, "SomeValue" },
+                    { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
+                    { ConfigurationKeys.AzureAppService.SiteExtensionVersionKey, "1.5.0" },
+                    { ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "~3" },
+                }));
 
             var collector = new ConfigurationTelemetryCollector();
 
-            collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, aas);
+            collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
 
             var data = collector.GetConfigurationData()
                 .ToDictionary(x => x.Name, x => x.Value);
@@ -150,19 +149,19 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string env = "serializer-tests";
             const string serviceVersion = "1.2.3";
-            var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion };
-            var aas = new AzureAppServices(new Dictionary<string, string>
+            var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion, InAzureAppService = true };
+            settings.AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(new NameValueConfigurationSource(new NameValueCollection
             {
                 // Without a DD_API_KEY, AAS does not consider it safe to trace
                 // { ConfigurationKeys.ApiKey, "SomeValue" },
-                { AzureAppServices.AzureAppServicesContextKey, "1" },
-                { AzureAppServices.SiteExtensionVersionKey, "1.5.0" },
-                { AzureAppServices.FunctionsExtensionVersionKey, "~3" },
-            });
+                { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
+                { ConfigurationKeys.AzureAppService.SiteExtensionVersionKey, "1.5.0" },
+                { ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "~3" },
+            }));
 
             var collector = new ConfigurationTelemetryCollector();
 
-            collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, aas);
+            collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
 
             var data = collector.GetConfigurationData()
                                 .ToDictionary(x => x.Name, x => x.Value);
@@ -185,7 +184,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             var collector = new ConfigurationTelemetryCollector();
 
-            collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, EmptyAasSettings);
+            collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
 
             var data = collector.GetConfigurationData()
                                 .ToDictionary(x => x.Name, x => x.Value);
@@ -212,7 +211,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var contextTracker = new Mock<IContextTracker>();
             contextTracker.Setup(s => s.IsEnabled).Returns(codeHotspotsEnabled);
 
-            collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName, EmptyAasSettings);
+            collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName);
             collector.RecordProfilerSettings(new Profiler(contextTracker.Object, status.Object));
 
             var data = collector.GetConfigurationData().ToDictionary(x => x.Name, x => x.Value);
@@ -258,7 +257,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
                 var collector = new ConfigurationTelemetryCollector();
 
-                collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, EmptyAasSettings);
+                collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
 
                 var data = collector.GetConfigurationData()
                                     .ToDictionary(x => x.Name, x => x.Value);
