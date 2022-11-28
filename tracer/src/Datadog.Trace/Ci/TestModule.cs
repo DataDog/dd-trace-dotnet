@@ -317,7 +317,7 @@ public sealed class TestModule
 
         if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
         {
-            coverageHandler.GetCodeCoverage();
+            coverageHandler.GetCodeCoveragePercentage();
         }
 
         CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
