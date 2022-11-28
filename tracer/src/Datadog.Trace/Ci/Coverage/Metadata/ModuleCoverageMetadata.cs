@@ -43,12 +43,32 @@ public abstract class ModuleCoverageMetadata
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal int GetTotalMethodsOfTypeOrDefault(int type)
+    {
+#if NETCOREAPP3_0_OR_GREATER
+        return Metadata.FastGetReference(type)?.Length ?? 0;
+#else
+        return Metadata[type]?.Length ?? 0;
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetTotalSequencePointsOfMethod(int type, int method)
     {
 #if NETCOREAPP3_0_OR_GREATER
         return Metadata.FastGetReference(type).FastGetReference(method);
 #else
         return Metadata[type][method];
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal int GetTotalSequencePointsOfMethodOrDefault(int type, int method)
+    {
+#if NETCOREAPP3_0_OR_GREATER
+        return Metadata.FastGetReference(type)?.FastGetReference(method) ?? 0;
+#else
+        return Metadata[type]?[method] ?? 0;
 #endif
     }
 

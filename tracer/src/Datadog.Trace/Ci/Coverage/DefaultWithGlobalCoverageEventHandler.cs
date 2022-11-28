@@ -75,10 +75,10 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                 var totalTypeSequencePoints = 0L;
                 var executedTypeSequencePoints = 0L;
 
-                var totalMethodsCount = moduleMetadata.GetTotalMethodsOfType(i);
+                var totalMethodsCount = moduleMetadata.GetTotalMethodsOfTypeOrDefault(i);
                 for (var typeMethodIdx = 0; typeMethodIdx < totalMethodsCount; typeMethodIdx++)
                 {
-                    totalTypeSequencePoints += moduleMetadata.GetTotalSequencePointsOfMethod(i, typeMethodIdx);
+                    totalTypeSequencePoints += moduleMetadata.GetTotalSequencePointsOfMethodOrDefault(i, typeMethodIdx);
                 }
 
                 var typeDef = moduleDef.Types[i];
@@ -190,8 +190,121 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
     public abstract class CoverageInfo
     {
+        private double[]? _data;
+
         [JsonProperty("data", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public double[]? Data { get; }
+        public double[] Data
+        {
+            get
+            {
+                if (_data is null)
+                {
+                    RefreshData();
+                }
+
+                return _data!;
+            }
+        }
+
+        protected void RefreshData()
+        {
+            ClearData();
+
+            double total = 0L;
+            double executed = 0L;
+
+            if (this is MethodCoverageInfo { Segments.Length: > 0 } methodCInfo)
+            {
+                foreach (var segment in methodCInfo.Segments)
+                {
+                    total++;
+                    if (segment[5] != 0)
+                    {
+                        executed++;
+                    }
+                }
+
+                goto set;
+            }
+
+            if (this is TypeCoverageInfo { Methods.Count: > 0 } typeCInfo)
+            {
+                foreach (var method in typeCInfo.Methods)
+                {
+                    var data = method.Data;
+                    total += data[1];
+                    executed += data[2];
+                }
+
+                goto set;
+            }
+
+            if (this is ModuleCoverageInfo { Types.Count: > 0 } modCInfo)
+            {
+                foreach (var type in modCInfo.Types)
+                {
+                    var data = type.Data;
+                    total += data[1];
+                    executed += data[2];
+                }
+
+                goto set;
+            }
+
+            if (this is GlobalCoverageInfo { Modules.Count: > 0 } globalCInfo)
+            {
+                foreach (var module in globalCInfo.Modules)
+                {
+                    var data = module.Data;
+                    total += data[1];
+                    executed += data[2];
+                }
+
+                goto set;
+            }
+
+            set:
+            _data = new[] { Math.Round((executed / total) * 100, 2), total, executed };
+        }
+
+        private void ClearData()
+        {
+            if (this is MethodCoverageInfo)
+            {
+                _data = null;
+                return;
+            }
+
+            if (this is TypeCoverageInfo { Methods.Count: > 0 } typeCInfo)
+            {
+                foreach (var method in typeCInfo.Methods)
+                {
+                    method.ClearData();
+                }
+
+                return;
+            }
+
+            if (this is ModuleCoverageInfo { Types.Count: > 0 } modCInfo)
+            {
+                foreach (var type in modCInfo.Types)
+                {
+                    type.ClearData();
+                }
+
+                return;
+            }
+
+            if (this is GlobalCoverageInfo { Modules.Count: > 0 } globalCInfo)
+            {
+                foreach (var module in globalCInfo.Modules)
+                {
+                    module.ClearData();
+                }
+
+                return;
+            }
+        }
     }
 
     public abstract class NamedCoverageInfo : CoverageInfo
