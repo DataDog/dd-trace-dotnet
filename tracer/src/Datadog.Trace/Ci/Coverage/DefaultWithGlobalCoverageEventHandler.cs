@@ -327,6 +327,33 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
         [JsonProperty("modules", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public List<ModuleCoverageInfo> Modules { get; }
+
+        public static GlobalCoverageInfo operator +(GlobalCoverageInfo a, GlobalCoverageInfo b)
+        {
+            var globalCovInfo = new GlobalCoverageInfo();
+            var aModules = a?.Modules ?? Enumerable.Empty<ModuleCoverageInfo>();
+            var bModules = b?.Modules ?? Enumerable.Empty<ModuleCoverageInfo>();
+            foreach (var moduleGroup in aModules.Concat(bModules).GroupBy(m => m.Name))
+            {
+                var moduleGroupArray = moduleGroup.ToArray();
+                if (moduleGroupArray.Length == 1)
+                {
+                    globalCovInfo.Modules.Add(moduleGroupArray[0]);
+                }
+                else
+                {
+                    var res = moduleGroupArray[0];
+                    for (var i = 1; i < moduleGroupArray.Length; i++)
+                    {
+                        res += moduleGroupArray[i];
+                    }
+
+                    globalCovInfo.Modules.Add(res);
+                }
+            }
+
+            return globalCovInfo;
+        }
     }
 
     public sealed class ModuleCoverageInfo : NamedCoverageInfo
@@ -339,6 +366,26 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
         [JsonProperty("types", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public List<TypeCoverageInfo> Types { get; }
+
+        public static ModuleCoverageInfo operator +(ModuleCoverageInfo a, ModuleCoverageInfo b)
+        {
+            if (a != null &&
+                b != null &&
+                a.Name == b.Name &&
+                a.Types.Count == b.Types.Count)
+            {
+                var modCovInfo = new ModuleCoverageInfo(a.Name);
+                foreach (var type in a.Types)
+                {
+                    var bType = b.Types.Single(t => t.Name == type.Name);
+                    modCovInfo.Types.Add(type + bType);
+                }
+
+                return modCovInfo;
+            }
+
+            throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
+        }
     }
 
     public sealed class TypeCoverageInfo : NamedCoverageInfo
@@ -351,6 +398,26 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
         [JsonProperty("methods", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public List<MethodCoverageInfo> Methods { get; }
+
+        public static TypeCoverageInfo operator +(TypeCoverageInfo a, TypeCoverageInfo b)
+        {
+            if (a != null &&
+                b != null &&
+                a.Name == b.Name &&
+                a.Methods.Count == b.Methods.Count)
+            {
+                var typeCovInfo = new TypeCoverageInfo(a.Name);
+                foreach (var method in a.Methods)
+                {
+                    var bMethod = b.Methods.Single(m => m.Name == method.Name && m.FileName == method.FileName);
+                    typeCovInfo.Methods.Add(method + bMethod);
+                }
+
+                return typeCovInfo;
+            }
+
+            throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
+        }
     }
 
     public sealed class MethodCoverageInfo : NamedCoverageInfo
@@ -365,6 +432,38 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         public string? FileName { get; set; }
 
         [JsonProperty("segments", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public int[][] Segments { get; set; } 
+        public int[][] Segments { get; set; }
+
+        public static MethodCoverageInfo operator +(MethodCoverageInfo a, MethodCoverageInfo b)
+        {
+            if (a != null &&
+                b != null &&
+                a.FileName == b.FileName &&
+                a.Name == b.Name &&
+                a.Segments.Length == b.Segments.Length)
+            {
+                var mcInfo = new MethodCoverageInfo(a.Name)
+                {
+                    FileName = a.FileName,
+                    Segments = new int[a.Segments.Length][]
+                };
+
+                for (var i = 0; i < mcInfo.Segments.Length; i++)
+                {
+                    mcInfo.Segments[i] = new[]
+                    {
+                        a.Segments[i][0],
+                        a.Segments[i][1],
+                        a.Segments[i][2],
+                        a.Segments[i][3],
+                        a.Segments[i][4] + b.Segments[i][4],
+                    };
+                }
+
+                return mcInfo;
+            }
+
+            throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
+        }
     }
 }
