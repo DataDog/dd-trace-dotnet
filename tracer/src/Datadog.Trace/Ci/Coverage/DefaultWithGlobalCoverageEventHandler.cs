@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Datadog.Trace.Ci.Coverage.Models;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
@@ -51,6 +52,8 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         GlobalContainer.Clear();
 
         // Process
+        var totalSequencePoints = 0L;
+        var executedSequencePoints = 0L;
         foreach (var moduleValues in lstModulesInstances.GroupBy(i => i.Module))
         {
             var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValues.Key);
@@ -60,6 +63,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             }
 
             var moduleMetadata = moduleValues.First().Metadata;
+            totalSequencePoints += moduleMetadata.TotalInstructions;
             var totalTypesCount = moduleMetadata.GetTotalTypes();
             for (var i = 0; i < totalTypesCount; i++)
             {
@@ -82,16 +86,33 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                     var methodName = methodDef.Name;
                     var methodValues = typeValues
                                       .Where(t => t.Methods[j] != null)
-                                      .Select(t => t.Methods[j])
+                                      .Select(t => t.Methods[j]!)
                                       .ToList();
                     if (methodValues.Count == 0)
                     {
                         Log.Warning("GCov: [Method] {typeName}.{methodName} doesn't got covered", fullName, methodName);
                         continue;
                     }
+
+                    var seqPointsCount = methodValues[0].SequencePoints.Length;
+                    for (var seqPointIdx = 0; seqPointIdx < seqPointsCount; seqPointIdx++)
+                    {
+                        foreach (var methodValue in methodValues)
+                        {
+                            if (methodValue.SequencePoints[seqPointIdx] != 0)
+                            {
+                                executedSequencePoints++;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
+
+        Log.Warning("GCov: Total Sequence Points: {totalSequencePoints}", totalSequencePoints);
+        Log.Warning("GCov: Executed Sequence Points: {executedSequencePoints}", executedSequencePoints);
+        Log.Warning("GCov: Percentage: {percentage}%", (executedSequencePoints / totalSequencePoints) * 100);
 
         // ***********************************************************
         const int HIDDEN = 0xFEEFEE;
