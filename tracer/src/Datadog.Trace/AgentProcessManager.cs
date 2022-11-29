@@ -66,9 +66,11 @@ namespace Datadog.Trace
                     return;
                 }
 
+                var azureAppServiceSettings = new ImmutableAzureAppServiceSettings(GlobalConfigurationSource.Instance);
+
                 var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
 
-                if (AzureAppServices.Metadata.CustomTracingEnabled || automaticTraceEnabled)
+                if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled)
                 {
                     if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                     {
@@ -84,7 +86,7 @@ namespace Datadog.Trace
                     }
                 }
 
-                if (AzureAppServices.Metadata.NeedsDogStatsD || automaticTraceEnabled)
+                if (azureAppServiceSettings.NeedsDogStatsD || automaticTraceEnabled)
                 {
                     if (string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
                     {
@@ -103,7 +105,7 @@ namespace Datadog.Trace
                 if (Processes.Count > 0)
                 {
                     Log.Debug("Starting {Count} child processes from process {ProcessName}, AppDomain {AppDomain}.", Processes.Count, DomainMetadata.Instance.ProcessName, DomainMetadata.Instance.AppDomainName);
-                    StartProcesses();
+                    StartProcesses(azureAppServiceSettings);
                 }
             }
             catch (Exception ex)
@@ -112,9 +114,9 @@ namespace Datadog.Trace
             }
         }
 
-        private static void StartProcesses()
+        private static void StartProcesses(ImmutableAzureAppServiceSettings azureAppServiceSettings)
         {
-            if (AzureAppServices.Metadata.DebugModeEnabled)
+            if (azureAppServiceSettings.DebugModeEnabled)
             {
                 const string ddLogLevelKey = "DD_LOG_LEVEL";
                 if (EnvironmentHelpers.GetEnvironmentVariable(ddLogLevelKey) == null)

@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 ErrorInvocations.Add((info, error));
             }
 
-            public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName, AzureAppServices appServicesMetadata)
+            public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
             {
             }
 
