@@ -33,6 +33,7 @@ $VSPackages = @(
     "Microsoft.Net.Component.4.7.TargetingPack",
     "Microsoft.Net.Component.4.5.TargetingPack",
     "Microsoft.Net.Component.4.6.1.TargetingPack",
+    "Microsoft.Net.Component.4.6.2.TargetingPack",
     "Microsoft.Net.Component.4.8.SDK",
     "Microsoft.VisualStudio.Component.FSharp",
     "Microsoft.VisualStudio.Component.FSharp.WebTemplates",
