@@ -18,7 +18,6 @@ using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
-    [Collection(nameof(AzureAppServicesTestCollection))]
     public class AzureAppServicesTests
     {
         internal static readonly string DeploymentId = "AzureExampleSiteName";
@@ -200,8 +199,9 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         }
 
         [Fact]
-        public void PopulatesOneSpanPerChunk()
+        public void DoNotTagSpans()
         {
+            // AAS Tags are handled at serialization now. So no tags should be set on spans
             var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             var settings = new TracerSettings(vars);
             var tracer = TracerHelper.Create(settings);
@@ -234,12 +234,17 @@ namespace Datadog.Trace.Tests.PlatformHelpers
 
             Assert.NotEmpty(spans);
 
-            var spansWithTag =
-                spans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) == ExpectedResourceId).ToList();
-
-            // We should have one span decorated per traceId
-            spansWithTag.Should().HaveCount(iterations);
-            spansWithTag.Select(span => span.TraceId).Should().OnlyHaveUniqueItems();
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteName) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteKind) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSiteType) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesSubscriptionId) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesResourceId) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceId) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesInstanceName) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesOperatingSystem) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesRuntime) != null);
+            spans.Should().NotContain(s => s.GetTag(Tags.AzureAppServicesExtensionVersion) != null);
         }
 
         private IConfigurationSource GetMockVariables(
