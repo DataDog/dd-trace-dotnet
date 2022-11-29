@@ -7,8 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
-using Datadog.Trace.Ci.Coverage.Models;
+using System.Reflection;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -37,8 +36,10 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         GlobalContainer.Clear();
     }
 
-    public IReadOnlyList<CoveragePercentages> GetCodeCoveragePercentage()
+    public GlobalCoverageInfo GetCodeCoveragePercentage()
     {
+        const int HIDDEN = 0xFEEFEE;
+
         // Get all ModuleValues
         var lstModulesInstances = new List<ModuleValue>();
         lstModulesInstances.AddRange(GlobalContainer.CloseContext());
@@ -50,142 +51,93 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
         GlobalContainer.Clear();
 
-        var lstCoverageValues = new List<CoveragePercentages>();
-
-        // Process
-        var totalGlobalSequencePoints = 0L;
-        var executedGlobalSequencePoints = 0L;
-        foreach (var moduleValues in lstModulesInstances.GroupBy(i => i.Module))
+        var globalCoverage = new GlobalCoverageInfo();
+        var moduleProcessed = new HashSet<Module>();
+        foreach (var moduleValue in lstModulesInstances)
         {
-            var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValues.Key);
+            if (moduleValue is null)
+            {
+                continue;
+            }
+
+            var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValue.Module);
             if (moduleDef is null)
             {
                 continue;
             }
 
-            var moduleMetadata = moduleValues.First().Metadata;
-
-            var totalModuleSequencePoints = moduleMetadata.TotalInstructions;
-            var executedModuleSequencePoints = 0L;
-            totalGlobalSequencePoints += totalModuleSequencePoints;
-
-            var totalTypesCount = moduleMetadata.GetTotalTypes();
-            for (var i = 0; i < totalTypesCount; i++)
+            var componentCoverageInfo = new ComponentCoverageInfo(moduleDef.FullName);
+            for (var tIdx = 0; tIdx < moduleValue.Metadata.GetTotalTypes(); tIdx++)
             {
-                var totalTypeSequencePoints = 0L;
-                var executedTypeSequencePoints = 0L;
-
-                var totalMethodsCount = moduleMetadata.GetTotalMethodsOfTypeOrDefault(i);
-                for (var typeMethodIdx = 0; typeMethodIdx < totalMethodsCount; typeMethodIdx++)
+                var typeValue = moduleValue.Types[tIdx];
+                if (typeValue is null && moduleProcessed.Contains(moduleValue.Module))
                 {
-                    totalTypeSequencePoints += moduleMetadata.GetTotalSequencePointsOfMethodOrDefault(i, typeMethodIdx);
-                }
-
-                var typeDef = moduleDef.Types[i];
-                var fullName = typeDef.FullName;
-                var typeValues = moduleValues
-                                .Where(m => m.Types[i] != null)
-                                .Select(m => m.Types[i]!)
-                                .ToList();
-                if (typeValues.Count == 0)
-                {
-                    // Log.Debug("GCov: [Type] {typeName} doesn't have coverage", fullName);
                     continue;
                 }
 
-                for (var j = 0; j < totalMethodsCount; j++)
+                var typeDef = moduleDef.Types[tIdx];
+                for (var mIdx = 0; mIdx < moduleValue.Metadata.GetTotalMethodsOfTypeOrDefault(tIdx); mIdx++)
                 {
-                    var totalMethodSequencePoints = moduleMetadata.GetTotalSequencePointsOfMethod(i, j);
-                    var executedMethodSequencePoints = 0L;
-
-                    var methodDef = typeDef.Methods[j];
-                    var methodName = methodDef.Name;
-                    var methodValues = typeValues
-                                      .Where(t => t.Methods[j] != null)
-                                      .Select(t => t.Methods[j]!)
-                                      .ToList();
-                    if (methodValues.Count == 0)
+                    var methodValue = typeValue?.Methods[mIdx];
+                    if (methodValue is null && moduleProcessed.Contains(moduleValue.Module))
                     {
-                        // Log.Debug("GCov: [Method] {typeName}.{methodName} doesn't have coverage", fullName, methodName);
                         continue;
                     }
 
-                    var seqPointsCount = methodValues[0].SequencePoints.Length;
-                    for (var seqPointIdx = 0; seqPointIdx < seqPointsCount; seqPointIdx++)
+                    var methodDef = typeDef.Methods[mIdx];
+                    if (methodDef.HasBody && methodDef.Body.HasInstructions)
                     {
-                        foreach (var methodValue in methodValues)
+                        var seqPoints = new List<SequencePoint>(methodValue?.SequencePoints?.Length ?? methodDef.Body.Instructions.Count);
+                        foreach (var instruction in methodDef.Body.Instructions)
                         {
-                            if (methodValue.SequencePoints[seqPointIdx] != 0)
+                            if (instruction.SequencePoint is null ||
+                                instruction.SequencePoint.StartLine == HIDDEN ||
+                                instruction.SequencePoint.EndLine == HIDDEN)
                             {
-                                executedGlobalSequencePoints++;
-                                executedModuleSequencePoints++;
-                                executedTypeSequencePoints++;
-                                executedMethodSequencePoints++;
-                                break;
+                                continue;
                             }
+
+                            seqPoints.Add(instruction.SequencePoint);
+                        }
+
+                        FileCoverageInfo? fileCoverageInfo = null;
+                        var seqPointsCount = methodValue?.SequencePoints?.Length ?? seqPoints.Count;
+                        for (var x = 0; x < seqPointsCount; x++)
+                        {
+                            var seqPoint = seqPoints[x];
+                            fileCoverageInfo ??= new FileCoverageInfo(CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false));
+
+                            var repInSeqPoints = 0;
+                            if (methodValue?.SequencePoints?.Length > x)
+                            {
+                                repInSeqPoints = methodValue.SequencePoints[x];
+                            }
+                            else if (methodValue?.SequencePoints is not null)
+                            {
+                                Log.Warning($"Index doesn't found: {fileCoverageInfo.Path} | {seqPoint.StartLine}:{seqPoint.StartColumn}:{seqPoint.EndLine}:{seqPoint.EndColumn} | {methodDef.FullName} | {x} | {methodValue.SequencePoints.Length}");
+                            }
+
+                            fileCoverageInfo.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
+                        }
+
+                        if (fileCoverageInfo is not null)
+                        {
+                            componentCoverageInfo.Add(fileCoverageInfo);
                         }
                     }
-
-                    lstCoverageValues.Add(new CoveragePercentages(
-                                              moduleValues.Key.Name,
-                                              fullName,
-                                              methodDef.FullName,
-                                              totalMethodSequencePoints,
-                                              executedMethodSequencePoints));
                 }
-
-                lstCoverageValues.Add(new CoveragePercentages(
-                                          moduleValues.Key.Name,
-                                          fullName,
-                                          null,
-                                          totalTypeSequencePoints,
-                                          executedTypeSequencePoints));
             }
 
-            lstCoverageValues.Add(new CoveragePercentages(
-                                      moduleValues.Key.Name,
-                                      null,
-                                      null,
-                                      totalModuleSequencePoints,
-                                      executedModuleSequencePoints));
+            moduleProcessed.Add(moduleValue.Module);
+            globalCoverage.Add(componentCoverageInfo);
         }
 
-        lstCoverageValues.Insert(0, new CoveragePercentages(
-                                     null,
-                                     null,
-                                     null,
-                                     totalGlobalSequencePoints,
-                                     executedGlobalSequencePoints));
-        return lstCoverageValues.AsReadOnly();
-    }
-
-    public readonly struct CoveragePercentages
-    {
-        public readonly string? ModuleName;
-        public readonly string? TypeName;
-        public readonly string? MethodName;
-        public readonly double Percentage;
-        public readonly double TotalSequencePoints;
-        public readonly double ExecutedSequencePoints;
-
-        public CoveragePercentages(string? moduleName, string? typeName, string? methodName, double totalSequencePoints, double executedSequencePoints)
+        if (Log.IsEnabled(LogEventLevel.Debug))
         {
-            ModuleName = moduleName;
-            TypeName = typeName;
-            MethodName = methodName;
-            Percentage = Math.Round((executedSequencePoints / totalSequencePoints) * 100, 2);
-            TotalSequencePoints = totalSequencePoints;
-            ExecutedSequencePoints = executedSequencePoints;
-
-            Log.Debug("**************************************************************");
-            Log.Debug("   GCov: Module: {moduleName}", moduleName);
-            Log.Debug("   GCov: Type: {typeName}", typeName);
-            Log.Debug("   GCov: Method: {methodName}", methodName);
-            Log.Debug("   GCov: Total Sequence Points: {totalSequencePoints}", totalSequencePoints);
-            Log.Debug("   GCov: Executed Sequence Points: {executedSequencePoints}", executedSequencePoints);
-            Log.Debug("   GCov: Percentage: {percentage}%", Percentage);
-            Log.Debug("**************************************************************");
+            Log.Debug("Global Coverage payload: {payload}", JsonConvert.SerializeObject(globalCoverage));
         }
+
+        return globalCoverage;
     }
 
     public abstract class CoverageInfo
@@ -218,7 +170,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                 foreach (var segment in fCovInfo.Segments)
                 {
                     total++;
-                    if (segment[5] != 0)
+                    if (segment[4] != 0)
                     {
                         executed++;
                     }
@@ -416,14 +368,14 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         public FileCoverageInfo(string? path)
         {
             Path = path;
-            Segments = new List<int[]>();
+            Segments = new List<uint[]>();
         }
 
         [JsonProperty("path", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public string? Path { get; set; }
 
         [JsonProperty("segments", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public List<int[]> Segments { get; set; }
+        public List<uint[]> Segments { get; set; }
 
         public static FileCoverageInfo? operator +(FileCoverageInfo? a, FileCoverageInfo? b)
         {
@@ -442,30 +394,45 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             else if (a.Path == b.Path)
             {
                 var fcInfo = new FileCoverageInfo(a.Path);
-                var aSegments = a.Segments ?? Enumerable.Empty<int[]>();
-                var bSegments = b.Segments ?? Enumerable.Empty<int[]>();
-                foreach (var segmentsGroup in aSegments.Concat(bSegments).GroupBy(s => new
-                         {
-                             StartLine = s[0],
-                             StartColumn = s[1],
-                             EndLine = s[2],
-                             EndColumn = s[3]
-                         }))
+                var aSegments = a.Segments ?? Enumerable.Empty<uint[]>();
+                var bSegments = b.Segments ?? Enumerable.Empty<uint[]>();
+
+                foreach (var segment in aSegments)
                 {
-                    fcInfo.Segments.Add(new[]
-                    {
-                        segmentsGroup.Key.StartLine,
-                        segmentsGroup.Key.StartColumn,
-                        segmentsGroup.Key.EndLine,
-                        segmentsGroup.Key.EndColumn,
-                        segmentsGroup.Sum(s => s[5]),
-                    });
+                    fcInfo.Add(segment);
+                }
+
+                foreach (var segment in bSegments)
+                {
+                    fcInfo.Add(segment);
                 }
 
                 return fcInfo;
             }
 
             throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
+        }
+
+        public void Add(uint[] segment)
+        {
+            if (segment?.Length == 5)
+            {
+                var segIdx = Segments.FindIndex(
+                    s =>
+                        s[0] == segment[0] &&
+                        s[1] == segment[1] &&
+                        s[2] == segment[2] &&
+                        s[3] == segment[3]);
+
+                if (segIdx != -1)
+                {
+                    Segments[segIdx][4] += segment[4];
+                }
+                else
+                {
+                    Segments.Add(segment);
+                }
+            }
         }
     }
 }
