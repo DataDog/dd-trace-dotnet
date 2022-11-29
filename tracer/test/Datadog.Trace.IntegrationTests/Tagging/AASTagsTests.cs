@@ -47,8 +47,7 @@ public class AASTagsTests
     [Fact]
     public async Task NoAasTagsIfNotInAASContext()
     {
-        var source = GetNullMockVariables();
-        var settings = new TracerSettings(source);
+        var settings = new TracerSettings(null);
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
         var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
@@ -195,54 +194,20 @@ public class AASTagsTests
         return true;
     }
 
-    private IConfigurationSource GetNullMockVariables()
-    {
-        var vars = Environment.GetEnvironmentVariables();
-
-        var collection = new NameValueCollection();
-        foreach (DictionaryEntry kvp in vars)
-        {
-            collection.Add(kvp.Key as string, kvp.Value as string);
-        }
-
-        return new NameValueConfigurationSource(collection);
-    }
-
     private IConfigurationSource GetMockVariables()
     {
-        var vars = Environment.GetEnvironmentVariables();
-
-        if (vars.Contains(ConfigurationKeys.AzureAppService.InstanceNameKey))
-        {
-            // This is the COMPUTERNAME key which we'll remove for consistent testing
-            vars.Remove(ConfigurationKeys.AzureAppService.InstanceNameKey);
-        }
-
-        if (vars.Contains(ConfigurationKeys.DebugEnabled))
-        {
-            vars.Remove(ConfigurationKeys.DebugEnabled);
-        }
-
-        if (!vars.Contains(ConfigurationKeys.ApiKey))
+        var collection = new NameValueCollection
         {
             // This is a needed configuration for the AAS extension
-            vars.Add(ConfigurationKeys.ApiKey, "1");
-        }
-
-        vars.Add(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1");
-        vars.Add(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, $"SubscriptionId+ResourceGroup-EastUSwebspace");
-        vars.Add(ConfigurationKeys.AzureAppService.ResourceGroupKey, "SiteResourceGroup");
-        vars.Add(ConfigurationKeys.AzureAppService.SiteNameKey, "SiteName");
-        vars.Add(ConfigurationKeys.AzureAppService.OperatingSystemKey, "windows");
-        vars.Add(ConfigurationKeys.AzureAppService.InstanceIdKey, "InstanceId");
-        vars.Add(ConfigurationKeys.AzureAppService.InstanceNameKey, "InstanceName");
-
-        var collection = new NameValueCollection();
-
-        foreach (DictionaryEntry kvp in vars)
-        {
-            collection.Add(kvp.Key as string, kvp.Value as string);
-        }
+            { ConfigurationKeys.ApiKey, "1" },
+            { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
+            { ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, $"SubscriptionId+ResourceGroup-EastUSwebspace" },
+            { ConfigurationKeys.AzureAppService.ResourceGroupKey, "SiteResourceGroup" },
+            { ConfigurationKeys.AzureAppService.SiteNameKey, "SiteName" },
+            { ConfigurationKeys.AzureAppService.OperatingSystemKey, "windows" },
+            { ConfigurationKeys.AzureAppService.InstanceIdKey, "InstanceId" },
+            { ConfigurationKeys.AzureAppService.InstanceNameKey, "InstanceName" },
+        };
 
         return new NameValueConfigurationSource(collection);
     }
