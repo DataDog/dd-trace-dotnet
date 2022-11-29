@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public const string LdPreloadNotSet = "The environment variable LD_PRELOAD is not set. Check the Datadog .NET Profiler documentation to set it properly.";
 
-        public const string TracerEnabled = "DD_TRACE_ENABLED is set to false, tracing is disabled for this process.";
+        public static string TracerNotEnabled(string value) => $"The value for DD_TRACE_ENABLED is set to {value}, to enable automatic tracing set it to true.";
 
         public static string ApiWrapperNotFound(string path) => $"The environment variable LD_PRELOAD is set to '{path}' but the file could not be found. Check the Datadog .NET Profiler documentation to set it properly.";
 

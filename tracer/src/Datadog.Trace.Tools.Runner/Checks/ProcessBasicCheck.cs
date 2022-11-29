@@ -175,11 +175,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 }
             }
 
-            process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue);
-
-            if (traceEnabledValue == "false")
+            if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
             {
-                Utils.WriteError(TracerEnabled);
+                if (!ParseBooleanConfigurationValue(traceEnabledValue))
+                {
+                    Utils.WriteError(TracerNotEnabled(traceEnabledValue));
+                }
             }
 
             return ok;
