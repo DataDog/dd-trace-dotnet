@@ -213,9 +213,9 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             double total = 0L;
             double executed = 0L;
 
-            if (this is MethodCoverageInfo { Segments.Length: > 0 } methodCInfo)
+            if (this is FileCoverageInfo { Segments.Count: > 0 } fCovInfo)
             {
-                foreach (var segment in methodCInfo.Segments)
+                foreach (var segment in fCovInfo.Segments)
                 {
                     total++;
                     if (segment[5] != 0)
@@ -223,244 +223,246 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                         executed++;
                     }
                 }
-
-                goto set;
             }
-
-            if (this is TypeCoverageInfo { Methods.Count: > 0 } typeCInfo)
+            else if (this is ComponentCoverageInfo { Files.Count: > 0 } cCovInfo)
             {
-                foreach (var method in typeCInfo.Methods)
+                foreach (var file in cCovInfo.Files)
                 {
-                    var data = method.Data;
+                    var data = file.Data;
                     total += data[1];
                     executed += data[2];
                 }
-
-                goto set;
             }
-
-            if (this is ModuleCoverageInfo { Types.Count: > 0 } modCInfo)
+            else if (this is GlobalCoverageInfo { Components.Count: > 0 } gCovInfo)
             {
-                foreach (var type in modCInfo.Types)
+                foreach (var component in gCovInfo.Components)
                 {
-                    var data = type.Data;
+                    var data = component.Data;
                     total += data[1];
                     executed += data[2];
                 }
-
-                goto set;
             }
 
-            if (this is GlobalCoverageInfo { Modules.Count: > 0 } globalCInfo)
-            {
-                foreach (var module in globalCInfo.Modules)
-                {
-                    var data = module.Data;
-                    total += data[1];
-                    executed += data[2];
-                }
-
-                goto set;
-            }
-
-            set:
             _data = new[] { Math.Round((executed / total) * 100, 2), total, executed };
         }
 
-        private void ClearData()
+        protected void ClearData()
         {
-            if (this is MethodCoverageInfo)
-            {
-                _data = null;
-                return;
-            }
+            _data = null;
 
-            if (this is TypeCoverageInfo { Methods.Count: > 0 } typeCInfo)
+            if (this is ComponentCoverageInfo { Files.Count: > 0 } cCovInfo)
             {
-                foreach (var method in typeCInfo.Methods)
+                foreach (var file in cCovInfo.Files)
                 {
-                    method.ClearData();
+                    file.ClearData();
                 }
-
-                return;
             }
-
-            if (this is ModuleCoverageInfo { Types.Count: > 0 } modCInfo)
+            else if (this is GlobalCoverageInfo { Components.Count: > 0 } gCovInfo)
             {
-                foreach (var type in modCInfo.Types)
+                foreach (var component in gCovInfo.Components)
                 {
-                    type.ClearData();
+                    component.ClearData();
                 }
-
-                return;
-            }
-
-            if (this is GlobalCoverageInfo { Modules.Count: > 0 } globalCInfo)
-            {
-                foreach (var module in globalCInfo.Modules)
-                {
-                    module.ClearData();
-                }
-
-                return;
             }
         }
-    }
-
-    public abstract class NamedCoverageInfo : CoverageInfo
-    {
-        public NamedCoverageInfo(string name)
-        {
-            Name = name;
-        }
-
-        [JsonProperty("name", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public string Name { get; }
     }
 
     public sealed class GlobalCoverageInfo : CoverageInfo
     {
         public GlobalCoverageInfo()
         {
-            Modules = new List<ModuleCoverageInfo>();
+            Components = new List<ComponentCoverageInfo>();
         }
 
-        [JsonProperty("modules", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public List<ModuleCoverageInfo> Modules { get; }
+        [JsonProperty("components", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public List<ComponentCoverageInfo> Components { get; }
 
         public static GlobalCoverageInfo operator +(GlobalCoverageInfo a, GlobalCoverageInfo b)
         {
             var globalCovInfo = new GlobalCoverageInfo();
-            var aModules = a?.Modules ?? Enumerable.Empty<ModuleCoverageInfo>();
-            var bModules = b?.Modules ?? Enumerable.Empty<ModuleCoverageInfo>();
-            foreach (var moduleGroup in aModules.Concat(bModules).GroupBy(m => m.Name))
+            var aComponents = a?.Components ?? Enumerable.Empty<ComponentCoverageInfo>();
+            var bComponents = b?.Components ?? Enumerable.Empty<ComponentCoverageInfo>();
+            foreach (var componentGroup in aComponents.Concat(bComponents).GroupBy(m => m.Name))
             {
-                var moduleGroupArray = moduleGroup.ToArray();
-                if (moduleGroupArray.Length == 1)
+                var componentGroupArray = componentGroup.ToArray();
+                if (componentGroupArray.Length == 1)
                 {
-                    globalCovInfo.Modules.Add(moduleGroupArray[0]);
+                    globalCovInfo.Components.Add(componentGroupArray[0]);
                 }
                 else
                 {
-                    var res = moduleGroupArray[0];
-                    for (var i = 1; i < moduleGroupArray.Length; i++)
+                    var res = componentGroupArray[0];
+                    for (var i = 1; i < componentGroupArray.Length; i++)
                     {
-                        res += moduleGroupArray[i];
+                        res += componentGroupArray[i];
                     }
 
-                    globalCovInfo.Modules.Add(res);
+                    if (res is not null)
+                    {
+                        globalCovInfo.Components.Add(res);
+                    }
                 }
             }
 
             return globalCovInfo;
         }
+
+        public void Add(ComponentCoverageInfo componentCoverageInfo)
+        {
+            var previous = Components.SingleOrDefault(m => m.Name == componentCoverageInfo.Name);
+            if (previous is not null)
+            {
+                Components.Remove(previous);
+                var res = previous + componentCoverageInfo;
+                if (res is not null)
+                {
+                    Components.Add(res);
+                    ClearData();
+                }
+            }
+            else
+            {
+                Components.Add(componentCoverageInfo);
+                ClearData();
+            }
+        }
     }
 
-    public sealed class ModuleCoverageInfo : NamedCoverageInfo
+    public sealed class ComponentCoverageInfo : CoverageInfo
     {
-        public ModuleCoverageInfo(string name)
-            : base(name)
+        public ComponentCoverageInfo(string? name)
         {
-            Types = new List<TypeCoverageInfo>();
+            Name = name;
+            Files = new List<FileCoverageInfo>();
         }
 
-        [JsonProperty("types", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public List<TypeCoverageInfo> Types { get; }
+        [JsonProperty("name", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string? Name { get; set; }
 
-        public static ModuleCoverageInfo operator +(ModuleCoverageInfo a, ModuleCoverageInfo b)
+        [JsonProperty("files", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public List<FileCoverageInfo> Files { get; }
+
+        public static ComponentCoverageInfo? operator +(ComponentCoverageInfo? a, ComponentCoverageInfo? b)
         {
-            if (a != null &&
-                b != null &&
-                a.Name == b.Name &&
-                a.Types.Count == b.Types.Count)
+            if (a is null && b is null)
             {
-                var modCovInfo = new ModuleCoverageInfo(a.Name);
-                foreach (var type in a.Types)
+                return null;
+            }
+            else if (b is null)
+            {
+                return a;
+            }
+            else if (a is null)
+            {
+                return b;
+            }
+            else if (a.Name == b.Name)
+            {
+                var componentCoverageInfo = new ComponentCoverageInfo(a.Name);
+
+                var aFiles = a.Files ?? Enumerable.Empty<FileCoverageInfo>();
+                var bFiles = b.Files ?? Enumerable.Empty<FileCoverageInfo>();
+                foreach (var filesGroup in aFiles.Concat(bFiles).GroupBy(f => f.Path))
                 {
-                    var bType = b.Types.Single(t => t.Name == type.Name);
-                    modCovInfo.Types.Add(type + bType);
+                    var filesGroupArray = filesGroup.ToArray();
+                    if (filesGroupArray.Length == 1)
+                    {
+                        componentCoverageInfo.Files.Add(filesGroupArray[0]);
+                    }
+                    else
+                    {
+                        var res = filesGroupArray[0];
+                        for (var i = 1; i < filesGroupArray.Length; i++)
+                        {
+                            res += filesGroupArray[i];
+                        }
+
+                        if (res is not null)
+                        {
+                            componentCoverageInfo.Files.Add(res);
+                        }
+                    }
                 }
 
-                return modCovInfo;
+                return componentCoverageInfo;
             }
 
             throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
         }
-    }
 
-    public sealed class TypeCoverageInfo : NamedCoverageInfo
-    {
-        public TypeCoverageInfo(string name)
-            : base(name)
+        public void Add(FileCoverageInfo fileCoverageInfo)
         {
-            Methods = new List<MethodCoverageInfo>();
-        }
-
-        [JsonProperty("methods", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public List<MethodCoverageInfo> Methods { get; }
-
-        public static TypeCoverageInfo operator +(TypeCoverageInfo a, TypeCoverageInfo b)
-        {
-            if (a != null &&
-                b != null &&
-                a.Name == b.Name &&
-                a.Methods.Count == b.Methods.Count)
+            var previous = Files.SingleOrDefault(m => m.Path == fileCoverageInfo.Path);
+            if (previous is not null)
             {
-                var typeCovInfo = new TypeCoverageInfo(a.Name);
-                foreach (var method in a.Methods)
+                Files.Remove(previous);
+                var res = previous + fileCoverageInfo;
+                if (res is not null)
                 {
-                    var bMethod = b.Methods.Single(m => m.Name == method.Name && m.FileName == method.FileName);
-                    typeCovInfo.Methods.Add(method + bMethod);
+                    Files.Add(res);
+                    ClearData();
                 }
-
-                return typeCovInfo;
             }
-
-            throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
+            else
+            {
+                Files.Add(fileCoverageInfo);
+                ClearData();
+            }
         }
     }
 
-    public sealed class MethodCoverageInfo : NamedCoverageInfo
+    public sealed class FileCoverageInfo : CoverageInfo
     {
-        public MethodCoverageInfo(string name)
-            : base(name)
+        public FileCoverageInfo(string? path)
         {
-            Segments = Array.Empty<int[]>();
+            Path = path;
+            Segments = new List<int[]>();
         }
 
-        [JsonProperty("filename", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public string? FileName { get; set; }
+        [JsonProperty("path", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string? Path { get; set; }
 
         [JsonProperty("segments", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public int[][] Segments { get; set; }
+        public List<int[]> Segments { get; set; }
 
-        public static MethodCoverageInfo operator +(MethodCoverageInfo a, MethodCoverageInfo b)
+        public static FileCoverageInfo? operator +(FileCoverageInfo? a, FileCoverageInfo? b)
         {
-            if (a != null &&
-                b != null &&
-                a.FileName == b.FileName &&
-                a.Name == b.Name &&
-                a.Segments.Length == b.Segments.Length)
+            if (a is null && b is null)
             {
-                var mcInfo = new MethodCoverageInfo(a.Name)
+                return null;
+            }
+            else if (b is null)
+            {
+                return a;
+            }
+            else if (a is null)
+            {
+                return b;
+            }
+            else if (a.Path == b.Path)
+            {
+                var fcInfo = new FileCoverageInfo(a.Path);
+                var aSegments = a.Segments ?? Enumerable.Empty<int[]>();
+                var bSegments = b.Segments ?? Enumerable.Empty<int[]>();
+                foreach (var segmentsGroup in aSegments.Concat(bSegments).GroupBy(s => new
+                         {
+                             StartLine = s[0],
+                             StartColumn = s[1],
+                             EndLine = s[2],
+                             EndColumn = s[3]
+                         }))
                 {
-                    FileName = a.FileName,
-                    Segments = new int[a.Segments.Length][]
-                };
-
-                for (var i = 0; i < mcInfo.Segments.Length; i++)
-                {
-                    mcInfo.Segments[i] = new[]
+                    fcInfo.Segments.Add(new[]
                     {
-                        a.Segments[i][0],
-                        a.Segments[i][1],
-                        a.Segments[i][2],
-                        a.Segments[i][3],
-                        a.Segments[i][4] + b.Segments[i][4],
-                    };
+                        segmentsGroup.Key.StartLine,
+                        segmentsGroup.Key.StartColumn,
+                        segmentsGroup.Key.EndLine,
+                        segmentsGroup.Key.EndColumn,
+                        segmentsGroup.Sum(s => s[5]),
+                    });
                 }
 
-                return mcInfo;
+                return fcInfo;
             }
 
             throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
