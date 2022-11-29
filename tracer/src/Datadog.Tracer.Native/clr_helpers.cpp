@@ -1175,7 +1175,7 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
     }
     
     resolvedTypeDefToken = mdTokenNil;
-    Logger::Error("[ResolveTypeInternal] ResolveTypeInternal has failed. Reason: Module not found in the loaded modules for type name: ", shared::WSTRING(refTypeName.data()));
+    Logger::Warn("[ResolveTypeInternal] ResolveTypeInternal has failed. Reason: Module not found in the loaded modules for type name: ", shared::WSTRING(refTypeName.data()));
     return E_NOTIMPL;
 }
 
@@ -1315,6 +1315,101 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
 
     return ResolveTypeInternal(info, loadedModules, refTypeName, resolvedTypeDefToken, resolutionScopeName,
                              resolvedTypeDefToken, resolvedMetadataImport);
+}
+
+// GenericTypeProps
+HRESULT GenericTypeProps::TryParse()
+{
+    // Note: Not all signatures are supported. Internal Jira ticket: DEBUG-1243.
+    // The following two signatures are supported for now:
+    // VAR | MVAR Number
+    // or GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
+
+    PCCOR_SIGNATURE pbCur = pbBase;
+    const PCCOR_SIGNATURE pbEnd = pbBase + len;
+    unsigned char specElementType;
+
+    unsigned offset = 0;
+    mdToken openGenericToken = mdTokenNil;
+
+    IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &specElementType));
+
+    while (specElementType == ELEMENT_TYPE_BYREF)
+    {
+        IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &specElementType));
+        offset++;
+    }
+
+    unsigned genericParamPosition;
+    if (specElementType == ELEMENT_TYPE_VAR || specElementType == ELEMENT_TYPE_MVAR)
+    {
+        IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &genericParamPosition));
+
+        std::vector<std::tuple<PCCOR_SIGNATURE, ULONG, unsigned char>> signatures;
+        SpecElementType = specElementType;
+        OpenTypeToken = openGenericToken;
+        GenericElementType = 0;
+        ParamsCount = 0;
+        IndexOfFirstParam = offset;
+        ParamPosition = genericParamPosition;
+        ParamsSignature = std::move(signatures);
+
+        return S_OK;
+    }
+
+    if (specElementType != ELEMENT_TYPE_GENERICINST) return E_FAIL;
+
+    offset++;
+    unsigned char elementType;
+    IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &elementType));
+
+    // Skip ELEMENT_TYPE_BYREF. Add more elements that could be here, if any...
+    while (elementType == ELEMENT_TYPE_BYREF)
+    {
+        IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &elementType));
+        offset++;
+    }
+
+    if (elementType != ELEMENT_TYPE_CLASS && elementType != ELEMENT_TYPE_VALUETYPE)
+        return E_FAIL;
+
+    offset++;
+    const auto tokenSigLength = CorSigUncompressToken(pbCur, &openGenericToken);
+    if (tokenSigLength == static_cast<ULONG>(-1))
+        return E_FAIL;
+    offset += tokenSigLength;
+
+    pbCur += tokenSigLength;
+    unsigned paramCount;
+    IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &paramCount));
+
+    offset++;
+    std::vector<std::tuple<PCCOR_SIGNATURE, ULONG, unsigned char>> signatures;
+    for (unsigned i = 0; i < paramCount; i++)
+    {
+        PCCOR_SIGNATURE copySig = pbCur;
+        IfFalseRetFAIL(ParseType(pbCur, pbEnd));
+        
+        PCCOR_SIGNATURE elementTypeSig = copySig;
+
+        while (*elementTypeSig == ELEMENT_TYPE_BYREF)
+        {
+            elementTypeSig++;
+        }
+
+        unsigned char paramElementType = *elementTypeSig;
+        signatures.emplace_back(std::make_tuple(copySig, static_cast<ULONG>(pbCur - copySig), paramElementType));
+    }
+
+    SpecElementType = specElementType;
+    OpenTypeToken = openGenericToken;
+    GenericElementType = elementType;
+    ParamsCount = paramCount;
+    IndexOfFirstParam = offset;
+    ParamPosition = 0;
+    ParamsSignature = std::move(signatures);
+
+    return S_OK;
 }
 
 } // namespace trace

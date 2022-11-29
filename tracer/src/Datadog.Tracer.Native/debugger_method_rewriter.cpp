@@ -102,10 +102,8 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
 
         const auto [elementType, argTypeFlags] = argOrLocal.GetElementTypeAndFlags();
         
-        auto emit = moduleMetadata.metadata_emit;
         bool isTypeIsByRefLike = false;
-        const auto argOrLocalTok = argOrLocal.GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
-        HRESULT hr = IsTypeByRefLike(moduleMetadata, argOrLocalTok,isTypeIsByRefLike);
+        HRESULT hr = IsTypeByRefLike(moduleMetadata, argOrLocal, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
 
         if (FAILED(hr))
         {
@@ -1375,10 +1373,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         // In async methods, the return value can't be byref-like (it can't be Task<T> where T is byref-like, because
         // byref-like can't exist as a generic param). Therefore, we only need to worry about non-async methods.
-        auto emit = module_metadata.metadata_emit;
         bool isTypeIsByRefLike = false;
-        const auto methodReturnTypeTok = methodReturnType.GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
-        hr = IsTypeByRefLike(module_metadata, methodReturnTypeTok, isTypeIsByRefLike);
+        hr = IsTypeByRefLike(module_metadata, methodReturnType, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
 
         if (FAILED(hr))
         {
@@ -1391,7 +1387,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
 
     bool isTypeIsByRefLike = false;
-    hr = IsTypeByRefLike(module_metadata, caller->type.id, isTypeIsByRefLike);
+    hr = IsTypeTokenByRefLike(module_metadata, caller->type.id, isTypeIsByRefLike);
 
     if (FAILED(hr))
     {
@@ -1550,19 +1546,50 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
 HRESULT DebuggerMethodRewriter::IsTypeByRefLike(
     ModuleMetadata& module_metadata, 
-    mdToken typeDefOrRefOrSpecToken, 
+    const TypeSignature& typeSig,
+    const mdAssemblyRef& corLibAssemblyRef,
     bool& isTypeIsByRefLike)
 {
-    ComPtr<IMetaDataImport2> metaDataImportOfTypeDef = module_metadata.metadata_import;
+    auto metaDataImportOfTypeDef = module_metadata.metadata_import;
+    auto metaDataEmitOfTypeDef = module_metadata.metadata_emit;
+    auto typeDefOrRefOrSpecToken = typeSig.GetTypeTok(metaDataEmitOfTypeDef, corLibAssemblyRef);
 
     // Get open type from type spec
     if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeSpec)
     {
-        // VAR | MVAR Number
-        // or GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
+        PCCOR_SIGNATURE sig;
+        const ULONG sigLength = typeSig.GetSignature(sig);
+        GenericTypeProps genericProps {sig, sigLength};
+        const auto hr = genericProps.TryParse();
 
-        // Generics are not supported for now. Assuming we are not dealing with by-ref like.
+        if (hr == S_OK && genericProps.OpenTypeToken != mdTokenNil)
+        {
+            typeDefOrRefOrSpecToken = genericProps.OpenTypeToken;
+        }
+        else if (genericProps.SpecElementType == ELEMENT_TYPE_VAR || genericProps.SpecElementType == ELEMENT_TYPE_MVAR)
+        {
+            isTypeIsByRefLike = false;
+            return S_OK;
+        }
+        else
+        {
+            Logger::Warn("[IsTypeByRefLike] Failed to get open type token for generic type. Assuming no byref-like.");
+            isTypeIsByRefLike = false;
+            return S_OK;
+        }
+    }
 
+    return IsTypeTokenByRefLike(module_metadata, typeDefOrRefOrSpecToken, isTypeIsByRefLike);
+}
+
+HRESULT DebuggerMethodRewriter::IsTypeTokenByRefLike(ModuleMetadata& module_metadata, mdToken typeDefOrRefOrSpecToken, bool& isTypeIsByRefLike)
+{
+    auto metaDataImportOfTypeDef = module_metadata.metadata_import;
+
+    // Get open type from type spec
+    if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeSpec)
+    {
+        Logger::Warn("IsTypeTokenByRefLike is not resolving type specs. Use IsTypeByRefLike instead.");
         isTypeIsByRefLike = false;
         return S_OK;
     }
@@ -1572,7 +1599,8 @@ HRESULT DebuggerMethodRewriter::IsTypeByRefLike(
         const auto& metadata_import = module_metadata.metadata_import;
         const auto& assembly_import = module_metadata.assembly_import;
 
-        auto hr = ResolveType(trace::profiler->info_, metadata_import, assembly_import, typeDefOrRefOrSpecToken, typeDefOrRefOrSpecToken,metaDataImportOfTypeDef);
+        auto hr = ResolveType(trace::profiler->info_, metadata_import, assembly_import, typeDefOrRefOrSpecToken,
+                              typeDefOrRefOrSpecToken, metaDataImportOfTypeDef);
 
         if (FAILED(hr))
         {

@@ -29,19 +29,19 @@ namespace Samples.Probes.SmokeTests
                 _whoAmI = whoAmI;
             }
 
-            [MethodProbeTestData]
+            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
             public ref ByRefLike CallMe(string @in, ByRefLike byRefLike, ref ByRefLike refByRefLike)
             {
                 return ref refByRefLike;
             }
 
-            [MethodProbeTestData]
+            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
             public ByRefLike CallMe2(string @in, ByRefLike byRefLike, ref ByRefLike refByRefLike)
             {
                 return byRefLike;
             }
 
-            [MethodProbeTestData]
+            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
             public string CallMe3(string @in, ByRefLike byRefLike, ref ByRefLike refByRefLike)
             {
                 return @in + "Hello World";

@@ -87,7 +87,9 @@ private:
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
                                                         MethodProbeDefinitions& methodProbes,
                                                         LineProbeDefinitions& lineProbes) const;
-    static HRESULT IsTypeByRefLike(ModuleMetadata& module_metadata, mdToken typeDefOrRefOrSpecToken, bool& isTypeIsByRefLike);
+    static HRESULT IsTypeByRefLike(ModuleMetadata& module_metadata, const TypeSignature& typeSig, const mdAssemblyRef& corLibAssemblyRef,
+                                   bool& isTypeIsByRefLike);
+    static HRESULT IsTypeTokenByRefLike(ModuleMetadata& module_metadata, mdToken typeDefOrRefOrSpecToken, bool& isTypeIsByRefLike);
     static std::vector<ILInstr*> GetBranchTargets(ILRewriter* pRewriter);
     static void AdjustBranchTargets(ILInstr* pFromInstr, ILInstr* pToInstr, const std::vector<ILInstr*>& branchTargets);
     static void AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr, ILRewriter* pRewriter);
