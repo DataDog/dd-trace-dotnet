@@ -51,7 +51,8 @@ namespace Datadog.Trace.Tools.Runner
             // If the agentless feature flag is enabled, we check for ApiKey
             // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
             var createTestSession = false;
-            var testSkippingDisabled = false;
+            var testSkippingEnabled = false;
+            var codeCoverageEnabled = false;
             if (settings is RunCiSettings ciSettings)
             {
                 var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
@@ -99,8 +100,8 @@ namespace Datadog.Trace.Tools.Runner
                     }
                 }
 
-                var enableCodeCoverage = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
-                testSkippingDisabled = ciVisibilitySettings.TestsSkippingEnabled == false;
+                codeCoverageEnabled = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
+                testSkippingEnabled = ciVisibilitySettings.TestsSkippingEnabled == true;
 
                 // If we have api and application key, and the code coverage or the tests skippeable environment variables
                 // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
@@ -110,11 +111,11 @@ namespace Datadog.Trace.Tools.Runner
                     var itrClient = new Ci.IntelligentTestRunnerClient(Ci.CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
                     // we should skip the framework info because we are interested in the target projects info not the runner one.
                     var itrSettings = itrClient.GetSettingsAsync(skipFrameworkInfo: true).GetAwaiter().GetResult();
-                    enableCodeCoverage = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
-                    testSkippingDisabled = itrSettings.TestsSkipping == false;
+                    codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
+                    testSkippingEnabled = itrSettings.TestsSkipping == true;
                 }
 
-                if (enableCodeCoverage)
+                if (codeCoverageEnabled)
                 {
                     // Check if we are running dotnet process
                     if (string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase) ||
@@ -152,10 +153,12 @@ namespace Datadog.Trace.Tools.Runner
             if (createTestSession && Program.CallbackForTests is null)
             {
                 session = TestSession.GetOrCreate(command, null, null, null, true);
+                session.SetTag(CommonTags.TestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
+                session.SetTag(CommonTags.CodeCoverageEnabled, codeCoverageEnabled ? "true" : "false");
 
                 // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
                 // In that case we tell the backend no tests are going to be skipped.
-                if (testSkippingDisabled)
+                if (!testSkippingEnabled)
                 {
                     session.SetTag(CommonTags.TestsSkipped, "false");
                 }

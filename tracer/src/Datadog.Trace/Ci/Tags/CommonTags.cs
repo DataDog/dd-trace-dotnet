@@ -159,5 +159,15 @@ namespace Datadog.Trace.Ci.Tags
         /// Intelligent Test Runner tests skipped flag
         /// </summary>
         public const string TestsSkipped = "_dd.ci.itr.tests_skipped";
+
+        /// <summary>
+        /// Intelligent Test Runner tests skipping is enabled flag
+        /// </summary>
+        public const string TestsSkippingEnabled = "itr.tests_skipping.enabled";
+
+        /// <summary>
+        /// Code Coverage is enabled flag
+        /// </summary>
+        public const string CodeCoverageEnabled = "code_coverage.enabled";
     }
 }
