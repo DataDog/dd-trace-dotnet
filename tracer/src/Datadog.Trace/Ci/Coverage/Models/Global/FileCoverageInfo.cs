@@ -20,10 +20,10 @@ internal sealed class FileCoverageInfo : CoverageInfo
         Segments = new List<uint[]>();
     }
 
-    [JsonProperty("path", DefaultValueHandling = DefaultValueHandling.Ignore)]
+    [JsonProperty("path")]
     public string? Path { get; set; }
 
-    [JsonProperty("segments", DefaultValueHandling = DefaultValueHandling.Ignore)]
+    [JsonProperty("segments")]
     public List<uint[]> Segments { get; set; }
 
     public static FileCoverageInfo? operator +(FileCoverageInfo? a, FileCoverageInfo? b)

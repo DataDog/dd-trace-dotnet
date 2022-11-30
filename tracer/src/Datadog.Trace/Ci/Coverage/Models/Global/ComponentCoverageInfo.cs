@@ -20,10 +20,10 @@ internal sealed class ComponentCoverageInfo : CoverageInfo
         Files = new List<FileCoverageInfo>();
     }
 
-    [JsonProperty("name", DefaultValueHandling = DefaultValueHandling.Ignore)]
+    [JsonProperty("name")]
     public string? Name { get; set; }
 
-    [JsonProperty("files", DefaultValueHandling = DefaultValueHandling.Ignore)]
+    [JsonProperty("files")]
     public List<FileCoverageInfo> Files { get; }
 
     public static ComponentCoverageInfo? operator +(ComponentCoverageInfo? a, ComponentCoverageInfo? b)

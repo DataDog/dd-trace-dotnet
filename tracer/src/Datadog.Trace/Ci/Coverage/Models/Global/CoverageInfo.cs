@@ -14,7 +14,7 @@ internal abstract class CoverageInfo
 {
     private double[]? _data;
 
-    [JsonProperty("data", DefaultValueHandling = DefaultValueHandling.Ignore)]
+    [JsonProperty("data")]
     public double[] Data
     {
         get

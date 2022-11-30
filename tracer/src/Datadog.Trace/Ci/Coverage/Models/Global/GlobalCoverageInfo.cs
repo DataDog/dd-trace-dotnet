@@ -18,7 +18,7 @@ internal sealed class GlobalCoverageInfo : CoverageInfo
         Components = new List<ComponentCoverageInfo>();
     }
 
-    [JsonProperty("components", DefaultValueHandling = DefaultValueHandling.Ignore)]
+    [JsonProperty("components")]
     public List<ComponentCoverageInfo> Components { get; }
 
     public static GlobalCoverageInfo operator +(GlobalCoverageInfo a, GlobalCoverageInfo b)
