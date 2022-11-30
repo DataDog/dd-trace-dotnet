@@ -139,9 +139,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             var profilerPath = GetNativeLoaderPath();
 
-            // Temporarily disable tiered compilation
-            environmentVariables["COMPlus_TieredCompilation"] = "0";
-
             environmentVariables["DD_NATIVELOADER_CONFIGFILE"] = GenerateLoaderConfigFile();
 
             if (!File.Exists(profilerPath))
@@ -346,6 +343,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private void AddTracerEnvironmentVariables()
         {
+            // Temporarily disable tiered compilation
+            CustomEnvironmentVariables["COMPlus_TieredCompilation"] = "0";
+
             CustomEnvironmentVariables["DD_TRACE_ENABLED"] = "1";
             CustomEnvironmentVariables["DD_DOTNET_TRACER_HOME"] = GetMonitoringHome();
         }
