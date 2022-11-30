@@ -35,7 +35,7 @@ public class LineProbesWithRevertTest : IRun
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    [MethodProbeTestData("System.Void", new[] { "System.String" }, phase: 1, skip: true /* Will be returned in the next PR - fix an issue when putting method probe and line probe one same method */)]
+    [MethodProbeTestData("System.Void", new[] { "System.String" }, phase: 1)]
     public void MethodToInstrument(string callerName)
     {
         int a = callerName.Length;

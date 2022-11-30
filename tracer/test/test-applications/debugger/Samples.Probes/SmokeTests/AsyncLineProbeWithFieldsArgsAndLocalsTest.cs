@@ -39,7 +39,7 @@ namespace Samples.Probes.SmokeTests
             }
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [MethodProbeTestData()]
+            [MethodProbeTestData]
             public async Task<string> Method(Generic someGenericObject, string input, Person goodPerson)
             {
                 var output = goodPerson.ToString() + someGenericObject.ToString() + goodPerson.Name;

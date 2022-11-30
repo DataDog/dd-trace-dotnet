@@ -99,12 +99,6 @@
                   "type": "HasLocalsAndReturnValue",
                   "value": "HasLocalsAndReturnValue"
                 }
-              },
-              "locals": {
-                "result": {
-                  "isNull": "true",
-                  "type": "String"
-                }
               }
             }
           }
@@ -155,12 +149,6 @@
                   },
                   "type": "HasLocalsAndReturnValue",
                   "value": "HasLocalsAndReturnValue"
-                }
-              },
-              "locals": {
-                "result": {
-                  "type": "String",
-                  "value": "00:00:07"
                 }
               }
             }

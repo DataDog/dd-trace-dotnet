@@ -4,11 +4,11 @@
     "debugger": {
       "diagnostics": {
         "Exception": null,
-        "probeId": "1828a3f0-e94b-eb91-81e3-12bcf19ac41a",
+        "probeId": "31d232fd-e292-63a1-cfc5-f0e71d98afd1",
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe 1828a3f0-e94b-eb91-81e3-12bcf19ac41a.",
+    "message": "Installed probe 31d232fd-e292-63a1-cfc5-f0e71d98afd1.",
     "service": "Probes"
   },
   {

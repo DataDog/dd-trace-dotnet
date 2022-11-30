@@ -12,7 +12,7 @@ namespace Samples.Probes.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData("System.String", new[] { "System.String" }, skip: true /* Will be returned in the next PR - fix an issue when putting method probe and line probe one same method */)]
+        [MethodProbeTestData("System.String", new[] { "System.String" })]
         public string Method(string lastName)
         {
             return lastName;

@@ -17,7 +17,7 @@ namespace Samples.Probes.SmokeTests
             public static string StaticProperty { get; } = "Static Property";
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [MethodProbeTestData("System.String", new[] { "System.String" }, skip: true /* Will be returned in the next PR - fix an issue when putting method probe and line probe one same method */)]
+            [MethodProbeTestData("System.String", new[] { "System.String" })]
             public static string Method(string lastName)
             {
                 return lastName;

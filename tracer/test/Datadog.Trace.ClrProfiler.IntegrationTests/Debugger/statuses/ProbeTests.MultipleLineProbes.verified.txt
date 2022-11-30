@@ -40,6 +40,18 @@
     "debugger": {
       "diagnostics": {
         "Exception": null,
+        "probeId": "3c5a4d30-f652-b355-51d6-9589d1d290b4",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 3c5a4d30-f652-b355-51d6-9589d1d290b4.",
+    "service": "Probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "Exception": null,
         "probeId": "8286d046-9740-a3e4-95cf-ff46699c73c4",
         "status": "INSTALLED"
       }

@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.SmokeTests
 {
-    [LineProbeTestData(16, skip: true /* Line probes are broken in some cases, will fix ASAP*/)]
-    [LineProbeTestData(17, skip: true /* Line probes are broken in some cases, will fix ASAP*/)]
-    [LineProbeTestData(25, skip: true /* Line probes are broken in some cases, will fix ASAP*/)]
+    [LineProbeTestData(16)]
+    [LineProbeTestData(17)]
+    [LineProbeTestData(25)]
     internal class HasLocalsAndReturnValue : IRun
     {
         public int Number { get; set; } = 7;
@@ -18,7 +18,7 @@ namespace Samples.Probes.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData("System.String", new[] { "System.Int32" }, skip: true /* Will be returned in the next PR - fix an issue when putting method probe and line probe one same method */ )]
+        [MethodProbeTestData("System.String", new[] { "System.Int32" })]
         public string Method(int num)
         {
             var timeSpan = TimeSpan.FromSeconds(num);
