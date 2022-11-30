@@ -25,6 +25,7 @@ private:
     std::unique_ptr<TracerTokens> tracerTokens = nullptr;
     std::unique_ptr<debugger::DebuggerTokens> debuggerTokens = nullptr;
     std::unique_ptr<std::vector<IntegrationDefinition>> integrations = nullptr;
+    mdTypeSpec moduleSpecSanityToken = mdTypeSpecNil;
 
 public:
     const ComPtr<IMetaDataImport2> metadata_import{};

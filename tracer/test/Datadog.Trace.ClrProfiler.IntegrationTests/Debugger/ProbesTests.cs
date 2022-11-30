@@ -107,7 +107,7 @@ public class ProbesTests : TestHelper, IDisposable
         await RunSingleTestWithApprovals(testType, isMultiPhase: true, expectedNumberOfSnapshots, probes.Select(p => p.Probe).ToArray());
     }
 
-    [SkippableFact(Skip = "Flaky in .NET 7 build")]
+    [Fact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task LineProbeEmit100SnapshotsTest()
@@ -294,15 +294,6 @@ public class ProbesTests : TestHelper, IDisposable
     /// </summary>
     private void SkipOverTestIfNeeded(Type testType)
     {
-#if NET7_0
-        if (testType == typeof(Samples.Probes.SmokeTests.HasLocalListOfObjects)
-         || testType.Name == "MethodThrowExceptionTest"
-         || testType.Name == "HasLocalsAndArgumentsInGenericNestedType")
-        {
-            throw new SkipException("Flaky in .NET 7");
-        }
-#endif
-
         if (testType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
         {
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
