@@ -51,6 +51,7 @@ namespace Datadog.Trace.Tools.Runner
             // If the agentless feature flag is enabled, we check for ApiKey
             // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
             var createTestSession = false;
+            var testSkippingDisabled = false;
             if (settings is RunCiSettings ciSettings)
             {
                 var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
@@ -99,6 +100,7 @@ namespace Datadog.Trace.Tools.Runner
                 }
 
                 var enableCodeCoverage = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
+                testSkippingDisabled = ciVisibilitySettings.TestsSkippingEnabled == false;
 
                 // If we have api and application key, and the code coverage or the tests skippeable environment variables
                 // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
@@ -109,6 +111,7 @@ namespace Datadog.Trace.Tools.Runner
                     // we should skip the framework info because we are interested in the target projects info not the runner one.
                     var itrSettings = itrClient.GetSettingsAsync(skipFrameworkInfo: true).GetAwaiter().GetResult();
                     enableCodeCoverage = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
+                    testSkippingDisabled = itrSettings.TestsSkipping == false;
                 }
 
                 if (enableCodeCoverage)
@@ -149,6 +152,13 @@ namespace Datadog.Trace.Tools.Runner
             if (createTestSession && Program.CallbackForTests is null)
             {
                 session = TestSession.GetOrCreate(command, null, null, null, true);
+
+                // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
+                // In that case we tell the backend no tests are going to be skipped.
+                if (testSkippingDisabled)
+                {
+                    session.SetTag(CommonTags.TestsSkipped, "false");
+                }
             }
 
             var exitCode = 0;
