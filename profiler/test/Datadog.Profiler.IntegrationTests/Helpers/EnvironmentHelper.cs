@@ -139,9 +139,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             var profilerPath = GetNativeLoaderPath();
 
-            // Temporarily disable tiered compilation
-            environmentVariables["COMPlus_TieredCompilation"] = "0";
-
             environmentVariables["DD_NATIVELOADER_CONFIGFILE"] = GenerateLoaderConfigFile();
 
             if (!File.Exists(profilerPath))
