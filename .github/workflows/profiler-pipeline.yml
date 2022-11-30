@@ -380,6 +380,14 @@ jobs:
           path: 'shared\bin\monitoring-home'
           retention-days: 7
 
+      - name: Publish monitoring-home symbols
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          name: 'monitoring-home.Windows.Symbols.${{matrix.configuration}}'
+          path: 'tracer\bin\symbols'
+          retention-days: 7
+
 
   test_windows_profiler:
     name: STests Windows Profiler
@@ -400,7 +408,7 @@ jobs:
       - uses: Datadog/setup-dotnet@v2
         with:
           architecture: ${{ matrix.platform }}
-          dotnet-version: | 
+          dotnet-version: |
             3.1.x
             6.0.100
             7.0.100
@@ -435,13 +443,22 @@ jobs:
           # set profiler deployment and test output dir folder path for the test
           #
           echo "MonitoringHomeDirectory=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "DD_TESTING_OUPUT_DIR=$(Join-Path -Path $(Resolve-Path .) -ChildPath tests_output)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          $tests_output=$(Join-Path -Path $(Resolve-Path .) -ChildPath tests_output)
+          echo "DD_TESTING_OUPUT_DIR=${tests_output}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          New-Item ${tests_output} -Type Directory
+          .\Procdump\procdump.exe -accepteula -ma -i ${tests_output}
 
       - name: Run Integration tests
         shell: cmd
         run: >
           cd profiler/test/Datadog.Profiler.IntegrationTests &&
           dotnet test -c ${{matrix.configuration}} -p:Platform=${{matrix.platform}} --filter "Category!=LinuxOnly" --logger "console;verbosity=detailed" --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
+
+      - name: Cleanup environment
+        shell: pwsh
+        run: |
+          # Uninstall Procdump
+          .\Procdump\procdump.exe -u
 
       - name: Generate tests report
         uses: dorny/test-reporter@v1

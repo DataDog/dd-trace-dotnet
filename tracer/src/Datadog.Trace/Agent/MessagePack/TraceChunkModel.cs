@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -47,6 +48,10 @@ internal readonly struct TraceChunkModel
 
     public readonly bool HasUpstreamService = false;
 
+    public readonly bool IsRunningInAzureAppService = false;
+
+    public readonly ImmutableAzureAppServiceSettings? AzureAppServiceSettings = null;
+
     public TraceChunkModel(in ArraySegment<Span> spans)
         : this(spans, GetTraceContext(spans))
     {
@@ -68,6 +73,8 @@ internal readonly struct TraceChunkModel
             ServiceVersion = traceContext.ServiceVersion;
             Origin = traceContext.Origin;
             Tags = traceContext.Tags;
+            IsRunningInAzureAppService = traceContext.Tracer?.Settings?.IsRunningInAzureAppService ?? false;
+            AzureAppServiceSettings = traceContext.Tracer?.Settings?.AzureAppServiceMetadata ?? null;
         }
     }
 

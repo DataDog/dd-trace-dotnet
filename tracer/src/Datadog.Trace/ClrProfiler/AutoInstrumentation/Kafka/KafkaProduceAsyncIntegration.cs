@@ -42,9 +42,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage>(TTarget instance, TTopicPartition topicPartition, TMessage message, CancellationToken cancellationToken)
             where TMessage : IMessage
         {
+            var partition = topicPartition.DuckCast<ITopicPartition>();
             Scope scope = KafkaHelper.CreateProducerScope(
                 Tracer.Instance,
-                topicPartition.DuckCast<ITopicPartition>(),
+                partition,
                 isTombstone: message.Value is null,
                 finishOnClose: true);
 
@@ -53,6 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
                     scope.Span.Context,
                     Tracer.Instance.TracerManager.DataStreamsManager,
+                    partition?.Topic,
                     message);
                 return new CallTargetState(scope);
             }
