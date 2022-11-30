@@ -139,6 +139,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // checks code owners
                             AssertTargetSpanExists(targetTest, TestTags.CodeOwners);
 
+                            // remove ITR skippeable tags
+                            AssertTargetSpanExists(targetTest, CommonTags.TestsSkipped);
+
                             // checks the origin tag
                             CheckOriginTag(targetTest);
 
