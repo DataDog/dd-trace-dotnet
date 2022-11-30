@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Ci.Coverage.Models.Global;
@@ -38,6 +39,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
     public GlobalCoverageInfo GetCodeCoveragePercentage()
     {
+        var sw = Stopwatch.StartNew();
         const int HIDDEN = 0xFEEFEE;
 
         // Get all ModuleValues
@@ -141,6 +143,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
             Log.Debug("Global Coverage payload: {payload}", JsonConvert.SerializeObject(globalCoverage));
+            Log.Debug($"Total time to calculate global coverage: {sw.Elapsed.TotalMilliseconds}ms");
         }
 
         return globalCoverage;
