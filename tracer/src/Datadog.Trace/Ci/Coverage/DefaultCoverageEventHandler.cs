@@ -6,7 +6,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Ci.Coverage.Models;
+using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
