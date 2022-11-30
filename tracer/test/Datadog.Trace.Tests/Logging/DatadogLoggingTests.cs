@@ -232,7 +232,7 @@ namespace Datadog.Trace.Tests.Logging
             }
 
             // Running method to delete the old files
-            DatadogLogging.CleanLogFiles(tempLogsDir);
+            DatadogLogging.CleanLogFiles(32, tempLogsDir);
 
             var deletedLogFiles = Directory.EnumerateFiles(tempLogsDir, "DD-DotNet-Profiler-Native-*").Count();
             var retainedLogFiles = Directory.EnumerateFiles(tempLogsDir, "dotnet-tracer-*").Count();

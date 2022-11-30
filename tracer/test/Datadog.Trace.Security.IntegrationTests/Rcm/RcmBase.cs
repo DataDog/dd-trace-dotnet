@@ -28,7 +28,7 @@ public class RcmBase : AspNetBase
 
     protected TimeSpan LogEntryWatcherTimeout => TimeSpan.FromSeconds(20);
 
-    protected string LogDirectory => Path.Combine(DatadogLogging.GetLogDirectory(), $"{GetTestName()}Logs");
+    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetTestName()}Logs");
 
     internal static void CheckAckState(GetRcmRequest request, string product, uint expectedState, string expectedError, string message)
     {
