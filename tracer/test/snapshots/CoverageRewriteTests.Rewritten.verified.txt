@@ -29,21 +29,14 @@ namespace CoverageRewriterAssembly
 			[CompilerGenerated]
 			get
 			{
-				if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 0, out var counters))
-				{
-					return <MyProperty>k__BackingField;
-				}
+			    int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(1, 0);
 				counters[0]++;
 				return <MyProperty>k__BackingField;
 			}
 			[CompilerGenerated]
 			set
 			{
-				if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 1, out var counters))
-				{
-					<MyProperty>k__BackingField = value;
-					return;
-				}
+			    int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(1, 1);
 				counters[0]++;
 				<MyProperty>k__BackingField = value;
 			}
@@ -52,17 +45,7 @@ namespace CoverageRewriterAssembly
 		public void Main()
 		{
 			int i;
-			if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 2, out var counters))
-			{
-				Console.WriteLine("Main Method");
-				for (i = 0; i < 100; i++)
-				{
-					Console.WriteLine(i);
-				}
-				MyProperty = "Value";
-				Console.WriteLine(MyProperty);
-				return;
-			}
+			int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(1, 2);
 			_ = counters[10];
 			counters[0]++;
 			counters[1]++;
