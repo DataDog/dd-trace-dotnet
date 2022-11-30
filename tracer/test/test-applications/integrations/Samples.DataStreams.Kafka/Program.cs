@@ -1,9 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -25,15 +23,14 @@ async Task RunStandardPipelineScenario()
 {
     // Create Topics
     var topicPrefix = "data-streams";
-    var topicSuffix = RuntimeInformation.FrameworkDescription.Replace(' ', '_');
-    var topic1 = $"{topicPrefix}-1-{topicSuffix}";
-    var topic2 = $"{topicPrefix}-2-{topicSuffix}";
-    var topic3 = $"{topicPrefix}-3-{topicSuffix}";
+
+    var topic1 = $"{topicPrefix}-1";
+    var topic2 = $"{topicPrefix}-2";
+    var topic3 = $"{topicPrefix}-3";
     var allTopics = new[] { topic1, topic2, topic3 };
     var topic3ConsumeCount = 0;
 
     var config = Config.Create();
-
     Console.WriteLine("Creating topics...");
     foreach (var topic in allTopics)
     {
@@ -126,10 +123,9 @@ async Task RunFanInAndOutScenario()
 {
     // Create Topics
     var topicPrefix = "data-streams-fan-in-out";
-    var topicSuffix = RuntimeInformation.FrameworkDescription.Replace(' ', '_');
 
-    var topic1 = $"{topicPrefix}-1-{topicSuffix}";
-    var topic2 = $"{topicPrefix}-2-{topicSuffix}";
+    var topic1 = $"{topicPrefix}-1";
+    var topic2 = $"{topicPrefix}-2";
     var allTopics = new[] { topic1, topic2};
     var topic2ConsumeCount = 0;
 
