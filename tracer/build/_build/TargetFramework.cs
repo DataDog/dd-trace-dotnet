@@ -23,7 +23,7 @@ public class TargetFramework : Enumeration
         return framework.Value;
     }
 
-    public static TargetFramework[] GetFrameworks(TargetFramework[] except = null)
+    public static TargetFramework[] GetFrameworks(params TargetFramework[] except)
     {
         return typeof(TargetFramework)
               .GetFields(ReflectionService.Static)

@@ -369,7 +369,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build Monitoring home
-        run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader BuildProfilerHome CompileProfilerNativeTestsWindows --build-configuration ${{matrix.configuration}}
+        run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader BuildProfilerHome PublishNativeSymbolsWindows CompileProfilerNativeTestsWindows --build-configuration ${{matrix.configuration}}
 
       - name: Run Native Unit tests (x64-${{matrix.configuration}})
         run: .\tracer\build.cmd RunProfilerNativeUnitTestsWindows --build-configuration ${{matrix.configuration}} --TargetPlatform x64

@@ -34,7 +34,7 @@ namespace Datadog.Trace.Telemetry
         /// Called when a tracer is initialized to record the tracer's settings
         /// Only the first tracer registered is recorded
         /// </summary>
-        void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName, AzureAppServices appServicesMetadata);
+        void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName);
 
         /// <summary>
         /// Called when app sec security is enabled to record the security settings

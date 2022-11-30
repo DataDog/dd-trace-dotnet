@@ -40,8 +40,7 @@ public abstract class AzureFunctionsTests : TestHelper
         SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Process)}_ENABLED", "0");
         // Add an extra exclude for calls to storage emulator. These aren't necessary in production
         // as they are already covered by the existing excludes
-        var nullAas = new AzureAppServices(new Dictionary<string, string>());
-        SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", nullAas.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts");
+        SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts");
     }
 
     protected ProcessResult RunAzureFunctionAndWaitForExit(MockTracerAgent agent, string framework = null)

@@ -7,10 +7,18 @@
     Service: AzureFunctionsAllTriggers,
     Type: serverless,
     Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
       aas.function.binding: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[Microsoft.Azure.WebJobs.TimerInfo, Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]],
       aas.function.method: Samples.AzureFunctions.AllTriggers.AllTriggers.TriggerAllTimer,
       aas.function.name: TriggerAllTimer,
       aas.function.trigger: Timer,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsAllTriggers,
+      aas.site.type: function,
       component: AzureFunctions,
       env: integration_tests,
       language: dotnet,
@@ -35,12 +43,6 @@
     Type: http,
     ParentId: Id_2,
     Tags: {
-      aas.environment.extension_version: unknown,
-      aas.environment.instance_id: unknown,
-      aas.environment.instance_name: IntegrationTestHost,
-      aas.environment.os: unknown,
-      aas.environment.runtime: .NET,
-      aas.site.kind: functionapp,
       aas.site.name: AzureFunctionsAllTriggers,
       aas.site.type: function,
       component: HttpMessageHandler,
@@ -65,10 +67,18 @@
     Type: serverless,
     ParentId: Id_3,
     Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
       aas.function.binding: Microsoft.Azure.WebJobs.Host.Executors.BindingSource,
       aas.function.method: Samples.AzureFunctions.AllTriggers.AllTriggers.Trigger,
       aas.function.name: TriggerCaller,
       aas.function.trigger: Http,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsAllTriggers,
+      aas.site.type: function,
       component: AzureFunctions,
       env: integration_tests,
       http.method: GET,
@@ -95,6 +105,8 @@
     Type: serverless,
     ParentId: Id_4,
     Tags: {
+      aas.site.name: AzureFunctionsAllTriggers,
+      aas.site.type: function,
       env: integration_tests,
       language: dotnet
     }
@@ -107,6 +119,8 @@
     Service: AzureFunctionsAllTriggers,
     ParentId: Id_5,
     Tags: {
+      aas.site.name: AzureFunctionsAllTriggers,
+      aas.site.type: function,
       env: integration_tests,
       language: dotnet
     }
@@ -120,12 +134,6 @@
     Type: http,
     ParentId: Id_6,
     Tags: {
-      aas.environment.extension_version: unknown,
-      aas.environment.instance_id: unknown,
-      aas.environment.instance_name: IntegrationTestHost,
-      aas.environment.os: unknown,
-      aas.environment.runtime: .NET,
-      aas.site.kind: functionapp,
       aas.site.name: AzureFunctionsAllTriggers,
       aas.site.type: function,
       component: HttpMessageHandler,
@@ -150,10 +158,18 @@
     Type: serverless,
     ParentId: Id_7,
     Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
       aas.function.binding: Microsoft.Azure.WebJobs.Host.Executors.BindingSource,
       aas.function.method: Samples.AzureFunctions.AllTriggers.AllTriggers.SimpleHttpTrigger,
       aas.function.name: SimpleHttpTrigger,
       aas.function.trigger: Http,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsAllTriggers,
+      aas.site.type: function,
       component: AzureFunctions,
       env: integration_tests,
       http.method: GET,
@@ -180,6 +196,8 @@
     Type: serverless,
     ParentId: Id_8,
     Tags: {
+      aas.site.name: AzureFunctionsAllTriggers,
+      aas.site.type: function,
       env: integration_tests,
       language: dotnet
     }
@@ -192,12 +210,6 @@
     Service: AzureFunctionsAllTriggers,
     ParentId: Id_9,
     Tags: {
-      aas.environment.extension_version: unknown,
-      aas.environment.instance_id: unknown,
-      aas.environment.instance_name: IntegrationTestHost,
-      aas.environment.os: unknown,
-      aas.environment.runtime: .NET,
-      aas.site.kind: functionapp,
       aas.site.name: AzureFunctionsAllTriggers,
       aas.site.type: function,
       env: integration_tests,
