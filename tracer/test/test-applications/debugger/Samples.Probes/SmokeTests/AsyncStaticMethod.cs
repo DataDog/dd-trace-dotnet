@@ -5,7 +5,7 @@ namespace Samples.Probes.SmokeTests
 {
     internal class AsyncStaticMethod : IAsyncRun
     {
-        public static string ClassName = "AsyncStaticMethod";
+        public const string ClassName = "AsyncStaticMethod";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()

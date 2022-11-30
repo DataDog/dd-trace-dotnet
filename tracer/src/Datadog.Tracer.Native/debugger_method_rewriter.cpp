@@ -453,27 +453,6 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     AdjustBranchTargets(lineProbeFirstInstruction, prevInstruction->m_pNext, branchTargets);
     AdjustExceptionHandlingClauses(lineProbeFirstInstruction, prevInstruction->m_pNext, &rewriter);
 
-    // ILInstr* pStateLeaveToBeginLineOriginalMethodInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
-
-    // *** BeginMethod call catch
-    // ILInstr* beginLineCatchFirstInstr = rewriterWrapper.LoadLocalAddress(lineProbeCallTargetStateIndex);
-    // debuggerTokens->WriteLogException(&rewriterWrapper, probeType);
-    // ILInstr* beginLineCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
-
-    // *** BeginMethod exception handling clause
-    // EHClause beginLineExClause{};
-    // beginLineExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
-    // beginLineExClause.m_pTryBegin = prevInstruction->m_pNext;
-    // beginLineExClause.m_pTryEnd = beginLineCatchFirstInstr;
-    // beginLineExClause.m_pHandlerBegin = beginLineCatchFirstInstr;
-    // beginLineExClause.m_pHandlerEnd = beginLineCatchLeaveInstr;
-    // beginLineExClause.m_ClassToken = debuggerTokens->GetExceptionTypeRef();
-
-    // ILInstr* beginOriginalLineInstr = rewriterWrapper.GetCurrentILInstr();
-    // pStateLeaveToBeginLineOriginalMethodInstr->m_pTarget = beginOriginalLineInstr;
-    // beginLineCatchLeaveInstr->m_pTarget = beginOriginalLineInstr;
-
-    // lineProbesEHClauses.emplace_back(beginLineExClause);
     return S_OK;
 }
 

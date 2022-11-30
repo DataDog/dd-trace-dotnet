@@ -776,7 +776,7 @@ bool ILRewriter::IsLoadLocalDirectInstruction(unsigned opcode)
     }
 }
 
-unsigned ILRewriter::GetLocalIndexFromOpcode(const ILInstr* pInstr)
+uint32_t ILRewriter::GetLocalIndexFromOpcode(const ILInstr* pInstr)
 {
     // get the index of the local that represent by the opcode or the operand of the instruction
     const auto localIndex =

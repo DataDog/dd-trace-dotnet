@@ -30,22 +30,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "ByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.ByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -56,7 +41,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "ByRefLikeTest.Run(this=ByRefLikeTest)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -90,22 +75,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "ByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.ByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -116,7 +86,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "ByRefLikeTest.Run(this=ByRefLikeTest)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -150,22 +120,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "ByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.ByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -176,7 +131,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "ByRefLikeTest.Run(this=ByRefLikeTest)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]
