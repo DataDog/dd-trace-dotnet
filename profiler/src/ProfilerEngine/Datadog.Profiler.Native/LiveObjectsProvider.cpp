@@ -98,7 +98,7 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
         bool hasBeenCollected = !IsAlive(info.GetHandle());
         if (hasBeenCollected)
         {
-            CloseWeakHandle(info.GetHandle());
+            //CloseWeakHandle(info.GetHandle());
         }
         else
         {
