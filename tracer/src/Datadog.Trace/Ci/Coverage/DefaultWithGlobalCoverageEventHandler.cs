@@ -4,8 +4,8 @@
 // </copyright>
 #nullable enable
 
-using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Pdb;
@@ -66,6 +66,12 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                 continue;
             }
 
+            if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out var moduleTypes))
+            {
+                moduleTypes = moduleDef.GetTypes().ToList();
+                TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
+            }
+
             var componentCoverageInfo = new ComponentCoverageInfo(moduleDef.FullName);
             for (var tIdx = 0; tIdx < moduleValue.Metadata.GetTotalTypes(); tIdx++)
             {
@@ -75,7 +81,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                     continue;
                 }
 
-                var typeDef = moduleDef.Types[tIdx];
+                var typeDef = moduleTypes[tIdx];
                 for (var mIdx = 0; mIdx < moduleValue.Metadata.GetTotalMethodsOfTypeOrDefault(tIdx); mIdx++)
                 {
                     var methodValue = typeValue?.Methods[mIdx];

@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -18,6 +19,7 @@ namespace Datadog.Trace.Ci.Coverage;
 internal class DefaultCoverageEventHandler : CoverageEventHandler
 {
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultCoverageEventHandler));
+    protected static readonly Dictionary<ModuleDef, List<TypeDef>> TypeDefsFromModuleDefs = new();
 
     protected override void OnSessionStart(CoverageContextContainer context)
     {
@@ -27,6 +29,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
     {
         var modules = context.CloseContext();
         const int HIDDEN = 0xFEEFEE;
+
         Dictionary<string, FileCoverage>? fileDictionary = null;
         foreach (var moduleValue in modules)
         {
@@ -34,6 +37,12 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
             if (moduleDef is null)
             {
                 continue;
+            }
+
+            if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out var moduleTypes))
+            {
+                moduleTypes = moduleDef.GetTypes().ToList();
+                TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
             }
 
             for (var i = 0; i < moduleValue.Types.Length; i++)
@@ -44,7 +53,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                     continue;
                 }
 
-                var typeDef = moduleDef.Types[i];
+                var typeDef = moduleTypes[i];
 
                 for (var j = 0; j < currentType.Methods.Length; j++)
                 {

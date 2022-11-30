@@ -53,13 +53,12 @@ public static class CoverageReporter<TMeta>
     }
 
     /// <summary>
-    /// Gets the coverage scope for the method
+    /// Gets the coverage counters for the method
     /// </summary>
     /// <param name="typeIndex">Type index</param>
     /// <param name="methodIndex">Method index</param>
-    /// <param name="counters">Counters array for the method</param>
-    /// <returns>True if the coverage is enabled and the scope is available; otherwise, false.</returns>
-    public static bool TryGetScope(int typeIndex, int methodIndex, out int[]? counters)
+    /// <returns>Counters array for the method</returns>
+    public static int[] GetCounters(int typeIndex, int methodIndex)
     {
         var module = _currentModuleValue;
         if (module is null)
@@ -90,13 +89,11 @@ public static class CoverageReporter<TMeta>
             type = new TypeValues(totalMethods);
             var typeMethod = new MethodValues(totalSequencePoints);
             type.Methods.FastGetReference(methodIndex) = typeMethod;
-            counters = typeMethod.SequencePoints;
-            return true;
+            return typeMethod.SequencePoints;
         }
 
         ref var method = ref type.Methods.FastGetReference(methodIndex);
         method ??= new MethodValues(Metadata.GetTotalSequencePointsOfMethod(typeIndex, methodIndex));
-        counters = method.SequencePoints;
-        return true;
+        return method.SequencePoints;
     }
 }
