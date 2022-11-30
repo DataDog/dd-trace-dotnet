@@ -68,7 +68,7 @@ private:
     IConfiguration* _pConfiguration;
     IThreadsCpuManager* _pThreadsCpuManager;
     IManagedThreadList* _pManagedThreadList;
-    IManagedThreadList* _pCodeHotspotThreadList;
+    IManagedThreadList* _pCodeHotspotsThreadList;
     ICollector<RawWallTimeSample>* _pWallTimeCollector;
     ICollector<RawCpuSample>* _pCpuTimeCollector;
 
@@ -81,6 +81,7 @@ private:
     uint32_t _iteratorCodeHotspot;
     int32_t _walltimeThreadsThreshold;
     int32_t _cpuThreadsThreshold;
+    int32_t _codeHotspotsThreadsThreshold;
 
 private:
     std::unordered_map<HRESULT, uint64_t> _encounteredStackSnapshotHRs;
@@ -92,7 +93,6 @@ private:
 
 private:
     void MainLoop();
-    void WaitOnePeriod();
     void MainLoopIteration();
     void CpuProfilingIteration();
     void WalltimeProfilingIteration();

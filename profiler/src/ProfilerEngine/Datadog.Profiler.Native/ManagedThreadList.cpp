@@ -131,7 +131,7 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
     uint32_t pos = 0;
     for (auto i = _threads.begin(); i != _threads.end(); ++i)
     {
-        auto pInfo = *i;
+        std::shared_ptr<ManagedThreadInfo> pInfo = *i; // make a copy so it can be moved later
         if (pInfo->GetClrThreadId() == clrThreadId)
         {
 

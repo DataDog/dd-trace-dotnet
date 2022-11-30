@@ -21,8 +21,7 @@ namespace BuggyBits
         StringBuilder,   // using StringBuilder
         Parallel,        // using parallel code
         Async,           // using async code
-        FormatExceptions, // generating FormatExceptions for prices
-        ControlledRequest,
+        FormatExceptions // generating FormatExceptions for prices
     }
 
     public class Program

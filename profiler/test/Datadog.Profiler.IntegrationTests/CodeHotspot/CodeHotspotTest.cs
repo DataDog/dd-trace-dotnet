@@ -34,13 +34,11 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckTraceContextAreAttachedForWalltimeProfilerHumberOfThreads(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 6 --with-idle-threads 500");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot + " --with-idle-threads 500");
             // By default, the codehotspot feature is activated
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            // reduce the sampling rate to ensure that if the optimization is not present we will miss trace context
-            runner.Environment.SetVariable("DD_INTERNAL_PROFILING_SAMPLING_RATE", "100");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -73,17 +71,18 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             Assert.Equal(profilerRuntimeId, tracerRuntimeId);
 
-            // Ensure that all pprof files have tracing context
-            foreach (var file in Directory.EnumerateFiles(runner.Environment.PprofDir, "*.pprof", SearchOption.AllDirectories))
-            {
-                Assert.NotEmpty(ExtractTracingContext(file));
-            }
+            // We cannot enumerate and check for each pprof files if it contains trace context.
+            // The profiler is configured to export/write pprof file every 3s, but
+            // depending on the machine or if it's release or debug, the first pprof file
+            // may not contains any trace context.
+            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            Assert.NotEmpty(tracingContexts);
         }
 
         [TestAppFact("Samples.BuggyBits")]
         public void CheckSpanContextAreAttachedForWalltimeProfiler(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 6");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             // By default, the codehotspot feature is activated
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
@@ -120,10 +119,12 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             Assert.Equal(profilerRuntimeId, tracerRuntimeId);
 
-            foreach (var file in Directory.EnumerateFiles(runner.Environment.PprofDir, "*.pprof", SearchOption.AllDirectories))
-            {
-                Assert.NotEmpty(ExtractTracingContext(file));
-            }
+            // We cannot enumerate and check for each pprof files if it contains trace context.
+            // The profiler is configured to export/write pprof file every 3s, but
+            // depending on the machine or if it's release or debug, the first pprof file
+            // may not contains any trace context.
+            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            Assert.NotEmpty(tracingContexts);
         }
 
         [TestAppFact("Samples.BuggyBits")]

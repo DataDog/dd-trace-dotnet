@@ -195,7 +195,7 @@ private:
     IConfiguration* _pConfiguration = nullptr;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
-    IManagedThreadList* _pCodeHotspotThreadList = nullptr;
+    IManagedThreadList* _pCodeHotspotsThreadList = nullptr;
     ICollector<RawWallTimeSample>* _pWallTimeCollector = nullptr;
     ICollector<RawCpuSample>* _pCpuTimeCollector = nullptr;
 

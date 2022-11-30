@@ -58,7 +58,7 @@ StackSamplerLoop::StackSamplerLoop(
     _pManager{pManager},
     _pThreadsCpuManager{pThreadsCpuManager},
     _pManagedThreadList{pManagedThreadList},
-    _pCodeHotspotThreadList{pCodeHotspotThreadList},
+    _pCodeHotspotsThreadList{pCodeHotspotThreadList},
     _pWallTimeCollector{pWallTimeCollector},
     _pCpuTimeCollector{pCpuTimeCollector},
     _pLoopThread{nullptr},
@@ -67,18 +67,20 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorWallTime{0},
     _iteratorCpuTime{0},
     _walltimeThreadsThreshold{pConfiguration->WalltimeThreadsThreshold()},
-    _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()}
+    _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
+    _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()}
 {
     _samplingPeriod = _pConfiguration->CpuWallTimeSamplingRate();
     Log::Info("CPU and wall time sampling period = ", _samplingPeriod.count() / 1000000, " ms");
     Log::Info("Wall time sampled threads = ", _walltimeThreadsThreshold);
+    Log::Info("Max CodeHotspots sampled threads = ", _codeHotspotsThreadsThreshold);
     Log::Info("Max CPU sampled threads = ", _cpuThreadsThreshold);
 
     _pCorProfilerInfo->AddRef();
 
     _iteratorWallTime = _pManagedThreadList->CreateIterator();
     _iteratorCpuTime = _pManagedThreadList->CreateIterator();
-    _iteratorCodeHotspot = _pCodeHotspotThreadList->CreateIterator();
+    _iteratorCodeHotspot = _pCodeHotspotsThreadList->CreateIterator();
 
     _pLoopThread = new std::thread(&StackSamplerLoop::MainLoop, this);
     OpSysTools::SetNativeThreadName(_pLoopThread, ThreadName);
@@ -138,7 +140,7 @@ void StackSamplerLoop::MainLoop()
     {
         try
         {
-            WaitOnePeriod();
+            OpSysTools::Sleep(_samplingPeriod);
             MainLoopIteration();
         }
         catch (const std::runtime_error& re)
@@ -156,11 +158,6 @@ void StackSamplerLoop::MainLoop()
     }
 
     Log::Debug("StackSamplerLoop::MainLoop has ended.");
-}
-
-void StackSamplerLoop::WaitOnePeriod()
-{
-    std::this_thread::sleep_for(_samplingPeriod);
 }
 
 void StackSamplerLoop::MainLoopIteration()
@@ -232,6 +229,7 @@ void StackSamplerLoop::WalltimeProfilingIteration()
         i++;
 
     } while (i < sampledThreadsCount && !_shutdownRequested);
+
 }
 
 void StackSamplerLoop::CpuProfilingIteration(void)
@@ -280,15 +278,14 @@ void StackSamplerLoop::CpuProfilingIteration(void)
 void StackSamplerLoop::CodeHotspotIteration()
 {
     int32_t managedThreadsCount = _pManagedThreadList->Count();
-    // TODO: need to measure to choose the right threshold
-    int32_t sampledThreadsCount = (std::min)(managedThreadsCount, 20);
+    int32_t sampledThreadsCount = (std::min)(managedThreadsCount, _codeHotspotsThreadsThreshold);
 
     int32_t i = 0;
     ManagedThreadInfo* firstThread = nullptr;
 
     do
     {
-        _targetThread = _pCodeHotspotThreadList->LoopNext(_iteratorCodeHotspot);
+        _targetThread = _pCodeHotspotsThreadList->LoopNext(_iteratorCodeHotspot);
 
         // either the list is empty or iterator is not in the array range, so there is a bug
         // so prefer bailing out
@@ -320,10 +317,6 @@ void StackSamplerLoop::CodeHotspotIteration()
 
         CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, duration, PROFILING_TYPE::WallTime);
 
-        // LoopNext() calls AddRef() on the threadInfo before returning it.
-        // This is because it needs to happen under the managedThreads's internal lock
-        // so that a concurrently dying thread cannot delete our threadInfo while we
-        // are just about to start processing it.
         _targetThread.reset();
         i++;
     } while (i < sampledThreadsCount && !_shutdownRequested);
