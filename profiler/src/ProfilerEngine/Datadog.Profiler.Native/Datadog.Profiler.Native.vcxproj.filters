@@ -287,6 +287,12 @@
     <ClInclude Include="GCBaseRawSample.h">
       <Filter>GarbageCollections</Filter>
     </ClInclude>
+    <ClInclude Include="EtwClrEventsReceiver.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="IClrEventsListener.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -420,6 +426,9 @@
     </ClCompile>
     <ClCompile Include="GarbageCollectionProvider.cpp">
       <Filter>GarbageCollections</Filter>
+    </ClCompile>
+    <ClCompile Include="EtwClrEventsReceiver.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

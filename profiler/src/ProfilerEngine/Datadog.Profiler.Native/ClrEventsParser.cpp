@@ -29,13 +29,11 @@ const bool LogGcEvents = false;
 
 
 ClrEventsParser::ClrEventsParser(
-    ICorProfilerInfo12* pCorProfilerInfo,
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
     IGCSuspensionsListener* pGCSuspensionsListener,
     IGarbageCollectionsListener* pGarbageCollectionsListener)
     :
-    _pCorProfilerInfo{pCorProfilerInfo},
     _pAllocationListener{pAllocationListener},
     _pContentionListener{pContentionListener},
     _pGCSuspensionsListener{pGCSuspensionsListener},
@@ -44,34 +42,8 @@ ClrEventsParser::ClrEventsParser(
     ClearCollections();
 }
 
-void ClrEventsParser::ParseEvent(
-    EVENTPIPE_PROVIDER provider,
-    DWORD eventId,
-    DWORD eventVersion,
-    ULONG cbMetadataBlob,
-    LPCBYTE metadataBlob,
-    ULONG cbEventData,
-    LPCBYTE eventData,
-    LPCGUID pActivityId,
-    LPCGUID pRelatedActivityId,
-    ThreadID eventThread,
-    ULONG numStackFrames,
-    UINT_PTR stackFrames[])
+void ClrEventsParser::OnEventReceived(uint64_t keywords, uint32_t id, uint32_t version, uint32_t cbEventData, const uint8_t* eventData)
 {
-    // Currently, only "Microsoft-Windows-DotNETRuntime" provider is used so no need to check.
-    // However, during the test, a last (keyword=0 id=1 V1) event is sent from "Microsoft-DotNETCore-EventPipe".
-
-    // These should be the same as eventId and eventVersion.
-    // However it was not the case for the last event received from "Microsoft-DotNETCore-EventPipe".
-    DWORD id;
-    DWORD version;
-    INT64 keywords; // used to filter out unneeded events.
-    WCHAR* name;
-    if (!TryGetEventInfo(metadataBlob, cbMetadataBlob, name, id, keywords, version))
-    {
-        return;
-    }
-
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
         ParseGcEvent(id, version, cbEventData, eventData);

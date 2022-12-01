@@ -156,7 +156,7 @@ bool CorProfilerCallback::InitializeServices()
     }
 
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
-    if (_pCorProfilerInfoEvents != nullptr)
+    if (_keywords != 0)
     {
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
@@ -223,12 +223,23 @@ bool CorProfilerCallback::InitializeServices()
 
         // TODO: add new CLR events-based providers to the event parser
         _pClrEventsParser = std::make_unique<ClrEventsParser>(
-            _pCorProfilerInfoEvents,
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
             _pGarbageCollectionProvider
             );
+
+        if (_pCorProfilerInfoEvents == nullptr)
+        {
+#ifdef _WINDOWS
+            // create ETW listener if .NET Framework
+            if (_keywords != 0)
+            {
+                uint32_t pid = GetCurrentProcessId();
+                _pEtwClrEventsReceiver = RegisterService<EtwClrEventsReceiver>(pid, _keywords, _verbosity, _pClrEventsParser.get());
+            }
+#endif
+        }
     }
 
     // Avoid iterating twice on all providers in order to inject this value in each constructor
@@ -236,7 +247,7 @@ bool CorProfilerCallback::InitializeServices()
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
     // compute enabled profilers based on configuration and receivable CLR events
-    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr);
+    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), (_keywords != 0));
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
@@ -276,9 +287,9 @@ bool CorProfilerCallback::InitializeServices()
         _pSamplesCollector->Register(_pExceptionsProvider);
     }
 
-    // CLR events-based providers require ICorProfilerInfo12 (stored in _pCorProfilerInfoEvents).
+    // CLR events-based providers require a bit mask of keywords to be enabled
     // If not set, no need to even check the configuration
-    if (_pCorProfilerInfoEvents != nullptr)
+    if (_keywords != 0)
     {
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
@@ -768,35 +779,67 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
     // If no such provider is enabled, no need to trigger it.
     // TODO: update the test when a new CLR events-based profiler is added (contention, GC, ...)
-    bool AreEventBasedProfilersEnabled =
+    bool areEventBasedProfilersEnabled =
         _pConfiguration->IsAllocationProfilingEnabled() ||
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled()
         ;
-    if ((major >= 5) && AreEventBasedProfilersEnabled)
+    if (areEventBasedProfilersEnabled)
     {
-        HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
-        if (FAILED(hr))
+        if (major <= 3)
         {
-            Log::Error("Failed to get ICorProfilerInfo12: 0x", std::hex, hr, std::dec, ".");
-            _pCorProfilerInfoEvents = nullptr;
-
-            // we continue: the CLR events won't be received so no contention/memory profilers...
+            // Need to listen to EventPipe for .NET Core 3.0/3.1
+            // .NET 2.2 is not allowing CLR events to be received via event pipes
+            Log::Warn("Event-based profilers (Allocation, Contention) are not supported for .NET", major, ".", minor, " (.NET Framework or .NET 5+ are required)");
         }
-    }
-    else
-    {
-        // TODO: Need to listen to ETW for .NET Framework and EventPipe for .NET Core 3.0/3.1.
-        //       This would be possible for contention but not for AllocationTick_V4 because
-        //       the address received in the payload might not point to a real object. Because
-        //       the events are received asynchronously, a GC might have happened and moved the
-        //       object somewhere else (i.e. the address will point to unknown content in memory;
-        //       even unmapped memory if the segment has been reclaimed).
-        if (major < 5)
+        else
         {
-            if (AreEventBasedProfilersEnabled)
+            // Microsoft-Windows-DotNETRuntime is the provider for the runtime events.
+            // Listen to interesting events:
+            //  - AllocationTick_V4
+            //  - ContentionStop_V1
+            //  - GC related events
+
+            _keywords = 0;
+            _verbosity = InformationalVerbosity;
+
+            if (_pConfiguration->IsAllocationProfilingEnabled())
             {
-                Log::Warn("Event-based profilers (Allocation, Contention) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
+                _keywords |= ClrEventsParser::KEYWORD_GC;
+
+                // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+                _verbosity = VerboseVerbosity;
+            }
+            if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+            {
+                _keywords |= ClrEventsParser::KEYWORD_GC;
+            }
+            if (_pConfiguration->IsContentionProfilingEnabled())
+            {
+                _keywords |= ClrEventsParser::KEYWORD_CONTENTION;
+            }
+
+            if (major >= 5)
+            {
+                HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
+                if (FAILED(hr))
+                {
+                    Log::Error("Failed to get ICorProfilerInfo12: 0x", std::hex, hr, std::dec, ".");
+                    _pCorProfilerInfoEvents = nullptr;
+
+                    // we continue: the CLR events won't be received so no contention/memory profilers...
+                    _keywords = 0;
+                    _verbosity = 0;
+                }
+            }
+            else if (major >= 4)
+            {
+                // Need to listen to ETW for .NET Framework.
+                // This would be possible for contention but not for AllocationTick_V4 because
+                // the address received in the payload might not point to a real object. Because
+                // the events are received asynchronously, a GC might have happened and moved the
+                // object somewhere else (i.e. the address will point to unknown content in memory;
+                // even unmapped memory if the segment has been reclaimed).
             }
         }
     }
@@ -821,7 +864,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     if (_pCorProfilerInfoEvents != nullptr)
     {
-        // listen to CLR events via ICorProfilerCallback
+        // listen to CLR events via ICorProfilerCallback for .NET 5+
         DWORD highMask = COR_PRF_HIGH_MONITOR_EVENT_PIPE;
         hr = _pCorProfilerInfo->SetEventMask2(eventMask, highMask);
         if (FAILED(hr))
@@ -830,40 +873,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             return E_FAIL;
         }
 
-        // Microsoft-Windows-DotNETRuntime is the provider for the runtime events.
-        // Listen to interesting events:
-        //  - AllocationTick_V4
-        //  - ContentionStop_V1
-        //  - GC related events
-
-        UINT64 activatedKeywords = 0;
-        uint32_t verbosity = InformationalVerbosity;
-
-        if (_pConfiguration->IsAllocationProfilingEnabled())
-        {
-            activatedKeywords |= ClrEventsParser::KEYWORD_GC;
-
-            // the documentation states that AllocationTick is Informational but... need Verbose  :^(
-            verbosity = VerboseVerbosity;
-        }
-        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
-        {
-            activatedKeywords |= ClrEventsParser::KEYWORD_GC;
-        }
-        if (_pConfiguration->IsContentionProfilingEnabled())
-        {
-            activatedKeywords |= ClrEventsParser::KEYWORD_CONTENTION;
-        }
-
         COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] =
+        {
             {
-                {
-                    WStr("Microsoft-Windows-DotNETRuntime"),
-                    activatedKeywords,
-                    verbosity,
-                    NULL
-                }
-            };
+                WStr("Microsoft-Windows-DotNETRuntime"),
+                _keywords,
+                _verbosity,
+                NULL
+            }
+        };
 
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
             sizeof(providers) / sizeof(providers[0]),
@@ -918,6 +936,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     {
         _pExceptionsProvider->Stop();
     }
+
+#ifdef _WINDOWS
+    // stop the ETW receiver before the providers to avoid sending events to stopped providers
+    if (_pEtwClrEventsReceiver != nullptr)
+    {
+        _pEtwClrEventsReceiver->Stop();
+    }
+#endif
+
     if (_pAllocationsProvider != nullptr)
     {
         _pAllocationsProvider->Stop();
@@ -1518,19 +1545,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
 {
     if (_pClrEventsParser != nullptr)
     {
-        _pClrEventsParser->ParseEvent(
-            provider,
-            eventId,
-            eventVersion,
-            cbMetadataBlob,
-            metadataBlob,
-            cbEventData,
-            eventData,
-            pActivityId,
-            pRelatedActivityId,
-            eventThread,
-            numStackFrames,
-            stackFrames);
+        DWORD id;
+        DWORD version;
+        INT64 keywords; // used to filter out unneeded events.
+        WCHAR* name;
+        if (!ClrEventsParser::TryGetEventInfo(metadataBlob, cbMetadataBlob, name, id, keywords, version))
+        {
+            return S_OK;
+        }
+
+        _pClrEventsParser->OnEventReceived(keywords, id, version, cbEventData, eventData);
     }
 
     return S_OK;
