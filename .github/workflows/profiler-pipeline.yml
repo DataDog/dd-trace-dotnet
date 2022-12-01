@@ -36,7 +36,7 @@ jobs:
 
   build_linux_release_x64:
     name: Build Linux Profiler (x64, Release)
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Clone dd-trace-dotnet repository
@@ -121,10 +121,10 @@ jobs:
         run: go install github.com/tonyredondo/timeit@latest
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Execute PiComputation benchmark
         run: |
@@ -196,10 +196,10 @@ jobs:
         run: go install github.com/tonyredondo/timeit@latest
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Execute PiComputation benchmark
         run: |
@@ -236,10 +236,10 @@ jobs:
           cmake --build __build --config Release --target all-profiler
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Run unit tests
         run: |
@@ -296,10 +296,10 @@ jobs:
           cmake --build __build --config Release --target all-profiler
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Run unit tests
         run: |
@@ -426,10 +426,10 @@ jobs:
           path: shared/bin/monitoring-home
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
+        run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}} -p:CheckEolTargetFramework=false
 
       - name: Prepare environment to run the application
         shell: pwsh
@@ -541,10 +541,10 @@ jobs:
         run: go install github.com/tonyredondo/timeit@latest
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Execute PiComputation benchmark
         env:
@@ -627,10 +627,10 @@ jobs:
         run: go install github.com/tonyredondo/timeit@latest
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Execute Clr Events benchmark
         env:
@@ -719,7 +719,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
 
       - name: Build Native profiler and tests
         run: msbuild -target:BuildCppWithAsan -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
@@ -735,10 +735,10 @@ jobs:
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}} --target-platform ${{matrix.platform}}
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
+        run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}} -p:CheckEolTargetFramework=false
 
       - name: Prepare environment to run the application
         shell: pwsh
@@ -873,7 +873,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
 
       - name: Prepare Output dir
         shell: pwsh
