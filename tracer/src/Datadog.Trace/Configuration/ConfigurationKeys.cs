@@ -550,9 +550,9 @@ namespace Datadog.Trace.Configuration
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
             /// <summary>
-            /// Enables experimental support for activity listener
+            /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
             /// </summary>
-            public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
+            public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
         }
 
         internal static class Telemetry
