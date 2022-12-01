@@ -29,16 +29,16 @@ private:
                                 const TypeSignature& argument);
     static HRESULT LoadLocal(CorProfiler* corProfiler, const ILRewriterWrapper& rewriterWrapper, int localIndex,
                              const TypeSignature& argument);
-    static HRESULT WriteCallsToLogArgOrLocal(CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
+    static HRESULT WriteCallsToLogArgOrLocal(ModuleMetadata& moduleMetadata, CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
                                         const std::vector<TypeSignature>& methodArgsOrLocals, int numArgsOrLocals,
                                         ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
                                              ILInstr** beginCallInstruction, bool isArgs, ProbeType probeType);
-    static HRESULT WriteCallsToLogArg(CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
+    static HRESULT WriteCallsToLogArg(ModuleMetadata& moduleMetadata, CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
                                 const std::vector<TypeSignature>& args, int numArgs, ILRewriterWrapper& rewriterWrapper,
                                 ULONG callTargetStateIndex,
                                 ILInstr** beginCallInstruction,
                                 ProbeType probeType);
-    static HRESULT WriteCallsToLogLocal(CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
+    static HRESULT WriteCallsToLogLocal(ModuleMetadata& moduleMetadata, CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
                                   const std::vector<TypeSignature>& locals, int numLocals,
                                   ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
                                         ILInstr** beginCallInstruction, ProbeType probeType);
@@ -67,7 +67,7 @@ private:
                           ULONG returnValueIndex, mdToken callTargetReturnToken, ILInstr* firstInstruction,
                              int instrumentedMethodIndex, ILInstr* const& beforeLineProbe, std::vector<EHClause>& newClauses) const;
     static HRESULT EndAsyncMethodProbe(CorProfiler* corProfiler, ILRewriterWrapper& rewriterWrapper,
-                                       ModuleMetadata& moduleMetadata,
+                                       ModuleMetadata& module_metadata,
                                        DebuggerTokens* debuggerTokens, FunctionInfo* caller, bool isStatic, TypeSignature* methodReturnType,
                                        const std::vector<TypeSignature>& methodLocals, int numLocals, ULONG callTargetStateIndex,
                                        ULONG callTargetReturnIndex, std::vector<EHClause>& newClauses,
@@ -87,6 +87,9 @@ private:
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
                                                         MethodProbeDefinitions& methodProbes,
                                                         LineProbeDefinitions& lineProbes) const;
+    static HRESULT IsTypeByRefLike(ModuleMetadata& module_metadata, const TypeSignature& typeSig, const mdAssemblyRef& corLibAssemblyRef,
+                                   bool& isTypeIsByRefLike);
+    static HRESULT IsTypeTokenByRefLike(ModuleMetadata& module_metadata, mdToken typeDefOrRefOrSpecToken, bool& isTypeIsByRefLike);
     static std::vector<ILInstr*> GetBranchTargets(ILRewriter* pRewriter);
     static void AdjustBranchTargets(ILInstr* pFromInstr, ILInstr* pToInstr, const std::vector<ILInstr*>& branchTargets);
     static void AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr, ILRewriter* pRewriter);

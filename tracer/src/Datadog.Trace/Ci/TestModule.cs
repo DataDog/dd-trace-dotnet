@@ -133,11 +133,8 @@ public sealed class TestModule
             }
         }
 
-        // Check if Intelligent Test Runner has skippable tests
-        if (CIVisibility.HasSkippableTests())
-        {
-            tags.TestsSkipped = "true";
-        }
+        // Check if Intelligent Test Runner has skippable tests and set the flag according to that
+        tags.TestsSkipped = CIVisibility.HasSkippableTests() ? "true" : "false";
 
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",

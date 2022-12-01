@@ -26,7 +26,7 @@ namespace Samples.Probes.SmokeTests
         public class Test<T> where T : new()
         {
             [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-            [MethodProbeTestData("System.String", new[] { "!0", "System.Int32" }, skipOnFramework: new string[]{ "net6.0" })]
+            [MethodProbeTestData("System.String", new[] { "!0", "System.Int32" })]
             public string Method(T genericVar, int age)
             {
                 var genericVarToString = genericVar.ToString();
