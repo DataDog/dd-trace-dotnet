@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Globalization;
 using System.IO;
-using System.Text;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
