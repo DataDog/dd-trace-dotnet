@@ -72,6 +72,8 @@ public:
     static bool IsSafeToStartProfiler(double coresThreshold);
     static std::int64_t GetHighPrecisionTimestamp();
 
+    static void Sleep(std::chrono::nanoseconds duration);
+
 private:
     static constexpr std::int64_t NanosecondsPerSecond = 1000000000;
 

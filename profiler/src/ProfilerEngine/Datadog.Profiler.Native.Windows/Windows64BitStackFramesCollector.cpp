@@ -181,7 +181,6 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 {
     // Collect data for TraceContext Tracking:
     bool traceContextDataCollected = this->TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
-    assert(traceContextDataCollected);
 
     // Now walk the stack:
     CONTEXT context;

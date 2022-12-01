@@ -71,6 +71,8 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext()
         return nullptr;
     }
 
+    profiler->GetCodeHotspotThreadList()->RegisterThread(pCurrentThreadInfo);
+
     // Get pointers to the relevant fields within the thread info data structure.
     return pCurrentThreadInfo->GetTraceContextPointer();
 }
