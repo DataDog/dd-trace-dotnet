@@ -49,4 +49,11 @@ internal static partial class ConfigurationKeys
         /// Configuration key for setting in number of days when to delete log files based on their last writetime date.
         /// </summary>
         public const string LogFileRetentionDays = "DD_TRACE_LOGFILE_RETENTION_DAYS";
+
+        /// <summary>
+        /// Configuration key for locations to write internal diagnostic logs.
+        /// Comma-separated list, containing one of <c>file</c> or <c>datadog</c> e.g. file,datadog
+        /// Defaults to <c>file</c>
+        /// </summary>
+        public const string LogSinks = "DD_TRACE_LOG_SINKS";
 }

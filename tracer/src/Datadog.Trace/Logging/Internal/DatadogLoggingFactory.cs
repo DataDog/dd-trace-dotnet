@@ -22,32 +22,14 @@ internal static class DatadogLoggingFactory
 
     public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource? source)
     {
-        string? logDirectory = null;
-        try
-        {
-            logDirectory = GetLogDirectory(source);
-        }
-        catch
-        {
-            // Do nothing when an exception is thrown for attempting to access the filesystem
-        }
+        var logSinkOptions = source?.GetString(ConfigurationKeys.LogSinks)
+                                   ?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
-        if (logDirectory is null)
+        FileLoggingConfiguration? fileConfig = null;
+        if (logSinkOptions is null || Contains(logSinkOptions, LogSinkOptions.File))
         {
-            return new DatadogLoggingConfiguration(rateLimit: DefaultRateLimit, file: null);
+            fileConfig = GetFileLoggingConfiguration(source);
         }
-        
-        // get file details
-        var maxLogSizeVar = source?.GetString(ConfigurationKeys.MaxLogFileSize);
-        var maxLogFileSize = long.TryParse(maxLogSizeVar, out var maxLogSize) ? maxLogSize : DefaultMaxLogFileSize;
-
-        var logFileRetentionDays = source?.GetInt32(ConfigurationKeys.LogFileRetentionDays) switch
-        {
-            >= 0 and var d => d,
-            _ => 32,
-        };
-
-        var fileConfig = new FileLoggingConfiguration(maxLogFileSize, logDirectory, logFileRetentionDays);
 
         var rateLimit = source?.GetInt32(ConfigurationKeys.LogRateLimit) switch
         {
@@ -56,6 +38,29 @@ internal static class DatadogLoggingFactory
         };
 
         return new DatadogLoggingConfiguration(rateLimit, fileConfig);
+
+        static bool Contains(string?[]? array, string toMatch)
+        {
+            if (array is null)
+            {
+                return false;
+            }
+
+            foreach (var value in array)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                if (string.Equals(value!.Trim(), toMatch))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     public static IDatadogLogger? CreateFromConfiguration(
@@ -64,23 +69,29 @@ internal static class DatadogLoggingFactory
     {
         if (!config.File.HasValue)
         {
+            // no enabled sinks
             return null;
         }
-
-        // Ends in a dash because of the date postfix
-        var managedLogPath = Path.Combine(config.File.Value.LogDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-.log");
 
         var loggerConfiguration =
             new LoggerConfiguration()
                .Enrich.FromLogContext()
-               .MinimumLevel.ControlledBy(DatadogLogging.LoggingLevelSwitch)
+               .MinimumLevel.ControlledBy(DatadogLogging.LoggingLevelSwitch);
+
+        if (config.File is { } fileConfig)
+        {
+            // Ends in a dash because of the date postfix
+            var managedLogPath = Path.Combine(fileConfig.LogDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-.log");
+
+            loggerConfiguration
                .WriteTo.File(
                     managedLogPath,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
                     rollingInterval: RollingInterval.Day,
                     rollOnFileSizeLimit: true,
-                    fileSizeLimitBytes: config.File.Value.MaxLogFileSizeBytes,
+                    fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
                     shared: true);
+        }
 
         try
         {

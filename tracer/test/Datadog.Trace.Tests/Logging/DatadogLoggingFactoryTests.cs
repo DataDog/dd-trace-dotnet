@@ -98,4 +98,42 @@ public class DatadogLoggingFactoryTests
             Directory.Exists(logDirectory).Should().BeTrue();
         }
     }
+
+    public class SinkConfiguration
+    {
+        [Fact]
+        public void WhenNoSinksProvided_UsesFileSink()
+        {
+            var source = new NameValueConfigurationSource(new());
+
+            var config = DatadogLoggingFactory.GetConfiguration(source);
+            config.File.HasValue.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("file")]
+        [InlineData("file,console")]
+        [InlineData("console, file")]
+        [InlineData("unknown,file")]
+        public void WhenFileSinkIsIncluded_UsesFileSink(string sinks)
+        {
+            var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source);
+            config.File.HasValue.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("console")]
+        [InlineData("datadog")]
+        [InlineData("datadog,console")]
+        [InlineData("unknown")]
+        public void WhenFileSinkIsNotIncluded_DoesNotUseFileSink(string sinks)
+        {
+            var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source);
+            config.File.HasValue.Should().BeFalse();
+        }
+    }
 }
