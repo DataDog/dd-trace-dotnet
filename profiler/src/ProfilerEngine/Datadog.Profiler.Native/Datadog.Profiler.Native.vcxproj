@@ -238,9 +238,11 @@
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
+    <ClInclude Include="EtwClrEventsReceiver.h" />
     <ClInclude Include="GarbageCollection.h" />
     <ClInclude Include="GCBaseRawSample.h" />
     <ClInclude Include="GarbageCollectionProvider.h" />
+    <ClInclude Include="IClrEventsListener.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
     <ClInclude Include="RawGarbageCollectionSample.h" />
     <ClInclude Include="StopTheWorldGCProvider.h" />
@@ -335,6 +337,7 @@
     <ClCompile Include="CpuTimeProvider.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />
+    <ClCompile Include="EtwClrEventsReceiver.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />

@@ -15,6 +15,7 @@
 
 #include "GarbageCollection.h"
 #include "IAllocationsListener.h"
+#include "IClrEventsListener.h"
 #include "IGarbageCollectionsListener.h"
 #include "IGCSuspensionsListener.h"
 
@@ -108,36 +109,26 @@ struct GCDetails
     uint64_t StartTimestamp;
 };
 
-class ClrEventsParser
+class ClrEventsParser : public IClrEventsListener
 {
 public:
     static const int KEYWORD_GC = 0x1;
     static const int KEYWORD_CONTENTION = 0x4000;
 
 public:
-    ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo,
-                    IAllocationsListener* pAllocationListener,
+    ClrEventsParser(IAllocationsListener* pAllocationListener,
                     IContentionListener* pContentionListener,
                     IGCSuspensionsListener* pGCSuspensionsListener,
                     IGarbageCollectionsListener* pGarbageCollectionsListener
                     );
 
-    void ParseEvent(EVENTPIPE_PROVIDER provider,
-                    DWORD eventId,
-                    DWORD eventVersion,
-                    ULONG cbMetadataBlob,
-                    LPCBYTE metadataBlob,
-                    ULONG cbEventData,
-                    LPCBYTE eventData,
-                    LPCGUID pActivityId,
-                    LPCGUID pRelatedActivityId,
-                    ThreadID eventThread,
-                    ULONG numStackFrames,
-                    UINT_PTR stackFrames[]
-                    );
+    // Inherited via IClrEventsListener
+    virtual void OnEventReceived(uint64_t keywords, uint32_t id, uint32_t version, uint32_t cbEventData, const uint8_t* eventData) override;
+
+public:
+    static bool TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version);
 
 private:
-    bool TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version);
     void ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
     void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
 
@@ -170,7 +161,7 @@ private:
 private:
     // Points to the UTF16, null terminated string from the given event data buffer
     // and update the offset accordingly
-    WCHAR* ReadWideString(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
+    static WCHAR* ReadWideString(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
     {
         WCHAR* start = (WCHAR*)(eventData + *offset);
         size_t length = WStrLen(start);
@@ -183,7 +174,7 @@ private:
     }
 
     template <typename T>
-    bool Read(T& value, LPCBYTE eventData, ULONG cbEventData, ULONG& offset)
+    static bool Read(T& value, LPCBYTE eventData, ULONG cbEventData, ULONG& offset)
     {
         if ((offset + sizeof(T)) > cbEventData)
         {
@@ -196,7 +187,6 @@ private:
     }
 
 private:
-    ICorProfilerInfo12* _pCorProfilerInfo = nullptr;
     IAllocationsListener* _pAllocationListener = nullptr;
     IContentionListener* _pContentionListener = nullptr;
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
@@ -227,5 +217,6 @@ private:
     const int EVENT_GC_HEAP_STAT = 4;             // V1
     const int EVENT_GC_GLOBAL_HEAP_HISTORY = 205; // V2
     const int EVENT_GC_SUSPEND_EE_BEGIN = 9;      // V1
-    const int EVENT_GC_RESTART_EE_END = 3;        // V2
+    const int EVENT_GC_RESTART_EE_END = 3;
+    // V2
 };

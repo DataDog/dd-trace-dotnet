@@ -27,6 +27,10 @@
 #include "IEnabledProfilers.h"
 #include "shared/src/native-src/string.h"
 
+#ifdef _WINDOWS
+#include "EtwClrEventsReceiver.h"
+#endif
+
 #include <atomic>
 #include <memory>
 #include <vector>
@@ -188,6 +192,7 @@ public:
     IExporter* GetExporter() { return _pExporter.get(); }
 
 private :
+    inline static bool _isNet46OrGreater = false;
     static CorProfilerCallback* _this;
     std::unique_ptr<IClrLifetime> _pClrLifetime = nullptr;
 
@@ -196,7 +201,8 @@ private :
     ICorProfilerInfo12* _pCorProfilerInfoEvents = nullptr;
     std::unique_ptr<ClrEventsParser> _pClrEventsParser = nullptr;
     EVENTPIPE_SESSION _session{0};
-    inline static bool _isNet46OrGreater = false;
+    uint64_t _keywords{0};  // different from 0 if CLR events are needed for enabled profilers
+    uint32_t _verbosity{0};
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
 
@@ -215,7 +221,9 @@ private :
     SamplesCollector* _pSamplesCollector = nullptr;
     StopTheWorldGCProvider* _pStopTheWorldProvider = nullptr;
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
-
+#ifdef _WINDOWS
+    EtwClrEventsReceiver* _pEtwClrEventsReceiver = nullptr;
+#endif
     std::vector<std::unique_ptr<IService>> _services;
 
     std::unique_ptr<IExporter> _pExporter = nullptr;
