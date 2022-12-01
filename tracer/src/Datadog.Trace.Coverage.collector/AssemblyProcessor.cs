@@ -132,7 +132,7 @@ namespace Datadog.Trace.Coverage.Collector
                             // We change it to `Default (1)` to enable jit optimizations.
                             if (cAttr.ConstructorArguments.Count == 1)
                             {
-                                cAttr.ConstructorArguments[0] = new CustomAttributeArgument(cAttr.ConstructorArguments[0].Type, 1);
+                                cAttr.ConstructorArguments[0] = new CustomAttributeArgument(cAttr.ConstructorArguments[0].Type, 2);
                             }
 
                             // If the attribute is using the .ctor: DebuggableAttribute(Boolean, Boolean)
