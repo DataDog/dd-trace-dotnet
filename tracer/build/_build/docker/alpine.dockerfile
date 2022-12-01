@@ -16,6 +16,8 @@ ENV \
     DOTNET_USE_POLLING_FILE_WATCHER=true \
     # Skip extraction of XML docs - generally not useful within an image/container - helps performance
     NUGET_XMLDOC_MODE=skip
+    # Disable LTTng tracing with QUIC
+    QUIC_LTTng=0
     
 RUN apk update \
         && apk upgrade \
