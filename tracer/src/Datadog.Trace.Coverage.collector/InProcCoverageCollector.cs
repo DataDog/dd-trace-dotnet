@@ -13,6 +13,25 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.InProcDataCollector;
 
 namespace Datadog.Trace.Coverage.Collector;
 
+/*
+ * To use InProc DataCollector we need to provide the following .runsettings file:
+ *
+ *  <RunSettings>
+ *      <InProcDataCollectionRunSettings>
+ *          <InProcDataCollectors>
+ *              <InProcDataCollector
+ *                  friendlyName='GlobalCoverageCollector'
+ *                  uri='InProcDataCollector://Datadog/GlobalCoverageCollector/1.0'
+ *                  assemblyQualifiedName='Datadog.Trace.Coverage.Collector.InProcCoverageCollector, Datadog.Trace.Coverage.collector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb'
+ *                  codebase='Datadog.Trace.Coverage.collector.dll'>
+ *                  <Configuration>
+ *                  </Configuration>
+ *              </InProcDataCollector>
+ *          </InProcDataCollectors>
+ *      </InProcDataCollectionRunSettings>
+ *  </RunSettings>
+ */
+
 /// <summary>
 /// Datadog inproc coverage collector
 /// </summary>
