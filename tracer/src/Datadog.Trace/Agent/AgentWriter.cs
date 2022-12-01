@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
@@ -402,14 +403,31 @@ namespace Datadog.Trace.Agent
                 spans = _statsAggregator?.ProcessTrace(spans) ?? spans;
                 bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(spans) ?? true;
                 _statsAggregator?.AddRange(spans);
+                var singleSpanSamplingSpans = new List<Span>(); // TODO maybe we can store this from above?
+
+                for (var i = spans.Offset; i < spans.Count; i++)
+                {
+                    if (spans.Array![i].GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
+                    {
+                        singleSpanSamplingSpans.Add(spans.Array![i]);
+                    }
+                }
 
                 // If stats computation determined that we can drop the P0 Trace,
                 // skip all other processing
-                if (!shouldSendTrace)
+                if (!shouldSendTrace && singleSpanSamplingSpans.Count == 0)
                 {
                     Interlocked.Increment(ref _droppedP0Traces);
                     Interlocked.Add(ref _droppedP0Spans, spans.Count);
                     return;
+                }
+                else if (!shouldSendTrace && singleSpanSamplingSpans.Count > 0)
+                {
+                    // change priority to be manual keep of the underlying trace context to notify agent
+                    spans.Array![spans.Offset].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+                    // note that we aren't incrementing _droppedP0Traces as we aren't dropping the trace entirely
+                    Interlocked.Add(ref _droppedP0Spans, spans.Count - singleSpanSamplingSpans.Count);
+                    spans = new ArraySegment<Span>(singleSpanSamplingSpans.ToArray());
                 }
             }
 
