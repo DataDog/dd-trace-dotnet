@@ -201,6 +201,7 @@ void StackSamplerLoop::WalltimeProfilingIteration()
 
         if (firstThread == _targetThread.get())
         {
+            _targetThread.reset();
             break;
         }
 
@@ -212,6 +213,7 @@ void StackSamplerLoop::WalltimeProfilingIteration()
         // skip thread if it has a trace context
         if (_targetThread->HasTraceContext())
         {
+            _targetThread.reset();
             continue;
         }
 
@@ -221,10 +223,6 @@ void StackSamplerLoop::WalltimeProfilingIteration()
 
         CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, duration, PROFILING_TYPE::WallTime);
 
-        // LoopNext() calls AddRef() on the threadInfo before returning it.
-        // This is because it needs to happen under the managedThreads's internal lock
-        // so that a concurrently dying thread cannot delete our threadInfo while we
-        // are just about to start processing it.
         _targetThread.reset();
         i++;
 
@@ -297,6 +295,7 @@ void StackSamplerLoop::CodeHotspotIteration()
         // keep track of the first seen thread, to avoid infinite loop
         if (firstThread == _targetThread.get())
         {
+            _targetThread.reset();
             break;
         }
 
@@ -308,6 +307,7 @@ void StackSamplerLoop::CodeHotspotIteration()
         // skip if it has no trace context
         if (!_targetThread->HasTraceContext())
         {
+            _targetThread.reset();
             continue;
         }
 

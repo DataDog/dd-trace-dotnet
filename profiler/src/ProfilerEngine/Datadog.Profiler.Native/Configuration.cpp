@@ -374,8 +374,8 @@ int32_t Configuration::ExtractWallTimeThreadsThreshold()
 
 int32_t Configuration::ExtractCodeHotspotsThreadsThreshold()
 {
-    // default threads to sample for codehotspots is 20; could be changed via env vars from 5 to 64
-    int32_t threshold = std::max(GetEnvironmentValue(EnvironmentVariables::CodeHotspotsThreadsThreshold, 20), 1);
+    // default threads to sample for codehotspots is 10; could be changed via env vars but down to 1ms
+    int32_t threshold = std::max(GetEnvironmentValue(EnvironmentVariables::CodeHotspotsThreadsThreshold, 10), 1);
     return threshold;
 }
 
