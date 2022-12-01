@@ -23,6 +23,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 {
     public class DatadogSinkTests
     {
+        private const int FailuresBeforeCircuitBreak = 10;
         private const int DefaultQueueLimit = 100_000;
         private static readonly TimeSpan TinyWait = TimeSpan.FromMilliseconds(50);
 
@@ -198,7 +199,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var sink = new DatadogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
             sink.Start();
 
-            for (var i = 0; i < BatchingSink.FailuresBeforeCircuitBreak; i++)
+            for (var i = 0; i < FailuresBeforeCircuitBreak; i++)
             {
                 sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "A message"));
                 mutex.Wait(30_000).Should().BeTrue();
@@ -209,7 +210,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "A message"));
             mutex.Wait(3_000).Should().BeFalse(); // don't expect it to be set
 
-            logsReceived.Should().Be(BatchingSink.FailuresBeforeCircuitBreak);
+            logsReceived.Should().Be(FailuresBeforeCircuitBreak);
         }
 
         internal class TestLogEvent : DatadogLogEvent

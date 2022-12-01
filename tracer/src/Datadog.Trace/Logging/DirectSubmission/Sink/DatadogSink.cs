@@ -14,7 +14,7 @@ using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
-    internal class DatadogSink : BatchingSink, IDatadogSink
+    internal class DatadogSink : BatchingSink<DatadogLogEvent>, IDatadogSink
     {
         // Maximum size for a single log is 1MB, we slightly err on the cautious side
         internal const int MaxMessageSizeBytes = 1000 * 1024;

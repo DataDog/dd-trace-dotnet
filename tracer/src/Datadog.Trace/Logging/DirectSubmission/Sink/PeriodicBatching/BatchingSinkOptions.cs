@@ -33,7 +33,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
              batchSizeLimit,
              queueLimit,
              period,
-             circuitBreakPeriod: TimeSpan.FromTicks(period.Ticks))
+             circuitBreakPeriod: TimeSpan.FromTicks(period.Ticks),
+             failuresBeforeCircuitBreak: 10)
         {
         }
 
@@ -41,12 +42,14 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             int batchSizeLimit,
             int queueLimit,
             TimeSpan period,
-            TimeSpan circuitBreakPeriod)
+            TimeSpan circuitBreakPeriod,
+            int failuresBeforeCircuitBreak)
         {
             BatchSizeLimit = batchSizeLimit;
             QueueLimit = queueLimit;
             Period = period;
             CircuitBreakPeriod = circuitBreakPeriod;
+            FailuresBeforeCircuitBreak = failuresBeforeCircuitBreak;
         }
 
         /// <summary>
@@ -69,5 +72,10 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         /// for an unbounded queue.
         /// </summary>
         public int? QueueLimit { get; }
+
+        /// <summary>
+        /// Gets the number of failures to emit the batch before the circuit breaker breaks
+        /// </summary>
+        public int FailuresBeforeCircuitBreak { get; }
     }
 }
