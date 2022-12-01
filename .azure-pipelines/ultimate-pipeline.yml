@@ -1394,6 +1394,9 @@ stages:
         net6:
           publishTargetFramework: "net6.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6"
+        net7:
+          publishTargetFramework: "net7.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7"
     pool:
       name: azure-linux-scale-set
 
