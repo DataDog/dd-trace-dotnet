@@ -41,21 +41,9 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
     {
         var sw = Stopwatch.StartNew();
         const int HIDDEN = 0xFEEFEE;
-
-        // Get all ModuleValues
-        var lstModulesInstances = new List<ModuleValue>();
-        lstModulesInstances.AddRange(GlobalContainer.CloseContext());
-        foreach (var coverage in _coverages)
-        {
-            lstModulesInstances.AddRange(coverage.CloseContext());
-            coverage.Clear();
-        }
-
-        GlobalContainer.Clear();
-
         var globalCoverage = new GlobalCoverageInfo();
         var moduleProcessed = new HashSet<Module>();
-        foreach (var moduleValue in lstModulesInstances)
+        foreach (var moduleValue in GlobalContainer.CloseContext().Concat(_coverages.SelectMany(c => c.CloseContext())))
         {
             if (moduleValue is null)
             {
@@ -144,6 +132,14 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         {
             Log.Debug("Global Coverage payload: {payload}", JsonConvert.SerializeObject(globalCoverage));
         }
+
+        // Clean coverages
+        foreach (var coverage in _coverages)
+        {
+            coverage.Clear();
+        }
+
+        GlobalContainer.Clear();
 
         Log.Information($"Total time to calculate global coverage: {sw.Elapsed.TotalMilliseconds}ms");
         return globalCoverage;
