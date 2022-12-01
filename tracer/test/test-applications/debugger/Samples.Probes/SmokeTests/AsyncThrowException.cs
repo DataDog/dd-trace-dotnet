@@ -11,8 +11,8 @@ namespace Samples.Probes.SmokeTests
             await Task.Run(async () => { await Method(nameof(RunAsync)); });
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        [MethodProbeTestData(skip: true)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodProbeTestData]
         private async Task<int> Method(string caller)
         {
             await Task.Delay(20);

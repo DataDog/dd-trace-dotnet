@@ -234,27 +234,7 @@
             "type": "Samples.Probes.SmokeTests.MultidimensionalArrayTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "MultidimensionalArrayTest.cs",
-            "function": "Samples.Probes.SmokeTests.MultidimensionalArrayTest.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "MultidimensionalArrayTest.cs",
-            "function": "Samples.Probes.SmokeTests.MultidimensionalArrayTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -265,7 +245,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultidimensionalArrayTest.Method(this=MultidimensionalArrayTest)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

@@ -8,7 +8,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "26": {
+            "25": {
               "arguments": {
                 "this": {
                   "type": "MultiScopesWithSameLocalNameTest",
@@ -36,26 +36,11 @@
           "location": {
             "file": "MultiScopesWithSameLocalNameTest.cs",
             "lines": [
-              26
+              25
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "MultiScopesWithSameLocalNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -66,7 +51,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=0, localInFor=0",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -78,7 +63,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "26": {
+            "25": {
               "arguments": {
                 "this": {
                   "type": "MultiScopesWithSameLocalNameTest",
@@ -106,26 +91,11 @@
           "location": {
             "file": "MultiScopesWithSameLocalNameTest.cs",
             "lines": [
-              26
+              25
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "MultiScopesWithSameLocalNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -136,7 +106,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=0, localInFor=0",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -148,7 +118,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "33": {
+            "32": {
               "arguments": {
                 "this": {
                   "type": "MultiScopesWithSameLocalNameTest",
@@ -176,26 +146,11 @@
           "location": {
             "file": "MultiScopesWithSameLocalNameTest.cs",
             "lines": [
-              33
+              32
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "MultiScopesWithSameLocalNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -206,7 +161,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=0, localInFor=9",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -218,7 +173,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "33": {
+            "32": {
               "arguments": {
                 "this": {
                   "type": "MultiScopesWithSameLocalNameTest",
@@ -246,26 +201,11 @@
           "location": {
             "file": "MultiScopesWithSameLocalNameTest.cs",
             "lines": [
-              33
+              32
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "MultiScopesWithSameLocalNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -276,7 +216,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=1, localInFor=10",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

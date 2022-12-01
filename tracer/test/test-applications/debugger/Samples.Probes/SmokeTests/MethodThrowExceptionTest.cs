@@ -8,13 +8,13 @@ namespace Samples.Probes.SmokeTests
     {
         public int Number { get; set; }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             Method(int.MaxValue);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData("System.String", new []{ "System.Int32" })]
         public string Method(int toSet)
         {

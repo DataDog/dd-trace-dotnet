@@ -14,7 +14,7 @@ public class MultipleLineProbes : IRun
         MethodToInstrument(nameof(Run));
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     [MethodProbeTestData("System.Void", new[] { "System.String" })]
     public void MethodToInstrument(string callerName)
     {

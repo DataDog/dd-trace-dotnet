@@ -168,27 +168,7 @@
             "type": "Samples.Probes.SmokeTests.GenericMethodWithArguments"
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericMethodWithArgumentsAndLocals.cs",
-            "function": "Samples.Probes.SmokeTests.GenericMethodWithArguments.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "GenericMethodWithArgumentsAndLocals.cs",
-            "function": "Samples.Probes.SmokeTests.GenericMethodWithArguments.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -199,7 +179,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericMethodWithArguments.Method(genericParam=Person, this=GenericMethodWithArguments): Alfred Hitchcock (30)\r\n@return=Alfred Hitchcock (30)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -297,27 +277,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericMethodWithArgumentsAndLocals.cs",
-            "function": "Samples.Probes.SmokeTests.GenericMethodWithArguments.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "GenericMethodWithArgumentsAndLocals.cs",
-            "function": "Samples.Probes.SmokeTests.GenericMethodWithArguments.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -328,7 +288,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericMethodWithArguments.Method(genericParam=Person, this=GenericMethodWithArguments)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

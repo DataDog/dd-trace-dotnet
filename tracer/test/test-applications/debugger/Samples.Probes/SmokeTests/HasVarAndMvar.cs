@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -7,7 +8,7 @@ namespace Samples.Probes.SmokeTests
 {
     internal class HasVarAndMvar : IRun
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             new Test<Generic>().Method(new Generic());
@@ -15,16 +16,38 @@ namespace Samples.Probes.SmokeTests
 
         public class Test<T> where T : IGeneric
         {
-            [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+            [MethodImpl(MethodImplOptions.NoInlining)]
             [MethodProbeTestData("System.Collections.Generic.List`1<Samples.Probes.SmokeTests`1<!0>>", new[] { "!!0" })]
             public List<Test<T>> Method<K>(K k) where K : IGeneric
             {
                 var @string = k.ToString();
-                System.Console.WriteLine(@string);
+                if (@string?.Length > 1)
+                {
+                    System.Console.WriteLine(@string);
+                }
+                else
+                {
+                    Console.WriteLine(k.Message);
+                }
+
                 var kk = new List<Test<K>>() { new Test<K>() };
-                System.Console.WriteLine(kk);
                 var tt = new List<Test<T>>() { new Test<T>() };
+
+                if (kk.First().Method(DateTime.Now.Second))
+                {
+                    Console.WriteLine(kk);
+                }
+                else
+                {
+                    Console.WriteLine(tt);
+                }
+
                 return tt;
+            }
+
+            bool Method(int n)
+            {
+                return n % 2 == 0;
             }
         }
     }
