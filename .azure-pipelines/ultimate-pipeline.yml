@@ -1656,6 +1656,8 @@ stages:
             publishTargetFramework: net5.0
           net6_0:
             publishTargetFramework: net6.0
+          net7_0:
+            publishTargetFramework: net7.0
       workspace:
         clean: all
       pool:
@@ -1728,6 +1730,8 @@ stages:
             publishTargetFramework: net5.0
           net6_0:
             publishTargetFramework: net6.0
+          net7_0:
+            publishTargetFramework: net7.0
       workspace:
         clean: all
       pool:
