@@ -308,15 +308,17 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
+        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
+        {
+            var globalCoverage = coverageHandler.GetCodeCoveragePercentage();
+
+            // Adds the global code coverage percentage to the module
+            span.SetTag(CommonTags.CodeCoverageTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+        }
+
         span.Finish(duration.Value);
 
         Current = null;
-
-        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
-        {
-            coverageHandler.GetCodeCoveragePercentage();
-        }
-
         CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
         CIVisibility.FlushSpans();
     }
