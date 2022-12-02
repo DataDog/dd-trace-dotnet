@@ -30,6 +30,11 @@ internal sealed class CoverageContextContainer
             return moduleValue;
         }
 
+        return GetModuleValueSlow(module);
+    }
+
+    private ModuleValue? GetModuleValueSlow(Module module)
+    {
         var container = _container;
         lock (container)
         {
