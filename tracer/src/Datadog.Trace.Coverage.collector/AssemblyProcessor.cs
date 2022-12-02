@@ -27,9 +27,7 @@ namespace Datadog.Trace.Coverage.Collector
     internal class AssemblyProcessor
     {
         private static readonly object PadLock = new();
-        private static readonly CultureInfo UsCultureInfo = new("us-US");
         private static readonly Regex NetCorePattern = new(@".NETCoreApp,Version=v(\d.\d)", RegexOptions.Compiled);
-        private static readonly MethodInfo ArrayEmptyOfIntMethod = typeof(Array).GetMethod("Empty")!.MakeGenericMethod(typeof(int));
         private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
         private static readonly string[] IgnoredAssemblies =
         {
@@ -615,6 +613,8 @@ namespace Datadog.Trace.Coverage.Collector
                 if (customAttribute.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute")
                 {
                     var targetValue = (string)customAttribute.ConstructorArguments[0].Value;
+                    _logger.Debug($"GetTracerTarget: TargetValue detected: {targetValue}");
+
                     if (targetValue.Contains(".NETFramework,Version="))
                     {
                         _logger.Debug($"GetTracerTarget: Returning TracerTarget.Net461 from {targetValue}");
@@ -624,9 +624,13 @@ namespace Datadog.Trace.Coverage.Collector
                     var matchTarget = NetCorePattern.Match(targetValue);
                     if (matchTarget.Success)
                     {
+                        _logger.Debug($"GetTracerTarget: NetCoreApp pattern detected.");
                         var versionValue = matchTarget.Groups[1].Value;
-                        if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, UsCultureInfo, out var version))
+                        _logger.Debug($"GetTracerTarget: Version value {versionValue}");
+                        if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var version))
                         {
+                            _logger.Debug($"GetTracerTarget: Parse result {version}");
+
                             if (version >= 2.0 && version <= 3.0)
                             {
                                 _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netstandard20 from {targetValue}");
