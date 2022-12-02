@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -56,10 +56,6 @@
                 {
                   "function": "Samples.Probes.SmokeTests.SimpleTypeNameTest.MethodToInstrument",
                   "lineNumber": "ScrubbedValue"
-                },
-                {
-                  "function": "Samples.Probes.SmokeTests.SimpleTypeNameTest.Run",
-                  "lineNumber": "ScrubbedValue"
                 }
               ],
               "type": "Samples.Probes.Shared.IntentionalDebuggerException"
@@ -76,27 +72,7 @@
             "type": "Samples.Probes.SmokeTests.SimpleTypeNameTest"
           }
         },
-        "stack": [
-          {
-            "fileName": "SimpleTypeNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.SimpleTypeNameTest.MethodToInstrument",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "SimpleTypeNameTest.cs",
-            "function": "Samples.Probes.SmokeTests.SimpleTypeNameTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -107,7 +83,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "SimpleTypeNameTest.MethodToInstrument(callerName=Run, this=SimpleTypeNameTest)\r\narr=count: 3",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

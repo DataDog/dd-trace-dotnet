@@ -33,13 +33,22 @@ namespace Samples.Probes.SmokeTests
             new Spicing.Things.Up.OverloadAndSimpleNameTest().Method('@'); // Should be instrumented.
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(useFullTypeName: false, unlisted: true)]
         public void Method(string callerName)
         {
             int a = callerName.Length;
             a++;
-            a++;
+            if (a > 5)
+            {
+                a++;
+            }
+            else
+            {
+                a += 2;
+            }
+
+            Console.WriteLine(a);
             a++;
         }
 

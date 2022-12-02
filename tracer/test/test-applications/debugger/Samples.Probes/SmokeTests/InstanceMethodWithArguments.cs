@@ -5,13 +5,13 @@ namespace Samples.Probes.SmokeTests
     [LineProbeTestData(18)]
     internal class InstanceMethodWithArguments : IRun
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             Method("Last");
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData("System.String", new[] { "System.String" })]
         public string Method(string lastName)
         {

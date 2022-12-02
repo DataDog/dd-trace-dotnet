@@ -5,14 +5,14 @@ namespace Samples.Probes.SmokeTests
 {
     internal class AsyncMethodInsideTaskRun : IAsyncRun
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
         {
             await RunInsideTask();
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        [MethodProbeTestData(skip: true)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodProbeTestData]
         public async Task<string> RunInsideTask()
         {
             return await Task.Run(
@@ -24,8 +24,8 @@ namespace Samples.Probes.SmokeTests
                  });
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        [MethodProbeTestData(skip: true)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodProbeTestData]
         public async Task<string> Method(string seed)
         {
             string result = seed + " ";

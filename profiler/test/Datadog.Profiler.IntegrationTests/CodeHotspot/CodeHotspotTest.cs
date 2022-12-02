@@ -32,10 +32,13 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         }
 
         [TestAppFact("Samples.BuggyBits")]
-        public void CheckSpanContextAreAttached(string appName, string framework, string appAssembly)
+        public void CheckTraceContextAreAttachedForWalltimeProfilerHumberOfThreads(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot + " --with-idle-threads 500");
             // By default, the codehotspot feature is activated
+
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -68,8 +71,104 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             Assert.Equal(profilerRuntimeId, tracerRuntimeId);
 
-            var profileTracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
-            Assert.NotEmpty(profileTracingContexts);
+            // We cannot enumerate and check for each pprof files if it contains trace context.
+            // The profiler is configured to export/write pprof file every 3s, but
+            // depending on the machine or if it's release or debug, the first pprof file
+            // may not contains any trace context.
+            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            Assert.NotEmpty(tracingContexts);
+        }
+
+        [TestAppFact("Samples.BuggyBits")]
+        public void CheckSpanContextAreAttachedForWalltimeProfiler(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            // By default, the codehotspot feature is activated
+
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            var profilerRuntimeIds = new List<string>();
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                profilerRuntimeIds.Add(ExtractRuntimeIdFromProfilerRequest(ctx.Value.Request));
+            };
+
+            var tracerRuntimeIds = new List<string>();
+            agent.TracerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                tracerRuntimeIds.AddRange(ExtractRuntimeIdsFromTracerRequest(ctx.Value.Request));
+            };
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            Assert.Single(profilerRuntimeIds.Distinct());
+            Assert.Single(tracerRuntimeIds.Distinct());
+
+            var profilerRuntimeId = profilerRuntimeIds.First();
+            Assert.NotNull(profilerRuntimeId);
+            Assert.NotEmpty(profilerRuntimeId);
+
+            var tracerRuntimeId = tracerRuntimeIds.First();
+            Assert.NotNull(tracerRuntimeId);
+            Assert.NotEmpty(tracerRuntimeId);
+
+            Assert.Equal(profilerRuntimeId, tracerRuntimeId);
+
+            // We cannot enumerate and check for each pprof files if it contains trace context.
+            // The profiler is configured to export/write pprof file every 3s, but
+            // depending on the machine or if it's release or debug, the first pprof file
+            // may not contains any trace context.
+            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            Assert.NotEmpty(tracingContexts);
+        }
+
+        [TestAppFact("Samples.BuggyBits")]
+        public void CheckSpanContextAreAttachedForCpuProfiler(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 6");
+            // By default, the codehotspot feature is activated
+
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            var profilerRuntimeIds = new List<string>();
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                profilerRuntimeIds.Add(ExtractRuntimeIdFromProfilerRequest(ctx.Value.Request));
+            };
+
+            var tracerRuntimeIds = new List<string>();
+            agent.TracerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                tracerRuntimeIds.AddRange(ExtractRuntimeIdsFromTracerRequest(ctx.Value.Request));
+            };
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            Assert.Single(profilerRuntimeIds.Distinct());
+            Assert.Single(tracerRuntimeIds.Distinct());
+
+            var profilerRuntimeId = profilerRuntimeIds.First();
+            Assert.NotNull(profilerRuntimeId);
+            Assert.NotEmpty(profilerRuntimeId);
+
+            var tracerRuntimeId = tracerRuntimeIds.First();
+            Assert.NotNull(tracerRuntimeId);
+            Assert.NotEmpty(tracerRuntimeId);
+
+            Assert.Equal(profilerRuntimeId, tracerRuntimeId);
+
+            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            Assert.NotEmpty(tracingContexts);
 
             // In the first versions of this test, we extracted span ids from Tracer requests and ensured that the ones collected by the
             // profiler was a subset. But this makes the test flacky: not flushed when the application is closing.

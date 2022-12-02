@@ -452,27 +452,7 @@
             "type": "Samples.Probes.SmokeTests.HasLocalListOfObjects"
           }
         },
-        "stack": [
-          {
-            "fileName": "HasLocalListOfObjects.cs",
-            "function": "Samples.Probes.SmokeTests.HasLocalListOfObjects.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "HasLocalListOfObjects.cs",
-            "function": "Samples.Probes.SmokeTests.HasLocalListOfObjects.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -483,7 +463,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasLocalListOfObjects.Method(age=36, name=Greg, this=HasLocalListOfObjects): Hello Greg (36)!\r\n@return=Hello Greg (36)!, children=count: 2, p=Person, p2=Person, p3=Person",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

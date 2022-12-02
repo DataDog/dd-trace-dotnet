@@ -59,6 +59,7 @@ Configuration::Configuration()
     _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate();
     _walltimeThreadsThreshold = ExtractWallTimeThreadsThreshold();
     _cpuThreadsThreshold = ExtractCpuThreadsThreshold();
+    _codeHotspotsThreadsThreshold = ExtractCodeHotspotsThreadsThreshold();
     _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
     _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
     _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, false);
@@ -165,6 +166,11 @@ int32_t Configuration::WalltimeThreadsThreshold() const
 int32_t Configuration::CpuThreadsThreshold() const
 {
     return _cpuThreadsThreshold;
+}
+
+int32_t Configuration::CodeHotspotsThreadsThreshold() const
+{
+    return _codeHotspotsThreadsThreshold;
 }
 
 double Configuration::MinimumCores() const
@@ -363,6 +369,13 @@ int32_t Configuration::ExtractWallTimeThreadsThreshold()
         std::min(
             std::max(GetEnvironmentValue(EnvironmentVariables::WalltimeThreadsThreshold, 5), 5),
             64);
+    return threshold;
+}
+
+int32_t Configuration::ExtractCodeHotspotsThreadsThreshold()
+{
+    // default threads to sample for codehotspots is 10; could be changed via env vars but down to 1ms
+    int32_t threshold = std::max(GetEnvironmentValue(EnvironmentVariables::CodeHotspotsThreadsThreshold, 10), 1);
     return threshold;
 }
 

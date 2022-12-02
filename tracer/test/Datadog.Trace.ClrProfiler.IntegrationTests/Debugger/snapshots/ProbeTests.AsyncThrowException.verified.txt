@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -10,22 +10,18 @@
           "entry": {
             "arguments": {
               "caller": {
-                "fields": null,
                 "type": "String",
                 "value": "RunAsync"
               }
-            },
-            "fields": null
+            }
           },
           "return": {
             "arguments": {
               "caller": {
-                "fields": null,
                 "type": "String",
                 "value": "RunAsync"
               }
             },
-            "fields": null,
             "throwable": {
               "message": "Exception from RunAsync.Method",
               "stacktrace": [],
@@ -43,7 +39,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncThrowException"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -54,7 +50,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncThrowException+<Method>d__1.MoveNext(caller=RunAsync)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

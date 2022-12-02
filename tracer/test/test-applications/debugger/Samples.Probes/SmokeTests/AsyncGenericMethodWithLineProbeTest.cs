@@ -6,10 +6,10 @@ using Samples.Probes.Shared;
 
 namespace Samples.Probes.SmokeTests
 {
-    [LineProbeTestData(39)]
+    [LineProbeTestData(39, expectedNumberOfSnapshots:0 /* in optimize code this will create a generic struct state machine */)]
     internal class AsyncGenericMethodWithLineProbeTest : IAsyncRun
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
         {
             var place = new Place { @Type = PlaceType.City, Name = "New York" };
@@ -30,8 +30,8 @@ namespace Samples.Probes.SmokeTests
                 _person = person;
             }
 
-            [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* Async Method Probes are disabled for now. */)]
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* in optimize code this will create a generic struct state machine*/)]
             public async Task<string> Method<K>(K generic, string input) where K : IGeneric
             {
                 var output = generic.Message + input + ".";

@@ -86,22 +86,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -112,7 +97,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -202,22 +187,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -228,7 +198,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -318,22 +288,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -344,7 +299,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -435,22 +390,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -461,7 +401,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=count: 0, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -611,22 +551,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -637,7 +562,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=count: 1, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -892,22 +817,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -918,7 +828,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=count: 1, person=Person, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1173,22 +1083,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1199,7 +1094,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=count: 1, person=Person, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1454,22 +1349,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1480,7 +1360,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=count: 1, person=Person, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1735,22 +1615,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1761,7 +1626,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=count: 1, person=Person, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -2016,22 +1881,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -2042,7 +1892,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=count: 1, person=Person, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -2297,22 +2147,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "GenericByRefLikeTest.cs",
-            "function": "Samples.Probes.SmokeTests.GenericByRefLikeTest.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -2323,7 +2158,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericByRefLikeTest.Run(this=GenericByRefLikeTest)\r\naddress=Address, children=count: 1, person=Person, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

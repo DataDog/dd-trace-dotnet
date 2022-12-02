@@ -7,13 +7,13 @@ namespace Samples.Probes.SmokeTests
     {
         public Lazy<string> FirstName = new Lazy<string>(new Func<string>(() => "First"));
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             Method(FirstName.Value);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData("System.String", new[] { "System.String" })]
         public string Method(string lastName)
         {
