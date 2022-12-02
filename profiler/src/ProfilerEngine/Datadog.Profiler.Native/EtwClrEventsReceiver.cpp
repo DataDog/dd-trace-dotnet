@@ -92,6 +92,9 @@ void EtwClrEventsReceiver::MainLoop(void)
     {
         Log::Error("ProcessTrace failed (status = ", status, ")");
     }
+
+    // don't forget to close the handle
+    ::CloseTrace(_hParse);
 }
 
 EVENT_TRACE_PROPERTIES* EtwClrEventsReceiver::GetSessionProperties()
@@ -201,7 +204,17 @@ bool EtwClrEventsReceiver::Start()
     _hParse = ::OpenTraceW(&etl);
     if (_hParse == INVALID_PROCESSTRACE_HANDLE)
     {
-        Log::Error("OpenTrace failed (status = ", status, ")\n ");
+        // GetLastError should be called to get the failure reason
+        // such as ERROR_ACCESS_DENIED for example
+        auto error = ::GetLastError();
+        if (error == ERROR_ACCESS_DENIED)
+        {
+            Log::Error("OpenTrace failed with access denied\n ");
+        }
+        else
+        {
+            Log::Error("OpenTrace failed (error = ", error, ")\n ");
+        }
         return false;
     }
     else
