@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -21,6 +22,14 @@ namespace Datadog.Trace.Activity.Handlers
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultActivityHandler));
         private static readonly ConcurrentDictionary<object, Scope> ActivityScope = new();
+        private static readonly string[] SpanKindNames = new string[]
+        {
+            "internal",
+            "server",
+            "client",
+            "producer",
+            "consumer",
+        };
 
         public bool ShouldListenTo(string sourceName, string? version)
         {
@@ -93,7 +102,16 @@ namespace Datadog.Trace.Activity.Handlers
 
             static Scope CreateScopeFromActivity(T activity, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId)
             {
-                var span = Tracer.Instance.StartSpan(activity.OperationName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+                string? serviceName = activity switch
+                {
+                    IActivity5 activity5 => activity5.Source.Name,
+                    _ => null
+                };
+
+                // TODO: The OpenTelemetry SDK can create spans without making them active. We'll need automatic instrumentation to detect when we want to update the ActiveScope or not
+                // Worst case, we set Tracer.ActiveScope here unconditionally so it can be retrieved by Tracer.ActiveScope from the original API methods
+                var span = Tracer.Instance.StartSpan(activity.OperationName, serviceName: serviceName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+                span.ResourceName = activity.OperationName;
                 var scope = Tracer.Instance.ActivateSpan(span, false);
                 return scope;
             }
@@ -187,9 +205,23 @@ namespace Datadog.Trace.Activity.Handlers
                 where TInner : IActivity
             {
                 var span = scope.Span;
-                foreach (var activityTag in activity.Tags)
+
+                // Copy over tags from Activity to the Datadog Span
+                // Starting with .NET 5, Activity can hold tags whose value have type object?
+                // For runtimes older than .NET 5, Activity can only hold tags whose values have type string
+                if (activity is IActivity5 activity5ObjectTags)
                 {
-                    span.SetTag(activityTag.Key, activityTag.Value);
+                    foreach (var activityTag in activity5ObjectTags.TagObjects)
+                    {
+                        OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
+                    }
+                }
+                else
+                {
+                    foreach (var activityTag in activity.Tags)
+                    {
+                        OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
+                    }
                 }
 
                 foreach (var activityBag in activity.Baggage)
@@ -197,23 +229,47 @@ namespace Datadog.Trace.Activity.Handlers
                     span.SetTag(activityBag.Key, activityBag.Value);
                 }
 
+                // TODO: Implement status2Error
                 if (activity is IActivity6 { Status: ActivityStatusCode.Error } activity6)
                 {
                     span.Error = true;
-                    span.SetTag(Tags.ErrorMsg, activity6.StatusDescription);
+                    if (span.GetTag(Tags.ErrorMsg) is null)
+                    {
+                        span.SetTag(Tags.ErrorMsg, activity6.StatusDescription);
+                    }
+                }
+                else if (span.GetTag("otel.status_code") == "STATUS_CODE_ERROR")
+                {
+                    span.Error = true;
+                    if (span.GetTag(Tags.ErrorMsg) is null)
+                    {
+                        if (span.GetTag("otel.status_description") is string statusDescription)
+                        {
+                            span.SetTag(Tags.ErrorMsg, statusDescription);
+                        }
+                        else if (span.GetTag("http.status_code") is string statusCodeString)
+                        {
+                            if (span.GetTag("http.status_text") is string httpTextString)
+                            {
+                                span.SetTag(Tags.ErrorMsg, $"{statusCodeString} {httpTextString}");
+                            }
+                            else
+                            {
+                                span.SetTag(Tags.ErrorMsg, statusCodeString);
+                            }
+                        }
+                    }
+                }
+                else if (span.GetTag("otel.status_code") is null)
+                {
+                    span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
                 }
 
                 if (activity is IActivity5 activity5)
                 {
-                    if (!string.IsNullOrWhiteSpace(sourceName))
-                    {
-                        span.SetTag("source", sourceName);
-                        span.ResourceName = $"{sourceName}.{span.OperationName}";
-                    }
-                    else
-                    {
-                        span.ResourceName = span.OperationName;
-                    }
+                    span.ResourceName = activity5.DisplayName;
+                    span.SetTag("otel.library.name", activity5.Source.Name);
+                    span.SetTag("otel.library.version", activity5.Source.Version);
 
                     switch (activity5.Kind)
                     {
@@ -230,7 +286,93 @@ namespace Datadog.Trace.Activity.Handlers
                             span.SetTag(Tags.SpanKind, SpanKinds.Server);
                             break;
                     }
+
+                    if (span.OperationName is null)
+                    {
+                        // Later: Support config 'span_name_as_resource_name'
+                        // Later: Support config 'span_name_remappings'
+                        span.OperationName = activity5.Source.Name switch
+                        {
+                            string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{SpanKindNames[(int)activity5.Kind]}",
+                            _ => $"opentelemetry.{SpanKindNames[(int)activity5.Kind]}",
+                        };
+                    }
+
+                    // Fixup Type
+                    if (string.IsNullOrWhiteSpace(span.Type))
+                    {
+                        span.Type = activity5.Kind switch
+                        {
+                            ActivityKind.Server => SpanTypes.Web,
+                            ActivityKind.Client => span.GetTag("db.system") switch
+                            {
+                                "redis" or "memcached" => "cache",
+                                string => "db",
+                                _ => "http",
+                            },
+                            _ => SpanTypes.Custom,
+                        };
+                    }
                 }
+
+                // OpenTelemtry SDK / OTLP Fixups
+                // 1) Update the Span.Type based off some heuristics
+
+                // TODO: Finish
+                // 2) Use trace agent algorithm to populate Datadog span from the Otlp attributes
+                //    See https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
+                // - "events" tag // TODO
+                if (activity is IW3CActivity w3CActivity)
+                {
+                    span.SetTag("otel.trace_id", w3CActivity.TraceId);
+
+                    // TODO: The .NET OTLP exporter doesn't currently add tracestate, but the DD agent will set it as tag "w3c.tracestate" if detected
+                    // For now, we can keep this unimplemented so the resulting span matches the .NET OTLP exporter
+                    // span.SetTag("w3c.tracestate", w3CActivity.TraceStateString);
+                }
+
+                // Fixup "version" tag
+                if (Tracer.Instance.Settings.ServiceVersion is null
+                    && span.GetTag("service.version") is string otelServiceVersion
+                    && !string.IsNullOrEmpty(otelServiceVersion))
+                {
+                    span.SetTag(Tags.Version, otelServiceVersion);
+                }
+
+                // Fixup "env" tag
+                if (Tracer.Instance.Settings.Environment is null
+                    && span.GetTag("deployment.environment") is string otelServiceEnv
+                    && !string.IsNullOrEmpty(otelServiceEnv))
+                {
+                    span.SetTag(Tags.Env, otelServiceEnv);
+                }
+
+                // Fixup Service property
+                if (span.ServiceName is null)
+                {
+                    span.ServiceName = span.GetTag("peer.service") switch
+                    {
+                        string peerService when !string.IsNullOrEmpty(peerService) => peerService,
+                        _ => "OTLPResourceNoServiceName",
+                    };
+                }
+
+                // Fixup Resource property
+                if (span.ResourceName is null)
+                {
+                    // TODO: Implement resourceFromTags
+                    // See: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L555
+                }
+
+                // TODO
+                // 3) Add resources to spans
+                // OpenTelemetry SDK resources are added to the span attributes by the configured exporter when OpenTelemetry.BaseExporter<T>.Export is called (e.g. OpenTelemetry.Exporter.ConsoleActivityExporter.Export)
+                // **** Note: The exporter has a ParentProvider field that is populated with the TracerProviderSdk when everything is initially built, so this is technically per instance
+                // **** To reliably get this, we might consider addding a Processor to the TracerProviderBuilder, though not sure where to invoke it
+                // - service.instance.id
+                // - service.name
+                // - service.namespace
+                // - service.version
 
                 span.Finish(activity.StartTimeUtc.Add(activity.Duration));
                 scope.Close();
