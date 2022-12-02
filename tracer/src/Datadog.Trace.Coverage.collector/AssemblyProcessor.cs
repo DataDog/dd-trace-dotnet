@@ -201,10 +201,20 @@ namespace Datadog.Trace.Coverage.Collector
                 var moduleCoverageMetadataImplTotalInstructionsField = new FieldReference("TotalInstructions", module.TypeSystem.Int64, moduleCoverageMetadataTypeReference);
 
                 // Create number of types array
-                var moduleCoverageMetadataImplMetadataField = new FieldReference("Metadata", new ArrayType(new ArrayType(module.TypeSystem.Int32)), moduleCoverageMetadataTypeReference);
+                var totalMethods = 0;
+                var sequencePointArrayCountInstruction = Instruction.Create(OpCodes.Ldc_I4, totalMethods);
+                var metadataArrayCountInstruction = Instruction.Create(OpCodes.Ldc_I4, totalMethods);
+
+                var moduleCoverageMetadataImplSequencePointField = new FieldReference("SequencePoints", new ArrayType(module.TypeSystem.Int32), moduleCoverageMetadataTypeReference);
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, moduleTypes.Count));
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, new ArrayType(module.TypeSystem.Int32)));
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(sequencePointArrayCountInstruction);
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.TypeSystem.Int32));
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplSequencePointField));
+
+                var moduleCoverageMetadataImplMetadataField = new FieldReference("Metadata", new ArrayType(module.TypeSystem.Int64), moduleCoverageMetadataTypeReference);
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(metadataArrayCountInstruction);
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.TypeSystem.Int64));
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplMetadataField));
 
                 moduleCoverageMetadataImplTypeDef.Methods.Add(moduleCoverageMetadataImplCtor);
@@ -219,13 +229,12 @@ namespace Datadog.Trace.Coverage.Collector
                     HasThis = false,
                     Parameters =
                     {
-                        new ParameterDefinition(module.TypeSystem.Int32) { Name = "typeIndex" },
                         new ParameterDefinition(module.TypeSystem.Int32) { Name = "methodIndex" }
                     }
                 };
 
                 long totalSequencePoints = 0;
-                GenericInstanceMethod? arrayEmptyOfIntMethodReference = null;
+                // GenericInstanceMethod? arrayEmptyOfIntMethodReference = null;
                 for (var typeIndex = 0; typeIndex < moduleTypes.Count; typeIndex++)
                 {
                     var moduleType = moduleTypes[typeIndex];
@@ -249,42 +258,6 @@ namespace Datadog.Trace.Coverage.Collector
                     _logger.Debug($"\t{moduleType.FullName}");
 
                     var moduleTypeMethods = moduleType.Methods;
-
-                    // Create Type number of methods array
-                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplMetadataField));
-                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, typeIndex));
-                    if (moduleTypeMethods.Count > 0)
-                    {
-                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, moduleTypeMethods.Count));
-                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr,  module.TypeSystem.Int32));
-                    }
-                    else
-                    {
-                        // Emit Array.Empty<int>() call
-                        if (arrayEmptyOfIntMethodReference is null)
-                        {
-                            var assemblyReferences = module.AssemblyReferences.ToArray();
-                            arrayEmptyOfIntMethodReference = (GenericInstanceMethod)module.ImportReference(ArrayEmptyOfIntMethod);
-                            arrayEmptyOfIntMethodReference.DeclaringType.Scope = module.TypeSystem.CoreLibrary;
-                            arrayEmptyOfIntMethodReference.GenericArguments[0] = module.TypeSystem.Int32;
-
-                            // If the `ImportReference` sentence add a new assembly reference (cross runtime versions)
-                            // we revert the reference list at the previous state.
-                            if (assemblyReferences.Length != module.AssemblyReferences.Count)
-                            {
-                                module.AssemblyReferences.Clear();
-                                foreach (var assemblyReference in assemblyReferences)
-                                {
-                                    module.AssemblyReferences.Add(assemblyReference);
-                                }
-                            }
-                        }
-
-                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Call, arrayEmptyOfIntMethodReference));
-                    }
-
-                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stelem_Ref));
 
                     // Process all Methods in the type
                     for (var methodIndex = 0; methodIndex < moduleTypeMethods.Count; methodIndex++)
@@ -321,7 +294,7 @@ namespace Datadog.Trace.Coverage.Collector
                              *
                              *  public static int Factorial(int value)
                              *  {
-                             *      var counters = CoverageReporter<ModuleCoverage>.GetCounters(1, 1)
+                             *      var counters = CoverageReporter<ModuleCoverage>.GetCounters(5)
                              *      _ = counters[5];
                              *      counters[0]++;
                              *      counters[1]++;
@@ -342,6 +315,7 @@ namespace Datadog.Trace.Coverage.Collector
                              *  }
                              */
 
+                            totalMethods++;
                             var methodBody = moduleTypeMethod.Body;
                             var instructions = methodBody.Instructions;
                             var instructionsOriginalLength = instructions.Count;
@@ -375,19 +349,32 @@ namespace Datadog.Trace.Coverage.Collector
 
                             // Step 4 - Create methods sequence points array
                             moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplMetadataField));
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, typeIndex));
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldelem_Ref));
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, methodIndex));
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplSequencePointField));
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, (totalMethods - 1)));
                             moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, instructionsWithValidSequencePoints.Count));
                             moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stelem_I4));
+
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplMetadataField));
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, (totalMethods - 1)));
+                            var indexes = ((long)typeIndex << 32) | (long)methodIndex;
+                            if (indexes > int.MaxValue)
+                            {
+                                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I8, indexes));
+                            }
+                            else
+                            {
+                                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)indexes));
+                                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Conv_I8));
+                            }
+
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stelem_I8));
                             totalSequencePoints += instructionsWithValidSequencePoints.Count;
 
                             // Step 5 - Insert the counter retriever
-                            instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, typeIndex));
-                            instructions.Insert(1, Instruction.Create(OpCodes.Ldc_I4, methodIndex));
-                            instructions.Insert(2, Instruction.Create(OpCodes.Call, reportGetCountersMethod));
-                            instructions.Insert(3, Instruction.Create(OpCodes.Stloc, countersVariable));
+                            instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, (totalMethods - 1)));
+                            instructions.Insert(1, Instruction.Create(OpCodes.Call, reportGetCountersMethod));
+                            instructions.Insert(2, Instruction.Create(OpCodes.Stloc, countersVariable));
 
                             // Step 6 - Insert line reporter
                             for (var i = 0; i < instructionsWithValidSequencePoints.Count; i++)
@@ -428,6 +415,8 @@ namespace Datadog.Trace.Coverage.Collector
                     }
                 }
 
+                sequencePointArrayCountInstruction.Operand = totalMethods;
+                metadataArrayCountInstruction.Operand = totalMethods;
                 module.Types.Add(moduleCoverageMetadataImplTypeDef);
 
                 // Sets the TotalInstructions field

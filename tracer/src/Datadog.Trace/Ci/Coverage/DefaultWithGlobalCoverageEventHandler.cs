@@ -63,63 +63,56 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             }
 
             var componentCoverageInfo = new ComponentCoverageInfo(moduleDef.FullName);
-            for (var tIdx = 0; tIdx < moduleValue.Metadata.GetTotalTypes(); tIdx++)
+            for (var mIdx = 0; mIdx < moduleValue.Metadata.GetMethodsCount(); mIdx++)
             {
-                var typeValue = moduleValue.Types[tIdx];
-                if (typeValue is null && moduleProcessed.Contains(moduleValue.Module))
+                var methodValue = moduleValue.Methods[mIdx];
+                if (methodValue is null && moduleProcessed.Contains(moduleValue.Module))
                 {
                     continue;
                 }
 
-                var typeDef = moduleTypes[tIdx];
-                for (var mIdx = 0; mIdx < moduleValue.Metadata.GetTotalMethodsOfTypeOrDefault(tIdx); mIdx++)
+                moduleValue.Metadata.GetMethodsMetadata(mIdx, out var typeIndex, out var methodIndex);
+                var typeDef = moduleTypes[typeIndex];
+                var methodDef = typeDef.Methods[methodIndex];
+
+                if (methodDef.HasBody && methodDef.Body.HasInstructions)
                 {
-                    var methodValue = typeValue?.Methods[mIdx];
-                    if (methodValue is null && moduleProcessed.Contains(moduleValue.Module))
+                    var seqPoints = new List<SequencePoint>(methodValue?.SequencePoints?.Length ?? methodDef.Body.Instructions.Count);
+                    foreach (var instruction in methodDef.Body.Instructions)
                     {
-                        continue;
+                        if (instruction.SequencePoint is null ||
+                            instruction.SequencePoint.StartLine == HIDDEN ||
+                            instruction.SequencePoint.EndLine == HIDDEN)
+                        {
+                            continue;
+                        }
+
+                        seqPoints.Add(instruction.SequencePoint);
                     }
 
-                    var methodDef = typeDef.Methods[mIdx];
-                    if (methodDef.HasBody && methodDef.Body.HasInstructions)
+                    FileCoverageInfo? fileCoverageInfo = null;
+                    var seqPointsCount = methodValue?.SequencePoints?.Length ?? seqPoints.Count;
+                    for (var x = 0; x < seqPointsCount; x++)
                     {
-                        var seqPoints = new List<SequencePoint>(methodValue?.SequencePoints?.Length ?? methodDef.Body.Instructions.Count);
-                        foreach (var instruction in methodDef.Body.Instructions)
-                        {
-                            if (instruction.SequencePoint is null ||
-                                instruction.SequencePoint.StartLine == HIDDEN ||
-                                instruction.SequencePoint.EndLine == HIDDEN)
-                            {
-                                continue;
-                            }
+                        var seqPoint = seqPoints[x];
+                        fileCoverageInfo ??= new FileCoverageInfo(CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false));
 
-                            seqPoints.Add(instruction.SequencePoint);
+                        var repInSeqPoints = 0;
+                        if (methodValue?.SequencePoints?.Length > x)
+                        {
+                            repInSeqPoints = methodValue.SequencePoints[x];
+                        }
+                        else if (methodValue?.SequencePoints is not null)
+                        {
+                            Log.Warning($"Index doesn't found: {fileCoverageInfo.Path} | {seqPoint.StartLine}:{seqPoint.StartColumn}:{seqPoint.EndLine}:{seqPoint.EndColumn} | {methodDef.FullName} | {x} | {methodValue.SequencePoints.Length}");
                         }
 
-                        FileCoverageInfo? fileCoverageInfo = null;
-                        var seqPointsCount = methodValue?.SequencePoints?.Length ?? seqPoints.Count;
-                        for (var x = 0; x < seqPointsCount; x++)
-                        {
-                            var seqPoint = seqPoints[x];
-                            fileCoverageInfo ??= new FileCoverageInfo(CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false));
+                        fileCoverageInfo.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
+                    }
 
-                            var repInSeqPoints = 0;
-                            if (methodValue?.SequencePoints?.Length > x)
-                            {
-                                repInSeqPoints = methodValue.SequencePoints[x];
-                            }
-                            else if (methodValue?.SequencePoints is not null)
-                            {
-                                Log.Warning($"Index doesn't found: {fileCoverageInfo.Path} | {seqPoint.StartLine}:{seqPoint.StartColumn}:{seqPoint.EndLine}:{seqPoint.EndColumn} | {methodDef.FullName} | {x} | {methodValue.SequencePoints.Length}");
-                            }
-
-                            fileCoverageInfo.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
-                        }
-
-                        if (fileCoverageInfo is not null)
-                        {
-                            componentCoverageInfo.Add(fileCoverageInfo);
-                        }
+                    if (fileCoverageInfo is not null)
+                    {
+                        componentCoverageInfo.Add(fileCoverageInfo);
                     }
                 }
             }

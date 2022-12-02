@@ -19,7 +19,14 @@ public abstract class ModuleCoverageMetadata
     /// Gets or sets the metadata array
     /// </summary>
 #pragma warning disable SA1401
-    protected readonly int[][] Metadata = Array.Empty<int[]>();
+    protected readonly long[] Metadata = Array.Empty<long>();
+#pragma warning restore SA1401
+
+    /// <summary>
+    /// Gets or sets the metadata array
+    /// </summary>
+#pragma warning disable SA1401
+    protected readonly int[] SequencePoints = Array.Empty<int>();
 #pragma warning restore SA1401
 
     /// <summary>
@@ -30,59 +37,27 @@ public abstract class ModuleCoverageMetadata
 #pragma warning restore SA1401
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetTotalTypes() => Metadata.Length;
+    internal int GetMethodsCount() => Metadata.Length;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetTotalMethodsOfType(int type)
+    internal int GetTotalSequencePointsOfMethod(int methodIndex)
     {
 #if NETCOREAPP3_0_OR_GREATER
-        return Metadata.FastGetReference(type).Length;
+        return SequencePoints.FastGetReference(methodIndex);
 #else
-        return Metadata[type].Length;
+        return SequencePoints[methodIndex];
 #endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetTotalMethodsOfTypeOrDefault(int type)
+    internal void GetMethodsMetadata(int methodIndex, out int typeIdx, out int methodIdx)
     {
 #if NETCOREAPP3_0_OR_GREATER
-        return Metadata.FastGetReference(type)?.Length ?? 0;
+        var methodMetadataIndexes = Metadata.FastGetReference(methodIndex);
 #else
-        return Metadata[type]?.Length ?? 0;
+        var methodMetadataIndexes = Metadata[methodIndex];
 #endif
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetTotalSequencePointsOfMethod(int type, int method)
-    {
-#if NETCOREAPP3_0_OR_GREATER
-        return Metadata.FastGetReference(type).FastGetReference(method);
-#else
-        return Metadata[type][method];
-#endif
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal int GetTotalSequencePointsOfMethodOrDefault(int type, int method)
-    {
-#if NETCOREAPP3_0_OR_GREATER
-        return Metadata.FastGetReference(type)?.FastGetReference(method) ?? 0;
-#else
-        return Metadata[type]?[method] ?? 0;
-#endif
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void GetTotalMethodsAndSequencePointsOfMethod(int type, int method, out int totalMethods, out int totalSequencePoints)
-    {
-#if NETCOREAPP3_0_OR_GREATER
-        var typeMeta = Metadata.FastGetReference(type);
-        totalMethods = typeMeta.Length;
-        totalSequencePoints = typeMeta.FastGetReference(method);
-#else
-        var typeMeta = Metadata[type];
-        totalMethods = typeMeta.Length;
-        totalSequencePoints = typeMeta[method];
-#endif
+        methodIdx = (int)(methodMetadataIndexes & 0xFFFF);
+        typeIdx = (int)(methodMetadataIndexes >> 32);
     }
 }

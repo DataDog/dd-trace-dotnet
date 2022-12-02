@@ -45,7 +45,7 @@ public static class CoverageReporter<TMeta>
         var globalModuleValue = globalCoverageContextContainer.GetModuleValue(Module);
         if (globalModuleValue is null)
         {
-            globalModuleValue = new ModuleValue(Metadata, Module, Metadata.GetTotalTypes());
+            globalModuleValue = new ModuleValue(Metadata, Module, Metadata.GetMethodsCount());
             globalCoverageContextContainer.Add(globalModuleValue);
         }
 
@@ -55,10 +55,9 @@ public static class CoverageReporter<TMeta>
     /// <summary>
     /// Gets the coverage counters for the method
     /// </summary>
-    /// <param name="typeIndex">Type index</param>
     /// <param name="methodIndex">Method index</param>
     /// <returns>Counters array for the method</returns>
-    public static int[] GetCounters(int typeIndex, int methodIndex)
+    public static int[] GetCounters(int methodIndex)
     {
         var module = _currentModuleValue;
         if (module is null)
@@ -73,7 +72,7 @@ public static class CoverageReporter<TMeta>
                 module = container.GetModuleValue(Module);
                 if (module is null)
                 {
-                    module = new ModuleValue(Metadata, Module, Metadata.GetTotalTypes());
+                    module = new ModuleValue(Metadata, Module, Metadata.GetMethodsCount());
                     container.Add(module);
                 }
 
@@ -81,19 +80,8 @@ public static class CoverageReporter<TMeta>
             }
         }
 
-        ref var type = ref module.Types.FastGetReference(typeIndex);
-        if (type is null)
-        {
-            Metadata.GetTotalMethodsAndSequencePointsOfMethod(typeIndex, methodIndex, out var totalMethods, out var totalSequencePoints);
-
-            type = new TypeValues(totalMethods);
-            var typeMethod = new MethodValues(totalSequencePoints);
-            type.Methods.FastGetReference(methodIndex) = typeMethod;
-            return typeMethod.SequencePoints;
-        }
-
-        ref var method = ref type.Methods.FastGetReference(methodIndex);
-        method ??= new MethodValues(Metadata.GetTotalSequencePointsOfMethod(typeIndex, methodIndex));
+        ref var method = ref module.Methods.FastGetReference(methodIndex);
+        method ??= new MethodValues(Metadata.GetTotalSequencePointsOfMethod(methodIndex));
         return method.SequencePoints;
     }
 }

@@ -45,62 +45,51 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                 TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
             }
 
-            for (var i = 0; i < moduleValue.Types.Length; i++)
+            for (var i = 0; i < moduleValue.Methods.Length; i++)
             {
-                var currentType = moduleValue.Types[i];
-                if (currentType is null)
+                var currentMethod = moduleValue.Methods[i];
+                if (currentMethod is null)
                 {
                     continue;
                 }
 
-                var typeDef = moduleTypes[i];
+                moduleValue.Metadata.GetMethodsMetadata(i, out var typeIndex, out var methodIndex);
+                var typeDef = moduleTypes[typeIndex];
+                var methodDef = typeDef.Methods[methodIndex];
 
-                for (var j = 0; j < currentType.Methods.Length; j++)
+                if (methodDef.HasBody && methodDef.Body.HasInstructions && currentMethod.SequencePoints.Length > 0)
                 {
-                    var currentMethod = currentType.Methods[j];
-                    if (currentMethod is null)
+                    var seqPoints = new List<SequencePoint>(currentMethod.SequencePoints.Length);
+                    foreach (var instruction in methodDef.Body.Instructions)
                     {
-                        continue;
+                        if (instruction.SequencePoint is null ||
+                            instruction.SequencePoint.StartLine == HIDDEN ||
+                            instruction.SequencePoint.EndLine == HIDDEN)
+                        {
+                            continue;
+                        }
+
+                        seqPoints.Add(instruction.SequencePoint);
                     }
 
-                    var methodDef = typeDef.Methods[j];
-                    if (methodDef.HasBody && methodDef.Body.HasInstructions && currentMethod.SequencePoints.Length > 0)
+                    for (var x = 0; x < currentMethod.SequencePoints.Length; x++)
                     {
-                        var seqPoints = new List<SequencePoint>(currentMethod.SequencePoints.Length);
-                        foreach (var instruction in methodDef.Body.Instructions)
+                        var repInSeqPoints = currentMethod.SequencePoints[x];
+                        if (repInSeqPoints == 0)
                         {
-                            if (instruction.SequencePoint is null ||
-                                instruction.SequencePoint.StartLine == HIDDEN ||
-                                instruction.SequencePoint.EndLine == HIDDEN)
-                            {
-                                continue;
-                            }
-
-                            seqPoints.Add(instruction.SequencePoint);
+                            continue;
                         }
 
-                        for (var x = 0; x < currentMethod.SequencePoints.Length; x++)
+                        var seqPoint = seqPoints[x];
+                        fileDictionary ??= new Dictionary<string, FileCoverage>();
+                        if (!fileDictionary.TryGetValue(seqPoint.Document.Url, out var fileCoverage))
                         {
-                            var repInSeqPoints = currentMethod.SequencePoints[x];
-                            if (repInSeqPoints == 0)
-                            {
-                                continue;
-                            }
+                            fileCoverage = new FileCoverage { FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false) };
 
-                            var seqPoint = seqPoints[x];
-                            fileDictionary ??= new Dictionary<string, FileCoverage>();
-                            if (!fileDictionary.TryGetValue(seqPoint.Document.Url, out var fileCoverage))
-                            {
-                                fileCoverage = new FileCoverage
-                                {
-                                    FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false)
-                                };
-
-                                fileDictionary[seqPoint.Document.Url] = fileCoverage;
-                            }
-
-                            fileCoverage.Segments.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
+                            fileDictionary[seqPoint.Document.Url] = fileCoverage;
                         }
+
+                        fileCoverage.Segments.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
                     }
                 }
             }
