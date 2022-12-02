@@ -14,6 +14,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -259,6 +260,7 @@ namespace Datadog.Trace.TestHelpers
                     { TelemetryRequestTypes.AppProductChanged, CreateSerializer<AppProductChangePayloadV2>() },
                     { TelemetryRequestTypes.GenerateMetrics, CreateSerializer<GenerateMetricsPayload>() },
                     { TelemetryRequestTypes.Distributions, CreateSerializer<DistributionsPayload>() },
+                    { TelemetryRequestTypes.DiagnosticLogs, CreateSerializer<DiagnosticLogsPayload>() },
                     { TelemetryRequestTypes.AppExtendedHeartbeat, CreateSerializer<AppExtendedHeartbeatPayload>() },
                     { TelemetryRequestTypes.AppClosing, CreateNullPayloadSerializer() },
                     { TelemetryRequestTypes.AppHeartbeat, CreateNullPayloadSerializer() },

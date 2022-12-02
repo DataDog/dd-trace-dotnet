@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.DTOs;
 
 namespace Datadog.Trace.Telemetry;
 
@@ -135,6 +136,9 @@ internal class TelemetryDataBuilderV2
 
         return GetRequest(application, host, new MessageBatchPayload(data), namingSchemeVersion);
     }
+
+    public TelemetryDataV2 BuildDiagnosticLogsTelemetryData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, List<DiagnosticLogMessageData> logs, string? namingSchemeVersion)
+        => GetRequest(application, host, TelemetryRequestTypes.DiagnosticLogs, new DiagnosticLogsPayload(logs), namingSchemeVersion);
 
     public TelemetryDataV2 BuildHeartbeatData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, string? namingSchemeVersion)
         => GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null, namingSchemeVersion);

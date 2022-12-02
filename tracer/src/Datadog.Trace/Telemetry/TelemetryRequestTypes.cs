@@ -15,6 +15,7 @@ namespace Datadog.Trace.Telemetry
         public const string AppHeartbeat = "app-heartbeat";
         public const string AppClosing = "app-closing";
         public const string AppExtendedHeartbeat = "app-extended-heartbeat";
+        public const string DiagnosticLogs = "debug-logs";
 
         public const string GenerateMetrics = "generate-metrics";
         public const string Distributions = "distributions";
