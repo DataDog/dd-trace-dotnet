@@ -42,15 +42,22 @@ ClrEventsParser::ClrEventsParser(
     ClearCollections();
 }
 
-void ClrEventsParser::OnEventReceived(uint64_t keywords, uint32_t id, uint32_t version, uint32_t cbEventData, const uint8_t* eventData)
+void ClrEventsParser::OnEventReceived(
+    uint32_t threadId,
+    uint64_t keywords,
+    uint32_t id,
+    uint32_t version,
+    uint32_t cbEventData,
+    const uint8_t* eventData
+    )
 {
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
-        ParseGcEvent(id, version, cbEventData, eventData);
+        ParseGcEvent(threadId, id, version, cbEventData, eventData);
     }
     else if (KEYWORD_CONTENTION == (keywords & KEYWORD_CONTENTION))
     {
-        ParseContentionEvent(id, version, cbEventData, eventData);
+        ParseContentionEvent(threadId, id, version, cbEventData, eventData);
     }
 }
 
@@ -59,7 +66,7 @@ uint64_t ClrEventsParser::GetCurrentTimestamp()
     return OpSysTools::GetHighPrecisionTimestamp();
 }
 
-void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
+void ClrEventsParser::ParseGcEvent(uint32_t threadId, uint32_t id, uint32_t version, uint32_t cbEventData, LPCBYTE pEventData)
 {
     // look for AllocationTick_V4
     if ((id == EVENT_ALLOCATION_TICK) && (version == 4))
@@ -200,7 +207,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
     }
 }
 
-void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
+void ClrEventsParser::ParseContentionEvent(uint32_t threadId, uint32_t id, uint32_t version, uint32_t cbEventData, LPCBYTE pEventData)
 {
     if (_pContentionListener == nullptr)
     {
@@ -208,22 +215,54 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
     }
 
     // look for ContentionStop_V1
-    if ((id == EVENT_CONTENTION_STOP) && (version >= 1))
+    // version 0 does not contain the duration so it is needed to keep track of contention start event
+    // and compute the difference when the contention stop event is received
+    if (id == EVENT_CONTENTION_STOP)
     {
-        //<template tid="ContentionStop_V1">
-        //    <data name="ContentionFlags" inType="win:UInt8" />
-        //    <data name="ClrInstanceID" inType="win:UInt16" />
-        //    <data name="DurationNs" inType="win:Double" />
-        //DumpBuffer(pEventData, cbEventData);
-
-        ContentionStopV1Payload payload{0};
-        ULONG offset = 0;
-        if (!Read<ContentionStopV1Payload>(payload, pEventData, cbEventData, offset))
+        if (version >= 1)
         {
-            return;
-        }
+            //<template tid="ContentionStop_V1">
+            //    <data name="ContentionFlags" inType="win:UInt8" />
+            //    <data name="ClrInstanceID" inType="win:UInt16" />
+            //    <data name="DurationNs" inType="win:Double" />
+            //DumpBuffer(pEventData, cbEventData);
 
-        _pContentionListener->OnContention(payload.DurationNs);
+            ContentionStopV1Payload payload{0};
+            ULONG offset = 0;
+            if (!Read<ContentionStopV1Payload>(payload, pEventData, cbEventData, offset))
+            {
+                return;
+            }
+
+            _pContentionListener->OnContention(threadId, payload.DurationNs);
+        }
+        else // version 0 does not contain duration so check if a contention start event was received for the event's thread
+        {
+            auto contentionStartTime = _contentionStarts[threadId];
+            if (contentionStartTime == 0)
+            {
+                // contention start event was missed: count only 1ms instead of skipping it
+                _pContentionListener->OnContention(threadId, 1000000);
+            }
+            else
+            {
+                auto now = OpSysTools::GetHighPrecisionTimestamp();
+                int64_t duration = now - contentionStartTime;
+                if (duration <= 0)
+                {
+                    duration = 1000000;
+                }
+
+                _pContentionListener->OnContention(threadId, static_cast<double_t>(duration));
+            }
+
+            // reset start
+            _contentionStarts[threadId] = 0;
+        }
+    }
+    else if (id == EVENT_CONTENTION_START)
+    {
+        _contentionStarts[threadId] = OpSysTools::GetHighPrecisionTimestamp();
     }
 }
 

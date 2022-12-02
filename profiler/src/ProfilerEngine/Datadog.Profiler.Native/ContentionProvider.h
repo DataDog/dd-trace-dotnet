@@ -31,7 +31,7 @@ public:
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration);
 
-    void OnContention(double contentionDuration) override;
+    void OnContention(uint32_t threadId, double contentionDuration) override;
 
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;

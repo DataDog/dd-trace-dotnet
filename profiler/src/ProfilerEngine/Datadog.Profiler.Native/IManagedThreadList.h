@@ -28,4 +28,6 @@ public:
                           const uint32_t threadNameBuffLen,
                           uint32_t* pActualThreadNameLen) = 0;
     virtual HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) = 0;
+    virtual bool TryGetThreadInfo(ThreadID clrThreadId, std::shared_ptr<ManagedThreadInfo>& pThreadInfo) = 0;
+    virtual bool TryGetByOsId(uint32_t threadId, std::shared_ptr<ManagedThreadInfo>& pThreadInfo) = 0;
 };

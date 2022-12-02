@@ -38,7 +38,7 @@ ContentionProvider::ContentionProvider(
 {
 }
 
-void ContentionProvider::OnContention(double contentionDuration)
+void ContentionProvider::OnContention(uint32_t threadId, double contentionDuration)
 {
     // sample contentions with a duration greater then a threshold (100ms by default)
     if ((_sampleLimit > 0) && (contentionDuration < _contentionDurationThreshold))
@@ -54,30 +54,52 @@ void ContentionProvider::OnContention(double contentionDuration)
     }
 
     std::shared_ptr<ManagedThreadInfo> threadInfo;
-    CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
-
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
-    pStackFramesCollector->PrepareForNextCollection();
-
-    uint32_t hrCollectStack = E_FAIL;
-    const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
-    if (result->GetFramesCount() == 0)
+    if (threadId == 0)  // self stack walk (.NET 5+)
     {
-        Log::Warn("Failed to walk stack for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
-        return;
+        CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
+
+        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+        pStackFramesCollector->PrepareForNextCollection();
+
+        uint32_t hrCollectStack = E_FAIL;
+        const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
+        if (result->GetFramesCount() == 0)
+        {
+            Log::Warn("Failed to walk stack for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
+            return;
+        }
+
+        result->SetUnixTimeUtc(GetCurrentTimestamp());
+        result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
+
+        RawContentionSample rawSample;
+        rawSample.Timestamp = result->GetUnixTimeUtc();
+        rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
+        rawSample.SpanId = result->GetSpanId();
+        rawSample.AppDomainId = result->GetAppDomainId();
+        result->CopyInstructionPointers(rawSample.Stack);
+        rawSample.ThreadInfo = threadInfo;
+        rawSample.ContentionDuration = contentionDuration;
+
+        Add(std::move(rawSample));
+    }
+    else // TODO: callstack should be provided by ClrStack sibling events
+    {
+        if (!_pManagedThreadList->TryGetByOsId(threadId, threadInfo))
+        {
+            return;
+        }
+
+        RawContentionSample rawSample;
+        rawSample.Timestamp = OpSysTools::GetHighPrecisionTimestamp();
+        rawSample.LocalRootSpanId = 0;
+        rawSample.SpanId = 0;
+        rawSample.AppDomainId = (AppDomainID) nullptr;
+        rawSample.ThreadInfo = threadInfo;
+        rawSample.Stack.clear();
+        rawSample.ContentionDuration = contentionDuration;
+
+        Add(std::move(rawSample));
     }
 
-    result->SetUnixTimeUtc(GetCurrentTimestamp());
-    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
-
-    RawContentionSample rawSample;
-    rawSample.Timestamp = result->GetUnixTimeUtc();
-    rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
-    rawSample.SpanId = result->GetSpanId();
-    rawSample.AppDomainId = result->GetAppDomainId();
-    result->CopyInstructionPointers(rawSample.Stack);
-    rawSample.ThreadInfo = threadInfo;
-    rawSample.ContentionDuration = contentionDuration;
-
-    Add(std::move(rawSample));
 }

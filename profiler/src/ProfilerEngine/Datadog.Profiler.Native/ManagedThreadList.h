@@ -45,6 +45,8 @@ public:
                           const std::uint32_t threadNameBuffLen,
                           std::uint32_t* pActualThreadNameLen) override;
     HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
+    bool TryGetThreadInfo(ThreadID clrThreadId, std::shared_ptr<ManagedThreadInfo>& pThreadInfo) override;
+    bool TryGetByOsId(uint32_t threadId, std::shared_ptr<ManagedThreadInfo>& pThreadInfo) override;
 
 private:
     std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId);
@@ -82,10 +84,14 @@ private:
     // that corresponds to the id. If the thread is dead, it will no longer be in the table.
     std::unordered_map<std::uint32_t, std::shared_ptr<ManagedThreadInfo>> _lookupByProfilerThreadInfoId;
 
+    // CLR events provide OS thread ID
+    std::unordered_map<std::uint32_t, std::shared_ptr<ManagedThreadInfo>> _lookupByOsThreadId;
+
     ICorProfilerInfo4* _pCorProfilerInfo;
 
 private:
     void UpdateIterators(uint32_t pos);
     std::shared_ptr<ManagedThreadInfo> FindByClrId(ThreadID clrThreadId);
     std::shared_ptr<ManagedThreadInfo> FindByProfilerId(uint32_t profilerThreadInfoId);
+    std::shared_ptr<ManagedThreadInfo> FindByOsId(uint32_t threadId);
 };

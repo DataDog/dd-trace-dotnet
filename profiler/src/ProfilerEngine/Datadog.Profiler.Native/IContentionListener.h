@@ -8,5 +8,5 @@ class IContentionListener
 public:
     virtual ~IContentionListener() = default;
 
-    virtual void OnContention(double contentionDuration) = 0;
+    virtual void OnContention(uint32_t threadId, double contentionDuration) = 0;
 };

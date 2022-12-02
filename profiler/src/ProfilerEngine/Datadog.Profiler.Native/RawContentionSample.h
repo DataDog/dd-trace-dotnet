@@ -15,7 +15,17 @@ public:
 
         sample->AddValue(1, contentionCountIndex);
         sample->AddValue(static_cast<std::int64_t>(ContentionDuration), contentionDurationIndex);
+
+        // TODO: fake frame in case of missing callstack (to be fixed for .NET Framework missing ClrStack sibling event)
+        if (Stack.size() == 0)
+        {
+            sample->AddFrame(EmptyModule, RootFrame);
+        }
     }
 
     double ContentionDuration;
+
+private:
+    static constexpr inline std::string_view EmptyModule = "Application";
+    static constexpr inline std::string_view RootFrame = "|lm: |ns: |ct: |fn:Lock_Contention";
 };

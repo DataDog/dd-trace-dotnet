@@ -15,6 +15,7 @@ ManagedThreadList::ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo) :
     _threads.reserve(MinBufferSize);
     _lookupByClrThreadId.reserve(MinBufferSize);
     _lookupByProfilerThreadInfoId.reserve(MinBufferSize);
+    _lookupByOsThreadId.reserve(MinBufferSize);
 
     // in case of tests, this could be null
     if (_pCorProfilerInfo != nullptr)
@@ -30,6 +31,7 @@ ManagedThreadList::~ManagedThreadList()
     _threads.clear();
     _lookupByClrThreadId.clear();
     _lookupByProfilerThreadInfoId.clear();
+    _lookupByOsThreadId.clear();
 
     ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
     if (pCorProfilerInfo != nullptr)
@@ -77,6 +79,38 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::GetOrCreate(ThreadID clrTh
 
     return pInfo;
 }
+
+bool ManagedThreadList::TryGetThreadInfo(ThreadID clrThreadId, std::shared_ptr<ManagedThreadInfo>& pThreadInfo)
+{
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+
+    auto pInfo = FindByClrId(clrThreadId);
+    if (pInfo == nullptr)
+    {
+        return false;
+    }
+
+    pThreadInfo = pInfo;
+
+    return true;
+}
+
+bool ManagedThreadList::TryGetByOsId(uint32_t threadId, std::shared_ptr<ManagedThreadInfo>& pThreadInfo)
+{
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+
+    auto pInfo = FindByOsId(threadId);
+    if (pInfo == nullptr)
+    {
+        return false;
+    }
+
+    pThreadInfo = pInfo;
+
+    return true;
+}
+
+
 
 void ManagedThreadList::UpdateIterators(uint32_t removalPos)
 {
@@ -139,6 +173,10 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
             _threads.erase(i);
             _lookupByClrThreadId.erase(pInfo->GetClrThreadId());
             _lookupByProfilerThreadInfoId.erase(pInfo->GetProfilerThreadInfoId());
+            if (pInfo->GetOsThreadId() != 0)
+            {
+                _lookupByOsThreadId.erase(pInfo->GetOsThreadId());
+            }
 
             // iterators might need to be updated
             UpdateIterators(pos);
@@ -167,6 +205,7 @@ bool ManagedThreadList::SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, 
     }
 
     pInfo->SetOsInfo(osThreadId, osThreadHandle);
+    _lookupByOsThreadId[osThreadId] = pInfo;
 
     Log::Debug("ManagedThreadList::SetThreadOsInfo(clrThreadId: 0x", std::hex, clrThreadId,
                ", osThreadId: ", std::dec, osThreadId,
@@ -365,6 +404,26 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::FindByClrId(ThreadID clrTh
 
     auto elem = _lookupByClrThreadId.find(clrThreadId);
     if (elem == _lookupByClrThreadId.end())
+    {
+        return nullptr;
+    }
+    else
+    {
+        return elem->second;
+    }
+}
+
+std::shared_ptr<ManagedThreadInfo> ManagedThreadList::FindByOsId(uint32_t threadId)
+{
+    // !!! This helper method must be called under the update lock (_mutex) from modifying functions !!!
+
+    if (_threads.empty())
+    {
+        return nullptr;
+    }
+
+    auto elem = _lookupByOsThreadId.find(threadId);
+    if (elem == _lookupByOsThreadId.end())
     {
         return nullptr;
     }

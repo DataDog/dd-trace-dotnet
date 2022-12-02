@@ -67,6 +67,7 @@ void CALLBACK EtwClrEventsReceiver::OnEventReceived(PEVENT_RECORD rec)
     }
 
     _pThis->_pEventsListener->OnEventReceived(
+        rec->EventHeader.ThreadId,
         rec->EventHeader.EventDescriptor.Keyword,
         rec->EventHeader.EventDescriptor.Id,
         rec->EventHeader.EventDescriptor.Version,

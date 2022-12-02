@@ -1554,7 +1554,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
             return S_OK;
         }
 
-        _pClrEventsParser->OnEventReceived(keywords, id, version, cbEventData, eventData);
+        std::shared_ptr<ManagedThreadInfo> pThreadInfo;
+        if (_pManagedThreadList->TryGetThreadInfo(eventThread, pThreadInfo))
+        {
+            uint32_t threadId = pThreadInfo->GetOsThreadId();
+            if (threadId != 0)  // race condition when os id mapping is done AFTER a first event is received
+            {
+                _pClrEventsParser->OnEventReceived(threadId, keywords, id, version, cbEventData, eventData);
+            }
+        }
     }
 
     return S_OK;

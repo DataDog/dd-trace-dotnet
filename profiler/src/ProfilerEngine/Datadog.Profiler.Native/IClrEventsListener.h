@@ -9,6 +9,7 @@ class IClrEventsListener
 {
 public:
     virtual void OnEventReceived(
+        uint32_t threadId,
         uint64_t keywords,
         uint32_t id,
         uint32_t version,

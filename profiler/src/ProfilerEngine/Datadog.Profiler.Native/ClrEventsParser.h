@@ -8,10 +8,11 @@
 #include "corprof.h"
 // end
 
-#include <string>
 #include <map>
-#include <shared_mutex>
 #include <math.h>
+#include <shared_mutex>
+#include <string>
+#include <unordered_map>
 
 #include "GarbageCollection.h"
 #include "IAllocationsListener.h"
@@ -123,14 +124,21 @@ public:
                     );
 
     // Inherited via IClrEventsListener
-    virtual void OnEventReceived(uint64_t keywords, uint32_t id, uint32_t version, uint32_t cbEventData, const uint8_t* eventData) override;
+    virtual void OnEventReceived(
+        uint32_t threadId,
+        uint64_t keywords,
+        uint32_t id,
+        uint32_t version,
+        uint32_t cbEventData,
+        const uint8_t* eventData
+        ) override;
 
 public:
     static bool TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version);
 
 private:
-    void ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
-    void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
+    void ParseGcEvent(uint32_t threadId, uint32_t id, uint32_t version, uint32_t cbEventData, LPCBYTE pEventData);
+    void ParseContentionEvent(uint32_t threadId, uint32_t id, uint32_t version, uint32_t cbEventData, LPCBYTE pEventData);
 
     // garbage collection events processing
     void OnGCTriggered();
@@ -203,9 +211,15 @@ private:
     // this is a foreground GC (could be triggered while a background GC is already running)
     GCDetails _gcInProgress;
 
+// state to compute lock contention duration
+private:
+    // per thread contention start time
+    std::unordered_map<uint32_t, int64_t> _contentionStarts;
+
 private:
     const int EVENT_ALLOCATION_TICK = 10;   // version 4 contains the size + reference
-    const int EVENT_CONTENTION_STOP = 91;   // version 1 contains the duration in nanoseconds
+    const int EVENT_CONTENTION_STOP = 91;   // version 1 contains the duration in nanoseconds (not v0... need contention start event)
+    const int EVENT_CONTENTION_START = 81;  // no interesting fields: used only to figure out when the contention started for a given thread
 
     // Events emitted during garbage collection lifetime
     // read https://medium.com/criteo-engineering/spying-on-net-garbage-collector-with-net-core-eventpipes-9f2a986d5705?source=friends_link&sk=baf9a7766fb5c7899b781f016803597f
@@ -217,6 +231,5 @@ private:
     const int EVENT_GC_HEAP_STAT = 4;             // V1
     const int EVENT_GC_GLOBAL_HEAP_HISTORY = 205; // V2
     const int EVENT_GC_SUSPEND_EE_BEGIN = 9;      // V1
-    const int EVENT_GC_RESTART_EE_END = 3;
-    // V2
+    const int EVENT_GC_RESTART_EE_END = 3;        // V2
 };
