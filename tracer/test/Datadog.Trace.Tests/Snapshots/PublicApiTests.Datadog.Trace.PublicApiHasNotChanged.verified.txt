@@ -188,7 +188,8 @@ namespace Datadog.Trace.Ci.Coverage.Metadata
 {
     public abstract class ModuleCoverageMetadata
     {
-        protected readonly int[][] Metadata;
+        protected readonly long[] Metadata;
+        protected readonly int[] SequencePoints;
         public readonly long TotalInstructions;
         protected ModuleCoverageMetadata() { }
     }
