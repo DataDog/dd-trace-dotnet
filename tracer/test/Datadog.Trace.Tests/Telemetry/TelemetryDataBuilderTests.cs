@@ -68,6 +68,27 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
+        public void WhenHasApplicationAndHostData_GeneratesLogTelemetry()
+        {
+            var builder = new TelemetryDataBuilder();
+            var logs = new LogsPayload()
+            {
+                new("This is my debug log", TelemetryLogLevel.DEBUG),
+                new("This is my warn log", TelemetryLogLevel.WARN),
+                new("This is my error log", TelemetryLogLevel.ERROR),
+            };
+
+            var result = builder.BuildLogsTelemetryData(_application, _host, logs);
+
+            result.Should().NotBeNull();
+            result.Application.Should().Be(_application);
+            result.SeqId.Should().Be(1);
+            result.Payload.Should()
+                  .NotBeNull()
+                  .And.Be(logs);
+        }
+
+        [Fact]
         public void ShouldGenerateIncrementingIds()
         {
             var builder = new TelemetryDataBuilder();
