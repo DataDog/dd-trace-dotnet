@@ -10,6 +10,8 @@
     Tags: {
       aspnet.route: api/statuscode/{value},
       env: integration_tests,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 401,
@@ -30,6 +32,8 @@
     ParentId: Id_4,
     Tags: {
       env: integration_tests,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 401,
@@ -55,6 +59,8 @@
 System.Exception: Oops, it broke. Specified status code was: 401
 at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTransferRequest(Int32 statuscode),
       error.type: System.Exception,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/statuscode/{value},
@@ -92,6 +98,8 @@ at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTrans
 System.Exception: Oops, it broke. Specified status code was: 401
 at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTransferRequest(Int32 statuscode),
       error.type: System.Exception,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,

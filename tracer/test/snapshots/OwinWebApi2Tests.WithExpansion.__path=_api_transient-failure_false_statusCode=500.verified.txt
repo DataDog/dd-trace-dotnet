@@ -15,6 +15,8 @@
 System.ArgumentException: Passed in value was not 'true': false
 at Samples.AspNetMvc5.Controllers.ApiController.TransientFailure(String value),
       error.type: System.ArgumentException,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/transient-failure/{value},
@@ -42,6 +44,8 @@ at Samples.AspNetMvc5.Controllers.ApiController.TransientFailure(String value),
     Service: Samples.Owin.WebApi2,
     Tags: {
       env: integration_tests,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,

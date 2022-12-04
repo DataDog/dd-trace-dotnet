@@ -7,6 +7,8 @@
     Service: Samples.Owin.WebApi2,
     Tags: {
       env: integration_tests,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,

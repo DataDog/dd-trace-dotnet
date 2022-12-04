@@ -13,6 +13,8 @@
       aspnet.route: api2/{action}/{value},
       env: integration_tests,
       error.msg: The HTTP response has status code 503.,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api2/{action}/{value},

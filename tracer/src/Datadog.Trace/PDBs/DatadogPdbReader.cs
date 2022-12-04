@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.MD;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
@@ -39,7 +40,7 @@ namespace Datadog.Trace.Pdb
         public static DatadogPdbReader CreatePdbReader(Assembly assembly)
         {
             var assemblyFullPath = assembly.Location;
-            var module = ModuleDefMD.Load(assembly.ManifestModule);
+            var module = ModuleDefMD.Load(assembly.ManifestModule, new ModuleCreationOptions { TryToLoadPdbFromDisk = false });
             var pdbFullPath = Path.ChangeExtension(assemblyFullPath, "pdb");
 
             if (!File.Exists(pdbFullPath))
@@ -55,7 +56,14 @@ namespace Datadog.Trace.Pdb
             }
 
             dnlibReader.Initialize(module);
+            module.LoadPdb(dnlibReader);
             return new DatadogPdbReader(dnlibReader, module);
+        }
+
+        public string GetSourceLinkJsonDocument()
+        {
+            var sourceLink = _module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
+            return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
         public SymbolMethod ReadMethodSymbolInfo(int methodMetadataToken)

@@ -6,19 +6,19 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.Util;
+using CommonTags = Datadog.Trace.Ci.Tags.CommonTags;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
@@ -69,22 +69,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static RemoteConfigurationManager? Instance { get; private set; }
 
-        public static RemoteConfigurationManager Create(
-            IDiscoveryService discoveryService,
-            IRemoteConfigurationApi remoteConfigurationApi,
-            RemoteConfigurationSettings settings,
-            string serviceName,
-            string? environment,
-            string? serviceVersion,
-            IReadOnlyList<string> tags)
+        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings)
         {
+            var tags = GetTags(settings, tracerSettings);
             lock (LockObject)
             {
                 Instance ??= new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
                     id: settings.Id,
-                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, environment, serviceVersion, tags),
+                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, tracerSettings.Environment, tracerSettings.ServiceVersion, tags),
                     pollInterval: settings.PollInterval);
             }
 
@@ -94,6 +88,37 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
 
             return Instance;
+        }
+
+        private static List<string> GetTags(RemoteConfigurationSettings rcmSettings, ImmutableTracerSettings tracerSettings)
+        {
+            var tags = tracerSettings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
+
+            var environment = tracerSettings.Environment;
+            if (!string.IsNullOrEmpty(environment))
+            {
+                tags.Add($"env:{environment}");
+            }
+
+            var serviceVersion = tracerSettings.ServiceVersion;
+            if (!string.IsNullOrEmpty(serviceVersion))
+            {
+                tags.Add($"version:{serviceVersion}");
+            }
+
+            var tracerVersion = rcmSettings.TracerVersion;
+            if (!string.IsNullOrEmpty(tracerVersion))
+            {
+                tags.Add($"tracer_version:{tracerVersion}");
+            }
+
+            var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
+            if (!string.IsNullOrEmpty(hostName))
+            {
+                tags.Add($"host_name:{hostName}");
+            }
+
+            return tags;
         }
 
         public static void CallbackWithInitializedInstance(Action<RemoteConfigurationManager> action)
@@ -222,9 +247,24 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError, _backendClientState);
             var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, capabilitiesArray);
+            EnrichWithSourceLinkTags(rcmClient.ClientTracer.Tags);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
             return rcmRequest;
+        }
+
+        private void EnrichWithSourceLinkTags(List<string> tags)
+        {
+            if (tags.Any(t => t.StartsWith(CommonTags.GitTag)) && tags.Any(t => t.StartsWith(CommonTags.GitRepository)))
+            {
+                // We already have both tags, no need to add more
+                return;
+            }
+
+            if (SourceLinkTagsProvider.Instance.GetGitTagsFromSourceLink() is { } gitTags)
+            {
+                tags.AddRange(gitTags.Select(t => $"{t.Key}:{t.Value}"));
+            }
         }
 
         private void ProcessResponse(GetRcmResponse response, IDictionary<string, Product> products)

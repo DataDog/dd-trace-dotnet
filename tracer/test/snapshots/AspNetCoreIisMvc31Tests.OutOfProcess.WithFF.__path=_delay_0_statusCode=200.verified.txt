@@ -13,6 +13,8 @@
       aspnet_core.route: delay/{seconds},
       component: aspnet_core,
       env: integration_tests,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       language: dotnet,
       span.kind: server,
       version: 1.0.0
@@ -30,6 +32,8 @@
       aspnet_core.route: delay/{seconds},
       component: aspnet_core,
       env: integration_tests,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: delay/{seconds},
