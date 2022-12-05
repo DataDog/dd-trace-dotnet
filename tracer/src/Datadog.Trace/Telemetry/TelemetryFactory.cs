@@ -33,13 +33,12 @@ namespace Datadog.Trace.Telemetry
                         return NullTelemetryController.Instance;
                     }
 
-                    var transportManager = new TelemetryTransportManager(telemetryTransports);
-
                     return new TelemetryController(
                         Configuration,
                         Dependencies,
                         Integrations,
-                        transportManager,
+                        telemetryTransports,
+                        TelemetryDataBuilder.Instance, // must use the shared instance so we get the sequence number correct
                         TelemetryConstants.DefaultFlushInterval,
                         settings.HeartbeatInterval);
                 }

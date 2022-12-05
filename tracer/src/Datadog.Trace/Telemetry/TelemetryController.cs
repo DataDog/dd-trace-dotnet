@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Reflection;
 using System.Threading;
@@ -12,7 +14,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -22,7 +23,7 @@ namespace Datadog.Trace.Telemetry
         private readonly ConfigurationTelemetryCollector _configuration;
         private readonly DependencyTelemetryCollector _dependencies;
         private readonly IntegrationTelemetryCollector _integrations;
-        private readonly TelemetryDataBuilder _dataBuilder = new();
+        private readonly TelemetryDataBuilder _dataBuilder;
         private readonly TelemetryTransportManager _transportManager;
         private readonly TimeSpan _flushInterval;
         private readonly TimeSpan _heartBeatInterval;
@@ -36,16 +37,20 @@ namespace Datadog.Trace.Telemetry
             ConfigurationTelemetryCollector configuration,
             DependencyTelemetryCollector dependencies,
             IntegrationTelemetryCollector integrations,
-            TelemetryTransportManager transportManager,
+            ITelemetryTransport[] transports,
+            TelemetryDataBuilder telemetryDataBuilder,
             TimeSpan flushInterval,
             TimeSpan heartBeatInterval)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
             _integrations = integrations ?? throw new ArgumentNullException(nameof(integrations));
+            _dataBuilder = telemetryDataBuilder ?? throw new ArgumentNullException(nameof(telemetryDataBuilder));
             _flushInterval = flushInterval;
             _heartBeatInterval = heartBeatInterval;
-            _transportManager = transportManager ?? throw new ArgumentNullException(nameof(transportManager));
+            _transportManager = transports.Length == 0
+                                    ? throw new ArgumentException("Telemetry transports were empty", nameof(transports))
+                                    : new TelemetryTransportManager(transports);
 
             try
             {
@@ -120,7 +125,7 @@ namespace Datadog.Trace.Telemetry
             AppDomain.CurrentDomain.AssemblyLoad -= CurrentDomain_OnAssemblyLoad;
         }
 
-        private void CurrentDomain_OnAssemblyLoad(object sender, AssemblyLoadEventArgs e)
+        private void CurrentDomain_OnAssemblyLoad(object? sender, AssemblyLoadEventArgs e)
         {
             RecordAssembly(e.LoadedAssembly);
         }

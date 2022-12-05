@@ -18,6 +18,8 @@ namespace Datadog.Trace.Telemetry
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryDataBuilder>();
         private int _sequence = 0;
 
+        public static TelemetryDataBuilder Instance { get; } = new();
+
         public TelemetryData[] BuildTelemetryData(
             ApplicationTelemetryData? application,
             HostTelemetryData? host,
