@@ -9,6 +9,8 @@ using System;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.Internal.Configuration;
+using Datadog.Trace.Logging.Internal.Sinks;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -31,13 +33,19 @@ internal static class DatadogLoggingFactory
             fileConfig = GetFileLoggingConfiguration(source);
         }
 
+        TelemetryLoggingConfiguration? telemetryConfig = null;
+        if (Contains(logSinkOptions, LogSinkOptions.Datadog))
+        {
+            telemetryConfig = GetTelemetryLoggingConfiguration(source);
+        }
+
         var rateLimit = source?.GetInt32(ConfigurationKeys.LogRateLimit) switch
         {
             >= 0 and { } r => r,
             _ => DefaultRateLimit,
         };
 
-        return new DatadogLoggingConfiguration(rateLimit, fileConfig);
+        return new DatadogLoggingConfiguration(rateLimit, fileConfig, telemetryConfig);
 
         static bool Contains(string?[]? array, string toMatch)
         {
@@ -91,6 +99,17 @@ internal static class DatadogLoggingFactory
                     rollOnFileSizeLimit: true,
                     fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
                     shared: true);
+        }
+
+        if (config.Telemetry is { } telemetryConfig)
+        {
+            // We use a level of indirection in the sink configuration so that if the sink dies
+            // we stop trying to queue logs to it
+            loggerConfiguration
+               .WriteTo.Logger(
+                    lc => lc
+                         .MinimumLevel.ControlledBy(telemetryConfig.LogLevelSwitch)
+                         .WriteTo.Sink(new TelemetrySink(telemetryConfig.TelemetrySink.Value)));
         }
 
         try
@@ -218,5 +237,23 @@ internal static class DatadogLoggingFactory
         };
 
         return new FileLoggingConfiguration(maxLogFileSize, logDirectory, logFileRetentionDays);
+    }
+
+    private static TelemetryLoggingConfiguration? GetTelemetryLoggingConfiguration(IConfigurationSource? source)
+    {
+        // Get the telemetry settings, assuming that the agent is available
+        // We cant use the "default" agent detection approach here,
+        // because that requires loading the Logger, which we can't yet
+        var telemetrySettings = TelemetrySettings.FromSource(source, () => true);
+        if (!telemetrySettings.TelemetryEnabled)
+        {
+            return null;
+        }
+
+        // Yes, I chose all these somewhat arbitrarily.
+        return new TelemetryLoggingConfiguration(
+            bufferSize: 1000,
+            batchSize: 100,
+            flushPeriod: TimeSpan.FromSeconds(10));
     }
 }

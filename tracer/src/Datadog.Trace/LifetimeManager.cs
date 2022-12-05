@@ -119,6 +119,11 @@ namespace Datadog.Trace
                         Log.Error("Hooks must be of Action or Func<Task> types.");
                     }
                 }
+
+                // We can't add this to the lifetime manager directly because
+                // we can't reference the lifetime manager when starting the logger
+                // as that would cause a circular dependency
+                DatadogLogging.GetGlobalTelemetrySink().DisposeAsync().Wait(TaskTimeout);
             }
             catch (Exception ex)
             {

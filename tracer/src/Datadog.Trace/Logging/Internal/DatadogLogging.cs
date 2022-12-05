@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -18,12 +19,14 @@ namespace Datadog.Trace.Logging
         internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new(DefaultLogLevel);
         private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly IDatadogLogger SharedLogger;
+        private static readonly ITelemetryLogsSink TelemetrySink;
 
         static DatadogLogging()
         {
             // Initialize the fallback logger right away
             // because some part of the code might produce logs while we initialize the actual logger
             SharedLogger = DatadogSerilogLogger.NullLogger;
+            TelemetrySink = NullTelemetryLogsSink.Instance;
 
             try
             {
@@ -33,6 +36,10 @@ namespace Datadog.Trace.Logging
                 }
 
                 var config = DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance);
+
+                TelemetrySink = config.Telemetry is { } telemetry
+                                    ? telemetry.TelemetrySink.Value
+                                    : NullTelemetryLogsSink.Instance;
 
                 if (config.File is { LogFileRetentionDays: > 0 } fileConfig)
                 {
@@ -79,6 +86,8 @@ namespace Datadog.Trace.Logging
         {
             SetLogLevel(DefaultLogLevel);
         }
+
+        internal static ITelemetryLogsSink GetGlobalTelemetrySink() => TelemetrySink;
 
         internal static void CleanLogFiles(int deleteAfter, string logsDirectory)
         {

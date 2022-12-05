@@ -4,7 +4,6 @@
 // </copyright>
 #nullable enable
 using System;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Transports;
@@ -30,6 +29,9 @@ namespace Datadog.Trace.Telemetry
 
                     if (telemetryTransports.Length == 0)
                     {
+                        // telemetry is not enabled, so disable the telemetry sink
+                        // I don't like that this modifies the static instance, but what's the other options?
+                        DatadogLogging.GetGlobalTelemetrySink()?.CloseImmediately();
                         return NullTelemetryController.Instance;
                     }
 
@@ -41,7 +43,7 @@ namespace Datadog.Trace.Telemetry
                         TelemetryDataBuilder.Instance, // must use the shared instance so we get the sequence number correct
                         TelemetryConstants.DefaultFlushInterval,
                         settings.HeartbeatInterval,
-                        NullTelemetryLogsSink.Instance); // TODO: Update this to use the real one
+                        DatadogLogging.GetGlobalTelemetrySink());
                 }
                 catch (Exception ex)
                 {
@@ -49,6 +51,9 @@ namespace Datadog.Trace.Telemetry
                 }
             }
 
+            // telemetry is not enabled, so disable the telemetry sink
+            // I don't like that this modifies the static instance, but what's the other options?
+            DatadogLogging.GetGlobalTelemetrySink()?.CloseImmediately();
             return NullTelemetryController.Instance;
         }
     }
