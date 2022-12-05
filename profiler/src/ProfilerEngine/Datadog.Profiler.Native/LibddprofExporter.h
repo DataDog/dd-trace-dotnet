@@ -45,17 +45,17 @@ private:
     class SerializedProfile
     {
     public:
-        SerializedProfile(struct ddog_Profile* profile);
+        SerializedProfile(struct ddog_prof_Profile* profile);
         ~SerializedProfile();
 
-        ddog_Vec_u8 GetBuffer() const;
+        ddog_prof_Vec_U8 GetBuffer() const;
         ddog_Timespec GetStart() const;
         ddog_Timespec GetEnd() const;
 
         bool IsValid() const;
 
     private:
-        ddog_SerializeResult _encodedProfile;
+        ddog_prof_Profile_SerializeResult _encodedProfile;
     };
 
     class Tags
@@ -72,20 +72,20 @@ private:
 
         void Add(std::string const& name, std::string const& value);
 
-        const ddog_Vec_tag* GetFfiTags() const;
+        const ddog_Vec_Tag* GetFfiTags() const;
 
     private:
-        ddog_Vec_tag _ffiTags;
+        ddog_Vec_Tag _ffiTags;
     };
 
     class ProfileAutoDelete
     {
     public:
-        ProfileAutoDelete(struct ddog_Profile* profile);
+        ProfileAutoDelete(struct ddog_prof_Profile* profile);
         ~ProfileAutoDelete();
 
     private:
-        struct ddog_Profile* _profile;
+        struct ddog_prof_Profile* _profile;
     };
 
     class ProfileInfo
@@ -93,7 +93,7 @@ private:
     public:
         ProfileInfo();
     public:
-        ddog_Profile* profile;
+        ddog_prof_Profile* profile;
         std::int32_t samplesCount;
         std::int32_t exportsCount;
         std::mutex lock;
@@ -115,16 +115,16 @@ private:
         IRuntimeInfo* runtimeInfo,
         IEnabledProfilers* enabledProfilers);
 
-    static ddog_ProfileExporter* CreateExporter(const ddog_Vec_tag* tags, ddog_Endpoint endpoint);
-    ddog_Profile* CreateProfile();
+    static ddog_prof_Exporter* CreateExporter(const ddog_Vec_Tag* tags, ddog_Endpoint endpoint);
+    ddog_prof_Profile* CreateProfile();
 
-    ddog_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_ProfileExporter* exporter,  const Tags& additionalTags) const;
+    ddog_prof_Exporter_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter,  const Tags& additionalTags) const;
     ddog_Endpoint CreateEndpoint(IConfiguration* configuration);
     ProfileInfoScope GetInfo(std::string_view runtimeId);
 
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
 
-    bool Send(ddog_Request* request, ddog_ProfileExporter* exporter) const;
+    bool Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter) const;
     std::string GeneratePprofFilePath(const std::string& applicationName, int idx) const;
     fs::path CreatePprofOutputPath(IConfiguration* configuration) const;
 
@@ -145,8 +145,8 @@ private:
     std::vector<SampleValueType> _sampleTypeDefinitions;
     fs::path _pprofOutputPath;
 
-    std::vector<ddog_Location> _locations;
-    std::vector<ddog_Line> _lines;
+    std::vector<ddog_prof_Location> _locations;
+    std::vector<ddog_prof_Line> _lines;
     std::string _agentUrl;
     std::size_t _locationsAndLinesSize;
 

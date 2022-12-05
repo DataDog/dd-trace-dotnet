@@ -82,7 +82,7 @@ LibddprofExporter::~LibddprofExporter()
 
             if (appInfo.profile != nullptr)
             {
-                ddog_Profile_free(appInfo.profile);
+                ddog_prof_Profile_drop(appInfo.profile);
             }
 
             appInfo.profile = nullptr;
@@ -91,16 +91,16 @@ LibddprofExporter::~LibddprofExporter()
     _perAppInfo.clear();
 }
 
-ddog_ProfileExporter* LibddprofExporter::CreateExporter(const ddog_Vec_tag* tags, ddog_Endpoint endpoint)
+ddog_prof_Exporter* LibddprofExporter::CreateExporter(const ddog_Vec_Tag* tags, ddog_Endpoint endpoint)
 {
-    auto result = ddog_ProfileExporter_new(
+    auto result = ddog_prof_Exporter_new(
         FfiHelper::StringToCharSlice(LibraryName),
         FfiHelper::StringToCharSlice(LibraryVersion),
         FfiHelper::StringToCharSlice(LanguageFamily),
         tags,
         endpoint);
 
-    if (result.tag == DDOG_NEW_PROFILE_EXPORTER_RESULT_OK)
+    if (result.tag == DDOG_PROF_EXPORTER_NEW_RESULT_OK)
     {
         return result.ok;
     }
@@ -111,9 +111,9 @@ ddog_ProfileExporter* LibddprofExporter::CreateExporter(const ddog_Vec_tag* tags
     }
 }
 
-struct ddog_Profile* LibddprofExporter::CreateProfile()
+struct ddog_prof_Profile* LibddprofExporter::CreateProfile()
 {
-    std::vector<ddog_ValueType> samplesTypes;
+    std::vector<ddog_prof_ValueType> samplesTypes;
     samplesTypes.reserve(_sampleTypeDefinitions.size());
 
     for (auto const& type : _sampleTypeDefinitions)
@@ -121,15 +121,15 @@ struct ddog_Profile* LibddprofExporter::CreateProfile()
         samplesTypes.push_back(FfiHelper::CreateValueType(type.Name, type.Unit));
     }
 
-    struct ddog_Slice_value_type sample_types = {samplesTypes.data(), samplesTypes.size()};
+    struct ddog_prof_Slice_ValueType sample_types = {samplesTypes.data(), samplesTypes.size()};
 
     auto period_value_type = FfiHelper::CreateValueType(ProfilePeriodType, ProfilePeriodUnit);
 
-    auto period = ddog_Period{};
+    auto period = ddog_prof_Period{};
     period.type_ = period_value_type;
     period.value = 1;
 
-    return ddog_Profile_new(sample_types, &period, nullptr);
+    return ddog_prof_Profile_new(sample_types, &period, nullptr);
 }
 
 LibddprofExporter::Tags LibddprofExporter::CreateTags(
@@ -336,12 +336,12 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
         ++idx;
     }
 
-    auto ffiSample = ddog_Sample{};
+    auto ffiSample = ddog_prof_Sample{};
     ffiSample.locations = {_locations.data(), nbFrames};
 
     // Labels
     auto const& labels = sample->GetLabels();
-    std::vector<ddog_Label> ffiLabels;
+    std::vector<ddog_prof_Label> ffiLabels;
     ffiLabels.reserve(labels.size());
 
     for (auto const& [label, value] : labels)
@@ -356,7 +356,7 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
 
     // TODO: add timestamps when available
 
-    auto result = ddog_Profile_add(profile, ffiSample);
+    auto result = ddog_prof_Profile_add(profile, ffiSample);
     profileInfoScope.profileInfo.samplesCount++;
 }
 
@@ -373,7 +373,12 @@ void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t trace
 
     const auto traceIdStr = std::to_string(traceId);
 
-    ddog_Profile_set_endpoint(profile, FfiHelper::StringToCharSlice(traceIdStr), FfiHelper::StringToCharSlice(endpoint));
+    auto endpointName = FfiHelper::StringToCharSlice(endpoint);
+
+    ddog_prof_Profile_set_endpoint(profile, FfiHelper::StringToCharSlice(traceIdStr), endpointName);
+
+    // This method is called only once: when the trace closes
+    ddog_prof_Profile_add_endpoint_count(profile, endpointName, 1);
 }
 
 bool LibddprofExporter::Export()
@@ -394,7 +399,7 @@ bool LibddprofExporter::Export()
 
     for (auto& runtimeId : keys)
     {
-        ddog_Profile* profile;
+        ddog_prof_Profile* profile;
         int32_t samplesCount;
         int32_t exportsCount;
 
@@ -466,7 +471,7 @@ bool LibddprofExporter::Export()
             exported = false;
             Log::Error("Unable to create a request to send the profile.");
         }
-        ddog_ProfileExporter_delete(exporter);
+        ddog_prof_Exporter_drop(exporter);
     }
     return exported;
 }
@@ -520,31 +525,31 @@ void LibddprofExporter::ExportToDisk(const std::string& applicationName, Seriali
     }
 }
 
-ddog_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedProfile, ddog_ProfileExporter* exporter, const Tags& additionalTags) const
+ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter, const Tags& additionalTags) const
 {
     auto start = encodedProfile.GetStart();
     auto end = encodedProfile.GetEnd();
     auto buffer = encodedProfile.GetBuffer();
 
-    ddog_File file{FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_u8_as_slice(&buffer)};
+    ddog_prof_Exporter_File file{FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_U8_as_slice(&buffer)};
 
-    struct ddog_Slice_file files
+    struct ddog_prof_Exporter_Slice_File files
     {
         &file, 1
     };
 
-    return ddog_ProfileExporter_build(exporter, start, end, files, additionalTags.GetFfiTags(), RequestTimeOutMs);
+    return ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), nullptr, RequestTimeOutMs);
 }
 
-bool LibddprofExporter::Send(ddog_Request* request, ddog_ProfileExporter* exporter) const
+bool LibddprofExporter::Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter) const
 {
     assert(request != nullptr);
 
-    auto result = ddog_ProfileExporter_send(exporter, request, nullptr);
+    auto result = ddog_prof_Exporter_send(exporter, request, nullptr);
 
-    on_leave { ddog_SendResult_drop(result); };
+    on_leave { ddog_prof_Exporter_SendResult_drop(result); };
 
-    if (result.tag == DDOG_SEND_RESULT_ERR)
+    if (result.tag == DDOG_PROF_EXPORTER_SEND_RESULT_ERR)
     {
         Log::Error("Failed to send profile (", std::string(reinterpret_cast<const char*>(result.err.ptr), result.err.len), ")"); // NOLINT
         return false;
@@ -584,22 +589,22 @@ fs::path LibddprofExporter::CreatePprofOutputPath(IConfiguration* configuration)
 //
 // LibddprofExporter::SerializedProfile class
 //
-LibddprofExporter::SerializedProfile::SerializedProfile(ddog_Profile* profile) :
-    _encodedProfile{ddog_Profile_serialize(profile, nullptr, nullptr)}
+LibddprofExporter::SerializedProfile::SerializedProfile(ddog_prof_Profile* profile) :
+    _encodedProfile{ddog_prof_Profile_serialize(profile, nullptr, nullptr)}
 {
 }
 
 bool LibddprofExporter::SerializedProfile::IsValid() const
 {
-    return _encodedProfile.tag == DDOG_SERIALIZE_RESULT_OK;
+    return _encodedProfile.tag == DDOG_PROF_PROFILE_SERIALIZE_RESULT_OK;
 }
 
 LibddprofExporter::SerializedProfile::~SerializedProfile()
 {
-    ddog_SerializeResult_drop(_encodedProfile);
+    ddog_prof_Profile_SerializeResult_drop(_encodedProfile);
 }
 
-ddog_Vec_u8 LibddprofExporter::SerializedProfile::GetBuffer() const
+ddog_prof_Vec_U8 LibddprofExporter::SerializedProfile::GetBuffer() const
 {
     return _encodedProfile.ok.buffer;
 }
@@ -619,13 +624,13 @@ ddog_Timespec LibddprofExporter::SerializedProfile::GetEnd() const
 //
 
 LibddprofExporter::Tags::Tags() :
-    _ffiTags{ddog_Vec_tag_new()}
+    _ffiTags{ddog_Vec_Tag_new()}
 {
 }
 
 LibddprofExporter::Tags::~Tags() noexcept
 {
-    ddog_Vec_tag_drop(_ffiTags);
+    ddog_Vec_Tag_drop(_ffiTags);
 }
 
 LibddprofExporter::Tags::Tags(Tags&& other) noexcept
@@ -651,16 +656,16 @@ void LibddprofExporter::Tags::Add(std::string const& labelName, std::string cons
     auto ffiName = FfiHelper::StringToCharSlice(labelName);
     auto ffiValue = FfiHelper::StringToCharSlice(labelValue);
 
-    auto pushResult = ddog_Vec_tag_push(&_ffiTags, ffiName, ffiValue);
-    if (pushResult.tag == DDOG_PUSH_TAG_RESULT_ERR)
+    auto pushResult = ddog_Vec_Tag_push(&_ffiTags, ffiName, ffiValue);
+    if (pushResult.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
     {
         auto err_details = pushResult.err;
         Log::Debug(err_details.ptr);
     }
-    ddog_PushTagResult_drop(pushResult);
+    ddog_Vec_Tag_PushResult_drop(pushResult);
 }
 
-const ddog_Vec_tag* LibddprofExporter::Tags::GetFfiTags() const
+const ddog_Vec_Tag* LibddprofExporter::Tags::GetFfiTags() const
 {
     return &_ffiTags;
 }
@@ -669,14 +674,14 @@ const ddog_Vec_tag* LibddprofExporter::Tags::GetFfiTags() const
 // LibddprofExporter::ProfileAutoDelete class
 //
 
-LibddprofExporter::ProfileAutoDelete::ProfileAutoDelete(struct ddog_Profile* profile) :
+LibddprofExporter::ProfileAutoDelete::ProfileAutoDelete(struct ddog_prof_Profile* profile) :
     _profile{profile}
 {
 }
 
 LibddprofExporter::ProfileAutoDelete::~ProfileAutoDelete()
 {
-    ddog_Profile_free(_profile);
+    ddog_prof_Profile_drop(_profile);
 }
 
 //
