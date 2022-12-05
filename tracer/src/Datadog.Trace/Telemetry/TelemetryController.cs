@@ -25,6 +25,8 @@ namespace Datadog.Trace.Telemetry
         private readonly IntegrationTelemetryCollector _integrations;
         private readonly TelemetryDataBuilder _dataBuilder;
         private readonly TelemetryTransportManager _transportManager;
+        private readonly ITelemetryTransport[] _telemetryTransports;
+        private readonly ITelemetryLogsSink _logsSink;
         private readonly TimeSpan _flushInterval;
         private readonly TimeSpan _heartBeatInterval;
         private readonly TaskCompletionSource<bool> _tracerInitialized = new();
@@ -40,7 +42,8 @@ namespace Datadog.Trace.Telemetry
             ITelemetryTransport[] transports,
             TelemetryDataBuilder telemetryDataBuilder,
             TimeSpan flushInterval,
-            TimeSpan heartBeatInterval)
+            TimeSpan heartBeatInterval,
+            ITelemetryLogsSink logsSink)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
@@ -48,6 +51,9 @@ namespace Datadog.Trace.Telemetry
             _dataBuilder = telemetryDataBuilder ?? throw new ArgumentNullException(nameof(telemetryDataBuilder));
             _flushInterval = flushInterval;
             _heartBeatInterval = heartBeatInterval;
+            _logsSink = logsSink;
+            // We provide the transports to the logs sink when we initialize
+            _telemetryTransports = transports;
             _transportManager = transports.Length == 0
                                     ? throw new ArgumentException("Telemetry transports were empty", nameof(transports))
                                     : new TelemetryTransportManager(transports);
@@ -84,6 +90,7 @@ namespace Datadog.Trace.Telemetry
         public void Start()
         {
             _tracerInitialized.TrySetResult(true);
+            _logsSink?.Initialize(_configuration.GetApplicationData(), _configuration.GetHostData(), _dataBuilder, _telemetryTransports);
         }
 
         public void RecordSecuritySettings(SecuritySettings settings)

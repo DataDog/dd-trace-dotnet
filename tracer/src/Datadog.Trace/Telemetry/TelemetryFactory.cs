@@ -40,7 +40,8 @@ namespace Datadog.Trace.Telemetry
                         telemetryTransports,
                         TelemetryDataBuilder.Instance, // must use the shared instance so we get the sequence number correct
                         TelemetryConstants.DefaultFlushInterval,
-                        settings.HeartbeatInterval);
+                        settings.HeartbeatInterval,
+                        NullTelemetryLogsSink.Instance); // TODO: Update this to use the real one
                 }
                 catch (Exception ex)
                 {

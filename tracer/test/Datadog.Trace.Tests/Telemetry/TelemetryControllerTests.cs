@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -33,7 +34,8 @@ namespace Datadog.Trace.Tests.Telemetry
                 new ITelemetryTransport[] { _transport },
                 new TelemetryDataBuilder(),
                 _refreshInterval,
-                _refreshInterval);
+                _refreshInterval,
+                NullTelemetryLogsSink.Instance);
         }
 
         public void Dispose() => _controller?.DisposeAsync();
@@ -65,7 +67,8 @@ namespace Datadog.Trace.Tests.Telemetry
                 new ITelemetryTransport[] { transport },
                 new TelemetryDataBuilder(),
                 _refreshInterval,
-                _refreshInterval);
+                _refreshInterval,
+                NullTelemetryLogsSink.Instance);
 
             controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
             controller.Start();
@@ -98,7 +101,8 @@ namespace Datadog.Trace.Tests.Telemetry
                 new ITelemetryTransport[] { transport },
                 new TelemetryDataBuilder(),
                 flushInterval: TimeSpan.FromMinutes(1),
-                heartBeatInterval: heartBeatInterval);
+                heartBeatInterval: heartBeatInterval,
+                NullTelemetryLogsSink.Instance);
 
             controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
             controller.Start();
@@ -139,7 +143,8 @@ namespace Datadog.Trace.Tests.Telemetry
                 new[] { _transport },
                 new TelemetryDataBuilder(),
                 _refreshInterval,
-                _refreshInterval);
+                _refreshInterval,
+                NullTelemetryLogsSink.Instance);
 
             controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
             controller.Start();
@@ -161,6 +166,29 @@ namespace Datadog.Trace.Tests.Telemetry
                        .Should()
                        .ContainEquivalentOf(assemblyName);
             }
+        }
+
+        [Fact]
+        public void TelemetryControllerInitializesLogsSinkOnStart()
+        {
+            // creating a new controller so we have the same list of assemblies
+            var logsSink = new TestTelemetryLogsSink();
+            var controller = new TelemetryController(
+                new ConfigurationTelemetryCollector(),
+                new DependencyTelemetryCollector(),
+                new IntegrationTelemetryCollector(),
+                new[] { _transport },
+                new TelemetryDataBuilder(),
+                _refreshInterval,
+                _refreshInterval,
+                logsSink);
+
+            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+
+            logsSink.WasInitialized.Should().BeFalse();
+            controller.Start();
+
+            logsSink.WasInitialized.Should().BeTrue();
         }
 
         private async Task<List<TelemetryData>> WaitForRequestStarted(TestTelemetryTransport transport, TimeSpan timeout)
@@ -219,6 +247,28 @@ namespace Datadog.Trace.Tests.Telemetry
             }
 
             public string GetTransportInfo() => nameof(TestTelemetryTransport);
+        }
+
+        internal class TestTelemetryLogsSink : ITelemetryLogsSink
+        {
+            private int _initializationCount;
+
+            public bool WasInitialized => Volatile.Read(ref _initializationCount) > 0;
+
+            public void Initialize(ApplicationTelemetryData applicationData, HostTelemetryData hostData, TelemetryDataBuilder dataBuilder, ITelemetryTransport[] transports)
+            {
+                Interlocked.Increment(ref _initializationCount);
+            }
+
+            public void EnqueueLog(LogMessageData logEvent)
+            {
+            }
+
+            public Task DisposeAsync() => Task.CompletedTask;
+
+            public void CloseImmediately()
+            {
+            }
         }
     }
 }
