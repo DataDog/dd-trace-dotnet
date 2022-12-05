@@ -12,7 +12,7 @@ public class SimpleNestedTypeNameInGlobalNamespaceTest : IRun
 
     class NestedType
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData("System.Void", new[] { "System.String" }, useFullTypeName: false)]
         public void MethodToInstrument(string callerName)
         {

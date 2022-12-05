@@ -120,6 +120,8 @@ variables:
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
+  # Include all test frameworks when (variable is set) OR ((running on master/release/hotfix) and (NOT scheduled build)),
+  IncludeAllTestFrameworks: $[or(eq(variables['run_all_test_frameworks'], 'true'), and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/')), not(eq(variables['Build.Reason'], 'Schedule'))))]
   # Logger variables
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
@@ -647,7 +649,7 @@ stages:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
-        artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
+        artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
         condition: succeededOrFailed()
         continueOnError: true
 
@@ -709,7 +711,7 @@ stages:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
-        artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
+        artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
         condition: succeededOrFailed()
         continueOnError: true
 
@@ -758,7 +760,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: tracer/build_data
-      artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -840,7 +842,7 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - publish: tracer/build_data
-          artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
 
@@ -907,13 +909,13 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows tracer logs
-      artifact: integration_tests_windows_tracer_logs_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_windows_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -963,13 +965,13 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
-      artifact: integration_tests_windows_iis_tracer_logs_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_windows_iis_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1019,13 +1021,13 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
-      artifact: integration_tests_windows_iis_security_tracer_logs_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_windows_iis_security_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1083,13 +1085,13 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading tracer logs
-      artifact: integration_tests_windows_azure_functions_tracer_logs_$(framework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_windows_azure_functions__snapshots_$(framework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1174,13 +1176,13 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_msi tracer logs
-      artifact: integration_tests_windows_msi_tracer_logs_$(targetPlatform)_$(framework)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_windows_msi_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1252,7 +1254,7 @@ stages:
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
-      artifact: integration_tests_linux_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1265,7 +1267,7 @@ stages:
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_linux_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1350,7 +1352,7 @@ stages:
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
-      artifact: integration_tests_linux_docker_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1363,7 +1365,7 @@ stages:
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_linux_docker_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1392,6 +1394,9 @@ stages:
         net6:
           publishTargetFramework: "net6.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6"
+        net7:
+          publishTargetFramework: "net7.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7"
     pool:
       name: azure-linux-scale-set
 
@@ -1519,7 +1524,7 @@ stages:
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
-      artifact: integration_tests_linux_serverless_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1532,7 +1537,7 @@ stages:
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_linux_serverless_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1618,7 +1623,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - publish: profiler/build_data
-      artifact: continuous-profiler-logs_integration_tests_linux_$(baseImage)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1651,6 +1656,8 @@ stages:
             publishTargetFramework: net5.0
           net6_0:
             publishTargetFramework: net6.0
+          net7_0:
+            publishTargetFramework: net7.0
       workspace:
         clean: all
       pool:
@@ -1692,7 +1699,7 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
         - publish: tracer/build_data
-          artifact: integration_tests_linux_tracer_logs_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
 
@@ -1705,7 +1712,7 @@ stages:
 
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
-          artifact: integration_tests_linux_snapshots_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
 
@@ -1723,6 +1730,8 @@ stages:
             publishTargetFramework: net5.0
           net6_0:
             publishTargetFramework: net6.0
+          net7_0:
+            publishTargetFramework: net7.0
       workspace:
         clean: all
       pool:
@@ -1784,7 +1793,7 @@ stages:
           condition: succeededOrFailed()
 
         - publish: tracer/build_data
-          artifact: integration_tests_linux_docker_tracer_logs_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
 
@@ -1797,7 +1806,7 @@ stages:
 
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
-          artifact: integration_tests_linux_docker_snapshots_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
 
@@ -1857,7 +1866,7 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading exploration_tests_windows tracer logs
-      artifact: exploration_tests_windows_tracer_logs_$(explorationTestUseCase)_$(explorationTestName)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1955,7 +1964,7 @@ stages:
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
-      artifact: profiler-logs_exploration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(explorationTestUseCase)_$(explorationTestName)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -2962,7 +2971,7 @@ stages:
       - publish: system-tests/logs
         condition: always()
         displayName: System tests logs
-        artifact: system-tests_$(System.JobAttempt)
+        artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
 
       - script: ./run.sh UDS
         workingDirectory: system-tests
@@ -2973,7 +2982,7 @@ stages:
       - publish: system-tests/logs_uds
         condition: always()
         displayName: System tests UDS logs
-        artifact: system-tests-uds_$(System.JobAttempt)
+        artifact: _$(System.StageName)_$(Agent.JobName)_logs_uds_$(System.JobAttempt)
         
       - script: ./run.sh REMOTE_CONFIG_MOCKED_BACKEND_LIVE_DEBUGGING
         workingDirectory: system-tests
@@ -2984,7 +2993,7 @@ stages:
       - publish: system-tests/logs_remote_config_mocked_backend_live_debugging
         condition: always()
         displayName: RCM tests logs
-        artifact: system-tests-rcm_$(System.JobAttempt)
+        artifact: _$(System.StageName)_$(Agent.JobName)_logs_rcm_$(System.JobAttempt)
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -3039,7 +3048,7 @@ stages:
         snapshotPrefix: "smoke_test"
 
     - publish: tracer/build_data
-      artifact: installer-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3110,7 +3119,7 @@ stages:
         snapshotPrefix: "smoke_test"
 
     - publish: tracer/build_data
-      artifact: nuget_installer-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3172,7 +3181,7 @@ stages:
         snapshotPrefix: "smoke_test"
 
     - publish: tracer/build_data
-      artifact: dotnet-tool-nuget-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3238,7 +3247,7 @@ stages:
         snapshotPrefix: "smoke_test"
 
     - publish: tracer/build_data
-      artifact: dotnet-tool-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3314,7 +3323,7 @@ stages:
         snapshotPrefix: "smoke_test"
 
     - publish: tracer/build_data
-      artifact: dotnet-tool-smoke-test-self-instrument-logs_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3373,7 +3382,7 @@ stages:
             snapshotPrefix: "smoke_test"
 
         - publish: tracer/build_data
-          artifact: installer-smoke-test-logs_arm64_$(dockerTag)_$(System.JobAttempt)
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
 
@@ -3442,7 +3451,7 @@ stages:
         snapshotPrefix: "smoke_test"
 
     - publish: tracer/build_data
-      artifact: nuget_installer-smoke-test-logs_arm64_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3504,7 +3513,7 @@ stages:
         snapshotPrefix: "smoke_test"
 
     - publish: tracer/build_data
-      artifact: dotnet-tool-smoke-test-logs_arm64_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3575,7 +3584,7 @@ stages:
         isLinux: false
 
     - publish: tracer/build_data
-      artifact: nuget_installer_windows-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3640,7 +3649,7 @@ stages:
         isLinux: false
 
     - publish: tracer/build_data
-      artifact: dotnet-tool-smoke-test-windows-logs_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3705,7 +3714,7 @@ stages:
         isLinux: false
 
     - publish: tracer/build_data
-      artifact: msi-installer-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3769,7 +3778,7 @@ stages:
         isLinux: false
 
     - publish: tracer/build_data
-      artifact: tracer-home-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 

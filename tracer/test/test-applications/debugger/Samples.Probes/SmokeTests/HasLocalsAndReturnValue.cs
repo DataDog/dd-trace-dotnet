@@ -10,14 +10,14 @@ namespace Samples.Probes.SmokeTests
     {
         public int Number { get; set; } = 7;
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             var result = Method(Number);
             Console.WriteLine(result);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData("System.String", new[] { "System.Int32" })]
         public string Method(int num)
         {

@@ -30,6 +30,7 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     IClrLifetime const* clrLifetime,
     IThreadsCpuManager* pThreadsCpuManager,
     IManagedThreadList* pManagedThreadList,
+    IManagedThreadList* pCodeHotspotThreadList,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
     ICollector<RawCpuSample>* pCpuTimeCollector
     ) :
@@ -52,6 +53,7 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _pClrLifetime{clrLifetime},
     _pThreadsCpuManager{pThreadsCpuManager},
     _pManagedThreadList{pManagedThreadList},
+    _pCodeHotspotsThreadList{pCodeHotspotThreadList},
     _pWallTimeCollector{pWallTimeCollector},
     _pCpuTimeCollector{pCpuTimeCollector},
     _deadlockInterventionInProgress{0}
@@ -118,6 +120,7 @@ void StackSamplerLoopManager::RunStackSampling()
             this,
             _pThreadsCpuManager,
             _pManagedThreadList,
+            _pCodeHotspotsThreadList,
             _pWallTimeCollector,
             _pCpuTimeCollector
             );

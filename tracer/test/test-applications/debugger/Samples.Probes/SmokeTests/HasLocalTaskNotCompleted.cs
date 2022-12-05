@@ -8,7 +8,7 @@ namespace Samples.Probes.SmokeTests
     {
         public Task<string> LastNameTask = new Task<string>(new Func<string>(() => throw new Exception()));
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             try
@@ -23,7 +23,7 @@ namespace Samples.Probes.SmokeTests
             Method(LastNameTask);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         // https://datadoghq.atlassian.net/browse/DEBUG-722
         [MethodProbeTestData("System.String", new[] { "System.Threading.Tasks.Task`1<System.String>" }, true)]
         public string Method(Task<string> task)

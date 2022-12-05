@@ -186,8 +186,10 @@ namespace Datadog.Trace.Debugger.Helpers
         {
             if (stateMachine == null)
             {
-                // State machine is null when we run in Optimized code and the original async method was generic,
-                // in which case the state machine is a generic value type.
+                // State machine is null in case is a nested struct inside a generic parent.
+                // This can happen if we operate in optimized code and the original async method was inside a generic class
+                // or in case the original async method was generic, in which case the state machine is a generic value type
+                // See more here: https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L70
                 return null;
             }
 
@@ -235,16 +237,7 @@ namespace Datadog.Trace.Debugger.Helpers
             public MethodBase KickoffMethod { get; }
         }
 
-        // can't use ref struct here because GetHoistedArgumentsFromStateMachine returns FieldNameValue[]
-        internal readonly record struct FieldNameValueType(string Name, object Value, Type Type)
-        {
-            public object Value { get; } = Value;
-
-            public string Name { get; } = Name;
-
-            public Type Type { get; } = Type;
-        }
-
+        // can't use ref struct here because GetHoistedArgumentsFromStateMachine returns FieldInfoNameSanitized[]
         internal readonly record struct FieldInfoNameSanitized(FieldInfo Field, string SanitizedName)
         {
             public FieldInfo Field { get; } = Field;

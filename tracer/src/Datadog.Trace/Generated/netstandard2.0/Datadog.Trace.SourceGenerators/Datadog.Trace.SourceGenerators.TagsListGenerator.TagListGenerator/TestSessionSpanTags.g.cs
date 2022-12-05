@@ -62,6 +62,8 @@ namespace Datadog.Trace.Ci.Tagging
         private static readonly byte[] GitCommitCommitterDateBytes = new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 100, 97, 116, 101 };
         // CiEnvVarsBytes = System.Text.Encoding.UTF8.GetBytes("_dd.ci.env_vars");
         private static readonly byte[] CiEnvVarsBytes = new byte[] { 95, 100, 100, 46, 99, 105, 46, 101, 110, 118, 95, 118, 97, 114, 115 };
+        // TestsSkippedBytes = System.Text.Encoding.UTF8.GetBytes("_dd.ci.itr.tests_skipped");
+        private static readonly byte[] TestsSkippedBytes = new byte[] { 95, 100, 100, 46, 99, 105, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 101, 100 };
 
         public override string? GetTag(string key)
         {
@@ -94,6 +96,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "git.commit.author.date" => GitCommitAuthorDate,
                 "git.commit.committer.date" => GitCommitCommitterDate,
                 "_dd.ci.env_vars" => CiEnvVars,
+                "_dd.ci.itr.tests_skipped" => TestsSkipped,
                 _ => base.GetTag(key),
             };
         }
@@ -179,6 +182,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "_dd.ci.env_vars": 
                     CiEnvVars = value;
+                    break;
+                case "_dd.ci.itr.tests_skipped": 
+                    TestsSkipped = value;
                     break;
                 case "library_version": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(TestSessionSpanTags));
@@ -324,6 +330,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (CiEnvVars is not null)
             {
                 processor.Process(new TagItem<string>("_dd.ci.env_vars", CiEnvVars, CiEnvVarsBytes));
+            }
+
+            if (TestsSkipped is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.ci.itr.tests_skipped", TestsSkipped, TestsSkippedBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -517,6 +528,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("_dd.ci.env_vars (tag):")
                   .Append(CiEnvVars)
+                  .Append(',');
+            }
+
+            if (TestsSkipped is not null)
+            {
+                sb.Append("_dd.ci.itr.tests_skipped (tag):")
+                  .Append(TestsSkipped)
                   .Append(',');
             }
 

@@ -2,9 +2,10 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.SmokeTests
 {
-    [LineProbeTestData(lineNumber: 22)]
+    [LineProbeTestData(lineNumber: 23)]
     public class StaticType : IRun
     {
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             StaticTypeInner.Method("Last name");
@@ -15,7 +16,7 @@ namespace Samples.Probes.SmokeTests
             public static string _staticField = "Static Field";
             public static string StaticProperty { get; } = "Static Property";
 
-            [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+            [MethodImpl(MethodImplOptions.NoInlining)]
             [MethodProbeTestData("System.String", new[] { "System.String" })]
             public static string Method(string lastName)
             {

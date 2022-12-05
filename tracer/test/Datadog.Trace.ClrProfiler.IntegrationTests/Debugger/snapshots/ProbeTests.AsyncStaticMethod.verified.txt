@@ -10,14 +10,12 @@
           "entry": {
             "arguments": {
               "input": {
-                "fields": null,
                 "type": "String",
-                "value": "AsyncStaticMethod.RunAsync"
+                "value": "RunAsync"
               }
             },
-            "fields": {
+            "staticFields": {
               "ClassName": {
-                "fields": null,
                 "type": "String",
                 "value": "AsyncStaticMethod"
               }
@@ -26,28 +24,24 @@
           "return": {
             "arguments": {
               "input": {
-                "fields": null,
                 "type": "String",
-                "value": "AsyncStaticMethod.RunAsync"
-              }
-            },
-            "fields": {
-              "ClassName": {
-                "fields": null,
-                "type": "String",
-                "value": "AsyncStaticMethod"
+                "value": "RunAsync"
               }
             },
             "locals": {
               "@return": {
-                "fields": null,
                 "type": "String",
                 "value": "AsyncStaticMethod.RunAsync.Method"
               },
               "output": {
-                "fields": null,
+                "isNull": "true",
+                "type": "String"
+              }
+            },
+            "staticFields": {
+              "ClassName": {
                 "type": "String",
-                "value": "AsyncStaticMethod.RunAsync."
+                "value": "AsyncStaticMethod"
               }
             }
           }
@@ -62,7 +56,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncStaticMethod"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -73,7 +67,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncStaticMethod+<Method>d__2.MoveNext(input=AsyncStaticMethod.RunAsync): AsyncStaticMethod.RunAsync.Method\r\n@return=AsyncStaticMethod.RunAsync.Method, output=AsyncStaticMethod.RunAsync.",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

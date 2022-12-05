@@ -72,27 +72,7 @@
             "type": "Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized"
           }
         },
-        "stack": [
-          {
-            "fileName": "HasFieldLazyValueNotInitialized.cs",
-            "function": "Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "HasFieldLazyValueNotInitialized.cs",
-            "function": "Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -103,7 +83,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasFieldLazyValueNotInitialized.Method(lastName=Last, this=HasFieldLazyValueNotInitialized): Last\r\n@return=Last",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

@@ -60,27 +60,7 @@
             "type": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner"
           }
         },
-        "stack": [
-          {
-            "fileName": "StaticType.cs",
-            "function": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "StaticType.cs",
-            "function": "Samples.Probes.SmokeTests.StaticType.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -91,7 +71,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "StaticType+StaticTypeInner.Method(lastName=Last name): Last name\r\n@return=Last name",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -103,7 +83,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "22": {
+            "23": {
               "arguments": {
                 "lastName": {
                   "type": "String",
@@ -131,31 +111,11 @@
           "location": {
             "file": "StaticType.cs",
             "lines": [
-              22
+              23
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "StaticType.cs",
-            "function": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "StaticType.cs",
-            "function": "Samples.Probes.SmokeTests.StaticType.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -166,7 +126,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "StaticType+StaticTypeInner.Method(lastName=Last name)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

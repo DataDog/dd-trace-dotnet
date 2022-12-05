@@ -7,14 +7,473 @@
     "debugger": {
       "snapshot": {
         "captures": {
+          "entry": {
+            "arguments": {
+              "goodPerson": {
+                "fields": {
+                  "_shouldCloned": {
+                    "type": "Int32",
+                    "value": "99"
+                  },
+                  "Address": {
+                    "fields": {
+                      "City": {
+                        "fields": {
+                          "Name": {
+                            "type": "String",
+                            "value": "New York"
+                          },
+                          "Type": {
+                            "type": "PlaceType",
+                            "value": "City"
+                          }
+                        },
+                        "type": "Place",
+                        "value": "Place"
+                      },
+                      "HomeType": {
+                        "type": "BuildingType",
+                        "value": "Duplex"
+                      },
+                      "Number": {
+                        "type": "Int32",
+                        "value": "15"
+                      },
+                      "Street": {
+                        "type": "String",
+                        "value": "Harlem"
+                      }
+                    },
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "type": "Double",
+                    "value": "99"
+                  },
+                  "Children": {
+                    "elements": [
+                      {
+                        "fields": {
+                          "_shouldCloned": {
+                            "type": "Int32",
+                            "value": "31"
+                          },
+                          "Address": {
+                            "fields": {
+                              "City": {
+                                "notCapturedReason": "depth",
+                                "type": "Place",
+                                "value": "Place"
+                              },
+                              "HomeType": {
+                                "type": "BuildingType",
+                                "value": "Duplex"
+                              },
+                              "Number": {
+                                "type": "Int32",
+                                "value": "15"
+                              },
+                              "Street": {
+                                "type": "String",
+                                "value": "Harlem"
+                              }
+                            },
+                            "type": "Address",
+                            "value": "Address"
+                          },
+                          "Age": {
+                            "type": "Double",
+                            "value": "31"
+                          },
+                          "Children": {
+                            "isNull": "true",
+                            "type": "List`1"
+                          },
+                          "Id": {
+                            "type": "Guid",
+                            "value": "ScrubbedValue"
+                          },
+                          "Name": {
+                            "type": "String",
+                            "value": "Ralph Jr."
+                          }
+                        },
+                        "type": "Person",
+                        "value": "Person"
+                      }
+                    ],
+                    "type": "List`1",
+                    "value": "count: 1"
+                  },
+                  "Id": {
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "type": "String",
+                    "value": "Ralph"
+                  }
+                },
+                "type": "Person",
+                "value": "Person"
+              },
+              "someGenericObject": {
+                "fields": {
+                  "Message": {
+                    "type": "String",
+                    "value": "NestedAsyncGenericStruct"
+                  }
+                },
+                "type": "Generic",
+                "value": "Generic"
+              },
+              "this": {
+                "fields": {
+                  "_person": {
+                    "fields": {
+                      "_shouldCloned": {
+                        "type": "Int32",
+                        "value": "99"
+                      },
+                      "Address": {
+                        "fields": {
+                          "City": {
+                            "notCapturedReason": "depth",
+                            "type": "Place",
+                            "value": "Place"
+                          },
+                          "HomeType": {
+                            "type": "BuildingType",
+                            "value": "Duplex"
+                          },
+                          "Number": {
+                            "type": "Int32",
+                            "value": "15"
+                          },
+                          "Street": {
+                            "type": "String",
+                            "value": "Harlem"
+                          }
+                        },
+                        "type": "Address",
+                        "value": "Address"
+                      },
+                      "Age": {
+                        "type": "Double",
+                        "value": "99"
+                      },
+                      "Children": {
+                        "elements": [
+                          {
+                            "fields": {
+                              "_shouldCloned": {
+                                "type": "Int32",
+                                "value": "31"
+                              },
+                              "Address": {
+                                "notCapturedReason": "depth",
+                                "type": "Address",
+                                "value": "Address"
+                              },
+                              "Age": {
+                                "type": "Double",
+                                "value": "31"
+                              },
+                              "Children": {
+                                "isNull": "true",
+                                "type": "List`1"
+                              },
+                              "Id": {
+                                "type": "Guid",
+                                "value": "ScrubbedValue"
+                              },
+                              "Name": {
+                                "type": "String",
+                                "value": "Ralph Jr."
+                              }
+                            },
+                            "type": "Person",
+                            "value": "Person"
+                          }
+                        ],
+                        "type": "List`1",
+                        "value": "count: 1"
+                      },
+                      "Id": {
+                        "type": "Guid",
+                        "value": "ScrubbedValue"
+                      },
+                      "Name": {
+                        "type": "String",
+                        "value": "Ralph"
+                      }
+                    },
+                    "type": "Person",
+                    "value": "Person"
+                  }
+                },
+                "type": "NestedAsyncGenericStruct",
+                "value": "NestedAsyncGenericStruct"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "goodPerson": {
+                "fields": {
+                  "_shouldCloned": {
+                    "type": "Int32",
+                    "value": "99"
+                  },
+                  "Address": {
+                    "fields": {
+                      "City": {
+                        "fields": {
+                          "Name": {
+                            "type": "String",
+                            "value": "New York"
+                          },
+                          "Type": {
+                            "type": "PlaceType",
+                            "value": "City"
+                          }
+                        },
+                        "type": "Place",
+                        "value": "Place"
+                      },
+                      "HomeType": {
+                        "type": "BuildingType",
+                        "value": "Duplex"
+                      },
+                      "Number": {
+                        "type": "Int32",
+                        "value": "15"
+                      },
+                      "Street": {
+                        "type": "String",
+                        "value": "Harlem"
+                      }
+                    },
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "type": "Double",
+                    "value": "99"
+                  },
+                  "Children": {
+                    "elements": [
+                      {
+                        "fields": {
+                          "_shouldCloned": {
+                            "type": "Int32",
+                            "value": "31"
+                          },
+                          "Address": {
+                            "fields": {
+                              "City": {
+                                "notCapturedReason": "depth",
+                                "type": "Place",
+                                "value": "Place"
+                              },
+                              "HomeType": {
+                                "type": "BuildingType",
+                                "value": "Duplex"
+                              },
+                              "Number": {
+                                "type": "Int32",
+                                "value": "15"
+                              },
+                              "Street": {
+                                "type": "String",
+                                "value": "Harlem"
+                              }
+                            },
+                            "type": "Address",
+                            "value": "Address"
+                          },
+                          "Age": {
+                            "type": "Double",
+                            "value": "31"
+                          },
+                          "Children": {
+                            "isNull": "true",
+                            "type": "List`1"
+                          },
+                          "Id": {
+                            "type": "Guid",
+                            "value": "ScrubbedValue"
+                          },
+                          "Name": {
+                            "type": "String",
+                            "value": "Ralph Jr."
+                          }
+                        },
+                        "type": "Person",
+                        "value": "Person"
+                      }
+                    ],
+                    "type": "List`1",
+                    "value": "count: 1"
+                  },
+                  "Id": {
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "type": "String",
+                    "value": "Ralph"
+                  }
+                },
+                "type": "Person",
+                "value": "Person"
+              },
+              "someGenericObject": {
+                "fields": {
+                  "Message": {
+                    "type": "String",
+                    "value": "NestedAsyncGenericStruct"
+                  }
+                },
+                "type": "Generic",
+                "value": "Generic"
+              },
+              "this": {
+                "fields": {
+                  "_person": {
+                    "fields": {
+                      "_shouldCloned": {
+                        "type": "Int32",
+                        "value": "99"
+                      },
+                      "Address": {
+                        "fields": {
+                          "City": {
+                            "notCapturedReason": "depth",
+                            "type": "Place",
+                            "value": "Place"
+                          },
+                          "HomeType": {
+                            "type": "BuildingType",
+                            "value": "Duplex"
+                          },
+                          "Number": {
+                            "type": "Int32",
+                            "value": "15"
+                          },
+                          "Street": {
+                            "type": "String",
+                            "value": "Harlem"
+                          }
+                        },
+                        "type": "Address",
+                        "value": "Address"
+                      },
+                      "Age": {
+                        "type": "Double",
+                        "value": "99"
+                      },
+                      "Children": {
+                        "elements": [
+                          {
+                            "fields": {
+                              "_shouldCloned": {
+                                "type": "Int32",
+                                "value": "31"
+                              },
+                              "Address": {
+                                "notCapturedReason": "depth",
+                                "type": "Address",
+                                "value": "Address"
+                              },
+                              "Age": {
+                                "type": "Double",
+                                "value": "31"
+                              },
+                              "Children": {
+                                "isNull": "true",
+                                "type": "List`1"
+                              },
+                              "Id": {
+                                "type": "Guid",
+                                "value": "ScrubbedValue"
+                              },
+                              "Name": {
+                                "type": "String",
+                                "value": "Ralph Jr."
+                              }
+                            },
+                            "type": "Person",
+                            "value": "Person"
+                          }
+                        ],
+                        "type": "List`1",
+                        "value": "count: 1"
+                      },
+                      "Id": {
+                        "type": "Guid",
+                        "value": "ScrubbedValue"
+                      },
+                      "Name": {
+                        "type": "String",
+                        "value": "Ralph"
+                      }
+                    },
+                    "type": "Person",
+                    "value": "Person"
+                  }
+                },
+                "type": "NestedAsyncGenericStruct",
+                "value": "NestedAsyncGenericStruct"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "Ralph (99)Samples.Probes.Shared.GenericRalphMethod99Ralph"
+              },
+              "output": {
+                "isNull": "true",
+                "type": "String"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
           "lines": {
             "23": {
-              "arguments": {
-                "this": {
-                  "type": "AsyncLineProbeWithFieldsArgsAndLocalsTest",
-                  "value": "AsyncLineProbeWithFieldsArgsAndLocalsTest"
-                }
-              },
               "locals": {
                 "address": {
                   "fields": {
@@ -86,21 +545,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -111,7 +556,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext(this=AsyncLineProbeWithFieldsArgsAndLocalsTest)\r\naddress=Address, children=, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -124,12 +569,6 @@
         "captures": {
           "lines": {
             "25": {
-              "arguments": {
-                "this": {
-                  "type": "AsyncLineProbeWithFieldsArgsAndLocalsTest",
-                  "value": "AsyncLineProbeWithFieldsArgsAndLocalsTest"
-                }
-              },
               "locals": {
                 "address": {
                   "fields": {
@@ -201,21 +640,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -226,7 +651,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext(this=AsyncLineProbeWithFieldsArgsAndLocalsTest)\r\naddress=Address, children=, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -239,12 +664,6 @@
         "captures": {
           "lines": {
             "26": {
-              "arguments": {
-                "this": {
-                  "type": "AsyncLineProbeWithFieldsArgsAndLocalsTest",
-                  "value": "AsyncLineProbeWithFieldsArgsAndLocalsTest"
-                }
-              },
               "locals": {
                 "address": {
                   "fields": {
@@ -316,21 +735,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -341,7 +746,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext(this=AsyncLineProbeWithFieldsArgsAndLocalsTest)\r\naddress=Address, children=, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -354,12 +759,6 @@
         "captures": {
           "lines": {
             "27": {
-              "arguments": {
-                "this": {
-                  "type": "AsyncLineProbeWithFieldsArgsAndLocalsTest",
-                  "value": "AsyncLineProbeWithFieldsArgsAndLocalsTest"
-                }
-              },
               "locals": {
                 "address": {
                   "fields": {
@@ -432,21 +831,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -457,7 +842,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext(this=AsyncLineProbeWithFieldsArgsAndLocalsTest)\r\naddress=Address, children=count: 0, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -470,12 +855,6 @@
         "captures": {
           "lines": {
             "28": {
-              "arguments": {
-                "this": {
-                  "type": "AsyncLineProbeWithFieldsArgsAndLocalsTest",
-                  "value": "AsyncLineProbeWithFieldsArgsAndLocalsTest"
-                }
-              },
               "locals": {
                 "address": {
                   "fields": {
@@ -607,21 +986,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -632,7 +997,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext(this=AsyncLineProbeWithFieldsArgsAndLocalsTest)\r\naddress=Address, children=count: 1, person=, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -645,12 +1010,6 @@
         "captures": {
           "lines": {
             "29": {
-              "arguments": {
-                "this": {
-                  "type": "AsyncLineProbeWithFieldsArgsAndLocalsTest",
-                  "value": "AsyncLineProbeWithFieldsArgsAndLocalsTest"
-                }
-              },
               "locals": {
                 "address": {
                   "fields": {
@@ -887,21 +1246,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -912,7 +1257,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+<RunAsync>d__0.MoveNext(this=AsyncLineProbeWithFieldsArgsAndLocalsTest)\r\naddress=Address, children=count: 1, person=Person, place=Place",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1035,10 +1380,6 @@
                   "type": "Person",
                   "value": "Person"
                 },
-                "input": {
-                  "type": "String",
-                  "value": ".RunAsync"
-                },
                 "someGenericObject": {
                   "fields": {
                     "Message": {
@@ -1159,25 +1500,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1188,7 +1511,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct+<Method>d__2.MoveNext(goodPerson=Person, input=.RunAsync, someGenericObject=Generic, this=NestedAsyncGenericStruct)\r\noutput=",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1311,10 +1634,6 @@
                   "type": "Person",
                   "value": "Person"
                 },
-                "input": {
-                  "type": "String",
-                  "value": ".RunAsync"
-                },
                 "someGenericObject": {
                   "fields": {
                     "Message": {
@@ -1435,25 +1754,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncLineProbeWithFieldsArgsAndLocalsTest.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1464,7 +1765,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct+<Method>d__2.MoveNext(goodPerson=Person, input=.RunAsync, someGenericObject=Generic, this=NestedAsyncGenericStruct)\r\noutput=Ralph (99)Samples.Probes.Shared.GenericRalph",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -1587,10 +1888,6 @@
                   "type": "Person",
                   "value": "Person"
                 },
-                "input": {
-                  "type": "String",
-                  "value": ".RunAsync"
-                },
                 "someGenericObject": {
                   "fields": {
                     "Message": {
@@ -1711,7 +2008,7 @@
             ]
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -1722,7 +2019,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncLineProbeWithFieldsArgsAndLocalsTest+NestedAsyncGenericStruct+<Method>d__2.MoveNext(goodPerson=Person, input=.RunAsync, someGenericObject=Generic, this=NestedAsyncGenericStruct)\r\noutput=Ralph (99)Samples.Probes.Shared.GenericRalph",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

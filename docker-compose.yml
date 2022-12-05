@@ -381,6 +381,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
+      - IncludeAllTestFrameworks
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
@@ -449,7 +450,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage
     volumes:
@@ -468,6 +469,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - CONTAINER_HOSTNAME=http://integrationtests
+      - IncludeAllTestFrameworks
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
@@ -514,6 +516,7 @@ services:
       - explorationTestUseCase=${explorationTestUseCase:-debugger}
       - explorationTestName=${explorationTestName:-eshoponweb}
       - baseImage=${baseImage:-default}
+      - IncludeAllTestFrameworks
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
@@ -587,6 +590,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
       - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379

@@ -11,14 +11,14 @@ namespace Samples.Probes.SmokeTests
     {
         private const string ClassName = "AsyncWithGenericMethod";
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
         {
             await Method(ClassName, $".{nameof(RunAsync)}");
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        [MethodProbeTestData(skip: true)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodProbeTestData (expectedNumberOfSnapshots:0 /* in optimize code this will create a generic struct state machine*/)]
         public async Task<string> Method<T>(T obj, string input)
         {
             var output = obj + input + ".";

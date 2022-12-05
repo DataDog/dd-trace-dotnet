@@ -6,13 +6,13 @@ namespace Samples.Probes.SmokeTests
     // https://datadoghq.atlassian.net/browse/DEBUG-723
     public class HasLocalListOfObjects : IRun
     {
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             Method("Greg", 36);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData("System.String", new[] { "System.String", "System.Int32" }, skipOnFramework: "net6.0")]
         public string Method(string name, int age)
         {

@@ -37,7 +37,7 @@ public class ProbesTests : TestHelper, IDisposable
     private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
-    private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1" };
+    private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack" };
 
     public ProbesTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -107,7 +107,7 @@ public class ProbesTests : TestHelper, IDisposable
         await RunSingleTestWithApprovals(testType, isMultiPhase: true, expectedNumberOfSnapshots, probes.Select(p => p.Probe).ToArray());
     }
 
-    [SkippableFact(Skip = "Flaky in .NET 7 build")]
+    [Fact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task LineProbeEmit100SnapshotsTest()
@@ -294,15 +294,6 @@ public class ProbesTests : TestHelper, IDisposable
     /// </summary>
     private void SkipOverTestIfNeeded(Type testType)
     {
-#if NET7_0
-        if (testType == typeof(Samples.Probes.SmokeTests.HasLocalListOfObjects)
-         || testType.Name == "MethodThrowExceptionTest"
-         || testType.Name == "HasLocalsAndArgumentsInGenericNestedType")
-        {
-            throw new SkipException("Flaky in .NET 7");
-        }
-#endif
-
         if (testType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
         {
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
@@ -367,7 +358,6 @@ public class ProbesTests : TestHelper, IDisposable
         var testName = isMultiPhase ? $"{testType.Name}_#{phaseNumber}." : testType.Name;
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
         settings.DisableRequireUniquePrefix();
-
         settings.ScrubEmptyLines();
         settings.AddScrubber(ScrubSnapshotJson);
 
@@ -423,7 +413,13 @@ public class ProbesTests : TestHelper, IDisposable
                                 }
 
                                 // Scrub MoveNext methods from `stack` in the snapshot as it varies between Windows/Linux.
-                                if (item.Key == "function" && value.Contains(".MoveNext"))
+                                if (value.Contains(".MoveNext"))
+                                {
+                                    item.Value.Replace(string.Empty);
+                                }
+
+                                // Scrub generated DisplayClass from stack in the snapshot as it varies between .net frameworks
+                                if (value.Contains("<>c__DisplayClass"))
                                 {
                                     item.Value.Replace(string.Empty);
                                 }
@@ -435,6 +431,25 @@ public class ProbesTests : TestHelper, IDisposable
                                 item.Value.Replace(Path.GetFileName(value));
 
                                 break;
+
+                            case "message":
+                                if (!value.Contains("Installed probe ") && !value.Contains("Error installing probe ") &&
+                                    !IsParentName(item, parentName: "throwable"))
+                                {
+                                    // remove snapshot message (not probe status and not an exception message)
+                                    item.Value.Replace("ScrubbedValue");
+                                }
+
+                                break;
+
+                            case "stacktrace":
+                                if (IsParentName(item, parentName: "throwable"))
+                                {
+                                    // take only the first frame of the exception stacktrace
+                                    item.Value.Replace(new JArray(item.Value.Children().First()));
+                                }
+
+                                break;
                         }
                     }
                     catch (Exception)
@@ -443,6 +458,11 @@ public class ProbesTests : TestHelper, IDisposable
                         Output.WriteLine($"Complete snapshot: {json}");
 
                         throw;
+                    }
+
+                    static bool IsParentName(KeyValuePair<string, JToken> item, string parentName)
+                    {
+                        return item.Value.Path.Substring(0, item.Value.Path.Length - $".{item.Key}".Length).EndsWith(parentName);
                     }
                 }
             }

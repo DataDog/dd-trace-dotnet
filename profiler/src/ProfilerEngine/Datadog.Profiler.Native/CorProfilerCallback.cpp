@@ -114,6 +114,8 @@ bool CorProfilerCallback::InitializeServices()
 
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
 
+    _pCodeHotspotsThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
+
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
     // Each sample contains a vector of values.
@@ -300,6 +302,7 @@ bool CorProfilerCallback::InitializeServices()
         _pClrLifetime.get(),
         _pThreadsCpuManager,
         _pManagedThreadList,
+        _pCodeHotspotsThreadList,
         _pWallTimeProvider,
         _pCpuTimeProvider);
 
@@ -404,6 +407,7 @@ bool CorProfilerCallback::DisposeServices()
     _pThreadsCpuManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
     _pManagedThreadList = nullptr;
+    _pCodeHotspotsThreadList = nullptr;
     _pApplicationStore = nullptr;
 
     return result;
@@ -1196,12 +1200,17 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
     }
 
     std::shared_ptr<ManagedThreadInfo> pThreadInfo;
-    if (_pManagedThreadList->UnregisterThread(threadId, pThreadInfo))
+    Log::Debug("Removing thread ", std::hex, threadId, " from the trace context threads list.");
+    if (_pCodeHotspotsThreadList->UnregisterThread(threadId, pThreadInfo))
     {
         // The docs require that we do not allow to destroy a thread while it is being stack-walked.
         // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
         pThreadInfo->SetThreadDestroyed();
+        pThreadInfo.reset();
     }
+
+    Log::Debug("Removing thread ", std::hex, threadId, " from the main managed thread list.");
+    _pManagedThreadList->UnregisterThread(threadId, pThreadInfo);
 
     return S_OK;
 }

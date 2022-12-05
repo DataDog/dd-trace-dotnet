@@ -19,7 +19,6 @@ namespace Datadog.Trace.Tests.Telemetry
 {
     public class TelemetryControllerTests : IDisposable
     {
-        private static readonly AzureAppServices EmptyAasMetadata = new(new Dictionary<string, string>());
         private readonly TimeSpan _refreshInterval = TimeSpan.FromMilliseconds(100);
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(60_000); // definitely should receive telemetry by now
         private readonly TestTelemetryTransport _transport;
@@ -44,7 +43,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public async Task TelemetryControllerShouldSendTelemetry()
         {
-            _controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
+            _controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
             _controller.Start();
 
             var data = await WaitForRequestStarted(_transport, _timeout);
@@ -70,7 +69,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 _refreshInterval,
                 _refreshInterval);
 
-            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
+            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
             controller.Start();
 
             (await WaitForFatalError(controller)).Should().BeTrue("controller should be disposed on failed push");
@@ -103,7 +102,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 flushInterval: TimeSpan.FromMinutes(1),
                 heartBeatInterval: heartBeatInterval);
 
-            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
+            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
             controller.Start();
 
             var requiredHeartbeats = 10;
@@ -143,7 +142,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 _refreshInterval,
                 _refreshInterval);
 
-            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
+            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
             controller.Start();
 
             var allData = await WaitForRequestStarted(_transport, _timeout);

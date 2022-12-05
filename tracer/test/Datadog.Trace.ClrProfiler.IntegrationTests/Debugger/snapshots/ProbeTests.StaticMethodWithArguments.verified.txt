@@ -40,27 +40,7 @@
             "type": "Samples.Probes.SmokeTests.StaticMethodWithArguments"
           }
         },
-        "stack": [
-          {
-            "fileName": "StaticMethodWithArguments.cs",
-            "function": "Samples.Probes.SmokeTests.StaticMethodWithArguments.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "StaticMethodWithArguments.cs",
-            "function": "Samples.Probes.SmokeTests.StaticMethodWithArguments.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -71,7 +51,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "StaticMethodWithArguments.Method(lastName=Last): Last\r\n@return=Last",
+    "message": "ScrubbedValue",
     "service": "Probes"
   },
   {
@@ -105,27 +85,7 @@
             ]
           }
         },
-        "stack": [
-          {
-            "fileName": "StaticMethodWithArguments.cs",
-            "function": "Samples.Probes.SmokeTests.StaticMethodWithArguments.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "StaticMethodWithArguments.cs",
-            "function": "Samples.Probes.SmokeTests.StaticMethodWithArguments.Run",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -136,7 +96,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "StaticMethodWithArguments.Method(lastName=Last)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

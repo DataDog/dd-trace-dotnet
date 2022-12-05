@@ -52,6 +52,7 @@ public:
     bool IsTimestampsAsLabelEnabled() const override;
     int32_t WalltimeThreadsThreshold() const override;
     int32_t CpuThreadsThreshold() const override;
+    int32_t CodeHotspotsThreadsThreshold() const override;
     bool IsGarbageCollectionProfilingEnabled() const override;
     bool IsHeapProfilingEnabled() const override;
 
@@ -73,6 +74,7 @@ private:
     static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate();
     static int32_t ExtractWallTimeThreadsThreshold();
     static int32_t ExtractCpuThreadsThreshold();
+    static int32_t ExtractCodeHotspotsThreadsThreshold();
     static bool GetContention();
 
 private:
@@ -118,6 +120,7 @@ private:
     std::chrono::nanoseconds _cpuWallTimeSamplingRate;
     int32_t _walltimeThreadsThreshold;
     int32_t _cpuThreadsThreshold;
+    int32_t _codeHotspotsThreadsThreshold;
 
     double _minimumCores;
     std::string _namedPipeName;

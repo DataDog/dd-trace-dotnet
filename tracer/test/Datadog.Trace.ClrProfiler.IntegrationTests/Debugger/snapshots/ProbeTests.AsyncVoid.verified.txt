@@ -8,15 +8,73 @@
       "snapshot": {
         "captures": {
           "entry": {
-            "fields": null
+            "arguments": {
+              "caller": {
+                "type": "String",
+                "value": "VoidTaskMethod"
+              }
+            }
           },
           "return": {
-            "fields": null,
+            "arguments": {
+              "caller": {
+                "type": "String",
+                "value": "VoidTaskMethod"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "VoidMethod",
+            "type": "Samples.Probes.SmokeTests.AsyncVoid"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "VoidMethod",
+      "name": "Samples.Probes.SmokeTests.AsyncVoid",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "this": {
+                "type": "AsyncVoid",
+                "value": "AsyncVoid"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "AsyncVoid",
+                "value": "AsyncVoid"
+              }
+            },
             "locals": {
               "e": {
-                "fields": null,
-                "type": "AccessViolationException",
-                "value": "null"
+                "isNull": "true",
+                "type": "AccessViolationException"
               }
             }
           }
@@ -31,7 +89,7 @@
             "type": "Samples.Probes.SmokeTests.AsyncVoid"
           }
         },
-        "stack": [],
+        "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
       }
     },
@@ -42,60 +100,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncVoid+<VoidTaskMethod>d__1.MoveNext()\r\ne=null",
-    "service": "Probes"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "ddtags": "Unknown",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "entry": {
-            "arguments": {
-              "caller": {
-                "fields": null,
-                "type": "String",
-                "value": "VoidTaskMethod"
-              }
-            },
-            "fields": null
-          },
-          "return": {
-            "arguments": {
-              "caller": {
-                "fields": null,
-                "type": "String",
-                "value": "VoidTaskMethod"
-              }
-            },
-            "fields": null
-          }
-        },
-        "duration": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "VoidMethod",
-            "type": "Samples.Probes.SmokeTests.AsyncVoid"
-          }
-        },
-        "stack": [],
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "VoidMethod",
-      "name": "Samples.Probes.SmokeTests.AsyncVoid",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "AsyncVoid+<VoidMethod>d__2.MoveNext(caller=VoidTaskMethod)",
+    "message": "ScrubbedValue",
     "service": "Probes"
   }
 ]

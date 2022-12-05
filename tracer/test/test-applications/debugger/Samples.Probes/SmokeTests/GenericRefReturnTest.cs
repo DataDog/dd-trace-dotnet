@@ -18,6 +18,14 @@ namespace Samples.Probes.SmokeTests
         internal void CallMe()
         {
             ref var whatever = ref Enqueue<Address>();
+            if (whatever.City.Name.Length > 1 && whatever.ToString().Length > 1)
+            {
+                Console.WriteLine(whatever.Number);
+            }
+            else
+            {
+                Console.WriteLine(whatever);
+            }
         }
 
         [MethodProbeTestData(expectedNumberOfSnapshots: 0)]

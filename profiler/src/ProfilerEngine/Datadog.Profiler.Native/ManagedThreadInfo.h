@@ -77,6 +77,7 @@ public:
     inline std::uint64_t GetLocalRootSpanId() const;
     inline std::uint64_t GetSpanId() const;
     inline bool CanReadTraceContext() const;
+    inline bool HasTraceContext() const;
 
     inline std::string GetProfileThreadId();
     inline std::string GetProfileThreadName();
@@ -357,4 +358,16 @@ inline bool ManagedThreadInfo::CanReadTraceContext() const
     // On Arm the __sync_synchronize is generated.
     std::atomic_thread_fence(std::memory_order_acquire);
     return canReadTraceContext == 0;
+}
+
+inline bool ManagedThreadInfo::HasTraceContext() const
+{
+    if (CanReadTraceContext())
+    {
+        std::uint64_t localRootSpanId = GetLocalRootSpanId();
+        std::uint64_t spanId = GetSpanId();
+
+        return localRootSpanId != 0 && spanId != 0;
+    }
+    return false;
 }
