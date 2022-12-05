@@ -51,7 +51,7 @@ private:
         ddog_prof_Vec_U8 GetBuffer() const;
         ddog_Timespec GetStart() const;
         ddog_Timespec GetEnd() const;
-        ddog_prof_ProfiledEndpointsStats* GetEndpointCount() const;
+        ddog_prof_ProfiledEndpointsStats* GetEndpointsStats() const;
 
         bool IsValid() const;
 
