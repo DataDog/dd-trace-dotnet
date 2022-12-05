@@ -24,7 +24,7 @@ namespace Datadog.Trace.Logging
         {
             // Initialize the fallback logger right away
             // because some part of the code might produce logs while we initialize the actual logger
-            SharedLogger = new DatadogSerilogLogger(SilentLogger.Instance, new NullLogRateLimiter());
+            SharedLogger = DatadogSerilogLogger.NullLogger;
 
             try
             {
