@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -185,6 +186,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertTelemetry(data);
         }
 #endif
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenEnabled_SendsTelemetryLogs()
+        {
+            using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
+            Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
+
+            int httpPort = TcpPortProvider.GetOpenPort();
+            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            {
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
+
+                var spans = agent.WaitForSpans(ExpectedSpans);
+                await AssertExpectedSpans(spans);
+            }
+
+            // wait for all the telemetry to be sent
+            agent.WaitForLatestTelemetry(x => ((TelemetryData)x).RequestType == TelemetryRequestTypes.AppClosing);
+            var logs = agent.Telemetry
+                            .Cast<TelemetryData>()
+                            .Where(x => x.RequestType == TelemetryRequestTypes.Logs)
+                            .OrderBy(x => x.SeqId)
+                            .Select(x => x.Payload as LogsPayload)
+                            .ToList();
+            logs.Should().NotBeNull();
+            logs.Should().Contain(x => x.Any(log => log.Message.Contains("DATADOG TRACER CONFIGURATION")));
+        }
 
         private static void AssertTelemetry(TelemetryData data)
         {

@@ -210,11 +210,14 @@ namespace Datadog.Trace.TestHelpers
 
             public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
             {
-                object payload = serializer.Deserialize<AppStartedPayload>(reader);
-
-                payload ??= serializer.Deserialize<AppDependenciesLoadedPayload>(reader);
-                payload ??= serializer.Deserialize<AppIntegrationsChangedPayload>(reader);
-                payload ??= serializer.Deserialize<GenerateMetricsPayload>(reader);
+                if (TryDeserialize<AppStartedPayload>(reader, serializer, out var payload)
+                 || TryDeserialize<AppDependenciesLoadedPayload>(reader, serializer, out payload)
+                 || TryDeserialize<AppIntegrationsChangedPayload>(reader, serializer, out payload)
+                 || TryDeserialize<GenerateMetricsPayload>(reader, serializer, out payload)
+                 || TryDeserialize<LogsPayload>(reader, serializer, out payload))
+                {
+                    return payload;
+                }
 
                 if (payload is null)
                 {
@@ -222,6 +225,20 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 return payload;
+            }
+
+            private static bool TryDeserialize<TOut>(JsonReader reader, JsonSerializer serializer, out object deserialized)
+            {
+                try
+                {
+                    deserialized = serializer.Deserialize<TOut>(reader);
+                    return true;
+                }
+                catch (Exception)
+                {
+                    deserialized = default;
+                    return false;
+                }
             }
         }
     }

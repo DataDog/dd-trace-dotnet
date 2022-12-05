@@ -250,6 +250,11 @@ namespace Datadog.Trace.TestHelpers
             if (agent.TelemetryEnabled)
             {
                 environmentVariables[ConfigurationKeys.Telemetry.AgentlessEnabled] = "0";
+                if (!environmentVariables.TryGetValue(ConfigurationKeys.LogSinks, out _))
+                {
+                    // enable sending logs via telemetry
+                    environmentVariables[ConfigurationKeys.LogSinks] = "file,datadog";
+                }
             }
 
             // Don't attach the profiler to these processes
