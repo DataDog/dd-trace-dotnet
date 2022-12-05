@@ -450,7 +450,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage
     volumes:
