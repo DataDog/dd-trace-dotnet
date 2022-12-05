@@ -27,7 +27,7 @@
 
     <ProjectReference Include="..\..\src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.csproj" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
-    <PackageReference Include="ICSharpCode.Decompiler" Version="7.2.1.6856" />
+    <PackageReference Include="ICSharpCode.Decompiler" Version="7.1.0.6543" />
   </ItemGroup>
 
   <ItemGroup>
