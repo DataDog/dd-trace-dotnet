@@ -530,6 +530,7 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
     auto start = encodedProfile.GetStart();
     auto end = encodedProfile.GetEnd();
     auto buffer = encodedProfile.GetBuffer();
+    auto* endpointCount = encodedProfile.GetEndpointCount();
 
     ddog_prof_Exporter_File file{FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_U8_as_slice(&buffer)};
 
@@ -538,7 +539,7 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
         &file, 1
     };
 
-    return ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), nullptr, RequestTimeOutMs);
+    return ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointCount, RequestTimeOutMs);
 }
 
 bool LibddprofExporter::Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter) const
@@ -617,6 +618,11 @@ ddog_Timespec LibddprofExporter::SerializedProfile::GetStart() const
 ddog_Timespec LibddprofExporter::SerializedProfile::GetEnd() const
 {
     return _encodedProfile.ok.end;
+}
+
+ddog_prof_ProfiledEndpointsStats* LibddprofExporter::SerializedProfile::GetEndpointCount() const
+{
+    return _encodedProfile.ok.endpoints_stats;
 }
 
 //
