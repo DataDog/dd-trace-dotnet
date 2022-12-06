@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.RateLimiting;
@@ -35,25 +37,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MethodDebuggerState BeginMethod_StartMarker<TTarget>(string probeId, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex)
         {
-            if (!ProbeRateLimiter.Instance.Sample(probeId))
-            {
-                return CreateInvalidatedDebuggerState();
-            }
-
-            if (!MethodMetadataProvider.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
-            {
-                Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaId = {methodMetadataIndex}");
-                return CreateInvalidatedDebuggerState();
-            }
-
-            var state = new MethodDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, instance);
-            state.SnapshotCreator.StartDebugger();
-
-            state.SnapshotCreator.StartSnapshot();
-            state.SnapshotCreator.StartCaptures();
-            state.SnapshotCreator.StartEntry();
-            state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
-            return state;
+            return CreateInvalidatedDebuggerState();
         }
 
         private static MethodDebuggerState CreateInvalidatedDebuggerState()
@@ -164,6 +148,65 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref MethodDebuggerState state)
         {
+            if (instance.GetType().FullName == "System.Diagnostics.StackFrameHelper")
+            {
+                var rgbMethodHandle = instance.GetType().GetField("rgMethodHandle", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(instance);
+                var numberOfMethods = (rgbMethodHandle as System.Array).Length;
+
+                if (numberOfMethods > 0)
+                {
+                    // Sanitize our methods
+                    const string GENERATED_METHODS_PREFIX = "Instrumented_";
+
+                    var getMethodBaseMethod = instance.GetType().GetMethod("GetMethodBase");
+
+                    var indices = new List<int>();
+
+                    for (var i = 0; i < numberOfMethods; i++)
+                    {
+                        var method = getMethodBaseMethod.Invoke(instance, new object[] { i }) as MethodBase;
+                        if (method?.Name.StartsWith(GENERATED_METHODS_PREFIX) == true)
+                        {
+                            indices.Add(i);
+                            var defaultValue = Activator.CreateInstance(rgbMethodHandle.GetType().GetElementType());
+                            (rgbMethodHandle as System.Array).SetValue(defaultValue, i);
+                        }
+                    }
+
+                    if (indices.Count > 0)
+                    {
+                        var allArrayFields = instance.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic).Where(field => field.FieldType.IsSubclassOf(typeof(Array)))
+                                                     .Where(field => (field.GetValue(instance) as Array)?.Length == numberOfMethods).ToArray();
+
+                        var newSize = numberOfMethods - indices.Count;
+
+                        foreach (var arrayField in allArrayFields)
+                        {
+                            var array = arrayField.GetValue(instance) as Array;
+                            var newArray = Array.CreateInstance(arrayField.FieldType.GetElementType(), newSize);
+
+                            var newArrayIndex = 0;
+                            for (var oldArrayIndex = array.GetLowerBound(0); oldArrayIndex <= array.GetUpperBound(0); oldArrayIndex++)
+                            {
+                                if (indices.Contains(oldArrayIndex))
+                                {
+                                    continue;
+                                }
+
+                                newArray.SetValue(array.GetValue(oldArrayIndex), newArrayIndex++);
+                            }
+
+                            arrayField.SetValue(instance, newArray);
+                        }
+
+                        instance
+                           .GetType()
+                           .GetField("iFrameCount", BindingFlags.Instance | BindingFlags.NonPublic)
+                           .SetValue(instance, newSize);
+                    }
+                }
+            }
+
             if (!state.IsActive)
             {
                 return DebuggerReturn.GetDefault();

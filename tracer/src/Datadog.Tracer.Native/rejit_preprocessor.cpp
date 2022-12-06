@@ -462,7 +462,35 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
 
     auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
 
-    for (const auto& module : modules)
+    ICorProfilerModuleEnum* moduleEnum;
+    auto hr = corProfilerInfo->EnumModules(&moduleEnum);
+    std::vector<ModuleID> loadedModules;
+    size_t resultIndex = 0;
+
+    auto retryCount = 1000;
+    // iterate over the loaded modules enumeration and collect the module ids into loadedModules
+    while (retryCount-- > 0)
+    {
+        const ULONG valueToRetrieve = 20;
+        ULONG valueRetrieved = 0;
+
+        std::vector<ModuleID> tempValues(valueToRetrieve, 0);
+        hr = moduleEnum->Next(valueToRetrieve, tempValues.data(), &valueRetrieved);
+
+        if (valueRetrieved == 0)
+        {
+            break;
+        }
+
+        loadedModules.resize(loadedModules.size() + valueToRetrieve);
+        for (size_t k = 0; k < valueRetrieved; ++k)
+        {
+            loadedModules[resultIndex] = tempValues[k];
+            ++resultIndex;
+        }
+    }
+
+    for (const auto& module : loadedModules)
     {
         auto _ = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
         const ModuleInfo& moduleInfo = GetModuleInfo(corProfilerInfo, module);

@@ -70,6 +70,24 @@ public class ProbesTests : TestHelper, IDisposable
         await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
     }
 
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task FaultTolerantStackTraceCleansingTest()
+    {
+        var testType = typeof(FaultTolerantStackTracePollutionTest);
+        const int expectedNumberOfSnapshots = 1;
+
+        var guidGenerator = new DeterministicGuidGenerator();
+
+        var probes = new[]
+        {
+            CreateProbe("System.Diagnostics.StackFrameHelper", "InitializeSourceInfo", guidGenerator)
+        };
+
+        await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
+    }
+
     [SkippableFact(Skip = "Too flakey")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
