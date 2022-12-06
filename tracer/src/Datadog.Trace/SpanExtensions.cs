@@ -5,6 +5,7 @@
 
 using System;
 using System.Text;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -81,6 +82,8 @@ namespace Datadog.Trace
             {
                 setTag(Tags.User.Scope, userDetails.Scope);
             }
+
+            throw new BlockException();
         }
     }
 }

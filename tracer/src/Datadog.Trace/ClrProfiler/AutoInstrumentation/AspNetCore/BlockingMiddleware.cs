@@ -1,4 +1,4 @@
-﻿// <copyright file="BlockingMiddleware.cs" company="Datadog">
+// <copyright file="BlockingMiddleware.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,6 +28,7 @@ internal class BlockingMiddleware
     private static Task WriteResponse(HttpContext context, SecuritySettings settings, out bool endedResponse)
     {
         var httpResponse = context.Response;
+
         if (!httpResponse.HasStarted)
         {
             httpResponse.Clear();
@@ -79,11 +80,14 @@ internal class BlockingMiddleware
 
     internal async Task Invoke(HttpContext context)
     {
+        System.Diagnostics.Debugger.Launch();
+
         var security = Security.Instance;
         var endedResponse = false;
+        var securityCoordinator = new SecurityCoordinator(security, context, (Span)Tracer.Instance.ActiveScope.Span);
+
         if (security.Settings.Enabled)
         {
-            var securityCoordinator = new SecurityCoordinator(security, context, (Span)Tracer.Instance.ActiveScope.Span);
             if (_endPipeline && !context.Response.HasStarted)
             {
                 context.Response.StatusCode = 404;
@@ -112,7 +116,6 @@ internal class BlockingMiddleware
             }
             catch (BlockException e)
             {
-                var securityCoordinator = new SecurityCoordinator(security, context, (Span)Tracer.Instance.ActiveScope.Span);
                 await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
                 if (security.Settings.Enabled)
                 {
