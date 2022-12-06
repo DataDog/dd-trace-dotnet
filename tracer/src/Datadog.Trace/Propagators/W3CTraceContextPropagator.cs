@@ -300,6 +300,8 @@ namespace Datadog.Trace.Propagators
 
                 if (propagatedTagsBuilder.Length > 0)
                 {
+                    // we can't use [^1] in .NET Framework without access to the Index and Range types
+                    // ReSharper disable once UseIndexFromEndExpression
                     if (propagatedTagsBuilder[propagatedTagsBuilder.Length - 1] == ',')
                     {
                         propagatedTagsBuilder.Length--;
