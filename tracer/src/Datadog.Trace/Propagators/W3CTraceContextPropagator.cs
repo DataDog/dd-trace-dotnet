@@ -32,11 +32,7 @@ namespace Datadog.Trace.Propagators
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             var traceparent = CreateTraceParentHeader(context);
-
-            if (!string.IsNullOrWhiteSpace(traceparent))
-            {
-                carrierSetter.Set(carrier, TraceParentHeaderName, traceparent);
-            }
+            carrierSetter.Set(carrier, TraceParentHeaderName, traceparent);
 
             var tracestate = CreateTraceStateHeader(context);
 
