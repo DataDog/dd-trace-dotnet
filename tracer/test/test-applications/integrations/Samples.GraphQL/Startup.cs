@@ -48,7 +48,7 @@ namespace Samples.GraphQL
         }
 
         public void Configure(IApplicationBuilder app,
-#if NETCOREAPP2_1 || NET461
+#if NETCOREAPP2_1 || NETFRAMEWORK
                               IHostingEnvironment env,
 #else
                               IWebHostEnvironment env,
