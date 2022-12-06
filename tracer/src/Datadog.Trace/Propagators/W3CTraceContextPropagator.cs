@@ -407,13 +407,13 @@ namespace Datadog.Trace.Propagators
                                         SamplingPriorityValues.AutoReject);
 
             spanContext = new SpanContext(
-                traceParent.TraceId,
-                traceParent.ParentId,
-                samplingPriority,
+                traceId: traceParent.TraceId,
+                spanId: traceParent.ParentId,
+                samplingPriority: samplingPriority,
                 serviceName: null,
                 origin: traceState.Origin,
-                traceParent.RawTraceId,
-                traceParent.RawParentId);
+                rawTraceId: traceParent.RawTraceId,
+                rawSpanId: traceParent.RawParentId);
 
             spanContext.PropagatedTags = traceState.PropagatedTags;
             return true;
