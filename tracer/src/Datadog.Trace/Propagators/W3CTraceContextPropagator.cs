@@ -343,7 +343,7 @@ namespace Datadog.Trace.Propagators
                        "1" => 1,
                        "0" => 0,
                        "-1" => 1,
-                       null => null,
+                       null or "" => null,
                        not null => int.TryParse(samplingPriority, out var result) ? result : null
                    };
         }
