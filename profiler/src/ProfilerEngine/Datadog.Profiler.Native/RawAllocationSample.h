@@ -22,4 +22,5 @@ public:
     std::string AllocationClass;
     int64_t AllocationSize;
     uintptr_t Address;
+    ClassID MethodTable;
 };

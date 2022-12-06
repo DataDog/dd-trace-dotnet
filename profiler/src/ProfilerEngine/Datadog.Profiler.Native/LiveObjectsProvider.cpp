@@ -146,7 +146,23 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
     // If _objectsToMonitor is already full, stop adding new objects
     if (_objectsToMonitor.size() + _monitoredObjects.size() < MAX_LIVE_OBJECTS)
     {
-        _objectsToMonitor.push_back(std::move(info));
+        //_objectsToMonitor.push_back(std::move(info));
+
+        // When the AllocationTick event is received, the object is not already initialized.
+        // To call CreateWeakHandle(), it is needed to patch the MethodTable in memory
+        *(uintptr_t*)rawSample.Address = rawSample.MethodTable;
+
+        auto handle = CreateWeakHandle(rawSample.Address);
+        if (handle != nullptr)
+        {
+            info.SetHandle(handle);
+            _monitoredObjects.push_back(std::move(info));
+        }
+        else
+        {
+            // this should never happen
+        }
+
     }
 }
 
