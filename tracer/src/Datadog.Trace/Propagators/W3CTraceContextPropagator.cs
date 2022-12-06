@@ -260,12 +260,12 @@ namespace Datadog.Trace.Propagators
                     var name = header.AsSpan(start: startIndex, length: colonIndex - startIndex);
                     var value = header.AsSpan(start: colonIndex + 1, length: endIndex - colonIndex);
 
-                    if (name.SequenceEqual("s"))
+                    if (name.Equals("s", StringComparison.Ordinal))
                     {
                         // SamplingPriorityToInt32(ReadOnlySpan<char>)
                         samplingPriority = SamplingPriorityToInt32(value);
                     }
-                    else if (name.SequenceEqual("o"))
+                    else if (name.Equals("o", StringComparison.Ordinal))
                     {
                         origin = value.ToString();
                     }
