@@ -14,19 +14,19 @@ ddog_ByteSlice FfiHelper::StringToByteSlice(char const* str)
     return {(uint8_t*)str, strlen(str)};
 }
 
-ddog_Slice_c_char FfiHelper::StringToCharSlice(std::string const& str)
+ddog_CharSlice FfiHelper::StringToCharSlice(std::string const& str)
 {
     return {str.data(), str.size()};
 }
 
-ddog_Slice_c_char FfiHelper::StringToCharSlice(std::string_view str)
+ddog_CharSlice FfiHelper::StringToCharSlice(std::string_view str)
 {
     return {str.data(), str.size()};
 }
 
-ddog_ValueType FfiHelper::CreateValueType(std::string const& type, std::string const& unit)
+ddog_prof_ValueType FfiHelper::CreateValueType(std::string const& type, std::string const& unit)
 {
-    auto valueType = ddog_ValueType{};
+    auto valueType = ddog_prof_ValueType{};
     valueType.type_ = FfiHelper::StringToCharSlice(type);
     valueType.unit = FfiHelper::StringToCharSlice(unit);
     return valueType;
