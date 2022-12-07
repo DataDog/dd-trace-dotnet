@@ -397,7 +397,7 @@ namespace Datadog.Trace.Agent
             }
 
             RunSpanSampler(spans);
-
+            int? spanSamplingPriority = null;
             if (CanComputeStats)
             {
                 spans = _statsAggregator?.ProcessTrace(spans) ?? spans;
@@ -423,8 +423,9 @@ namespace Datadog.Trace.Agent
                 }
                 else if (!shouldSendTrace && singleSpanSamplingSpans.Count > 0)
                 {
-                    // change priority to be manual keep of the underlying trace context to notify agent
-                    spans.Array![spans.Offset].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+                    // we need to set the sampling priority of the chunk to be user keep so the agent handles it correctly
+                    // this will override the TraceContext sampling priority when we do a SpanBuffer.TryWrite
+                    spanSamplingPriority = SamplingPriorityValues.UserKeep;
                     // note that we aren't incrementing _droppedP0Traces as we aren't dropping the trace entirely
                     Interlocked.Add(ref _droppedP0Spans, spans.Count - singleSpanSamplingSpans.Count);
                     spans = new ArraySegment<Span>(singleSpanSamplingSpans.ToArray());
@@ -452,7 +453,7 @@ namespace Datadog.Trace.Agent
             // This allows the serialization thread to keep doing its job while a buffer is being flushed
             var buffer = _activeBuffer;
 
-            if (buffer.TryWrite(spans, ref _temporaryBuffer))
+            if (buffer.TryWrite(spans, ref _temporaryBuffer, spanSamplingPriority))
             {
                 // Serialization to the primary buffer succeeded
                 return;
@@ -466,7 +467,7 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(spans, ref _temporaryBuffer))
+                if (buffer.TryWrite(spans, ref _temporaryBuffer, spanSamplingPriority))
                 {
                     // Serialization to the secondary buffer succeeded
                     return;

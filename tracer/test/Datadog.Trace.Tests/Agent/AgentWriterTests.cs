@@ -57,9 +57,6 @@ namespace Datadog.Trace.Tests.Agent
 
             api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Never);
 
-            // validate that we have not updated the sampling priority)
-            traceContext.SamplingPriority.Should().Be(-1);
-
             await _agentWriter.FlushAndCloseAsync();
         }
 
@@ -83,7 +80,7 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.SetSamplingPriority(new SamplingDecision(SamplingPriorityValues.UserReject, SamplingMechanism.Manual));
             span.Finish();
             var traceChunk = new ArraySegment<Span>(new[] { span });
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk), SpanFormatterResolver.Instance);
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
@@ -91,9 +88,6 @@ namespace Datadog.Trace.Tests.Agent
             var expectedDroppedP0Spans = 0;
 
             api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans)), Times.Once);
-
-            // validate that we have updated the sampling priority to 2 (manual keep)
-            traceContext.SamplingPriority.Should().Be(2);
 
             await _agentWriter.FlushAndCloseAsync();
         }
@@ -124,16 +118,13 @@ namespace Datadog.Trace.Tests.Agent
 
             var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
             var size = ComputeSize(expectedChunk);
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk), SpanFormatterResolver.Instance);
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             var expectedDroppedP0Traces = 0;
             var expectedDroppedP0Spans = 0;
             api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans)), Times.Once);
-
-            // validate that we have updated the sampling priority to 2 (manual keep)
-            traceContext.SamplingPriority.Should().Be(2);
 
             await _agentWriter.FlushAndCloseAsync();
         }
@@ -170,7 +161,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new ArraySegment<Span>(new[] { rootSpan, droppedChildSpan, droppedChildSpan2, keptChildSpan });
             var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk), SpanFormatterResolver.Instance);
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
@@ -179,8 +170,6 @@ namespace Datadog.Trace.Tests.Agent
             // expecting a single trace, but there should have been two spans
             api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans)), Times.Once);
 
-            // validate that we have updated the sampling priority to 2 (manual keep)
-            traceContext.SamplingPriority.Should().Be(2);
             await _agentWriter.FlushAndCloseAsync();
         }
 
