@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -43,7 +44,9 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         const int HIDDEN = 0xFEEFEE;
         var globalCoverage = new GlobalCoverageInfo();
         var moduleProcessed = new HashSet<Module>();
-        foreach (var moduleValue in GlobalContainer.CloseContext().Concat(_coverages.SelectMany(c => c.CloseContext())))
+        var fromGlobalContainer = GlobalContainer?.CloseContext() ?? Array.Empty<ModuleValue>();
+        var fromTestsContainers = _coverages?.SelectMany(c => c?.CloseContext() ?? Array.Empty<ModuleValue>()) ?? Array.Empty<ModuleValue>();
+        foreach (var moduleValue in fromGlobalContainer.Concat(fromTestsContainers))
         {
             if (moduleValue is null)
             {
@@ -127,12 +130,15 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         }
 
         // Clean coverages
-        foreach (var coverage in _coverages)
+        if (_coverages is { } coverages)
         {
-            coverage.Clear();
+            foreach (var coverage in coverages)
+            {
+                coverage.Clear();
+            }
         }
 
-        GlobalContainer.Clear();
+        GlobalContainer?.Clear();
 
         Log.Information($"Total time to calculate global coverage: {sw.Elapsed.TotalMilliseconds}ms");
         return globalCoverage;
