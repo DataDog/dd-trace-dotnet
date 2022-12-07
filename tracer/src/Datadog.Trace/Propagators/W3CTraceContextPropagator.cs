@@ -353,27 +353,15 @@ namespace Datadog.Trace.Propagators
 #if NETCOREAPP
         private static int? SamplingPriorityToInt32(ReadOnlySpan<char> samplingPriority)
         {
-            if (samplingPriority.Equals("2", StringComparison.Ordinal))
-            {
-                return 2;
-            }
-
-            if (samplingPriority.Equals("1", StringComparison.Ordinal))
-            {
-                return 1;
-            }
-
-            if (samplingPriority.Equals("0", StringComparison.Ordinal))
-            {
-                return 0;
-            }
-
-            if (samplingPriority.Equals("-1", StringComparison.Ordinal))
-            {
-                return -1;
-            }
-
-            return int.TryParse(samplingPriority, out var result) ? result : null;
+            return samplingPriority switch
+                   {
+                       "2" => 2,
+                       "1" => 1,
+                       "0" => 0,
+                       "-1" => -1,
+                       "" => null,
+                       _ => int.TryParse(samplingPriority, out var result) ? result : null
+                   };
         }
 #endif
 
