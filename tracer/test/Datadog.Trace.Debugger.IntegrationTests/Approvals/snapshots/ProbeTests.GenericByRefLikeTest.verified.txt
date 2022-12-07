@@ -1,0 +1,2164 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "23": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "isNull": "true",
+                          "type": "String"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Cottage"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "0"
+                    },
+                    "Street": {
+                      "isNull": "true",
+                      "type": "String"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "isNull": "true",
+                  "type": "List`1"
+                },
+                "person": {
+                  "isNull": "true",
+                  "type": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "isNull": "true",
+                      "type": "String"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              23
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "24": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "isNull": "true",
+                          "type": "String"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Cottage"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "0"
+                    },
+                    "Street": {
+                      "isNull": "true",
+                      "type": "String"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "isNull": "true",
+                  "type": "List`1"
+                },
+                "person": {
+                  "isNull": "true",
+                  "type": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "type": "String",
+                      "value": "New York"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              24
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "25": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "type": "String",
+                          "value": "New York"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Duplex"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "15"
+                    },
+                    "Street": {
+                      "type": "String",
+                      "value": "Harlem"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "isNull": "true",
+                  "type": "List`1"
+                },
+                "person": {
+                  "isNull": "true",
+                  "type": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "type": "String",
+                      "value": "New York"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              25
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "26": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "type": "String",
+                          "value": "New York"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Duplex"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "15"
+                    },
+                    "Street": {
+                      "type": "String",
+                      "value": "Harlem"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "elements": [],
+                  "type": "List`1",
+                  "value": "count: 0"
+                },
+                "person": {
+                  "isNull": "true",
+                  "type": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "type": "String",
+                      "value": "New York"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              26
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "27": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "type": "String",
+                          "value": "New York"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Duplex"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "15"
+                    },
+                    "Street": {
+                      "type": "String",
+                      "value": "Harlem"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "elements": [
+                    {
+                      "fields": {
+                        "_shouldCloned": {
+                          "type": "Int32",
+                          "value": "31"
+                        },
+                        "Address": {
+                          "fields": {
+                            "City": {
+                              "fields": {
+                                "Name": {
+                                  "type": "String",
+                                  "value": "New York"
+                                },
+                                "Type": {
+                                  "type": "PlaceType",
+                                  "value": "City"
+                                }
+                              },
+                              "type": "Place",
+                              "value": "Place"
+                            },
+                            "HomeType": {
+                              "type": "BuildingType",
+                              "value": "Duplex"
+                            },
+                            "Number": {
+                              "type": "Int32",
+                              "value": "15"
+                            },
+                            "Street": {
+                              "type": "String",
+                              "value": "Harlem"
+                            }
+                          },
+                          "type": "Address",
+                          "value": "Address"
+                        },
+                        "Age": {
+                          "type": "Double",
+                          "value": "31"
+                        },
+                        "Children": {
+                          "isNull": "true",
+                          "type": "List`1"
+                        },
+                        "Id": {
+                          "type": "Guid",
+                          "value": "ScrubbedValue"
+                        },
+                        "Name": {
+                          "type": "String",
+                          "value": "Ralph Jr."
+                        }
+                      },
+                      "type": "Person",
+                      "value": "Person"
+                    }
+                  ],
+                  "type": "List`1",
+                  "value": "count: 1"
+                },
+                "person": {
+                  "isNull": "true",
+                  "type": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "type": "String",
+                      "value": "New York"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              27
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "29": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "type": "String",
+                          "value": "New York"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Duplex"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "15"
+                    },
+                    "Street": {
+                      "type": "String",
+                      "value": "Harlem"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "elements": [
+                    {
+                      "fields": {
+                        "_shouldCloned": {
+                          "type": "Int32",
+                          "value": "31"
+                        },
+                        "Address": {
+                          "fields": {
+                            "City": {
+                              "fields": {
+                                "Name": {
+                                  "type": "String",
+                                  "value": "New York"
+                                },
+                                "Type": {
+                                  "type": "PlaceType",
+                                  "value": "City"
+                                }
+                              },
+                              "type": "Place",
+                              "value": "Place"
+                            },
+                            "HomeType": {
+                              "type": "BuildingType",
+                              "value": "Duplex"
+                            },
+                            "Number": {
+                              "type": "Int32",
+                              "value": "15"
+                            },
+                            "Street": {
+                              "type": "String",
+                              "value": "Harlem"
+                            }
+                          },
+                          "type": "Address",
+                          "value": "Address"
+                        },
+                        "Age": {
+                          "type": "Double",
+                          "value": "31"
+                        },
+                        "Children": {
+                          "isNull": "true",
+                          "type": "List`1"
+                        },
+                        "Id": {
+                          "type": "Guid",
+                          "value": "ScrubbedValue"
+                        },
+                        "Name": {
+                          "type": "String",
+                          "value": "Ralph Jr."
+                        }
+                      },
+                      "type": "Person",
+                      "value": "Person"
+                    }
+                  ],
+                  "type": "List`1",
+                  "value": "count: 1"
+                },
+                "person": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "type": "Int32",
+                      "value": "99"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "type": "String",
+                              "value": "New York"
+                            },
+                            "Type": {
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "type": "Int32",
+                          "value": "15"
+                        },
+                        "Street": {
+                          "type": "String",
+                          "value": "Harlem"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "type": "Double",
+                      "value": "99"
+                    },
+                    "Children": {
+                      "elements": [
+                        {
+                          "fields": {
+                            "_shouldCloned": {
+                              "type": "Int32",
+                              "value": "31"
+                            },
+                            "Address": {
+                              "fields": {
+                                "City": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Place",
+                                  "value": "Place"
+                                },
+                                "HomeType": {
+                                  "type": "BuildingType",
+                                  "value": "Duplex"
+                                },
+                                "Number": {
+                                  "type": "Int32",
+                                  "value": "15"
+                                },
+                                "Street": {
+                                  "type": "String",
+                                  "value": "Harlem"
+                                }
+                              },
+                              "type": "Address",
+                              "value": "Address"
+                            },
+                            "Age": {
+                              "type": "Double",
+                              "value": "31"
+                            },
+                            "Children": {
+                              "isNull": "true",
+                              "type": "List`1"
+                            },
+                            "Id": {
+                              "type": "Guid",
+                              "value": "ScrubbedValue"
+                            },
+                            "Name": {
+                              "type": "String",
+                              "value": "Ralph Jr."
+                            }
+                          },
+                          "type": "Person",
+                          "value": "Person"
+                        }
+                      ],
+                      "type": "List`1",
+                      "value": "count: 1"
+                    },
+                    "Id": {
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "type": "String",
+                      "value": "Ralph"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "type": "String",
+                      "value": "New York"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              29
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "30": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "type": "String",
+                          "value": "New York"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Duplex"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "15"
+                    },
+                    "Street": {
+                      "type": "String",
+                      "value": "Harlem"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "elements": [
+                    {
+                      "fields": {
+                        "_shouldCloned": {
+                          "type": "Int32",
+                          "value": "31"
+                        },
+                        "Address": {
+                          "fields": {
+                            "City": {
+                              "fields": {
+                                "Name": {
+                                  "type": "String",
+                                  "value": "New York"
+                                },
+                                "Type": {
+                                  "type": "PlaceType",
+                                  "value": "City"
+                                }
+                              },
+                              "type": "Place",
+                              "value": "Place"
+                            },
+                            "HomeType": {
+                              "type": "BuildingType",
+                              "value": "Duplex"
+                            },
+                            "Number": {
+                              "type": "Int32",
+                              "value": "15"
+                            },
+                            "Street": {
+                              "type": "String",
+                              "value": "Harlem"
+                            }
+                          },
+                          "type": "Address",
+                          "value": "Address"
+                        },
+                        "Age": {
+                          "type": "Double",
+                          "value": "31"
+                        },
+                        "Children": {
+                          "isNull": "true",
+                          "type": "List`1"
+                        },
+                        "Id": {
+                          "type": "Guid",
+                          "value": "ScrubbedValue"
+                        },
+                        "Name": {
+                          "type": "String",
+                          "value": "Ralph Jr."
+                        }
+                      },
+                      "type": "Person",
+                      "value": "Person"
+                    }
+                  ],
+                  "type": "List`1",
+                  "value": "count: 1"
+                },
+                "person": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "type": "Int32",
+                      "value": "99"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "type": "String",
+                              "value": "New York"
+                            },
+                            "Type": {
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "type": "Int32",
+                          "value": "15"
+                        },
+                        "Street": {
+                          "type": "String",
+                          "value": "Harlem"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "type": "Double",
+                      "value": "99"
+                    },
+                    "Children": {
+                      "elements": [
+                        {
+                          "fields": {
+                            "_shouldCloned": {
+                              "type": "Int32",
+                              "value": "31"
+                            },
+                            "Address": {
+                              "fields": {
+                                "City": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Place",
+                                  "value": "Place"
+                                },
+                                "HomeType": {
+                                  "type": "BuildingType",
+                                  "value": "Duplex"
+                                },
+                                "Number": {
+                                  "type": "Int32",
+                                  "value": "15"
+                                },
+                                "Street": {
+                                  "type": "String",
+                                  "value": "Harlem"
+                                }
+                              },
+                              "type": "Address",
+                              "value": "Address"
+                            },
+                            "Age": {
+                              "type": "Double",
+                              "value": "31"
+                            },
+                            "Children": {
+                              "isNull": "true",
+                              "type": "List`1"
+                            },
+                            "Id": {
+                              "type": "Guid",
+                              "value": "ScrubbedValue"
+                            },
+                            "Name": {
+                              "type": "String",
+                              "value": "Ralph Jr."
+                            }
+                          },
+                          "type": "Person",
+                          "value": "Person"
+                        }
+                      ],
+                      "type": "List`1",
+                      "value": "count: 1"
+                    },
+                    "Id": {
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "type": "String",
+                      "value": "Ralph"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "type": "String",
+                      "value": "New York"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              30
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "31": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "type": "String",
+                          "value": "New York"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Duplex"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "15"
+                    },
+                    "Street": {
+                      "type": "String",
+                      "value": "Harlem"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "elements": [
+                    {
+                      "fields": {
+                        "_shouldCloned": {
+                          "type": "Int32",
+                          "value": "31"
+                        },
+                        "Address": {
+                          "fields": {
+                            "City": {
+                              "fields": {
+                                "Name": {
+                                  "type": "String",
+                                  "value": "New York"
+                                },
+                                "Type": {
+                                  "type": "PlaceType",
+                                  "value": "City"
+                                }
+                              },
+                              "type": "Place",
+                              "value": "Place"
+                            },
+                            "HomeType": {
+                              "type": "BuildingType",
+                              "value": "Duplex"
+                            },
+                            "Number": {
+                              "type": "Int32",
+                              "value": "15"
+                            },
+                            "Street": {
+                              "type": "String",
+                              "value": "Harlem"
+                            }
+                          },
+                          "type": "Address",
+                          "value": "Address"
+                        },
+                        "Age": {
+                          "type": "Double",
+                          "value": "31"
+                        },
+                        "Children": {
+                          "isNull": "true",
+                          "type": "List`1"
+                        },
+                        "Id": {
+                          "type": "Guid",
+                          "value": "ScrubbedValue"
+                        },
+                        "Name": {
+                          "type": "String",
+                          "value": "Ralph Jr."
+                        }
+                      },
+                      "type": "Person",
+                      "value": "Person"
+                    }
+                  ],
+                  "type": "List`1",
+                  "value": "count: 1"
+                },
+                "person": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "type": "Int32",
+                      "value": "99"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "type": "String",
+                              "value": "New York"
+                            },
+                            "Type": {
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "type": "Int32",
+                          "value": "15"
+                        },
+                        "Street": {
+                          "type": "String",
+                          "value": "Harlem"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "type": "Double",
+                      "value": "99"
+                    },
+                    "Children": {
+                      "elements": [
+                        {
+                          "fields": {
+                            "_shouldCloned": {
+                              "type": "Int32",
+                              "value": "31"
+                            },
+                            "Address": {
+                              "fields": {
+                                "City": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Place",
+                                  "value": "Place"
+                                },
+                                "HomeType": {
+                                  "type": "BuildingType",
+                                  "value": "Duplex"
+                                },
+                                "Number": {
+                                  "type": "Int32",
+                                  "value": "15"
+                                },
+                                "Street": {
+                                  "type": "String",
+                                  "value": "Harlem"
+                                }
+                              },
+                              "type": "Address",
+                              "value": "Address"
+                            },
+                            "Age": {
+                              "type": "Double",
+                              "value": "31"
+                            },
+                            "Children": {
+                              "isNull": "true",
+                              "type": "List`1"
+                            },
+                            "Id": {
+                              "type": "Guid",
+                              "value": "ScrubbedValue"
+                            },
+                            "Name": {
+                              "type": "String",
+                              "value": "Ralph Jr."
+                            }
+                          },
+                          "type": "Person",
+                          "value": "Person"
+                        }
+                      ],
+                      "type": "List`1",
+                      "value": "count: 1"
+                    },
+                    "Id": {
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "type": "String",
+                      "value": "Ralph"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "type": "String",
+                      "value": "New York"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              31
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "32": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "type": "String",
+                          "value": "New York"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Duplex"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "15"
+                    },
+                    "Street": {
+                      "type": "String",
+                      "value": "Harlem"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "elements": [
+                    {
+                      "fields": {
+                        "_shouldCloned": {
+                          "type": "Int32",
+                          "value": "31"
+                        },
+                        "Address": {
+                          "fields": {
+                            "City": {
+                              "fields": {
+                                "Name": {
+                                  "type": "String",
+                                  "value": "New York"
+                                },
+                                "Type": {
+                                  "type": "PlaceType",
+                                  "value": "City"
+                                }
+                              },
+                              "type": "Place",
+                              "value": "Place"
+                            },
+                            "HomeType": {
+                              "type": "BuildingType",
+                              "value": "Duplex"
+                            },
+                            "Number": {
+                              "type": "Int32",
+                              "value": "15"
+                            },
+                            "Street": {
+                              "type": "String",
+                              "value": "Harlem"
+                            }
+                          },
+                          "type": "Address",
+                          "value": "Address"
+                        },
+                        "Age": {
+                          "type": "Double",
+                          "value": "31"
+                        },
+                        "Children": {
+                          "isNull": "true",
+                          "type": "List`1"
+                        },
+                        "Id": {
+                          "type": "Guid",
+                          "value": "ScrubbedValue"
+                        },
+                        "Name": {
+                          "type": "String",
+                          "value": "Ralph Jr."
+                        }
+                      },
+                      "type": "Person",
+                      "value": "Person"
+                    }
+                  ],
+                  "type": "List`1",
+                  "value": "count: 1"
+                },
+                "person": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "type": "Int32",
+                      "value": "99"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "type": "String",
+                              "value": "New York"
+                            },
+                            "Type": {
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "type": "Int32",
+                          "value": "15"
+                        },
+                        "Street": {
+                          "type": "String",
+                          "value": "Harlem"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "type": "Double",
+                      "value": "99"
+                    },
+                    "Children": {
+                      "elements": [
+                        {
+                          "fields": {
+                            "_shouldCloned": {
+                              "type": "Int32",
+                              "value": "31"
+                            },
+                            "Address": {
+                              "fields": {
+                                "City": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Place",
+                                  "value": "Place"
+                                },
+                                "HomeType": {
+                                  "type": "BuildingType",
+                                  "value": "Duplex"
+                                },
+                                "Number": {
+                                  "type": "Int32",
+                                  "value": "15"
+                                },
+                                "Street": {
+                                  "type": "String",
+                                  "value": "Harlem"
+                                }
+                              },
+                              "type": "Address",
+                              "value": "Address"
+                            },
+                            "Age": {
+                              "type": "Double",
+                              "value": "31"
+                            },
+                            "Children": {
+                              "isNull": "true",
+                              "type": "List`1"
+                            },
+                            "Id": {
+                              "type": "Guid",
+                              "value": "ScrubbedValue"
+                            },
+                            "Name": {
+                              "type": "String",
+                              "value": "Ralph Jr."
+                            }
+                          },
+                          "type": "Person",
+                          "value": "Person"
+                        }
+                      ],
+                      "type": "List`1",
+                      "value": "count: 1"
+                    },
+                    "Id": {
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "type": "String",
+                      "value": "Ralph"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "type": "String",
+                      "value": "New York"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              32
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "34": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "type": "String",
+                          "value": "New York"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Duplex"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "15"
+                    },
+                    "Street": {
+                      "type": "String",
+                      "value": "Harlem"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "elements": [
+                    {
+                      "fields": {
+                        "_shouldCloned": {
+                          "type": "Int32",
+                          "value": "31"
+                        },
+                        "Address": {
+                          "fields": {
+                            "City": {
+                              "fields": {
+                                "Name": {
+                                  "type": "String",
+                                  "value": "New York"
+                                },
+                                "Type": {
+                                  "type": "PlaceType",
+                                  "value": "City"
+                                }
+                              },
+                              "type": "Place",
+                              "value": "Place"
+                            },
+                            "HomeType": {
+                              "type": "BuildingType",
+                              "value": "Duplex"
+                            },
+                            "Number": {
+                              "type": "Int32",
+                              "value": "15"
+                            },
+                            "Street": {
+                              "type": "String",
+                              "value": "Harlem"
+                            }
+                          },
+                          "type": "Address",
+                          "value": "Address"
+                        },
+                        "Age": {
+                          "type": "Double",
+                          "value": "31"
+                        },
+                        "Children": {
+                          "isNull": "true",
+                          "type": "List`1"
+                        },
+                        "Id": {
+                          "type": "Guid",
+                          "value": "ScrubbedValue"
+                        },
+                        "Name": {
+                          "type": "String",
+                          "value": "Ralph Jr."
+                        }
+                      },
+                      "type": "Person",
+                      "value": "Person"
+                    }
+                  ],
+                  "type": "List`1",
+                  "value": "count: 1"
+                },
+                "person": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "type": "Int32",
+                      "value": "99"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "type": "String",
+                              "value": "New York"
+                            },
+                            "Type": {
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "type": "Int32",
+                          "value": "15"
+                        },
+                        "Street": {
+                          "type": "String",
+                          "value": "Harlem"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "type": "Double",
+                      "value": "99"
+                    },
+                    "Children": {
+                      "elements": [
+                        {
+                          "fields": {
+                            "_shouldCloned": {
+                              "type": "Int32",
+                              "value": "31"
+                            },
+                            "Address": {
+                              "fields": {
+                                "City": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Place",
+                                  "value": "Place"
+                                },
+                                "HomeType": {
+                                  "type": "BuildingType",
+                                  "value": "Duplex"
+                                },
+                                "Number": {
+                                  "type": "Int32",
+                                  "value": "15"
+                                },
+                                "Street": {
+                                  "type": "String",
+                                  "value": "Harlem"
+                                }
+                              },
+                              "type": "Address",
+                              "value": "Address"
+                            },
+                            "Age": {
+                              "type": "Double",
+                              "value": "31"
+                            },
+                            "Children": {
+                              "isNull": "true",
+                              "type": "List`1"
+                            },
+                            "Id": {
+                              "type": "Guid",
+                              "value": "ScrubbedValue"
+                            },
+                            "Name": {
+                              "type": "String",
+                              "value": "Ralph Jr."
+                            }
+                          },
+                          "type": "Person",
+                          "value": "Person"
+                        }
+                      ],
+                      "type": "List`1",
+                      "value": "count: 1"
+                    },
+                    "Id": {
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "type": "String",
+                      "value": "Ralph"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "type": "String",
+                      "value": "New York"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              34
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "35": {
+              "arguments": {
+                "this": {
+                  "type": "GenericByRefLikeTest",
+                  "value": "GenericByRefLikeTest"
+                }
+              },
+              "locals": {
+                "address": {
+                  "fields": {
+                    "City": {
+                      "fields": {
+                        "Name": {
+                          "type": "String",
+                          "value": "New York"
+                        },
+                        "Type": {
+                          "type": "PlaceType",
+                          "value": "City"
+                        }
+                      },
+                      "type": "Place",
+                      "value": "Place"
+                    },
+                    "HomeType": {
+                      "type": "BuildingType",
+                      "value": "Duplex"
+                    },
+                    "Number": {
+                      "type": "Int32",
+                      "value": "15"
+                    },
+                    "Street": {
+                      "type": "String",
+                      "value": "Harlem"
+                    }
+                  },
+                  "type": "Address",
+                  "value": "Address"
+                },
+                "children": {
+                  "elements": [
+                    {
+                      "fields": {
+                        "_shouldCloned": {
+                          "type": "Int32",
+                          "value": "31"
+                        },
+                        "Address": {
+                          "fields": {
+                            "City": {
+                              "fields": {
+                                "Name": {
+                                  "type": "String",
+                                  "value": "New York"
+                                },
+                                "Type": {
+                                  "type": "PlaceType",
+                                  "value": "City"
+                                }
+                              },
+                              "type": "Place",
+                              "value": "Place"
+                            },
+                            "HomeType": {
+                              "type": "BuildingType",
+                              "value": "Duplex"
+                            },
+                            "Number": {
+                              "type": "Int32",
+                              "value": "15"
+                            },
+                            "Street": {
+                              "type": "String",
+                              "value": "Harlem"
+                            }
+                          },
+                          "type": "Address",
+                          "value": "Address"
+                        },
+                        "Age": {
+                          "type": "Double",
+                          "value": "31"
+                        },
+                        "Children": {
+                          "isNull": "true",
+                          "type": "List`1"
+                        },
+                        "Id": {
+                          "type": "Guid",
+                          "value": "ScrubbedValue"
+                        },
+                        "Name": {
+                          "type": "String",
+                          "value": "Ralph Jr."
+                        }
+                      },
+                      "type": "Person",
+                      "value": "Person"
+                    }
+                  ],
+                  "type": "List`1",
+                  "value": "count: 1"
+                },
+                "person": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "type": "Int32",
+                      "value": "99"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "type": "String",
+                              "value": "New York"
+                            },
+                            "Type": {
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "type": "Int32",
+                          "value": "15"
+                        },
+                        "Street": {
+                          "type": "String",
+                          "value": "Harlem"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "type": "Double",
+                      "value": "99"
+                    },
+                    "Children": {
+                      "elements": [
+                        {
+                          "fields": {
+                            "_shouldCloned": {
+                              "type": "Int32",
+                              "value": "31"
+                            },
+                            "Address": {
+                              "fields": {
+                                "City": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Place",
+                                  "value": "Place"
+                                },
+                                "HomeType": {
+                                  "type": "BuildingType",
+                                  "value": "Duplex"
+                                },
+                                "Number": {
+                                  "type": "Int32",
+                                  "value": "15"
+                                },
+                                "Street": {
+                                  "type": "String",
+                                  "value": "Harlem"
+                                }
+                              },
+                              "type": "Address",
+                              "value": "Address"
+                            },
+                            "Age": {
+                              "type": "Double",
+                              "value": "31"
+                            },
+                            "Children": {
+                              "isNull": "true",
+                              "type": "List`1"
+                            },
+                            "Id": {
+                              "type": "Guid",
+                              "value": "ScrubbedValue"
+                            },
+                            "Name": {
+                              "type": "String",
+                              "value": "Ralph Jr."
+                            }
+                          },
+                          "type": "Person",
+                          "value": "Person"
+                        }
+                      ],
+                      "type": "List`1",
+                      "value": "count: 1"
+                    },
+                    "Id": {
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "type": "String",
+                      "value": "Ralph"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                },
+                "place": {
+                  "fields": {
+                    "Name": {
+                      "type": "String",
+                      "value": "New York"
+                    },
+                    "Type": {
+                      "type": "PlaceType",
+                      "value": "City"
+                    }
+                  },
+                  "type": "Place",
+                  "value": "Place"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericByRefLikeTest.cs",
+            "lines": [
+              35
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericByRefLikeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  }
+]

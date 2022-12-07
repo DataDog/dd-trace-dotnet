@@ -1,0 +1,95 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "this": {
+                "type": "GenericRefReturnTest",
+                "value": "GenericRefReturnTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "GenericRefReturnTest",
+                "value": "GenericRefReturnTest"
+              }
+            },
+            "locals": {
+              "whatever": {
+                "fields": {
+                  "City": {
+                    "fields": {
+                      "Name": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "Type": {
+                        "type": "PlaceType",
+                        "value": "City"
+                      }
+                    },
+                    "type": "Place",
+                    "value": "Place"
+                  },
+                  "HomeType": {
+                    "type": "BuildingType",
+                    "value": "Cottage"
+                  },
+                  "Number": {
+                    "type": "Int32",
+                    "value": "0"
+                  },
+                  "Street": {
+                    "isNull": "true",
+                    "type": "String"
+                  }
+                },
+                "type": "Address",
+                "value": "Address"
+              }
+            },
+            "throwable": {
+              "message": "Object reference not set to an instance of an object.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.SmokeTests.GenericRefReturnTest.CallMe",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NullReferenceException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "CallMe",
+            "type": "Samples.Probes.TestRuns.SmokeTests.GenericRefReturnTest"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "CallMe",
+      "name": "Samples.Probes.TestRuns.SmokeTests.GenericRefReturnTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  }
+]
