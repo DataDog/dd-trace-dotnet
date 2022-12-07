@@ -125,8 +125,8 @@ partial class Build
 
     TargetFramework[] TestingFrameworks =>
         IncludeAllTestFrameworks || HaveIntegrationsChanged
-            ? TargetFramework.GetFrameworks(except: TargetFramework.NETSTANDARD2_0)
-            : new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
+            ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, }
+            : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
 
     bool HaveIntegrationsChanged => 
         GetGitChangedFiles(baseBranch: "origin/master")
@@ -854,41 +854,23 @@ partial class Build
 
             testProjects.ForEach(EnsureResultsDirectory);
             var filter = string.IsNullOrEmpty(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
-            List<Exception> exceptions = new();
             try
             {
-                foreach (var targetFramework in TestingFrameworks)
-                {
-                    try
-                    {
-                        DotNetTest(x => x
-                           .EnableNoRestore()
-                           .EnableNoBuild()
-                           .SetFilter(filter)
-                           .SetConfiguration(BuildConfiguration)
-                           .SetTargetPlatformAnyCPU()
-                           .SetDDEnvironmentVariables("dd-tracer-dotnet")
-                           .SetFramework(targetFramework)
-                           .EnableCrashDumps()
-                           .SetLogsDirectory(TestLogsDirectory)
-                           .When(CodeCoverage, x => ConfigureCodeCoverage(x, targetFramework))
-                           .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
-                           .CombineWith(testProjects, (x, project) => x
-                                 .EnableTrxLogOutput(GetResultsDirectory(project))
-                                 .WithDatadogLogger()
-                                 .SetProjectFile(project)));
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error($"Error testing {targetFramework}");
-                        exceptions.Add(ex);
-                    }
-                }
-
-                if (exceptions.Any())
-                {
-                    throw new AggregateException("Error in one or more test runs", exceptions);
-                }
+                DotNetTest(x => x
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetFilter(filter)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatformAnyCPU()
+                    .SetDDEnvironmentVariables("dd-tracer-dotnet")
+                    .EnableCrashDumps()
+                    .SetLogsDirectory(TestLogsDirectory)
+                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
+                    .CombineWith(testProjects, (x, project) => x
+                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithDatadogLogger()
+                        .SetProjectFile(project)));
             }
             finally
             {
@@ -1482,10 +1464,10 @@ partial class Build
                     {
                         "LogsInjection.Log4Net.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
                         "LogsInjection.NLog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
-                        "LogsInjection.NLog10.VersionConflict.2x" => Framework == TargetFramework.NET461,
-                        "LogsInjection.NLog20.VersionConflict.2x" => Framework == TargetFramework.NET461,
+                        "LogsInjection.NLog10.VersionConflict.2x" => Framework == TargetFramework.NET461 || Framework == TargetFramework.NET462,
+                        "LogsInjection.NLog20.VersionConflict.2x" => Framework == TargetFramework.NET461 || Framework == TargetFramework.NET462,
                         "LogsInjection.Serilog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
-                        "LogsInjection.Serilog14.VersionConflict.2x" => Framework == TargetFramework.NET461,
+                        "LogsInjection.Serilog14.VersionConflict.2x" => Framework == TargetFramework.NET461 || Framework == TargetFramework.NET462,
                         "Samples.AspNetCoreMvc21" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
@@ -1495,7 +1477,7 @@ partial class Build
                         "Samples.Security.AspNetCoreBare" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.GraphQL4" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.HotChocolate" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
-                        "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
+                        "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
                         "Samples.Probes" => true,
@@ -2143,21 +2125,7 @@ partial class Build
     }
 
     private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings) 
-        => ConfigureCodeCoverage(settings, Framework);
-
-    private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings, TargetFramework framework)
     {
-        if(framework is null)
-        {
-            throw new InvalidOperationException("No test framework provided. You must define the framework as code coverage breaks on net461");
-        }
-
-        if (framework == TargetFramework.NET461)
-        {
-            // Coverlet apparently breaks .NET Framework when running on the .NET 7 SDK.
-            // TODO: Fix it
-            return settings;
-        }
         var strongNameKeyPath = Solution.Directory / "Datadog.Trace.snk";
 
         return settings.SetDataCollector("XPlat Code Coverage")

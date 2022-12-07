@@ -1394,6 +1394,9 @@ stages:
         net6:
           publishTargetFramework: "net6.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6"
+        net7:
+          publishTargetFramework: "net7.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7"
     pool:
       name: azure-linux-scale-set
 
@@ -1653,6 +1656,8 @@ stages:
             publishTargetFramework: net5.0
           net6_0:
             publishTargetFramework: net6.0
+          net7_0:
+            publishTargetFramework: net7.0
       workspace:
         clean: all
       pool:
@@ -1725,6 +1730,8 @@ stages:
             publishTargetFramework: net5.0
           net6_0:
             publishTargetFramework: net6.0
+          net7_0:
+            publishTargetFramework: net7.0
       workspace:
         clean: all
       pool:
