@@ -22,6 +22,11 @@ public static class Projects
     public const string DataDogThreadTest = "DataDogThreadTest";
 
     public const string Tool = "Datadog.Trace.Tools.Runner";
+
+    public const string DebuggerIntegrationTests = "Datadog.Trace.Debugger.IntegrationTests";
+    public const string DebuggerSamples = "Samples.Probes";
+    public const string DebuggerSamplesTestRuns = "Samples.Probes.TestRuns";
+
 }
 
 public static class FileNames

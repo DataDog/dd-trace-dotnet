@@ -205,6 +205,12 @@ partial class Build : NukeBuild
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildRunnerTool);
 
+    Target BuildDebuggerIntegrationTests => _ => _
+        .Unlisted()
+        .Description("Builds the debugger integration tests")
+        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CompileDebuggerIntegrationTests);
+
     Target BuildAspNetIntegrationTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
@@ -231,6 +237,11 @@ partial class Build : NukeBuild
         .Description("Builds and runs the Windows (non-IIS) integration tests")
         .DependsOn(BuildWindowsIntegrationTests)
         .DependsOn(RunWindowsIntegrationTests);
+
+    Target BuildAndRunDebuggerIntegrationTests => _ => _
+        .Description("Builds and runs the debugger integration tests")
+        .DependsOn(BuildDebuggerIntegrationTests)
+        .DependsOn(RunDebuggerIntegrationTests);
 
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)
