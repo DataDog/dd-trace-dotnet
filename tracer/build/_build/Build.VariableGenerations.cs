@@ -70,8 +70,8 @@ partial class Build : NukeBuild
             void GenerateIntegrationTestsWindowsMatrices()
             {
                 GenerateIntegrationTestsWindowsMatrix(TestingFrameworks);
-                GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET461);
-                GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET461);
+                GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET462);
+                GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET462);
                 GenerateIntegrationTestsWindowsAzureFunctionsMatrix();
             }
 
@@ -159,7 +159,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrix()
             {
-                var targetFrameworks = TestingFrameworks.Except(new [] {TargetFramework.NET461});
+                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0, });
 
                 var baseImages = new[] { "centos7", "alpine" };
 
@@ -225,7 +225,7 @@ partial class Build : NukeBuild
             void GenerateExplorationTestsLinuxMatrix(IEnumerable<string> useCases)
             {
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
-                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, });
+                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0, });
 
                 var baseImages = new[] { "centos7", "alpine" };
 

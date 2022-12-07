@@ -19,7 +19,7 @@ public:
 
     static ddog_ByteSlice StringToByteSlice(std::string const& str);
     static ddog_ByteSlice StringToByteSlice(char const* str);
-    static ddog_Slice_c_char StringToCharSlice(std::string const& str);
-    static ddog_Slice_c_char StringToCharSlice(std::string_view str);
-    static ddog_ValueType CreateValueType(std::string const& type, std::string const& unit);
+    static ddog_CharSlice StringToCharSlice(std::string const& str);
+    static ddog_CharSlice StringToCharSlice(std::string_view str);
+    static ddog_prof_ValueType CreateValueType(std::string const& type, std::string const& unit);
 };
