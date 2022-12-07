@@ -120,22 +120,22 @@ namespace Datadog.Trace.Propagators
 
             header = header.Trim();
 
-            if (header.Length != 55 || header[2] != '-' || header[35] != '-' || header[52] != '-')
+            if (header.Length < 55 || header[2] != '-' || header[35] != '-' || header[52] != '-')
             {
-                // validate format
+                // too short, or invalid delimiter positions
                 return false;
             }
 
-            if (header[0] != '0' || header[1] != '0')
+            if (header[0] == '0' && header[1] == '0' && header.Length != 55)
             {
-                // we only support traceparent version "00"
+                // for version "00", the length must be exactly 55,
                 return false;
             }
 
-            char sampled = header[54];
-
-            if (header[53] != '0' || (sampled != '0' && sampled != '1'))
+            if (header.Length > 55 && header[55] != '-')
             {
+                // if there is more data (e.g. future version of the spec), it's expected to be additive,
+                // and there must be a delimiter after `trace-tags`
                 return false;
             }
 
@@ -163,6 +163,9 @@ namespace Datadog.Trace.Propagators
 
             rawTraceId = w3cTraceId.ToString();
             rawSpanId = w3cSpanId.ToString();
+
+            var traceFlags = header.AsSpan(start: 53, length: 2);
+            var sampled = (ParseUtility.ParseFromHexOrDefault(traceFlags) & 1) == 1;
 #else
             rawTraceId = header.Substring(startIndex: 3, length: 32);
             rawSpanId = header.Substring(startIndex: 36, length: 16);
@@ -179,14 +182,17 @@ namespace Datadog.Trace.Propagators
             {
                 return false;
             }
+
+            var traceFlags = header.Substring(53, 2);
+            var sampled = (ParseUtility.ParseFromHexOrDefault(traceFlags) & 1) == 1;
 #endif
 
             traceParent = new W3CTraceParent(
-                traceId,
-                parentId,
-                sampled == '1',
-                rawTraceId,
-                rawSpanId);
+                traceId: traceId,
+                parentId: parentId,
+                sampled: sampled,
+                rawTraceId: rawTraceId,
+                rawParentId: rawSpanId);
 
             return true;
         }

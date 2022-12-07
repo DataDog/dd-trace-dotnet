@@ -137,9 +137,10 @@ namespace Datadog.Trace.Tests.Propagators
         [Theory]
         [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-00", 123456789, 987654321, false, "000000000000000000000000075bcd15", "000000003ade68b1")]
         [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-01", 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]
-        [InlineData("01-0000000000000000000000003ade68b1-00000000075bcd15-01", 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]  // allow other versions, version=01
-        [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-02", 987654321, 123456789, false, "0000000000000000000000003ade68b1", "00000000075bcd15")] // allow unknown flags, trace-flags=02
-        [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-03", 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]  // allow unknown flags, trace-flags=03
+        [InlineData("01-0000000000000000000000003ade68b1-00000000075bcd15-01", 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]       // allow other versions, version=01
+        [InlineData("02-000000000000000000000000075bcd15-000000003ade68b1-00-1234", 123456789, 987654321, false, "000000000000000000000000075bcd15", "000000003ade68b1")] // allow more data after trace-flags if the version is not 00
+        [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-02", 987654321, 123456789, false, "0000000000000000000000003ade68b1", "00000000075bcd15")]      // allow unknown flags, trace-flags=02, sampled=false
+        [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-03", 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]       // allow unknown flags, trace-flags=03, sampled=true
         public void TryParseTraceParent(string header, ulong traceId, ulong spanId, bool sampled, string rawTraceId, string rawParentId)
         {
             var expected = new W3CTraceParent(
@@ -155,17 +156,16 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData(null)]                                                      // null
-        [InlineData("")]                                                        // empty
-        [InlineData(" ")]                                                       // whitespace
-        [InlineData("01-000000000000000000000000075bcd15-000000003ade68b1-0")]  // too short
-        [InlineData("010-00000000000000000000000075bcd15-000000003ade68b1-00")] // wrong hyphen location #1
-        [InlineData("01-000000000000000000000000075bcd150-00000003ade68b1-00")] // wrong hyphen location #2
-        [InlineData("01-000000000000000000000000075bcd15-000000003ade68b-100")] // wrong hyphen location #3
-        [InlineData("01-000000000000000000000000075bcd15-000000003ade68b1-00")] // bad version value
-        [InlineData("00-000000000000000000000000075bcd1z-000000003ade68b1-00")] // bad trace id value
-        [InlineData("00-000000000000000000000000075bcd15-000000003ade68bx-00")] // bad parent id value
-        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-02")] // bad sampled value
+        [InlineData(null)]                                                           // null
+        [InlineData("")]                                                             // empty
+        [InlineData(" ")]                                                            // whitespace
+        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-0")]       // too short
+        [InlineData("000-00000000000000000000000075bcd15-000000003ade68b1-00")]      // wrong hyphen location #1
+        [InlineData("00-000000000000000000000000075bcd150-00000003ade68b1-00")]      // wrong hyphen location #2
+        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b-100")]      // wrong hyphen location #3
+        [InlineData("00-000000000000000000000000075bcd1z-000000003ade68b1-00")]      // bad trace id value
+        [InlineData("00-000000000000000000000000075bcd15-000000003ade68bx-00")]      // bad parent id value
+        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-00-1234")] // do NOT allow more data after trace-flags if the version is 00
         public void TryParseTraceParent_Invalid(string header)
         {
             W3CTraceContextPropagator.TryParseTraceParent(header, out _).Should().BeFalse();
