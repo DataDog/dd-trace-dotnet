@@ -118,6 +118,8 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
+            header = header.Trim();
+
             if (header.Length != 55 || header[2] != '-' || header[35] != '-' || header[52] != '-')
             {
                 // validate format
@@ -193,7 +195,7 @@ namespace Datadog.Trace.Propagators
         {
             traceState = default;
 
-            if (string.IsNullOrWhiteSpace(header))
+            if (header == null!)
             {
                 return false;
             }
