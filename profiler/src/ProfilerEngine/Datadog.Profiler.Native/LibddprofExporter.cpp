@@ -454,6 +454,8 @@ bool LibddprofExporter::Export()
             return false;
         }
 
+        on_leave { ddog_prof_Exporter_drop(exporter); };
+
         Tags additionalTags;
         additionalTags.Add("env", applicationInfo.Environment);
         additionalTags.Add("version", applicationInfo.Version);
@@ -464,6 +466,7 @@ bool LibddprofExporter::Export()
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         if (request != nullptr)
         {
+            on_leave { ddog_prof_Exporter_Request_drop(request); };
             exported &= Send(request, exporter);
         }
         else
@@ -471,7 +474,7 @@ bool LibddprofExporter::Export()
             exported = false;
             Log::Error("Unable to create a request to send the profile.");
         }
-        ddog_prof_Exporter_drop(exporter);
+
     }
     return exported;
 }

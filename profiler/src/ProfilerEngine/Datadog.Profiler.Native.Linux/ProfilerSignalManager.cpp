@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <sys/syscall.h>
 
+#include "ScopeFinalizer.h"
 #include "Log.h"
 #include "OpSysTools.h"
 
@@ -170,6 +171,8 @@ void ProfilerSignalManager::CallOrignalHandler(int32_t signal, siginfo_t* info, 
 
     isExecuting = true;
 
+    on_leave { isExecuting = false; };
+
     try
     {
         if ((_previousAction.sa_flags & SA_SIGINFO) == SA_SIGINFO && _previousAction.sa_sigaction != nullptr)
@@ -187,6 +190,4 @@ void ProfilerSignalManager::CallOrignalHandler(int32_t signal, siginfo_t* info, 
     catch (...)
     {
     }
-
-    isExecuting = false;
 }

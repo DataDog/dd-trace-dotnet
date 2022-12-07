@@ -246,8 +246,9 @@ bool LinuxStackFramesCollector::CanCollect(int32_t threadId, pid_t processId) co
 
 bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, siginfo_t* info, void* context)
 {
-    // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
+    // Libunwind can overwrite the value of errno - save it beforehand and restore it when leaving
     auto oldErrno = errno;
+    on_leave { errno = oldErrno; };
 
     bool success = false;
 
@@ -279,7 +280,6 @@ bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, sigi
         // no need to release the lock and notify. The sampling thread must wait until its signal is handled correctly
     }
 
-    errno = oldErrno;
     return success;
 }
 
