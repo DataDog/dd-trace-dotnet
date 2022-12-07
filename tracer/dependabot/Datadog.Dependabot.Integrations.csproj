@@ -114,7 +114,7 @@
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/2.2.10 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.0.0" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.TestFramework -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.TestFramework -->
