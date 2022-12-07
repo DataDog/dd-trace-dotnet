@@ -101,7 +101,7 @@ namespace Datadog.Trace.Propagators
                     sb.Length--;
                 }
 
-                return StringBuilderCache.GetStringAndRelease(sb);
+                return sb.ToString();
             }
             finally
             {
@@ -307,7 +307,7 @@ namespace Datadog.Trace.Propagators
                         propagatedTagsBuilder.Length--;
                     }
 
-                    propagatedTags = StringBuilderCache.GetStringAndRelease(propagatedTagsBuilder);
+                    propagatedTags = propagatedTagsBuilder.ToString();
                 }
                 else
                 {
