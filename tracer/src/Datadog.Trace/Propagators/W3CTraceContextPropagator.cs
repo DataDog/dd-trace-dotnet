@@ -377,7 +377,10 @@ namespace Datadog.Trace.Propagators
         }
 #endif
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(
+            TCarrier carrier,
+            TCarrierGetter carrierGetter,
+            [NotNullWhen(true)] out SpanContext? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
