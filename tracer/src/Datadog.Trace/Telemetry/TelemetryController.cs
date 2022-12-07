@@ -299,7 +299,7 @@ namespace Datadog.Trace.Telemetry
             var aggregatedDependencies = newDependencies ?? _transportManager.PreviousDependencies;
             var integrations = _integrations.GetData() ?? _transportManager.PreviousIntegrations;
 
-            var data = _dataBuilder.BuildTelemetryData(application, host, configuration, aggregatedDependencies, integrations);
+            var data = _dataBuilder.BuildTelemetryData(application, host, configuration, aggregatedDependencies, integrations, metricData: null, distributionMetricData: null);
             if (data.Length == 0)
             {
                 return true;
@@ -308,6 +308,11 @@ namespace Datadog.Trace.Telemetry
             Log.Debug("Pushing telemetry changes");
             foreach (var telemetryData in data)
             {
+                if (telemetryData is null)
+                {
+                    continue;
+                }
+
                 var result = await _transportManager.TryPushTelemetry(telemetryData, configuration, aggregatedDependencies, integrations).ConfigureAwait(false);
                 if (!result)
                 {

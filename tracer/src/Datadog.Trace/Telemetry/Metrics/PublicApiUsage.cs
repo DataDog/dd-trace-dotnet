@@ -5,11 +5,20 @@
 
 #nullable enable
 
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.SourceGenerators;
+
 namespace Datadog.Trace.Telemetry.Metrics;
 
-/// <summary>
-/// Required by the TelemetryMetric source generator
-/// </summary>
+[SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1134:Attributes should not share line", Justification = "It's easier to read")]
+[SuppressMessage("ReSharper", "InconsistentNaming", Justification = "It's easier to read")]
+[EnumExtensions]
 internal enum PublicApiUsage
 {
+    [Description("tracer_ctor")] Tracer_Ctor,
+    [Description("tracer_ctor_settings")] Tracer_Ctor_Settings,
+    [Description("tracer_instance_set")] Tracer_Instance_Set,
+    [Description("tracer_configure")] Tracer_Configure,
+    // TODO: more will be added soon, these are just for testing initially
 }

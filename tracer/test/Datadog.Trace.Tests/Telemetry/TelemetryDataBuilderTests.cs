@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 serviceName: "Test Service",
                 env: "integration-ci",
                 tracerVersion: TracerConstants.AssemblyVersion,
-                languageName: "dotnet",
+                languageName: TracerConstants.Language,
                 languageVersion: FrameworkDescription.Instance.ProductVersion);
             _host = new HostTelemetryData();
         }
@@ -34,8 +34,8 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var builder = new TelemetryDataBuilder();
 
-            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(null, _host, null, null, null));
-            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(_application, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(null, _host, null, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(_application, null, null, null, null, null, null));
 
             Assert.Throws<ArgumentNullException>(() => builder.BuildAppClosingTelemetryData(null, _host));
             Assert.Throws<ArgumentNullException>(() => builder.BuildAppClosingTelemetryData(_application, null));
@@ -73,10 +73,12 @@ namespace Datadog.Trace.Tests.Telemetry
             var builder = new TelemetryDataBuilder();
 
             var config = Array.Empty<TelemetryValue>();
-            var data = builder.BuildTelemetryData(_application, _host, config, null, null);
+            var data = builder.BuildTelemetryData(_application, _host, config, null, null, null, null)
+                              .Where(x => x is not null);
             data.Should().ContainSingle().Which.SeqId.Should().Be(1);
 
-            data = builder.BuildTelemetryData(_application, _host, config, null, null);
+            data = builder.BuildTelemetryData(_application, _host, config, null, null, null, null)
+                          .Where(x => x is not null);
             data.Should().ContainSingle().Which.SeqId.Should().Be(2);
 
             var closingData = builder.BuildAppClosingTelemetryData(_application, _host);
@@ -94,20 +96,27 @@ namespace Datadog.Trace.Tests.Telemetry
             bool hasConfiguration,
             bool hasDependencies,
             bool hasIntegrations,
+            bool hasMetrics,
+            bool hasDistributions,
             string expectedRequests)
         {
             var config = hasConfiguration ? Array.Empty<TelemetryValue>() : null;
             var dependencies = hasDependencies ? new List<DependencyTelemetryData>() : null;
             var integrations = hasIntegrations ? new List<IntegrationTelemetryData>() : null;
+            var metrics = hasMetrics ? new List<MetricData>() : null;
+            var distributions = hasDistributions ? new List<DistributionMetricData>() : null;
             var expected = string.IsNullOrEmpty(expectedRequests) ? Array.Empty<string>() : expectedRequests.Split(',');
             var builder = new TelemetryDataBuilder();
 
-            var result = builder.BuildTelemetryData(_application, _host, config, dependencies, integrations);
+            var result = builder.BuildTelemetryData(_application, _host, config, dependencies, integrations, metrics, distributions)
+                                .Where(x => x is not null)
+                                .ToArray();
 
             result.Should().NotBeNull();
             result.Select(x => x.RequestType)
                   .ToArray()
-                  .Should().BeEquivalentTo(expected);
+                  .Should()
+                  .BeEquivalentTo(expected);
 
             using var scope = new AssertionScope();
 
@@ -138,6 +147,14 @@ namespace Datadog.Trace.Tests.Telemetry
                     appStarted.Dependencies.Should().BeSameAs(dependencies);
                     appStarted.Integrations.Should().BeSameAs(integrations);
                 }
+                else if (data.Payload is GenerateMetricsPayload metricsPayload)
+                {
+                    metricsPayload.Series.Should().BeSameAs(metrics);
+                }
+                else if (data.Payload is DistributionsPayload distributionsPayload)
+                {
+                    distributionsPayload.Series.Should().BeSameAs(distributions);
+                }
                 else
                 {
                     data.Payload.Should().BeNull();
@@ -147,17 +164,20 @@ namespace Datadog.Trace.Tests.Telemetry
 
         public class TestData
         {
-            public static TheoryData<bool, bool, bool, string> Data => new()
-                // configuration, dependencies, integrations, expected request types
+            public static TheoryData<bool, bool, bool, bool, bool, string> Data => new()
+                // configuration, dependencies, integrations, metrics, distributions, expected request types
                 {
-                    { true, true, true, TelemetryRequestTypes.AppStarted },
-                    { true, true, false, TelemetryRequestTypes.AppStarted },
-                    { true, false, true, TelemetryRequestTypes.AppStarted },
-                    { true, false, false, TelemetryRequestTypes.AppStarted },
-                    { false, false, false, string.Empty },
-                    { false, true, false, TelemetryRequestTypes.AppDependenciesLoaded },
-                    { false, false, true, TelemetryRequestTypes.AppIntegrationsChanged },
-                    { false, true, true, $"{TelemetryRequestTypes.AppIntegrationsChanged},{TelemetryRequestTypes.AppDependenciesLoaded}" },
+                    { true, true, true, false, false, TelemetryRequestTypes.AppStarted },
+                    { true, true, false, false, false, TelemetryRequestTypes.AppStarted },
+                    { true, false, true, false, false, TelemetryRequestTypes.AppStarted },
+                    { true, false, false, false, false, TelemetryRequestTypes.AppStarted },
+                    { false, false, false, false, false, string.Empty },
+                    { false, true, false, false, false, TelemetryRequestTypes.AppDependenciesLoaded },
+                    { false, false, true, false, false, TelemetryRequestTypes.AppIntegrationsChanged },
+                    { false, true, true, false, false, $"{TelemetryRequestTypes.AppIntegrationsChanged},{TelemetryRequestTypes.AppDependenciesLoaded}" },
+                    { false, true, false, true, false, $"{TelemetryRequestTypes.GenerateMetrics},{TelemetryRequestTypes.AppDependenciesLoaded}" },
+                    { false, true, false, false, true, $"{TelemetryRequestTypes.Distributions},{TelemetryRequestTypes.AppDependenciesLoaded}" },
+                    { false, true, false, true, true, $"{TelemetryRequestTypes.GenerateMetrics},{TelemetryRequestTypes.Distributions},{TelemetryRequestTypes.AppDependenciesLoaded}" },
                 };
         }
     }
