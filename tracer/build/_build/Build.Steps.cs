@@ -129,7 +129,7 @@ partial class Build
         : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
 
     TargetFramework[] TestingFrameworksDebugger =>
-        TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0 });
+        TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, TargetFramework.NETCOREAPP3_0, TargetFramework.NET5_0 });
 
     bool HaveIntegrationsChanged => 
         GetGitChangedFiles(baseBranch: "origin/master")

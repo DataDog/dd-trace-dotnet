@@ -25,7 +25,7 @@ partial class Build : NukeBuild
                        GenerateConditionVariables();
 
                        GenerateIntegrationTestsWindowsMatrices();
-                       GenerateIntegrationTestsLinuxMatrix();
+                       GenerateIntegrationTestsLinuxMatrices();
                        GenerateExplorationTestMatrices();
                        GenerateSmokeTestsMatrices();
                    });
@@ -95,7 +95,7 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Info($"Integration test windows matrix");
+                Logger.Info(matrixName);
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable(matrixName, JsonConvert.SerializeObject(matrix, Formatting.None));
             }            
@@ -164,10 +164,14 @@ partial class Build : NukeBuild
                 AzurePipelines.Instance.SetVariable("integration_tests_windows_msi_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateIntegrationTestsLinuxMatrix()
+            void GenerateIntegrationTestsLinuxMatrices()
             {
-                var targetFrameworks = TestingFrameworks.Except(new [] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
+                GenerateIntegrationTestsLinuxMatrix(TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 }), "integration_tests_linux_matrix");
+                GenerateIntegrationTestsLinuxMatrix(TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 }), "integration_tests_linux_debugger_matrix");
+            }
 
+            void GenerateIntegrationTestsLinuxMatrix(IEnumerable<TargetFramework> targetFrameworks, string matrixName)
+            {
                 var baseImages = new[] { "centos7", "alpine" };
 
                 var matrix = new Dictionary<string, object>();
@@ -179,9 +183,9 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Info($"Integration test linux matrix");
+                Logger.Info(matrixName);
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable("integration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                AzurePipelines.Instance.SetVariable(matrixName, JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateExplorationTestMatrices()
