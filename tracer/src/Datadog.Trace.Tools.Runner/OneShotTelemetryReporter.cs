@@ -3,13 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Linq;
+#nullable enable
+
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Tools.Runner.Checks;
-using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
 {
@@ -21,11 +21,11 @@ namespace Datadog.Trace.Tools.Runner
     /// </summary>
     internal class OneShotTelemetryReporter
     {
-        private readonly TelemetryTransportManager _telemetryTransportManager;
+        private readonly ITelemetryTransport[] _transports;
 
         internal OneShotTelemetryReporter(ITelemetryTransport[] transports)
         {
-            _telemetryTransportManager = new TelemetryTransportManager(transports, maxFatalErrors: 1, maxTransientErrors: 1);
+            _transports = transports;
         }
 
         internal static OneShotTelemetryReporter CreateForProcess(ProcessInfo process)
@@ -43,23 +43,22 @@ namespace Datadog.Trace.Tools.Runner
 
         private async Task<bool> UploadTelemetryData(TelemetryData telemetryData)
         {
-            while (!_telemetryTransportManager.HasSentSuccessfully)
+            foreach (var transport in _transports)
             {
-                bool keepTrying = await _telemetryTransportManager.TryPushTelemetry(telemetryData).ConfigureAwait(false);
-                if (!keepTrying)
+                if (await transport.PushTelemetry(telemetryData).ConfigureAwait(false) == TelemetryPushResult.Success)
                 {
-                    return false;
+                    return true;
                 }
             }
 
-            return true;
+            return false;
         }
 
         private TelemetryData BuildLogTelemetryData(string logContents, ApplicationTelemetryData applicationData)
         {
             var telemetryDataBuilder = new TelemetryDataBuilder();
             var hostData = ConfigurationTelemetryCollector.CreateHostTelemetryData();
-            var logsPayload = new LogsPayload() { new() { Message = logContents, Level = TelemetryLogLevel.ERROR } };
+            var logsPayload = new LogsPayload() { new LogMessageData(logContents, TelemetryLogLevel.ERROR) };
             return telemetryDataBuilder.BuildLogsTelemetryData(applicationData, hostData, logsPayload);
         }
     }

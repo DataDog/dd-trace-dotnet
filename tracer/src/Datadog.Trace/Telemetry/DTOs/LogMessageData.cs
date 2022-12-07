@@ -3,19 +3,26 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
 
-namespace Datadog.Trace.Telemetry
+namespace Datadog.Trace.Telemetry;
+
+internal class LogMessageData
 {
-    internal class LogMessageData
+    public LogMessageData(string message, TelemetryLogLevel level)
     {
-        public string Message { get; set; }
-
-        [Vendors.Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
-        public TelemetryLogLevel Level { get; set; }
-
-        public string Tags { get; set; }
-
-        public string Stack_Trace { get; set; }
+        Message = message;
+        Level = level;
     }
+
+    public string Message { get; set; }
+
+    [Vendors.Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+    public TelemetryLogLevel Level { get; set; }
+
+    public string? Tags { get; set; }
+
+    public string? StackTrace { get; set; }
 }

@@ -15,6 +15,7 @@ namespace Datadog.Trace.Tools.Runner.DumpAnalysis
 {
     internal static class BCLAssemblyDetector
     {
+        // Created by using this tool: https://gist.github.com/OmerRaviv/81c870f0d521e1122e88be4499b74b8c
         private static readonly string[] MicrosoftPublicKeyTokens =
         {
             "b03f5f7f11d50a3a",

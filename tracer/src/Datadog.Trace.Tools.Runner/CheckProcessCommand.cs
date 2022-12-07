@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tools.Runner
     {
         public override async Task<int> ExecuteAsync(CommandContext context, CheckProcessSettings settings)
         {
-            AnsiConsole.WriteLine("Running checks on process " + settings.Pid);
+            AnsiConsole.WriteLine("Analyzing process memory for PID " + settings.Pid);
 
             var process = ProcessInfo.GetProcessInfo(settings.Pid);
 

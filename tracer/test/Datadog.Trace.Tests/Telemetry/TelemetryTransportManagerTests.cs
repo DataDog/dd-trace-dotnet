@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public async Task OnMultipleTransientErrorsAfterSuccess_ReturnsFatal(int errorType)
         {
             var results = new[] { TelemetryPushResult.Success }
-                         .Concat(Enumerable.Repeat((TelemetryPushResult)errorType, TelemetryTransportManager.DefaultMaxTransientErrors))
+                         .Concat(Enumerable.Repeat((TelemetryPushResult)errorType, TelemetryTransportManager.MaxTransientErrors))
                          .Concat(new[] { TelemetryPushResult.FatalError })
                          .ToArray();
 
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var integrations = Array.Empty<IntegrationTelemetryData>();
 
             await transportManager.TryPushTelemetry(null!, config, deps, integrations);
-            for (var i = 0; i < TelemetryTransportManager.DefaultMaxTransientErrors - 1; i++)
+            for (var i = 0; i < TelemetryTransportManager.MaxTransientErrors - 1; i++)
             {
                 var result = await transportManager.TryPushTelemetry(null!, config, deps, integrations);
                 result.Should().Be(true); // transient

@@ -5,9 +5,18 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Telemetry
+#nullable enable
+
+namespace Datadog.Trace.Telemetry;
+
+internal class LogsPayload : List<LogMessageData>, IPayload
 {
-    internal class LogsPayload : List<LogMessageData>, IPayload
+    public LogsPayload()
+    {
+    }
+
+    public LogsPayload(int capacity)
+        : base(capacity)
     {
     }
 }

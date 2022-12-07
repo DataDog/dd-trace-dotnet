@@ -17,20 +17,18 @@ internal class TelemetryTransportManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryTransportManager>();
 
+    internal const int MaxFatalErrors = 2;
+    internal const int MaxTransientErrors = 5;
     private readonly ITelemetryTransport[] _transports;
 
+    private bool _hasSentSuccessfully = false;
     private int _initialFatalCount = 0;
     private int _failureCount = 0;
     private int _currentTransport = 0;
-    internal const int DefaultMaxTransientErrors = 5;
-    private readonly int _maxFatalErrors;
-    private readonly int _maxTransientErrors;
 
-    public TelemetryTransportManager(ITelemetryTransport[] transports, int maxFatalErrors = 2, int maxTransientErrors = DefaultMaxTransientErrors)
+    public TelemetryTransportManager(ITelemetryTransport[] transports)
     {
         _transports = transports ?? throw new ArgumentNullException(nameof(transports));
-        _maxFatalErrors = maxFatalErrors;
-        _maxTransientErrors = maxTransientErrors;
         if (transports.Length > 0 && Log.IsEnabled(LogEventLevel.Debug))
         {
             var firstTransport = transports[0];
@@ -47,8 +45,6 @@ internal class TelemetryTransportManager
         TransientError,
         FatalError
     }
-
-    public bool HasSentSuccessfully { get; private set; }
 
     public ICollection<TelemetryValue>? PreviousConfiguration { get; private set; }
 
@@ -107,14 +103,14 @@ internal class TelemetryTransportManager
     {
         if (result == TelemetryPushResult.Success)
         {
-            HasSentSuccessfully = true;
+            _hasSentSuccessfully = true;
             _failureCount = 0;
             return PushEvaluationResult.Success;
         }
-        else if (result == TelemetryPushResult.FatalError && !HasSentSuccessfully)
+        else if (result == TelemetryPushResult.FatalError && !_hasSentSuccessfully)
         {
             _initialFatalCount++;
-            if (_initialFatalCount >= _maxFatalErrors)
+            if (_initialFatalCount >= MaxFatalErrors)
             {
                 // we've had MaxFatalErrors 404s, 1 minute apart, prob never going to work, so try next transport
                 return ConfigureNextTransport();
@@ -123,7 +119,7 @@ internal class TelemetryTransportManager
         else
         {
             _failureCount++;
-            if (_failureCount >= _maxTransientErrors)
+            if (_failureCount >= MaxTransientErrors)
             {
                 // we've had MaxTransientErrors in a row, 1 minute apart, probably something bigger wrong
                 return ConfigureNextTransport();
@@ -149,7 +145,7 @@ internal class TelemetryTransportManager
             // reset the circuit breaker counters
             _failureCount = 0;
             _initialFatalCount = 0;
-            HasSentSuccessfully = false;
+            _hasSentSuccessfully = false;
             // try with the next transport next time
             return PushEvaluationResult.TransientError;
         }
