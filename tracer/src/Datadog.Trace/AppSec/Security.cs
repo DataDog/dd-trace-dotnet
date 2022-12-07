@@ -10,7 +10,6 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
-using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
 using Datadog.Trace.ClrProfiler;
