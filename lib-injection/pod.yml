@@ -3,10 +3,15 @@ kind: Pod
 metadata:
   name: sample-app
   namespace: default
+  labels:
+    app: sample-dotnet-app
+    admission.datadoghq.com/enabled: "true"
+    admission.datadoghq.com/config.mode: "socket"
+    tags.datadoghq.com/service: dotnet-service
 spec:
   initContainers:
     - name: dotnet-init
-      image: pierrebonet/test-auto-inst:latest  # put the library image here
+      image: dockeranna123/test-auto-inst:latest  # put the library image here
       imagePullPolicy: Never
       command: ["sh", "copy-lib.sh", "/autoinstrumentation"]
       volumeMounts:

@@ -12,6 +12,8 @@ The `ìmage` folder contains the actual init container docker file. It will be t
 
 `pod.yml` contains a pod configuration for testing. It contains a config similar to what the admission controller will inject. It also contains the app itself. We use a sample app from MS for this test.
 
+`values.yml` is the file to install the cluster agent following these instructions with [helm](https://docs.datadoghq.com/containers/kubernetes/installation/?tab=helm)
+
 ## Local testing
 
 Here are some instructions for working with the init image for local development (i.e. when working on the init image itself).
@@ -21,6 +23,12 @@ Replace any namespaces with your own, including in `pod.yml`.
 
 First, you can use [minikube](https://minikube.sigs.k8s.io/docs/start/) to test locally.
 If you use it, after setup, run ```eval $(minikube docker-env)``` to reuse Minikube’s built-in Docker daemon. Reusing the built-in daemon means you don’t have to build a Docker registry on your host machine and push the image into it. Instead, you can build inside the same Docker daemon as Minikube, which speeds up local experiments.
+
+### Kubernetes with Docker Desktop
+
+Otherwise, uou can also use Kubernetes that comes with Docker Desktop:
+>Docker Desktop includes a standalone Kubernetes server and client, as well as Docker CLI integration that runs on your machine. The Kubernetes server runs locally within your Docker instance, is not configurable, and is a single-node cluster.
+
 
 ### Building init image
 

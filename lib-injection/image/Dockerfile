@@ -3,11 +3,10 @@
 FROM busybox
 
 ARG UID=10000
-RUN addgroup -g 10000 -S datadog && \
-    adduser -u ${UID} -S datadog -G datadog \
-
+RUN addgroup -g 10000 -S datadog
+RUN adduser -S -G datadog -u ${UID} datadog
 USER ${UID}
 
 WORKDIR /datadog-init
-
-ADD copy-lib.sh /datadog-init/copy-lib.sh
+ADD datadog-dotnet-apm-2.19.0.tar.gz ./datadog-dotnet-apm-2.19.0.tar.gz
+ADD copy-lib.sh ./copy-lib.sh
