@@ -148,6 +148,11 @@ namespace Datadog.Trace.Tools.Runner
                   .WithDescription("Apply AOT automatic instrumentation on application folder")
                   .WithExample("apply-aot c:\\input\\ c:\\output\\".Split(' '))
                   .IsHidden();
+
+            config.AddCommand<CoverageMergerCommand>("coverage-merge")
+                  .WithDescription("Merges all coverage json files into a single one.")
+                  .WithExample("coverage-merge c:\\coverage_folder\\ total-coverage.json".Split(' '))
+                  .IsHidden();
         }
 
         private static int ExecuteLegacyCommandLine(string[] args, ApplicationContext applicationContext)
