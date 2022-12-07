@@ -854,23 +854,41 @@ partial class Build
 
             testProjects.ForEach(EnsureResultsDirectory);
             var filter = string.IsNullOrEmpty(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
+            var exceptions = new List<Exception>();
             try
             {
-                DotNetTest(x => x
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetFilter(filter)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatformAnyCPU()
-                    .SetDDEnvironmentVariables("dd-tracer-dotnet")
-                    .EnableCrashDumps()
-                    .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
-                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
-                    .CombineWith(testProjects, (x, project) => x
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
-                        .SetProjectFile(project)));
+                foreach (var targetFramework in TestingFrameworks)
+                {
+                    try
+                    {
+                        DotNetTest(x => x
+                            .EnableNoRestore()
+                            .EnableNoBuild()
+                            .SetFilter(filter)
+                            .SetConfiguration(BuildConfiguration)
+                            .SetTargetPlatformAnyCPU()
+                            .SetDDEnvironmentVariables("dd-tracer-dotnet")
+                            .SetFramework(targetFramework)
+                            .EnableCrashDumps()
+                            .SetLogsDirectory(TestLogsDirectory)
+                            .When(CodeCoverage, ConfigureCodeCoverage)
+                            .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
+                            .CombineWith(testProjects, (x, project) => x
+                                .EnableTrxLogOutput(GetResultsDirectory(project))
+                                .WithDatadogLogger()
+                                .SetProjectFile(project)));
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Error testing {targetFramework}");
+                        exceptions.Add(ex);
+                    }
+                }
+
+                if (exceptions.Any())
+                {
+                    throw new AggregateException("Error in one or more test runs", exceptions);
+                }
             }
             finally
             {

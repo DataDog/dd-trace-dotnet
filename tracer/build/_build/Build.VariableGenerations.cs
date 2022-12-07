@@ -159,7 +159,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrix()
             {
-                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0, });
+                var targetFrameworks = TestingFrameworks.Except(new [] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
 
                 var baseImages = new[] { "centos7", "alpine" };
 
