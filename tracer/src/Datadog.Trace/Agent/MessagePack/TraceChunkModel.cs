@@ -70,10 +70,12 @@ internal readonly struct TraceChunkModel
     private TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext, int? samplingPriority)
         : this(spans, traceContext?.RootSpan)
     {
+        SamplingPriority = samplingPriority;
+
         if (traceContext is not null)
         {
             DefaultServiceName = traceContext.Tracer?.DefaultServiceName;
-            SamplingPriority = samplingPriority ?? traceContext.SamplingPriority;
+            SamplingPriority ??= traceContext.SamplingPriority;
             Environment = traceContext.Environment;
             ServiceVersion = traceContext.ServiceVersion;
             Origin = traceContext.Origin;
