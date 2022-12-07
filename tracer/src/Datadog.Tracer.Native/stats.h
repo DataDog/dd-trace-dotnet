@@ -14,10 +14,10 @@ class SWStat
     std::chrono::steady_clock::time_point _startTime;
 
 public:
-    SWStat(std::atomic_ullong* value)
+    SWStat(std::atomic_ullong* value) :
+        _value(value),
+        _startTime(std::chrono::steady_clock::now())
     {
-        _value = value;
-        _startTime = std::chrono::steady_clock::now();
     }
     ~SWStat()
     {

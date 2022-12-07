@@ -55,7 +55,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.20.0";
+    readonly string Version = "2.21.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -84,6 +84,9 @@ partial class Build : NukeBuild
     [Parameter("Should we build and run tests that require docker. true = only docker integration tests, false = no docker integration tests, null = all", List = false)]
     readonly bool? IncludeTestsRequiringDocker;
 
+    [Parameter("Should we build and run tests against _all_ target frameworks, or just the reduced set. Defaults to true locally, false in PRs, and true in CI on main branch only", List = false)]
+    readonly bool IncludeAllTestFrameworks = true;
+
     Target Info => _ => _
         .Description("Describes the current configuration")
         .Before(Clean, Restore, BuildTracerHome)
@@ -96,6 +99,7 @@ partial class Build : NukeBuild
             Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
             Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
             Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
+            Logger.Info($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
             Logger.Info($"IsAlpine: {IsAlpine}");
             Logger.Info($"Version: {Version}");
         });
@@ -201,6 +205,12 @@ partial class Build : NukeBuild
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildRunnerTool);
 
+    Target BuildDebuggerIntegrationTests => _ => _
+        .Unlisted()
+        .Description("Builds the debugger integration tests")
+        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CompileDebuggerIntegrationTests);
+
     Target BuildAspNetIntegrationTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
@@ -227,6 +237,11 @@ partial class Build : NukeBuild
         .Description("Builds and runs the Windows (non-IIS) integration tests")
         .DependsOn(BuildWindowsIntegrationTests)
         .DependsOn(RunWindowsIntegrationTests);
+
+    Target BuildAndRunDebuggerIntegrationTests => _ => _
+        .Description("Builds and runs the debugger integration tests")
+        .DependsOn(BuildDebuggerIntegrationTests)
+        .DependsOn(RunDebuggerIntegrationTests);
 
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)

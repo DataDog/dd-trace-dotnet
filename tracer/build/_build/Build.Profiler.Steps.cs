@@ -209,7 +209,7 @@ partial class Build
                     // .EnableNoRestore()
                     .EnableNoDependencies()
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(MSBuildTargetPlatform.x64)
+                    // .SetTargetPlatform(MSBuildTargetPlatform.x64)
                     .SetNoWarnDotNetCore3()
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))

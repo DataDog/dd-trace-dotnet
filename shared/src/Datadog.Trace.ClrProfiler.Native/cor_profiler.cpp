@@ -2,6 +2,7 @@
 #include "log.h"
 #include "dynamic_dispatcher.h"
 #include "util.h"
+#include "../../../shared/src/native-src/pal.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
@@ -52,7 +53,12 @@ namespace datadog::shared::nativeloader
     CorProfiler* CorProfiler::m_this = nullptr;
 
     CorProfiler::CorProfiler(IDynamicDispatcher* dispatcher) :
-        m_refCount(0), m_dispatcher(dispatcher), m_cpProfiler(nullptr), m_tracerProfiler(nullptr), m_customProfiler(nullptr)
+        m_refCount(0),
+        m_dispatcher(dispatcher),
+        m_cpProfiler(nullptr),
+        m_tracerProfiler(nullptr),
+        m_customProfiler(nullptr),
+        m_info(nullptr)
     {
         Log::Debug("CorProfiler::.ctor");
     }
@@ -109,6 +115,15 @@ namespace datadog::shared::nativeloader
     {
         Log::Debug("CorProfiler::Initialize");
         InspectRuntimeCompatibility(pICorProfilerInfoUnk);
+
+        const auto process_name = ::shared::GetCurrentProcessName();
+        Log::Debug("ProcessName: ", process_name);
+
+        if (process_name == WStr("dd-trace") || process_name == WStr("dd-trace.exe"))
+        {
+            Log::Info("Profiler disabled - monitoring the dd-trace tool is not supported.");
+            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+        }
 
         //
         // Get and set profiler pointers

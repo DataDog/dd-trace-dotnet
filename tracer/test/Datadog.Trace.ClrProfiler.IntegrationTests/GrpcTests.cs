@@ -276,134 +276,139 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var assert = new AssertionScope();
-            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
+            ProcessResult processResult = null;
+
+            try
             {
-                var spans = agent.WaitForSpans(totalExpectedSpans, 500);
-
-                // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
-                // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
-                if (processResult.ExitCode != 0
-                    && (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version("2.43.0")))
+                using (processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
                 {
-                    if (processResult.StandardError.Contains("ObjectDisposedException"))
+                    var spans = agent.WaitForSpans(totalExpectedSpans, 500);
+
+                    using var scope = new AssertionScope();
+                    spans.Count.Should().Be(totalExpectedSpans);
+
+                    if (!isGrpcSupported)
                     {
-                        throw new SkipException("Hit race condition in GRPC deadline exceeded");
-                    }
-                }
-
-                using var scope = new AssertionScope();
-                spans.Count.Should().Be(totalExpectedSpans);
-
-                if (!isGrpcSupported)
-                {
-                    Output.WriteLine($"Package version {packageVersion} is not supported in Grpc, skipping snapshot verification");
-                    telemetry.AssertIntegrationDisabled(IntegrationId.Grpc);
-                    return;
-                }
-
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-                // Grpc.Core creates nasty exception messages that we need to scrub so they're consistent
-                settings.AddRegexScrubber(GrpcCoreCreatedRegex, "@00000000000.000000000");
-                // Different versions of Grpc.Core will have a different file line
-                settings.AddRegexScrubber(GrpcCoreFileLineRegex, @"""file_line"":1234,");
-                // Depending on the exact code paths taken, the error status may be either of these:
-                settings.AddSimpleScrubber("DeadlineExceeded", "Deadline Exceeded");
-                // Keep the traces the same between http and https endpoints
-                settings.AddSimpleScrubber("https://", "http://");
-                // Linux vs Windows have different file paths in stack traces (legacy grpc)
-                settings.AddSimpleScrubber(@"T:\src\github\grpc\workspace_csharp_ext_windows_x64\", @"..\..\..\");
-                settings.AddSimpleScrubber(@"T:\src\github\grpc\workspace_csharp_ext_windows_x86\", @"..\..\..\");
-                settings.AddSimpleScrubber("/var/local/git/grpc/src/core/lib/surface/", @"..\..\..\src\core\lib\surface\");
-                // net461 has a different call stack
-                settings.AddSimpleScrubber(
-                    "at Grpc.Core.Internal.AsyncCallServer`2.SendStatusFromServerAsync(Status status, Metadata trailers, Nullable`1 optionalWrite)",
-                    "at Grpc.Core.Utils.GrpcPreconditions.CheckState(Boolean condition)");
-
-                // There are inconsistencies in the very slow spans depending on the exact order that things get cancelled
-                // so normalise them all
-                FixVerySlowServerSpans(spans, httpClientIntegrationType);
-
-                if (EnvironmentHelper.SampleName == "GrpcLegacy")
-                {
-                    FixVerySlowClientSpans(spans);
-                }
-
-                foreach (var span in spans)
-                {
-                    // TODO: Refactor to use ValidateIntegrationSpans, but this sample produces both server and client spans so the immediate implementation is not suitable for this test
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-                }
-
-                await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseTypeName(EnvironmentHelper.SampleName)
-                                  .UseTextForParameters($"httpclient={httpInstrumentationEnabled}")
-                                  .DisableRequireUniquePrefix();
-
-                static void FixVerySlowServerSpans(IImmutableList<MockSpan> spans, HttpClientIntegrationType httpClientIntegrationType)
-                {
-                    // normalise the grpc.request very slow spans
-                    // These _may_ not get the expected values (though the _client_ spans always will)
-                    // Depending on how the server handles them
-                    var verySlowGrpcServerSpans = spans
-                                                 .Where(x => x.Name == "grpc.request" && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "server")
-                                                 .ToList();
-                    foreach (var span in verySlowGrpcServerSpans)
-                    {
-                        span.Error = 1;
-                        span.Tags["error.msg"] = "Deadline Exceeded";
-                        span.Tags.Remove("error.stack");
-                        span.Tags.Remove("error.type");
-                        span.Tags["grpc.status.code"] = "4";
+                        Output.WriteLine($"Package version {packageVersion} is not supported in Grpc, skipping snapshot verification");
+                        telemetry.AssertIntegrationDisabled(IntegrationId.Grpc);
+                        return;
                     }
 
-                    var verySlowAspNetCoreServerSpans = spans
-                                                 .Where(x => x.Name == "aspnet_core.request" && x.Resource.EndsWith("veryslow"))
-                                                 .ToList();
+                    var settings = VerifyHelper.GetSpanVerifierSettings();
+                    // Grpc.Core creates nasty exception messages that we need to scrub so they're consistent
+                    settings.AddRegexScrubber(GrpcCoreCreatedRegex, "@00000000000.000000000");
+                    // Different versions of Grpc.Core will have a different file line
+                    settings.AddRegexScrubber(GrpcCoreFileLineRegex, @"""file_line"":1234,");
+                    // Depending on the exact code paths taken, the error status may be either of these:
+                    settings.AddSimpleScrubber("DeadlineExceeded", "Deadline Exceeded");
+                    // Keep the traces the same between http and https endpoints
+                    settings.AddSimpleScrubber("https://", "http://");
+                    // Linux vs Windows have different file paths in stack traces (legacy grpc)
+                    settings.AddSimpleScrubber(@"T:\src\github\grpc\workspace_csharp_ext_windows_x64\", @"..\..\..\");
+                    settings.AddSimpleScrubber(@"T:\src\github\grpc\workspace_csharp_ext_windows_x86\", @"..\..\..\");
+                    settings.AddSimpleScrubber("/var/local/git/grpc/src/core/lib/surface/", @"..\..\..\src\core\lib\surface\");
+                    // net461 has a different call stack
+                    settings.AddSimpleScrubber(
+                        "at Grpc.Core.Internal.AsyncCallServer`2.SendStatusFromServerAsync(Status status, Metadata trailers, Nullable`1 optionalWrite)",
+                        "at Grpc.Core.Utils.GrpcPreconditions.CheckState(Boolean condition)");
 
-                    foreach (var span in verySlowAspNetCoreServerSpans)
+                    // There are inconsistencies in the very slow spans depending on the exact order that things get cancelled
+                    // so normalise them all
+                    FixVerySlowServerSpans(spans, httpClientIntegrationType);
+
+                    if (EnvironmentHelper.SampleName == "GrpcLegacy")
                     {
-                        // May be missing in some cases
-                        span.Tags["http.status_code"] = "200";
+                        FixVerySlowClientSpans(spans);
                     }
 
-                    // there is a race between the server cancelling a deadline and the client cancelling it
-                    // which can lead to inconsistency in the httpclient span, so "fix" the cancelled http client spans
-                    if (httpClientIntegrationType != HttpClientIntegrationType.Disabled)
+                    foreach (var span in spans)
                     {
-                        var httpClientSpans = spans
-                                             .Where(x => x.Name == "http.request" && x.Resource.EndsWith("VerySlow"))
-                                             .ToList();
-                        httpClientSpans.Should().HaveCount(2);
+                        // TODO: Refactor to use ValidateIntegrationSpans, but this sample produces both server and client spans so the immediate implementation is not suitable for this test
+                        var result = ValidateIntegrationSpan(span);
+                        Assert.True(result.Success, result.ToString());
+                    }
 
-                        foreach (var span in httpClientSpans)
+                    await VerifyHelper.VerifySpans(spans, settings)
+                                    .UseTypeName(EnvironmentHelper.SampleName)
+                                    .UseTextForParameters($"httpclient={httpInstrumentationEnabled}")
+                                    .DisableRequireUniquePrefix();
+
+                    static void FixVerySlowServerSpans(IImmutableList<MockSpan> spans, HttpClientIntegrationType httpClientIntegrationType)
+                    {
+                        // normalise the grpc.request very slow spans
+                        // These _may_ not get the expected values (though the _client_ spans always will)
+                        // Depending on how the server handles them
+                        var verySlowGrpcServerSpans = spans
+                                                    .Where(x => x.Name == "grpc.request" && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "server")
+                                                    .ToList();
+                        foreach (var span in verySlowGrpcServerSpans)
                         {
-                            span.Error = 0;
-                            span.Tags.Remove("error.msg");
-                            span.Tags.Remove("error.type");
+                            span.Error = 1;
+                            span.Tags["error.msg"] = "Deadline Exceeded";
                             span.Tags.Remove("error.stack");
+                            span.Tags.Remove("error.type");
+                            span.Tags["grpc.status.code"] = "4";
+                        }
+
+                        var verySlowAspNetCoreServerSpans = spans
+                                                    .Where(x => x.Name == "aspnet_core.request" && x.Resource.EndsWith("veryslow"))
+                                                    .ToList();
+
+                        foreach (var span in verySlowAspNetCoreServerSpans)
+                        {
+                            // May be missing in some cases
                             span.Tags["http.status_code"] = "200";
+                        }
+
+                        // there is a race between the server cancelling a deadline and the client cancelling it
+                        // which can lead to inconsistency in the httpclient span, so "fix" the cancelled http client spans
+                        if (httpClientIntegrationType != HttpClientIntegrationType.Disabled)
+                        {
+                            var httpClientSpans = spans
+                                                .Where(x => x.Name == "http.request" && x.Resource.EndsWith("VerySlow"))
+                                                .ToList();
+                            httpClientSpans.Should().HaveCount(2);
+
+                            foreach (var span in httpClientSpans)
+                            {
+                                span.Error = 0;
+                                span.Tags.Remove("error.msg");
+                                span.Tags.Remove("error.type");
+                                span.Tags.Remove("error.stack");
+                                span.Tags["http.status_code"] = "200";
+                            }
+                        }
+                    }
+
+                    static void FixVerySlowClientSpans(IImmutableList<MockSpan> spans)
+                    {
+                        var verySlowGrpcClientSpans = spans
+                                                    .Where(x => x.Name == "grpc.request" && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "client")
+                                                    .ToList();
+
+                        // Grpc.Core 2.45.0 started using very different paths and messages in the
+                        // deadline paths. For simplicity, normalise these to something simple
+                        foreach (var span in verySlowGrpcClientSpans)
+                        {
+                            span.Tags["error.msg"] = "Deadline Exceeded";
+                            span.Tags.Remove("error.stack");
                         }
                     }
                 }
 
-                static void FixVerySlowClientSpans(IImmutableList<MockSpan> spans)
+                telemetry.AssertIntegrationEnabled(IntegrationId.Grpc);
+            }
+            catch (ExitCodeException)
+            {
+                // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
+                // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
+                if ((string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version("2.43.0"))
+                    && processResult is not null
+                    && processResult.StandardError.Contains("ObjectDisposedException"))
                 {
-                    var verySlowGrpcClientSpans = spans
-                                                 .Where(x => x.Name == "grpc.request" && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "client")
-                                                 .ToList();
-
-                    // Grpc.Core 2.45.0 started using very different paths and messages in the
-                    // deadline paths. For simplicity, normalise these to something simple
-                    foreach (var span in verySlowGrpcClientSpans)
-                    {
-                        span.Tags["error.msg"] = "Deadline Exceeded";
-                        span.Tags.Remove("error.stack");
-                    }
+                    throw new SkipException("Hit race condition in GRPC deadline exceeded");
                 }
             }
-
-            telemetry.AssertIntegrationEnabled(IntegrationId.Grpc);
         }
 
         protected void RunIntegrationDisabled(string packageVersion)
@@ -411,11 +416,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var telemetry = this.ConfigureTelemetry();
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Grpc)}_ENABLED", "false");
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0);
-            var spans = agent.WaitForSpans(1, timeoutInMilliseconds: 500).Where(s => s.Type == "grpc.request").ToList();
+            ProcessResult processResult = null;
+            try
+            {
+                using (processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
+                {
+                    var spans = agent.WaitForSpans(1, timeoutInMilliseconds: 500).Where(s => s.Type == "grpc.request").ToList();
 
-            Assert.Empty(spans);
-            telemetry.AssertIntegrationDisabled(IntegrationId.Grpc);
+                    Assert.Empty(spans);
+                    telemetry.AssertIntegrationDisabled(IntegrationId.Grpc);
+                }
+            }
+            catch (ExitCodeException)
+            {
+                // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
+                // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
+                if ((string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version("2.43.0"))
+                    && processResult is not null
+                    && processResult.StandardError.Contains("ObjectDisposedException"))
+                {
+                    throw new SkipException("Hit race condition in GRPC deadline exceeded");
+                }
+            }
         }
 
         protected void GuardAlpine()

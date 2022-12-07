@@ -28,7 +28,7 @@ public:
     AppDomainID AppDomainId;
     std::uint64_t LocalRootSpanId;  // _localRootSpanId;
     std::uint64_t SpanId;           // _spanId;
-    ManagedThreadInfo* ThreadInfo;
+    std::shared_ptr<ManagedThreadInfo> ThreadInfo;
 
     // array of instruction pointers (32 or 64 bit address)
     std::vector<std::uintptr_t> Stack;

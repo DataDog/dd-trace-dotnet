@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
    MethodName = "ComputeHash",
    ReturnTypeName = ClrNames.ByteArray,
    MinimumVersion = "1.0.0",
-   MaximumVersion = "7.*.*",
+   MaximumVersion = "6.*.*",
    InstrumentationCategory = InstrumentationCategory.Iast,
    IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 [InstrumentMethod(
@@ -34,10 +34,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
    MethodName = "ComputeHash",
    ReturnTypeName = ClrNames.ByteArray,
    MinimumVersion = "1.0.0",
-   MaximumVersion = "7.*.*",
+   MaximumVersion = "6.*.*",
    InstrumentationCategory = InstrumentationCategory.Iast,
    IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
-
+[InstrumentMethod(
+    AssemblyNames = new[] { "System.Security.Cryptography" },
+    TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
+    ParameterTypeNames = new[] { ClrNames.Stream },
+    MethodName = "ComputeHash",
+    ReturnTypeName = ClrNames.ByteArray,
+    MinimumVersion = "7.0.0",
+    MaximumVersion = "7.*.*",
+    InstrumentationCategory = InstrumentationCategory.Iast,
+    IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
+[InstrumentMethod(
+    AssemblyNames = new[] { "System.Security.Cryptography" },
+    TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
+    ParameterTypeNames = new[] { ClrNames.ByteArray },
+    MethodName = "ComputeHash",
+    ReturnTypeName = ClrNames.ByteArray,
+    MinimumVersion = "7.0.0",
+    MaximumVersion = "7.*.*",
+    InstrumentationCategory = InstrumentationCategory.Iast,
+    IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class HashAlgorithmIntegrationBis

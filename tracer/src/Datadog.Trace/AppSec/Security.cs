@@ -5,14 +5,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Transports;
-using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
@@ -22,8 +20,8 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.AppSec
 {
@@ -46,7 +44,8 @@ namespace Datadog.Trace.AppSec
         private IWaf _waf;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
-        private IDictionary<string, Payload> _asmDataConfigs;
+        private IDictionary<string, RcmModels.AsmData.Payload> _asmDataConfigs = new Dictionary<string, RcmModels.AsmData.Payload>();
+        private IDictionary<string, bool> _ruleStatus = null;
         private string _remoteRulesJson = null;
 
         private bool? _usingIntegratedPipeline = null;
@@ -296,8 +295,11 @@ namespace Datadog.Trace.AppSec
             var features = e.GetDeserializedConfigurations<AsmFeatures>().FirstOrDefault();
             if (features.TypedFile != null)
             {
-                _settings.Enabled = features.TypedFile.Asm.Enabled;
-                UpdateStatus(true);
+                lock (_settings)
+                {
+                    _settings.Enabled = features.TypedFile.Asm.Enabled;
+                    UpdateStatus(true);
+                }
             }
 
             e.Acknowledge(features.Name);
@@ -305,17 +307,16 @@ namespace Datadog.Trace.AppSec
 
         private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            if (!_enabled)
-            {
-                return;
-            }
+            if (!_enabled) { return; }
 
-            _asmDataConfigs ??= new Dictionary<string, Payload>();
-            var asmDataConfigs = e.GetDeserializedConfigurations<Payload>();
-            foreach (var asmDataConfig in asmDataConfigs)
+            var asmDataConfigs = e.GetDeserializedConfigurations<RcmModels.AsmData.Payload>();
+            lock (_asmDataConfigs)
             {
-                _asmDataConfigs[asmDataConfig.Name] = asmDataConfig.TypedFile;
-                e.Acknowledge(asmDataConfig.Name);
+                foreach (var asmDataConfig in asmDataConfigs)
+                {
+                    _asmDataConfigs[asmDataConfig.Name] = asmDataConfig.TypedFile;
+                    e.Acknowledge(asmDataConfig.Name);
+                }
             }
 
             var updated = UpdateRulesData();
@@ -332,9 +333,69 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private void AsmProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        {
+            if (!_enabled) { return; }
+
+            var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
+            int ruleCount = 0;
+            var ruleStatus = new Dictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase);
+            foreach (var asmConfig in asmConfigs)
+            {
+                try
+                {
+                    var rulesStatus = asmConfig.TypedFile.RuleStatus;
+                    foreach (var data in rulesStatus)
+                    {
+                        if (data.Id == null || data.Enabled == null)
+                        {
+                            var id = data.Id ?? "NULL";
+                            var enabled = data.Enabled?.ToString() ?? "NULL";
+                            e.Error(asmConfig.Name, $"Received Null values on message ({id}={enabled}).");
+                            continue;
+                        }
+
+                        ruleStatus[data.Id] = data.Enabled.Value;
+                        ruleCount++;
+                    }
+
+                    if (ruleCount > 0)
+                    {
+                        e.Acknowledge(asmConfig.Name);
+                    }
+                    else
+                    {
+                        e.Error(asmConfig.Name, "No valid Waf rule status data received.");
+                    }
+                }
+                catch (Exception err)
+                {
+                    e.Error(asmConfig.Name, "Waf rule status data error: " + err.Message);
+                }
+            }
+
+            _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
+            UpdateRuleStatus(_ruleStatus);
+        }
+
         private bool UpdateRulesData()
         {
-            return _waf?.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData)) ?? false;
+            bool res = false;
+            lock (_asmDataConfigs)
+            {
+                res = _waf?.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData)) ?? false;
+            }
+
+            UpdateRuleStatus(_ruleStatus);
+            return res;
+        }
+
+        private void UpdateRuleStatus(IDictionary<string, bool> ruleStatus)
+        {
+            if (ruleStatus != null && ruleStatus.Count > 0 && !_waf.ToggleRules(ruleStatus))
+            {
+                Log.Debug($"_waf.ToggleRules returned false ({ruleStatus.Count} rule status entries)");
+            }
         }
 
         private void UpdateStatus(bool fromRemoteConfig = false)
@@ -369,6 +430,7 @@ namespace Datadog.Trace.AppSec
             if (!_enabled)
             {
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
+                AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged += AsmProductConfigChanged;
                 _instrumentationGateway.StartRequest += RunWafAndReact;
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
@@ -420,6 +482,7 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
 
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
+                AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
                 RemoveAppsecSpecificInstrumentations();
 
                 _enabled = false;
@@ -591,6 +654,7 @@ namespace Datadog.Trace.AppSec
             }
 
             AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
+            AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged -= AsmDDProductConfigChanged;
             Dispose();

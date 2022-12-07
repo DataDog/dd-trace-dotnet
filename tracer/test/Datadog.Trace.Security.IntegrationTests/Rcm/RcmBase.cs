@@ -5,8 +5,12 @@
 
 using System;
 using System.IO;
+using System.Linq;
+using System.Numerics;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm;
@@ -25,6 +29,25 @@ public class RcmBase : AspNetBase
     protected TimeSpan LogEntryWatcherTimeout => TimeSpan.FromSeconds(20);
 
     protected string LogDirectory => Path.Combine(DatadogLogging.GetLogDirectory(), $"{GetTestName()}Logs");
+
+    internal static void CheckAckState(GetRcmRequest request, string product, uint expectedState, string expectedError, string message)
+    {
+        var state = request?.Client?.State?.ConfigStates?.SingleOrDefault(x => x.Product == product);
+
+        state.Should().NotBeNull();
+        state.ApplyState.Should().Be(expectedState, message);
+        state.ApplyError.Should().Be(expectedError, message);
+    }
+
+    internal static void CheckCapabilities(GetRcmRequest request, uint expectedState, string message)
+    {
+#if !NETCOREAPP
+        var capabilities = new BigInteger(request?.Client?.Capabilities);
+#else
+        var capabilities = new BigInteger(request?.Client?.Capabilities, true, true);
+#endif
+        capabilities.Should().Be(expectedState, message);
+    }
 
     protected string AppSecDisabledMessage() => $"AppSec is now Disabled, _settings.Enabled is false, coming from remote config: true  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
 

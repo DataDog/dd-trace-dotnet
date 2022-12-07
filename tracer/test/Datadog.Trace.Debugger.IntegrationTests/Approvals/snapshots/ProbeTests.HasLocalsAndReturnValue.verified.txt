@@ -1,0 +1,244 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "num": {
+                "type": "Int32",
+                "value": "7"
+              },
+              "this": {
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "7"
+                  }
+                },
+                "type": "HasLocalsAndReturnValue",
+                "value": "HasLocalsAndReturnValue"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "num": {
+                "type": "Int32",
+                "value": "7"
+              },
+              "this": {
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "7"
+                  }
+                },
+                "type": "HasLocalsAndReturnValue",
+                "value": "HasLocalsAndReturnValue"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "00:00:07"
+              },
+              "timeSpan": {
+                "type": "TimeSpan",
+                "value": "00:00:07"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "16": {
+              "arguments": {
+                "this": {
+                  "fields": {
+                    "Number": {
+                      "type": "Int32",
+                      "value": "7"
+                    }
+                  },
+                  "type": "HasLocalsAndReturnValue",
+                  "value": "HasLocalsAndReturnValue"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "HasLocalsAndReturnValue.cs",
+            "lines": [
+              16
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "17": {
+              "arguments": {
+                "this": {
+                  "fields": {
+                    "Number": {
+                      "type": "Int32",
+                      "value": "7"
+                    }
+                  },
+                  "type": "HasLocalsAndReturnValue",
+                  "value": "HasLocalsAndReturnValue"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "HasLocalsAndReturnValue.cs",
+            "lines": [
+              17
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "25": {
+              "arguments": {
+                "num": {
+                  "type": "Int32",
+                  "value": "7"
+                },
+                "this": {
+                  "fields": {
+                    "Number": {
+                      "type": "Int32",
+                      "value": "7"
+                    }
+                  },
+                  "type": "HasLocalsAndReturnValue",
+                  "value": "HasLocalsAndReturnValue"
+                }
+              },
+              "locals": {
+                "timeSpan": {
+                  "type": "TimeSpan",
+                  "value": "00:00:07"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "HasLocalsAndReturnValue.cs",
+            "lines": [
+              25
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  }
+]

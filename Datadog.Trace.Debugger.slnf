@@ -6,6 +6,8 @@
       "tracer\\src\\Datadog.InstrumentedAssemblyGenerator\\Datadog.InstrumentedAssemblyGenerator.csproj",
       "tracer\\src\\Datadog.InstrumentedAssemblyVerification.Standalone\\Datadog.InstrumentedAssemblyVerification.Standalone.csproj",
       "tracer\\src\\Datadog.InstrumentedAssemblyVerification\\Datadog.InstrumentedAssemblyVerification.csproj",
+      "tracer\\src\\Datadog.Trace.Annotations\\Datadog.Trace.Annotations.csproj",
+      "tracer\\src\\Datadog.Trace.AspNet\\Datadog.Trace.AspNet.csproj",
       "tracer\\src\\Datadog.Trace.SourceGenerators\\Datadog.Trace.SourceGenerators.csproj",
       "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
       "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj",
@@ -13,6 +15,8 @@
       "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.vcxproj",
       "tracer\\test\\Datadog.Trace.ClrProfiler.IntegrationTests\\Datadog.Trace.ClrProfiler.IntegrationTests.csproj",
       "tracer\\test\\Datadog.Trace.ClrProfiler.Managed.Tests\\Datadog.Trace.ClrProfiler.Managed.Tests.csproj",
+      "tracer\\test\\Datadog.Trace.Debugger.IntegrationTests\\Datadog.Trace.Debugger.IntegrationTests.csproj",
+      "tracer\\test\\Datadog.Trace.TestHelpers.AutoInstrumentation\\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj",
       "tracer\\test\\Datadog.Trace.TestHelpers\\Datadog.Trace.TestHelpers.csproj",
       "tracer\\test\\Datadog.Trace.Tests\\Datadog.Trace.Tests.csproj",
       "tracer\\test\\Datadog.Trace.Tools.Runner.IntegrationTests\\Datadog.Trace.Tools.Runner.IntegrationTests.csproj",
@@ -22,7 +26,8 @@
       "tracer\\test\\Datadog.Trace.Tools.Runner.Tests\\Datadog.Trace.Tools.Runner.Tests.csproj",
       "tracer\\src\\Datadog.Trace.Annotations\\Datadog.Trace.Annotations.csproj",
       "tracer\\src\\Datadog.Trace.AspNet\\Datadog.Trace.AspNet.csproj",
-      "tracer\\src\\Datadog.Trace.Tools.Runner\\Datadog.Trace.Tools.Runner.csproj"
+      "tracer\\src\\Datadog.Trace.Tools.Runner\\Datadog.Trace.Tools.Runner.csproj",
+      "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\Samples.Probes.TestRuns.csproj"
     ]
   }
 }

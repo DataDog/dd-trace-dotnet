@@ -50,6 +50,7 @@ public:
         StackSamplerLoopManager* pManager,
         IThreadsCpuManager* pThreadsCpuManager,
         IManagedThreadList* pManagedThreadList,
+        IManagedThreadList* pCodeHotspotThreadList,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
         ICollector<RawCpuSample>* pCpuTimeCollector
         );
@@ -67,17 +68,20 @@ private:
     IConfiguration* _pConfiguration;
     IThreadsCpuManager* _pThreadsCpuManager;
     IManagedThreadList* _pManagedThreadList;
+    IManagedThreadList* _pCodeHotspotsThreadList;
     ICollector<RawWallTimeSample>* _pWallTimeCollector;
     ICollector<RawCpuSample>* _pCpuTimeCollector;
 
     std::thread* _pLoopThread;
     DWORD _loopThreadOsId;
     volatile bool _shutdownRequested = false;
-    ManagedThreadInfo* _targetThread;
+    std::shared_ptr<ManagedThreadInfo> _targetThread;
     uint32_t _iteratorWallTime;
     uint32_t _iteratorCpuTime;
+    uint32_t _iteratorCodeHotspot;
     int32_t _walltimeThreadsThreshold;
     int32_t _cpuThreadsThreshold;
+    int32_t _codeHotspotsThreadsThreshold;
 
 private:
     std::unordered_map<HRESULT, uint64_t> _encounteredStackSnapshotHRs;
@@ -88,12 +92,12 @@ private:
     std::chrono::nanoseconds _samplingPeriod;
 
 private:
-    void MainLoop(void);
-    void WaitOnePeriod(void);
-    void MainLoopIteration(void);
-    void CpuProfilingIteration(void);
-    void WalltimeProfilingIteration(void);
-    void CollectOneThreadStackSample(ManagedThreadInfo* pThreadInfo,
+    void MainLoop();
+    void MainLoopIteration();
+    void CpuProfilingIteration();
+    void WalltimeProfilingIteration();
+    void CodeHotspotIteration();
+    void CollectOneThreadStackSample(std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
                                      int64_t thisSampleTimestampNanosecs,
                                      int64_t duration,
                                      PROFILING_TYPE profilingType);
@@ -103,6 +107,6 @@ private:
     void UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames);
     time_t GetCurrentTimestamp();
     void PersistStackSnapshotResults(StackSnapshotResultBuffer const* pSnapshotResult,
-                                     ManagedThreadInfo* pThreadInfo,
+                                     std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
                                      PROFILING_TYPE profilingType);
 };

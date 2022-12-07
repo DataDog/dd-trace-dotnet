@@ -5,7 +5,8 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <Platforms>x86;x64</Platforms>
-    <NoWarn>0618;NETSDK1138</NoWarn>
+    <!-- Suppress warnings about lowercase variable names in generated code -->
+    <NoWarn>0618;NETSDK1138;CS8981</NoWarn>
 
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.45.0</ApiVersion>
 
@@ -34,7 +35,7 @@
     <PackageReference Include="Grpc.Tools" Version="$(ApiVersion)" PrivateAssets="All" />
   </ItemGroup>
   
-  <ItemGroup Condition="$(TargetFramework) == 'net461'">
+  <ItemGroup Condition="$(TargetFramework) == 'net462'">
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
   </ItemGroup>

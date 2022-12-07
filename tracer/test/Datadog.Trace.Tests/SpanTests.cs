@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests
             span.SetTag(key, value);
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
-            Assert.Equal(span.GetTag(key), value);
+            span.GetTag(key).Should().Be(value);
         }
 
         [Fact]

@@ -53,14 +53,14 @@ void ContentionProvider::OnContention(double contentionDuration)
     // TODO: should we call _sampler.Keep() to avoid swamping the profile with contention samples?
     }
 
-    ManagedThreadInfo* threadInfo;
-    CALL(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
+    std::shared_ptr<ManagedThreadInfo> threadInfo;
+    CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
     const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
-    const auto result = pStackFramesCollector->CollectStackSample(threadInfo, &hrCollectStack);
+    const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
     if (result->GetFramesCount() == 0)
     {
         Log::Warn("Failed to walk stack for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
@@ -77,7 +77,6 @@ void ContentionProvider::OnContention(double contentionDuration)
     rawSample.AppDomainId = result->GetAppDomainId();
     result->CopyInstructionPointers(rawSample.Stack);
     rawSample.ThreadInfo = threadInfo;
-    threadInfo->AddRef();
     rawSample.ContentionDuration = contentionDuration;
 
     Add(std::move(rawSample));

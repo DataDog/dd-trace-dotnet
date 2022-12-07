@@ -26,9 +26,9 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueNewMethod(const RejitRequ
     const FunctionInfo& functionInfo, 
     RejitHandlerModule* moduleHandler)
 {
-    RejitHandlerModuleMethodCreatorFunc creator = [=, request = definition, functionInfo = functionInfo](
+    RejitHandlerModuleMethodCreatorFunc creator = [=, request = definition, fInfo = functionInfo](
         const mdMethodDef method, RejitHandlerModule* module) {
-        return CreateMethod(method, module, functionInfo, request);
+        return CreateMethod(method, module, fInfo, request);
     };
 
     RejitHandlerModuleMethodUpdaterFunc updater = [=, request = definition](RejitHandlerModuleMethod* method) {
@@ -323,14 +323,14 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
 
     Logger::Debug("RejitHandler::EnqueueRequestRejit");
 
-    std::function<void()> action = [=, requests = std::move(rejitRequests), promise = promise]() mutable {
+    std::function<void()> action = [=, requests = std::move(rejitRequests), localPromise = promise]() mutable {
         // Process modules for rejit
         RequestRejit(requests, true);
 
         // Resolve promise
-        if (promise != nullptr)
+        if (localPromise != nullptr)
         {
-            promise->set_value();
+            localPromise->set_value();
         }
     };
 
@@ -359,14 +359,14 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevert(std::vector
 
     Logger::Debug("RejitHandler::EnqueueRequestRevert");
 
-    std::function<void()> action = [=, requests = std::move(revertRequests), promise = promise]() mutable {
+    std::function<void()> action = [=, requests = std::move(revertRequests), localPromise = promise]() mutable {
         // Process modules for rejit
         RequestRevert(requests, true);
 
         // Resolve promise
-        if (promise != nullptr)
+        if (localPromise != nullptr)
         {
-            promise->set_value();
+            localPromise->set_value();
         }
     };
 
@@ -397,14 +397,14 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
     Logger::Debug("RejitHandler::EnqueueRequestRejitForLoadedModules");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
-                                    promise = promise]() mutable {
+                                    localPromise = promise]() mutable {
         // Process modules for rejit
         const auto rejitCount = RequestRejitForLoadedModules(modules, definitions, true);
 
         // Resolve promise
-        if (promise != nullptr)
+        if (localPromise != nullptr)
         {
-            promise->set_value(rejitCount);
+            localPromise->set_value(rejitCount);
         }
     };
 
@@ -435,14 +435,14 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevertForLoadedMod
     Logger::Debug("RejitHandler::EnqueueRequestRevertForLoadedModules");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
-                                    promise = promise]() mutable {
+                                    localPromise = promise]() mutable {
         // Process modules for rejit
         const auto rejitCount = RequestRevertForLoadedModules(modules, definitions, true);
 
         // Resolve promise
-        if (promise != nullptr)
+        if (localPromise != nullptr)
         {
-            promise->set_value(rejitCount);
+            localPromise->set_value(rejitCount);
         }
     };
 
@@ -770,16 +770,16 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(c
     Logger::Debug("RejitHandler::EnqueuePreprocessRejitRequests");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
-                                    rejitRequests = rejitRequests,
-                                    promise = promise]() mutable {
+                                    localRejitRequests = rejitRequests,
+                                    localPromise = promise]() mutable {
 
         // Process modules for rejit
-        const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
+        const auto rejitCount = PreprocessRejitRequests(modules, definitions, localRejitRequests);
 
         // Resolve promise
-        if (promise != nullptr)
+        if (localPromise != nullptr)
         {
-            promise->set_value(rejitRequests);
+            localPromise->set_value(localRejitRequests);
         }
     };
 

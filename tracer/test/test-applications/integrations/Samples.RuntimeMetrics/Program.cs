@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 
@@ -10,6 +11,8 @@ namespace Samples.RuntimeMetrics
 
         private static void Main()
         {
+            Console.WriteLine($"Started - PID {Process.GetCurrentProcess().Id}");
+
             // Force the tracer to be loaded
             _ = WebRequest.CreateHttp("http://localhost/");
 
@@ -18,6 +21,8 @@ namespace Samples.RuntimeMetrics
             new Thread(GenerateEvents) { IsBackground = true }.Start();
 
             Thread.Sleep(30000);
+
+            Console.WriteLine("Exiting");
         }
 
         private static void GenerateEvents()

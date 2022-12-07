@@ -18,12 +18,14 @@ namespace BuggyBits
         private readonly CancellationToken _exitToken;
         private readonly HttpClient _httpClient;
         private readonly Scenario _scenario;
+        private readonly int _nbIdleThreads;
 
-        public SelfInvoker(CancellationToken token, Scenario scenario)
+        public SelfInvoker(CancellationToken token, Scenario scenario, int nbIdleThreds)
         {
             _exitToken = token;
             _httpClient = new HttpClient();
             _scenario = scenario;
+            _nbIdleThreads = nbIdleThreds;
         }
 
         public void Dispose()
@@ -34,6 +36,8 @@ namespace BuggyBits
         public async Task RunAsync(string rootUrl, int iterations = 0)
         {
             Console.WriteLine($"{this.GetType().Name} started.");
+
+            CreateIdleThreads();
 
             if (_scenario == Scenario.None)
             {
@@ -65,6 +69,16 @@ namespace BuggyBits
             }
 
             Console.WriteLine($"{this.GetType().Name} stopped.");
+        }
+
+        private void CreateIdleThreads()
+        {
+            Console.WriteLine($"----- Creating {_nbIdleThreads} idle threads");
+
+            for (var i = 0; i < _nbIdleThreads; i++)
+            {
+                Task.Factory.StartNew(() => { _exitToken.WaitHandle.WaitOne(); }, TaskCreationOptions.LongRunning);
+            }
         }
 
         private string GetEndpoint(string rootUrl)

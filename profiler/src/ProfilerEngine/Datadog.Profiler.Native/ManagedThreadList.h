@@ -31,12 +31,13 @@ public:
     bool Start() override;
     bool Stop() override;
     bool GetOrCreateThread(ThreadID clrThreadId) override;
-    bool UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo) override;
+    bool RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThreadInfo) override;
+    bool UnregisterThread(ThreadID clrThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
     bool SetThreadName(ThreadID clrThreadId, const shared::WSTRING& threadName) override;
     uint32_t Count() override;
     uint32_t CreateIterator() override;
-    ManagedThreadInfo* LoopNext(uint32_t iterator) override;
+    std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) override;
     bool TryGetThreadInfo(const std::uint32_t profilerThreadInfoId,
                           ThreadID* pClrThreadId,
                           DWORD* pOsThreadId,
@@ -44,10 +45,10 @@ public:
                           WCHAR* pThreadNameBuff,
                           const std::uint32_t threadNameBuffLen,
                           std::uint32_t* pActualThreadNameLen) override;
-    HRESULT TryGetCurrentThreadInfo(ManagedThreadInfo** ppThreadInfo) override;
+    HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
 
 private:
-    ManagedThreadInfo* GetOrCreate(ThreadID clrThreadId);
+    std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId);
 
 private:
     const char* _serviceName = "ManagedThreadList";
@@ -62,8 +63,8 @@ private:
 
     // Threads are stored in a vector where new threads are added at the end
     // Also, threads are "directly" accessible from their CLR ThreadID via an index
-    std::vector<ManagedThreadInfo*> _threads;
-    std::unordered_map<ThreadID, ManagedThreadInfo*> _lookupByClrThreadId;
+    std::vector<std::shared_ptr<ManagedThreadInfo>> _threads;
+    std::unordered_map<ThreadID, std::shared_ptr<ManagedThreadInfo>> _lookupByClrThreadId;
 
     // An iterator is just a position in the vector corresponding to the next thread to be returned by LoopNext
     // so keep track of them in a vector of positions initialized to 0
@@ -80,12 +81,12 @@ private:
     // the info from the corresponding ManagedThreadInfo.
     // When that happens, we use the '_lookupByProfilerThreadInfoId' table to look up the ManagedThreadInfo instance
     // that corresponds to the id. If the thread is dead, it will no longer be in the table.
-    std::unordered_map<std::uint32_t, ManagedThreadInfo*> _lookupByProfilerThreadInfoId;
+    std::unordered_map<std::uint32_t, std::shared_ptr<ManagedThreadInfo>> _lookupByProfilerThreadInfoId;
 
     ICorProfilerInfo4* _pCorProfilerInfo;
 
 private:
     void UpdateIterators(uint32_t pos);
-    ManagedThreadInfo* FindByClrId(ThreadID clrThreadId);
-    ManagedThreadInfo* FindByProfilerId(uint32_t profilerThreadInfoId);
+    std::shared_ptr<ManagedThreadInfo> FindByClrId(ThreadID clrThreadId);
+    std::shared_ptr<ManagedThreadInfo> FindByProfilerId(uint32_t profilerThreadInfoId);
 };

@@ -140,6 +140,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // check the version
                             AssertTargetSpanEqual(targetTest, "version", "1.0.0");
 
+                            // remove ITR skippeable tags
+                            AssertTargetSpanExists(targetTest, CommonTags.TestsSkipped);
+
                             // checks the origin tag
                             CheckOriginTag(targetTest);
 

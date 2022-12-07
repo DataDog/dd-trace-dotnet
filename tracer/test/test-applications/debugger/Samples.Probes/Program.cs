@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using Samples.Probes;
+using Samples.Probes.TestRuns;
 
 public static class Program
 {
@@ -29,7 +30,7 @@ public static class Program
 
     private static object GetInstance(string testName)
     {
-        var type = Assembly.GetExecutingAssembly().GetType(testName);
+        var type = Assembly.GetAssembly(typeof(IRun)).GetType(testName);
         if (type == null)
         {
             throw new ArgumentException($"Type {testName} not found in assembly {Assembly.GetExecutingAssembly().GetName().Name}");

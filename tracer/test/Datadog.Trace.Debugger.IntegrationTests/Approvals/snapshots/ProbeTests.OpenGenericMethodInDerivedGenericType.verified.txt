@@ -1,0 +1,117 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "gen": {
+                "fields": {
+                  "Message": {
+                    "type": "String",
+                    "value": "Hello"
+                  }
+                },
+                "type": "Generic",
+                "value": "Generic"
+              },
+              "gen2": {
+                "type": "OpenGenericMethodInDerivedGenericType",
+                "value": "OpenGenericMethodInDerivedGenericType"
+              },
+              "k": {
+                "fields": {
+                  "Message": {
+                    "type": "String",
+                    "value": "Hello"
+                  }
+                },
+                "type": "Generic",
+                "value": "Generic"
+              },
+              "this": {
+                "type": "Test2`1",
+                "value": "Test2`1"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "gen": {
+                "fields": {
+                  "Message": {
+                    "type": "String",
+                    "value": "Hello"
+                  }
+                },
+                "type": "Generic",
+                "value": "Generic"
+              },
+              "gen2": {
+                "type": "OpenGenericMethodInDerivedGenericType",
+                "value": "OpenGenericMethodInDerivedGenericType"
+              },
+              "k": {
+                "fields": {
+                  "Message": {
+                    "type": "String",
+                    "value": "Hello"
+                  }
+                },
+                "type": "Generic",
+                "value": "Generic"
+              },
+              "this": {
+                "type": "Test2`1",
+                "value": "Test2`1"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "Samples.Probes.TestRuns.Shared.GenericSamples.Probes.TestRuns.SmokeTests.OpenGenericMethodInDerivedGenericTypeSamples.Probes.TestRuns.Shared.Generic"
+              },
+              "gen2ToString": {
+                "type": "String",
+                "value": "Samples.Probes.TestRuns.SmokeTests.OpenGenericMethodInDerivedGenericType"
+              },
+              "genToString": {
+                "type": "String",
+                "value": "Samples.Probes.TestRuns.Shared.Generic"
+              },
+              "kToString": {
+                "type": "String",
+                "value": "Samples.Probes.TestRuns.Shared.Generic"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  }
+]

@@ -1,0 +1,89 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "callerName": {
+                "type": "String",
+                "value": "Run"
+              },
+              "this": {
+                "type": "NestedType",
+                "value": "NestedType"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "callerName": {
+                "type": "String",
+                "value": "Run"
+              },
+              "this": {
+                "type": "NestedType",
+                "value": "NestedType"
+              }
+            },
+            "locals": {
+              "arr": {
+                "elements": [
+                  {
+                    "type": "String",
+                    "value": "Run"
+                  },
+                  {
+                    "type": "String",
+                    "value": "MethodToInstrument"
+                  },
+                  {
+                    "type": "String",
+                    "value": "SimpleTypeNameTest"
+                  }
+                ],
+                "type": "String[]",
+                "value": "count: 3"
+              }
+            },
+            "throwable": {
+              "message": "Same length.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.SmokeTests.SimpleNestedTypeNameTest+NestedType.MethodToInstrument",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "Samples.Probes.TestRuns.Shared.IntentionalDebuggerException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "MethodToInstrument",
+            "type": "Samples.Probes.TestRuns.SmokeTests.SimpleNestedTypeNameTest+NestedType"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.TestRuns.SmokeTests.SimpleNestedTypeNameTest+NestedType",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  }
+]

@@ -2,11 +2,11 @@
     "profiles": {
       "Samples.Probes": {
         "commandName": "Project",
-        "commandLineArgs": "--test-name Samples.Probes.SmokeTests.HasFieldLazyValueInitialized --listen-url http://127.0.0.1:1234/",
+        "commandLineArgs": "--test-name Samples.Probes.SmokeTests.StaticType",
         "environmentVariables": {
           "DD_LOG_LEVEL": "DEBUG",
-        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
-        "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
+          "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
+          "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
           "COR_ENABLE_PROFILING": "1",
           "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
           "CORECLR_ENABLE_PROFILING": "1",

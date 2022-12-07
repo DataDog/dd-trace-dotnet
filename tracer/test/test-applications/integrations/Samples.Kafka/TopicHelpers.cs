@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -92,9 +92,20 @@ namespace Samples.Kafka
         {
             using var adminClient = new AdminClientBuilder(config).Build();
             var metadata = adminClient.GetMetadata(timeout: TimeSpan.FromSeconds(30));
-            return metadata.Topics.Any(
-                x => string.Equals(x.Topic, topicName, StringComparison.Ordinal)
-                  && x.Error.Code == ErrorCode.NoError);
+
+            var topic = metadata.Topics.FirstOrDefault(x => string.Equals(x.Topic, topicName, StringComparison.Ordinal));
+
+            if (topic != null)
+            {
+                if (topic.Error.Code == ErrorCode.NoError)
+                {
+                    return true;
+                }
+
+                Console.WriteLine($"Topic found with error {topic.Error} (code: {topic.Error.Code})");
+            }
+
+            return false;
         }
     }
 }

@@ -6,7 +6,6 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.RateLimiting;
@@ -40,19 +39,26 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogLocal<TLocal>(ref TLocal local, int index, ref AsyncLineDebuggerState state)
         {
-            if (!state.IsActive)
+            try
             {
-                return;
-            }
+                if (!state.IsActive)
+                {
+                    return;
+                }
 
-            var localVariableNames = state.MethodMetadataInfo.LocalVariableNames;
-            if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
+                var localVariableNames = state.MethodMetadataInfo.LocalVariableNames;
+                if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
+                {
+                    return;
+                }
+
+                state.SnapshotCreator.CaptureLocal(local, localName);
+                state.HasLocalsOrReturnValue = true;
+            }
+            catch (Exception e)
             {
-                return;
+                LogException(e, ref state);
             }
-
-            state.SnapshotCreator.CaptureLocal(local, localName);
-            state.HasLocalsOrReturnValue = true;
         }
 
         /// <summary>
@@ -63,14 +69,21 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException(Exception exception, ref AsyncLineDebuggerState state)
         {
-            if (!state.IsActive)
+            try
             {
-                // Already encountered `LogException`
-                return;
-            }
+                if (!state.IsActive)
+                {
+                    // Already encountered `LogException`
+                    return;
+                }
 
-            Log.Warning(exception, "Error caused by our instrumentation");
-            state.IsActive = false;
+                Log.Warning(exception, "Error caused by our instrumentation");
+                state.IsActive = false;
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         /// <summary>
@@ -96,47 +109,56 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AsyncLineDebuggerState BeginLine<TTarget>(string probeId, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, int lineNumber, string probeFilePath)
         {
-            if (!ProbeRateLimiter.Instance.Sample(probeId))
+            try
             {
-                return CreateInvalidatedAsyncLineDebuggerState();
-            }
-
-            if (instance == null)
-            {
-                // Should not happen, but placing it here for a safeguard.
-                // We may load `instance` (aka `this`) as null when we deal with complex stack-allocated values types that are generic (either open/close generics).
-                // In the native side we already have a safeguard that will fail to instrument a method if we deal with such situations but I also placed a safeguard in the managed side just in case.
-                return CreateInvalidatedAsyncLineDebuggerState();
-            }
-
-            // Assess if we have metadata associated with the given index
-            if (!MethodMetadataProvider.IsIndexExists(methodMetadataIndex))
-            {
-                // State machine is null when we run in Optimized code and the original async method was generic,
-                // in which case the state machine is a generic value type.
-
-                var stateMachineType = instance.GetType();
-                var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
-                if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
+                if (!ProbeRateLimiter.Instance.Sample(probeId))
                 {
-                    Log.Warning($"{nameof(BeginLine)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
-                }
-
-                if (!MethodMetadataProvider.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
-                {
-                    Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaId = {methodMetadataIndex}");
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
+
+                if (instance == null)
+                {
+                    // Should not happen, but placing it here for a safeguard.
+                    // We may load `instance` (aka `this`) as null when we deal with complex stack-allocated values types that are generic (either open/close generics).
+                    // In the native side we already have a safeguard that will fail to instrument a method if we deal with such situations but I also placed a safeguard in the managed side just in case.
+                    return CreateInvalidatedAsyncLineDebuggerState();
+                }
+
+                // Assess if we have metadata associated with the given index
+                if (!MethodMetadataProvider.IsIndexExists(methodMetadataIndex))
+                {
+                    // State machine is null when we run in Optimized code and the original async method was generic,
+                    // in which case the state machine is a generic value type.
+
+                    var stateMachineType = instance.GetType();
+                    var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
+                    if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
+                    {
+                        Log.Warning($"{nameof(BeginLine)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
+                    }
+
+                    if (!MethodMetadataProvider.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
+                    {
+                        Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadataId = {methodMetadataIndex}");
+                        return CreateInvalidatedAsyncLineDebuggerState();
+                    }
+                }
+
+                var kickoffParentObject = AsyncHelper.GetAsyncKickoffThisObject(instance);
+                var state = new AsyncLineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, lineNumber, probeFilePath, instance, kickoffParentObject);
+                state.SnapshotCreator.StartDebugger();
+                state.SnapshotCreator.StartSnapshot();
+                state.SnapshotCreator.StartCaptures();
+                state.SnapshotCreator.StartLines(lineNumber);
+
+                return state;
             }
-
-            var kickoffParentObject = AsyncHelper.GetAsyncKickoffThisObject(instance);
-            var state = new AsyncLineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, lineNumber, probeFilePath, instance, kickoffParentObject);
-            state.SnapshotCreator.StartDebugger();
-            state.SnapshotCreator.StartSnapshot();
-            state.SnapshotCreator.StartCaptures();
-            state.SnapshotCreator.StartLines(lineNumber);
-
-            return state;
+            catch (Exception e)
+            {
+                var invalidState = new AsyncLineDebuggerState();
+                LogException(e, ref invalidState);
+                return invalidState;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -167,6 +189,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
             for (var index = 0; index < kickOffMethodLocalsValues.Length; index++)
             {
                 ref var local = ref kickOffMethodLocalsValues[index];
+                if (local == default)
+                {
+                    continue;
+                }
+
                 var localValue = local.Field.GetValue(asyncState.MoveNextInvocationTarget);
                 LogLocal(ref localValue, local.Field.FieldType, local.SanitizedName, index, ref asyncState);
             }
@@ -202,21 +229,28 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void EndLine(ref AsyncLineDebuggerState state)
         {
-            if (!state.IsActive)
+            try
             {
-                return;
-            }
+                if (!state.IsActive)
+                {
+                    return;
+                }
 
-            var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
-                                       state.MethodMetadataInfo.AsyncMethodHoistedArguments.Length > 0 ||
-                                       state.KickoffInvocationTarget != null;
-            state.HasLocalsOrReturnValue = false;
-            CollectLocals(ref state);
-            state.SnapshotCreator.CaptureInstance(state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType);
-            CollectArgs(ref state);
-            state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
-            state.SnapshotCreator.LineProbeEndReturn(hasArgumentsOrLocals);
-            FinalizeSnapshot(ref state);
+                var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
+                                           state.MethodMetadataInfo.AsyncMethodHoistedArguments.Length > 0 ||
+                                           state.KickoffInvocationTarget != null;
+                state.HasLocalsOrReturnValue = false;
+                CollectLocals(ref state);
+                state.SnapshotCreator.CaptureInstance(state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType);
+                CollectArgs(ref state);
+                state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
+                state.SnapshotCreator.LineProbeEndReturn(hasArgumentsOrLocals);
+                FinalizeSnapshot(ref state);
+            }
+            catch (Exception e)
+            {
+                LogException(e, ref state);
+            }
         }
 
         private static void FinalizeSnapshot(ref AsyncLineDebuggerState state)

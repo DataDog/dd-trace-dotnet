@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/windows/servercore:ltsc2019-amd64
+﻿FROM mcr.microsoft.com/windows/servercore:ltsc2022-amd64
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 WORKDIR /app

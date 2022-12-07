@@ -251,6 +251,10 @@ namespace Datadog.InstrumentedAssemblyGenerator
                         continue;
                     }
 
+                    if (module.Name == "Datadog.Trace.dll") // We don't instrument ourselves
+                    {
+                        continue;
+                    }
                     using (var memoryStream = new MemoryStream())
                     {
                         // in order to read the final and up-to-date representation of the assembly,

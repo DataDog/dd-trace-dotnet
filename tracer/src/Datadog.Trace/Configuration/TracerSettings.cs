@@ -68,11 +68,6 @@ namespace Datadog.Trace.Configuration
                            // default value
                            true;
 
-            if (AzureAppServices.Metadata.IsRelevant && AzureAppServices.Metadata.IsUnsafeToTrace)
-            {
-                TraceEnabled = false;
-            }
-
             var disabledIntegrationNames = source?.GetString(ConfigurationKeys.DisabledIntegrations)
                                                  ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
                                            Enumerable.Empty<string>();
@@ -141,16 +136,6 @@ namespace Datadog.Trace.Configuration
                                           // default value
                                           true;
 
-            var urlSubstringSkips = source?.GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings) ??
-                                    // default value
-                                    (AzureAppServices.Metadata.IsRelevant ? AzureAppServices.Metadata.DefaultHttpClientExclusions :
-                                     Serverless.Metadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : null);
-
-            if (urlSubstringSkips != null)
-            {
-                HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator);
-            }
-
             var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
                                              // Default value
                                              "500-599";
@@ -190,7 +175,8 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) is { } x and > 0 ? x : 200;
 
-            IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
+            IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled) ??
+                                        source?.GetBool("DD_TRACE_ACTIVITY_LISTENER_ENABLED") ??
                                         // default value
                                         false;
 
@@ -242,6 +228,26 @@ namespace Datadog.Trace.Configuration
                                              false;
 
             IsRareSamplerEnabled = source?.GetBool(ConfigurationKeys.RareSamplerEnabled) ?? false;
+
+            IsRunningInAzureAppService = source?.GetString(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)?.ToBoolean() ?? false;
+            if (IsRunningInAzureAppService)
+            {
+                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source);
+                if (AzureAppServiceMetadata.IsUnsafeToTrace)
+                {
+                    TraceEnabled = false;
+                }
+            }
+
+            var urlSubstringSkips = source?.GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings) ??
+                                    // default value
+                                    (IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
+                                     Serverless.Metadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : null);
+
+            if (urlSubstringSkips != null)
+            {
+                HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator);
+            }
         }
 
         /// <summary>
@@ -528,6 +534,16 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the rare sampler is enabled or not.
         /// </summary>
         internal bool IsRareSamplerEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the tracer is running in AAS
+        /// </summary>
+        internal bool IsRunningInAzureAppService { get; set; }
+
+        /// <summary>
+        /// Gets or sets the AAS settings
+        /// </summary>
+        internal ImmutableAzureAppServiceSettings AzureAppServiceMetadata { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

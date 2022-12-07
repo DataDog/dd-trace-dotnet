@@ -364,7 +364,6 @@ std::tuple<unsigned, int> TypeSignature::GetElementTypeAndFlags() const
 
     if (*pbCur == ELEMENT_TYPE_VOID)
     {
-        elementType = ELEMENT_TYPE_VOID;
         typeFlags |= TypeFlagVoid;
     }
 
@@ -928,7 +927,7 @@ HRESULT FunctionMethodSignature::TryParse()
     return S_OK;
 }
 
-bool FindTypeDefByName(const shared::WSTRING instrumentationTargetMethodTypeName, const shared::WSTRING assemblyName,
+bool FindTypeDefByName(const shared::WSTRING& instrumentationTargetMethodTypeName, const shared::WSTRING& assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef)
 {
     mdTypeDef parentTypeDef = mdTypeDefNil;
@@ -1019,7 +1018,398 @@ HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataIm
         methodDefToken, WStr("System.Runtime.CompilerServices.AsyncStateMachineAttribute"), &ppData, &pcbData);
 
     IfFailRet(hr);
-    hasAsyncAttribute = pcbData > 0 ? true : false;
+    hasAsyncAttribute = pcbData > 0;
     return hr;
 }
+
+HRESULT IsByRefLike(const ComPtr<IMetaDataImport2>& metadataImport, const mdTypeDef typeDefToken, bool& hasByRefLikeAttribute)
+{
+    const void* ppData = nullptr;
+    ULONG pcbData = 0;
+    auto hr = metadataImport->GetCustomAttributeByName(
+        typeDefToken, WStr("System.Runtime.CompilerServices.IsByRefLikeAttribute"), &ppData, &pcbData);
+
+    IfFailRet(hr);
+    hasByRefLikeAttribute = pcbData > 0;
+    return hr;
+}
+
+HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
+                            const std::vector<ModuleID>& loadedModules,
+                            const std::vector<WCHAR>& refTypeName,
+                            const mdToken parentToken,
+                            const shared::WSTRING& resolutionScopeName, mdTypeDef& resolvedTypeDefToken,
+                            ComPtr<IMetaDataImport2>& resolvedTypeDefMetadataImport)
+{
+    mdAssembly candidateAssembly;
+    auto foundModule = false;
+
+    if (Logger::IsDebugEnabled())
+    {
+        Logger::Debug("[ResolveTypeInternal] Trying to resolve type ref to type def for: ", shared::WSTRING(refTypeName.data()));
+    }
+
+    // iterate over all the loaded modules and search for the correct one that matches the assemblyRef (resolutionScope)
+    for (auto& moduleId : loadedModules)
+    {
+        if (moduleId == 0) continue;
+
+        ComPtr<IUnknown> metadata_interfaces;
+        auto hr = info->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                            metadata_interfaces.GetAddressOf());
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveTypeInternal] GetModuleMetaData has failed with: ", shared::WSTRING(refTypeName.data()));
+            continue;
+        }
+
+        const auto& candidateAssemblyImport =
+            metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const auto& candidateMetadataImport = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+
+        hr = candidateAssemblyImport->GetAssemblyFromScope(&candidateAssembly);
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveTypeInternal] GetAssemblyFromScope has failed with: ", shared::WSTRING(refTypeName.data()));
+            continue;
+        }
+
+        const auto& assemblyMetadata = GetAssemblyImportMetadata(candidateAssemblyImport);
+
+        if (assemblyMetadata.name == shared::EmptyWStr)
+        {
+            Logger::Warn("[ResolveTypeInternal] GetAssemblyImportMetadata has failed with: ", shared::WSTRING(refTypeName.data()));
+            continue;
+        }
+
+        const auto& candidateResolutionScopeName = assemblyMetadata.name;
+
+        if (resolutionScopeName == candidateResolutionScopeName)
+        {
+            hr = candidateMetadataImport->FindTypeDefByName(refTypeName.data(), parentToken, &resolvedTypeDefToken);
+            if (hr == S_OK)
+            {
+                resolvedTypeDefMetadataImport = candidateMetadataImport;
+                foundModule = true;
+                break;
+            }
+            else
+            {
+                // look for exported type with the same name of the given TypeRef
+                mdExportedType exportedType;
+                hr = candidateAssemblyImport->FindExportedTypeByName(refTypeName.data(), parentToken, &exportedType);
+                if (FAILED(hr))
+                {
+                    Logger::Warn("[ResolveTypeInternal] FindExportedTypeByName has failed with: ", shared::WSTRING(refTypeName.data()));
+                    continue;
+                }
+
+                if (hr == S_OK)
+                {
+                    WCHAR szName[kNameMaxSize];
+                    ULONG pchName;
+                    mdToken exportedTypeContainerToken; // will hold mdAssemblyRef / mdExportedType  / mdFile
+                    mdTypeDef exportedTypeTypeDef;
+                    DWORD exportedTypeFlags;
+
+                    hr = candidateAssemblyImport->GetExportedTypeProps(exportedType, szName, kNameMaxSize, &pchName,
+                                                                       &exportedTypeContainerToken,
+                                                                       &exportedTypeTypeDef, &exportedTypeFlags);
+                    if (FAILED(hr))
+                    {
+                        Logger::Warn("[ResolveTypeInternal] GetExportedTypeProps [1] has failed with: ", shared::WSTRING(refTypeName.data()));
+                        continue;
+                    }
+
+                    int retryCount = 1000; // To avoid falling into an infinite loop
+                    while (retryCount-- > 0 && 
+                           exportedTypeContainerToken != mdExportedTypeNil &&
+                           TypeFromToken(exportedTypeContainerToken) == mdtExportedType &&
+                           IsTdNestedPublic(exportedTypeFlags))
+                    {
+                        hr = candidateAssemblyImport->GetExportedTypeProps(
+                            exportedTypeContainerToken, szName, kNameMaxSize, &pchName, &exportedTypeContainerToken,
+                            &exportedTypeTypeDef, &exportedTypeFlags);
+                        if (FAILED(hr))
+                        {
+                            Logger::Warn("[ResolveTypeInternal] GetExportedTypeProps [2] has failed with: ", shared::WSTRING(refTypeName.data()));
+                        }
+                    }
+
+                    if (retryCount == 0)
+                    {
+                        Logger::Warn("[ResolveTypeInternal] Reached the maximum amount of tryouts of trying to grab the exported type with: ", shared::WSTRING(refTypeName.data()));
+                        return E_FAIL;
+                    }
+
+                    if (TypeFromToken(exportedTypeContainerToken) == mdtAssemblyRef)
+                    {
+                        const auto& assemblyRefMetadata =
+                            GetReferencedAssemblyMetadata(candidateAssemblyImport, exportedTypeContainerToken);
+                        if (assemblyRefMetadata.name == shared::EmptyWStr)
+                        {
+                            Logger::Warn(
+                                "[ResolveTypeInternal] GetResolutionScopeNameForAssemblyRefTok has failed with: ", shared::WSTRING(refTypeName.data()));
+                            continue;
+                        }
+
+                        hr = ResolveTypeInternal(info, loadedModules, refTypeName, mdExportedTypeNil, assemblyRefMetadata.name,
+                                                resolvedTypeDefToken, resolvedTypeDefMetadataImport);
+                        if (FAILED(hr))
+                        {
+                            Logger::Warn(
+                                "[ResolveTypeInternal] Recursive call to ResolveTypeInternal has failed with: ", shared::WSTRING(refTypeName.data()));
+                            continue;
+                        }
+
+                        return hr;
+                    }
+                }
+            }
+        }
+    }
+
+    if (foundModule)
+    {
+        return S_OK;
+    }
+    
+    resolvedTypeDefToken = mdTokenNil;
+    Logger::Warn("[ResolveTypeInternal] ResolveTypeInternal has failed. Reason: Module not found in the loaded modules for type name: ", shared::WSTRING(refTypeName.data()));
+    return E_NOTIMPL;
+}
+
+/**
+ Resolves TypeRef to TypeDef.
+ Note: If the module where the TypeRef is defined is not loaded, E_FAIL will return.
+ */
+HRESULT ResolveType(ICorProfilerInfo4* info,
+                    const ComPtr<IMetaDataImport2>& metadata_import,
+                    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+                    const mdTypeRef typeRefToken,
+                    mdTypeDef& resolvedTypeDefToken,
+                    ComPtr<IMetaDataImport2>& resolvedMetadataImport)
+{
+    mdToken resolutionScope = mdTokenNil; // will hold either AssemblyRef or ModuleRef token
+    mdToken enclosingType = mdTokenNil;
+    ULONG nameSize = 0;
+    std::vector<WCHAR> refTypeName(kNameMaxSize);
+
+    // get the type name & resolution scope
+    auto hr = metadata_import->GetTypeRefProps(typeRefToken, &resolutionScope, refTypeName.data(), kNameMaxSize, &nameSize);
+    if (FAILED(hr) || resolutionScope == mdTokenNil)
+    {
+        Logger::Error("[ResolveType] GetTypeRefProps [1] has failed. typeRefToken: ", typeRefToken);
+        return E_FAIL;
+    }
+
+    mdToken tempToken = mdTokenNil;
+    // To avoid ending up in an infinite loop, I'm limiting the execution to 1000 (arbitrary large number that will be
+    // well beyond enough)
+    int retryCount = 1000;
+    while (retryCount-- > 0 && 
+        TypeFromToken(resolutionScope) != mdtAssemblyRef && 
+        TypeFromToken(resolutionScope) != mdtModuleRef &&
+        resolutionScope != mdTokenNil)
+    {
+        tempToken = resolutionScope;
+        if (enclosingType == mdTokenNil)
+        {
+            enclosingType = tempToken;
+        }
+        hr = metadata_import->GetTypeRefProps(tempToken, &resolutionScope, nullptr, 0, &nameSize);
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveType] GetTypeRefProps [2] has failed. typeRefToken: ", typeRefToken);
+        }
+        IfFailRet(hr);
+    }
+
+    if (retryCount == 0)
+    {
+        Logger::Warn(
+            "[ResolveType] Reached the maximum amount of tryouts of resolving the resolution scope. typeRefToken: ",
+            typeRefToken);
+        return E_FAIL;
+    }
+
+    if (resolutionScope == mdTokenNil)
+    {
+        Logger::Warn("[ResolveType] resolutionScope is nil. typeRefToken: ", typeRefToken);
+        return E_FAIL;
+    }
+
+    const auto& assemblyMetadata = GetReferencedAssemblyMetadata(assembly_import, resolutionScope);
+    if (assemblyMetadata.name == shared::EmptyWStr)
+    {
+        Logger::Warn("[ResolveType] GetReferencedAssemblyMetadata has failed. typeRefToken: ", typeRefToken);
+        return E_FAIL;
+    }
+
+    ICorProfilerModuleEnum* moduleEnum;
+    hr = info->EnumModules(&moduleEnum);
+    if (FAILED(hr))
+    {
+        Logger::Warn("[ResolveType] EnumModules has failed. typeRefToken: ", typeRefToken);
+    }
+    IfFailRet(hr);
+
+    std::vector<ModuleID> loadedModules;
+    size_t resultIndex = 0;
+
+    retryCount = 1000;
+    // iterate over the loaded modules enumeration and collect the module ids into loadedModules
+    while (retryCount-- > 0)
+    {
+        const ULONG valueToRetrieve = 20;
+        ULONG valueRetrieved = 0;
+
+        std::vector<ModuleID> tempValues(valueToRetrieve, 0);
+        hr = moduleEnum->Next(valueToRetrieve, tempValues.data(), &valueRetrieved);
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveType] EnumModules.Next has failed. typeRefToken: ", typeRefToken);
+        }
+        IfFailRet(hr);
+
+        if (valueRetrieved == 0)
+        {
+            break;
+        }
+
+        loadedModules.resize(loadedModules.size() + valueToRetrieve);
+        for (size_t k = 0; k < valueRetrieved; ++k)
+        {
+            loadedModules[resultIndex] = tempValues[k];
+            ++resultIndex;
+        }
+    }
+
+    if (retryCount == 0)
+    {
+        Logger::Warn(
+            "[ResolveType] Reached the maximum amount of tryouts of enumerating the loaded modules. typeRefToken: ",
+            typeRefToken);
+        return E_FAIL;
+    }
+
+    const auto& resolutionScopeName = assemblyMetadata.name;
+
+    resolvedTypeDefToken = mdTokenNil;
+    if (enclosingType != mdTokenNil)
+    {
+        Logger::Debug("ResolveType: Found enclosing type, try to get parent token");
+        std::vector<WCHAR> enclosingRefTypeName(kNameMaxSize);
+        hr = metadata_import->GetTypeRefProps(enclosingType, &resolutionScope, enclosingRefTypeName.data(),
+                                              kNameMaxSize, &nameSize);
+        if (FAILED(hr))
+        {
+            Logger::Warn("[ResolveType] GetTypeRefProps [3] has failed. typeRefToken: ", typeRefToken);
+        }
+        IfFailRet(hr);
+
+        hr = ResolveTypeInternal(info, loadedModules, enclosingRefTypeName, mdTokenNil, resolutionScopeName,
+                                 resolvedTypeDefToken, resolvedMetadataImport);
+        IfFailRet(hr);
+    }
+
+    return ResolveTypeInternal(info, loadedModules, refTypeName, resolvedTypeDefToken, resolutionScopeName,
+                             resolvedTypeDefToken, resolvedMetadataImport);
+}
+
+// GenericTypeProps
+HRESULT GenericTypeProps::TryParse()
+{
+    // Note: Not all signatures are supported. Internal Jira ticket: DEBUG-1243.
+    // The following two signatures are supported for now:
+    // VAR | MVAR Number
+    // or GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
+
+    PCCOR_SIGNATURE pbCur = pbBase;
+    const PCCOR_SIGNATURE pbEnd = pbBase + len;
+    unsigned char specElementType;
+
+    unsigned offset = 0;
+    mdToken openGenericToken = mdTokenNil;
+
+    IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &specElementType));
+
+    while (specElementType == ELEMENT_TYPE_BYREF)
+    {
+        IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &specElementType));
+        offset++;
+    }
+
+    unsigned genericParamPosition;
+    if (specElementType == ELEMENT_TYPE_VAR || specElementType == ELEMENT_TYPE_MVAR)
+    {
+        IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &genericParamPosition));
+
+        std::vector<std::tuple<PCCOR_SIGNATURE, ULONG, unsigned char>> signatures;
+        SpecElementType = specElementType;
+        OpenTypeToken = openGenericToken;
+        GenericElementType = 0;
+        ParamsCount = 0;
+        IndexOfFirstParam = offset;
+        ParamPosition = genericParamPosition;
+        ParamsSignature = std::move(signatures);
+
+        return S_OK;
+    }
+
+    if (specElementType != ELEMENT_TYPE_GENERICINST) return E_FAIL;
+
+    offset++;
+    unsigned char elementType;
+    IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &elementType));
+
+    // Skip ELEMENT_TYPE_BYREF. Add more elements that could be here, if any...
+    while (elementType == ELEMENT_TYPE_BYREF)
+    {
+        IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &elementType));
+        offset++;
+    }
+
+    if (elementType != ELEMENT_TYPE_CLASS && elementType != ELEMENT_TYPE_VALUETYPE)
+        return E_FAIL;
+
+    offset++;
+    const auto tokenSigLength = CorSigUncompressToken(pbCur, &openGenericToken);
+    if (tokenSigLength == static_cast<ULONG>(-1))
+        return E_FAIL;
+    offset += tokenSigLength;
+
+    pbCur += tokenSigLength;
+    unsigned paramCount;
+    IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &paramCount));
+
+    offset++;
+    std::vector<std::tuple<PCCOR_SIGNATURE, ULONG, unsigned char>> signatures;
+    for (unsigned i = 0; i < paramCount; i++)
+    {
+        PCCOR_SIGNATURE copySig = pbCur;
+        IfFalseRetFAIL(ParseType(pbCur, pbEnd));
+        
+        PCCOR_SIGNATURE elementTypeSig = copySig;
+
+        while (*elementTypeSig == ELEMENT_TYPE_BYREF)
+        {
+            elementTypeSig++;
+        }
+
+        unsigned char paramElementType = *elementTypeSig;
+        signatures.emplace_back(std::make_tuple(copySig, static_cast<ULONG>(pbCur - copySig), paramElementType));
+    }
+
+    SpecElementType = specElementType;
+    OpenTypeToken = openGenericToken;
+    GenericElementType = elementType;
+    ParamsCount = paramCount;
+    IndexOfFirstParam = offset;
+    ParamPosition = 0;
+    ParamsSignature = std::move(signatures);
+
+    return S_OK;
+}
+
 } // namespace trace

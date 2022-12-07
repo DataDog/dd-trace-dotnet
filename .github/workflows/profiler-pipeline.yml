@@ -36,11 +36,11 @@ jobs:
 
   build_linux_release_x64:
     name: Build Linux Profiler (x64, Release)
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: ./.github/actions/run-in-docker
         name: Build Monitoring Home in Docker
@@ -53,7 +53,7 @@ jobs:
           command: "RunProfilerNativeUnitTestsLinux"
 
       - name: Publish artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
           name: monitoring-home.Linux.Release.x64
@@ -61,7 +61,7 @@ jobs:
           retention-days: 7
 
   benchmark_linux_x64:
-    name: BMmark Linux Profiler (x64, Release)
+    name: BMark Linux Profiler (x64, Release)
     runs-on: ubuntu-latest
     needs: build_linux_release_x64
     strategy:
@@ -86,16 +86,23 @@ jobs:
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            3.1.x
+            6.0.100
+            7.0.100
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Linux.Release.x64
           path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.16.8
 
@@ -114,10 +121,10 @@ jobs:
         run: go install github.com/tonyredondo/timeit@latest
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Execute PiComputation benchmark
         run: |
@@ -128,7 +135,7 @@ jobs:
         run: sleep 20
 
       - name: Publish artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
           name: Benchmark.tests.linux.${{ matrix.framework }}.logs
@@ -136,7 +143,7 @@ jobs:
           retention-days: 7
 
   benchmark_ClrEvents_linux_x64:
-    name: BMmark ClrEvents Linux Profiler (x64, Release)
+    name: BMark ClrEvents Linux Profiler (x64, Release)
     runs-on: ubuntu-latest
     needs: build_linux_release_x64
     strategy:
@@ -161,16 +168,16 @@ jobs:
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Linux.Release.x64
           path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.16.8
 
@@ -189,10 +196,10 @@ jobs:
         run: go install github.com/tonyredondo/timeit@latest
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Execute PiComputation benchmark
         run: |
@@ -203,7 +210,7 @@ jobs:
         run: sleep 20
 
       - name: Publish artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
           name: Benchmark.clrevents.linux.${{ matrix.framework }}.logs
@@ -221,7 +228,7 @@ jobs:
         run: sudo apt-get install -y libasan6
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build Native Profiler Engine
         run: |
@@ -229,10 +236,10 @@ jobs:
           cmake --build __build --config Release --target all-profiler
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Run unit tests
         run: |
@@ -261,7 +268,7 @@ jobs:
           ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -281,7 +288,7 @@ jobs:
         run: sudo apt-get install -y libubsan1
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build Native Profiler Engine
         run: |
@@ -289,10 +296,10 @@ jobs:
           cmake --build __build --config Release --target all-profiler
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Run unit tests
         run: |
@@ -320,7 +327,7 @@ jobs:
           UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -331,7 +338,7 @@ jobs:
 
   build_windows:
     name: Build Windows Profiler and Tracer
-    runs-on: windows-2019
+    runs-on: windows-2022
     env:
       NugetPackageDirectory: ./packages
     strategy:
@@ -348,15 +355,16 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
         
       - name: Support longpaths
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build Monitoring home
-        run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader BuildProfilerHome CompileProfilerNativeTestsWindows --build-configuration ${{matrix.configuration}}
+        run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader BuildProfilerHome PublishNativeSymbolsWindows CompileProfilerNativeTestsWindows --build-configuration ${{matrix.configuration}}
 
       - name: Run Native Unit tests (x64-${{matrix.configuration}})
         run: .\tracer\build.cmd RunProfilerNativeUnitTestsWindows --build-configuration ${{matrix.configuration}} --TargetPlatform x64
@@ -365,17 +373,25 @@ jobs:
         run: .\tracer\build.cmd RunProfilerNativeUnitTestsWindows --build-configuration ${{matrix.configuration}} --TargetPlatform x86
 
       - name: Publish artifact monitoring-home
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
           name: 'monitoring-home.Windows.${{matrix.configuration}}'
           path: 'shared\bin\monitoring-home'
           retention-days: 7
 
+      - name: Publish monitoring-home symbols
+        uses: actions/upload-artifact@v3
+        with:
+          if-no-files-found: error
+          name: 'monitoring-home.Windows.Symbols.${{matrix.configuration}}'
+          path: 'tracer\bin\symbols'
+          retention-days: 7
+
 
   test_windows_profiler:
     name: STests Windows Profiler
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: build_windows
     strategy:
       fail-fast: false
@@ -392,27 +408,28 @@ jobs:
       - uses: Datadog/setup-dotnet@v2
         with:
           architecture: ${{ matrix.platform }}
-          dotnet-version: | 
+          dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
     
       - name: Support longpaths
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Windows.${{matrix.configuration}}
           path: shared/bin/monitoring-home
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
+        run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}} -p:CheckEolTargetFramework=false
 
       - name: Prepare environment to run the application
         shell: pwsh
@@ -426,13 +443,22 @@ jobs:
           # set profiler deployment and test output dir folder path for the test
           #
           echo "MonitoringHomeDirectory=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "DD_TESTING_OUPUT_DIR=$(Join-Path -Path $(Resolve-Path .) -ChildPath tests_output)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          $tests_output=$(Join-Path -Path $(Resolve-Path .) -ChildPath tests_output)
+          echo "DD_TESTING_OUPUT_DIR=${tests_output}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          New-Item ${tests_output} -Type Directory
+          .\Procdump\procdump.exe -accepteula -ma -i ${tests_output}
 
       - name: Run Integration tests
         shell: cmd
         run: >
           cd profiler/test/Datadog.Profiler.IntegrationTests &&
           dotnet test -c ${{matrix.configuration}} -p:Platform=${{matrix.platform}} --filter "Category!=LinuxOnly" --logger "console;verbosity=detailed" --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
+
+      - name: Cleanup environment
+        shell: pwsh
+        run: |
+          # Uninstall Procdump
+          .\Procdump\procdump.exe -u
 
       - name: Generate tests report
         uses: dorny/test-reporter@v1
@@ -443,7 +469,7 @@ jobs:
           reporter: dotnet-trx
 
       - name: 'Publish Test results, Logs and PProf files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -453,8 +479,8 @@ jobs:
           retention-days: 7
 
   benchmark_windows_x64:
-    name: BMmark Windows Profiler x64
-    runs-on: windows-2019
+    name: BMark Windows Profiler x64
+    runs-on: windows-2022
     needs: build_windows
     strategy:
       fail-fast: false
@@ -473,6 +499,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
     
       - name: Install Datadog agent
         continue-on-error: false
@@ -490,16 +517,16 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Windows.Release
           path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.16.8
 
@@ -514,10 +541,10 @@ jobs:
         run: go install github.com/tonyredondo/timeit@latest
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Execute PiComputation benchmark
         env:
@@ -531,7 +558,7 @@ jobs:
         run: Start-Sleep -s 20
 
       - name: 'Publish Benchmark log files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -540,8 +567,8 @@ jobs:
           retention-days: 7
 
   benchmark_ClrEvents_windows_x64:
-    name: BMmark ClrEvents Windows Profiler x64
-    runs-on: windows-2019
+    name: BMark ClrEvents Windows Profiler x64
+    runs-on: windows-2022
     needs: build_windows
     strategy:
     # add scenarios when new profilers based on CLR events are added
@@ -558,6 +585,7 @@ jobs:
         with:
           dotnet-version: |
             6.0.100
+            7.0.100
 
       - name: Install Datadog agent
         continue-on-error: false
@@ -575,16 +603,16 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Windows.Release
           path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.16.8
 
@@ -599,10 +627,10 @@ jobs:
         run: go install github.com/tonyredondo/timeit@latest
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
       - name: Execute Clr Events benchmark
         env:
@@ -616,7 +644,7 @@ jobs:
         run: Start-Sleep -s 20
 
       - name: 'Publish Benchmark log files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -632,10 +660,10 @@ jobs:
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Windows.Release
           path: DDProf-Deploy
@@ -652,7 +680,7 @@ jobs:
 
   build_windows_asan_release:
     name: Build Windows Profiler ASAN
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -669,6 +697,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
     
       - name: Install Datadog agent
         continue-on-error: false
@@ -687,10 +716,10 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
 
       - name: Build Native profiler and tests
         run: msbuild -target:BuildCppWithAsan -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
@@ -700,15 +729,16 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
+            7.0.100
 
       - name: Build Monitoring home
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}} --target-platform ${{matrix.platform}}
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}" /p:CheckEolTargetFramework=false
 
       - name: Build sample applications
-        run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
+        run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}} -p:CheckEolTargetFramework=false
 
       - name: Prepare environment to run the application
         shell: pwsh
@@ -734,7 +764,7 @@ jobs:
           Samples.Computer01.exe --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -749,15 +779,15 @@ jobs:
     steps:
       - name: Install CppCheck
         run: |
-          wget https://github.com/danmar/cppcheck/archive/refs/tags/2.5.tar.gz \
-          && CPPCHECK_SHA256="dc27154d799935c96903dcc46653c526c6f4148a6912b77d3a50cb35dabd82e1" \
-          && (printf "${CPPCHECK_SHA256}  2.5.tar.gz" | sha256sum --check --strict --status) \
-          && tar xvfz 2.5.tar.gz \
-          && cd cppcheck-2.5 \
+          wget https://github.com/danmar/cppcheck/archive/refs/tags/2.9.tar.gz \
+          && CPPCHECK_SHA256="56aee8b5bdf936ab7adc9ab43903ba2052f088695c80f047682024a1ed0ef3f3" \
+          && (printf "${CPPCHECK_SHA256}  2.9.tar.gz" | sha256sum --check --strict --status) \
+          && tar xvfz 2.9.tar.gz \
+          && cd cppcheck-2.9 \
           && mkdir build \
           && cd build \
           && cmake ../ \
-          && cmake --build .  \
+          && cmake --build . --parallel $(nproc)  \
           && sudo make install
 
       - name: Install clang-tidy
@@ -766,7 +796,7 @@ jobs:
           sudo apt-get -y install clang-tidy
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare environment to run the application
         run: |
           mkdir analyzers_results
@@ -783,17 +813,17 @@ jobs:
 
       - name: Run CppCheck
         run: |
-          cppcheck --enable=all --project=__build/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list=profiler/cppcheck-suppressions.txt --output-file=$CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.txt
+          cppcheck --enable=all --project=__build/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list=profiler/cppcheck-suppressions.txt --xml --output-file=$CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.xml
 
       - name: Run clang-tidy
         run: run-clang-tidy -p __build &> $CI_ANALYSIS_RESULTS_FOLDER/clang-tidy-results.txt
 
       - name: Checking for errors in the result files
         run: |
-          [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "cppcheck-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains CppCheck result file(s)" && exit 1)
+          [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "cppcheck-results.xml" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains CppCheck result file(s)" && exit 1)
           [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "clang-tidy-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains clang-tidy result file(s)" && exit 1)
 
-          errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.txt || true)
+          errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.xml || true)
           if [ ! -z "$errors" ]
           then
               echo $errors
@@ -810,7 +840,7 @@ jobs:
           fi
 
       - name: Publish Analyzers Results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -821,7 +851,7 @@ jobs:
 
   run_static_analysis_windows:
     name: Analyze Windows Profiler code
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -840,10 +870,10 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
 
       - name: Prepare Output dir
         shell: pwsh
@@ -889,7 +919,7 @@ jobs:
           }
 
       - name: Publish Analyzers Results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
@@ -904,10 +934,10 @@ jobs:
     needs: [build_windows, build_linux_release_x64]
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
          
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Linux.Release.x64
           path: monitoring-home-linux
@@ -925,10 +955,10 @@ jobs:
     needs: [build_windows, build_linux_release_x64]
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download profiler artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: monitoring-home.Windows.Release
           path: monitoring-home-windows

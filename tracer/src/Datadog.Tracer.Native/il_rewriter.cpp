@@ -118,7 +118,11 @@ ILRewriter::ILRewriter(ICorProfilerInfo* pICorProfilerInfo, ICorProfilerFunction
     m_pEH(nullptr),
     m_pOffsetToInstr(nullptr),
     m_pOutputBuffer(nullptr),
-    m_pIMethodMalloc(nullptr)
+    m_pIMethodMalloc(nullptr),
+    m_maxStack(0),
+    m_flags(CorILMethod_TinyFormat),
+    m_nEH(0),
+    m_CodeSize(0)
 {
     m_IL.m_pNext = &m_IL;
     m_IL.m_pPrev = &m_IL;
@@ -213,6 +217,11 @@ HRESULT ILRewriter::Import()
 
 HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
 {
+    if (m_pOffsetToInstr != nullptr)
+    {
+        delete[] m_pOffsetToInstr;
+    }
+
     m_pOffsetToInstr = new ILInstr*[m_CodeSize + 1];
     IfNullRet(m_pOffsetToInstr);
 
@@ -767,7 +776,7 @@ bool ILRewriter::IsLoadLocalDirectInstruction(unsigned opcode)
     }
 }
 
-bool ILRewriter::GetLocalIndexFromOpcode(const ILInstr* pInstr)
+uint32_t ILRewriter::GetLocalIndexFromOpcode(const ILInstr* pInstr)
 {
     // get the index of the local that represent by the opcode or the operand of the instruction
     const auto localIndex =

@@ -199,11 +199,13 @@ internal static partial class DotNetSettingsExtensions
 
     public static DotNetTestSettings WithDatadogLogger(this DotNetTestSettings settings)
     {
+        var enabled = NukeBuild.IsServerBuild;
         try
         {
-            if (string.Equals(Environment.GetEnvironmentVariable("DD_LOGGER_ENABLED"), "false", StringComparison.OrdinalIgnoreCase))
+            var envVar = Environment.GetEnvironmentVariable("DD_LOGGER_ENABLED");
+            if (!string.IsNullOrWhiteSpace(envVar))
             {
-                return settings;
+                enabled = !string.Equals(envVar, "false", StringComparison.OrdinalIgnoreCase);
             }
         }
         catch
@@ -211,10 +213,13 @@ internal static partial class DotNetSettingsExtensions
             // Security issues...
         }
 
-        var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);
-        return settings.SetProcessArgumentConfigurator(
-            args =>
-                pArgConf(args.Add("--logger:datadog"))
-        );
+        if (enabled)
+        {
+            var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);
+            return settings.SetProcessArgumentConfigurator(
+                args => pArgConf(args.Add("--logger:datadog")));
+        }
+
+        return settings;
     }
 }
