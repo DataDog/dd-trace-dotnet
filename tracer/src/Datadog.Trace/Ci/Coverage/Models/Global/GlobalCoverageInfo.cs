@@ -21,8 +21,18 @@ internal sealed class GlobalCoverageInfo : CoverageInfo
     [JsonProperty("components")]
     public List<ComponentCoverageInfo> Components { get; }
 
-    public static GlobalCoverageInfo operator +(GlobalCoverageInfo a, GlobalCoverageInfo b)
+    public static GlobalCoverageInfo? operator +(GlobalCoverageInfo? a, GlobalCoverageInfo? b)
     {
+        if (a is null)
+        {
+            return b;
+        }
+
+        if (b is null)
+        {
+            return a;
+        }
+
         var globalCovInfo = new GlobalCoverageInfo();
         var aComponents = a?.Components ?? Enumerable.Empty<ComponentCoverageInfo>();
         var bComponents = b?.Components ?? Enumerable.Empty<ComponentCoverageInfo>();
@@ -49,6 +59,17 @@ internal sealed class GlobalCoverageInfo : CoverageInfo
         }
 
         return globalCovInfo;
+    }
+
+    public static GlobalCoverageInfo? Combine(params GlobalCoverageInfo?[] coverages)
+    {
+        GlobalCoverageInfo? res = null;
+        foreach (var coverage in coverages)
+        {
+            res += coverage;
+        }
+
+        return res;
     }
 
     public void Add(ComponentCoverageInfo componentCoverageInfo)
