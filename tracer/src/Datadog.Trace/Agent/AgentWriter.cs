@@ -405,11 +405,12 @@ namespace Datadog.Trace.Agent
                 _statsAggregator?.AddRange(spans);
                 var singleSpanSamplingSpans = new List<Span>(); // TODO maybe we can store this from above?
 
-                for (var i = spans.Offset; i < spans.Count; i++)
+                for (var i = 0; i < spans.Count; i++)
                 {
-                    if (spans.Array![i].GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
+                    var index = i + spans.Offset;
+                    if (spans.Array![index].GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
                     {
-                        singleSpanSamplingSpans.Add(spans.Array![i]);
+                        singleSpanSamplingSpans.Add(spans.Array![index]);
                     }
                 }
 

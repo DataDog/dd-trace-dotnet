@@ -154,15 +154,24 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.AddSpan(droppedChildSpan2); // is NOT single span sampled
             traceContext.AddSpan(keptChildSpan); // IS single span sampled
 
-            rootSpan.Finish();
-            droppedChildSpan.Finish();
-            droppedChildSpan2.Finish();
-            keptChildSpan.Finish();
+            // run spans that will be kept through the span sampler - so that we can get the correct tags on them for asserting
+            spanSampler.MakeSamplingDecision(rootSpan);
+            spanSampler.MakeSamplingDecision(keptChildSpan);
 
-            var traceChunk = new ArraySegment<Span>(new[] { rootSpan, droppedChildSpan, droppedChildSpan2, keptChildSpan });
+            rootSpan.SetMetric(Metrics.TracesKeepRate, 0);
+
+            // create a trace chunk so that our array has an offset
+            var unusedSpans = CreateTraceChunk(5, 10);
+            var spanList = new List<Span>();
+            spanList.AddRange(unusedSpans.Array);
+            spanList.AddRange(new[] { rootSpan, droppedChildSpan, droppedChildSpan2, keptChildSpan });
+            var spans = spanList.ToArray();
+
+            var traceChunk = new ArraySegment<Span>(spans, 5, 4);
             var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
+            agent.WriteTrace(traceChunk);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             var expectedDroppedP0Traces = 1;
