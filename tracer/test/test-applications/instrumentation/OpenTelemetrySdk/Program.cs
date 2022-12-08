@@ -80,7 +80,7 @@ public static class Program
     {
         span.SetAttribute("operation.name", "Saying hello!");
 
-        span.SetAttribute("attribute-string", (string)null);
+        span.SetAttribute("attribute-string", "str");
         span.SetAttribute("attribute-int", 1);
         span.SetAttribute("attribute-bool", true);
         span.SetAttribute("attribute-double", 2.0);
@@ -98,7 +98,7 @@ public static class Program
     {
         SpanAttributes attributes = new(new Dictionary<string, object>
         {
-            {"foo", 1 },
+            { "foo", 1 },
             { "bar", "Hello, World!" },
             { "baz", new int[] { 1, 2, 3 } }
         });
