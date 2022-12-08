@@ -209,11 +209,12 @@ namespace Datadog.Trace.Coverage.Collector
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.TypeSystem.Int32));
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplSequencePointField));
 
+                var lstMetadataInstructions = new List<Instruction>();
                 var moduleCoverageMetadataImplMetadataField = new FieldReference("Metadata", new ArrayType(module.TypeSystem.Int64), moduleCoverageMetadataTypeReference);
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(metadataArrayCountInstruction);
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.TypeSystem.Int64));
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplMetadataField));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                lstMetadataInstructions.Add(metadataArrayCountInstruction);
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Newarr, module.TypeSystem.Int64));
+                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplMetadataField));
 
                 moduleCoverageMetadataImplTypeDef.Methods.Add(moduleCoverageMetadataImplCtor);
 
@@ -352,21 +353,21 @@ namespace Datadog.Trace.Coverage.Collector
                             moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, instructionsWithValidSequencePoints.Count));
                             moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stelem_I4));
 
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplMetadataField));
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, (totalMethods - 1)));
+                            lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                            lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplMetadataField));
+                            lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (totalMethods - 1)));
                             var indexes = ((long)typeIndex << 32) | (long)methodIndex;
                             if (indexes > int.MaxValue)
                             {
-                                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I8, indexes));
+                                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I8, indexes));
                             }
                             else
                             {
-                                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)indexes));
-                                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Conv_I8));
+                                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldc_I4, (int)indexes));
+                                lstMetadataInstructions.Add(Instruction.Create(OpCodes.Conv_I8));
                             }
 
-                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stelem_I8));
+                            lstMetadataInstructions.Add(Instruction.Create(OpCodes.Stelem_I8));
                             totalSequencePoints += instructionsWithValidSequencePoints.Count;
 
                             // Step 5 - Insert the counter retriever
@@ -416,6 +417,12 @@ namespace Datadog.Trace.Coverage.Collector
                 sequencePointArrayCountInstruction.Operand = totalMethods;
                 metadataArrayCountInstruction.Operand = totalMethods;
                 module.Types.Add(moduleCoverageMetadataImplTypeDef);
+
+                // Copy metadata instructions to the .ctor
+                foreach (var instruction in lstMetadataInstructions)
+                {
+                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(instruction);
+                }
 
                 // Sets the TotalInstructions field
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));

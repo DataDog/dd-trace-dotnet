@@ -92,14 +92,14 @@ namespace Datadog.Trace.Ci.Coverage.Metadata.Target
 		public ModuleCoverage()
 		{
 			SequencePoints = new int[4];
-			Metadata = new long[4];
 			SequencePoints[0] = 1;
-			Metadata[0] = 4294967296L;
 			SequencePoints[1] = 1;
-			Metadata[1] = 4294967297L;
 			SequencePoints[2] = 11;
-			Metadata[2] = 4294967298L;
 			SequencePoints[3] = 3;
+			Metadata = new long[4];
+			Metadata[0] = 4294967296L;
+			Metadata[1] = 4294967297L;
+			Metadata[2] = 4294967298L;
 			Metadata[3] = 8589934593L;
 			TotalInstructions = 16L;
 		}
