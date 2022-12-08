@@ -414,22 +414,25 @@ namespace Datadog.Trace.Agent
                     }
                 }
 
-                // If stats computation determined that we can drop the P0 Trace,
-                // skip all other processing
-                if (!shouldSendTrace && singleSpanSamplingSpans.Count == 0)
+                if (!shouldSendTrace)
                 {
-                    Interlocked.Increment(ref _droppedP0Traces);
-                    Interlocked.Add(ref _droppedP0Spans, spans.Count);
-                    return;
-                }
-                else if (!shouldSendTrace && singleSpanSamplingSpans.Count > 0)
-                {
-                    // we need to set the sampling priority of the chunk to be user keep so the agent handles it correctly
-                    // this will override the TraceContext sampling priority when we do a SpanBuffer.TryWrite
-                    chunkSamplingPriority = SamplingPriorityValues.UserKeep;
-                    Interlocked.Increment(ref _droppedP0Traces); // increment since we are sampling out the entire trace
-                    Interlocked.Add(ref _droppedP0Spans, spans.Count - singleSpanSamplingSpans.Count);
-                    spans = new ArraySegment<Span>(singleSpanSamplingSpans.ToArray());
+                    // If stats computation determined that we can drop the P0 Trace,
+                    // skip all other processing
+                    if (singleSpanSamplingSpans.Count == 0)
+                    {
+                        Interlocked.Increment(ref _droppedP0Traces);
+                        Interlocked.Add(ref _droppedP0Spans, spans.Count);
+                        return;
+                    }
+                    else
+                    {
+                        // we need to set the sampling priority of the chunk to be user keep so the agent handles it correctly
+                        // this will override the TraceContext sampling priority when we do a SpanBuffer.TryWrite
+                        chunkSamplingPriority = SamplingPriorityValues.UserKeep;
+                        Interlocked.Increment(ref _droppedP0Traces); // increment since we are sampling out the entire trace
+                        Interlocked.Add(ref _droppedP0Spans, spans.Count - singleSpanSamplingSpans.Count);
+                        spans = new ArraySegment<Span>(singleSpanSamplingSpans.ToArray());
+                    }
                 }
             }
 
