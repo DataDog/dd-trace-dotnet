@@ -20,6 +20,8 @@ namespace Datadog.Trace.Propagators
 #if NETCOREAPP
         public static ulong ParseFromHexOrDefault(ReadOnlySpan<char> value)
         {
+            // we use ulong.TryParse() here instead of Convert.ToUInt64() like we do in ParseFromHexOrDefault(string)
+            // because benchmarks show it has better performance in .NET Core
             if (ulong.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
             {
                 return result;
@@ -27,17 +29,21 @@ namespace Datadog.Trace.Propagators
 
             return default;
         }
-#endif
-
+#else
         public static ulong ParseFromHexOrDefault(string value)
         {
-            if (ulong.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
+            try
             {
-                return result;
+                // we use Convert.ToUInt64() here instead of ulong.TryParse() like we do in ParseFromHexOrDefault(ReadOnlySpan<char>)
+                // because benchmarks show it has better performance in .NET Framework
+                return Convert.ToUInt64(value, 16);
             }
-
-            return default;
+            catch
+            {
+                return default;
+            }
         }
+#endif
 
         public static ulong? ParseUInt64<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter getter, string headerName)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
