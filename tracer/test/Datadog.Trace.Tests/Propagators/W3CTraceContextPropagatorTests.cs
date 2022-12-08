@@ -155,17 +155,20 @@ namespace Datadog.Trace.Tests.Propagators
             traceParent.Should().BeEquivalentTo(expected);
         }
 
+        // "{version:2}-{traceid:32}-{parentid:16}-{traceflags:2}
         [Theory]
         [InlineData(null)]                                                           // null
         [InlineData("")]                                                             // empty
         [InlineData(" ")]                                                            // whitespace
-        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-0")]       // too short
-        [InlineData("000-00000000000000000000000075bcd15-000000003ade68b1-00")]      // wrong hyphen location #1
-        [InlineData("00-000000000000000000000000075bcd150-00000003ade68b1-00")]      // wrong hyphen location #2
-        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b-100")]      // wrong hyphen location #3
-        [InlineData("00-000000000000000000000000075bcd1z-000000003ade68b1-00")]      // bad trace id value
-        [InlineData("00-000000000000000000000000075bcd15-000000003ade68bx-00")]      // bad parent id value
-        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-00-1234")] // do NOT allow more data after trace-flags if the version is 00
+        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-0")]       // too short (length => 54)
+        [InlineData("000-00000000000000000000000075bcd15-000000003ade68b1-00")]      // wrong hyphen location (2 => 3)
+        [InlineData("00-000000000000000000000000075bcd150-00000003ade68b1-00")]      // wrong hyphen location (35 => 36)
+        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b-100")]      // wrong hyphen location (52 => 51)
+        [InlineData("ff-000000000000000000000000075bcd1z-000000003ade68b1-00")]      // bad version value (ff)
+        [InlineData("xz-000000000000000000000000075bcd1z-000000003ade68b1-00")]      // bad version value (xz)
+        [InlineData("00-000000000000000000000000075bcd1z-000000003ade68b1-00")]      // bad trace id value ("z" in hex)
+        [InlineData("00-000000000000000000000000075bcd15-000000003ade68bx-00")]      // bad parent id value ("x" in hex)
+        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-00-1234")] // do NOT allow more data after trace-flags if the version is "00"
         public void TryParseTraceParent_Invalid(string header)
         {
             W3CTraceContextPropagator.TryParseTraceParent(header, out _).Should().BeFalse();

@@ -111,6 +111,9 @@ namespace Datadog.Trace.Propagators
 
         internal static bool TryParseTraceParent(string header, out W3CTraceParent traceParent)
         {
+            // "{version:2}-{trace-id:32}-{parent-id:16}-{trace-flags:2}
+            //             ^ 2           ^ 35           ^ 52            ^ 55
+
             traceParent = default;
 
             if (header == null!)
@@ -126,16 +129,28 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
+            if (header[0] < '0' || header[0] > 'f' || header[1] < '0' || header[1] > 'f')
+            {
+                // invalid version value, must contain lower-case hexadecimal characters
+                return false;
+            }
+
+            if (header[0] == 'f' && header[1] == 'f')
+            {
+                // while "ff" is valid hex, it is explicitly not allowed as a version value
+                return false;
+            }
+
             if (header[0] == '0' && header[1] == '0' && header.Length != 55)
             {
-                // for version "00", the length must be exactly 55,
+                // for version "00", the length must be exactly 55
                 return false;
             }
 
             if (header.Length > 55 && header[55] != '-')
             {
-                // if there is more data (e.g. future version of the spec), it's expected to be additive,
-                // and there must be a delimiter after `trace-tags`
+                // if there is more data than expected (e.g. future version of the spec),
+                // it's should to be additive, so there must be another delimiter after `trace-tags`
                 return false;
             }
 
