@@ -1,17 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
-    <DebugType>full</DebugType>
-    <Optimize>True</Optimize>
-    <Platforms>x86;x64</Platforms>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net462;$(TargetFrameworks)</TargetFrameworks>
-    <RuntimeIdentifiers Condition="'$(OS)' == 'Windows_NT' AND '$(TargetFramework)' == 'net462'">win7-x86;win7-x64</RuntimeIdentifiers>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\dependency-libs\Samples.Probes.External\Samples.Probes.External.csproj" />
+    <ProjectReference Include="..\dependency-libs\Samples.Probes.TestRuns\Samples.Probes.TestRuns.csproj" />
   </ItemGroup>
 
 </Project>

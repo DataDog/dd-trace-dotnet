@@ -345,6 +345,7 @@
     <ClCompile Include="GarbageCollectionProvider.cpp" />
     <ClCompile Include="LiveObjectInfo.cpp" />
     <ClCompile Include="LiveObjectsProvider.cpp" />
+    <ClCompile Include="RawGarbageCollectionSample.cpp" />
     <ClCompile Include="StopTheWorldGCProvider.cpp" />
     <ClCompile Include="GenericSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />

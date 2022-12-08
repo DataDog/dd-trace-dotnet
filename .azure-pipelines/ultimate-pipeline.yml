@@ -922,6 +922,65 @@ stages:
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
+- stage: integration_tests_windows_debugger
+  condition: >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
+    )
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Win]
+
+  - job: Win
+    pool:
+      name: azure-windows-scale-set-3
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_debugger_matrix'] ]
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/install-dotnet-sdks.yml
+      parameters:
+        includeX86: true
+    
+    - template: steps/restore-working-directory.yml
+
+    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --code-coverage
+      displayName: Run integration tests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      displayName: Uploading integration_tests_windows_debugger tracer logs
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
+
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
@@ -1547,6 +1606,99 @@ stages:
         command: "CheckBuildLogsForErrors"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
+- stage: integration_tests_linux_debugger
+  condition: >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
+    )
+  dependsOn: [package_linux, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
+  - job: Test
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_debugger_matrix']]
+
+    variables:
+      TestAllPackageVersions: true
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    # when we build samples separately, we could run this step and the docker-compose one below in //
+    # (currently the docker-compose step relies on serverless samples)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64"
+        apikey: $(DD_LOGGER_DD_API_KEY)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux monitoring home
+      inputs:
+        artifact: linux-monitoring-home-$(baseImage)
+        path: $(monitoringHome)
+
+    - task: DockerCompose@0
+      displayName: docker-compose run --no-deps IntegrationTests.Debugger
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+          framework=$(publishTargetFramework)
+          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.Debugger
+        projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+    
+    - script: |      
+        sudo chmod -R 644 tracer/build_data/dumps/* || true
+      displayName: Make dumps uploadable to AzDo
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckBuildLogsForErrors"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
 - stage: profiler_integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, generate_variables, master_commit_id]
@@ -1791,6 +1943,94 @@ stages:
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
           condition: succeededOrFailed()
+
+        - publish: tracer/build_data
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - task: PublishTestResults@2
+          displayName: publish test results
+          inputs:
+            testResultsFormat: VSTest
+            testResultsFiles: tracer/build_data/results/**/*.trx
+          condition: succeededOrFailed()
+
+        - publish: tracer/test/snapshots
+          displayName: Uploading snapshots
+          artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            baseImage: $(baseImage)
+            command: "CheckBuildLogsForErrors"
+            apiKey: $(DD_LOGGER_DD_API_KEY)
+
+- stage: integration_tests_arm64_debugger
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [package_arm64, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    TestAllPackageVersions: true
+    IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
+    baseImage: debian
+
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [Test]
+
+    - job: Test
+      timeoutInMinutes: 60 #default value
+      strategy:
+        matrix:
+          net5_0:
+            publishTargetFramework: net5.0
+          net6_0:
+            publishTargetFramework: net6.0
+          net7_0:
+            publishTargetFramework: net7.0
+      workspace:
+        clean: all
+      pool:
+        name: aws-arm64-auto-scaling
+
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            masterCommitId: $(masterCommitId)
+
+        - template: steps/restore-working-directory.yml
+          parameters:
+            artifact: build-linux-arm64-working-directory
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: $(baseImage)
+            command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64"
+            apiKey: $(DD_LOGGER_DD_API_KEY)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download arm64 monitoring home
+          inputs:
+            artifact: linux-monitoring-home-arm64
+            path: $(monitoringHome)
+
+        - task: DockerCompose@0
+          displayName: docker-compose run --no-deps IntegrationTests.ARM64.Debugger
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeFileArgs: |
+              baseImage=$(baseImage)
+              framework=$(publishTargetFramework)
+              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.ARM64.Debugger
+            projectName: ddtrace_$(Build.BuildNumber)
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
         - publish: tracer/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -3795,12 +4035,15 @@ stages:
     - unit_tests_windows
     - unit_tests_arm64
     - integration_tests_windows
+    - integration_tests_windows_debugger
     - integration_tests_windows_iis
     - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
+    - integration_tests_linux_debugger
     - integration_tests_arm64
+    - integration_tests_arm64_debugger
     - profiler_integration_tests_linux
     - exploration_tests_windows
     - exploration_tests_linux

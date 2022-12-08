@@ -295,9 +295,6 @@
     <ClInclude Include="LiveObjectInfo.h">
       <Filter>Allocations</Filter>
     </ClInclude>
-    <ClInclude Include="RawLiveObjectSample.h">
-      <Filter>Allocations</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -437,6 +434,9 @@
     </ClCompile>
     <ClCompile Include="LiveObjectsProvider.cpp">
       <Filter>Allocations</Filter>
+    </ClCompile>
+    <ClCompile Include="RawGarbageCollectionSample.cpp">
+      <Filter>GarbageCollections</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
