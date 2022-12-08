@@ -205,6 +205,7 @@ namespace Datadog.Trace.Activity.Handlers
                 where TInner : IActivity
             {
                 var span = scope.Span;
+                span.OperationName = null; // Reset the operation name, it will be recalculated by the trace agent OTLP logic
 
                 // Copy over tags from Activity to the Datadog Span
                 // Starting with .NET 5, Activity can hold tags whose value have type object?
@@ -313,6 +314,10 @@ namespace Datadog.Trace.Activity.Handlers
                             _ => SpanTypes.Custom,
                         };
                     }
+                }
+                else
+                {
+                    span.OperationName ??= activity.OperationName;
                 }
 
                 // OpenTelemtry SDK / OTLP Fixups
