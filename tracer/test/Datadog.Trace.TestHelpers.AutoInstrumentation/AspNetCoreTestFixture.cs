@@ -2,6 +2,9 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
+#nullable enable
+
 #if NETCOREAPP
 using System;
 using System.Collections.Generic;
@@ -20,26 +23,20 @@ namespace Datadog.Trace.TestHelpers;
 
 public sealed class AspNetCoreTestFixture : IDisposable
 {
-    public const string HeaderName2 = "sample.correlation.identifier";
-
-    private const string HeaderName1WithMapping = "datadog-header-name";
-    private const string HeaderValue1 = "asp-net-core";
-    private const string HeaderValue2 = "0000-0000-0000";
-
     private readonly HttpClient _httpClient;
-    private Process _process;
-    private ITestOutputHelper _currentOutput;
+    private Process? _process;
+    private ITestOutputHelper? _currentOutput;
 
     public AspNetCoreTestFixture()
     {
         _httpClient = new HttpClient();
         _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
         _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
-        _httpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
-        _httpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
+        _httpClient.DefaultRequestHeaders.Add(TestHttpHeaders.HeaderName1WithMapping, TestHttpHeaders.HeaderValue1);
+        _httpClient.DefaultRequestHeaders.Add(TestHttpHeaders.HeaderName2, TestHttpHeaders.HeaderValue2);
     }
 
-    public MockTracerAgent.TcpUdpAgent Agent { get; private set; }
+    public MockTracerAgent.TcpUdpAgent? Agent { get; private set; }
 
     public int HttpPort { get; private set; }
 
@@ -105,14 +102,25 @@ public sealed class AspNetCoreTestFixture : IDisposable
 
     public async Task<IImmutableList<MockSpan>> WaitForSpans(string path, bool post = false)
     {
+        if (Agent == null)
+        {
+            throw new ArgumentNullException(nameof(Agent));
+        }
+
         var testStart = DateTime.UtcNow;
 
         await SubmitRequest(path, post);
+
         return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
     }
 
     private async Task EnsureServerStarted()
     {
+        if (_process == null)
+        {
+            throw new ArgumentNullException(nameof(_process));
+        }
+
         var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
         _process.OutputDataReceived += (sender, args) =>

@@ -22,18 +22,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     [UsesVerify]
     public abstract class AspNetCoreMvcTestBase : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>, IDisposable
     {
-        private const string HeaderName1UpperWithMapping = "DATADOG-HEADER-NAME";
-        private const string HeaderTagName1WithMapping = "datadog-header-tag";
-        private const string HeaderName3 = "Server";
-        private const string HeaderValue3 = "Kestrel";
-
         private readonly bool _enableRouteTemplateResourceNames;
 
         protected AspNetCoreMvcTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
             : base(sampleName, output)
         {
             _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
-            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{AspNetCoreTestFixture.HeaderName2},{HeaderName3}");
+            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{TestHttpHeaders.HeaderName1UpperWithMapping}:{TestHttpHeaders.HeaderTagName1WithMapping},{TestHttpHeaders.HeaderName2},{TestHttpHeaders.HeaderName3}");
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
             EnableDebugMode();
 

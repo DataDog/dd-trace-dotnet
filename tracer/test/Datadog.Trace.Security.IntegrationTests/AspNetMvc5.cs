@@ -52,7 +52,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
-    public abstract class AspNetMvc5 : AspNetBase, IClassFixture<IisFixture>
+    public abstract class AspNetMvc5 : IisFixtureBase, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
