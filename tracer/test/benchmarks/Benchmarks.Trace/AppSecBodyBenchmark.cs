@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 #if NETFRAMEWORK
 using System.Web;
