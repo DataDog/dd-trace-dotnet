@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -59,10 +60,14 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                 continue;
             }
 
-            if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out var moduleTypes))
+            List<TypeDef>? moduleTypes;
+            lock (TypeDefsFromModuleDefs)
             {
-                moduleTypes = moduleDef.GetTypes().ToList();
-                TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
+                if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out moduleTypes))
+                {
+                    moduleTypes = moduleDef.GetTypes().ToList();
+                    TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
+                }
             }
 
             var componentCoverageInfo = new ComponentCoverageInfo(moduleDef.FullName);

@@ -39,10 +39,14 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                 continue;
             }
 
-            if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out var moduleTypes))
+            List<TypeDef>? moduleTypes;
+            lock (TypeDefsFromModuleDefs)
             {
-                moduleTypes = moduleDef.GetTypes().ToList();
-                TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
+                if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out moduleTypes))
+                {
+                    moduleTypes = moduleDef.GetTypes().ToList();
+                    TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
+                }
             }
 
             for (var i = 0; i < moduleValue.Methods.Length; i++)
