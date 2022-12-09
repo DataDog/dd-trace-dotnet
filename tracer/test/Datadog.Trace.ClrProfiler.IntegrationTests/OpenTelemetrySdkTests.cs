@@ -1,0 +1,72 @@
+// <copyright file="OpenTelemetrySdkTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using FluentAssertions.Execution;
+using VerifyXunit;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Datadog.Trace.ClrProfiler.IntegrationTests
+{
+    [UsesVerify]
+    public class OpenTelemetrySdkTests : TracingIntegrationTest
+    {
+        public OpenTelemetrySdkTests(ITestOutputHelper output)
+            : base("OpenTelemetrySdk", @"test\test-applications\instrumentation", output, prependSamplesToAppName: false)
+        {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+
+            // Intentionally unset service name and version, which may be derived from OTEL SDK
+            SetServiceName(string.Empty);
+            SetServiceVersion(string.Empty);
+        }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.IsOpenTelemetry(excludeTags: new HashSet<string>
+            {
+                "attribute-string",
+                "attribute-int",
+                "attribute-bool",
+                "attribute-double",
+                "attribute-stringArray",
+                "attribute-stringArrayEmpty",
+                "attribute-intArray",
+                "attribute-intArrayEmpty",
+                "attribute-boolArray",
+                "attribute-boolArrayEmpty",
+                "attribute-doubleArray",
+                "attribute-doubleArrayEmpty",
+            });
+
+        [Fact]
+        [Trait("Category", "EndToEnd")]
+        public async Task SubmitsTraces()
+        {
+            // using var telemetry = this.ConfigureTelemetry();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (RunSampleAndWaitForExit(agent))
+            {
+                const int expectedSpanCount = 4;
+                var spans = agent.WaitForSpans(expectedSpanCount);
+
+                using var s = new AssertionScope();
+                spans.Count.Should().Be(expectedSpanCount);
+                ValidateIntegrationSpans(spans, expectedServiceName: "MyServiceName");
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .DisableRequireUniquePrefix()
+                                  .UseFileName(nameof(OpenTelemetrySdkTests));
+
+                // telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
+            }
+        }
+    }
+}

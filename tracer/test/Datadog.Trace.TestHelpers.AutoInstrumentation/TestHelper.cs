@@ -32,13 +32,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper : IDisposable
     {
-        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
-        {
-        }
-
-        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, bool prependSamplesToAppName)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides, prependSamplesToAppName: false), output)
+        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, bool prependSamplesToAppName = false)
+            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides, prependSamplesToAppName), output)
         {
         }
 
@@ -418,6 +413,11 @@ namespace Datadog.Trace.TestHelpers
         protected void SetServiceName(string serviceName)
         {
             SetEnvironmentVariable(ConfigurationKeys.ServiceName, serviceName);
+        }
+
+        protected void SetServiceEnv(string serviceEnv)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Environment, serviceEnv);
         }
 
         protected void SetServiceVersion(string serviceVersion)

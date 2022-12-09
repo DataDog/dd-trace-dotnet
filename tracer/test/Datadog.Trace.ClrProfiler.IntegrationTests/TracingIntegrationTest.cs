@@ -17,8 +17,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        public TracingIntegrationTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
-            : base(sampleAppName, samplePathOverrides, output)
+        public TracingIntegrationTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, bool prependSamplesToAppName = false)
+            : base(sampleAppName, samplePathOverrides, output, prependSamplesToAppName)
         {
         }
 
