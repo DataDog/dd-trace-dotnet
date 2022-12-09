@@ -17,7 +17,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
 
         public IActionResult Index()
-        {
+        {   
             ViewBag.ProfilerAttached = SampleHelpers.IsProfilerAttached();
             ViewBag.TracerAssemblyLocation = SampleHelpers.GetTracerAssemblyLocation();
 

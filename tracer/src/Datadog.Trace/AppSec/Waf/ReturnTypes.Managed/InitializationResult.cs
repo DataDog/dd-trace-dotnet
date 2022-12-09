@@ -50,6 +50,8 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
 
         internal string RuleFileVersion { get; }
 
+        internal bool Reported { get; set; }
+
         internal static InitializationResult FromUnusableRuleFile() => new(null, 0, 0, string.Empty, new Dictionary<string, string[]>(), true);
 
         internal static InitializationResult FromExportErrors() => new(null, 0, 0, string.Empty, new Dictionary<string, string[]>(), exportErrors: true);
