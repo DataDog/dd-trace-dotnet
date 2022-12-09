@@ -37,19 +37,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             }
 
             var previousTask = returnValue == null ? null : FromTReturn<Task>(returnValue);
-            if (_continuation is not null)
+            if (_continuation is not null &&
+                (exception != null || returnValue == null || previousTask.Status == TaskStatus.RanToCompletion))
             {
-                if (exception != null || returnValue == null)
-                {
-                    _continuation(instance, default, exception, in state);
-                    return returnValue;
-                }
-
-                if (previousTask.Status == TaskStatus.RanToCompletion)
-                {
-                    _continuation(instance, default, null, in state);
-                    return returnValue;
-                }
+                _continuation(instance, returnValue, exception, in state);
+                return returnValue;
             }
 
             return ToTReturn(ContinuationAction(previousTask, instance, state));
