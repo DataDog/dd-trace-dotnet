@@ -111,7 +111,7 @@ namespace Datadog.Trace.Propagators
 
         internal static bool TryParseTraceParent(string header, out W3CTraceParent traceParent)
         {
-            // "{version:2}-{trace-id:32}-{parent-id:16}-{trace-flags:2}
+            // "{version:2}-{trace-id:32}-{parent-id:16}-{trace-flags:2}"
             //             ^ 2           ^ 35           ^ 52            ^ 55
 
             traceParent = default;
@@ -214,6 +214,7 @@ namespace Datadog.Trace.Propagators
 
         internal static bool TryParseTraceState(string header, out W3CTraceState traceState)
         {
+            // "dd=s:1;o:rum;t.dm:-4;t.usr.id:12345"
             traceState = default;
 
             if (header == null!)
@@ -396,6 +397,7 @@ namespace Datadog.Trace.Propagators
         {
             spanContext = null;
 
+            // TODO: reject multiple "traceparent" headers
             // get the "traceparent" header
             var traceParentHeader = ParseUtility.ParseString(carrier, carrierGetter, TraceParentHeaderName)?.Trim();
 
@@ -405,6 +407,7 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
+            // TODO: concatenate multiple "tracestate" headers
             var traceStateHeader = ParseUtility.ParseString(carrier, carrierGetter, TraceStateHeaderName)?.Trim();
 
             if (string.IsNullOrEmpty(traceStateHeader) || !TryParseTraceState(traceStateHeader!, out var traceState))
