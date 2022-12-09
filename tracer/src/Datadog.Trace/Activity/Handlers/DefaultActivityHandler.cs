@@ -21,7 +21,7 @@ namespace Datadog.Trace.Activity.Handlers
     internal class DefaultActivityHandler : IActivityHandler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultActivityHandler));
-        private static readonly ConcurrentDictionary<object, Scope> ActivityScope = new();
+        private static readonly ConcurrentDictionary<string, ActivityMapping> ActivityMappingById = new();
         private static readonly string[] SpanKindNames = new string[]
         {
             "internal",
@@ -42,13 +42,22 @@ namespace Datadog.Trace.Activity.Handlers
             var activeSpan = (Span?)Tracer.Instance.ActiveScope?.Span;
 
             // Propagate Trace and Parent Span ids
+            SpanContext? parent = null;
             ulong? traceId = null;
             ulong? spanId = null;
             string? rawTraceId = null;
             string? rawSpanId = null;
+
+            // If the user has specified a parent context, get the parent Datadog SpanContext
+            if (activity.ParentId is string parentId
+                && ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
+            {
+                parent = mapping.Scope.Span.Context;
+            }
+
             if (activity is IW3CActivity w3cActivity)
             {
-                if (activeSpan is not null)
+                if (parent is null && activeSpan is not null)
                 {
                     // If this is the first activity (no parent) and we already have an active span
                     // or the span was started after the parent activity so we use the span as a parent
@@ -93,14 +102,14 @@ namespace Datadog.Trace.Activity.Handlers
                     return;
                 }
 
-                ActivityScope.GetOrAdd(activity.Instance, _ => CreateScopeFromActivity(activity, traceId, spanId, rawTraceId, rawSpanId));
+                ActivityMappingById.GetOrAdd(activity.Id, _ => new(activity.Instance, CreateScopeFromActivity(activity, parent, traceId, spanId, rawTraceId, rawSpanId)));
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error processing the OnActivityStarted callback");
             }
 
-            static Scope CreateScopeFromActivity(T activity, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId)
+            static Scope CreateScopeFromActivity(T activity, SpanContext? parent, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId)
             {
                 string? serviceName = activity switch
                 {
@@ -110,7 +119,7 @@ namespace Datadog.Trace.Activity.Handlers
 
                 // TODO: The OpenTelemetry SDK can create spans without making them active. We'll need automatic instrumentation to detect when we want to update the ActiveScope or not
                 // Worst case, we set Tracer.ActiveScope here unconditionally so it can be retrieved by Tracer.ActiveScope from the original API methods
-                var span = Tracer.Instance.StartSpan(activity.OperationName, serviceName: serviceName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+                var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, serviceName: serviceName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
                 span.ResourceName = activity.OperationName;
                 var scope = Tracer.Instance.ActivateSpan(span, false);
                 return scope;
@@ -129,11 +138,11 @@ namespace Datadog.Trace.Activity.Handlers
                         return;
                     }
 
-                    if (ActivityScope.TryRemove(activity.Instance, out var scope) && scope?.Span is not null)
+                    if (ActivityMappingById.TryRemove(activity.Id, out ActivityMapping value) && value.Scope?.Span is not null)
                     {
                         // We have the exact scope associated with the Activity
                         Log.Debug($"DefaultActivityHandler.ActivityStopped: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
-                        CloseActivityScope(sourceName, activity, scope);
+                        CloseActivityScope(sourceName, activity, value.Scope);
                         return;
                     }
                 }
@@ -150,17 +159,19 @@ namespace Datadog.Trace.Activity.Handlers
                     Log.Information($"DefaultActivityHandler.ActivityStopped: [Missing Activity]");
                 }
 
-                List<object>? toDelete = null;
-                foreach (var item in ActivityScope)
+                List<string>? toDelete = null;
+                foreach (var item in ActivityMappingById)
                 {
-                    var activityObject = item.Key;
+                    string activityId = item.Key;
+                    var activityObject = item.Value.Activity;
+                    var scope = item.Value.Scope;
                     var hasClosed = false;
 
                     if (activityObject.TryDuckCast<IActivity6>(out var activity6))
                     {
                         if (activity6.Duration != TimeSpan.Zero)
                         {
-                            CloseActivityScope(sourceName, activity6, item.Value);
+                            CloseActivityScope(sourceName, activity6, scope);
                             hasClosed = true;
                         }
                     }
@@ -168,7 +179,7 @@ namespace Datadog.Trace.Activity.Handlers
                     {
                         if (activity5.Duration != TimeSpan.Zero)
                         {
-                            CloseActivityScope(sourceName, activity5, item.Value);
+                            CloseActivityScope(sourceName, activity5, scope);
                             hasClosed = true;
                         }
                     }
@@ -176,15 +187,15 @@ namespace Datadog.Trace.Activity.Handlers
                     {
                         if (activity4.Duration != TimeSpan.Zero)
                         {
-                            CloseActivityScope(sourceName, activity4, item.Value);
+                            CloseActivityScope(sourceName, activity4, scope);
                             hasClosed = true;
                         }
                     }
 
                     if (hasClosed)
                     {
-                        toDelete ??= new List<object>();
-                        toDelete.Add(activityObject);
+                        toDelete ??= new List<string>();
+                        toDelete.Add(activityId);
                     }
                 }
 
@@ -192,7 +203,7 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     foreach (var item in toDelete)
                     {
-                        ActivityScope.TryRemove(item, out _);
+                        ActivityMappingById.TryRemove(item, out _);
                     }
                 }
             }
@@ -381,6 +392,18 @@ namespace Datadog.Trace.Activity.Handlers
 
                 span.Finish(activity.StartTimeUtc.Add(activity.Duration));
                 scope.Close();
+            }
+        }
+
+        public readonly struct ActivityMapping
+        {
+            public readonly object Activity;
+            public readonly Scope Scope;
+
+            internal ActivityMapping(object activity, Scope scope)
+            {
+                Activity = activity;
+                Scope = scope;
             }
         }
     }

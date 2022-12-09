@@ -15,6 +15,8 @@ namespace Datadog.Trace.Activity.DuckTypes
     {
         string Id { get; }
 
+        string ParentId { get; }
+
         string RootId { get; }
 
         TimeSpan Duration { get; }

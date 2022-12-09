@@ -39,6 +39,54 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: MyServiceName.internal,
+    Resource: StartSpan,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: MyServiceName.internal,
+    Resource: StartSpan2,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: MyServiceName.internal,
+    Resource: StartRootSpan,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: MyServiceName.internal,
     Resource: InnerSpanOk,
     Service: MyServiceName,
     Type: custom,
@@ -53,7 +101,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_4,
+    SpanId: Id_7,
     Name: MyServiceName.internal,
     Resource: InnerSpanError,
     Service: MyServiceName,
@@ -72,12 +120,28 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_5,
+    SpanId: Id_8,
     Name: MyServiceName.internal,
     Resource: InnerSpanUpdated,
     Service: MyServiceName,
     Type: custom,
     ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_9,
+    Name: MyServiceName.internal,
+    Resource: StartActiveSpan.Child,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_3,
     Tags: {
       env: integration_tests,
       language: dotnet,

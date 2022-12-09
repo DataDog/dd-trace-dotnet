@@ -35,7 +35,7 @@ public static class Program
         PrintSpanStartedInformation(span);
         Activity.Current.TraceStateString = "app=hello";
 
-        // await RunStartSpanOverloadsAsync(span);
+        await RunStartSpanOverloadsAsync(span);
         RunSetAttributeOverloads(span);
         RunAddEventOverloads(span);
         RunSpanUpdateMethods(span);
@@ -56,7 +56,7 @@ public static class Program
         using var nonActiveSpan = _tracer.StartSpan("StartSpan");
         PrintSpanStartedInformation(nonActiveSpan);
 
-        using var nonActiveChildSpan = _tracer.StartSpan("StartSpan.Child", SpanKind.Internal, span);
+        using var nonActiveChildSpan = _tracer.StartSpan("StartSpan2", SpanKind.Internal);
         PrintSpanStartedInformation(nonActiveChildSpan);
 
         using var rootSpan = _tracer.StartRootSpan("StartRootSpan");
