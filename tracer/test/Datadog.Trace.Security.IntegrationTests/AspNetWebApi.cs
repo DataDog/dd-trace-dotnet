@@ -60,6 +60,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetWebApi(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
             : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet")
         {
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "true");
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
@@ -79,6 +80,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(AddressesConstants.RequestQuery, "/api/Health/?arg=[$slice]", null)]
         [InlineData(AddressesConstants.RequestQuery, "/api/Health/?arg&[$slice]", null)]
         [InlineData(AddressesConstants.RequestPathParams, "/api/Health/appscan_fingerprint", null)]
+        [InlineData(AddressesConstants.RequestPathParams, "/api/route/2", null)]
+        [InlineData(AddressesConstants.RequestPathParams, "/api/route/TwoMember", null)]
         [InlineData(AddressesConstants.RequestBody, "/api/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
         public Task TestSecurity(string test, string url, string body)
         {
