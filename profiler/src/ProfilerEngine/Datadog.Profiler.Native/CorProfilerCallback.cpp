@@ -440,7 +440,7 @@ bool CorProfilerCallback::StopServices()
     return result;
 }
 
-void CorProfilerCallback::DisposeInternal(void)
+void CorProfilerCallback::DisposeInternal()
 {
     // This method is called from the destructor as well as from the Shutdown callback.
     // Most operations here are idempotent - calling them multiple time is benign.
@@ -531,13 +531,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::QueryInterface(REFIID riid, void*
     return E_NOINTERFACE;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerCallback::AddRef(void)
+ULONG STDMETHODCALLTYPE CorProfilerCallback::AddRef()
 {
     ULONG refCount = _refCount.fetch_add(1) + 1;
     return refCount;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerCallback::Release(void)
+ULONG STDMETHODCALLTYPE CorProfilerCallback::Release()
 {
     ULONG refCount = _refCount.fetch_sub(1) - 1;
 
@@ -549,7 +549,7 @@ ULONG STDMETHODCALLTYPE CorProfilerCallback::Release(void)
     return refCount;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerCallback::GetRefCount(void) const
+ULONG STDMETHODCALLTYPE CorProfilerCallback::GetRefCount() const
 {
     ULONG refCount = _refCount.load();
     return refCount;
@@ -665,7 +665,7 @@ const char* CorProfilerCallback::SysInfoProcessorArchitectureToStr(WORD wProcArc
     }
 }
 
-void CorProfilerCallback::InspectProcessorInfo(void)
+void CorProfilerCallback::InspectProcessorInfo()
 {
 #ifdef _WINDOWS
     BOOL isWow64Process;
@@ -735,7 +735,7 @@ void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerI
     }
 }
 
-void CorProfilerCallback::ConfigureDebugLog(void)
+void CorProfilerCallback::ConfigureDebugLog()
 {
     // For now we want debug log to be ON by default. In future releases, this may require explicit opt-in.
     // For that, change 'IsLogDebugEnabledDefault' to be initialized to 'false' by default (@ToDo).
@@ -951,7 +951,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                     WStr("Microsoft-Windows-DotNETRuntime"),
                     activatedKeywords,
                     verbosity,
-                    NULL
+                    nullptr
                 }
             };
 
@@ -985,7 +985,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 {
     Log::Info("CorProfilerCallback::Shutdown()");
 
@@ -1284,7 +1284,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID thread
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingClientInvocationStarted(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingClientInvocationStarted()
 {
     return S_OK;
 }
@@ -1299,7 +1299,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingClientReceivingReply(GUID
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingClientInvocationFinished(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingClientInvocationFinished()
 {
     return S_OK;
 }
@@ -1309,12 +1309,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingServerReceivingMessage(GU
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingServerInvocationStarted(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingServerInvocationStarted()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingServerInvocationReturned(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingServerInvocationReturned()
 {
     return S_OK;
 }
@@ -1339,22 +1339,22 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendStarted(COR_PRF_SUS
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendFinished(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendFinished()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendAborted(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendAborted()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeResumeStarted(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeResumeStarted()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeResumeFinished(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeResumeFinished()
 {
     return S_OK;
 }
@@ -1415,7 +1415,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFunctionEnter(Func
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFunctionLeave(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFunctionLeave()
 {
     return S_OK;
 }
@@ -1425,7 +1425,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFilterEnter(Functi
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFilterLeave(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFilterLeave()
 {
     return S_OK;
 }
@@ -1450,7 +1450,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionEnter(Func
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionLeave(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionLeave()
 {
     return S_OK;
 }
@@ -1460,7 +1460,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFinallyEnter(Funct
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFinallyLeave(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFinallyLeave()
 {
     return S_OK;
 }
@@ -1470,7 +1470,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherEnter(FunctionID 
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherLeave(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherLeave()
 {
     return S_OK;
 }
@@ -1485,12 +1485,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::COMClassicVTableDestroyed(ClassID
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherFound(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherFound()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherExecute(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherExecute()
 {
     return S_OK;
 }
@@ -1505,7 +1505,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::SurvivingReferences(ULONG cSurviv
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionFinished(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionFinished()
 {
     return S_OK;
 }
@@ -1535,12 +1535,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::InitializeForAttach(IUnknown* pCo
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ProfilerAttachComplete(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ProfilerAttachComplete()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ProfilerDetachSucceeded(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ProfilerDetachSucceeded()
 {
     return S_OK;
 }

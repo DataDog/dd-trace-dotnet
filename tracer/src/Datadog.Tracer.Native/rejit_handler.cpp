@@ -77,7 +77,7 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             unsigned int total = 0;
             std::vector<ModuleID> modules;
             std::vector<mdMethodDef> methods;
-            while (methodEnum->Next(1, &method, NULL) == S_OK)
+            while (methodEnum->Next(1, &method, nullptr) == S_OK)
             {
                 Logger::Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId,
                               ",MethodDef=", method.methodId, "]");

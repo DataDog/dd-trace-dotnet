@@ -230,7 +230,7 @@ void StackSamplerLoop::WalltimeProfilingIteration()
 
 }
 
-void StackSamplerLoop::CpuProfilingIteration(void)
+void StackSamplerLoop::CpuProfilingIteration()
 {
     int32_t managedThreadsCount = _pManagedThreadList->Count();
     // TODO: as an optimization, don't scan more threads than nb logical cores
@@ -329,7 +329,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
     PROFILING_TYPE profilingType)
 {
     HANDLE osThreadHandle = pThreadInfo->GetOsThreadHandle();
-    if (osThreadHandle == static_cast<HANDLE>(0))
+    if (osThreadHandle == static_cast<HANDLE>(nullptr))
     {
         // The thread was already registered, but the OS handle is not associated yet.
         return;

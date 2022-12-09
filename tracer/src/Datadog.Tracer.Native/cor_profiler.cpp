@@ -670,7 +670,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
         hr = assembly_import->GetAssemblyProps(assembly_metadata.assembly_token, &corAssemblyProperty.ppbPublicKey,
                                                &corAssemblyProperty.pcbPublicKey, &corAssemblyProperty.pulHashAlgId,
-                                               NULL, 0, NULL, &corAssemblyProperty.pMetaData,
+                                               nullptr, 0, nullptr, &corAssemblyProperty.pMetaData,
                                                &corAssemblyProperty.assemblyFlags);
 
         if (FAILED(hr))
@@ -1401,7 +1401,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 
     ModuleID calleeModuleId;
     mdToken calleFunctionToken = mdTokenNil;
-    auto hr = this->info_->GetFunctionInfo(calleeId, NULL, &calleeModuleId, &calleFunctionToken);
+    auto hr = this->info_->GetFunctionInfo(calleeId, nullptr, &calleeModuleId, &calleFunctionToken);
 
     *pfShouldInline = true;
 
@@ -2358,7 +2358,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             orig_sstream << "0x";
             orig_sstream << std::setfill('0') << std::setw(2) << std::hex << cInstr->m_opcode;
         }
-        if (cInstr->m_pTarget != NULL)
+        if (cInstr->m_pTarget != nullptr)
         {
             orig_sstream << "  ";
             orig_sstream << cInstr->m_pTarget;
@@ -2509,7 +2509,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
     // Define a new TypeDef __DDVoidMethodType__ that extends System.Object
     mdTypeDef new_type_def;
-    hr = metadata_emit->DefineTypeDef(WStr("__DDVoidMethodType__"), tdAbstract | tdSealed, object_type_ref, NULL,
+    hr = metadata_emit->DefineTypeDef(WStr("__DDVoidMethodType__"), tdAbstract | tdSealed, object_type_ref, nullptr,
                                       &new_type_def);
     if (FAILED(hr))
     {
@@ -2606,7 +2606,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     rewriter_already_loaded.InitializeTiny();
 
     ILInstr* pALFirstInstr = rewriter_already_loaded.GetILList()->m_pNext;
-    ILInstr* pALNewInstr = NULL;
+    ILInstr* pALNewInstr = nullptr;
 
     // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
     pALNewInstr = rewriter_already_loaded.NewILInstr();
@@ -2864,7 +2864,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     rewriter_void.SetTkLocalVarSig(locals_signature_token);
 
     ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
-    ILInstr* pNewInstr = NULL;
+    ILInstr* pNewInstr = nullptr;
 
     // Step 0) Check if the assembly was already loaded
 
@@ -3197,8 +3197,8 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(const ModuleID module_id, const mdT
     // Get first instruction and set the rewriter to that location
     ILInstr* pInstr = rewriter.GetILList()->m_pNext;
     rewriter_wrapper.SetILPosition(pInstr);
-    ILInstr* pCurrentInstr = NULL;
-    ILInstr* pNewInstr = NULL;
+    ILInstr* pCurrentInstr = nullptr;
+    ILInstr* pNewInstr = nullptr;
 
     //////////////////////////////////////////////////
     // At the beginning of the method, call

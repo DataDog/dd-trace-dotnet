@@ -350,7 +350,7 @@ private:
     }
 
 protected:
-    virtual HRESULT EnsureBaseCalltargetTokens() override;
+    HRESULT EnsureBaseCalltargetTokens() override;
 
     const WSTRING& GetCallTargetType() override;
     const WSTRING& GetCallTargetStateType() override;
