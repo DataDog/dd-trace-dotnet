@@ -339,6 +339,7 @@ public sealed class TestModule
         Current = null;
         CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
         CIVisibility.FlushSpans();
+        CIVisibility.Log.Debug("### Data Flushed by Module: {name}", Name);
     }
 
     /// <summary>
