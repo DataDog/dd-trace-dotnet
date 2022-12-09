@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -769,6 +770,20 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         {
             return (TTo)returnValue.Instance;
         }
+
+        private static async Task<TTo> UnwrapTaskReturnValue<TFrom, TTo>(Task<TFrom> returnValue, bool preserveContext)
+            where TFrom : IDuckType
+        {
+            return (TTo)(await returnValue.ConfigureAwait(preserveContext)).Instance;
+        }
+
+#if NETCOREAPP3_1_OR_GREATER
+        private static async ValueTask<TTo> UnwrapValueTaskReturnValue<TFrom, TTo>(ValueTask<TFrom> returnValue, bool preserveContext)
+            where TFrom : IDuckType
+        {
+            return (TTo)(await returnValue.ConfigureAwait(preserveContext)).Instance;
+        }
+#endif
 
         private static void WriteIntValue(ILGenerator il, int value)
         {
