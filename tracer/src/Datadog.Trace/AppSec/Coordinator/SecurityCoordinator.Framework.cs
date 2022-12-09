@@ -78,7 +78,7 @@ internal readonly partial struct SecurityCoordinator
         if (result.ShouldBeReported)
         {
             var blocked = false;
-            if (result.Block)
+            if (result.ShouldBlock)
             {
                 blocked = WriteAndEndResponse();
                 _httpTransport.MarkBlocked();
@@ -216,7 +216,7 @@ internal readonly partial struct SecurityCoordinator
 
         public HttpTransport(HttpContext context) => _context = context;
 
-        internal override bool Blocked => _context.Items["block"] is true;
+        internal override bool IsBlocked => _context.Items["block"] is true;
 
         internal override void MarkBlocked() => _context.Items["block"] = true;
 

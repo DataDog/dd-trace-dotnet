@@ -180,7 +180,7 @@ namespace Datadog.Trace.AspNet
                     var args = securityCoordinator.GetBasicRequestArgsForWaf();
 
                     // body args
-                    if (httpRequest.ContentType.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
                         var bodyArgs = securityCoordinator.GetBodyFromRequest();
                         args.Add(AddressesConstants.RequestBody, bodyArgs);
@@ -267,7 +267,7 @@ namespace Datadog.Trace.AspNet
                         if (security.Settings.Enabled)
                         {
                             var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
-                            if (!securityCoordinator.Blocked)
+                            if (!securityCoordinator.IsBlocked)
                             {
                                 // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
                                 var args = securityCoordinator.GetBasicRequestArgsForWaf();

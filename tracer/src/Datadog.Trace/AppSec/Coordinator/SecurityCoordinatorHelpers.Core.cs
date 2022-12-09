@@ -19,7 +19,7 @@ internal static partial class SecurityCoordinatorHelpers
         if (security.Settings.Enabled)
         {
             var transport = new SecurityCoordinator.HttpTransport(context);
-            if (!transport.Blocked)
+            if (!transport.IsBlocked)
             {
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 using var result = securityCoordinator.Scan();
@@ -33,7 +33,7 @@ internal static partial class SecurityCoordinatorHelpers
         if (security.Settings.Enabled)
         {
             var transport = new SecurityCoordinator.HttpTransport(context);
-            if (!transport.Blocked)
+            if (!transport.IsBlocked)
             {
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
@@ -48,7 +48,7 @@ internal static partial class SecurityCoordinatorHelpers
         if (security.Settings.Enabled && actionPathParams != null)
         {
             var transport = new SecurityCoordinator.HttpTransport(context);
-            if (!transport.Blocked)
+            if (!transport.IsBlocked)
             {
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 var pathParams = new Dictionary<string, object>(actionPathParams.Count);
@@ -71,7 +71,7 @@ internal static partial class SecurityCoordinatorHelpers
     internal static void CheckBody(this Security security, HttpContext context, Span span, object body)
     {
         var transport = new SecurityCoordinator.HttpTransport(context);
-        if (!transport.Blocked)
+        if (!transport.IsBlocked)
         {
             var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
             var keysAndValues = BodyExtractor.Extract(body);

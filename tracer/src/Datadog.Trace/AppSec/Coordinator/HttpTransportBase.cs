@@ -10,7 +10,7 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal abstract class HttpTransportBase
 {
-    internal abstract bool Blocked { get; }
+    internal abstract bool IsBlocked { get; }
 
     internal abstract IContext GetAdditiveContext();
 

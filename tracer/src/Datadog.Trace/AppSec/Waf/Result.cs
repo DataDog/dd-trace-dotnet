@@ -24,7 +24,7 @@ namespace Datadog.Trace.AppSec.Waf
             this.wafNative = wafNative;
             Actions = new((int)returnStruct.ActionsSize);
             ReadActions(returnStruct);
-            Block = Actions.Contains("block");
+            ShouldBlock = Actions.Contains("block");
             ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
@@ -46,7 +46,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
-        public bool Block { get; }
+        public bool ShouldBlock { get; }
 
         public bool ShouldBeReported { get; }
 

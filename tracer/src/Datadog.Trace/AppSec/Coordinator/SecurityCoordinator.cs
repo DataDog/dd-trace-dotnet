@@ -25,7 +25,7 @@ internal readonly partial struct SecurityCoordinator
     private readonly Span _localRootSpan;
     private readonly HttpTransportBase _httpTransport;
 
-    public bool Blocked => _httpTransport.Blocked;
+    public bool IsBlocked => _httpTransport.IsBlocked;
 
     public void MarkBlocked() => _httpTransport.MarkBlocked();
 

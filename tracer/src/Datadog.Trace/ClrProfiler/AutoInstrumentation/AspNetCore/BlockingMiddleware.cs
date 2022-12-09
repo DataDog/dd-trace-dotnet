@@ -6,7 +6,6 @@
 #nullable enable
 #if !NETFRAMEWORK
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -17,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 internal class BlockingMiddleware
 {
     private readonly bool _endPipeline;
+    // if we add support for ASP.NET Core on .NET Framework, we can't directly reference RequestDelegate, so this would need to be written
     private readonly RequestDelegate? _next;
 
     internal BlockingMiddleware(RequestDelegate? next = null, bool endPipeline = false)
@@ -43,7 +43,7 @@ internal class BlockingMiddleware
 
             foreach (var header in context.Request.Headers)
             {
-                if (header.Key == "Accept")
+                if (string.Equals(header.Key, "Accept", StringComparison.OrdinalIgnoreCase))
                 {
                     var textHtmlContentType = "text/html";
                     foreach (var value in header.Value)
@@ -92,7 +92,7 @@ internal class BlockingMiddleware
             using var result = securityCoordinator.Scan();
             if (result?.ShouldBeReported is true)
             {
-                if (result.Block)
+                if (result.ShouldBlock)
                 {
                     await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
                     securityCoordinator.MarkBlocked();

@@ -12,7 +12,10 @@ namespace Datadog.Trace.AppSec.Waf
     {
         ReturnCode ReturnCode { get; }
 
-        public bool Block { get; }
+        /// <summary>
+        /// Gets a value indicating whether to block the request or not
+        /// </summary>
+        public bool ShouldBlock { get; }
 
         public bool ShouldBeReported { get; }
 

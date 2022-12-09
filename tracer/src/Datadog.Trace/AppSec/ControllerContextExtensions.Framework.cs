@@ -42,7 +42,7 @@ namespace Datadog.Trace.AppSec
 
                 var scope = SharedItems.TryPeekScope(context, peekScopeKey);
                 var securityTransport = new Coordinator.SecurityCoordinator(security, context, scope.Span);
-                if (!securityTransport.Blocked)
+                if (!securityTransport.IsBlocked)
                 {
                     securityTransport.CheckAndBlock(new Dictionary<string, object> { { AddressesConstants.RequestBody, BodyExtractor.Extract(bodyDic) }, { AddressesConstants.RequestPathParams, pathParamsDic } });
                 }
