@@ -361,19 +361,6 @@ namespace Datadog.Trace.Propagators
                    };
         }
 
-        private static int? SamplingPriorityToInt32(string? samplingPriority)
-        {
-            return samplingPriority switch
-                   {
-                       "2" => 2,
-                       "1" => 1,
-                       "0" => 0,
-                       "-1" => -1,
-                       null or "" => null,
-                       not null => int.TryParse(samplingPriority, out var result) ? result : null
-                   };
-        }
-
 #if NETCOREAPP
         private static int? SamplingPriorityToInt32(ReadOnlySpan<char> samplingPriority)
         {
@@ -385,6 +372,19 @@ namespace Datadog.Trace.Propagators
                        "-1" => -1,
                        "" => null,
                        _ => int.TryParse(samplingPriority, out var result) ? result : null
+                   };
+        }
+#else
+        private static int? SamplingPriorityToInt32(string? samplingPriority)
+        {
+            return samplingPriority switch
+                   {
+                       "2" => 2,
+                       "1" => 1,
+                       "0" => 0,
+                       "-1" => -1,
+                       null or "" => null,
+                       not null => int.TryParse(samplingPriority, out var result) ? result : null
                    };
         }
 #endif
