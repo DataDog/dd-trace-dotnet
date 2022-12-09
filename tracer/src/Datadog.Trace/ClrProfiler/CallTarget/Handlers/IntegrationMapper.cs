@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntegrationMapper));
         private static readonly MethodInfo UnwrapReturnValueMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.UnwrapReturnValue), BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo UnwrapTaskReturnValueMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.UnwrapTaskReturnValue), BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo ConvertTypeMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.ConvertType), BindingFlags.NonPublic | BindingFlags.Static);
 
         internal static DynamicMethod CreateBeginMethodDelegate(Type integrationType, Type targetType, Type[] argumentsTypes)
@@ -595,9 +596,18 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 return default;
             }
 
+            var isAsyncReturn = false;
             if (!onAsyncMethodEndMethodInfo.ReturnType.IsGenericParameter && onAsyncMethodEndMethodInfo.ReturnType != returnType)
             {
-                ThrowHelper.ThrowArgumentException($"The return type of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is not {returnType}");
+                if (onAsyncMethodEndMethodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>) ||
+                    onAsyncMethodEndMethodInfo.ReturnType == typeof(Task))
+                {
+                    isAsyncReturn = true;
+                }
+                else
+                {
+                    ThrowHelper.ThrowArgumentException($"The return type of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is not {returnType}");
+                }
             }
 
             Type[] genericArgumentsTypes = onAsyncMethodEndMethodInfo.GetGenericArguments();
@@ -676,7 +686,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onAsyncMethodEndMethodInfo.DeclaringType.Name}.{onAsyncMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
-                     returnType,
+                     isAsyncReturn ? typeof(Task<>).MakeGenericType(returnType) : returnType,
                      new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onAsyncMethodEndMethodInfo.Module,
                      true);
@@ -718,7 +728,16 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // Unwrap return value proxy
             if (returnValueProxyType != null)
             {
-                MethodInfo unwrapReturnValue = UnwrapReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
+                MethodInfo unwrapReturnValue;
+                if (isAsyncReturn)
+                {
+                    unwrapReturnValue = UnwrapTaskReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
+                }
+                else
+                {
+                    unwrapReturnValue = UnwrapReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
+                }
+
                 ilWriter.EmitCall(OpCodes.Call, unwrapReturnValue, null);
             }
 
