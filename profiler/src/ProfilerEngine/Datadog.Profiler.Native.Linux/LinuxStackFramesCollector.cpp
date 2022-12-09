@@ -183,7 +183,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 
         if (count == 0)
         {
-            return S_FALSE;
+            return E_FAIL;
         }
 
         SetFrameCount(count);
