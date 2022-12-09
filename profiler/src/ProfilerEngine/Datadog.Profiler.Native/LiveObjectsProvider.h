@@ -88,7 +88,6 @@ private:
     bool _isTimestampsAsLabelEnabled = false;
 
     std::mutex _liveObjectsLock;
-    std::list<LiveObjectInfo> _objectsToMonitor;  // need to wait for the next GC to build a WeakHandle around the address
     std::list<LiveObjectInfo> _monitoredObjects;
     // WeakHandle are checked after each GC
 };
