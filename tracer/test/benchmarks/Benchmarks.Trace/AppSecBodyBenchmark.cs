@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.Configuration;
 using SecurityCoordinator = Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
 #if NETFRAMEWORK
 using System.Web;
@@ -42,13 +45,15 @@ namespace Benchmarks.Trace
         static AppSecBodyBenchmark()
         {
             var dir = Directory.GetCurrentDirectory();
-            while (!dir.EndsWith("tracer"))
+            while (!Directory.GetDirectories(dir).Any(s=>s.Contains("shared")))
             {
                 dir = Directory.GetParent(dir).FullName;
             }
 
+            dir = Directory.GetDirectories(dir).First(s=>s.Contains("shared"));
             Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
-            Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", Path.Combine(dir, "bin", "dd-tracer-home", RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty));
+            var path = Path.Combine(dir, "bin", "monitoring-home", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty);
+            Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
             security = Security.Instance;
 #if NETFRAMEWORK
             var ms = new MemoryStream();
