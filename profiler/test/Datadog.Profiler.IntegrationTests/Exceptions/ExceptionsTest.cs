@@ -48,8 +48,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             else if (framework == "net7.0")
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions")
-                    );
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"));
             }
             else
             {

@@ -16,7 +16,6 @@ std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
     {"inuse-space", "bytes"}
 });
 
-
 const uint32_t MAX_LIVE_OBJECTS = 1024;
 
 
@@ -61,25 +60,10 @@ void LiveObjectsProvider::OnGarbageCollectionStart(
     GCType type
     )
 {
-    std::lock_guard<std::mutex> lock(_liveObjectsLock);
-
-    // address provided during AllocationTick event were not pointing to real objects
-    // so we have to wait for the next garbage collection to create a wrapping weak handle
-    for (auto& info : _objectsToMonitor)
-    {
-        auto handle = CreateWeakHandle(info.GetAddress());
-
-        if (handle != nullptr)
-        {
-            info.SetHandle(handle);
-        }
-        else
-        {
-            // this should never happen
-        }
-    }
-
-    _monitoredObjects.splice(_monitoredObjects.end(), _objectsToMonitor);
+    // The address provided during AllocationTick event is not pointing to real object
+    // so we tried to wait for the next garbage collection to create a wrapping weak handle.
+    // However, this triggered access violations during GCs...
+    // Instead, the MethodTable is patched into memory in AllocationTick.
 }
 
 void LiveObjectsProvider::OnGarbageCollectionEnd(
@@ -115,13 +99,16 @@ std::list<std::shared_ptr<Sample>> LiveObjectsProvider::GetSamples()
     // return the live object samples
     std::list<std::shared_ptr<Sample>> liveObjectsSamples;
 
-    std::lock_guard<std::mutex> lock(_liveObjectsLock);
-    for (auto const& info : _monitoredObjects)
+    // limit lock scope
     {
-        // only gen2 objects are candidates for leaking: gen0 and gen1 could be transient
-        if (info.IsGen2())
+        std::lock_guard<std::mutex> lock(_liveObjectsLock);
+        for (auto const& info : _monitoredObjects)
         {
-            liveObjectsSamples.push_back(info.GetSample());
+            // only gen2 objects are candidates for leaking: gen0 and gen1 could be transient
+            if (info.IsGen2())
+            {
+                liveObjectsSamples.push_back(info.GetSample());
+            }
         }
     }
 
@@ -139,17 +126,10 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
-    LiveObjectInfo info(
-        _pAllocationsProvider->TransformRawSample(rawSample),
-        rawSample.Address,
-        rawSample.Timestamp);
-
     // Limit the number of handle to create until the next GC
-    // If _objectsToMonitor is already full, stop adding new objects
-    if (_objectsToMonitor.size() + _monitoredObjects.size() < MAX_LIVE_OBJECTS)
+    // If _monitoredObjects is already full, stop adding new objects
+    if (_monitoredObjects.size() < MAX_LIVE_OBJECTS)
     {
-        //_objectsToMonitor.push_back(std::move(info));
-
         // When the AllocationTick event is received, the object is not already initialized.
         // To call CreateWeakHandle(), it is needed to patch the MethodTable in memory
         *(uintptr_t*)rawSample.Address = rawSample.MethodTable;
@@ -157,6 +137,10 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
         auto handle = CreateWeakHandle(rawSample.Address);
         if (handle != nullptr)
         {
+            LiveObjectInfo info(
+                _pAllocationsProvider->TransformRawSample(rawSample),
+                rawSample.Address,
+                rawSample.Timestamp);
             info.SetHandle(handle);
             _monitoredObjects.push_back(std::move(info));
         }
@@ -164,7 +148,6 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
         {
             // this should never happen
         }
-
     }
 }
 
