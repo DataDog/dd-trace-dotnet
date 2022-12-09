@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
     internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn> : ContinuationGenerator<TTarget, TReturn>
     {
         private static readonly ContinuationMethodDelegate _continuation;
-        private static readonly AsyncContinuationMethodDelegate _asyncContinuation = null;
+        private static readonly AsyncContinuationMethodDelegate _asyncContinuation;
         private static readonly bool _preserveContext;
 
         static TaskContinuationGenerator()
@@ -20,7 +20,19 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(object));
             if (result.Method is not null)
             {
-                _continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
+                if (result.Method.ReturnType == typeof(Task))
+                {
+                    _asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
+                }
+                else if (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType))
+                {
+                    _asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
+                }
+                else
+                {
+                    _continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
+                }
+
                 _preserveContext = result.PreserveContext;
             }
         }
@@ -31,20 +43,31 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            if (_continuation == null && _asyncContinuation == null)
+            if (_continuation is not null)
             {
-                return returnValue;
+                if (exception != null || returnValue == null)
+                {
+                    _continuation(instance, returnValue, exception, in state);
+                    return returnValue;
+                }
+
+                var previousTask = FromTReturn<Task>(returnValue);
+                if (previousTask.Status == TaskStatus.RanToCompletion)
+                {
+                    _continuation(instance, returnValue, exception, in state);
+                    return returnValue;
+                }
+
+                return ToTReturn(ContinuationAction(previousTask, instance, state));
             }
 
-            var previousTask = returnValue == null ? null : FromTReturn<Task>(returnValue);
-            if (_continuation is not null &&
-                (exception != null || returnValue == null || previousTask.Status == TaskStatus.RanToCompletion))
+            if (_asyncContinuation is not null)
             {
-                _continuation(instance, returnValue, exception, in state);
-                return returnValue;
+                var previousTask = returnValue == null ? null : FromTReturn<Task>(returnValue);
+                return ToTReturn(ContinuationAction(previousTask, instance, state));
             }
 
-            return ToTReturn(ContinuationAction(previousTask, instance, state));
+            return returnValue;
         }
 
         private static async Task ContinuationAction(Task previousTask, TTarget target, CallTargetState state)

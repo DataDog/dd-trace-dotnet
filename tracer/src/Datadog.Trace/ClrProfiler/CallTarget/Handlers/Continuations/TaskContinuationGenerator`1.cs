@@ -21,7 +21,19 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TResult));
             if (result.Method is not null)
             {
-                _continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
+                if (result.Method.ReturnType == typeof(Task))
+                {
+                    _asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
+                }
+                else if (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType))
+                {
+                    _asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
+                }
+                else
+                {
+                    _continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
+                }
+
                 _preserveContext = result.PreserveContext;
             }
         }
@@ -32,12 +44,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            if (_continuation == null && _asyncContinuation == null)
-            {
-                return returnValue;
-            }
-
-            var previousTask = returnValue == null ? null : FromTReturn<Task<TResult>>(returnValue);
             if (_continuation is not null)
             {
                 if (exception != null || returnValue == null)
@@ -46,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     return returnValue;
                 }
 
+                var previousTask = FromTReturn<Task<TResult>>(returnValue);
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
                     return ToTReturn(Task.FromResult(_continuation(instance, previousTask.Result, default, in state)));
@@ -54,7 +61,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 return ToTReturn(ContinuationAction(previousTask, instance, state));
             }
 
-            return ToTReturn(ContinuationAction(previousTask, instance, state));
+            if (_asyncContinuation is not null)
+            {
+                var previousTask = returnValue == null ? null : FromTReturn<Task<TResult>>(returnValue);
+                return ToTReturn(ContinuationAction(previousTask, instance, state));
+            }
+
+            return returnValue;
         }
 
         private static async Task<TResult> ContinuationAction(Task<TResult> previousTask, TTarget target, CallTargetState state)
