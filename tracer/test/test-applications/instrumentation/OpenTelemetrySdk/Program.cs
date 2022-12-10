@@ -31,14 +31,21 @@ public static class Program
             .Build();
 
         _tracer = tracerProvider.GetTracer(serviceName);
-        using var span = _tracer.StartActiveSpan("SayHello");
-        PrintSpanStartedInformation(span);
-        Activity.Current.TraceStateString = "app=hello";
+        TelemetrySpan span = null;
+        using (span = _tracer.StartActiveSpan("SayHello"))
+        {
+            PrintSpanStartedInformation(span);
+            Activity.Current.TraceStateString = "app=hello";
 
-        await RunStartSpanOverloadsAsync(span);
-        RunSetAttributeOverloads(span);
-        RunAddEventOverloads(span);
-        RunSpanUpdateMethods(span);
+            await RunStartSpanOverloadsAsync(span);
+            RunSetAttributeOverloads(span);
+            RunAddEventOverloads(span);
+            RunSpanUpdateMethods(span);
+        }
+
+        using var span2 = _tracer.StartSpan("SayHello2", SpanKind.Internal, parentContext: default, links: new Link[] { new(span.Context, new SpanAttributes()) });
+
+        using var span3 = _tracer.StartSpan("SayHello3", SpanKind.Internal, parentSpan: default, links: new Link[] { new(span.Context, new SpanAttributes()), new(span2.Context, new SpanAttributes()) });
     }
 
     private static void EnsureAutomaticInstrumentationEnabled()

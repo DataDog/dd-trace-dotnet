@@ -149,5 +149,53 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1
     }
+  },
+  {
+    TraceId: Id_10,
+    SpanId: Id_11,
+    Name: MyServiceName.internal,
+    Resource: SayHello2,
+    Service: MyServiceName,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      runtime-id: Guid_2,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_12,
+    SpanId: Id_13,
+    Name: MyServiceName.internal,
+    Resource: SayHello3,
+    Service: MyServiceName,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_4,
+      runtime-id: Guid_2,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
   }
 ]
