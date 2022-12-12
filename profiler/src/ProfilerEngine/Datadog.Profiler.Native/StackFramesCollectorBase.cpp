@@ -14,29 +14,29 @@
 StackFramesCollectorBase::StackFramesCollectorBase()
 {
     _isRequestedCollectionAbortSuccessful = false;
-    _pReusableStackSnapshotResult = new StackSnapshotResultReusableBuffer();
+    _pStackSnapshotResult = std::make_unique<StackSnapshotResultBuffer>();
     _pCurrentCollectionThreadInfo = nullptr;
     _isCurrentCollectionAbortRequested.store(false);
 }
 
-StackFramesCollectorBase::~StackFramesCollectorBase()
-{
-    StackSnapshotResultReusableBuffer* pReusableStackSnapshotResult = _pReusableStackSnapshotResult;
-    if (pReusableStackSnapshotResult != nullptr)
-    {
-        delete pReusableStackSnapshotResult;
-        _pReusableStackSnapshotResult = nullptr;
-    }
-}
-
 bool StackFramesCollectorBase::AddFrame(std::uintptr_t ip)
 {
-    return _pReusableStackSnapshotResult->AddFrame(ip);
+    return _pStackSnapshotResult->AddFrame(ip);
 }
 
 void StackFramesCollectorBase::AddFakeFrame()
 {
-    _pReusableStackSnapshotResult->AddFakeFrame();
+    _pStackSnapshotResult->AddFakeFrame();
+}
+
+void StackFramesCollectorBase::SetFrameCount(std::uint16_t count)
+{
+    _pStackSnapshotResult->SetFramesCount(count);
+}
+
+std::pair<uintptr_t*, std::uint16_t> StackFramesCollectorBase::Data()
+{
+    return {_pStackSnapshotResult->Data(), StackSnapshotResultBuffer::MaxSnapshotStackDepth_Limit};
 }
 
 void StackFramesCollectorBase::RequestAbortCurrentCollection(void)
@@ -113,8 +113,8 @@ bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThre
         std::uint64_t localRootSpanId = pCurrentCollectionThreadInfo->GetLocalRootSpanId();
         std::uint64_t spanId = pCurrentCollectionThreadInfo->GetSpanId();
 
-        _pReusableStackSnapshotResult->SetLocalRootSpanId(localRootSpanId);
-        _pReusableStackSnapshotResult->SetSpanId(spanId);
+        _pStackSnapshotResult->SetLocalRootSpanId(localRootSpanId);
+        _pStackSnapshotResult->SetSpanId(spanId);
 
         return true;
     }
@@ -124,7 +124,7 @@ bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThre
 
 StackSnapshotResultBuffer* StackFramesCollectorBase::GetStackSnapshotResult()
 {
-    return _pReusableStackSnapshotResult;
+    return _pStackSnapshotResult.get();
 }
 
 // ----------- Inline stubs for APIs that are specific to overriding implementations: -----------
@@ -136,7 +136,7 @@ void StackFramesCollectorBase::PrepareForNextCollection(void)
     // We cannot allocate memory once a thread is suspended.
     // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.
     // So we pre-allocate the memory buffer and reset it before suspending the target thread.
-    _pReusableStackSnapshotResult->Reset();
+    _pStackSnapshotResult->Reset();
 
     // Clear the current collection thread pointer:
     _pCurrentCollectionThreadInfo = nullptr;
