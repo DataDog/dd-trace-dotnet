@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using Datadog.Trace.Util;
 
@@ -400,13 +401,14 @@ namespace Datadog.Trace.Propagators
         {
             spanContext = null;
 
-            // TODO: reject multiple "traceparent" headers
             // get the "traceparent" header
-            var traceParentHeader = ParseUtility.ParseString(carrier, carrierGetter, TraceParentHeaderName)?.Trim();
+            var traceParentHeaders = carrierGetter.Get(carrier, TraceParentHeaderName);
 
-            if (string.IsNullOrEmpty(traceParentHeader) || !TryParseTraceParent(traceParentHeader!, out var traceParent))
+            if (!TryGetSingle(traceParentHeaders, out var traceParentHeader) ||
+                string.IsNullOrEmpty(traceParentHeader) ||
+                !TryParseTraceParent(traceParentHeader!, out var traceParent))
             {
-                // "traceparent" header is required
+                // a single "traceparent" header is required
                 return false;
             }
 
@@ -457,6 +459,20 @@ namespace Datadog.Trace.Propagators
             }
 
             return true;
+        }
+
+        private static bool TryGetSingle(IEnumerable<string?> values, out string? value)
+        {
+            var list = values as IReadOnlyList<string?> ?? values.Take(2).ToList();
+
+            if (list.Count == 1)
+            {
+                value = list[0];
+                return true;
+            }
+
+            value = null;
+            return false;
         }
 
         private static string TrimAndJoinStrings(IEnumerable<string?> values)
