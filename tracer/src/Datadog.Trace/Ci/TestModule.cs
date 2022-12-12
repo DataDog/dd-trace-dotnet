@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
@@ -280,9 +281,47 @@ public sealed class TestModule
     /// <param name="duration">Duration of the test module</param>
     public void Close(TimeSpan? duration)
     {
+        if (InternalClose(duration))
+        {
+            CIVisibility.Log.Debug("### Test Module Flushing after close: {name}", Name);
+            CIVisibility.Flush();
+        }
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <returns>Task instance </returns>
+    public Task CloseAsync()
+    {
+        return CloseAsync(null);
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <param name="duration">Duration of the test module</param>
+    /// <returns>Task instance </returns>
+    public Task CloseAsync(TimeSpan? duration)
+    {
+        if (InternalClose(duration))
+        {
+            CIVisibility.Log.Debug("### Test Module Flushing after close: {name}", Name);
+            return CIVisibility.FlushAsync();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <param name="duration">Duration of the test module</param>
+    private bool InternalClose(TimeSpan? duration)
+    {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
-            return;
+            return false;
         }
 
         var span = _span;
@@ -311,7 +350,7 @@ public sealed class TestModule
 
         Current = null;
         CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
-        CIVisibility.FlushSpans();
+        return true;
     }
 
     /// <summary>
