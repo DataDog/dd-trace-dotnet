@@ -24,12 +24,14 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly GetVersionDelegate _getVersionField;
         private readonly InitDelegate _initField;
         private readonly UpdateRuleDelegate _updateRuleField;
+        private readonly UpdateRuleDelegate _toggleRulesField;
         private readonly InitContextDelegate _initContextField;
         private readonly RunDelegate _runField;
         private readonly DestroyDelegate _destroyField;
         private readonly ContextDestroyDelegate _contextDestroyField;
         private readonly ObjectInvalidDelegate _objectInvalidField;
         private readonly ObjectStringLengthDelegate _objectStringLengthField;
+        private readonly ObjectBoolDelegate _objectBoolField;
         private readonly ObjectArrayDelegate _objectArrayField;
         private readonly ObjectMapDelegate _objectMapField;
         private readonly ObjectArrayAddDelegate _objectArrayAddField;
@@ -56,6 +58,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(handle, "ddwaf_context_destroy");
             _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(handle, "ddwaf_object_invalid");
             _objectStringLengthField = GetDelegateForNativeFunction<ObjectStringLengthDelegate>(handle, "ddwaf_object_stringl");
+            _objectBoolField = GetDelegateForNativeFunction<ObjectBoolDelegate>(handle, "ddwaf_object_bool");
             _objectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(handle, "ddwaf_object_array");
             _objectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(handle, "ddwaf_object_map");
             _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
@@ -69,6 +72,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(handle, "ddwaf_ruleset_info_free");
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
             _updateRuleField = GetDelegateForNativeFunction<UpdateRuleDelegate>(handle, "ddwaf_update_rule_data");
+            _toggleRulesField = GetDelegateForNativeFunction<UpdateRuleDelegate>(handle, "ddwaf_toggle_rules");
             // setup logging
             var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
             // convert to a delegate and attempt to pin it by assigning it to  field
@@ -99,6 +103,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private delegate IntPtr ObjectInvalidDelegate(IntPtr emptyObjPtr);
 
         private delegate IntPtr ObjectStringLengthDelegate(IntPtr emptyObjPtr, string s, ulong length);
+
+        private delegate IntPtr ObjectBoolDelegate(IntPtr emptyObjPtr, bool b);
 
         private delegate IntPtr ObjectArrayDelegate(IntPtr emptyObjPtr);
 
@@ -154,6 +160,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal DDWAF_RET_CODE UpdateRuleData(IntPtr powerwafHandle, IntPtr data) => _updateRuleField(powerwafHandle, data);
 
+        internal DDWAF_RET_CODE ToggleRules(IntPtr powerwafHandle, IntPtr data) => _toggleRulesField(powerwafHandle, data);
+
         internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
         internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref result, timeLeftInUs);
@@ -175,6 +183,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
             _objectStringLengthField(ptr, s, length);
+            return ptr;
+        }
+
+        internal IntPtr ObjectBool(bool b)
+        {
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            _objectBoolField(ptr, b);
             return ptr;
         }
 

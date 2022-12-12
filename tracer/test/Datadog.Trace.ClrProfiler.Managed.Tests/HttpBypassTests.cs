@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Xunit;
 
@@ -27,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("https://www.datadoghq.com", false)]
         public void ShouldBypassUrlInAzureAppService(string url, bool shouldBypass)
         {
-            var exclusions = AzureAppServices.Metadata.DefaultHttpClientExclusions.Replace(" ", string.Empty).Split(',');
+            var exclusions = ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions.Replace(" ", string.Empty).Split(',');
             var didBypass = HttpBypassHelper.UriContainsAnyOf(new Uri(url), exclusions);
             Assert.Equal(expected: shouldBypass, actual: didBypass);
         }

@@ -17,6 +17,11 @@ BUILD_PROJECT_FILE="$SCRIPT_DIR/build/_build/_build.csproj"
 
 export DOTNET_EXE="$(command -v dotnet)"
 
+# Some commands apparently break unless this is set
+# e.g. "/property:Platform=AnyCPU" gives
+# No se reconoce el comando o el argumento "/property:Platform=AnyCPU"
+export DOTNET_CLI_UI_LANGUAGE="en"
+
 echo "Microsoft (R) .NET Core SDK version $("$DOTNET_EXE" --version)"
 
 "$DOTNET_EXE" build "$BUILD_PROJECT_FILE" /nodeReuse:false /p:UseSharedCompilation=false -nologo -clp:NoSummary --verbosity quiet

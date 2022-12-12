@@ -10,7 +10,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -171,10 +170,6 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
-                // When receiving chunks of spans, the backend checks whether the aas.resource.id tag is present on any of the
-                // span to decide which metric to emit (datadog.apm.host.instance or datadog.apm.azure_resource_instance one).
-                AddAASMetadata(spansToWrite.Array![spansToWrite.Offset]);
-
                 Tracer.Write(spansToWrite);
             }
         }
@@ -192,7 +187,6 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
-                AddAASMetadata(spansToWrite.Array![spansToWrite.Offset]);
                 Tracer.Write(spansToWrite);
             }
         }
@@ -238,24 +232,6 @@ namespace Datadog.Trace
         public TimeSpan ElapsedSince(DateTimeOffset date)
         {
             return Elapsed + (_utcStart - date);
-        }
-
-        private static void AddAASMetadata(Span span)
-        {
-            if (AzureAppServices.Metadata.IsRelevant)
-            {
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteName, AzureAppServices.Metadata.SiteName);
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteKind, AzureAppServices.Metadata.SiteKind);
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteType, AzureAppServices.Metadata.SiteType);
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata.ResourceGroup);
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata.SubscriptionId);
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceId, AzureAppServices.Metadata.InstanceId);
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceName, AzureAppServices.Metadata.InstanceName);
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesOperatingSystem, AzureAppServices.Metadata.OperatingSystem);
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesRuntime, AzureAppServices.Metadata.Runtime);
-                span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, AzureAppServices.Metadata.SiteExtensionVersion);
-            }
         }
     }
 }

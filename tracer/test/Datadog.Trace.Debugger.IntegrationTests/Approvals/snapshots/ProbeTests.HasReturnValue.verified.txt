@@ -1,0 +1,69 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "this": {
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "0"
+                  }
+                },
+                "type": "HasReturnValue",
+                "value": "HasReturnValue"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "this": {
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "7"
+                  }
+                },
+                "type": "HasReturnValue",
+                "value": "HasReturnValue"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "7"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.HasReturnValue"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.HasReturnValue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  }
+]

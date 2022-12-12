@@ -25,6 +25,7 @@
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
     <!-- Note, not referencing coverlet.collector because it has file locking issues -->
     <!-- Somebody should look into that... -->
+    <PackageReference Remove="coverlet.collector" />
   </ItemGroup>
 
   <ItemGroup>

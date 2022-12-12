@@ -1,0 +1,148 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "this": {
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "0"
+                  }
+                },
+                "type": "MethodThrowExceptionTest",
+                "value": "MethodThrowExceptionTest"
+              },
+              "toSet": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "this": {
+                "fields": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "2147483647"
+                  }
+                },
+                "type": "MethodThrowExceptionTest",
+                "value": "MethodThrowExceptionTest"
+              },
+              "toSet": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            },
+            "locals": {
+              "numberSnapshot": {
+                "type": "Int32",
+                "value": "7"
+              }
+            },
+            "throwable": {
+              "message": "Number 2147483647is above snapshot value 7",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.SmokeTests.MethodThrowExceptionTest.Method",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.InvalidOperationException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.MethodThrowExceptionTest"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MethodThrowExceptionTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "26": {
+              "arguments": {
+                "this": {
+                  "fields": {
+                    "Number": {
+                      "type": "Int32",
+                      "value": "2147483647"
+                    }
+                  },
+                  "type": "MethodThrowExceptionTest",
+                  "value": "MethodThrowExceptionTest"
+                },
+                "toSet": {
+                  "type": "Int32",
+                  "value": "2147483647"
+                }
+              },
+              "locals": {
+                "numberSnapshot": {
+                  "type": "Int32",
+                  "value": "7"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MethodThrowExceptionTest.cs",
+            "lines": [
+              26
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MethodThrowExceptionTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  }
+]

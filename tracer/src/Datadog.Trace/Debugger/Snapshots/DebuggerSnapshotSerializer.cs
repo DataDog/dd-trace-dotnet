@@ -166,9 +166,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             else if (SupportedTypesService.IsSafeToCallToString(type))
             {
                 jsonWriter.WritePropertyName("value");
-                var stringifiedValue = source.ToString();
-                var stringifiedValueTruncated = stringifiedValue.Length < _maximumStringLength ? stringifiedValue : stringifiedValue.Substring(0, _maximumStringLength);
-                jsonWriter.WriteValue(stringifiedValueTruncated);
+                var stringValue = source.ToString();
+                var stringValueTruncated = stringValue.Length < _maximumStringLength ? stringValue : stringValue.Substring(0, _maximumStringLength);
+                jsonWriter.WriteValue(stringValueTruncated);
             }
             else
             {
@@ -377,8 +377,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                     case FieldInfo field:
                         {
                             if (field.FieldType.ContainsGenericParameters ||
-                                field.DeclaringType.ContainsGenericParameters ||
-                                field.ReflectedType.ContainsGenericParameters)
+                                field.DeclaringType?.ContainsGenericParameters == true ||
+                                field.ReflectedType?.ContainsGenericParameters == true)
                             {
                                 return false;
                             }

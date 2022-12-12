@@ -384,3 +384,12 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold)
 
 #endif
 }
+
+void OpSysTools::Sleep(std::chrono::nanoseconds duration)
+{
+#ifdef _WINDOWS
+    ::Sleep(static_cast<DWORD>(duration.count() / 1000000));
+#else
+    usleep(duration.count() / 1000);
+#endif
+}

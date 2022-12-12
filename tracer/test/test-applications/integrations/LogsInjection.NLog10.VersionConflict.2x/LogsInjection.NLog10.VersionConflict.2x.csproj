@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- Older versions of NLog are built for .NET Framework -->
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>net462</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

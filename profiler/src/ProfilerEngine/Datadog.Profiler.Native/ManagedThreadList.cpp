@@ -131,7 +131,7 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
     uint32_t pos = 0;
     for (auto i = _threads.begin(); i != _threads.end(); ++i)
     {
-        auto pInfo = *i;
+        std::shared_ptr<ManagedThreadInfo> pInfo = *i; // make a copy so it can be moved later
         if (pInfo->GetClrThreadId() == clrThreadId)
         {
 
@@ -151,7 +151,7 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
         pos++;
     }
 
-    Log::Error("ManagedThreadList: thread ", std::dec, clrThreadId, "cannot be unregister because not in the list");
+    Log::Debug("ManagedThreadList: thread ", std::dec, clrThreadId, " cannot be unregister because not in the list");
     return false;
 }
 
@@ -372,4 +372,23 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::FindByClrId(ThreadID clrTh
     {
         return elem->second;
     }
+}
+
+bool ManagedThreadList::RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThreadInfo)
+{
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+
+    auto it = _lookupByClrThreadId.find(pThreadInfo->GetClrThreadId());
+    if (it == _lookupByClrThreadId.cend())
+    {
+        // not registered yet
+
+        _threads.push_back(pThreadInfo);
+        _lookupByClrThreadId[pThreadInfo->GetClrThreadId()] = pThreadInfo;
+        _lookupByProfilerThreadInfoId[pThreadInfo->GetProfilerThreadInfoId()] = pThreadInfo;
+
+        return true;
+    }
+
+    return false;
 }

@@ -200,6 +200,21 @@ namespace Datadog.Trace
 
                     Context.TraceContext.Origin = value;
                     break;
+
+                case Trace.Tags.AzureAppServicesSiteName:
+                case Trace.Tags.AzureAppServicesSiteKind:
+                case Trace.Tags.AzureAppServicesSiteType:
+                case Trace.Tags.AzureAppServicesResourceGroup:
+                case Trace.Tags.AzureAppServicesSubscriptionId:
+                case Trace.Tags.AzureAppServicesResourceId:
+                case Trace.Tags.AzureAppServicesInstanceId:
+                case Trace.Tags.AzureAppServicesInstanceName:
+                case Trace.Tags.AzureAppServicesOperatingSystem:
+                case Trace.Tags.AzureAppServicesRuntime:
+                case Trace.Tags.AzureAppServicesExtensionVersion:
+                    Log.Warning("This tag is reserved for Azure App Service tagging. Value will be ignored");
+                    break;
+
                 case Trace.Tags.SamplingPriority:
                     if (Context.TraceContext == null)
                     {

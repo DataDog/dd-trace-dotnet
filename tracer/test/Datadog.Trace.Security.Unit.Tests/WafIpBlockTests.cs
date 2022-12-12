@@ -174,6 +174,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.ReturnCode.Should().Be(ReturnCode.Match);
             result.Actions.Should().NotBeEmpty();
             result.Actions.Should().Contain("block");
+            result.ShouldBlock.Should().BeTrue();
         }
     }
 }

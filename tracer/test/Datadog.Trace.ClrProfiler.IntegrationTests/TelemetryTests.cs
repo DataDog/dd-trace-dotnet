@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public TelemetryTests(ITestOutputHelper output)
             : base("Telemetry", output)
         {
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled, "true");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true");
             SetServiceVersion(ServiceVersion);
             EnableDebugMode();
         }

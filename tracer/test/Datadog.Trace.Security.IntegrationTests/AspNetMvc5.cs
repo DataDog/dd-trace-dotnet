@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET461
+#if NETFRAMEWORK
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -99,7 +99,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestBlockedRequest(string test)
         {
             var url = "/Health";
-
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, SecurityEnabled ? 1 : 2, settings, userAgent: "Hello/V");
         }

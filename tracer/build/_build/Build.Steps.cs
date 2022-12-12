@@ -53,7 +53,6 @@ partial class Build
     [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;
     AbsolutePath ProfilerMsBuildProject => ProfilerDirectory / "src" / "ProfilerEngine" / "Datadog.Profiler.Native.Windows" / "Datadog.Profiler.Native.Windows.WithTests.proj";
     AbsolutePath ProfilerOutputDirectory => RootDirectory / "profiler" / "_build";
-    AbsolutePath ProfilerLinuxBuildDirectory => ProfilerOutputDirectory / "cmake";
     AbsolutePath ProfilerBuildDataDirectory => ProfilerDirectory / "build_data";
     AbsolutePath ProfilerTestLogsDirectory => ProfilerBuildDataDirectory / "logs";
 
@@ -123,6 +122,29 @@ partial class Build
         Solution.GetProject(Projects.AppSecIntegrationTests),
         Solution.GetProject(Projects.ToolIntegrationTests)
     };
+
+    TargetFramework[] TestingFrameworks =>
+    IncludeAllTestFrameworks || HaveIntegrationsChanged
+        ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, }
+        : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
+
+    TargetFramework[] TestingFrameworksDebugger =>
+        TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, TargetFramework.NETCOREAPP3_0, TargetFramework.NET5_0 });
+
+    bool HaveIntegrationsChanged => 
+        GetGitChangedFiles(baseBranch: "origin/master")
+           .Any(s => new []
+            {
+                "tracer/src/Datadog.Trace/Generated/net461/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
+                "tracer/src/Datadog.Trace/Generated/netstandard2.0/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
+                "tracer/src/Datadog.Trace/Generated/netcoreapp3.1/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
+                "tracer/src/Datadog.Trace/Generated/net6.0/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
+            }.Any(s.Contains));
+
+    Project DebuggerIntegrationTests => Solution.GetProject(Projects.DebuggerIntegrationTests);
+    Project DebuggerSamples => Solution.GetProject(Projects.DebuggerSamples);
+    Project DebuggerSamplesTestRuns => Solution.GetProject(Projects.DebuggerSamplesTestRuns);
+
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
     {
@@ -840,23 +862,41 @@ partial class Build
 
             testProjects.ForEach(EnsureResultsDirectory);
             var filter = string.IsNullOrEmpty(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
+            var exceptions = new List<Exception>();
             try
             {
-                DotNetTest(x => x
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetFilter(filter)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatformAnyCPU()
-                    .SetDDEnvironmentVariables("dd-tracer-dotnet")
-                    .EnableCrashDumps()
-                    .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
-                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
-                    .CombineWith(testProjects, (x, project) => x
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
-                        .SetProjectFile(project)));
+                foreach (var targetFramework in TestingFrameworks)
+                {
+                    try
+                    {
+                        DotNetTest(x => x
+                            .EnableNoRestore()
+                            .EnableNoBuild()
+                            .SetFilter(filter)
+                            .SetConfiguration(BuildConfiguration)
+                            .SetTargetPlatformAnyCPU()
+                            .SetDDEnvironmentVariables("dd-tracer-dotnet")
+                            .SetFramework(targetFramework)
+                            .EnableCrashDumps()
+                            .SetLogsDirectory(TestLogsDirectory)
+                            .When(CodeCoverage, ConfigureCodeCoverage)
+                            .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
+                            .CombineWith(testProjects, (x, project) => x
+                                .EnableTrxLogOutput(GetResultsDirectory(project))
+                                .WithDatadogLogger()
+                                .SetProjectFile(project)));
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Error testing {targetFramework}");
+                        exceptions.Add(ex);
+                    }
+                }
+
+                if (exceptions.Any())
+                {
+                    throw new AggregateException("Error in one or more test runs", exceptions);
+                }
             }
             finally
             {
@@ -909,27 +949,6 @@ partial class Build
                 .EnableNoDependencies()
                 .SetTargets("BuildDependencyLibs")
             );
-
-            // The live debugger dependency lib _sometimes_ has to be x86/x64, and _sometimes_ has to be AnyCPU apparently
-            // so try building it with both...
-            var debuggerProjects = GlobFiles(TestsDirectory / "test-applications" / "debugger" / "dependency-libs" / "**" / "*.csproj");
-            DotNetBuild(config => config
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .CombineWith(debuggerProjects, (x, project) => x
-                    .SetProjectFile(project)));
-
-            DotNetBuild(config => config
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(TargetPlatform)
-                .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .CombineWith(debuggerProjects, (x, project) => x
-                    .SetProjectFile(project)));
         });
 
     Target CompileRegressionDependencyLibs => _ => _
@@ -1039,6 +1058,76 @@ partial class Build
                 .SetMaxCpuCount(null));
         });
 
+    Target CompileDebuggerIntegrationTests => _ => _
+        .Unlisted()
+        .After(CompileManagedSrc)
+        .DependsOn(CompileDebuggerIntegrationTestsDependencies)
+        .DependsOn(CompileDebuggerIntegrationTestsSamples)
+        .Requires(() => Framework)
+        .Requires(() => MonitoringHomeDirectory != null)
+        .Executes(() =>
+        {
+            DotNetBuild(s => s
+                .SetConfiguration(BuildConfiguration)
+                .SetFramework(Framework)
+                .SetTargetPlatformAnyCPU()
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetNoWarnDotNetCore3()
+                .SetProjectFile(DebuggerIntegrationTests));
+        });
+
+    Target CompileDebuggerIntegrationTestsDependencies => _ => _
+        .Unlisted()
+        .Requires(() => Framework)
+        .Requires(() => MonitoringHomeDirectory != null)
+        .Executes(() =>
+        {
+            DotNetBuild(s => s
+                .SetConfiguration(BuildConfiguration)
+                .SetFramework(Framework)
+                .SetTargetPlatformAnyCPU()
+                .EnableNoRestore()
+                .SetNoWarnDotNetCore3()
+                .SetProjectFile(DebuggerSamplesTestRuns));            
+            
+            DotNetBuild(s => s
+                .SetConfiguration(BuildConfiguration)
+                .SetFramework(Framework)
+                .SetTargetPlatform(TargetPlatform)
+                .EnableNoRestore()
+                .SetNoWarnDotNetCore3()
+                .SetProjectFile(DebuggerSamplesTestRuns));
+        });
+
+    Target CompileDebuggerIntegrationTestsSamples => _ => _
+        .Unlisted()
+        .DependsOn(CompileDebuggerIntegrationTestsDependencies)
+        .Requires(() => Framework)
+        .Requires(() => MonitoringHomeDirectory != null)
+        .Executes(() =>
+        {
+            DotNetBuild(s => s
+                .SetFramework(Framework)
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatform(TargetPlatform)
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetNoWarnDotNetCore3()
+                .SetProjectFile(DebuggerSamples));
+
+            if (!IsWin)
+            {
+                // The sample helper in the test library assumes that the sample has 
+                // been published when running on Linux
+                DotNetPublish(x => x
+                    .SetFramework(Framework)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetNoWarnDotNetCore3()
+                    .SetProject(DebuggerSamples));
+            }
+        });
+
     Target CompileSamplesWindows => _ => _
         .Unlisted()
         .After(CompileDependencyLibs)
@@ -1052,14 +1141,12 @@ partial class Build
             var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
             // Don't build aspnet full framework sample in this step
             var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
-            var includeDebugger = TracerDirectory.GlobFiles("test/test-applications/debugger/*/*.csproj");
 
             var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj")
                                          .Concat(TracerDirectory.GlobFiles("test/test-applications/debugger/dependency-libs/**/*.csproj"));
 
             var projects = includeIntegration
                 .Concat(includeSecurity)
-                .Concat(includeDebugger)
                 .Select(x => Solution.GetProject(x))
                 .Where(project =>
                 (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
@@ -1168,6 +1255,53 @@ partial class Build
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
                         .SetProjectFile(project)));
+            }
+            finally
+            {
+                CopyDumpsToBuildData();
+            }
+        });
+
+    Target RunDebuggerIntegrationTests => _ => _
+        .Unlisted()
+        .After(BuildTracerHome)
+        .After(BuildDebuggerIntegrationTests)
+        .Requires(() => Framework)
+        .Triggers(PrintSnapshotsDiff)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureResultsDirectory(DebuggerIntegrationTests);
+
+            try
+            {
+                DotNetTest(config => config
+                    .SetDotnetPath(TargetPlatform)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatform(TargetPlatform)
+                    .SetFramework(Framework)
+                    .EnableCrashDumps()
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetFilter(GetTestFilter())
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetLogsDirectory(TestLogsDirectory)
+                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .EnableTrxLogOutput(GetResultsDirectory(DebuggerIntegrationTests))
+                    .WithDatadogLogger()
+                    .SetProjectFile(DebuggerIntegrationTests));
+
+                string GetTestFilter()
+                {
+                    var filter = (IsWin, IsArm64) switch
+                    {
+                        (true, _) => "(RunOnWindows=True)",
+                        (_, true) => "(Category!=ArmUnsupported)",
+                        _ => "(Category!=LinuxUnsupported)",
+                    };
+
+                    return Filter is null ? filter : $"{Filter}&{filter}";
+                }
             }
             finally
             {
@@ -1386,7 +1520,6 @@ partial class Build
             var securitySampleProjects = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
             var regressionProjects = TracerDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
             var instrumentationProjects = TracerDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
-            var debuggerProjects = TracerDirectory.GlobFiles("test/test-applications/debugger/*/*.csproj");
 
             // These samples are currently skipped.
             var projectsToSkip = new[]
@@ -1432,14 +1565,12 @@ partial class Build
                 .Concat(securitySampleProjects)
                 .Concat(regressionProjects)
                 .Concat(instrumentationProjects)
-                .Concat(debuggerProjects)
                 .Select(path => (path, project: Solution.GetProject(path)))
                 .Where(x => (IncludeTestsRequiringDocker, x.project) switch
                 {
                     // filter out or to integration tests that have docker dependencies
                     (null, _) => true,
                     (_, null) => true,
-                    (_, { } p) when p.Name.Contains("Samples.Probes") => true, // always have to build this one
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
                     (var required, { } p) => p.RequiresDockerDependency() == required,
@@ -1450,10 +1581,10 @@ partial class Build
                     {
                         "LogsInjection.Log4Net.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
                         "LogsInjection.NLog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
-                        "LogsInjection.NLog10.VersionConflict.2x" => Framework == TargetFramework.NET461,
-                        "LogsInjection.NLog20.VersionConflict.2x" => Framework == TargetFramework.NET461,
+                        "LogsInjection.NLog10.VersionConflict.2x" => Framework == TargetFramework.NET461 || Framework == TargetFramework.NET462,
+                        "LogsInjection.NLog20.VersionConflict.2x" => Framework == TargetFramework.NET461 || Framework == TargetFramework.NET462,
                         "LogsInjection.Serilog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
-                        "LogsInjection.Serilog14.VersionConflict.2x" => Framework == TargetFramework.NET461,
+                        "LogsInjection.Serilog14.VersionConflict.2x" => Framework == TargetFramework.NET461 || Framework == TargetFramework.NET462,
                         "Samples.AspNetCoreMvc21" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
@@ -1463,10 +1594,9 @@ partial class Build
                         "Samples.Security.AspNetCoreBare" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.GraphQL4" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.HotChocolate" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
-                        "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
+                        "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
-                        "Samples.Probes" => true,
                         "Samples.AspNetCoreRazorPages" => true,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => x.project?.Name?.Contains(SampleName) ?? false,
                         _ => true,
@@ -1561,7 +1691,12 @@ partial class Build
         .Executes(() =>
         {
             // Build the actual integration test projects for Any CPU
-            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
+            var integrationTestProjects =
+                TracerDirectory
+                   .GlobFiles("test/*.IntegrationTests/*.csproj")
+                   .Where(path => Solution.GetProject(path).Name != Projects.DebuggerIntegrationTests);
+                ;
+
             DotNetBuild(x => x
                     // .EnableNoRestore()
                     .EnableNoDependencies()
@@ -2110,14 +2245,8 @@ partial class Build
         }
     }
 
-    private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings)
+    private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings) 
     {
-        if (Framework == TargetFramework.NET461)
-        {
-            // Coverlet apparently breaks .NET Framework when running on the .NET 7 SDK.
-            // TODO: Fix it
-            return settings;
-        }
         var strongNameKeyPath = Solution.Directory / "Datadog.Trace.snk";
 
         return settings.SetDataCollector("XPlat Code Coverage")

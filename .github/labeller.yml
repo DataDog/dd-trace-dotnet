@@ -2,6 +2,9 @@ labels:
   - name: "area:ci-visibility"
     title: "^\\[?(?i)civisibility"
 
+  - name: "area:ci-visibility"
+    title: "^\\[?(?i)(ci visibility)"
+
   - name: "area:serverless"
     title: "^\\[?(?i)serverless"
 
@@ -16,6 +19,12 @@ labels:
 
   - name: "area:debugger"
     title: "^\\[?(?i)debugger"
+
+  - name: "area:debugger"
+    title: "^\\[?(?i)(dynamic instrumentation)"
+
+  - name: "area:builds"
+    title: "^\\[?(?i)build"
 
   - name: "area:profiler"
     allFilesIn: "profiler\/.*"

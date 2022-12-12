@@ -11,5 +11,5 @@ namespace Datadog.Trace.AppSec;
 
 internal class AsmFeatures
 {
-    public Asm Asm { get; set; } = new();
+    public AsmFeature Asm { get; set; } = new();
 }

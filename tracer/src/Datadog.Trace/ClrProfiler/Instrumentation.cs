@@ -340,7 +340,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
-            if (!PlatformHelpers.AzureAppServices.Metadata.IsFunctionsApp)
+            if (Tracer.Instance.Settings.AzureAppServiceMetadata?.IsFunctionsApp is not true)
             {
                 // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for Azure Functions.
                 // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal
@@ -375,6 +375,7 @@ namespace Datadog.Trace.ClrProfiler
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDDProduct); // This should be activated by Security only when Asm is active, but there is no visibility right now
+                        configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmProduct);
 
                         var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, tracer.Settings, serviceName);
 

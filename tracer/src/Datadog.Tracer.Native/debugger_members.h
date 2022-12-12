@@ -141,7 +141,7 @@ struct ProbeMetadata
 {
     shared::WSTRING probeId;
     std::set<trace::MethodIdentifier> methods;
-    ProbeStatus status;
+    ProbeStatus status = ProbeStatus::RECEIVED;
 
     ProbeMetadata() = default;
     ProbeMetadata(const ProbeMetadata& other) = default;

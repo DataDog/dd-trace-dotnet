@@ -19,7 +19,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private const string ProcessMetrics = $"{MetricsNames.ThreadsCount}, {MetricsNames.CommittedMemory}, {MetricsNames.CpuUserTime}, {MetricsNames.CpuSystemTime}, {MetricsNames.CpuPercentage}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeMetricsWriter>();
-        private static readonly Func<IDogStatsd, TimeSpan, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
+        private static readonly Func<IDogStatsd, TimeSpan, bool, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
 
         private readonly TimeSpan _delay;
 
@@ -35,12 +35,12 @@ namespace Datadog.Trace.RuntimeMetrics
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
 
-        public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay)
-            : this(statsd, delay, InitializeListenerFunc)
+        public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
+            : this(statsd, delay, inAzureAppServiceContext, InitializeListenerFunc)
         {
         }
 
-        internal RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, Func<IDogStatsd, TimeSpan, IRuntimeMetricsListener> initializeListener)
+        internal RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext, Func<IDogStatsd, TimeSpan, bool, IRuntimeMetricsListener> initializeListener)
         {
             _delay = delay;
             _statsd = statsd;
@@ -72,7 +72,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                _listener = initializeListener(statsd, delay);
+                _listener = initializeListener(statsd, delay, inAzureAppServiceContext);
             }
             catch (Exception ex)
             {
@@ -151,7 +151,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
         }
 
-        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, TimeSpan delay)
+        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
         {
 #if NETCOREAPP
             return new RuntimeEventListener(statsd, delay);
@@ -164,7 +164,7 @@ namespace Datadog.Trace.RuntimeMetrics
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error while initializing memory-mapped counters. Falling back to performance counters.");
-                return AzureAppServices.Metadata.IsRelevant ? new AzureAppServicePerformanceCounters(statsd) : new PerformanceCountersListener(statsd);
+                return inAzureAppServiceContext ? new AzureAppServicePerformanceCounters(statsd) : new PerformanceCountersListener(statsd);
             }
 #else
             return null;

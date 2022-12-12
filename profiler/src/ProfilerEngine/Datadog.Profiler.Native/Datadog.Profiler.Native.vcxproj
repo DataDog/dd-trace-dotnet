@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\packages\libdatadog.0.9.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.0.9.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\..\packages\libdatadog.1.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.1.0.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -309,7 +309,7 @@
     <ClInclude Include="StackFramesCollectorBase.h" />
     <ClInclude Include="StackSamplerLoop.h" />
     <ClInclude Include="StackSamplerLoopManager.h" />
-    <ClInclude Include="StackSnapshotResultReusableBuffer.h" />
+    <ClInclude Include="StackSnapshotResultBuffer.h" />
     <ClInclude Include="TagsHelper.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
@@ -339,6 +339,7 @@
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="GarbageCollectionProvider.cpp" />
+    <ClCompile Include="RawGarbageCollectionSample.cpp" />
     <ClCompile Include="StopTheWorldGCProvider.cpp" />
     <ClCompile Include="GenericSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />
@@ -359,7 +360,7 @@
     <ClCompile Include="StackFramesCollectorBase.cpp" />
     <ClCompile Include="StackSamplerLoop.cpp" />
     <ClCompile Include="StackSamplerLoopManager.cpp" />
-    <ClCompile Include="StackSnapshotResultReusableBuffer.cpp" />
+    <ClCompile Include="StackSnapshotResultBuffer.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
@@ -376,6 +377,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.0.9.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.0.9.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.1.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.1.0.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

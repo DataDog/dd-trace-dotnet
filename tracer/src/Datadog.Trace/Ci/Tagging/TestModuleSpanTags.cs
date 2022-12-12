@@ -55,7 +55,4 @@ internal partial class TestModuleSpanTags : TestSessionSpanTags
 
     [Tag(CommonTags.OSVersion)]
     public string OSVersion { get; set; }
-
-    [Tag(CommonTags.TestsSkipped)]
-    public string TestsSkipped { get; set; }
 }

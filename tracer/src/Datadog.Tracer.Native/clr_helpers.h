@@ -571,11 +571,31 @@ struct FunctionInfo
         method_signature(method_signature)
     {
     }
-
+    
     bool IsValid() const
     {
         return id != 0;
     }
+};
+
+struct GenericTypeProps
+{
+private:
+    PCCOR_SIGNATURE pbBase;
+    ULONG len;
+
+public:
+    unsigned char SpecElementType = 0; // Element type of the TypeSpec. e.g GENERICINST, VAR, MVAR, SZARRAY etc.
+    mdToken OpenTypeToken = mdTokenNil; // Token of the open generic type, can be TypeDef or TypeRef. In any case except CLASS or VALUETYPE, this will be mdTokenNil.
+    unsigned char GenericElementType = 0; // Element type of the generic type, can be any valid element type. e.g. OBJECT, CLASS, VALUETYPE etc.
+    unsigned ParamsCount = 0; // Number of generic type args. e.g. GenericClass<T,V> params count will be 2.
+    unsigned IndexOfFirstParam = 0; // Index (the offset in signature) of the first generic parameter type.
+    unsigned ParamPosition = 0; // For VAR and MVAR will be the number in the generic type parameters.
+    std::vector<std::tuple<PCCOR_SIGNATURE, ULONG, unsigned char>> ParamsSignature; // Collection of tuple(signature, length) for each generic parameter type.
+    
+    GenericTypeProps(PCCOR_SIGNATURE pb, ULONG len) : pbBase(pb), len(len){}
+
+    HRESULT TryParse();
 };
 
 RuntimeInformation GetRuntimeInformation(ICorProfilerInfo4* info);
@@ -603,6 +623,16 @@ bool FindTypeDefByName(const shared::WSTRING& instrumentationTargetMethodTypeNam
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef);
 
 HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, const mdMethodDef methodDefToken, bool& hasAsyncAttribute);
+HRESULT IsByRefLike(const ComPtr<IMetaDataImport2>& metadataImport, const mdTypeDef typeDefToken, bool& hasByRefLikeAttribute);
+HRESULT ResolveTypeInternal(ICorProfilerInfo4* info, const std::vector<ModuleID>& loadedModules,
+                            const std::vector<WCHAR>& refTypeName,
+                            const mdToken parentToken, const shared::WSTRING& resolutionScopeName,
+                            mdTypeDef& resolvedTypeDefToken, ComPtr<IMetaDataImport2>& resolvedTypeDefMetadataImport);
+HRESULT ResolveType(ICorProfilerInfo4* info, const ComPtr<IMetaDataImport2>& metadata_import,
+                    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+                    const mdTypeRef typeRefToken, mdTypeDef& resolvedTypeDefToken,
+                    ComPtr<IMetaDataImport2>& resolvedMetadataImport);
+
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_CLR_HELPERS_H_

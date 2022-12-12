@@ -11,7 +11,7 @@
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "StackSamplerLoopManager.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
 
 #endif // matches the '#ifdef BIT64' above
 
@@ -181,7 +181,6 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 {
     // Collect data for TraceContext Tracking:
     bool traceContextDataCollected = this->TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
-    assert(traceContextDataCollected);
 
     // Now walk the stack:
     CONTEXT context;

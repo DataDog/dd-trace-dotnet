@@ -109,9 +109,22 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             var finalRuleDatas = MergeRuleData(res);
-            var encoded = encoder.Encode(finalRuleDatas, new List<Obj>(), false);
+            using var encoded = encoder.Encode(finalRuleDatas, new List<Obj>(), false);
             var ret = wafNative.UpdateRuleData(ruleHandle.Value, encoded.RawPtr);
             Log.Information("{number} rules have been updated and waf status is {status}", finalRuleDatas.Count, ret);
+            return ret == DDWAF_RET_CODE.DDWAF_OK;
+        }
+
+        public bool ToggleRules(IDictionary<string, bool> ruleStatus)
+        {
+            if (ruleStatus == null || ruleStatus.Count == 0)
+            {
+                return false;
+            }
+
+            var encoded = encoder.Encode(ruleStatus);
+            var ret = wafNative.ToggleRules(ruleHandle.Value, encoded.RawPtr);
+            Log.Information("{number} rule status have been updated and waf status is {status}", ruleStatus.Count, ret);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
 
