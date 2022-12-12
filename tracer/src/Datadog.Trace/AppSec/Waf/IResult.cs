@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -11,9 +12,16 @@ namespace Datadog.Trace.AppSec.Waf
     {
         ReturnCode ReturnCode { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether to block the request or not
+        /// </summary>
+        public bool ShouldBlock { get; }
+
+        public bool ShouldBeReported { get; }
+
         string Data { get; }
 
-        string[] Actions { get; }
+        List<string> Actions { get; }
 
         ulong AggregatedTotalRuntime { get; }
 

@@ -1,20 +1,19 @@
-
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Security.Claims;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Configuration;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.Configuration;
+using SecurityCoordinator = Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
 #if NETFRAMEWORK
 using System.Web;
+
 #else
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -33,54 +32,28 @@ namespace Benchmarks.Trace
             Gender = "Female",
             Name = "Tata",
             LastName = "Toto",
-            Address = new Address
-            {
-                Number = 12,
-                City = new City { Name = "Paris", Country = new Country { Name = "France", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } },
-                IsHouse = false,
-                NameStreet = "lorem ipsum dolor sit amet"
-            },
-            Address2 = new Address
-            {
-                Number = 15,
-                City = new City
-                {
-                    Name = "Madrid",
-                    Country = new Country
-                    {
-                        Name = "Spain",
-                        Continent = new Continent
-                        {
-                            Name = "Europe",
-                            Planet = new Planet { Name = "Earth" }
-                        }
-                    }
-                },
-                IsHouse = true,
-                NameStreet = "lorem ipsum dolor sit amet"
-            },
-            Dogs = new List<Dog> {
-                    new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" } } },
-                    new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "tata" }, new Dog { Name = "tata" } } },
-                    new Dog { Name = "tata", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" }, new Dog { Name = "tutu" } } }
-                    }
+            Address = new Address { Number = 12, City = new City { Name = "Paris", Country = new Country { Name = "France", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } }, IsHouse = false, NameStreet = "lorem ipsum dolor sit amet" },
+            Address2 = new Address { Number = 15, City = new City { Name = "Madrid", Country = new Country { Name = "Spain", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } }, IsHouse = true, NameStreet = "lorem ipsum dolor sit amet" },
+            Dogs = new List<Dog> { new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" } } }, new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "tata" }, new Dog { Name = "tata" } } }, new Dog { Name = "tata", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" }, new Dog { Name = "tutu" } } } }
         };
 #if NETFRAMEWORK
         private static HttpContext httpContext;
-#else                                   
+#else
         private static HttpContext httpContext;
 #endif
-
 
         static AppSecBodyBenchmark()
         {
             var dir = Directory.GetCurrentDirectory();
-            while (!dir.EndsWith("tracer"))
+            while (!Directory.GetDirectories(dir).Any(s=>s.Contains("shared")))
             {
                 dir = Directory.GetParent(dir).FullName;
             }
+
+            dir = Directory.GetDirectories(dir).First(s=>s.Contains("shared"));
             Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
-            Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", Path.Combine(dir, "bin", "dd-tracer-home", RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty));
+            var path = Path.Combine(dir, "bin", "monitoring-home", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty);
+            Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
             security = Security.Instance;
 #if NETFRAMEWORK
             var ms = new MemoryStream();
@@ -90,7 +63,6 @@ namespace Benchmarks.Trace
 #else
             httpContext = new DefaultHttpContext();
 #endif
-
         }
 
         [Benchmark]
@@ -98,18 +70,21 @@ namespace Benchmarks.Trace
 
         private void ExecuteCycle(object body)
         {
-            security.InstrumentationGateway.RaiseBodyAvailable(httpContext, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), body);
-#if NETFRAMEWORK
-            var context = httpContext.Items["waf"] as IContext;
-            context?.Dispose();
-            httpContext.Items["waf"] = null;
-#else
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+#if !NETFRAMEWORK
+            security.CheckBody(httpContext, span, body);
             var context = httpContext.Features.Get<IContext>();
             context?.Dispose();
             httpContext.Features.Set<IContext>(null);
+#else
+            var securityTransport = new SecurityCoordinator(security, httpContext, span);
+            using var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, BodyExtractor.Extract(body) } });
+            var context = httpContext.Items["waf"] as IContext;
+            context?.Dispose();
+            httpContext.Items["waf"] = null;
 #endif
         }
-        
+
         [Benchmark]
         public void AllCycleMoreComplexBody() => ExecuteCycle(complexModel);
 
@@ -131,12 +106,12 @@ namespace Benchmarks.Trace
         public Address Address2 { get; set; }
         public string Gender { get; set; }
     }
+
     public class Dog
     {
         public string Name { get; set; }
 
         public IEnumerable<Dog> Dogs { get; set; }
-
     }
 
     public class Address
@@ -171,7 +146,6 @@ namespace Benchmarks.Trace
     {
         public string Name { get; set; }
         public Planet Planet { get; set; }
-
     }
 
     public class Planet

@@ -4,7 +4,6 @@
 // </copyright>
 
 #if NETFRAMEWORK
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,12 +41,11 @@ namespace Datadog.Trace.AppSec
                 }
 
                 var scope = SharedItems.TryPeekScope(context, peekScopeKey);
-                security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, bodyDic);
-                security.InstrumentationGateway.RaisePathParamsAvailable(context, scope.Span, pathParamsDic);
-                security.InstrumentationGateway.RaiseBlockingOpportunity(context, scope, Tracer.Instance.Settings, args =>
+                var securityTransport = new Coordinator.SecurityCoordinator(security, context, scope.Span);
+                if (!securityTransport.IsBlocked)
                 {
-                    TracingHttpModule.AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
-                });
+                    securityTransport.CheckAndBlock(new Dictionary<string, object> { { AddressesConstants.RequestBody, BodyExtractor.Extract(bodyDic) }, { AddressesConstants.RequestPathParams, pathParamsDic } });
+                }
             }
         }
     }
