@@ -40,21 +40,15 @@ namespace Datadog.Trace.Activity
             // even though the tag is not present on normal OTLP spans
             if (activity5 is not null)
             {
-                switch (activity5.Kind)
+                string tagValue = activity5.Kind switch
                 {
-                    case ActivityKind.Client:
-                        span.SetTag(Tags.SpanKind, SpanKinds.Client);
-                        break;
-                    case ActivityKind.Consumer:
-                        span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
-                        break;
-                    case ActivityKind.Producer:
-                        span.SetTag(Tags.SpanKind, SpanKinds.Producer);
-                        break;
-                    case ActivityKind.Server:
-                        span.SetTag(Tags.SpanKind, SpanKinds.Server);
-                        break;
-                }
+                    ActivityKind.Server => SpanKinds.Server,
+                    ActivityKind.Client => SpanKinds.Client,
+                    ActivityKind.Producer => SpanKinds.Producer,
+                    ActivityKind.Consumer => SpanKinds.Consumer,
+                    _ => SpanKinds.Internal,
+                };
+                span.SetTag(Tags.SpanKind, tagValue);
             }
         }
 

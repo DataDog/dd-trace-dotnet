@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -23,6 +23,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
+      span.kind: internal,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -48,7 +49,8 @@
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1
+      otel.trace_id: Guid_1,
+      span.kind: internal
     }
   },
   {
@@ -64,7 +66,8 @@
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1
+      otel.trace_id: Guid_1,
+      span.kind: internal
     }
   },
   {
@@ -80,7 +83,8 @@
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1
+      otel.trace_id: Guid_1,
+      span.kind: internal
     }
   },
   {
@@ -96,7 +100,8 @@
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_OK,
-      otel.trace_id: Guid_1
+      otel.trace_id: Guid_1,
+      span.kind: internal
     }
   },
   {
@@ -115,7 +120,8 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_ERROR,
       otel.status_description: Something went wrong,
-      otel.trace_id: Guid_1
+      otel.trace_id: Guid_1,
+      span.kind: internal
     }
   },
   {
@@ -131,7 +137,8 @@
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1
+      otel.trace_id: Guid_1,
+      span.kind: internal
     }
   },
   {
@@ -147,7 +154,8 @@
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1
+      otel.trace_id: Guid_1,
+      span.kind: internal
     }
   },
   {
@@ -164,6 +172,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
       runtime-id: Guid_2,
+      span.kind: internal,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -188,6 +197,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       runtime-id: Guid_2,
+      span.kind: internal,
       _dd.p.dm: -0
     },
     Metrics: {
