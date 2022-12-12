@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
@@ -16,6 +17,8 @@ namespace Datadog.Trace.Propagators
     // https://www.w3.org/TR/trace-context/
     internal class W3CTraceContextPropagator : IContextInjector, IContextExtractor
     {
+        private const string TraceStateHeaderValuesSeparator = ",";
+
         /// <summary>
         /// W3C traceparent header name
         /// </summary>
@@ -407,10 +410,11 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
-            // TODO: concatenate multiple "tracestate" headers
-            var traceStateHeader = ParseUtility.ParseString(carrier, carrierGetter, TraceStateHeaderName)?.Trim();
+            // get the "tracestate" header
+            var traceStateHeaders = carrierGetter.Get(carrier, TraceStateHeaderName);
+            var traceStateHeader = TrimAndJoinStrings(traceStateHeaders);
 
-            if (string.IsNullOrEmpty(traceStateHeader) || !TryParseTraceState(traceStateHeader!, out var traceState))
+            if (string.IsNullOrEmpty(traceStateHeader) || !TryParseTraceState(traceStateHeader, out var traceState))
             {
                 // "tracestate" header is optional
                 traceState = default;
@@ -453,6 +457,81 @@ namespace Datadog.Trace.Propagators
             }
 
             return true;
+        }
+
+        private static string TrimAndJoinStrings(IEnumerable<string?> values)
+        {
+            List<string> trimmedValues;
+
+            if (values is IReadOnlyList<string?> roList)
+            {
+                var count = roList.Count;
+
+                if (count == 0)
+                {
+                    // short-circuit for empty collection
+                    return string.Empty;
+                }
+
+                if (count == 1)
+                {
+                    // short-circuit for single values
+                    return roList[0]?.Trim() ?? string.Empty;
+                }
+
+                // initialize list to maximum possible size
+                // (could have less items if some are null or empty)
+                trimmedValues = new List<string>(roList.Count);
+            }
+            else
+            {
+                // fallback if we can't determine count
+                trimmedValues = new List<string>();
+            }
+
+            static void AddToList(List<string> list, string? value)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    list.Add(value!.Trim());
+                }
+            }
+
+            switch (values)
+            {
+                case string?[] array:
+                    // converts into a for loop
+                    foreach (var value in array)
+                    {
+                        AddToList(trimmedValues, value);
+                    }
+
+                    break;
+
+                case List<string?> list:
+                    // uses List<T>'s struct enumerator
+                    foreach (var value in list)
+                    {
+                        AddToList(trimmedValues, value);
+                    }
+
+                    break;
+
+                default:
+                    foreach (var value in values)
+                    {
+                        AddToList(trimmedValues, value);
+                    }
+
+                    break;
+            }
+
+            if (trimmedValues.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return string.Join(TraceStateHeaderValuesSeparator, trimmedValues);
         }
     }
 }
