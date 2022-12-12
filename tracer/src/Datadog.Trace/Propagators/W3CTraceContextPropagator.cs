@@ -218,7 +218,7 @@ namespace Datadog.Trace.Propagators
 
         internal static bool TryParseTraceState(string header, out W3CTraceState traceState)
         {
-            // "dd=s:1;o:rum;t.dm:-4;t.usr.id:12345"
+            // "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             traceState = default;
 
             if (header == null!)
@@ -230,7 +230,7 @@ namespace Datadog.Trace.Propagators
 
             if (header.Length < 6 || !header.StartsWith("dd=", StringComparison.Ordinal))
             {
-                // shorted valid length is 6: "dd=s:1"
+                // shortest valid length is 6: "dd=s:1"
                 return false;
             }
 
