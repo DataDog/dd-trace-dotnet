@@ -12,38 +12,70 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
     internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn>
     {
-        private static readonly ContinuationMethodDelegate _continuation;
-        private static readonly bool _preserveContext;
+        private static readonly ContinuationResolver Resolver;
 
         static ValueTaskContinuationGenerator()
         {
             var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TResult));
-            if (result.Method != null)
+            if (result.Method is not null)
             {
-                _continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
-                _preserveContext = result.PreserveContext;
+                if (result.Method.ReturnType == typeof(Task) ||
+                    (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
+                {
+                    var asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
+                    Resolver = new AsyncContinuationResolver(asyncContinuation, result.PreserveContext);
+                }
+                else
+                {
+                    var continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
+                    Resolver = new SyncContinuationResolver(continuation, result.PreserveContext);
+                }
             }
+
+            Resolver ??= new ContinuationResolver();
         }
 
         internal delegate TResult ContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, in CallTargetState state);
 
+        internal delegate Task<TResult> AsyncContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, in CallTargetState state);
+
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            if (_continuation is null)
+            return Resolver.SetContinuation(instance, returnValue, exception, in state);
+        }
+
+        private class ContinuationResolver
+        {
+            public virtual TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             {
                 return returnValue;
             }
+        }
 
-            if (exception != null)
+        private class SyncContinuationResolver : ContinuationResolver
+        {
+            private readonly ContinuationMethodDelegate _continuation;
+            private readonly bool _preserveContext;
+
+            public SyncContinuationResolver(ContinuationMethodDelegate continuation, bool preserveContext)
             {
-                _continuation(instance, default, exception, in state);
-                return returnValue;
+                _continuation = continuation;
+                _preserveContext = preserveContext;
             }
 
-            ValueTask<TResult> previousValueTask = FromTReturn<ValueTask<TResult>>(returnValue);
-            return ToTReturn(InnerSetValueTaskContinuation(instance, previousValueTask, state));
+            public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            {
+                if (exception != null)
+                {
+                    _continuation(instance, default, exception, in state);
+                    return returnValue;
+                }
 
-            static async ValueTask<TResult> InnerSetValueTaskContinuation(TTarget instance, ValueTask<TResult> previousValueTask, CallTargetState state)
+                var previousValueTask = FromTReturn<ValueTask<TResult>>(returnValue);
+                return ToTReturn(ContinuationAction(previousValueTask, instance, state));
+            }
+
+            private async ValueTask<TResult> ContinuationAction(ValueTask<TResult> previousValueTask, TTarget target, CallTargetState state)
             {
                 TResult result = default;
                 try
@@ -57,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                         // *
                         // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                         // *
-                        _continuation(instance, result, ex, in state);
+                        _continuation(target, result, ex, in state);
                     }
                     catch (Exception contEx)
                     {
@@ -72,7 +104,69 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     // *
                     // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                     // *
-                    return _continuation(instance, result, null, in state);
+                    return _continuation(target, result, null, in state);
+                }
+                catch (Exception contEx)
+                {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx, "Exception occurred when calling the CallTarget integration continuation.");
+                }
+
+                return result;
+            }
+        }
+
+        private class AsyncContinuationResolver : ContinuationResolver
+        {
+            private readonly AsyncContinuationMethodDelegate _asyncContinuation;
+            private readonly bool _preserveContext;
+
+            public AsyncContinuationResolver(AsyncContinuationMethodDelegate asyncContinuation, bool preserveContext)
+            {
+                _asyncContinuation = asyncContinuation;
+                _preserveContext = preserveContext;
+            }
+
+            public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            {
+                var previousValueTask = FromTReturn<ValueTask<TResult>>(returnValue);
+                return ToTReturn(ContinuationAction(previousValueTask, instance, state, exception));
+            }
+
+            private async ValueTask<TResult> ContinuationAction(ValueTask<TResult> previousValueTask, TTarget target, CallTargetState state, Exception exception)
+            {
+                if (exception != null)
+                {
+                    return await _asyncContinuation(target, default, exception, in state).ConfigureAwait(_preserveContext);
+                }
+
+                TResult result = default;
+                try
+                {
+                    result = await previousValueTask.ConfigureAwait(_preserveContext);
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        // *
+                        // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                        // *
+                        await _asyncContinuation(target, result, ex, in state).ConfigureAwait(_preserveContext);
+                    }
+                    catch (Exception contEx)
+                    {
+                        IntegrationOptions<TIntegration, TTarget>.LogException(contEx, "Exception occurred when calling the CallTarget integration continuation.");
+                    }
+
+                    throw;
+                }
+
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // *
+                    return await _asyncContinuation(target, result, null, in state).ConfigureAwait(_preserveContext);
                 }
                 catch (Exception contEx)
                 {

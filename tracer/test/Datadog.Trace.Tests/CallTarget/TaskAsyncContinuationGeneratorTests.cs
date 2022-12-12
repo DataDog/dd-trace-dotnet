@@ -226,6 +226,26 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
+        [Fact]
+        public async Task SuccessGenericDuckTypeTest()
+        {
+            var tcg = new TaskContinuationGenerator<IntegrationWithDuckType, TaskAsyncContinuationGeneratorTests, Task<ReturnValue>, ReturnValue>();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, in state);
+
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue[Modified]", rValue.Value);
+
+            async Task<ReturnValue> GetPreviousTask()
+            {
+                await Task.Delay(1000).ConfigureAwait(false);
+                return new ReturnValue
+                {
+                    Value = "ReturnValue"
+                };
+            }
+        }
+
         internal class CustomException : Exception
         {
             public CustomException(string message)
@@ -267,6 +287,27 @@ namespace Datadog.Trace.Tests.CallTarget
                 await Task.Delay(1000).ConfigureAwait(false);
                 return returnValue;
             }
+        }
+
+        internal class IntegrationWithDuckType
+        {
+            public interface IReturnValue
+            {
+                string Value { get; set; }
+            }
+
+            public static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+                where TReturn : IReturnValue
+            {
+                await Task.Delay(1000).ConfigureAwait(false);
+                returnValue.Value += "[Modified]";
+                return returnValue;
+            }
+        }
+
+        internal class ReturnValue
+        {
+            public string Value { get; set; }
         }
     }
 }

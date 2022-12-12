@@ -583,6 +583,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *      - TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state);
              *      - [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, in CallTargetState state);
              *
+             * Or as a Task<> return
+             *      - Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
+             *      - Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
+             *      - Task<[Type]> OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
+             *      - Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
+             *      - Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state);
+             *      - Task<[Type]> OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, in CallTargetState state);
+             *
              *      In case the continuation is for a Task/ValueTask, the returnValue type will be an object and the value null.
              *      In case the continuation is for a Task<T>/ValueTask<T>, the returnValue type will be T with the instance value after the task completes.
              *
@@ -596,13 +604,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 return default;
             }
 
-            var isAsyncReturn = false;
+            bool isTaskReturn = false;
+            Type dynMethodReturnType = returnType;
             if (!onAsyncMethodEndMethodInfo.ReturnType.IsGenericParameter && onAsyncMethodEndMethodInfo.ReturnType != returnType)
             {
                 if (onAsyncMethodEndMethodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>) ||
                     onAsyncMethodEndMethodInfo.ReturnType == typeof(Task))
                 {
-                    isAsyncReturn = true;
+                    dynMethodReturnType = typeof(Task<>).MakeGenericType(returnType);
+                    isTaskReturn = true;
                 }
                 else
                 {
@@ -686,7 +696,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onAsyncMethodEndMethodInfo.DeclaringType.Name}.{onAsyncMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
-                     isAsyncReturn ? typeof(Task<>).MakeGenericType(returnType) : returnType,
+                     dynMethodReturnType,
                      new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onAsyncMethodEndMethodInfo.Module,
                      true);
@@ -729,8 +739,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             if (returnValueProxyType != null)
             {
                 MethodInfo unwrapReturnValue;
-                if (isAsyncReturn)
+                if (isTaskReturn)
                 {
+                    if (preserveContext)
+                    {
+                        ilWriter.Emit(OpCodes.Ldc_I4_1);
+                    }
+                    else
+                    {
+                        ilWriter.Emit(OpCodes.Ldc_I4_0);
+                    }
+
                     unwrapReturnValue = UnwrapTaskReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
                 }
                 else
@@ -795,14 +814,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         {
             return (TTo)(await returnValue.ConfigureAwait(preserveContext)).Instance;
         }
-
-#if NETCOREAPP3_1_OR_GREATER
-        private static async ValueTask<TTo> UnwrapValueTaskReturnValue<TFrom, TTo>(ValueTask<TFrom> returnValue, bool preserveContext)
-            where TFrom : IDuckType
-        {
-            return (TTo)(await returnValue.ConfigureAwait(preserveContext)).Instance;
-        }
-#endif
 
         private static void WriteIntValue(ILGenerator il, int value)
         {

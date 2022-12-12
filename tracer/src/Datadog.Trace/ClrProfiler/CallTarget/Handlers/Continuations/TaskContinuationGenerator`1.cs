@@ -12,30 +12,27 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
     internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn>
     {
-        private static readonly ContinuationMethodDelegate _continuation;
-        private static readonly AsyncContinuationMethodDelegate _asyncContinuation = null;
-        private static readonly bool _preserveContext;
+        private static readonly ContinuationResolver Resolver;
 
         static TaskContinuationGenerator()
         {
             var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TResult));
             if (result.Method is not null)
             {
-                if (result.Method.ReturnType == typeof(Task))
+                if (result.Method.ReturnType == typeof(Task) ||
+                    (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
                 {
-                    _asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
-                }
-                else if (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType))
-                {
-                    _asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
+                    var asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
+                    Resolver = new AsyncContinuationResolver(asyncContinuation, result.PreserveContext);
                 }
                 else
                 {
-                    _continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
+                    var continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
+                    Resolver = new SyncContinuationResolver(continuation, result.PreserveContext);
                 }
-
-                _preserveContext = result.PreserveContext;
             }
+
+            Resolver ??= new ContinuationResolver();
         }
 
         internal delegate TResult ContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, in CallTargetState state);
@@ -44,7 +41,29 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            if (_continuation is not null)
+            return Resolver.SetContinuation(instance, returnValue, exception, in state);
+        }
+
+        private class ContinuationResolver
+        {
+            public virtual TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            {
+                return returnValue;
+            }
+        }
+
+        private class SyncContinuationResolver : ContinuationResolver
+        {
+            private readonly ContinuationMethodDelegate _continuation;
+            private readonly bool _preserveContext;
+
+            public SyncContinuationResolver(ContinuationMethodDelegate continuation, bool preserveContext)
+            {
+                _continuation = continuation;
+                _preserveContext = preserveContext;
+            }
+
+            public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             {
                 if (exception != null || returnValue == null)
                 {
@@ -61,28 +80,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 return ToTReturn(ContinuationAction(previousTask, instance, state));
             }
 
-            if (_asyncContinuation is not null)
-            {
-                var previousTask = returnValue == null ? null : FromTReturn<Task<TResult>>(returnValue);
-                return ToTReturn(ContinuationAction(previousTask, instance, state));
-            }
-
-            return returnValue;
-        }
-
-        private static async Task<TResult> ContinuationAction(Task<TResult> previousTask, TTarget target, CallTargetState state)
-        {
-            TResult taskResult = default;
-            Exception exception = null;
-            TResult continuationResult = default;
-
-            if (previousTask is not null)
+            private async Task<TResult> ContinuationAction(Task<TResult> previousTask, TTarget target, CallTargetState state)
             {
                 if (!previousTask.IsCompleted)
                 {
                     await new NoThrowAwaiter(previousTask, _preserveContext);
                 }
 
+                TResult taskResult = default;
+                Exception exception = null;
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
                     taskResult = previousTask.Result;
@@ -103,36 +109,104 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                         exception = ex;
                     }
                 }
-            }
 
-            try
-            {
-                // *
-                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
-                // *
-                if (_continuation is not null)
+                TResult continuationResult = default;
+                try
                 {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // *
                     continuationResult = _continuation(target, taskResult, exception, in state);
                 }
-                else if (_asyncContinuation is not null)
+                catch (Exception ex)
                 {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex, "Exception occurred when calling the CallTarget integration continuation.");
+                }
+
+                // *
+                // If the original task throws an exception we rethrow it here.
+                // *
+                if (exception != null)
+                {
+                    ExceptionDispatchInfo.Capture(exception).Throw();
+                }
+
+                return continuationResult;
+            }
+        }
+
+        private class AsyncContinuationResolver : ContinuationResolver
+        {
+            private readonly AsyncContinuationMethodDelegate _asyncContinuation;
+            private readonly bool _preserveContext;
+
+            public AsyncContinuationResolver(AsyncContinuationMethodDelegate asyncContinuation, bool preserveContext)
+            {
+                _asyncContinuation = asyncContinuation;
+                _preserveContext = preserveContext;
+            }
+
+            public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            {
+                var previousTask = returnValue == null ? null : FromTReturn<Task<TResult>>(returnValue);
+                return ToTReturn(ContinuationAction(previousTask, instance, state, exception));
+            }
+
+            private async Task<TResult> ContinuationAction(Task<TResult> previousTask, TTarget target, CallTargetState state, Exception exception)
+            {
+                TResult taskResult = default;
+                if (previousTask is not null)
+                {
+                    if (!previousTask.IsCompleted)
+                    {
+                        await new NoThrowAwaiter(previousTask, _preserveContext);
+                    }
+
+                    if (previousTask.Status == TaskStatus.RanToCompletion)
+                    {
+                        taskResult = previousTask.Result;
+                    }
+                    else if (previousTask.Status == TaskStatus.Faulted)
+                    {
+                        exception ??= previousTask.Exception?.GetBaseException();
+                    }
+                    else if (previousTask.Status == TaskStatus.Canceled)
+                    {
+                        try
+                        {
+                            // The only supported way to extract the cancellation exception is to await the task
+                            await previousTask.ConfigureAwait(_preserveContext);
+                        }
+                        catch (Exception ex)
+                        {
+                            exception ??= ex;
+                        }
+                    }
+                }
+
+                TResult continuationResult = default;
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // *
                     continuationResult = await _asyncContinuation(target, taskResult, exception, in state).ConfigureAwait(_preserveContext);
                 }
-            }
-            catch (Exception ex)
-            {
-                IntegrationOptions<TIntegration, TTarget>.LogException(ex, "Exception occurred when calling the CallTarget integration continuation.");
-            }
+                catch (Exception ex)
+                {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex, "Exception occurred when calling the CallTarget integration continuation.");
+                }
 
-            // *
-            // If the original task throws an exception we rethrow it here.
-            // *
-            if (exception != null)
-            {
-                ExceptionDispatchInfo.Capture(exception).Throw();
-            }
+                // *
+                // If the original task throws an exception we rethrow it here.
+                // *
+                if (exception != null)
+                {
+                    ExceptionDispatchInfo.Capture(exception).Throw();
+                }
 
-            return continuationResult;
+                return continuationResult;
+            }
         }
     }
 }
