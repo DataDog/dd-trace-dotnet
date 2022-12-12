@@ -117,8 +117,6 @@ namespace Datadog.Trace.Activity.Handlers
                     _ => null
                 };
 
-                // TODO: The OpenTelemetry SDK can create spans without making them active. We'll need automatic instrumentation to detect when we want to update the ActiveScope or not
-                // Worst case, we set Tracer.ActiveScope here unconditionally so it can be retrieved by Tracer.ActiveScope from the original API methods
                 var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, serviceName: serviceName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
                 span.ResourceName = activity.OperationName;
                 var scope = Tracer.Instance.ActivateSpan(span, false);

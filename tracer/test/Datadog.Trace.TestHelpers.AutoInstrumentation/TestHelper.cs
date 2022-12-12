@@ -415,11 +415,6 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(ConfigurationKeys.ServiceName, serviceName);
         }
 
-        protected void SetServiceEnv(string serviceEnv)
-        {
-            SetEnvironmentVariable(ConfigurationKeys.Environment, serviceEnv);
-        }
-
         protected void SetServiceVersion(string serviceVersion)
         {
             SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, serviceVersion);

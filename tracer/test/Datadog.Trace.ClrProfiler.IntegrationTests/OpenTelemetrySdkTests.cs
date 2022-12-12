@@ -49,7 +49,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTraces()
         {
-            // using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
@@ -64,8 +63,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .DisableRequireUniquePrefix()
                                   .UseFileName(nameof(OpenTelemetrySdkTests));
-
-                // telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
             }
         }
     }

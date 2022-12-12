@@ -16,8 +16,6 @@ public static class Program
 
     public static async Task Main(string[] args)
     {
-        EnsureAutomaticInstrumentationEnabled();
-
         var serviceName = "MyServiceName";
         var serviceVersion = "1.0.x";
 
@@ -46,12 +44,6 @@ public static class Program
         using var span2 = _tracer.StartSpan("SayHello2", SpanKind.Internal, parentContext: default, links: new Link[] { new(span.Context, new SpanAttributes()) });
 
         using var span3 = _tracer.StartSpan("SayHello3", SpanKind.Internal, parentSpan: default, links: new Link[] { new(span.Context, new SpanAttributes()), new(span2.Context, new SpanAttributes()) });
-    }
-
-    private static void EnsureAutomaticInstrumentationEnabled()
-    {
-        var process = new Process();
-        return;
     }
 
     private static async Task RunStartSpanOverloadsAsync(TelemetrySpan span)
