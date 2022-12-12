@@ -228,10 +228,26 @@ namespace Datadog.Trace.Propagators
 
             header = header.Trim();
 
-            if (header.Length < 6 || !header.StartsWith("dd=", StringComparison.Ordinal))
+            if (header.Length < 6)
             {
                 // shortest valid length is 6: "dd=s:1"
                 return false;
+            }
+
+            var ddStart = header.IndexOf("dd=", StringComparison.Ordinal);
+
+            if (ddStart < 0 || (ddStart > 0 && header[ddStart - 1] != ','))
+            {
+                // either "dd=" was not found, or it wasn't preceded by a separator comma
+                return false;
+            }
+
+            var ddEnd = header.IndexOf(',', ddStart + 3);
+
+            if (ddEnd < 0)
+            {
+                // comma not found, "dd=" reaches the end of header
+                ddEnd = header.Length;
             }
 
             int? samplingPriority = null;
@@ -246,23 +262,24 @@ namespace Datadog.Trace.Propagators
                 //            ^ endIndex
                 //      ^ colonIndex
                 // ^ startIndex
-                var startIndex = 3;
+                var startIndex = ddStart + 3;
 
                 while (true)
                 {
-                    if (startIndex > header.Length - 3)
+                    if (startIndex > ddEnd - 3)
                     {
                         // not enough chars left in the header value
                         break;
                     }
 
-                    var endIndex = header.IndexOf(';', startIndex);
+                    // search for next separator semicolon in "dd=<...>"
+                    var endIndex = header.IndexOf(';', startIndex, ddEnd - startIndex);
 
                     if (endIndex < 0)
                     {
-                        // no more semicolons left in the header value,
-                        // this pair goes on to the end of the string
-                        endIndex = header.Length - 1;
+                        // no more semicolons left in "dd=" value,
+                        // this key/value pair goes on to the end of the value "dd="
+                        endIndex = ddEnd - 1;
                     }
                     else
                     {
