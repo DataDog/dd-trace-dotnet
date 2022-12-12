@@ -560,6 +560,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 CurrentSecurity.CheckPathParams(httpContext, span, routeValues);
+
+                if (Iast.Iast.Instance.Settings.Enabled)
+                {
+                    span.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
+                }
             }
         }
 
@@ -599,6 +604,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+
+                if (Iast.Iast.Instance.Settings.Enabled)
+                {
+                    parentSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
+                }
             }
         }
 

@@ -49,7 +49,6 @@ namespace Datadog.Trace.AppSec
                     }
                 }
 
-                var scope = SharedItems.TryPeekScope(context, peekScopeKey);
                 var securityTransport = new Coordinator.SecurityCoordinator(security, context, scope.Span);
                 if (!securityTransport.IsBlocked)
                 {
