@@ -6,11 +6,13 @@
 using System;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using Datadog.Trace.Vendors.Serilog.Events;
+
 #pragma warning disable SA1649 // File name must match first type name
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
-    internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn>
+    internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn, TResult>
     {
         private static readonly ContinuationResolver Resolver;
 
@@ -31,25 +33,20 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     Resolver = new SyncContinuationResolver(continuation, result.PreserveContext);
                 }
             }
+            else
+            {
+                Resolver = new NullContinuationResolver();
+            }
 
-            Resolver ??= new ContinuationResolver();
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug($"== TaskContinuationGenerator<{typeof(TIntegration).FullName}, {typeof(TTarget).FullName}, {typeof(TReturn).FullName}, {typeof(TResult).FullName}> using Resolver: {Resolver.GetType().FullName}");
+            }
         }
-
-        internal delegate TResult ContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, in CallTargetState state);
-
-        internal delegate Task<TResult> AsyncContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, in CallTargetState state);
 
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             return Resolver.SetContinuation(instance, returnValue, exception, in state);
-        }
-
-        private class ContinuationResolver
-        {
-            public virtual TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
-            {
-                return returnValue;
-            }
         }
 
         private class SyncContinuationResolver : ContinuationResolver
@@ -71,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     return returnValue;
                 }
 
-                var previousTask = FromTReturn<Task<TResult>>(returnValue);
+                Task<TResult> previousTask = FromTReturn<Task<TResult>>(returnValue);
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
                     return ToTReturn(Task.FromResult(_continuation(instance, previousTask.Result, default, in state)));
@@ -89,6 +86,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
                 TResult taskResult = default;
                 Exception exception = null;
+                TResult continuationResult = default;
+
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
                     taskResult = previousTask.Result;
@@ -110,7 +109,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     }
                 }
 
-                TResult continuationResult = default;
                 try
                 {
                     // *

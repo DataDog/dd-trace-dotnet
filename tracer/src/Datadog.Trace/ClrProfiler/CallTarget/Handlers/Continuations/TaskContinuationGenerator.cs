@@ -6,6 +6,7 @@
 using System;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
@@ -21,42 +22,37 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 if (result.Method.ReturnType == typeof(Task) ||
                     (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
                 {
-                    var asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
+                    var asyncContinuation = (AsyncObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncObjectContinuationMethodDelegate));
                     Resolver = new AsyncContinuationResolver(asyncContinuation, result.PreserveContext);
                 }
                 else
                 {
-                    var continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
+                    var continuation = (ObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ObjectContinuationMethodDelegate));
                     Resolver = new SyncContinuationResolver(continuation, result.PreserveContext);
                 }
             }
+            else
+            {
+                Resolver = new NullContinuationResolver();
+            }
 
-            Resolver ??= new ContinuationResolver();
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug($"== TaskContinuationGenerator<{typeof(TIntegration).FullName}, {typeof(TTarget).FullName}, {typeof(TReturn).FullName}> using Resolver: {Resolver.GetType().FullName}");
+            }
         }
-
-        internal delegate object ContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, in CallTargetState state);
-
-        internal delegate Task<object> AsyncContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, in CallTargetState state);
 
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             return Resolver.SetContinuation(instance, returnValue, exception, in state);
         }
 
-        private class ContinuationResolver
-        {
-            public virtual TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
-            {
-                return returnValue;
-            }
-        }
-
         private class SyncContinuationResolver : ContinuationResolver
         {
-            private readonly ContinuationMethodDelegate _continuation;
+            private readonly ObjectContinuationMethodDelegate _continuation;
             private readonly bool _preserveContext;
 
-            public SyncContinuationResolver(ContinuationMethodDelegate continuation, bool preserveContext)
+            public SyncContinuationResolver(ObjectContinuationMethodDelegate continuation, bool preserveContext)
             {
                 _continuation = continuation;
                 _preserveContext = preserveContext;
@@ -66,14 +62,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             {
                 if (exception != null || returnValue == null)
                 {
-                    _continuation(instance, returnValue, exception, in state);
+                    _continuation(instance, default, exception, in state);
                     return returnValue;
                 }
 
-                var previousTask = FromTReturn<Task>(returnValue);
+                Task previousTask = FromTReturn<Task>(returnValue);
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
-                    _continuation(instance, returnValue, exception, in state);
+                    _continuation(instance, default, null, in state);
                     return returnValue;
                 }
 
@@ -88,6 +84,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 }
 
                 Exception exception = null;
+
                 if (previousTask.Status == TaskStatus.Faulted)
                 {
                     exception = previousTask.Exception?.GetBaseException();
@@ -129,10 +126,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
         private class AsyncContinuationResolver : ContinuationResolver
         {
-            private readonly AsyncContinuationMethodDelegate _asyncContinuation;
+            private readonly AsyncObjectContinuationMethodDelegate _asyncContinuation;
             private readonly bool _preserveContext;
 
-            public AsyncContinuationResolver(AsyncContinuationMethodDelegate asyncContinuation, bool preserveContext)
+            public AsyncContinuationResolver(AsyncObjectContinuationMethodDelegate asyncContinuation, bool preserveContext)
             {
                 _asyncContinuation = asyncContinuation;
                 _preserveContext = preserveContext;
