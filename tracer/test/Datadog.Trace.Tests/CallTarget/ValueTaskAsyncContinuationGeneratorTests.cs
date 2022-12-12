@@ -251,6 +251,23 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
+        [Fact]
+        public async Task SuccessGenericKnownTypeTest()
+        {
+            var tcg = new ValueTaskContinuationGenerator<IntegrationWithKnownType, ValueTaskAsyncContinuationGeneratorTests, ValueTask<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, in state);
+
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue[Modified]", rValue);
+
+            async ValueTask<string> GetPreviousTask()
+            {
+                await Task.Delay(1000).ConfigureAwait(false);
+                return "ReturnValue";
+            }
+        }
+
         internal class CustomException : Exception
         {
             public CustomException(string message)
@@ -313,6 +330,15 @@ namespace Datadog.Trace.Tests.CallTarget
         internal class ReturnValue
         {
             public string Value { get; set; }
+        }
+
+        internal class IntegrationWithKnownType
+        {
+            public static async Task<string> OnAsyncMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, CallTargetState state)
+            {
+                await Task.Delay(1000).ConfigureAwait(false);
+                return returnValue + "[Modified]";
+            }
         }
     }
 }
