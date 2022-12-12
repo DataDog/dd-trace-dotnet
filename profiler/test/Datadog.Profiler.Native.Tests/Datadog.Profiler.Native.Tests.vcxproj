@@ -59,7 +59,7 @@
     <ClCompile Include="RuntimeIdTest.cpp" />
     <ClCompile Include="RuntimeInfoHelper.cpp" />
     <ClCompile Include="SamplesCollectorTest.cpp" />
-    <ClCompile Include="StackSnapshotResultReusableBufferTest.cpp" />
+    <ClCompile Include="StackSnapshotResultBufferTest.cpp" />
     <ClCompile Include="TagsHelperTest.cpp" />
     <ClCompile Include="ProviderTest.cpp" />
     <ClCompile Include="ThreadsCpuManagerHelper.cpp" />
