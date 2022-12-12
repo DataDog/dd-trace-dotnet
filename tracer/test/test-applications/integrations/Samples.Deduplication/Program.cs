@@ -46,4 +46,17 @@ internal static class Program
 
         return times;
     }
+
+    private static void testHashAlgorithm(HashAlgorithm algorithm)
+    {
+        var byteArg = new byte[] { 3, 5, 6 };
+        var stream = new MemoryStream(byteArg);
+
+        algorithm.ComputeHash(byteArg, 0, 3);
+        algorithm.ComputeHash(byteArg);
+        algorithm.ComputeHash(stream);
+#if NET5_0_OR_GREATER
+            _ = algorithm.ComputeHashAsync(stream, CancellationToken.None).Result;
+#endif
+    }
 }
