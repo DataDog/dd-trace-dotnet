@@ -225,8 +225,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     if (internal_workaround_77973_enabled)
     {
         if (runtime_information_.major_version == 5 ||
-            (runtime_information_.major_version == 6 && runtime_information_.minor_version == 0 && runtime_information_.build_version <= 11) ||
-            (runtime_information_.major_version == 7 && runtime_information_.minor_version == 0 && runtime_information_.build_version == 0))
+            (runtime_information_.major_version == 6 && runtime_information_.minor_version == 0 && runtime_information_.build_version <= 12) ||
+            (runtime_information_.major_version == 7 && runtime_information_.minor_version == 0 && runtime_information_.build_version <= 1))
         {
             Logger::Warn("Tiered Compilation was disabled due to https://github.com/dotnet/runtime/issues/77973. This action can be disabled by setting the environment variable DD_INTERNAL_WORKAROUND_77973_ENABLED=false");
             disableTieredCompilation = true;
