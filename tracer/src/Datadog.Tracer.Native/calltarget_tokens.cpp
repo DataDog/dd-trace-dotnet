@@ -7,7 +7,6 @@
 
 namespace trace
 {
-
 const int signatureBufferSize = 500;
 
 /**
@@ -227,7 +226,8 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(mdTypeSpe
     }
     if (callTargetReturnTypeRef == mdTypeRefNil)
     {
-        Logger::Warn("Wrapper callTargetReturnTypeGetDefault could not be defined because callTargetReturnTypeRef is null.");
+        Logger::Warn(
+            "Wrapper callTargetReturnTypeGetDefault could not be defined because callTargetReturnTypeRef is null.");
         return mdMemberRefNil;
     }
 
@@ -455,7 +455,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     }
 
     // Add new locals
-    
+
     // Return value local
     if (returnSignatureType != nullptr)
     {
@@ -569,6 +569,18 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper profilerAssemblyRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure Datadog.Trace.AppSec.BlockException type ref
+    if (blockExTypeRef == mdTypeRefNil)
+    {
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, BlockException,
+                                                                      &blockExTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper blockExTypeRef could not be defined.");
             return hr;
         }
     }
@@ -752,7 +764,8 @@ int CallTargetTokens::GetAdditionalLocalsCount()
     return 0;
 }
 
-void CallTargetTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod)
+void CallTargetTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset,
+                                           ULONG& signatureSize, bool isAsyncMethod)
 {
 }
 
@@ -761,7 +774,9 @@ CallTargetTokens::CallTargetTokens(ModuleMetadata* moduleMetadataPtr, const bool
     module_metadata_ptr(moduleMetadataPtr),
     enable_by_ref_instrumentation(enableByRefInstrumentation),
     enable_calltarget_state_by_ref(enableCallTargetStateByRef)
-{ }
+{
+}
+
 /**
  * PUBLIC
  **/
@@ -770,18 +785,27 @@ mdTypeRef CallTargetTokens::GetObjectTypeRef()
 {
     return objectTypeRef;
 }
+
 mdTypeRef CallTargetTokens::GetExceptionTypeRef()
 {
     return exTypeRef;
 }
+
+mdTypeRef CallTargetTokens::GetBlockExceptionTypeRef()
+{
+    return blockExTypeRef;
+}
+
 mdTypeRef CallTargetTokens::GetRuntimeTypeHandleTypeRef()
 {
     return runtimeTypeHandleRef;
 }
+
 mdTypeRef CallTargetTokens::GetRuntimeMethodHandleTypeRef()
 {
     return runtimeMethodHandleRef;
 }
+
 mdAssemblyRef CallTargetTokens::GetCorLibAssemblyRef()
 {
     return corLibAssemblyRef;
@@ -799,7 +823,8 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
     // Modify the Local Var Signature of the method
 
     auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(), methodReturnType, callTargetStateIndex,
-                             exceptionIndex, callTargetReturnIndex, returnValueIndex, callTargetStateToken, exceptionToken,
+                             exceptionIndex, callTargetReturnIndex, returnValueIndex, callTargetStateToken,
+                             exceptionToken,
                              callTargetReturnToken, isAsyncMethod);
 
     if (FAILED(hr))
@@ -867,5 +892,4 @@ HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(void* rewriterWrap
     *instruction = rewriterWrapper->CallMember(callTargetReturnGetValueMemberRef, false);
     return S_OK;
 }
-
 } // namespace trace

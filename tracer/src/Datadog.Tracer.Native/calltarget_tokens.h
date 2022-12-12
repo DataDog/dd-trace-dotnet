@@ -58,6 +58,7 @@ protected:
     mdTypeRef callTargetReturnVoidTypeRef = mdTypeRefNil;
     mdTypeRef callTargetReturnTypeRef = mdTypeRefNil;
     mdTypeRef exTypeRef = mdTypeRefNil;
+    mdTypeRef blockExTypeRef = mdTypeRefNil;
     mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
     mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
 
@@ -78,6 +79,7 @@ protected:
 public:
     mdTypeRef GetObjectTypeRef();
     mdTypeRef GetExceptionTypeRef();
+    mdTypeRef GetBlockExceptionTypeRef();
     mdTypeRef GetRuntimeTypeHandleTypeRef();
     mdTypeRef GetRuntimeMethodHandleTypeRef();
     mdAssemblyRef GetCorLibAssemblyRef();
