@@ -217,6 +217,8 @@ namespace Datadog.Trace.Ci
         public System.DateTimeOffset StartTime { get; }
         public void Close() { }
         public void Close(System.TimeSpan? duration) { }
+        public System.Threading.Tasks.Task CloseAsync() { }
+        public System.Threading.Tasks.Task CloseAsync(System.TimeSpan? duration) { }
         public Datadog.Trace.Ci.TestSuite GetOrCreateSuite(string name) { }
         public Datadog.Trace.Ci.TestSuite GetOrCreateSuite(string name, System.DateTimeOffset? startDate) { }
         public void SetErrorInfo(System.Exception exception) { }
@@ -241,6 +243,8 @@ namespace Datadog.Trace.Ci
         public string? WorkingDirectory { get; }
         public void Close(Datadog.Trace.Ci.TestStatus status) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
+        public System.Threading.Tasks.Task CloseAsync(Datadog.Trace.Ci.TestStatus status) { }
+        public System.Threading.Tasks.Task CloseAsync(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
         public Datadog.Trace.Ci.TestModule CreateModule(string name) { }
         public Datadog.Trace.Ci.TestModule CreateModule(string name, string framework, string frameworkVersion) { }
         public Datadog.Trace.Ci.TestModule CreateModule(string name, string framework, string frameworkVersion, System.DateTimeOffset startDate) { }
