@@ -357,6 +357,7 @@ ILInstr* ILRewriterWrapper::CreateInstr(unsigned opCode) const
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
     return pNewInstr;
 }
+
 ILInstr* ILRewriterWrapper::InitObj(mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
@@ -364,4 +365,19 @@ ILInstr* ILRewriterWrapper::InitObj(mdTypeRef type_ref) const
     pNewInstr->m_Arg32 = type_ref;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
     return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::CreateFilterForException(mdTypeRef type_ref) const
+{
+    ILInstr* filter = CreateInstr(CEE_ISINST);
+    mdTypeRef bubbleUpExceptionTypeRef = type_ref;
+    filter->m_Arg32 = bubbleUpExceptionTypeRef;
+    LoadNull();
+    CreateInstr(CEE_CGT_UN);
+    CreateInstr(CEE_LDC_I4_0);
+    CreateInstr(CEE_CEQ);
+    CreateInstr(CEE_LDC_I4_0);
+    CreateInstr(CEE_CGT_UN);
+    CreateInstr(CEE_ENDFILTER);
+    return filter;
 }

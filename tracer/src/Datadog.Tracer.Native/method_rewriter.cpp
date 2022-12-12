@@ -382,7 +382,11 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
     reWriterWrapper.StLocal(callTargetStateIndex);
     ILInstr* pStateLeaveToBeginOriginalMethodInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
-
+    
+    // *** Filter exception
+    mdTypeRef bubbleUpExceptionTypeRef = tracerTokens->GetBubbleUpExceptionTypeRef();
+    ILInstr* filter = reWriterWrapper.CreateFilterForException(bubbleUpExceptionTypeRef);
+    
     // *** BeginMethod call catch
     ILInstr* beginMethodCatchFirstInstr = nullptr;
     tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
@@ -391,12 +395,12 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     // *** BeginMethod exception handling clause
     EHClause beginMethodExClause{};
-    beginMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    beginMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FILTER;
     beginMethodExClause.m_pTryBegin = firstInstruction;
-    beginMethodExClause.m_pTryEnd = beginMethodCatchFirstInstr;
+    beginMethodExClause.m_pTryEnd = filter;
     beginMethodExClause.m_pHandlerBegin = beginMethodCatchFirstInstr;
     beginMethodExClause.m_pHandlerEnd = beginMethodCatchLeaveInstr;
-    beginMethodExClause.m_ClassToken = tracerTokens->GetExceptionTypeRef();
+    beginMethodExClause.m_pFilter = filter;
 
     // ***
     // METHOD EXECUTION
@@ -525,44 +529,24 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ILInstr* endMethodTryLeave = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** Filter exception
-    ILInstr* filter = reWriterWrapper.CreateInstr(CEE_ISINST);
-    filter->m_Arg32 = tracerTokens->GetExceptionTypeRef();
-    reWriterWrapper.Duplicate();
-    ILInstr* pIsTrue = reWriterWrapper.CreateInstr(CEE_BRTRUE_S);
-    reWriterWrapper.Pop();
-    reWriterWrapper.CreateInstr(CEE_LDC_I4_0);
-    ILInstr* transfer = reWriterWrapper.CreateInstr(CEE_BR_S);
-    ILInstr* stsLoc4 = reWriterWrapper.StLocal(4);
-    pIsTrue->m_pTarget = stsLoc4;
-    reWriterWrapper.LoadLocal(4);
-    mdTypeRef blockexceptionType = tracerTokens->GetBlockExceptionTypeRef();
-    ILInstr* pNewInstr = reWriterWrapper.CreateInstr(CEE_ISINST);
-    pNewInstr->m_Arg32 = blockexceptionType;
-    reWriterWrapper.LoadNull();
-    ILInstr* pNewInstr1 = reWriterWrapper.CreateInstr(CEE_CGT_UN);
-    ILInstr* pNewInstr2 = reWriterWrapper.CreateInstr(CEE_LDC_I4_0);
-    ILInstr* pNewInstr3 = reWriterWrapper.CreateInstr(CEE_CEQ);
-    ILInstr* pNewInstr4 = reWriterWrapper.CreateInstr(CEE_LDC_I4_0);
-    ILInstr* pNewInstr5 = reWriterWrapper.CreateInstr(CEE_CGT_UN);
-    ILInstr* endFilter = reWriterWrapper.CreateInstr(CEE_ENDFILTER);
-    transfer->m_pTarget = endFilter;
+    ILInstr* filterEnd = reWriterWrapper.CreateFilterForException(bubbleUpExceptionTypeRef);
+    
+    // transfer->m_pTarget = endFilter;
     // *** EndMethod call catch
     ILInstr* endMethodCatchFirstInstr = nullptr;
     tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
                                     &endMethodCatchFirstInstr);
-    
-    
+
     ILInstr* endMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** EndMethod exception handling clause
     EHClause endMethodExClause{};
     endMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FILTER;
     endMethodExClause.m_pTryBegin = endMethodTryStartInstr;
-    endMethodExClause.m_pTryEnd = filter;
+    endMethodExClause.m_pTryEnd = filterEnd;
     endMethodExClause.m_pHandlerBegin = endMethodCatchFirstInstr;
     endMethodExClause.m_pHandlerEnd = endMethodCatchLeaveInstr;
-    endMethodExClause.m_pFilter = filter;
-
+    endMethodExClause.m_pFilter = filterEnd;
 
     // *** EndMethod leave to finally
     ILInstr* endFinallyInstr = reWriterWrapper.EndFinally();

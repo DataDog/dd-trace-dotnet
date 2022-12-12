@@ -573,14 +573,14 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
         }
     }
 
-    // *** Ensure Datadog.Trace.AppSec.BlockException type ref
-    if (blockExTypeRef == mdTypeRefNil)
+    // *** Ensure Datadog.Trace.AppSec.CallTargetBubbleUpException type ref
+    if (bubbleUpExceptionTypeRef == mdTypeRefNil)
     {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, BlockException,
-                                                                      &blockExTypeRef);
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, CallTargetBubbleUpException,
+                                                                      &bubbleUpExceptionTypeRef);
         if (FAILED(hr))
         {
-            Logger::Warn("Wrapper blockExTypeRef could not be defined.");
+            Logger::Warn("Wrapper bubbleUpExceptionTypeRef could not be defined.");
             return hr;
         }
     }
@@ -791,9 +791,9 @@ mdTypeRef CallTargetTokens::GetExceptionTypeRef()
     return exTypeRef;
 }
 
-mdTypeRef CallTargetTokens::GetBlockExceptionTypeRef()
+mdTypeRef CallTargetTokens::GetBubbleUpExceptionTypeRef()
 {
-    return blockExTypeRef;
+    return bubbleUpExceptionTypeRef;
 }
 
 mdTypeRef CallTargetTokens::GetRuntimeTypeHandleTypeRef()
