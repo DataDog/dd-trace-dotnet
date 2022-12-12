@@ -7,18 +7,183 @@
 
 using System;
 using System.Text;
+using Datadog.Trace.Activity.DuckTypes;
 
 namespace Datadog.Trace.Activity
 {
     internal static class OtlpHelpers
     {
-        internal static bool? GoStrConvParseBool(string value) =>
-            value switch
+        private static readonly string[] SpanKindNames = new string[]
+        {
+            "internal",
+            "server",
+            "client",
+            "producer",
+            "consumer",
+        };
+
+        internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
+            where TInner : IActivity
+        {
+            var activity5 = activity as IActivity5;
+
+            // Update ResourceName before running agent logic
+            if (activity5 is not null)
             {
-                "1" or "t" or "T" or "TRUE" or "true" or "True" => true,
-                "0" or "f" or "F" or "FALSE" or "false" or "False" => false,
-                _ => null
-            };
+                span.ResourceName = activity5.DisplayName;
+            }
+
+            AgentConvertSpan(activity, span);
+
+            // Additional Datdog policy: Set tag "span.kind"
+            // Since the ActivityKind can only be one of a fixed set of values, always set the tag as prescribed by Datadog practices
+            // even though the tag is not present on normal OTLP spans
+            if (activity5 is not null)
+            {
+                switch (activity5.Kind)
+                {
+                    case ActivityKind.Client:
+                        span.SetTag(Tags.SpanKind, SpanKinds.Client);
+                        break;
+                    case ActivityKind.Consumer:
+                        span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+                        break;
+                    case ActivityKind.Producer:
+                        span.SetTag(Tags.SpanKind, SpanKinds.Producer);
+                        break;
+                    case ActivityKind.Server:
+                        span.SetTag(Tags.SpanKind, SpanKinds.Server);
+                        break;
+                }
+            }
+        }
+
+        // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
+        private static void AgentConvertSpan<TInner>(TInner activity, Span span)
+            where TInner : IActivity
+        {
+            // Perform activity casts first and check for null when their members need to be accessed
+            var w3cActivity = activity as IW3CActivity;
+            var activity5 = activity as IActivity5;
+            var activity6 = activity as IActivity6;
+
+            span.OperationName = null; // Reset the operation name, it will be repopulated
+
+            // TODO: Add resources to spans
+            // OpenTelemetry SDK resources are added to the span attributes by the configured exporter when OpenTelemetry.BaseExporter<T>.Export is called (e.g. OpenTelemetry.Exporter.ConsoleActivityExporter.Export)
+            // **** Note: The exporter has a ParentProvider field that is populated with the TracerProviderSdk when everything is initially built, so this is technically per instance
+            // **** To reliably get this, we might consider addding a Processor to the TracerProviderBuilder, though not sure where to invoke it
+            // - service.instance.id
+            // - service.name
+            // - service.namespace
+            // - service.version
+
+            if (w3cActivity is not null)
+            {
+                span.SetTag("otel.trace_id", w3cActivity.TraceId);
+
+                // Marshall events here using tag "events"
+                // span.SetTag("events", eventsArray);
+            }
+
+            // Fixup "version" tag
+            if (Tracer.Instance.Settings.ServiceVersion is null
+                && span.GetTag("service.version") is string otelServiceVersion
+                && !string.IsNullOrEmpty(otelServiceVersion))
+            {
+                span.SetTag(Tags.Version, otelServiceVersion);
+            }
+
+            // Copy over tags from Activity to the Datadog Span
+            // Starting with .NET 5, Activity can hold tags whose value have type object?
+            // For runtimes older than .NET 5, Activity can only hold tags whose values have type string
+            if (activity5 is not null)
+            {
+                foreach (var activityTag in activity5.TagObjects)
+                {
+                    OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
+                }
+            }
+            else
+            {
+                foreach (var activityTag in activity.Tags)
+                {
+                    OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
+                }
+            }
+
+            // TODO: Add container tags from attributes if the tag isn't already in the span
+
+            // Fixup "env" tag
+            if (span.Context.TraceContext?.Environment is null
+                && span.GetTag("deployment.environment") is string otelServiceEnv
+                && !string.IsNullOrEmpty(otelServiceEnv))
+            {
+                span.SetTag(Tags.Env, otelServiceEnv);
+            }
+
+            // TODO: The .NET OTLP exporter doesn't currently add tracestate, but the DD agent will set it as tag "w3c.tracestate" if detected
+            // For now, we can keep this unimplemented so the resulting span matches the .NET OTLP exporter
+            // span.SetTag("w3c.tracestate", w3CActivity.TraceStateString);
+
+            // Add the library name and library version
+            if (activity5 is not null)
+            {
+                span.SetTag("otel.library.name", activity5.Source.Name);
+                span.SetTag("otel.library.version", activity5.Source.Version);
+            }
+
+            // Set OTEL status code and OTEL status description
+            if (span.GetTag("otel.status_code") is null)
+            {
+                span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
+            }
+
+            // Map the OTEL status to error tags
+            AgentStatus2Error(activity, span);
+
+            if (span.OperationName is null)
+            {
+                if (activity5 is not null)
+                {
+                    // Later: Support config 'span_name_as_resource_name'
+                    // Later: Support config 'span_name_remappings'
+                    span.OperationName = activity5.Source.Name switch
+                    {
+                        string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{SpanKindNames[(int)activity5.Kind]}",
+                        _ => $"opentelemetry.{SpanKindNames[(int)activity5.Kind]}",
+                    };
+                }
+                else
+                {
+                    span.OperationName = activity.OperationName;
+                }
+            }
+
+            // Update Service with a reasonable default
+            if (span.ServiceName is null)
+            {
+                span.ServiceName = span.GetTag("peer.service") switch
+                {
+                    string peerService when !string.IsNullOrEmpty(peerService) => peerService,
+                    _ => "OTLPResourceNoServiceName",
+                };
+            }
+
+            // Update Resource with a reasonable default
+            if (span.ResourceName is null)
+            {
+                // TODO: Implement resourceFromTags
+                // See: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L555
+                span.ResourceName = activity5?.DisplayName;
+            }
+
+            // Update Type with a reasonable default
+            if (string.IsNullOrWhiteSpace(span.Type))
+            {
+                span.Type = activity5 is null ? SpanTypes.Custom : AgentSpanKind2Type(activity5.Kind, span);
+            }
+        }
 
         internal static void SetTagObject(Span span, string key, object? value)
         {
@@ -31,13 +196,13 @@ namespace Datadog.Trace.Activity
             switch (value)
             {
                 case char c: // TODO: Can't get here from OTEL API, test with Activity API
-                    SetOtlpTag(span, key, c.ToString());
+                    AgentSetOtlpTag(span, key, c.ToString());
                     break;
                 case string s:
-                    SetOtlpTag(span, key, s);
+                    AgentSetOtlpTag(span, key, s);
                     break;
                 case bool b:
-                    SetOtlpTag(span, key, b ? "true" : "false");
+                    AgentSetOtlpTag(span, key, b ? "true" : "false");
                     break;
                 case byte b: // TODO: Can't get here from OTEL API, test with Activity API
                     span.SetMetric(key, b);
@@ -70,17 +235,16 @@ namespace Datadog.Trace.Activity
                     span.SetMetric(key, d);
                     break;
                 case Array array:
-                    SetOtlpTag(span, key, ComposeArrayString(array));
+                    AgentSetOtlpTag(span, key, ComposeArrayString(array));
                     break;
                 default:
-                    SetOtlpTag(span, key, value.ToString()!);
+                    AgentSetOtlpTag(span, key, value.ToString()!);
                     break;
             }
         }
 
-        // Use trace agent algorithm to transform Otlp attributes to Datadog span meta fields
-        // See https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L424
-        internal static void SetOtlpTag(Span span, string key, string value)
+        // See trace agent func setMetaOTLP: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L424
+        internal static void AgentSetOtlpTag(Span span, string key, string value)
         {
             switch (key)
             {
@@ -120,6 +284,57 @@ namespace Datadog.Trace.Activity
             }
         }
 
+        // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
+        internal static void AgentStatus2Error<TInner>(TInner activity, Span span)
+            where TInner : IActivity
+        {
+            if (activity is IActivity6 { Status: ActivityStatusCode.Error } activity6)
+            {
+                span.Error = true;
+                // First iterate through Activity events first and set error.msg, error.type, and error.stack
+                if (span.GetTag(Tags.ErrorMsg) is null)
+                {
+                    span.SetTag(Tags.ErrorMsg, activity6.StatusDescription);
+                }
+            }
+            else if (span.GetTag("otel.status_code") == "STATUS_CODE_ERROR")
+            {
+                span.Error = true;
+                // First iterate through Activity events first and set error.msg, error.type, and error.stack
+                if (span.GetTag(Tags.ErrorMsg) is null)
+                {
+                    if (span.GetTag("otel.status_description") is string statusDescription)
+                    {
+                        span.SetTag(Tags.ErrorMsg, statusDescription);
+                    }
+                    else if (span.GetTag("http.status_code") is string statusCodeString)
+                    {
+                        if (span.GetTag("http.status_text") is string httpTextString)
+                        {
+                            span.SetTag(Tags.ErrorMsg, $"{statusCodeString} {httpTextString}");
+                        }
+                        else
+                        {
+                            span.SetTag(Tags.ErrorMsg, statusCodeString);
+                        }
+                    }
+                }
+            }
+        }
+
+        // See trace agent func spanKind2Type: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L621
+        internal static string AgentSpanKind2Type(ActivityKind kind, Span span) => kind switch
+        {
+            ActivityKind.Server => SpanTypes.Web,
+            ActivityKind.Client => span.GetTag("db.system") switch
+            {
+                "redis" or "memcached" => "cache",
+                string => "db",
+                _ => "http",
+            },
+            _ => SpanTypes.Custom,
+        };
+
         internal static string ComposeArrayString(Array array)
         {
             if (array.Length == 0)
@@ -158,5 +373,13 @@ namespace Datadog.Trace.Activity
             sb.Append(']');
             return sb.ToString();
         }
+
+        private static bool? GoStrConvParseBool(string value) =>
+            value switch
+            {
+                "1" or "t" or "T" or "TRUE" or "true" or "True" => true,
+                "0" or "f" or "F" or "FALSE" or "false" or "False" => false,
+                _ => null
+            };
     }
 }
