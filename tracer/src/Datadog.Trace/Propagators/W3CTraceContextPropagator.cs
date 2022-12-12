@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
@@ -80,7 +81,7 @@ namespace Datadog.Trace.Propagators
                 {
                     foreach (var tag in tags)
                     {
-                        if (tag.Key.StartsWith("_dd.p.", StringComparison.Ordinal))
+                        if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
                         {
 #if NETCOREAPP
                             var key = tag.Key.AsSpan(start: 6);
@@ -316,7 +317,7 @@ namespace Datadog.Trace.Propagators
                     }
                     else if (name.StartsWith("t.", StringComparison.Ordinal))
                     {
-                        propagatedTagsBuilder.Append("_dd.p.").Append(name[2..]).Append('=').Append(value).Append(',');
+                        propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix).Append(name[2..]).Append('=').Append(value).Append(',');
                     }
 #else
                     var name = header.Substring(startIndex, colonIndex - startIndex);
@@ -333,7 +334,7 @@ namespace Datadog.Trace.Propagators
                     }
                     else if (name.StartsWith("t.", StringComparison.Ordinal))
                     {
-                        propagatedTagsBuilder.Append("_dd.p.").Append(name.Substring(2)).Append('=').Append(value).Append(',');
+                        propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix).Append(name.Substring(2)).Append('=').Append(value).Append(',');
                     }
 #endif
 
