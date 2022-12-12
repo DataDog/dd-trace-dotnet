@@ -60,6 +60,15 @@ namespace Datadog.Trace.AppSec.Waf
         public Obj Encode(object o, List<Obj>? argCache = null, bool applySafetyLimits = true) =>
             EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits);
 
+        private Obj EncodeUnknownType(object o)
+        {
+            Log.Warning("Couldn't encode object of unknown type {type}, falling back to ToString", o?.GetType());
+
+            var s = o?.ToString() ?? string.Empty;
+
+            return CreateNativeString(s, applyLimits: true);
+        }
+
         private Obj EncodeInternal(object o, List<Obj>? argCache, int remainingDepth, bool applyLimits)
         {
             var value =
@@ -82,7 +91,7 @@ namespace Datadog.Trace.AppSec.Waf
                     IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits),
                     IList<string> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits),
                     IList<object> objs => EncodeList(objs, argCache, remainingDepth, applyLimits),
-                    _ => throw new Exception($"Couldn't encode type: {o?.GetType()}")
+                    _ => EncodeUnknownType(o),
                 };
 
             argCache?.Add(value);
