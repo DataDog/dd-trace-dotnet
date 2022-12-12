@@ -575,8 +575,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.Settings.Enabled;
+            var shouldUseIast = Iast.Iast.Instance.Settings.Enabled;
 
-            if (!shouldTrace && !shouldSecure)
+            if (!shouldTrace && !shouldSecure && !shouldUseIast)
             {
                 return;
             }
@@ -605,7 +606,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
 
-                if (Iast.Iast.Instance.Settings.Enabled)
+                if (shouldUseIast)
                 {
                     parentSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
