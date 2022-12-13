@@ -149,6 +149,12 @@ namespace Datadog.Trace.Tools.Runner
                   .WithExample("apply-aot c:\\input\\ c:\\output\\".Split(' '))
                   .IsHidden();
 
+            config.AddCommand<AnalyzeInstrumentationErrorsCommand>("analyze-instrumentation")
+                  .WithDescription("Analyze instrumentation errors")
+                  .WithExample("analyze-instrumentation [--process-name dotnet]".Split(' '))
+                  .WithExample("analyze-instrumentation [--pid 12345]".Split(' '))
+                  .WithExample("analyze-instrumentation [--log-path \"C:\\ProgramData\\Datadog .NET Tracer\\logs\\\"]".Split(' '));
+
             config.AddCommand<CoverageMergerCommand>("coverage-merge")
                   .WithDescription("Merges all coverage json files into a single one.")
                   .WithExample("coverage-merge c:\\coverage_folder\\ total-coverage.json".Split(' '))
