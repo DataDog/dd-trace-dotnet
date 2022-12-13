@@ -17,6 +17,7 @@ namespace Datadog.Trace.Ci
 {
     internal sealed class CIEnvironmentValues
     {
+        internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)(\/)?";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
 
         private static readonly Lazy<CIEnvironmentValues> _instance = new Lazy<CIEnvironmentValues>(() => new CIEnvironmentValues());
@@ -100,12 +101,22 @@ namespace Datadog.Trace.Ci
             return path;
         }
 
-        private static string GetEnvironmentVariableIfIsNotEmpty(string key, string defaultValue)
+        private static string GetEnvironmentVariableIfIsNotEmpty(string key, string defaultValue, Func<string, string, bool> validator = null)
         {
             string value = EnvironmentHelpers.GetEnvironmentVariable(key, defaultValue);
-            if (string.IsNullOrEmpty(value))
+            if (validator is not null)
             {
-                return defaultValue;
+                if (!validator.Invoke(value, defaultValue))
+                {
+                    return defaultValue;
+                }
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(value))
+                {
+                    return defaultValue;
+                }
             }
 
             return value;
@@ -125,6 +136,23 @@ namespace Datadog.Trace.Ci
             }
 
             return defaultValue;
+        }
+
+        private static bool IsHex(IEnumerable<char> chars)
+        {
+            foreach (var c in chars)
+            {
+                var isHex = (c is >= '0' and <= '9' ||
+                             c is >= 'a' and <= 'f' ||
+                             c is >= 'A' and <= 'F');
+
+                if (!isHex)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public void DecorateSpan(Span span)
@@ -382,8 +410,64 @@ namespace Datadog.Trace.Ci
             // **********
             Branch = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_BRANCH", Branch);
             Tag = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_TAG", Tag);
-            Repository = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_REPOSITORY_URL", Repository);
-            Commit = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_SHA", Commit);
+            Repository = GetEnvironmentVariableIfIsNotEmpty(
+                "DD_GIT_REPOSITORY_URL",
+                Repository,
+                (value, defaultValue) =>
+                {
+                    if (value is not null)
+                    {
+                        value = value.Trim();
+                        if (value.Length == 0)
+                        {
+                            Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{default}'", defaultValue);
+                        }
+                        else if (Regex.Match(value, RepositoryUrlPattern).Length != value.Length)
+                        {
+                            Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{value}'), defaulting to '{default}'", value, defaultValue);
+                        }
+                        else
+                        {
+                            // All ok!
+                            return true;
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(defaultValue))
+                    {
+                        Log.Error("The Git repository couldn't be automatically extracted.");
+                    }
+
+                    // If not set use the default value
+                    return false;
+                });
+            Commit = GetEnvironmentVariableIfIsNotEmpty(
+                "DD_GIT_COMMIT_SHA",
+                Commit,
+                (value, defaultValue) =>
+                {
+                    if (value is not null)
+                    {
+                        value = value.Trim();
+                        if (value.Length < 40 || !IsHex(value))
+                        {
+                            Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA, defaulting to '{default}'", defaultValue);
+                        }
+                        else
+                        {
+                            // All ok!
+                            return true;
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(defaultValue))
+                    {
+                        Log.Error("The Git commit sha couldn't be automatically extracted.");
+                    }
+
+                    // If not set use the default value
+                    return false;
+                });
             Message = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_MESSAGE", Message);
             AuthorName = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_AUTHOR_NAME", AuthorName);
             AuthorEmail = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_AUTHOR_EMAIL", AuthorEmail);
