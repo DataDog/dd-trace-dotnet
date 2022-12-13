@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
@@ -93,7 +94,8 @@ namespace Datadog.Trace.Tests.Propagators
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
 
-            tracestate.Should().Be("dd=s:2;t.dm:-4;t.usr.id:MTIzNDU=");
+            // note that "t.usr.id:MTIzNDU=" is encoded as "t.usr.id:MTIzNDU~"
+            tracestate.Should().Be("dd=s:2;t.dm:-4;t.usr.id:MTIzNDU~");
         }
 
         [Fact]
@@ -425,12 +427,18 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("dog🐶", "dog__")] // note that 🐶 is two UTF-16 chars, can also be written as "dog\ud83d\udc36" (UTF-16) or "dog\U0001F436" (UTF-32)
         public void ReplaceInvalidCharacters(string value, string expected)
         {
-            const char lowerBound = (char)0x20;
-            const char upperBound = (char)0x7E;
-            const char replacement = '_';
-            const string invalidCharacters = ",;=";
+            const char lowerBound = '\u0020'; // decimal: 32, ' ' (space)
+            const char upperBound = '\u007e'; // decimal: 126, '~' (tilde)
+            const char outOfBoundsReplacement = '_';
 
-            W3CTraceContextPropagator.ReplaceInvalidCharacters(value, lowerBound, upperBound, invalidCharacters, replacement).Should().Be(expected);
+            KeyValuePair<char, char>[] invalidCharacterReplacements =
+            {
+                new(',', '_'),
+                new(';', '_'),
+                new('=', '_'),
+            };
+
+            W3CTraceContextPropagator.ReplaceInvalidCharacters(value, lowerBound, upperBound, outOfBoundsReplacement, invalidCharacterReplacements).Should().Be(expected);
         }
     }
 }

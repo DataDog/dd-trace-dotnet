@@ -21,12 +21,31 @@ namespace Datadog.Trace.Propagators
     {
         private const string TraceStateHeaderValuesSeparator = ",";
 
-        private const char LowerBound = (char)0x20;
-        private const char UpperBound = (char)0x7E;
-        private const char InvalidCharacterReplacement = '_';
-        private const string InvalidOriginCharacters = ",;=";
-        private const string InvalidPropagatedTagKeyCharacters = " ,=";
-        private const string InvalidPropagatedTagValueCharacters = " ,=";
+        private const char LowerBound = '\u0020'; // decimal: 32, ' ' (space)
+        private const char UpperBound = '\u007e'; // decimal: 126, '~' (tilde)
+        private const char OutOfBoundsReplacement = '_';
+
+        private static readonly KeyValuePair<char, char>[] OriginReplacements =
+        {
+            new(',', '_'),
+            new(';', '_'),
+            new('=', '_'),
+        };
+
+        private static readonly KeyValuePair<char, char>[] PropagatedTagKeyReplacements =
+        {
+            new(' ', '_'),
+            new(',', '_'),
+            new('=', '_'),
+        };
+
+        private static readonly KeyValuePair<char, char>[] PropagatedTagValueReplacements =
+        {
+            new(',', '_'),
+            new(';', '_'),
+            new('~', '_'),
+            new('=', '~'), // note '=' is encoded as '~' when injecting, then back to '=' then extracting
+        };
 
         /// <summary>
         /// W3C traceparent header name
@@ -81,7 +100,7 @@ namespace Datadog.Trace.Propagators
 
                 if (!string.IsNullOrWhiteSpace(context.Origin))
                 {
-                    var origin = ReplaceInvalidCharacters(context.Origin, LowerBound, UpperBound, InvalidOriginCharacters, InvalidCharacterReplacement);
+                    var origin = ReplaceInvalidCharacters(context.Origin, LowerBound, UpperBound, OutOfBoundsReplacement, OriginReplacements);
                     sb.Append("o:").Append(origin).Append(';');
                 }
 
@@ -97,8 +116,8 @@ namespace Datadog.Trace.Propagators
                             var key = tag.Key.Substring(startIndex: 6);
 #endif
 
-                            var tagKey = ReplaceInvalidCharacters(key, LowerBound, UpperBound, InvalidPropagatedTagKeyCharacters, InvalidCharacterReplacement);
-                            var tagValue = ReplaceInvalidCharacters(tag.Value, LowerBound, UpperBound, InvalidPropagatedTagValueCharacters, InvalidCharacterReplacement);
+                            var tagKey = ReplaceInvalidCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, PropagatedTagKeyReplacements);
+                            var tagValue = ReplaceInvalidCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, PropagatedTagValueReplacements);
                             sb.Append("t.").Append(tagKey).Append(':').Append(tagValue).Append(';');
                         }
                     }
@@ -581,9 +600,9 @@ namespace Datadog.Trace.Propagators
         }
 
 #if NETCOREAPP
-        public static string ReplaceInvalidCharacters(ReadOnlySpan<char> value, char lowerBound, char upperBound, string invalidChars, char replacement)
+        public static string ReplaceInvalidCharacters(ReadOnlySpan<char> value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
 #else
-        public static string ReplaceInvalidCharacters(string value, char lowerBound, char upperBound, string invalidChars, char replacement)
+        public static string ReplaceInvalidCharacters(string value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
 #endif
         {
             var sb = StringBuilderCache.Acquire(value.Length);
@@ -593,9 +612,19 @@ namespace Datadog.Trace.Propagators
             {
                 var c = sb[i];
 
-                if (c < lowerBound || c > upperBound || invalidChars.IndexOf(c) >= 0)
+                if (c < lowerBound || c > upperBound)
                 {
-                    sb[i] = replacement;
+                    sb[i] = outOfBoundsReplacement;
+                }
+                else
+                {
+                    foreach (var replacement in replacements)
+                    {
+                        if (c == replacement.Key)
+                        {
+                            sb[i] = replacement.Value;
+                        }
+                    }
                 }
             }
 
