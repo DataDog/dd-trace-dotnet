@@ -61,7 +61,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .DisableRequireUniquePrefix()
                                   .UseFileName(nameof(OpenTelemetrySdkTests));
             }
         }
