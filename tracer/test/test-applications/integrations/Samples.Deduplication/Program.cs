@@ -87,8 +87,9 @@ internal static class Program
 
         foreach (var method in methods)
         {
-            if (method.Name == "Main")
-            { 
+            if ((method.Name == "Main") || (method.Name == "testHashAlgorithm"))
+            {
+                code += "METHOD: method.Name" + Environment.NewLine;
                 var instructions = method.Body?.Instructions;
                 if (instructions != null)
                 {
