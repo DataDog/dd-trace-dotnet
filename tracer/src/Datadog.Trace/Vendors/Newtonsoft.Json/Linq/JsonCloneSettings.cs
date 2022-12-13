@@ -30,21 +30,35 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json
+using System;
+
+namespace Datadog.Trace.Vendors.Newtonsoft.Json.Linq
 {
     /// <summary>
-    /// Specifies how constructors are used when initializing objects during deserialization by the <see cref="JsonSerializer"/>.
+    /// Specifies the settings used when cloning JSON.
     /// </summary>
-    internal enum ConstructorHandling
+    internal class JsonCloneSettings
     {
-        /// <summary>
-        /// First attempt to use the public default constructor, then fall back to a single parameterized constructor, then to the non-public default constructor.
-        /// </summary>
-        Default = 0,
+        internal static readonly JsonCloneSettings SkipCopyAnnotations = new JsonCloneSettings
+        {
+            CopyAnnotations = false
+        };
 
         /// <summary>
-        /// Json.NET will use a non-public default constructor before falling back to a parameterized constructor.
+        /// Initializes a new instance of the <see cref="JsonCloneSettings"/> class.
         /// </summary>
-        AllowNonPublicDefaultConstructor = 1
+        public JsonCloneSettings()
+        {
+            CopyAnnotations = true;
+        }
+
+        /// <summary>
+        /// Gets or sets a flag that indicates whether to copy annotations when cloning a <see cref="JToken"/>.
+        /// The default value is <c>true</c>.
+        /// </summary>
+        /// <value>
+        /// A flag that indicates whether to copy annotations when cloning a <see cref="JToken"/>.
+        /// </value>
+        public bool CopyAnnotations { get; set; }
     }
 }

@@ -51,9 +51,9 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "Newtonsoft.Json",
-                version: "13.0.1",
-                downloadUrl: "https://github.com/JamesNK/Newtonsoft.Json/archive/13.0.1.zip",
-                pathToSrc: new[] { "Newtonsoft.Json-13.0.1", "src", "Newtonsoft.Json" },
+                version: "13.0.2",
+                downloadUrl: "https://github.com/JamesNK/Newtonsoft.Json/archive/13.0.2.zip",
+                pathToSrc: new[] { "Newtonsoft.Json-13.0.2", "src", "Newtonsoft.Json" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Newtonsoft.Json", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma),
                 relativePathsToExclude: new[] { "Utilities/NullableAttributes.cs" });
 
