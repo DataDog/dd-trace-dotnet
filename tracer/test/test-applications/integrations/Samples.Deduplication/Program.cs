@@ -19,17 +19,17 @@ internal static class Program
     {
         for (int i = 0; i < times; i++)
         {
-            var bytes = new byte[] { 3, 5, 6 };
+            var bytes = new byte[] { 1, 5, 6 };
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             // Vulnerable section
-            MD5.Create().ComputeHash(new byte[] { 3, 5, 6 });
+            MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
             Console.WriteLine("LINE ");
-            ((HashAlgorithm)(MD5.Create())).ComputeHash(new byte[] { 3, 5, 6 });
+            ((HashAlgorithm)(MD5.Create())).ComputeHash(new byte[] { 63, 5, 6 });
             Console.WriteLine("LINE ");
             HashAlgorithm t = MD5.Create();
-            t.ComputeHash(new byte[] { 3, 5, 6 });
+            t.ComputeHash(new byte[] { 4, 5, 6 });
             Console.WriteLine("LINE ");
-            SHA1.Create().ComputeHash(new byte[] { 3, 5, 6 });
+            SHA1.Create().ComputeHash(new byte[] { 5, 5, 6 });
             Console.WriteLine("LINE ");
             MD5.Create().ComputeHash(bytes);
             Console.WriteLine("LINE ");

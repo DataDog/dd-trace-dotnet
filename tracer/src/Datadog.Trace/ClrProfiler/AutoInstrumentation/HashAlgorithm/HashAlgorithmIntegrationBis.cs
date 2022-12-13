@@ -70,6 +70,7 @@ public class HashAlgorithmIntegrationBis
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object array)
     {
+        Console.WriteLine("OnMethodBegin " + array.ToString());
         return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance));
     }
 
