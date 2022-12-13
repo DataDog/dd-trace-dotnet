@@ -5,7 +5,10 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Xml.Linq;
 
 namespace Datadog.Trace.Iast;
 
@@ -99,8 +102,17 @@ internal class IastRequestContext
                 AddQueryStringRaw(request.QueryString.ToString());
             }
 
+            AddRequestHeaders(request.Headers);
             AddQueryPath(request.Path);
             _queryPathParametersAdded = true;
+        }
+    }
+
+    private void AddRequestHeaders(NameValueCollection headers)
+    {
+        foreach (var header in headers.AllKeys)
+        {
+            AddHeaderData(header, headers[header]);
         }
     }
 
@@ -110,6 +122,7 @@ internal class IastRequestContext
         AddRouteData(routeData);
         AddRequestData(request);
     }
+
 #else
     // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(Microsoft.AspNetCore.Http.HttpRequest request, IDictionary<string, object> routeParameters)
@@ -128,8 +141,32 @@ internal class IastRequestContext
 
             AddQueryPath(request.Path);
             AddQueryStringRaw(request.QueryString.Value);
+            AddRequestHeaders(request.Headers);
             _queryPathParametersAdded = true;
         }
     }
+
+    private void AddRequestHeaders(Microsoft.AspNetCore.Http.IHeaderDictionary headers)
+    {
+        foreach (var header in headers)
+        {
+            AddHeaderData(header.Key, header.Value);
+        }
+    }
+
+    private void AddHeaderData(string key, Microsoft.Extensions.Primitives.StringValues values)
+    {
+        foreach (var singleValue in values)
+        {
+            AddHeaderData(key, singleValue);
+        }
+    }
+
 #endif
+
+    private void AddHeaderData(string name, string value)
+    {
+        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestHeader), name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderName), name, null));
+    }
 }

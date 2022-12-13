@@ -13,5 +13,6 @@ internal enum SourceTypeName
     RequestParameterValue,
     RoutedParameterValue,
     RequestHeader,
+    RequestHeaderName,
     RequestQueryString
 }
