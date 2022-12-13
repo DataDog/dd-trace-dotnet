@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;netcoreapp3.1;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.1;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
     <Platforms>AnyCPU;x64;x86</Platforms>
 
     <!--This is required for smoke test assembly discovery-->
@@ -24,7 +24,6 @@
 
   <PropertyGroup>
     <RootNamespace>Samples.ExceptionGenerator</RootNamespace>
-    <TargetFrameworks>net45;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

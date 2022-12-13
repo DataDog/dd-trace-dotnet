@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
-    <TargetFrameworks>net45;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
 
 </Project>
