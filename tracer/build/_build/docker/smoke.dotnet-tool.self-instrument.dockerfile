@@ -41,9 +41,6 @@ ENV DD_TRACE_DEBUG=1
 ENV ASPNETCORE_URLS=http://localhost:5000
 ENV DD_PROFILING_LOG_DIR=/var/log/datadog/dotnet
 
-# see https://github.com/dotnet/runtime/issues/77973
-ENV COMPlus_TieredCompilation=0
-
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
