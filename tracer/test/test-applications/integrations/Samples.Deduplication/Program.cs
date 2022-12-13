@@ -19,10 +19,15 @@ internal static class Program
     {
         for (int i = 0; i < times; i++)
         {
+            var bytes = new byte[] { 3, 5, 6 };
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             // Vulnerable section
             MD5.Create().ComputeHash(new byte[] { 3, 5, 6 });
+            SHA1.Create().ComputeHash(new byte[] { 3, 5, 6 });
+            MD5.Create().ComputeHash(bytes);
+            SHA1.Create().ComputeHash(bytes);
             testHashAlgorithm(SHA1.Create());
+            testHashAlgorithm(MD5.Create());
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
@@ -54,7 +59,6 @@ internal static class Program
     private static void testHashAlgorithm(HashAlgorithm algorithm)
     {
         var byteArg = new byte[] { 3, 5, 6 };
-        var stream = new MemoryStream(byteArg);
-        algorithm.ComputeHash(stream);
+        algorithm.ComputeHash(byteArg);
     }
 }
