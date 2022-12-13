@@ -421,6 +421,9 @@
     <ClCompile Include="GarbageCollectionProvider.cpp">
       <Filter>GarbageCollections</Filter>
     </ClCompile>
+    <ClCompile Include="RawGarbageCollectionSample.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
