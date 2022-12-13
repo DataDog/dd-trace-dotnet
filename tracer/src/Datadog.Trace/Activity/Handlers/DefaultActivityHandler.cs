@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -44,7 +43,7 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 // If the user has specified a parent context, get the parent Datadog SpanContext
                 if (w3cActivity.ParentSpanId is not null
-                    && activity.ParentId is string parentId
+                    && w3cActivity.ParentId is string parentId
                     && ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
                 {
                     parent = mapping.Scope.Span.Context;
@@ -111,7 +110,6 @@ namespace Datadog.Trace.Activity.Handlers
                 };
 
                 var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, serviceName: serviceName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
-                span.ResourceName = activity.OperationName;
                 var scope = Tracer.Instance.ActivateSpan(span, false);
                 return scope;
             }
@@ -151,11 +149,10 @@ namespace Datadog.Trace.Activity.Handlers
                 }
 
                 List<string>? toDelete = null;
-                foreach (var item in ActivityMappingById)
+                foreach (var (activityId, item) in ActivityMappingById)
                 {
-                    string activityId = item.Key;
-                    var activityObject = item.Value.Activity;
-                    var scope = item.Value.Scope;
+                    var activityObject = item.Activity;
+                    var scope = item.Scope;
                     var hasClosed = false;
 
                     if (activityObject.TryDuckCast<IActivity6>(out var activity6))
@@ -236,6 +233,17 @@ namespace Datadog.Trace.Activity.Handlers
                 Activity = activity;
                 Scope = scope;
             }
+        }
+    }
+
+#pragma warning disable SA1204 // Static elements should appear before instance elements
+#pragma warning disable SA1402 // File may only contain a single type
+    internal static class ActivityMappingExtensions
+    {
+        public static void Deconstruct(this KeyValuePair<string, DefaultActivityHandler.ActivityMapping> item, out string key, out DefaultActivityHandler.ActivityMapping value)
+        {
+            key = item.Key;
+            value = item.Value;
         }
     }
 }
