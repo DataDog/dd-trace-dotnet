@@ -304,7 +304,8 @@ bool CorProfilerCallback::InitializeServices()
         _pManagedThreadList,
         _pCodeHotspotsThreadList,
         _pWallTimeProvider,
-        _pCpuTimeProvider);
+        _pCpuTimeProvider,
+        _metricsRegistry);
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 

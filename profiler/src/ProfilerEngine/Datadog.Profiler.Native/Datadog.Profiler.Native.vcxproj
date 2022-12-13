@@ -234,6 +234,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
+    <ClInclude Include="CounterMetric.h" />
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
@@ -246,6 +247,10 @@
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="LiveObjectInfo.h" />
     <ClInclude Include="LiveObjectsProvider.h" />
+    <ClInclude Include="MeanMaxMetric.h" />
+    <ClInclude Include="MetricBase.h" />
+    <ClInclude Include="MetricsRegistry.h" />
+    <ClInclude Include="ProxyMetric.h" />
     <ClInclude Include="RawGarbageCollectionSample.h" />
     <ClInclude Include="StopTheWorldGCProvider.h" />
     <ClInclude Include="GenericSampler.h" />
@@ -336,6 +341,7 @@
     <ClCompile Include="ContentionProvider.cpp" />
     <ClCompile Include="CorProfilerCallback.cpp" />
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
+    <ClCompile Include="CounterMetric.cpp" />
     <ClCompile Include="CpuTimeProvider.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />
@@ -345,6 +351,9 @@
     <ClCompile Include="GarbageCollectionProvider.cpp" />
     <ClCompile Include="LiveObjectInfo.cpp" />
     <ClCompile Include="LiveObjectsProvider.cpp" />
+    <ClCompile Include="MeanMaxMetric.cpp" />
+    <ClCompile Include="MetricsRegistry.cpp" />
+    <ClCompile Include="ProxyMetric.cpp" />
     <ClCompile Include="RawGarbageCollectionSample.cpp" />
     <ClCompile Include="StopTheWorldGCProvider.cpp" />
     <ClCompile Include="GenericSampler.cpp" />

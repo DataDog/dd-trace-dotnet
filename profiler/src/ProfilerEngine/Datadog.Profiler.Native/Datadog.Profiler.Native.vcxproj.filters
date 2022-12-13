@@ -294,6 +294,20 @@
     </ClInclude>
     <ClInclude Include="LiveObjectInfo.h">
       <Filter>Allocations</Filter>
+    <ClInclude Include="MetricsRegistry.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="MetricBase.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="MeanMaxMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="ProxyMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="CounterMetric.h">
+      <Filter>Metrics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -437,6 +451,23 @@
     </ClCompile>
     <ClCompile Include="RawGarbageCollectionSample.cpp">
       <Filter>GarbageCollections</Filter>
+    <ClCompile Include="RawGarbageCollectionSample.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="MetricsRegistry.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadsInfo.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="MeanMaxMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="ProxyMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="CounterMetric.cpp">
+      <Filter>Metrics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
