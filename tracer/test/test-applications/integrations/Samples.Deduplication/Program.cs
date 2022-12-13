@@ -1,10 +1,14 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace Samples.Deduplication;
 
@@ -71,5 +75,31 @@ internal static class Program
     {
         var byteArg = new byte[] { 3, 5, 6 };
         algorithm.ComputeHash(byteArg);
+    }
+
+    private static void PrintCode()
+    {
+        string code = "";
+        Assembly currentAssem = Assembly.GetExecutingAssembly();
+        var assembly = AssemblyDefinition.ReadAssembly(currentAssem.Location);
+        var types = assembly.MainModule.Types.Where(o => o.IsClass);
+        var methods = types.SelectMany(type => type.Methods);
+
+        foreach (var method in methods)
+        {
+            if (method.Name == "Main")
+            { 
+                var instructions = method.Body?.Instructions;
+                if (instructions != null)
+                {
+                    foreach (var instruction in instructions)
+                    {
+                        code += instruction.ToString() + Environment.NewLine;
+                    }
+                }
+            }
+        }
+
+        Console.WriteLine(code);
     }
 }
