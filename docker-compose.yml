@@ -93,9 +93,20 @@ services:
 
   stackexchangeredis:
     image: redis:4-alpine
-    command: redis-server --bind 0.0.0.0
+    hostname: stackexchangeredis
+    container_name: stackexchangeredis
+    command: redis-server --bind 0.0.0.0 --port 6389
     ports:
-    - "127.0.0.1:6389:6379"
+    - "127.0.0.1:6389:6389"
+    depends_on:
+      - stackexchangeredis-slave
+      
+  stackexchangeredis-slave:
+    hostname: stackexchangeredis-slave
+    image: redis:4-alpine
+    ports:
+      - "127.0.0.1:6390:6390"
+    command: redis-server --port 6390 --slaveof stackexchangeredis 6389
 
   mongo:
     image: mongo:4.0.9
