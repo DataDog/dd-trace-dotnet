@@ -23,11 +23,22 @@ internal static class Program
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             // Vulnerable section
             MD5.Create().ComputeHash(new byte[] { 3, 5, 6 });
+            Console.WriteLine("LINE ");
+            ((HashAlgorithm)(MD5.Create())).ComputeHash(new byte[] { 3, 5, 6 });
+            Console.WriteLine("LINE ");
+            HashAlgorithm t = MD5.Create();
+            t.ComputeHash(new byte[] { 3, 5, 6 });
+            Console.WriteLine("LINE ");
             SHA1.Create().ComputeHash(new byte[] { 3, 5, 6 });
+            Console.WriteLine("LINE ");
             MD5.Create().ComputeHash(bytes);
+            Console.WriteLine("LINE ");
             SHA1.Create().ComputeHash(bytes);
+            Console.WriteLine("LINE ");
             testHashAlgorithm(SHA1.Create());
+            Console.WriteLine("LINE ");
             testHashAlgorithm(MD5.Create());
+            Console.WriteLine("LINE ");
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
