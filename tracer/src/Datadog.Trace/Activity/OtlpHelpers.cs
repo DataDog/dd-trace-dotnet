@@ -27,12 +27,6 @@ namespace Datadog.Trace.Activity
         {
             var activity5 = activity as IActivity5;
 
-            // Update ResourceName before running agent logic
-            if (activity5 is not null)
-            {
-                span.ResourceName = activity5.DisplayName;
-            }
-
             AgentConvertSpan(activity, span);
 
             // Additional Datdog policy: Set tag "span.kind"
@@ -61,6 +55,7 @@ namespace Datadog.Trace.Activity
             var activity5 = activity as IActivity5;
             var activity6 = activity as IActivity6;
 
+            span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic
             span.OperationName = null; // Reset the operation name, it will be repopulated
 
             // TODO: Add resources to spans
@@ -169,7 +164,16 @@ namespace Datadog.Trace.Activity
             {
                 // TODO: Implement resourceFromTags
                 // See: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L555
-                span.ResourceName = activity5?.DisplayName;
+
+                // Fallback: Use the information provided by Activity
+                if (activity5 is not null)
+                {
+                    span.ResourceName = activity5.DisplayName;
+                }
+                else
+                {
+                    span.ResourceName = activity.OperationName;
+                }
             }
 
             // Update Type with a reasonable default
