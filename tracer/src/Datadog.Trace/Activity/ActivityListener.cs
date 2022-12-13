@@ -159,7 +159,7 @@ namespace Datadog.Trace.Activity
             static void ChangeActivityDefaultFormat(Type activityType)
             {
                 // We change the default ID format to W3C (so traceid and spanid gets populated)
-                if (Activator.CreateInstance(activityType, string.Empty).TryDuckCast<IActivityFormat>(out var activityFormat))
+                if (Activator.CreateInstance(activityType, "operationName").TryDuckCast<IActivityFormat>(out var activityFormat))
                 {
                     activityFormat.DefaultIdFormat = ActivityIdFormat.W3C;
                 }
