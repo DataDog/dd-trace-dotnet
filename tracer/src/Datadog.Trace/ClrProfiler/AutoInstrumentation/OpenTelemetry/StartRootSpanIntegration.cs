@@ -6,7 +6,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
@@ -26,8 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class StartRootSpanIntegration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StartSpanIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -44,7 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTracer, TSpanKind, TSpanAttributes, TLinks>(TTracer instance, string name, TSpanKind kind, TSpanAttributes spanAttributes, TLinks links, DateTimeOffset startTimeinstance)
         {
-            Log.Information("Entered OnMethodBegin for StartRootSpan");
             return new CallTargetState(Tracer.Instance.InternalActiveScope);
         }
 
@@ -60,8 +56,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         /// <returns>CallTargetReturn</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            Log.Information("Entered OnMethodEnd for StartRootSpan");
-
             // If the integration created a new scope, dispose it
             var previousScope = state.Scope;
             var currentScope = Tracer.Instance.InternalActiveScope;
