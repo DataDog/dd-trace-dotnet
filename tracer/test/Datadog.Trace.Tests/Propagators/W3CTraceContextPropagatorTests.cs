@@ -411,5 +411,26 @@ namespace Datadog.Trace.Tests.Propagators
 
             W3CTraceContextPropagator.CreateTraceParentHeader(spanContext).Should().Be(traceParentHeader);
         }
+
+        [Theory]
+        // no replacements
+        [InlineData("valid1234567890", "valid1234567890")]
+        [InlineData("`~!@#$%^&*(){}[]<>-_+'\"/|\\?.", "`~!@#$%^&*(){}[]<>-_+'\"/|\\?.")]
+        // explicit replacements
+        [InlineData(",foo,bar,", "_foo_bar_")]
+        [InlineData(";foo;bar;", "_foo_bar_")]
+        [InlineData("=foo=bar=", "_foo_bar_")]
+        // out of bounds replacements
+        [InlineData("\0foo\tbar\u00E7", "_foo_bar_")]
+        [InlineData("dog🐶", "dog__")] // note that 🐶 is two UTF-16 chars, can also be written as "dog\ud83d\udc36" (UTF-16) or "dog\U0001F436" (UTF-32)
+        public void ReplaceInvalidCharacters(string value, string expected)
+        {
+            const char lowerBound = (char)0x20;
+            const char upperBound = (char)0x7E;
+            const char replacement = '_';
+            const string invalidCharacters = ",;=";
+
+            W3CTraceContextPropagator.ReplaceInvalidCharacters(value, lowerBound, upperBound, invalidCharacters, replacement).Should().Be(expected);
+        }
     }
 }

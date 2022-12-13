@@ -21,6 +21,13 @@ namespace Datadog.Trace.Propagators
     {
         private const string TraceStateHeaderValuesSeparator = ",";
 
+        private const char LowerBound = (char)0x20;
+        private const char UpperBound = (char)0x7E;
+        private const char InvalidCharacterReplacement = '_';
+        private const string InvalidOriginCharacters = ",;=";
+        private const string InvalidPropagatedTagKeyCharacters = " ,=";
+        private const string InvalidPropagatedTagValueCharacters = " ,=";
+
         /// <summary>
         /// W3C traceparent header name
         /// </summary>
@@ -74,7 +81,8 @@ namespace Datadog.Trace.Propagators
 
                 if (!string.IsNullOrWhiteSpace(context.Origin))
                 {
-                    sb.Append("o:").Append(context.Origin).Append(';');
+                    var origin = ReplaceInvalidCharacters(context.Origin, LowerBound, UpperBound, InvalidOriginCharacters, InvalidCharacterReplacement);
+                    sb.Append("o:").Append(origin).Append(';');
                 }
 
                 if (context.TraceContext?.Tags?.ToArray() is { Length: > 0 } tags)
@@ -89,10 +97,14 @@ namespace Datadog.Trace.Propagators
                             var key = tag.Key.Substring(startIndex: 6);
 #endif
 
-                            sb.Append("t.").Append(key).Append(':').Append(tag.Value).Append(';');
+                            var tagKey = ReplaceInvalidCharacters(key, LowerBound, UpperBound, InvalidPropagatedTagKeyCharacters, InvalidCharacterReplacement);
+                            var tagValue = ReplaceInvalidCharacters(tag.Value, LowerBound, UpperBound, InvalidPropagatedTagValueCharacters, InvalidCharacterReplacement);
+                            sb.Append("t.").Append(tagKey).Append(':').Append(tagValue).Append(';');
                         }
                     }
                 }
+
+                // TODO: propagate other "tracestate" values we received from upstream service
 
                 if (sb.Length == 3)
                 {
@@ -566,6 +578,28 @@ namespace Datadog.Trace.Propagators
             }
 
             return string.Join(TraceStateHeaderValuesSeparator, trimmedValues);
+        }
+
+#if NETCOREAPP
+        public static string ReplaceInvalidCharacters(ReadOnlySpan<char> value, char lowerBound, char upperBound, string invalidChars, char replacement)
+#else
+        public static string ReplaceInvalidCharacters(string value, char lowerBound, char upperBound, string invalidChars, char replacement)
+#endif
+        {
+            var sb = StringBuilderCache.Acquire(value.Length);
+            sb.Append(value);
+
+            for (var i = 0; i < sb.Length; i++)
+            {
+                var c = sb[i];
+
+                if (c < lowerBound || c > upperBound || invalidChars.IndexOf(c) >= 0)
+                {
+                    sb[i] = replacement;
+                }
+            }
+
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
     }
 }
