@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         /// <param name="links">Links for the span.</param>
         /// <param name="startTimeinstance">Start time for the span.</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTracer, TSpanKind, TSpanContext, TSpanAttributes, TLinks>(TTracer instance, string name, TSpanKind kind, ref TSpanContext parentContext, TSpanAttributes spanAttributes, TLinks links, DateTimeOffset startTimeinstance)
+        internal static CallTargetState OnMethodBegin<TTracer, TSpanKind, TSpanContext, TSpanAttributes, TLinks>(TTracer instance, string name, TSpanKind kind, in TSpanContext parentContext, TSpanAttributes spanAttributes, TLinks links, DateTimeOffset startTimeinstance)
         {
             return new CallTargetState(Tracer.Instance.InternalActiveScope);
         }
