@@ -102,12 +102,12 @@ inline fs::path GetInstrumentedAssemblyGeneratorCurrentProcessFolder()
     }
     catch (const std::exception& e)
     {
-        Log::Error("GetInstrumentedAssemblyGeneratorCurrentProcessFolder: failed to get instrumented log path. ",
+        Log::Error("GetInstrumentedAssemblyGeneratorCurrentProcessFolder: failed to get or create log path. ",
                    e.what());
     }
     catch (...)
     {
-        Log::Error("GetInstrumentedAssemblyGeneratorCurrentProcessFolder: failed to get instrumented log path.");
+        Log::Error("GetInstrumentedAssemblyGeneratorCurrentProcessFolder: failed to get or create log path.");
     }
     return instrumentedAssemblyGeneratorOutputFolder;
 }
@@ -117,10 +117,13 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
 {
     try
     {
-        const auto isInstrumentedAssemblyGeneratorEnabled =
-            shared::GetEnvironmentValue(cfg_instrumentation_verification_env);
-        if (isInstrumentedAssemblyGeneratorEnabled == WStr("1") ||
-            isInstrumentedAssemblyGeneratorEnabled == WStr("true"))
+        const auto instrumentationVerificationEnv = shared::GetEnvironmentValue(cfg_instrumentation_verification_env);
+        bool isInstrumentedAssemblyGeneratorEnabled;
+        // default is true
+        if (instrumentationVerificationEnv.empty() &&
+            shared::TryParseBooleanEnvironmentValue(instrumentationVerificationEnv,
+                                                    isInstrumentedAssemblyGeneratorEnabled) &&
+            isInstrumentedAssemblyGeneratorEnabled)
         {
 #if _WIN32
             if (const auto path = GetInstrumentedAssemblyGeneratorCurrentProcessFolder(); !path.empty())
@@ -136,7 +139,16 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
     catch (...)
     {
     }
+    Log::Info("Instrumentation Verification log is disabled.");
     return false;
+}
+
+inline bool IsCopyingOriginalsModulesEnabled()
+{
+    const auto copyingOriginalModulesEnv = shared::GetEnvironmentValue(cfg_copying_originals_modules_env);
+    bool isCopyingOriginalsModulesEnabled;
+    return shared::TryParseBooleanEnvironmentValue(copyingOriginalModulesEnv, isCopyingOriginalsModulesEnabled) &&
+           isCopyingOriginalsModulesEnabled;
 }
 
 inline std::tuple<HRESULT, shared::WSTRING, shared::WSTRING>
@@ -313,26 +325,18 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
         // TODO: shared::WSTRINGSTREAM is not supported in osx, so as a workaround we convert to char
         // In the case we want to support MACOS this should be solved.
         std::stringstream headerFileStream;
-        headerFileStream << shared::ToString(mvid)
-                         << shared::ToString(FileNameSeparator)
-                         << std::hex << methodAndTypeInfo.typeToken
-                         << shared::ToString(FileNameSeparator)
-                         << std::hex << methodAndTypeInfo.token
-                         << shared::ToString(FileNameSeparator)
-                         << shared::ToString(moduleName)
-                         << shared::ToString(FileNameSeparator)
-                         << shared::ToString(methodAndTypeInfo.typeName)
-                         << shared::ToString(FileNameSeparator)
-                         << shared::ToString(methodAndTypeInfo.name)
-                         << shared::ToString(FileNameSeparator)
+        headerFileStream << shared::ToString(mvid) << shared::ToString(FileNameSeparator) << std::hex
+                         << methodAndTypeInfo.typeToken << shared::ToString(FileNameSeparator) << std::hex
+                         << methodAndTypeInfo.token << shared::ToString(FileNameSeparator)
+                         << shared::ToString(moduleName) << shared::ToString(FileNameSeparator)
+                         << shared::ToString(methodAndTypeInfo.typeName) << shared::ToString(FileNameSeparator)
+                         << shared::ToString(methodAndTypeInfo.name) << shared::ToString(FileNameSeparator)
                          << shared::ToString(methodAndTypeInfo.methodSig.ReturnTypeName(metadataImport))
                          << shared::ToString(FileNameSeparator)
                          << shared::ToString(methodAndTypeInfo.methodSig.ArgumentsNames(metadataImport))
+                         << shared::ToString(FileNameSeparator) << shared::ToString(locals)
                          << shared::ToString(FileNameSeparator)
-                         << shared::ToString(locals)
-                         << shared::ToString(FileNameSeparator)
-                         << shared::ToString(methodAndTypeInfo.methodSig.HasThis())
-                         << std::endl;
+                         << shared::ToString(methodAndTypeInfo.methodSig.HasThis()) << std::endl;
         headerFileString = shared::ToWSTRING(headerFileStream.str());
 #endif
 
@@ -349,12 +353,9 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
         // TODO: shared::WSTRINGSTREAM is not supported in osx, so as a workaround we convert to char
         // In the case we want to support MACOS this should be solved.
         std::stringstream fileNameStream;
-        fileNameStream << shared::ToString(mvid)
-                       << shared::ToString(FileNameSeparator)
-                       << std::hex << methodAndTypeInfo.typeToken
-                       << shared::ToString(FileNameSeparator)
-                       << std::hex << methodAndTypeInfo.token
-                       << shared::ToString(FileNameSeparator)
+        fileNameStream << shared::ToString(mvid) << shared::ToString(FileNameSeparator) << std::hex
+                       << methodAndTypeInfo.typeToken << shared::ToString(FileNameSeparator) << std::hex
+                       << methodAndTypeInfo.token << shared::ToString(FileNameSeparator)
                        << shared::ToString(GetCleanedFileName(methodAndTypeInfo.name))
                        << shared::ToString(InstrumentedLogFileExtension);
 

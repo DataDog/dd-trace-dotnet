@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogLoggingFactory.cs" company="Datadog">
+// <copyright file="DatadogLoggingFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -145,6 +145,11 @@ internal static class DatadogLoggingFactory
             }
         }
 
+        return GetDefaultLogDirectory(logDirectory);
+    }
+
+    private static string GetDefaultLogDirectory(string? logDirectory)
+    {
         // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
         // because of the following API calls
         //   - Directory.Exists
