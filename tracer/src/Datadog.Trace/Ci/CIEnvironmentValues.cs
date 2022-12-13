@@ -420,7 +420,7 @@ namespace Datadog.Trace.Ci
                         value = value.Trim();
                         if (value.Length == 0)
                         {
-                            if(string.IsNullOrEmpty(defaultValue))
+                            if (string.IsNullOrEmpty(defaultValue))
                             {
                                 Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, and the Git repository could not be automatically extracted");
                             }
@@ -434,7 +434,7 @@ namespace Datadog.Trace.Ci
 
                         if (Regex.Match(value, RepositoryUrlPattern).Length != value.Length)
                         {
-                            if(string.IsNullOrEmpty(defaultValue))
+                            if (string.IsNullOrEmpty(defaultValue))
                             {
                                 Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{value}'), and the Git repository could not be automatically extracted", value);
                             }
@@ -468,7 +468,7 @@ namespace Datadog.Trace.Ci
                         value = value.Trim();
                         if (value.Length < 40 || !IsHex(value))
                         {
-                            if(string.IsNullOrEmpty(defaultValue))
+                            if (string.IsNullOrEmpty(defaultValue))
                             {
                                 Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA, and the The Git commit sha couldn't be automatically extracted.");
                             }
