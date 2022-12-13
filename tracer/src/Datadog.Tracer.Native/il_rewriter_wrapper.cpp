@@ -15,11 +15,12 @@ void ILRewriterWrapper::SetILPosition(ILInstr* pILInstr)
     m_ILInstr = pILInstr;
 }
 
-void ILRewriterWrapper::Pop() const
+ILInstr* ILRewriterWrapper::Pop() const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_POP;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
 }
 
 ILInstr* ILRewriterWrapper::LoadNull() const
@@ -367,17 +368,28 @@ ILInstr* ILRewriterWrapper::InitObj(mdTypeRef type_ref) const
     return pNewInstr;
 }
 
-ILInstr* ILRewriterWrapper::CreateFilterForException(mdTypeRef type_ref) const
+ILInstr* ILRewriterWrapper::CreateFilterForException(mdTypeRef exception, mdTypeRef type_ref, unsigned index) const
 {
     ILInstr* filter = CreateInstr(CEE_ISINST);
-    mdTypeRef bubbleUpExceptionTypeRef = type_ref;
-    filter->m_Arg32 = bubbleUpExceptionTypeRef;
+    filter->m_Arg32 = exception;
+    CreateInstr(CEE_DUP);
+    ILInstr* isException = CreateInstr(CEE_BRTRUE_S);
+    CreateInstr(CEE_POP);
+    CreateInstr(CEE_LDC_I4_0);
+    ILInstr* endNotException = CreateInstr(CEE_BR_S);
+
+    ILInstr* testBubbleUpPart = StLocal(index);
+    LoadLocal(index);
+    ILInstr* testBubbleUp = CreateInstr(CEE_ISINST);
+    testBubbleUp->m_Arg32 = type_ref;
+    isException->m_pTarget = testBubbleUpPart;
     LoadNull();
     CreateInstr(CEE_CGT_UN);
     CreateInstr(CEE_LDC_I4_0);
     CreateInstr(CEE_CEQ);
     CreateInstr(CEE_LDC_I4_0);
     CreateInstr(CEE_CGT_UN);
-    CreateInstr(CEE_ENDFILTER);
+    ILInstr* endFilter = CreateInstr(CEE_ENDFILTER);
+    endNotException->m_pTarget = endFilter;
     return filter;
 }

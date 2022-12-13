@@ -573,7 +573,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
         }
     }
 
-    // *** Ensure Datadog.Trace.AppSec.CallTargetBubbleUpException type ref
+    // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException type ref
     if (bubbleUpExceptionTypeRef == mdTypeRefNil)
     {
         auto hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, CallTargetBubbleUpException,
@@ -836,8 +836,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
     // Init locals
     if (*returnValueIndex != static_cast<ULONG>(ULONG_MAX))
     {
-        *firstInstruction =
-            rewriterWrapper->CallMember(GetCallTargetDefaultValueMethodSpec(methodReturnType), false);
+        *firstInstruction = rewriterWrapper->CallMember(GetCallTargetDefaultValueMethodSpec(methodReturnType), false);
         rewriterWrapper->StLocal(*returnValueIndex);
 
         rewriterWrapper->CallMember(GetCallTargetReturnValueDefaultMemberRef(*callTargetReturnToken), false);

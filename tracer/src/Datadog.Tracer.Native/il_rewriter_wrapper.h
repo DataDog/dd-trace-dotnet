@@ -18,7 +18,7 @@ public:
     ILRewriter* GetILRewriter() const;
     ILInstr* GetCurrentILInstr() const;
     void SetILPosition(ILInstr* pILInstr);
-    void Pop() const;
+    ILInstr* Pop() const;
     ILInstr* LoadNull() const;
     void LoadInt64(INT64 value) const;
     void LoadInt32(INT32 value) const;
@@ -48,7 +48,7 @@ public:
 
     ILInstr* CreateInstr(unsigned opCode) const;
     ILInstr* InitObj(mdTypeRef type_ref) const;
-    ILInstr* CreateFilterForException(mdTypeRef type_ref) const;
+    ILInstr* CreateFilterForException(mdTypeRef exception, mdTypeRef type_ref, unsigned index) const;
 };
 
 #endif // DD_CLR_PROFILER_IL_REWRITER_WRAPPER_H_

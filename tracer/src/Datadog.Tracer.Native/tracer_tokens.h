@@ -40,7 +40,7 @@ public:
                                     TypeSignature* returnArgument, ILInstr** instruction);
 
     HRESULT WriteLogException(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo* currentType,
-                              ILInstr** instruction);
+                              ILInstr** instruction, unsigned callTargetReturnIndex);
 };
 
 } // namespace trace

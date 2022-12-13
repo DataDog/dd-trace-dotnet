@@ -7,17 +7,20 @@
 
 namespace trace
 {
-
 const int signatureBufferSize = 500;
 
 /**
  * TRACER CONSTANTS
  **/
 
-static const shared::WSTRING managed_profiler_calltarget_type = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
-static const shared::WSTRING managed_profiler_calltarget_statetype = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
-static const shared::WSTRING managed_profiler_calltarget_returntype = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn");
-static const shared::WSTRING managed_profiler_calltarget_returntype_generics = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
+static const shared::WSTRING managed_profiler_calltarget_type = WStr(
+    "Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
+static const shared::WSTRING managed_profiler_calltarget_statetype = WStr(
+    "Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
+static const shared::WSTRING managed_profiler_calltarget_returntype = WStr(
+    "Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn");
+static const shared::WSTRING managed_profiler_calltarget_returntype_generics = WStr(
+    "Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
 static const shared::WSTRING managed_profiler_calltarget_beginmethod_name = WStr("BeginMethod");
 static const shared::WSTRING managed_profiler_calltarget_endmethod_name = WStr("EndMethod");
 static const shared::WSTRING managed_profiler_calltarget_logexception_name = WStr("LogException");
@@ -28,7 +31,7 @@ static const shared::WSTRING managed_profiler_calltarget_logexception_name = WSt
 
 // slowpath BeginMethod
 HRESULT TracerTokens::WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                                             const TypeInfo* currentType, ILInstr** instruction)
+                                                         const TypeInfo* currentType, ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -160,10 +163,10 @@ TracerTokens::TracerTokens(ModuleMetadata* module_metadata_ptr, const bool enabl
 }
 
 HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                           const TypeInfo* currentType,
-                                           const std::vector<TypeSignature>& methodArguments,
-                                           const bool ignoreByRefInstrumentation,
-                                           ILInstr** instruction)
+                                       const TypeInfo* currentType,
+                                       const std::vector<TypeSignature>& methodArguments,
+                                       const bool ignoreByRefInstrumentation,
+                                       ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -333,7 +336,7 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
 
 // endmethod with void return
 HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                                      const TypeInfo* currentType, ILInstr** instruction)
+                                                  const TypeInfo* currentType, ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -448,8 +451,8 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
 
 // endmethod with return type
 HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                                  const TypeInfo* currentType, TypeSignature* returnArgument,
-                                                  ILInstr** instruction)
+                                              const TypeInfo* currentType, TypeSignature* returnArgument,
+                                              ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -580,7 +583,7 @@ HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRe
 
 // write log exception
 HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                            const TypeInfo* currentType, ILInstr** instruction)
+                                        const TypeInfo* currentType, ILInstr** instruction, unsigned callTargetReturnIndex)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -662,9 +665,9 @@ HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef inte
         Logger::Warn("Error creating log exception method spec.");
         return hr;
     }
-
-    *instruction = rewriterWrapper->CallMember(logExceptionMethodSpec, false);
+    *instruction = rewriterWrapper->Pop();
+    rewriterWrapper->LoadLocal(callTargetReturnIndex);
+    rewriterWrapper->CallMember(logExceptionMethodSpec, false);
     return S_OK;
 }
-
 } // namespace trace

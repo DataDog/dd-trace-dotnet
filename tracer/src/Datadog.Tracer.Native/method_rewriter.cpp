@@ -27,7 +27,7 @@ namespace trace
 ///       - Invoke BeginMethod with object instance (or null if static method) and original method arguments
 ///       - Store result into CallTargetState local
 ///     }
-///     catch
+///     catch when exception is not Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException
 ///     {
 ///       - Invoke LogException(Exception)
 ///     }
@@ -51,7 +51,7 @@ namespace trace
 ///     - Store result into CallTargetReturn/CallTargetReturn<TReturn> local
 ///     - If non-void method, store CallTargetReturn<TReturn>.GetReturnValue() into TReturn local
 ///   }
-///   catch
+///   catch when exception is not Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException
 ///   {
 ///     - Invoke LogException(Exception)
 ///   }
@@ -385,13 +385,15 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     
     // *** Filter exception
     mdTypeRef bubbleUpExceptionTypeRef = tracerTokens->GetBubbleUpExceptionTypeRef();
-    ILInstr* filter = reWriterWrapper.CreateFilterForException(bubbleUpExceptionTypeRef);
+    callTargetStateIndex++;
+    ILInstr* filter = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(), bubbleUpExceptionTypeRef, callTargetStateIndex);
     
     // *** BeginMethod call catch
     ILInstr* beginMethodCatchFirstInstr = nullptr;
     tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
-                                    &beginMethodCatchFirstInstr);
+                                    &beginMethodCatchFirstInstr, callTargetStateIndex);
     ILInstr* beginMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+
 
     // *** BeginMethod exception handling clause
     EHClause beginMethodExClause{};
@@ -529,13 +531,13 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ILInstr* endMethodTryLeave = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** Filter exception
-    ILInstr* filterEnd = reWriterWrapper.CreateFilterForException(bubbleUpExceptionTypeRef);
+    ILInstr* filterEnd = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(), bubbleUpExceptionTypeRef, callTargetReturnIndex);
     
     // transfer->m_pTarget = endFilter;
     // *** EndMethod call catch
     ILInstr* endMethodCatchFirstInstr = nullptr;
     tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
-                                    &endMethodCatchFirstInstr);
+                                    &endMethodCatchFirstInstr, callTargetReturnIndex);
 
     ILInstr* endMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
