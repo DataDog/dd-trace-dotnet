@@ -215,6 +215,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
+    WSTRING runtimeType = runtime_information_.is_core() ? (runtime_information_.major_version > 4 ? WStr(".NET") : WStr(".NET Core")) : WStr(".NET Framework");
+    Logger::Info("Runtime Information: ", runtimeType, " ", runtime_information_.major_version, ".", runtime_information_.minor_version, ".", runtime_information_.build_version);
+
+    // Check if we have to disable tiered compilation (due to https://github.com/dotnet/runtime/issues/77973)
+    bool disableTieredCompilation = false;
+    bool internal_workaround_77973_enabled = true;
+    shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(environment::internal_workaround_77973_enabled), internal_workaround_77973_enabled);
+    if (internal_workaround_77973_enabled)
+    {
+        if (runtime_information_.major_version == 5 ||
+            (runtime_information_.major_version == 6 && runtime_information_.minor_version == 0 && runtime_information_.build_version <= 12) ||
+            (runtime_information_.major_version == 7 && runtime_information_.minor_version == 0 && runtime_information_.build_version <= 1))
+        {
+            Logger::Info("Tiered Compilation was disabled due to https://github.com/dotnet/runtime/issues/77973. This action can be disabled by setting the environment variable DD_INTERNAL_WORKAROUND_77973_ENABLED=false");
+            disableTieredCompilation = true;
+        }
+    }
+
     auto pInfo = info10 != nullptr ? info10 : this->info_;
     auto work_offloader = std::make_shared<RejitWorkOffloader>(pInfo);
 
@@ -255,8 +273,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         event_mask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
     }
 
-    // set event mask to subscribe to events and disable NGEN images
-    hr = this->info_->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+    DWORD high_event_mask = COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES;
+    if (disableTieredCompilation)
+    {
+        high_event_mask |= COR_PRF_HIGH_DISABLE_TIERED_COMPILATION;
+    }
+
+    // set event mask to subscribe to events
+    hr = this->info_->SetEventMask2(event_mask, high_event_mask);
     if (FAILED(hr))
     {
         Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: unable to set event mask.");
