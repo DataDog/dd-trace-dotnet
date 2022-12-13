@@ -41,8 +41,12 @@ public static class Program
             RunSpanUpdateMethods(span);
         }
 
+        // There is no active span, so the default behavior will result in a new trace
+        // Note: StartSpan does not update the active span, so when the call returns there will still be no active span
         using var span2 = _tracer.StartSpan("SayHello2", SpanKind.Internal, parentContext: default, links: new Link[] { new(span.Context, new SpanAttributes()) });
 
+        // There is no active span, so the default behavior will result in a new trace
+        // Note: StartSpan does not update the active span, so when the call returns there will still be no active span
         using var span3 = _tracer.StartSpan("SayHello3", SpanKind.Internal, parentSpan: default, links: new Link[] { new(span.Context, new SpanAttributes()), new(span2.Context, new SpanAttributes()) });
     }
 
@@ -52,18 +56,22 @@ public static class Program
         // - StartActiveSpan
         // - StartSpan
         // - StartRootSpan
+
+        // This call does not change the active span, so any new spans created without an explicit parent will not become child spans of this one
         using var nonActiveSpan = _tracer.StartSpan("StartSpan");
         PrintSpanStartedInformation(nonActiveSpan);
 
+        // This call does not change the active span, so any new spans created without an explicit parent will not become child spans of this one
         using var nonActiveChildSpan = _tracer.StartSpan("StartSpan2", SpanKind.Internal);
         PrintSpanStartedInformation(nonActiveChildSpan);
 
+        // Confusingly, the new span is still a child of the active span. I expect this behavior to change later because this doesn't make sense.
         using var rootSpan = _tracer.StartRootSpan("StartRootSpan");
         PrintSpanStartedInformation(rootSpan);
 
-        // Use StartActiveSpan which will make the new span Active for the time-being. Note two oddities being tested here:
-        // 1) The parent span is not the currently Active span
-        // 2) Upon leaving this scope, the Active span should be reset back to the previous Active span, NOT to the parent span
+        // Use StartActiveSpan with a parent TelemetrySpan. There are two things to note here:
+        // 1) The parent span will be the specified span instead of the currently active span
+        // 2) Upon leaving this scope, the active span should be reset back to the previous active span, NOT to the parent span
         var childSpan = _tracer.StartActiveSpan("StartActiveSpan.Child", SpanKind.Internal, nonActiveSpan);
         using (childSpan)
         {
