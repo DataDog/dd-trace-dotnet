@@ -314,14 +314,24 @@ partial class Build
         .After(Restore)
         .Executes(() =>
         {
-            // Always AnyCPU
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
-                .SetTargetPlatformAnyCPU()
-                .SetConfiguration(BuildConfiguration)
-                .DisableRestore()
-                .SetTargets("BuildCsharpSrc")
+            var include = TracerDirectory.GlobFiles(
+                "src/**/*.csproj"
             );
+
+            var exclude = TracerDirectory.GlobFiles(
+                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
+                "src/Datadog.Trace.Tools.Runner/*.csproj",
+                "src/**/Datadog.InstrumentedAssembly*.csproj"
+            );
+
+            var toBuild = include.Except(exclude);
+
+            // Always AnyCPU
+            DotNetBuild(s => s
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .EnableNoRestore()
+                .CombineWith(toBuild, (config, project) => config.SetProjectFile(project)));
         });
 
 
@@ -805,29 +815,39 @@ partial class Build
         .After(Restore, CompileManagedSrc)
         .Executes(() =>
         {
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
+            var projects = TracerDirectory.GlobFiles(
+                "src/**/Datadog.InstrumentedAssembly*.csproj"
+            );
+
+            // Always AnyCPU
+            DotNetBuild(s => s
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
-                .SetProperty("BuildProjectReferences", true)
-                .SetTargets("BuildInstrumentationVerificationLibrary"));
+                .EnableNoRestore()
+                .CombineWith(projects, (config, project) => config.SetProjectFile(project)));
         });
 
     Target CompileManagedTestHelpers => _ => _
         .Unlisted()
-        .DependsOn(CompileInstrumentationVerificationLibrary)
         .After(Restore)
         .After(CompileManagedSrc)
+        .DependsOn(CompileInstrumentationVerificationLibrary)
         .Executes(() =>
         {
-            // Always AnyCPU
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .DisableRestore()
-                .SetProperty("BuildProjectReferences", false)
-                .SetTargets("BuildCsharpTestHelpers"));
+            //we need to build in this exact order 
+            Build(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj").First());
+            Build(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj").First());
+
+            void Build(AbsolutePath projPath)
+            {
+                // Always AnyCPU
+                DotNetBuild(s => s
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatformAnyCPU()
+                    .EnableNoRestore()
+                    .EnableNoDependencies()
+                    .SetProjectFile(projPath));
+            }
         });
 
     Target CompileManagedUnitTests => _ => _
@@ -839,14 +859,17 @@ partial class Build
         .DependsOn(CompileManagedTestHelpers)
         .Executes(() =>
         {
+            var projects = TracerDirectory.GlobFiles(
+                "test/**/*.Tests.csproj"
+            );
+
             // Always AnyCPU
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
+            DotNetBuild(s => s
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
-                .DisableRestore()
-                .SetProperty("BuildProjectReferences", false)
-                .SetTargets("BuildCsharpUnitTests"));
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .CombineWith(projects, (config, project) => config.SetProjectFile(project)));
         });
 
     Target RunManagedUnitTests => _ => _
@@ -940,15 +963,18 @@ partial class Build
         .After(CompileManagedSrc)
         .Executes(() =>
         {
+            var projects = TracerDirectory.GlobFiles(
+                "test/test-applications/integrations/dependency-libs/**/*.csproj",
+                "test/test-applications/integrations/**/*.vbproj"
+            );
+
             // Always AnyCPU
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
+            DotNetBuild(s => s
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
-                .DisableRestore()
-                .EnableNoDependencies()
-                .SetTargets("BuildDependencyLibs")
-            );
+                .EnableNoRestore()
+                .SetNoWarnDotNetCore3()
+                .CombineWith(projects, (settings, project) => settings.SetProjectFile(project)));
         });
 
     Target CompileRegressionDependencyLibs => _ => _
@@ -957,18 +983,19 @@ partial class Build
         .After(CompileManagedSrc)
         .Executes(() =>
         {
+            var projects = TracerDirectory.GlobFiles(
+                "test/test-applications/regression/dependency-libs/**/Datadog.StackExchange.Redis*.csproj"
+            );
+
             // We run linux integration tests in AnyCPU, but Windows on the specific architecture
             var platform = !IsWin ? MSBuildTargetPlatform.MSIL : TargetPlatform;
 
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
-                .SetTargetPlatformAnyCPU()
-                .DisableRestore()
-                .EnableNoDependencies()
+            DotNetBuild(s => s
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(platform)
-                .SetTargets("BuildRegressionDependencyLibs")
-            );
+                .EnableNoRestore()
+                .SetNoWarnDotNetCore3()
+                .CombineWith(projects, (settings, project) => settings.SetProjectFile(project)));
         });
 
     Target CompileRegressionSamples => _ => _
@@ -1036,6 +1063,7 @@ partial class Build
     Target CompileIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
+        .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
@@ -1044,18 +1072,35 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
-            DotNetMSBuild(s => s
-                .SetTargetPath(MsBuildProject)
-                .SetProperty("TargetFramework", Framework.ToString())
-                .DisableRestore()
-                .EnableNoDependencies()
+            var projects = TracerDirectory.GlobFiles(
+                "test/*.IntegrationTests/*.IntegrationTests.csproj"
+            );
+
+            var toBuild = projects
+                .Where(path => !path.Equals(Solution.GetProject(Projects.DebuggerIntegrationTests).Path))
+                .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework));
+
+            if (!Framework.ToString().StartsWith("net46"))
+            {
+                // we need to build Projects.RazorPages before integration tests
+                DotNetBuild(s => s
+                    .SetConfiguration(BuildConfiguration)
+                    .SetFramework(Framework)
+                    .SetTargetPlatformAnyCPU()
+                    .EnableNoRestore()
+                    .EnableNoDependencies()
+                    .SetNoWarnDotNetCore3()
+                    .SetProjectFile(Solution.GetProject(Projects.RazorPages)));
+            }
+
+            DotNetBuild(s => s
                 .SetConfiguration(BuildConfiguration)
-                // Including this apparently breaks the integration tests when running against with the .NET 7 SDK
-                // as dotnet test doesn't look in the right folder. No, I don't understand it either
-                // .SetTargetPlatform(TargetPlatform)
+                .SetFramework(Framework)
                 .SetTargetPlatformAnyCPU()
-                .SetTargets("BuildCsharpIntegrationTests")
-                .SetMaxCpuCount(null));
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetNoWarnDotNetCore3()
+                .CombineWith(toBuild, (config, project) => config.SetProjectFile(project)));
         });
 
     Target CompileDebuggerIntegrationTests => _ => _
