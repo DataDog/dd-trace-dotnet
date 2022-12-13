@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using dnlib.DotNet;
 using dnlib.DotNet.Writer;
@@ -17,7 +16,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
         private readonly AssemblyGeneratorArgs _args;
         private readonly ModuleContext _moduleContext;
         private readonly List<ModuleDefMD> _allLoadedModules;
-        internal List<(string modulePath, List<string> methods)> ExportedModulesPathAndMethods { get; set; } = new();
+        internal List<InstrumentedAssembly> ExportedModulesPathAndMethods { get; set; } = new();
         internal InstrumentedAssemblyGeneratorContext ModuleRewriteContext { get; private set; }
 
         public InstrumentedAssemblyGenerator(AssemblyGeneratorArgs args)
@@ -52,7 +51,8 @@ namespace Datadog.InstrumentedAssemblyGenerator
                                                                             originalsModulesOfRewrittenMembers,
                                                                             originalModulesTokensMaps,
                                                                             metadataChangesByModule,
-                                                                            instrumentedMethodsByModule);
+                                                                            instrumentedMethodsByModule,
+                                                                            originalModulesPaths);
         }
 
         private static void LoadRelevantTokens(ModuleDefMD[] originalsModulesOfRewrittenMembers)
@@ -79,14 +79,13 @@ namespace Datadog.InstrumentedAssemblyGenerator
         }
 
         private ModuleDefMD[] GetOriginalModulesMetadata(
-            ILookup<(string ModuleName, Guid? Mvid), InstrumentedMethod> instrumentedMethodsByModule, 
+            ILookup<(string ModuleName, Guid? Mvid), InstrumentedMethod> instrumentedMethodsByModule,
             List<string> originalModulesPaths)
         {
             Logger.Info("Collecting original modules metadata");
             // Collect all original modules that participating in the test - i.e. module name & mvid are same
             var originalsModulesOfRewrittenMembers = (from file in originalModulesPaths.Distinct()
-                                                      let extension = Path.GetExtension(file).ToLower()
-                                                      where extension is ".dll" or ".exe"
+                                                      where Path.GetExtension(file).ToLower() is ".dll" or ".exe"
                                                       select LoadModuleWithDnlibSafe(file) into module
                                                       where module?.Mvid != null
                                                       let key = (module.Name, (Guid)module.Mvid)
@@ -167,17 +166,16 @@ namespace Datadog.InstrumentedAssemblyGenerator
 
         private List<string> ReadOriginalModulesPathsFromFile()
         {
-            Logger.Info("\r\nSanitize modules path");
+            Logger.Info("Sanitize modules path");
+            var wereOriginalModulesCopied = !string.IsNullOrEmpty(_args.OriginalModulesFolder);
 
             var newLines =
                 (from line in File.ReadAllLines(_args.OriginalModulesFilePath)
-                 where !string.IsNullOrWhiteSpace(line)
+                 where !string.IsNullOrWhiteSpace(line) && Path.GetExtension(line).ToLower() is ".dll" or ".exe"
                  let line2 = line.Trim(new char['"'])
-                 let ext = Path.GetExtension(line2)
-                 where ext.ToLower() is ".dll" or ".exe"
                  let fileName = Path.GetFileName(line2)
                  where fileName != null
-                 select Path.Combine(_args.OriginalModulesFolder, fileName)).ToList();
+                 select wereOriginalModulesCopied ? Path.Combine(_args.OriginalModulesFolder, fileName) : line2).ToList();
 
             if (!newLines.Any())
             {
@@ -266,15 +264,19 @@ namespace Datadog.InstrumentedAssemblyGenerator
                     }
 
                     Logger.Info($"Modifying methods of module: {module.Name}");
-                    var methodsModified = new List<string>();
+                    var modifiedMethods = new List<ModifiedMethod>();
                     foreach (var instrumentedMethod in methods)
                     {
                         try
                         {
-                            ModifyMethod(module, instrumentedMethod, ModuleRewriteContext.InstrumentedModulesTypesTokens[methods.Key], ModuleRewriteContext.OriginalModulesTypesTokens[methods.Key]);
-                            Logger.Debug($"Method: {instrumentedMethod} has modified");
+                            var modifiedMethod = ModifyMethod(module, instrumentedMethod, ModuleRewriteContext.InstrumentedModulesTypesTokens[methods.Key], ModuleRewriteContext.OriginalModulesTypesTokens[methods.Key]);
+                            if (modifiedMethod == null)
+                            {
+                                continue;
+                            }
 
-                            methodsModified.Add(instrumentedMethod.ToString() + $"({string.Join(",", instrumentedMethod.ArgumentsNames.Select(n => n.GetTypeSig(module, ModuleRewriteContext).FullName))})");
+                            Logger.Debug($"Method: {instrumentedMethod} has modified");
+                            modifiedMethods.Add(modifiedMethod);
                         }
                         catch (Exception e)
                         {
@@ -284,14 +286,14 @@ namespace Datadog.InstrumentedAssemblyGenerator
                         }
                     }
 
-                    if (methodsModified.Count == 0)
+                    if (modifiedMethods.Count == 0)
                     {
                         Logger.Warn($"No methods were modified, so rewritten module will not be saved");
                         result = InstrumentedAssemblyGenerationResult.PartiallySucceeded;
                         continue;
                     }
 
-                    Logger.Debug($"{methodsModified.Count} method(s) were modified");
+                    Logger.Debug($"{modifiedMethods.Count} method(s) were modified");
 
                     string exportPath = Path.Combine(_args.InstrumentedAssembliesFolder, module.FullName);
 
@@ -305,8 +307,8 @@ namespace Datadog.InstrumentedAssemblyGenerator
 
                     module.Write(exportPath, writeOptions);
                     Logger.Successful($"Module: '{module.FullName}' was successfully written to: '{exportPath}'");
-
-                    ExportedModulesPathAndMethods.Add((exportPath, methodsModified));
+                    var originalPath = ModuleRewriteContext.OriginalsModulesPaths.First(path => path.EndsWith(module.FullName));
+                    ExportedModulesPathAndMethods.Add(new InstrumentedAssembly(exportPath, originalPath, modifiedMethods));
                     succeededCounter++;
 
                     if (moduleWriteLogger.ErrorsBuilder.Length > 0)
@@ -330,7 +332,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
             return result;
         }
 
-        private void ModifyMethod(ModuleDefMD module,
+        private ModifiedMethod ModifyMethod(ModuleDefMD module,
                                   InstrumentedMethod instrumentedMethod,
                                   ModuleTokensMapping instrumentedModuleTokens,
                                   ModuleTokensMapping originalModuleTokens)
@@ -345,7 +347,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
             if (!methodDef.HasBody && instrumentedMethod.Code.Value.Length == 0)
             {
                 Logger.Error($"Method {methodDef.FullName} has no body");
-                return;
+                return null;
             }
 
             var locals = new LocalsCreator(instrumentedMethod, module, ModuleRewriteContext);
@@ -368,6 +370,9 @@ namespace Datadog.InstrumentedAssemblyGenerator
             var body = methodBodyReader.CreateCilBody();
             methodDef.Body = body;
             LogMethodInstructions(methodDef);
+            return new ModifiedMethod(
+                methodDef,
+                Path.Combine(_args.InstrumentedAssembliesFolder, module.FullName));
         }
 
         private MethodDef FindInstrumentedMethod(ModuleDefMD module, InstrumentedMethod instrumentedMethod, ModuleTokensMapping originalModuleTokens)

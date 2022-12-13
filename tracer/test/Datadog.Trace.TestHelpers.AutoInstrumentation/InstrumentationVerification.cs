@@ -17,27 +17,32 @@ namespace Datadog.Trace.TestHelpers;
 internal static class InstrumentationVerification
 {
     /// <summary>
-    /// Configuration key for enabling or disabling the instrumentation verification.
-    /// Default is value is disabled.
+    /// Configuration key for enabling or disabling writing the instrumentation changes to disk
+    /// (to allow for post-mortem instrumentation verification analysis).
+    /// Default value is enabled.
     /// </summary>
     public const string InstrumentationVerificationEnabled = "DD_WRITE_INSTRUMENTATION_TO_DISK";
+
+    /// <summary>
+    /// Configuration key for enabling or disabling the copying original modules to disk so we can do offline investigation.
+    /// Default is value is disabled.
+    /// </summary>
+    public const string CopyingOriginalModulesEnabled = "DD_COPY_ORIGINALS_MODULES_TO_DISK";
 
     public static void VerifyInstrumentation(Process process, string logDirectory)
     {
         var instrumentedLogsPath = GetInstrumentationLogsFolder(process, logDirectory);
-
-        var generatorArgs = new AssemblyGeneratorArgs(instrumentedLogsPath);
+        var copyOriginalsModulesToDisk = Environment.GetEnvironmentVariable(InstrumentationVerification.CopyingOriginalModulesEnabled);
+        var generatorArgs = new AssemblyGeneratorArgs(instrumentedLogsPath, copyOriginalModulesToDisk: copyOriginalsModulesToDisk?.ToLower() is "true" or "1");
         var generatedModules = InstrumentedAssemblyGeneration.Generate(generatorArgs);
 
         var results = new List<VerificationOutcome>();
-        foreach (var (modulePath, methods) in generatedModules)
+        foreach (var instrumentedAssembly in generatedModules)
         {
-            var moduleName = Path.GetFileName(modulePath);
-            var originalModulePath = Path.Combine(instrumentedLogsPath, InstrumentedAssemblyGeneratorConsts.OriginalModulesFolderName, moduleName);
             var result = new VerificationsRunner(
-                modulePath,
-                originalModulePath,
-                methods).Run();
+                instrumentedAssembly.InstrumentedAssemblyPath,
+                instrumentedAssembly.OriginalAssemblyPath,
+                instrumentedAssembly.ModifiedMethods.Select(m => (m.TypeFullName, m.MethodAndArgumentsName)).ToList()).Run();
             results.Add(result);
         }
 

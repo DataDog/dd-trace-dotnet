@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.InstrumentedAssemblyGenerator;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using ICSharpCode.Decompiler.CSharp.Syntax;
@@ -16,7 +17,7 @@ namespace Datadog.InstrumentedAssemblyVerification
     internal class IlSpyDecompilationVerification : IVerification
     {
         private readonly InstrumentationVerificationLogger _logger;
-        private readonly List<string> _methods;
+        private readonly List<(string type, string method)> _methods;
         private readonly string _peFile;
 
         private readonly List<(string toExclude, string inMethod)> _errorsToExclude = new()
@@ -28,7 +29,7 @@ namespace Datadog.InstrumentedAssemblyVerification
             ("Expected O, but got I4", "Serilog.LoggerConfiguration::CreateLogger()")
         };
 
-        public IlSpyDecompilationVerification(string module, List<string> methods, InstrumentationVerificationLogger logger)
+        public IlSpyDecompilationVerification(string module, List<(string type, string method)> methods, InstrumentationVerificationLogger logger)
         {
             _peFile = module;
             _methods = methods;
@@ -42,53 +43,39 @@ namespace Datadog.InstrumentedAssemblyVerification
             var errors = new List<string>();
             var settings = new DecompilerSettings();
             var decompiler = new CSharpDecompiler(_peFile, settings);
-            foreach (string method in _methods)
+            foreach ((string type, string method) in _methods)
             {
                 try
                 {
-                    int methodNameIndex = method.Substring(0, method.LastIndexOf('(')).LastIndexOf(".", StringComparison.InvariantCulture);
-                    string methodAndParametersName = method.Substring(methodNameIndex + 1);
-                    FullTypeName typeName;
-                    if (methodAndParametersName.StartsWith("ctor") || methodAndParametersName.StartsWith("cctor"))
+                    ITypeDefinition typeDefinition = ILSpyHelper.FindType(decompiler, type);
+                    if (typeDefinition == null)
                     {
-                        typeName = new FullTypeName(method.Substring(0, methodNameIndex - 1));
-                    }
-                    else
-                    {
-                        typeName = new FullTypeName(method.Substring(0, methodNameIndex));
-                    }
-                    ITypeDefinition typeInfo = decompiler.TypeSystem.MainModule.Compilation.FindType(typeName).GetDefinition();
-                    if (typeInfo == null)
-                    {
-                        string error = $"{nameof(IlSpyDecompilationVerification)} Type {typeName} not found in assembly {decompiler.TypeSystem.MainModule.AssemblyName}";
+                        string error = $"{nameof(IlSpyDecompilationVerification)} Type {type} not found in assembly {decompiler.TypeSystem.MainModule.AssemblyName}";
                         _logger.Warn(error);
                         continue;
                     }
 
-                    // we can't do this replace in ILSpy method because '`' is valid sign for generic type
-                    var copyOfMethodAndParameterName = methodAndParametersName.Replace("!", "`");
-                    var tokenOfFirstMethod = typeInfo.Methods.SingleOrDefault(m => GetMethodAndParametersName(m.Name, m.Parameters) == copyOfMethodAndParameterName) ??
-                                             typeInfo.GetConstructors().SingleOrDefault(m => GetMethodAndParametersName(m.Name.Substring(1), m.Parameters) == copyOfMethodAndParameterName);
-                    if (tokenOfFirstMethod?.MetadataToken == null)
+                    var ilSpyMethod = ILSpyHelper.FindMethod(typeDefinition, method);
+                    if (ilSpyMethod?.MetadataToken == null)
                     {
-                        string error = $"{nameof(IlSpyDecompilationVerification)} Method {methodAndParametersName} not found in type {typeInfo.FullTypeName}";
+                        string error = $"{nameof(IlSpyDecompilationVerification)} Method {method} not found in type {typeDefinition.FullTypeName}";
                         _logger.Warn(error);
                         continue;
                     }
 
-                    var decompiled = decompiler.Decompile(tokenOfFirstMethod.MetadataToken);
+                    var decompiled = decompiler.Decompile(ilSpyMethod.MetadataToken);
                     if (decompiled == null)
                     {
-                        string error = $"{nameof(IlSpyDecompilationVerification)} Compilation of {tokenOfFirstMethod.FullName} failed";
+                        string error = $"{nameof(IlSpyDecompilationVerification)} Compilation of {ilSpyMethod.FullName} failed";
                         errors.Add(error);
                         continue;
                     }
 
-                    errors.AddRange(GetDecompilationIlErrors(decompiled, methodAndParametersName, tokenOfFirstMethod));
+                    errors.AddRange(GetDecompilationIlErrors(decompiled, method, ilSpyMethod));
                 }
                 catch (Exception e)
                 {
-                    _logger.Error($"{nameof(IlSpyDecompilationVerification)} {e.ToString()}");
+                    _logger.Error($"{nameof(IlSpyDecompilationVerification)} {e}");
                 }
             }
 
@@ -107,16 +94,6 @@ namespace Datadog.InstrumentedAssemblyVerification
             return errors;
         }
 
-        private string GetMethodAndParametersName(string name, IReadOnlyList<IParameter> parameters)
-        {
-            return name + $"({string.Join(",", parameters.Select(p => SanitizeParameterTypeName(p.Type.ReflectionName)))})";
-        }
-
-        private string SanitizeParameterTypeName(string typeName)
-        {
-            return typeName.Replace("[[", "<").Replace("]]", ">").Replace("[", "").Replace("]", "").Replace("+", "/");
-        }
-
         private List<string> GetDecompilationIlErrors(SyntaxTree decompiledMethod, string methodAndParametersName, IMethod method)
         {
             var errors = new List<string>();
@@ -124,7 +101,7 @@ namespace Datadog.InstrumentedAssemblyVerification
             var ilFunction = decompiledMethod.DescendantNodes().OfType<EntityDeclaration>().
                                               Select(m => m.Annotations.OfType<ILFunction>().FirstOrDefault()).
                                               FirstOrDefault(function => function != null &&
-                                                                         GetMethodAndParametersName(function.Name, function.Parameters) == copyOfMethodAndParameterName);
+                                                                         ILSpyHelper.GetMethodAndParametersName(function.Name, function.Parameters) == copyOfMethodAndParameterName);
 
 
             string where = $"{method.DeclaringType?.FullName}::{methodAndParametersName}, in assembly: '{method.ParentModule.PEFile?.FileName}'";
