@@ -22,14 +22,6 @@ namespace Datadog.Trace.Activity.Handlers
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultActivityHandler));
         private static readonly ConcurrentDictionary<string, ActivityMapping> ActivityMappingById = new();
-        private static readonly string[] SpanKindNames = new string[]
-        {
-            "internal",
-            "server",
-            "client",
-            "producer",
-            "consumer",
-        };
 
         public bool ShouldListenTo(string sourceName, string? version)
         {
