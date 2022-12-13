@@ -22,11 +22,12 @@ internal static class Program
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             // Vulnerable section
             MD5.Create().ComputeHash(new byte[] { 3, 5, 6 });
-            testHashAlgorithm(new MD5CryptoServiceProvider());
+            testHashAlgorithm(SHA1.Create());
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
         testHashAlgorithm(new SHA1CryptoServiceProvider());
+        Console.WriteLine("MAIN DUPLICATED OUT");
     }
 
     private static int GetExecutionTimes(string[] args)
@@ -54,12 +55,6 @@ internal static class Program
     {
         var byteArg = new byte[] { 3, 5, 6 };
         var stream = new MemoryStream(byteArg);
-
-        algorithm.ComputeHash(byteArg, 0, 3);
-        algorithm.ComputeHash(byteArg);
         algorithm.ComputeHash(stream);
-#if NET5_0_OR_GREATER
-            _ = algorithm.ComputeHashAsync(stream, CancellationToken.None).Result;
-#endif
     }
 }
