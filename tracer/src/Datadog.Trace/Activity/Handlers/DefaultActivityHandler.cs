@@ -40,15 +40,16 @@ namespace Datadog.Trace.Activity.Handlers
             string? rawTraceId = null;
             string? rawSpanId = null;
 
-            // If the user has specified a parent context, get the parent Datadog SpanContext
-            if (activity.ParentId is string parentId
-                && ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
-            {
-                parent = mapping.Scope.Span.Context;
-            }
-
             if (activity is IW3CActivity w3cActivity)
             {
+                // If the user has specified a parent context, get the parent Datadog SpanContext
+                if (w3cActivity.ParentSpanId is not null
+                    && activity.ParentId is string parentId
+                    && ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
+                {
+                    parent = mapping.Scope.Span.Context;
+                }
+
                 if (parent is null && activeSpan is not null)
                 {
                     // If this is the first activity (no parent) and we already have an active span
