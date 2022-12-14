@@ -8,20 +8,12 @@
 using System;
 using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Activity
 {
     internal static class OtlpHelpers
     {
-        private static readonly string[] SpanKindNames = new string[]
-        {
-            "internal",
-            "server",
-            "client",
-            "producer",
-            "consumer",
-        };
-
         internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
             where TInner : IActivity
         {
@@ -29,20 +21,12 @@ namespace Datadog.Trace.Activity
 
             AgentConvertSpan(activity, span);
 
-            // Additional Datdog policy: Set tag "span.kind"
+            // Additional Datadog policy: Set tag "span.kind"
             // Since the ActivityKind can only be one of a fixed set of values, always set the tag as prescribed by Datadog practices
             // even though the tag is not present on normal OTLP spans
             if (activity5 is not null)
             {
-                string tagValue = activity5.Kind switch
-                {
-                    ActivityKind.Server => SpanKinds.Server,
-                    ActivityKind.Client => SpanKinds.Client,
-                    ActivityKind.Producer => SpanKinds.Producer,
-                    ActivityKind.Consumer => SpanKinds.Consumer,
-                    _ => SpanKinds.Internal,
-                };
-                span.SetTag(Tags.SpanKind, tagValue);
+                span.SetTag(Tags.SpanKind, GetSpanKind(activity5.Kind));
             }
         }
 
@@ -77,8 +61,7 @@ namespace Datadog.Trace.Activity
 
             // Fixup "version" tag
             if (Tracer.Instance.Settings.ServiceVersion is null
-                && span.GetTag("service.version") is string otelServiceVersion
-                && !string.IsNullOrEmpty(otelServiceVersion))
+                && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
                 span.SetTag(Tags.Version, otelServiceVersion);
             }
@@ -139,8 +122,8 @@ namespace Datadog.Trace.Activity
                     // Later: Support config 'span_name_remappings'
                     span.OperationName = activity5.Source.Name switch
                     {
-                        string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{SpanKindNames[(int)activity5.Kind]}",
-                        _ => $"opentelemetry.{SpanKindNames[(int)activity5.Kind]}",
+                        string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{GetSpanKind(activity5.Kind)}",
+                        _ => $"opentelemetry.{GetSpanKind(activity5.Kind)}",
                     };
                 }
                 else
@@ -182,6 +165,16 @@ namespace Datadog.Trace.Activity
                 span.Type = activity5 is null ? SpanTypes.Custom : AgentSpanKind2Type(activity5.Kind, span);
             }
         }
+
+        internal static string GetSpanKind(ActivityKind activityKind) =>
+            activityKind switch
+            {
+                ActivityKind.Server => SpanKinds.Server,
+                ActivityKind.Client => SpanKinds.Client,
+                ActivityKind.Producer => SpanKinds.Producer,
+                ActivityKind.Consumer => SpanKinds.Consumer,
+                _ => SpanKinds.Internal,
+            };
 
         internal static void SetTagObject(Span span, string key, object? value)
         {
@@ -340,7 +333,7 @@ namespace Datadog.Trace.Activity
                 return "[]";
             }
 
-            StringBuilder sb = new();
+            StringBuilder sb = StringBuilderCache.Acquire(0);
             sb.Append('[');
             for (int i = 0; i < array.Length; i++)
             {
@@ -369,15 +362,49 @@ namespace Datadog.Trace.Activity
 
             sb.Remove(sb.Length - 1, 1);
             sb.Append(']');
-            return sb.ToString();
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        private static bool? GoStrConvParseBool(string value) =>
-            value switch
+        // This algorithm implements Go function strconv.ParseBool, which the trace agent uses
+        // for string->bool conversions
+        // See https://pkg.go.dev/strconv#ParseBool
+        private static bool? GoStrConvParseBool(string value)
+        {
+            if (value == null) { ThrowHelper.ThrowArgumentNullException(nameof(value)); }
+
+            if (value.Length == 0)
             {
-                "1" or "t" or "T" or "TRUE" or "true" or "True" => true,
-                "0" or "f" or "F" or "FALSE" or "false" or "False" => false,
-                _ => null
-            };
+                return null;
+            }
+
+            if (value.Length == 1)
+            {
+                if (value[0] == 't' || value[0] == 'T' ||
+                    value[0] == '1')
+                {
+                    return true;
+                }
+
+                if (value[0] == 'f' || value[0] == 'F' ||
+                    value[0] == '0')
+                {
+                    return false;
+                }
+
+                return null;
+            }
+
+            if (value == "TRUE" || value == "true" || value == "True")
+            {
+                return true;
+            }
+
+            if (value == "FALSE" || value == "false" || value == "False")
+            {
+                return false;
+            }
+
+            return null;
+        }
     }
 }
