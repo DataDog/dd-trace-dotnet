@@ -254,7 +254,7 @@ namespace Datadog.Trace.Activity
                     span.Type = value;
                     break;
                 case "analytics.event":
-                    if (value is not null && GoStrConvParseBool(value) is bool b)
+                    if (GoStrConvParseBool(value) is bool b)
                     {
                         span.SetMetric(Tags.Analytics, b ? 1 : 0);
                     }
@@ -331,11 +331,9 @@ namespace Datadog.Trace.Activity
         // This algorithm implements Go function strconv.ParseBool, which the trace agent uses
         // for string->bool conversions
         // See https://pkg.go.dev/strconv#ParseBool
-        private static bool? GoStrConvParseBool(string value)
+        private static bool? GoStrConvParseBool(string? value)
         {
-            if (value == null) { ThrowHelper.ThrowArgumentNullException(nameof(value)); }
-
-            if (value.Length == 0)
+            if (value is null || value.Length == 0)
             {
                 return null;
             }
