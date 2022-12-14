@@ -48,7 +48,7 @@ public:
 
     ILInstr* CreateInstr(unsigned opCode) const;
     ILInstr* InitObj(mdTypeRef type_ref) const;
-    ILInstr* CreateFilterForException(mdTypeRef exception, mdTypeRef type_ref, unsigned index) const;
+    ILInstr* CreateFilterForException(mdTypeRef exception, mdTypeRef type_ref, ULONG exceptionValueIndex) const;
 };
 
 #endif // DD_CLR_PROFILER_IL_REWRITER_WRAPPER_H_

@@ -502,7 +502,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *exceptionToken = exTypeRef;
     *callTargetReturnToken = callTargetReturn;
     *exceptionValueIndex = newLocalsCount - 5 - additionalLocalsCount;
-    Logger::Warn("Exceptionvalue index is", &exceptionValueIndex);
+    Logger::Warn("Exceptionvalue index in ModifyLocalSig is", *exceptionValueIndex);
 
     if (returnSignatureType != nullptr)
     {

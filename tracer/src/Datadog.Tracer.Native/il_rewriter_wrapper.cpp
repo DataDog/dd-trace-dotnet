@@ -368,7 +368,7 @@ ILInstr* ILRewriterWrapper::InitObj(mdTypeRef type_ref) const
     return pNewInstr;
 }
 
-ILInstr* ILRewriterWrapper::CreateFilterForException(mdTypeRef exception, mdTypeRef type_ref, unsigned exceptionValueIndex) const
+ILInstr* ILRewriterWrapper::CreateFilterForException(mdTypeRef exception, mdTypeRef type_ref, ULONG exceptionValueIndex) const
 {
     ILInstr* filter = CreateInstr(CEE_ISINST);
     filter->m_Arg32 = exception;
