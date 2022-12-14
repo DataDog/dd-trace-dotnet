@@ -164,6 +164,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             sink.EnqueueLog(evt);
             batches = WaitForBatches(sink, batchCount: FailuresBeforeCircuitBreak + 2);
             _output.WriteLine($"Found {batches.Count} batches");
+            sink.Batches.Count.Should().Be(FailuresBeforeCircuitBreak + 2);
         }
 
         [Fact]

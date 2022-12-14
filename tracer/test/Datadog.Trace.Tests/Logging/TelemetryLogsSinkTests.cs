@@ -113,7 +113,6 @@ public class TelemetryLogsSinkTests
         sink.EnqueueLog(new LogMessageData("This is my second message", TelemetryLogLevel.DEBUG));
         WaitForBatchCount(sink, count: 2, seconds: 600);
 
-        // should send with second sink only this time, as previous success
         await WaitForPushAttempts(transports[0], count: 2);
         await WaitForPushAttempts(transports[1], count: 2);
 
