@@ -417,6 +417,34 @@ namespace Datadog.Trace.Tests.Propagators
 
         [Theory]
         // no replacements
+        [InlineData("valid1234567890", false)]
+        [InlineData("`~!@#$%^&*(){}[]<>-_+'\"/|\\?.", false)]
+        // explicit replacements
+        [InlineData(",foo,bar,", true)]
+        [InlineData(";foo;bar;", true)]
+        [InlineData("=foo=bar=", true)]
+        // out of bounds replacements
+        [InlineData("\0foo\tbar\u00E7", true)]
+        [InlineData("dog🐶", true)]
+        public void NeedsCharacterReplacement(string value, bool expected)
+        {
+            const char lowerBound = '\u0020'; // decimal: 32, ' ' (space)
+            const char upperBound = '\u007e'; // decimal: 126, '~' (tilde)
+
+            KeyValuePair<char, char>[] invalidCharacterReplacements =
+            {
+                new(',', '_'),
+                new(';', '_'),
+                new('=', '_'),
+            };
+
+            W3CTraceContextPropagator.NeedsCharacterReplacement(value, lowerBound, upperBound, invalidCharacterReplacements)
+                                     .Should()
+                                     .Be(expected);
+        }
+
+        [Theory]
+        // no replacements
         [InlineData("valid1234567890", "valid1234567890")]
         [InlineData("`~!@#$%^&*(){}[]<>-_+'\"/|\\?.", "`~!@#$%^&*(){}[]<>-_+'\"/|\\?.")]
         // explicit replacements

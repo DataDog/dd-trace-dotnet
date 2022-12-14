@@ -607,11 +607,42 @@ namespace Datadog.Trace.Propagators
         }
 
 #if NETCOREAPP
+        public static bool NeedsCharacterReplacement(ReadOnlySpan<char> value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
+#else
+        public static bool NeedsCharacterReplacement(string value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
+#endif
+        {
+            foreach (var c in value)
+            {
+                if (c < lowerBound || c > upperBound)
+                {
+                    return true;
+                }
+
+                foreach (var pair in replacements)
+                {
+                    if (c == pair.Key)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+#if NETCOREAPP
         public static ReadOnlySpan<char> ReplaceCharacters(ReadOnlySpan<char> value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
 #else
         public static string ReplaceCharacters(string value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
 #endif
         {
+            if (!NeedsCharacterReplacement(value, lowerBound, upperBound, replacements))
+            {
+                // common case, no replacements
+                return value;
+            }
+
             var sb = StringBuilderCache.Acquire(value.Length);
             sb.Append(value);
 
