@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [SkippableTheory]
         public void RepositoryPattern(string value, bool expected)
         {
-            Assert.Equal(expected, Regex.Match(value, CIEnvironmentValues.RepositoryUrlPattern).Length != value.Length);
+            Assert.Equal(expected, Regex.Match(value, CIEnvironmentValues.RepositoryUrlPattern).Length == value.Length);
         }
 
         [SkippableTheory]
