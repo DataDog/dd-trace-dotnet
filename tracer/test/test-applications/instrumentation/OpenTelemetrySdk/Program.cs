@@ -104,11 +104,11 @@ public static class Program
     {
         span.SetAttribute("operation.name", "Saying hello!");
 
-        span.SetAttribute("attribute-string", "str");
+        span.SetAttribute("attribute-string", "\"str");
         span.SetAttribute("attribute-int", 1);
         span.SetAttribute("attribute-bool", true);
         span.SetAttribute("attribute-double", 2.0);
-        span.SetAttribute("attribute-stringArray", new string[] { "str1", "str2", "str3" });
+        span.SetAttribute("attribute-stringArray", new string[] { "\"str1\"", "str2", "str3" });
         span.SetAttribute("attribute-stringArrayEmpty", new string[] { });
         span.SetAttribute("attribute-intArray", new int[] { 1, 2, 3 });
         span.SetAttribute("attribute-intArrayEmpty", new int[] { });
