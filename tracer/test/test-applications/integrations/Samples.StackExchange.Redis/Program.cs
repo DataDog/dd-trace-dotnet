@@ -26,7 +26,7 @@ namespace Samples.StackExchangeRedis
 
         private static string Host()
         {
-            return Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "stackexchangeredis:6379,stackexchangeredis-slave:6380";
+            return Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6379,localhost:6380";
         }
 
         private static void RunStackExchange(string prefix)

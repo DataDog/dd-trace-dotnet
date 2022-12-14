@@ -63,9 +63,18 @@ services:
 
   stackexchangeredis_arm64:
     image: redis:4-alpine
+    hostname: stackexchangeredis_arm64
     command: redis-server --bind 0.0.0.0
     ports:
     - "6379"
+
+  stackexchangeredis_arm64-slave:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_arm64-slave
+    command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis_arm64 6379
+    ports:
+    - "127.0.0.1:6390:6379"
+
 
 # Dependencies
   aws_sqs:
@@ -93,9 +102,17 @@ services:
 
   stackexchangeredis:
     image: redis:4-alpine
+    hostname: stackexchangeredis
     command: redis-server --bind 0.0.0.0
     ports:
     - "127.0.0.1:6389:6379"
+
+  stackexchangeredis-slave:
+    image: redis:4-alpine
+    hostname: stackexchangeredis-slave
+    command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis 6379
+    ports:
+    - "127.0.0.1:6390:6379"
 
   mongo:
     image: mongo:4.0.9
@@ -384,7 +401,7 @@ services:
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379,stackexchangeredis-slave:6379
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
@@ -641,7 +658,7 @@ services:
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
       - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
-      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379
+      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379,stackexchangeredis-slave_arm64:6379
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
