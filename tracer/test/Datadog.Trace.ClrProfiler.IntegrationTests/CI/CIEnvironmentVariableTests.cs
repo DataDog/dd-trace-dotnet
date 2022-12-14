@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Newtonsoft.Json;
@@ -40,6 +41,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, string>[][]>(content);
                 yield return new object[] { new JsonDataItem(name, jsonObject) };
             }
+        }
+
+        [InlineData("git@github.com:DataDog/dd-trace-dotnet.git", true)]
+        [InlineData("git@git@hub.com:DataDog/dd-trace-dotnet.git", false)]
+        [InlineData("git@git/hub.com:DataDog/dd-trace-dotnet.git", false)]
+        [InlineData("git@git$hub.com:DataDog/dd-trace-dotnet.git", false)]
+        [InlineData("github.com:DataDog/dd-trace-dotnet.git", false)]
+        [InlineData("https://github.com/DataDog/dd-trace-dotnet.git", true)]
+        [InlineData("https://github.com/DataDog/dd-trace-dotnet.dit", false)]
+        [InlineData("https://github.com/DataDog/dd-trace-dotnet.git123", false)]
+        [InlineData("git@gitlab.com:gitlab-org/gitlab.git", true)]
+        [InlineData("https://gitlab.com/gitlab-org/gitlab.git", true)]
+        [SkippableTheory]
+        public void RepositoryPattern(string value, bool expected)
+        {
+            Assert.Equal(expected, Regex.Match(value, CIEnvironmentValues.RepositoryUrlPattern).Length == value.Length);
         }
 
         [SkippableTheory]
