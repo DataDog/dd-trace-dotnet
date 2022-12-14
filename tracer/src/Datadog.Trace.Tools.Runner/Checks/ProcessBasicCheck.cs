@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     {
                         nativeTracerVersion = null;
                     }
-                    
+
                     AnsiConsole.WriteLine(ProfilerVersion(nativeTracerVersion != null ? $"{nativeTracerVersion}" : "{empty}"));
                 }
             }
