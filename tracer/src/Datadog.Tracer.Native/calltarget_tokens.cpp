@@ -368,7 +368,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     }
 
     const auto additionalLocalsCount = GetAdditionalLocalsCount();
-    ULONG newLocalsCount = 3 + additionalLocalsCount;
+    ULONG newLocalsCount = 4 + additionalLocalsCount;
 
     // Gets the calltarget state type buffer and size
     unsigned callTargetStateTypeRefBuffer;
@@ -464,6 +464,11 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     }
 
     // Exception value
+    newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&newSignatureBuffer[newSignatureOffset], &exTypeRefBuffer, exTypeRefSize);
+    newSignatureOffset += exTypeRefSize;
+
+    // Exception value for calltarget exception filters
     newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_CLASS;
     memcpy(&newSignatureBuffer[newSignatureOffset], &exTypeRefBuffer, exTypeRefSize);
     newSignatureOffset += exTypeRefSize;
