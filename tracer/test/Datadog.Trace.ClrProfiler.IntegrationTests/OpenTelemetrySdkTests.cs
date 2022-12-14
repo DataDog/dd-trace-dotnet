@@ -21,8 +21,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", @"test\test-applications\instrumentation", output, prependSamplesToAppName: false)
         {
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-
             // Intentionally unset service name and version, which may be derived from OTEL SDK
             SetServiceName(string.Empty);
             SetServiceVersion(string.Empty);
@@ -45,10 +43,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "attribute-doubleArrayEmpty",
             });
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces()
         {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+
+            using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
@@ -62,6 +64,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(OpenTelemetrySdkTests));
+
+                telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
+            }
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void IntegrationDisabled()
+        {
+            using (var telemetry = this.ConfigureTelemetry())
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (RunSampleAndWaitForExit(agent))
+            {
+                var spans = agent.WaitForSpans(1, 2000);
+
+                using var s = new AssertionScope();
+                spans.Should().BeEmpty();
+                telemetry.AssertIntegrationDisabled(IntegrationId.OpenTelemetry);
             }
         }
     }

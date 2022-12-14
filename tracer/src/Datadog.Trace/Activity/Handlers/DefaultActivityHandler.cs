@@ -8,7 +8,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -110,8 +112,9 @@ namespace Datadog.Trace.Activity.Handlers
                 };
 
                 var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, serviceName: serviceName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
-                var scope = Tracer.Instance.ActivateSpan(span, false);
-                return scope;
+                Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.OpenTelemetry);
+
+                return Tracer.Instance.ActivateSpan(span, false);
             }
         }
 
