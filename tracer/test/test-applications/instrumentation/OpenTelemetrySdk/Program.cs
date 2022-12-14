@@ -32,8 +32,9 @@ public static class Program
         TelemetrySpan span = null;
         using (span = _tracer.StartActiveSpan("SayHello"))
         {
-            PrintSpanStartedInformation(span);
+            // Change tracestate before print statement so previous<->current comparison is accurate
             Activity.Current.TraceStateString = "app=hello";
+            PrintSpanStartedInformation(span);
 
             await RunStartSpanOverloadsAsync(span);
             RunSetAttributeOverloads(span);
