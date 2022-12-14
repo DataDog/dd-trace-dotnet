@@ -81,7 +81,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 // .so modules don't have version metadata
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    Version.TryParse(FileVersionInfo.GetVersionInfo(nativeTracerModule).FileVersion, out nativeTracerVersion);
+                    if (!Version.TryParse(FileVersionInfo.GetVersionInfo(nativeTracerModule).FileVersion, out nativeTracerVersion))
+                    {
+                        nativeTracerVersion = null;
+                    }
+                    
                     AnsiConsole.WriteLine(ProfilerVersion(nativeTracerVersion != null ? $"{nativeTracerVersion}" : "{empty}"));
                 }
             }
