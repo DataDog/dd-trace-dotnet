@@ -419,10 +419,11 @@ namespace Datadog.Trace.Tests.Propagators
         // no replacements
         [InlineData("valid1234567890", false)]
         [InlineData("`~!@#$%^&*(){}[]<>-_+'\"/|\\?.", false)]
-        // explicit replacements
+        // specific replacements
         [InlineData(",foo,bar,", true)]
         [InlineData(";foo;bar;", true)]
         [InlineData("=foo=bar=", true)]
+        [InlineData(",foo;bar=", true)]
         // out of bounds replacements
         [InlineData("\0foo\tbar\u00E7", true)]
         [InlineData("dog🐶", true)]
@@ -433,9 +434,9 @@ namespace Datadog.Trace.Tests.Propagators
 
             KeyValuePair<char, char>[] invalidCharacterReplacements =
             {
-                new(',', '_'),
-                new(';', '_'),
-                new('=', '_'),
+                new(',', '1'),
+                new(';', '2'),
+                new('=', '3'),
             };
 
             W3CTraceContextPropagator.NeedsCharacterReplacement(value, lowerBound, upperBound, invalidCharacterReplacements)
@@ -447,10 +448,11 @@ namespace Datadog.Trace.Tests.Propagators
         // no replacements
         [InlineData("valid1234567890", "valid1234567890")]
         [InlineData("`~!@#$%^&*(){}[]<>-_+'\"/|\\?.", "`~!@#$%^&*(){}[]<>-_+'\"/|\\?.")]
-        // explicit replacements
-        [InlineData(",foo,bar,", "_foo_bar_")]
-        [InlineData(";foo;bar;", "_foo_bar_")]
-        [InlineData("=foo=bar=", "_foo_bar_")]
+        // specific replacements
+        [InlineData(",foo,bar,", "1foo1bar1")]
+        [InlineData(";foo;bar;", "2foo2bar2")]
+        [InlineData("=foo=bar=", "3foo3bar3")]
+        [InlineData(",foo;bar=", "1foo2bar3")]
         // out of bounds replacements
         [InlineData("\0foo\tbar\u00E7", "_foo_bar_")]
         [InlineData("dog🐶", "dog__")] // note that 🐶 is two UTF-16 chars, can also be written as "dog\ud83d\udc36" (UTF-16) or "dog\U0001F436" (UTF-32)
@@ -462,9 +464,9 @@ namespace Datadog.Trace.Tests.Propagators
 
             KeyValuePair<char, char>[] invalidCharacterReplacements =
             {
-                new(',', '_'),
-                new(';', '_'),
-                new('=', '_'),
+                new(',', '1'),
+                new(';', '2'),
+                new('=', '3'),
             };
 
             W3CTraceContextPropagator.ReplaceCharacters(value, lowerBound, upperBound, outOfBoundsReplacement, invalidCharacterReplacements)
