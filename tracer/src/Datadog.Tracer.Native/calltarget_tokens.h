@@ -45,7 +45,7 @@ private:
 
     HRESULT ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue, ULONG* callTargetStateIndex,
                            ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
-                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken, bool isAsyncMethod = false);
+                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken, ULONG* exceptionValueIndex, bool isAsyncMethod = false);
 
 protected:
     // CallTarget tokens
@@ -89,7 +89,7 @@ public:
                                         ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                         ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                         mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                        mdToken* callTargetReturnToken, ILInstr** firstInstruction, bool isAsyncMethod = false);
+                                        mdToken* callTargetReturnToken, ILInstr** firstInstruction, ULONG* exceptionValueIndex, bool isAsyncMethod = false);
 
     HRESULT WriteCallTargetReturnGetReturnValue(void* rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,
                                                 ILInstr** instruction);

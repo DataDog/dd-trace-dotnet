@@ -1336,6 +1336,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     // *** Modify the Local Var Signature of the method and initialize the new local vars
     ULONG callTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG exceptionIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG exceptionValueIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG callTargetReturnIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG returnValueIndex = static_cast<ULONG>(ULONG_MAX);
     mdToken callTargetStateToken = mdTokenNil;
@@ -1375,7 +1376,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, &methodReturnType, &callTargetStateIndex, &exceptionIndex,
                                                      &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
-                                                     &exceptionToken, &callTargetReturnToken, &firstInstruction, isAsyncMethod);
+                                                     &exceptionToken, &callTargetReturnToken, &firstInstruction, &exceptionValueIndex, isAsyncMethod);
 
     if (FAILED(hr))
     {

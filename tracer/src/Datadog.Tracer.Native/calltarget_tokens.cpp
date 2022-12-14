@@ -331,7 +331,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
                                          ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                          ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                          mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                         mdToken* callTargetReturnToken, bool isAsyncMethod)
+                                         mdToken* callTargetReturnToken,  ULONG* exceptionValueIndex, bool isAsyncMethod)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -501,6 +501,9 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *callTargetStateToken = callTargetStateTypeRef;
     *exceptionToken = exTypeRef;
     *callTargetReturnToken = callTargetReturn;
+    *exceptionValueIndex = newLocalsCount - 5 - additionalLocalsCount;
+    Logger::Warn("Exceptionvalue index is", &exceptionValueIndex);
+
     if (returnSignatureType != nullptr)
     {
         *returnValueIndex = newLocalsCount - 4 - additionalLocalsCount;
@@ -816,7 +819,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
                                                       ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                                       mdToken* callTargetStateToken, mdToken* exceptionToken,
                                                       mdToken* callTargetReturnToken, ILInstr** firstInstruction,
-                                                      bool isAsyncMethod)
+                                                      ULONG* exceptionValueIndex, bool isAsyncMethod)
 {
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
 
@@ -824,8 +827,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
 
     auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(), methodReturnType, callTargetStateIndex,
                              exceptionIndex, callTargetReturnIndex, returnValueIndex, callTargetStateToken,
-                             exceptionToken,
-                             callTargetReturnToken, isAsyncMethod);
+                             exceptionToken, callTargetReturnToken, exceptionValueIndex, isAsyncMethod);
 
     if (FAILED(hr))
     {

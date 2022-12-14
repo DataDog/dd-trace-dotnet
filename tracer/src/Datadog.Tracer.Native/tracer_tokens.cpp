@@ -583,7 +583,7 @@ HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRe
 
 // write log exception
 HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                        const TypeInfo* currentType, ILInstr** instruction, unsigned callTargetReturnIndex)
+                                        const TypeInfo* currentType, ILInstr** instruction, unsigned exceptionValueIndex)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -666,7 +666,7 @@ HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef inte
         return hr;
     }
     *instruction = rewriterWrapper->Pop();
-    rewriterWrapper->LoadLocal(callTargetReturnIndex);
+    rewriterWrapper->LoadLocal(exceptionValueIndex);
     rewriterWrapper->CallMember(logExceptionMethodSpec, false);
     return S_OK;
 }

@@ -175,6 +175,8 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ULONG exceptionIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG callTargetReturnIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG returnValueIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG exceptionValueIndex = static_cast<ULONG>(ULONG_MAX);
+
     mdToken callTargetStateToken = mdTokenNil;
     mdToken exceptionToken = mdTokenNil;
     mdToken callTargetReturnToken = mdTokenNil;
@@ -182,7 +184,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     auto returnType = caller->method_signature.GetReturnValue();
     tracerTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, &returnType, &callTargetStateIndex, &exceptionIndex,
                                               &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
-                                              &exceptionToken, &callTargetReturnToken, &firstInstruction);
+                                              &exceptionToken, &callTargetReturnToken, &firstInstruction, &exceptionValueIndex, false);
 
     // ***
     // BEGIN METHOD PART
@@ -386,12 +388,11 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     // *** Filter exception
     mdTypeRef bubbleUpExceptionTypeRef = tracerTokens->GetBubbleUpExceptionTypeRef();
     callTargetStateIndex++;
-    ILInstr* filter = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(), bubbleUpExceptionTypeRef, callTargetStateIndex);
+    ILInstr* filter = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(), bubbleUpExceptionTypeRef, exceptionValueIndex);
     
     // *** BeginMethod call catch
     ILInstr* beginMethodCatchFirstInstr = nullptr;
-    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
-                                    &beginMethodCatchFirstInstr, callTargetStateIndex);
+    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type, &beginMethodCatchFirstInstr, exceptionValueIndex);
     ILInstr* beginMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
 
@@ -523,8 +524,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     {
         ILInstr* callTargetReturnGetReturnInstr;
         reWriterWrapper.LoadLocalAddress(callTargetReturnIndex);
-        tracerTokens->WriteCallTargetReturnGetReturnValue(&reWriterWrapper, callTargetReturnToken,
-                                                          &callTargetReturnGetReturnInstr);
+        tracerTokens->WriteCallTargetReturnGetReturnValue(&reWriterWrapper, callTargetReturnToken, &callTargetReturnGetReturnInstr);
         reWriterWrapper.StLocal(returnValueIndex);
     }
 
@@ -536,8 +536,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     // transfer->m_pTarget = endFilter;
     // *** EndMethod call catch
     ILInstr* endMethodCatchFirstInstr = nullptr;
-    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
-                                    &endMethodCatchFirstInstr, callTargetReturnIndex);
+    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type, &endMethodCatchFirstInstr, callTargetReturnIndex);
 
     ILInstr* endMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
