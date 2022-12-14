@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Util;
@@ -226,8 +227,8 @@ namespace Datadog.Trace.Activity
                 case double d:
                     span.SetMetric(key, d);
                     break;
-                case Array array:
-                    AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(array));
+                case IEnumerable enumerable:
+                    AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(enumerable));
                     break;
                 default:
                     AgentSetOtlpTag(span, key, value.ToString()!);
