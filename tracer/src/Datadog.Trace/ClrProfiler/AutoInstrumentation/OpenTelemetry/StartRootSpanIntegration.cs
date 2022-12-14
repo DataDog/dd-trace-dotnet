@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
@@ -20,11 +21,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         ParameterTypeNames = new[] { ClrNames.String, "OpenTelemetry.Trace.SpanKind", "OpenTelemetry.Trace.SpanAttributes", "System.Collections.Generic.IEnumerable`1[OpenTelemetry.Trace.Link]", "System.DateTimeOffset" },
         MinimumVersion = "1.0.0",
         MaximumVersion = "1.0.0",
-        IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry))]
+        IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class StartRootSpanIntegration
     {
+        internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -41,7 +45,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTracer, TSpanKind, TSpanAttributes, TLinks>(TTracer instance, string name, TSpanKind kind, TSpanAttributes spanAttributes, TLinks links, DateTimeOffset startTimeinstance)
         {
-            return new CallTargetState(Tracer.Instance.InternalActiveScope);
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            {
+                return new CallTargetState(Tracer.Instance.InternalActiveScope);
+            }
+
+            // integration disabled, don't create a scope, skip this trace
+            return CallTargetState.GetDefault();
         }
 
         /// <summary>
@@ -56,13 +66,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         /// <returns>CallTargetReturn</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            // If the integration created a new scope, dispose it
-            var previousScope = state.Scope;
-            var currentScope = Tracer.Instance.InternalActiveScope;
-
-            if (previousScope != currentScope)
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                currentScope.Dispose();
+                // If the integration created a new scope, dispose it
+                var currentScope = Tracer.Instance.InternalActiveScope;
+                if (state.Scope != currentScope)
+                {
+                    currentScope.Dispose();
+                }
             }
 
             return new CallTargetReturn<TReturn>(returnValue);

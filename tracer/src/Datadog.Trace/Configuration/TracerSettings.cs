@@ -201,6 +201,10 @@ namespace Datadog.Trace.Configuration
                 PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
                 PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
             }
+            else
+            {
+                DisabledIntegrationNames.Add(nameof(Configuration.IntegrationId.OpenTelemetry));
+            }
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
 
