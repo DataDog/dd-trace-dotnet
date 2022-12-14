@@ -17,7 +17,7 @@ namespace Samples.MongoDB
             return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
         }
 
-        public static void Main(string[] args)
+        private static void Main(string[] args)
         {
             Console.WriteLine($"Profiler attached: {SampleHelpers.IsProfilerAttached()}");
             Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");
