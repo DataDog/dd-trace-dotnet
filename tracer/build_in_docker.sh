@@ -19,6 +19,7 @@ docker run -it --rm \
     --env NugetPackageDirectory=/project/packages \
     --env artifacts=/project/tracer/bin/artifacts \
     --env DD_INSTRUMENTATION_TELEMETRY_ENABLED=0 \
+    --network redis-net \
     -p 5003:5003 \
     -v /var/log/datadog:/var/log/datadog/dotnet \
     $IMAGE_NAME \
