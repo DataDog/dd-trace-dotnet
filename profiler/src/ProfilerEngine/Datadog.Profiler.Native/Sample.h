@@ -59,12 +59,19 @@ public:
         _labels.push_back(std::forward<T>(label));
     }
 
-    // used to replace the last label (for lifetime)
+
     template<typename T>
-    void ReplaceLastLabel(T&& label)
+    void ReplaceLabel(T&& label)
     {
-        _labels.pop_back();
-        _labels.push_back(std::forward<T>(label));
+        for (auto it = _labels.rbegin(); it != _labels.rend(); it++)
+        {
+            if (it->first == label.first)
+            {
+                it->second = label.second;
+
+                return;
+            }
+        }
     }
 
     // helpers for well known mandatory labels
@@ -114,6 +121,7 @@ public:
     static const std::string GarbageCollectionCompactingLabel;
     static const std::string ObjectLifetimeLabel;
     static const std::string ObjectIdLabel;
+    static const std::string ObjectGenerationLabel;
 
 private:
     uint64_t _timestamp;

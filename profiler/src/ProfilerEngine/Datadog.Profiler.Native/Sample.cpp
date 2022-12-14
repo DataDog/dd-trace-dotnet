@@ -28,6 +28,7 @@ const std::string Sample::GarbageCollectionNumberLabel = "gc number";
 // life object related labels
 const std::string Sample::ObjectLifetimeLabel = "object lifetime";
 const std::string Sample::ObjectIdLabel = "object id";
+const std::string Sample::ObjectGenerationLabel = "object generation";
 
 
 // TODO: update the values vector size if more than 16 slots are needed

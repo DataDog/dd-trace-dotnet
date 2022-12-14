@@ -16,7 +16,7 @@ LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address
     auto id = s_nextObjectId++;
     sample->AddLabel(Label{Sample::ObjectIdLabel, std::to_string(id)});
 
-    // !! this must be the last label !!
+    sample->AddLabel(Label{Sample::ObjectGenerationLabel, std::to_string(0)});
     sample->AddLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(0)});
     _sample = sample;
 }

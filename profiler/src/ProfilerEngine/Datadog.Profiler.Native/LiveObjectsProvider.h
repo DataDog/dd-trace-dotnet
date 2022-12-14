@@ -90,4 +90,7 @@ private:
     std::mutex _liveObjectsLock;
     std::list<LiveObjectInfo> _monitoredObjects;
     // WeakHandle are checked after each GC
+
+    static const std::string Gen1;
+    static const std::string Gen2;
 };

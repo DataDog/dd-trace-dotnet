@@ -18,6 +18,9 @@ std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
 
 const uint32_t MAX_LIVE_OBJECTS = 1024;
 
+const std::string LiveObjectsProvider::Gen1("1");
+const std::string LiveObjectsProvider::Gen2("2");
+
 
 LiveObjectsProvider::LiveObjectsProvider(
     uint32_t valueOffset,
@@ -102,21 +105,19 @@ std::list<std::shared_ptr<Sample>> LiveObjectsProvider::GetSamples()
     // limit lock scope
     {
         std::lock_guard<std::mutex> lock(_liveObjectsLock);
+
+        int64_t currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
         for (auto const& info : _monitoredObjects)
         {
-            // only gen2 objects are candidates for leaking: gen0 and gen1 could be transient
-            if (info.IsGen2())
-            {
-                liveObjectsSamples.push_back(info.GetSample());
-            }
-        }
-    }
+            // gen2 objects are candidates for leaking however collections could be rare and only gen1 objects
+            // are available for live heap profiling
+            auto sample = info.GetSample();
+            liveObjectsSamples.push_back(sample);
 
-    // update samples lifetime
-    int64_t currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
-    for (auto& sample : liveObjectsSamples)
-    {
-        sample->ReplaceLastLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(sample->GetTimeStamp() - currentTimestamp)});
+            // update samples lifetime
+            sample->ReplaceLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(sample->GetTimeStamp() - currentTimestamp)});
+            sample->ReplaceLabel(Label{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
+        }
     }
 
     return liveObjectsSamples;
