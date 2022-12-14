@@ -10,7 +10,7 @@ using MongoDB.Driver.Core.Servers;
 
 namespace Samples.MongoDB
 {
-    public static class Program
+    internal static class Program
     {
         private static string Host()
         {
