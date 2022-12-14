@@ -29,12 +29,12 @@ namespace Datadog.InstrumentedAssemblyVerification
     {
         private readonly string _instrumentedModulePath;
         private readonly string _originalModulePath;
-        private readonly List<string> _methods;
+        private readonly List<(string type, string method)> _methods;
         private readonly IEnumerable<Verification> _verifications;
 
         public VerificationsRunner(string instrumentedModulePath, 
                                    string originalModulePath, 
-                                   List<string> methods)
+                                   List<(string type, string method)> methods)
         {
             _instrumentedModulePath = instrumentedModulePath;
             _originalModulePath = originalModulePath;

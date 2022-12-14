@@ -318,6 +318,7 @@ partial class Build : NukeBuild
 
     Target BuildRunnerTool => _ => _
         .Unlisted()
+        .DependsOn(CompileInstrumentationVerificationLibrary)
         .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {

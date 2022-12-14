@@ -30,7 +30,7 @@
       },
       {
         "name": "pg",
-        "compatible": "false",
+        "compatible": false,
         "enabled": false,
         "auto_enabled": false
       }
