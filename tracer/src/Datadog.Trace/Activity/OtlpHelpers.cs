@@ -231,13 +231,13 @@ namespace Datadog.Trace.Activity
                     AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(enumerable));
                     break;
                 default:
-                    AgentSetOtlpTag(span, key, value.ToString()!);
+                    AgentSetOtlpTag(span, key, value.ToString());
                     break;
             }
         }
 
         // See trace agent func setMetaOTLP: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L424
-        internal static void AgentSetOtlpTag(Span span, string key, string value)
+        internal static void AgentSetOtlpTag(Span span, string key, string? value)
         {
             switch (key)
             {
@@ -254,7 +254,7 @@ namespace Datadog.Trace.Activity
                     span.Type = value;
                     break;
                 case "analytics.event":
-                    if (GoStrConvParseBool(value) is bool b)
+                    if (value is not null && GoStrConvParseBool(value) is bool b)
                     {
                         span.SetMetric(Tags.Analytics, b ? 1 : 0);
                     }
