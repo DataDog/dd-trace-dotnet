@@ -1089,7 +1089,8 @@ partial class Build
                 .SetTargetPlatformAnyCPU()
                 .EnableNoRestore()
                 .SetNoWarnDotNetCore3()
-                .SetProjectFile(DebuggerSamplesTestRuns));            
+                .SetProcessEnvironmentVariable("DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER ", "0")
+                .SetProjectFile(DebuggerSamplesTestRuns));
             
             DotNetBuild(s => s
                 .SetConfiguration(BuildConfiguration)
@@ -1097,6 +1098,7 @@ partial class Build
                 .SetTargetPlatform(TargetPlatform)
                 .EnableNoRestore()
                 .SetNoWarnDotNetCore3()
+                .SetProcessEnvironmentVariable("DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER ", "0")
                 .SetProjectFile(DebuggerSamplesTestRuns));
         });
 
@@ -1114,6 +1116,7 @@ partial class Build
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetNoWarnDotNetCore3()
+                .SetProcessEnvironmentVariable("DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER ", "0")
                 .SetProjectFile(DebuggerSamples));
 
             if (!IsWin)
