@@ -54,6 +54,7 @@ internal static class Program
     private static void testMethod()
     {
         ((HashAlgorithm)(MD5.Create())).ComputeHash(new byte[] { 63, 5, 6 });
+        DES.Create();
         Console.WriteLine("LINE22 ");
 
         try
