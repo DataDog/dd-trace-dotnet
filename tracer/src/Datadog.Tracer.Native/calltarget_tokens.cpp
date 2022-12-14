@@ -501,18 +501,20 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *callTargetStateToken = callTargetStateTypeRef;
     *exceptionToken = exTypeRef;
     *callTargetReturnToken = callTargetReturn;
-    *exceptionValueIndex = newLocalsCount - 5 - additionalLocalsCount;
-    Logger::Warn("Exceptionvalue index in ModifyLocalSig is", *exceptionValueIndex);
+
 
     if (returnSignatureType != nullptr)
     {
-        *returnValueIndex = newLocalsCount - 4 - additionalLocalsCount;
+        *returnValueIndex = newLocalsCount - 5 - additionalLocalsCount;
     }
     else
     {
         *returnValueIndex = static_cast<ULONG>(ULONG_MAX);
     }
+    *exceptionValueIndex = newLocalsCount - 4 - additionalLocalsCount;
+    Logger::Warn("Exceptionvalue index in ModifyLocalSig is", *exceptionValueIndex);
     *exceptionIndex = newLocalsCount - 3 - additionalLocalsCount;
+    Logger::Warn("exceptionIndex index in ModifyLocalSig is", *exceptionIndex);
     *callTargetReturnIndex = newLocalsCount - 2 - additionalLocalsCount;
     *callTargetStateIndex = newLocalsCount - 1; // Must be the last local.
     return hr;
