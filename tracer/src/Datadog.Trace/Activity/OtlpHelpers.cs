@@ -9,6 +9,7 @@ using System;
 using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Activity
 {
@@ -226,7 +227,7 @@ namespace Datadog.Trace.Activity
                     span.SetMetric(key, d);
                     break;
                 case Array array:
-                    AgentSetOtlpTag(span, key, ComposeArrayString(array));
+                    AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(array));
                     break;
                 default:
                     AgentSetOtlpTag(span, key, value.ToString()!);
@@ -325,45 +326,6 @@ namespace Datadog.Trace.Activity
             },
             _ => SpanTypes.Custom,
         };
-
-        internal static string ComposeArrayString(Array array)
-        {
-            if (array.Length == 0)
-            {
-                return "[]";
-            }
-
-            StringBuilder sb = StringBuilderCache.Acquire(0);
-            sb.Append('[');
-            for (int i = 0; i < array.Length; i++)
-            {
-                var value = array.GetValue(i);
-                if (value is null)
-                {
-                    sb.Append("null");
-                }
-                else if (value is string s)
-                {
-                    sb.Append('"');
-                    sb.Append(s);
-                    sb.Append('"');
-                }
-                else if (value is bool b)
-                {
-                    sb.Append(b ? "true" : "false");
-                }
-                else
-                {
-                    sb.Append(value.ToString());
-                }
-
-                sb.Append(',');
-            }
-
-            sb.Remove(sb.Length - 1, 1);
-            sb.Append(']');
-            return StringBuilderCache.GetStringAndRelease(sb);
-        }
 
         // This algorithm implements Go function strconv.ParseBool, which the trace agent uses
         // for string->bool conversions
