@@ -155,6 +155,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\IastController.cs" />
     <Compile Include="Controllers\PostsController.cs" />
     <Compile Include="Controllers\RenderController.cs" />
     <Compile Include="Data\DatabaseHelper.cs" />
