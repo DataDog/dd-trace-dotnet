@@ -415,7 +415,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     }
 
     // New signature size
-    ULONG newSignatureSize = originalSignatureSize + returnSignatureTypeSize + (1 + exTypeRefSize) +
+    ULONG newSignatureSize = originalSignatureSize + returnSignatureTypeSize + (2 + exTypeRefSize) +
                              callTargetReturnSizeForNewSignature + (1 + callTargetStateTypeRefSize);
     ULONG newSignatureOffset = 0;
 
