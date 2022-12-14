@@ -28,8 +28,7 @@ internal static class Program
             // Vulnerable section
             MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
             Console.WriteLine("LINE ");
-            ((HashAlgorithm)(MD5.Create())).ComputeHash(new byte[] { 63, 5, 6 });
-            Console.WriteLine("LINE ");
+            testMethod();
             HashAlgorithm t = MD5.Create();
             t.ComputeHash(new byte[] { 4, 5, 6 });
             Console.WriteLine("LINE ");
@@ -48,6 +47,12 @@ internal static class Program
 
         testHashAlgorithm(new SHA1CryptoServiceProvider());
         Console.WriteLine("MAIN DUPLICATED OUT");
+    }
+
+    private static void testMethod()
+    {
+        ((HashAlgorithm)(MD5.Create())).ComputeHash(new byte[] { 63, 5, 6 });
+        Console.WriteLine("LINE ");
     }
 
     private static int GetExecutionTimes(string[] args)
@@ -87,7 +92,7 @@ internal static class Program
 
         foreach (var method in methods)
         {
-            if ((method.Name == "Main") || (method.Name == "testHashAlgorithm"))
+            if ((method.Name == "Main") || (method.Name == "testHashAlgorithm") || (method.Name == "testMethod"))
             {
                 code += "METHOD: method.Name" + Environment.NewLine;
                 var instructions = method.Body?.Instructions;
