@@ -9,7 +9,7 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Source
 {
-    public Source(byte origin, string name, string value)
+    public Source(byte origin, string? name, string? value)
     {
         this.Origin = origin;
         this.Name = name;
@@ -18,9 +18,9 @@ internal readonly struct Source
 
     public byte Origin { get; }
 
-    public string Name { get; }
+    public string? Name { get; }
 
-    public string Value { get; }
+    public string? Value { get; }
 
     public override int GetHashCode()
     {
