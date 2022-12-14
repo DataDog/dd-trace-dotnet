@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -54,12 +55,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
-                const int expectedSpanCount = 10;
+                const int expectedSpanCount = 11;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-                ValidateIntegrationSpans(spans, expectedServiceName: "MyServiceName");
+
+                var myServiceNameSpans = spans.Where(s => s.Service == "MyServiceName");
+                var otherLibrarySpans = spans.Where(s => s.Service != "MyServiceName");
+
+                ValidateIntegrationSpans(myServiceNameSpans, expectedServiceName: "MyServiceName");
+                ValidateIntegrationSpans(otherLibrarySpans, expectedServiceName: "OtherLibrary");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)

@@ -29,6 +29,8 @@ public static class Program
             .Build();
 
         _tracer = tracerProvider.GetTracer(serviceName);
+        var _otherLibraryTracer = tracerProvider.GetTracer("OtherLibrary", version: "4.0.0");
+
         TelemetrySpan span = null;
         using (span = _tracer.StartActiveSpan("SayHello"))
         {
@@ -40,7 +42,17 @@ public static class Program
             RunSetAttributeOverloads(span);
             RunAddEventOverloads(span);
             RunSpanUpdateMethods(span);
+
+            TelemetrySpan otherSpan = null;
+            using (otherSpan = _otherLibraryTracer.StartActiveSpan("Response"))
+            {
+                PrintSpanStartedInformation(otherSpan);
+            }
+
+            PrintSpanClosedInformation(otherSpan);
         }
+
+        PrintSpanClosedInformation(span);
 
         // There is no active span, so the default behavior will result in a new trace
         // Note: StartSpan does not update the active span, so when the call returns there will still be no active span
@@ -160,7 +172,10 @@ public static class Program
         var currentSpanContext = Tracer.CurrentSpan.Context;
         if (_previousSpanContext != currentSpanContext)
         {
-            Console.WriteLine($"       ===> Active span has changed: Activity.Current.DisplayName={Activity.Current.DisplayName}, Tracer.CurrentSpan span_id={Tracer.CurrentSpan.Context.SpanId}");
+            var displayName = Activity.Current?.DisplayName ?? "(null)";
+            var spanId = Tracer.CurrentSpan.Context.SpanId;
+
+            Console.WriteLine($"       ===> Active span has changed: Activity.Current.DisplayName={displayName}, Tracer.CurrentSpan span_id={spanId}");
         }
 
         _previousSpanContext = currentSpanContext;

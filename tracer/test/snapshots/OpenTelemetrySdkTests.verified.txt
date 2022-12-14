@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -144,6 +144,28 @@
   {
     TraceId: Id_1,
     SpanId: Id_9,
+    Name: OtherLibrary.internal,
+    Resource: Response,
+    Service: OtherLibrary,
+    Type: custom,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: OtherLibrary,
+      otel.library.version: 4.0.0,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_10,
     Name: MyServiceName.internal,
     Resource: StartActiveSpan.Child,
     Service: MyServiceName,
@@ -159,8 +181,8 @@
     }
   },
   {
-    TraceId: Id_10,
-    SpanId: Id_11,
+    TraceId: Id_11,
+    SpanId: Id_12,
     Name: MyServiceName.internal,
     Resource: SayHello2,
     Service: MyServiceName,
@@ -184,8 +206,8 @@
     }
   },
   {
-    TraceId: Id_12,
-    SpanId: Id_13,
+    TraceId: Id_13,
+    SpanId: Id_14,
     Name: MyServiceName.internal,
     Resource: SayHello3,
     Service: MyServiceName,
