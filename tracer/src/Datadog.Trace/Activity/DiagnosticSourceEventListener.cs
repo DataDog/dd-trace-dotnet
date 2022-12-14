@@ -86,7 +86,7 @@ namespace Datadog.Trace.Activity
                     return;
                 }
 
-                if (activity.Instance != null
+                if (activity.Instance is not null
                     && activity.OperationName is not null
                     && activity.OperationName.Length != dotIndex
                     && string.Compare(activity.OperationName, 0, value.Key, 0, dotIndex, StringComparison.Ordinal) != 0)
