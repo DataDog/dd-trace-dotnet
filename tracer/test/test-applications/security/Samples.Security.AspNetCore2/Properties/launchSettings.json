@@ -17,6 +17,9 @@
         "DD_APPSEC_BLOCKING_ENABLED": "true",
         "DD_IAST_ENABLED": "true",
         "DD_IAST_DEDUPLICATION_ENABLED": "false",
+        "DD_IAST_VULNERABILITIES_PER_REQUEST": "100",
+        "DD_IAST_REQUEST_SAMPLING": "100",
+        "DD_IAST_MAX_CONCURRENT_REQUESTS": "1",
 
         "COR_ENABLE_PROFILING": "1",
         "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
@@ -50,7 +53,10 @@
         "DD_TRACE_DEBUG": "0",
         "DD_ENV": "asm-samples",
         "DD_IAST_ENABLED": "true",
-        "DD_IAST_DEDUPLICATION_ENABLED": "false"
+        "DD_IAST_DEDUPLICATION_ENABLED": "false",
+        "DD_IAST_VULNERABILITIES_PER_REQUEST": "100",
+        "DD_IAST_REQUEST_SAMPLING": "100",
+        "DD_IAST_MAX_CONCURRENT_REQUESTS": "1"
       }
     }
   }

@@ -7,12 +7,12 @@
     Service: Samples.Security.AspNetCore2,
     Type: web,
     Tags: {
-      aspnet_core.route: iast/weakhashing/{delayinanswerms:int?},
+      aspnet_core.route: iast/weakhashing,
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: iast/weakhashing/{delayinanswerms:int?},
+      http.route: iast/weakhashing,
       http.status_code: 200,
       http.url: http://localhost:00000/Iast/WeakHashing,
       http.useragent: Mistake Not...,
@@ -60,7 +60,7 @@
     Tags: {
       aspnet_core.action: weakhashing,
       aspnet_core.controller: iast,
-      aspnet_core.route: iast/weakhashing/{delayinanswerms:int?},
+      aspnet_core.route: iast/weakhashing,
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,

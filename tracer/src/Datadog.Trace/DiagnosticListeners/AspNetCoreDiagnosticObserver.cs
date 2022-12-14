@@ -18,6 +18,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
@@ -559,6 +560,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 CurrentSecurity.CheckPathParams(httpContext, span, routeValues);
+
+                if (Iast.Iast.Instance.Settings.Enabled)
+                {
+                    span.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
+                }
             }
         }
 
@@ -569,8 +575,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.Settings.Enabled;
+            var shouldUseIast = Iast.Iast.Instance.Settings.Enabled;
 
-            if (!shouldTrace && !shouldSecure)
+            if (!shouldTrace && !shouldSecure && !shouldUseIast)
             {
                 return;
             }
@@ -598,6 +605,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+
+                if (shouldUseIast)
+                {
+                    parentSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
+                }
             }
         }
 

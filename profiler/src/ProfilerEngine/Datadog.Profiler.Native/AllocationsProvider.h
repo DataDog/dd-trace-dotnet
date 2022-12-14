@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CollectorBase.h"
-#include "GroupSampler.h"
+#include "GenericSampler.h"
 #include "IAllocationsListener.h"
 #include "RawAllocationSample.h"
 
@@ -44,6 +44,6 @@ private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
-    GroupSampler<ClassID> _sampler;
+    GenericSampler _sampler;
     int32_t _sampleLimit;
 };
