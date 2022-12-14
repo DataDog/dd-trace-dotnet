@@ -69,11 +69,14 @@ internal class IastRequestContext
     {
         if (!_routedParametersAdded)
         {
-            foreach (var item in routeData)
+            if (routeData != null)
             {
-                if (item.Value is string valueAsString)
+                foreach (var item in routeData)
                 {
-                    AddRoutedParameter(item.Key, valueAsString);
+                    if (item.Value is string valueAsString)
+                    {
+                        AddRoutedParameter(item.Key, valueAsString);
+                    }
                 }
             }
 
