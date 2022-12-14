@@ -25,26 +25,31 @@ namespace Datadog.Trace.Propagators
         private const char UpperBound = '\u007e'; // decimal: 126, '~' (tilde)
         private const char OutOfBoundsReplacement = '_';
 
-        private static readonly KeyValuePair<char, char>[] OriginReplacements =
+        private static readonly KeyValuePair<char, char>[] InjectOriginReplacements =
         {
             new(',', '_'),
             new(';', '_'),
             new('=', '_'),
         };
 
-        private static readonly KeyValuePair<char, char>[] PropagatedTagKeyReplacements =
+        private static readonly KeyValuePair<char, char>[] InjectPropagatedTagKeyReplacements =
         {
             new(' ', '_'),
             new(',', '_'),
             new('=', '_'),
         };
 
-        private static readonly KeyValuePair<char, char>[] PropagatedTagValueReplacements =
+        private static readonly KeyValuePair<char, char>[] InjectPropagatedTagValueReplacements =
         {
             new(',', '_'),
             new(';', '_'),
             new('~', '_'),
-            new('=', '~'), // note '=' is encoded as '~' when injecting, then back to '=' then extracting
+            new('=', '~'), // note '=' is encoded as '~' when injecting
+        };
+
+        private static readonly KeyValuePair<char, char>[] ExtractPropagatedTagValueReplacements =
+        {
+            new('~', '='), // note '~' is decoded as '~' when extracting
         };
 
         /// <summary>
@@ -100,7 +105,7 @@ namespace Datadog.Trace.Propagators
 
                 if (!string.IsNullOrWhiteSpace(context.Origin))
                 {
-                    var origin = ReplaceInvalidCharacters(context.Origin, LowerBound, UpperBound, OutOfBoundsReplacement, OriginReplacements);
+                    var origin = ReplaceCharacters(context.Origin, LowerBound, UpperBound, OutOfBoundsReplacement, InjectOriginReplacements);
                     sb.Append("o:").Append(origin).Append(';');
                 }
 
@@ -116,8 +121,8 @@ namespace Datadog.Trace.Propagators
                             var key = tag.Key.Substring(startIndex: 6);
 #endif
 
-                            var tagKey = ReplaceInvalidCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, PropagatedTagKeyReplacements);
-                            var tagValue = ReplaceInvalidCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, PropagatedTagValueReplacements);
+                            var tagKey = ReplaceCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagKeyReplacements);
+                            var tagValue = ReplaceCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
                             sb.Append("t.").Append(tagKey).Append(':').Append(tagValue).Append(';');
                         }
                     }
@@ -348,6 +353,7 @@ namespace Datadog.Trace.Propagators
                     }
                     else if (name.StartsWith("t.", StringComparison.Ordinal))
                     {
+                        value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
                         propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix).Append(name[2..]).Append('=').Append(value).Append(',');
                     }
 #else
@@ -365,6 +371,7 @@ namespace Datadog.Trace.Propagators
                     }
                     else if (name.StartsWith("t.", StringComparison.Ordinal))
                     {
+                        value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
                         propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix).Append(name.Substring(2)).Append('=').Append(value).Append(',');
                     }
 #endif
@@ -600,9 +607,9 @@ namespace Datadog.Trace.Propagators
         }
 
 #if NETCOREAPP
-        public static string ReplaceInvalidCharacters(ReadOnlySpan<char> value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
+        public static ReadOnlySpan<char> ReplaceCharacters(ReadOnlySpan<char> value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
 #else
-        public static string ReplaceInvalidCharacters(string value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
+        public static string ReplaceCharacters(string value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
 #endif
         {
             var sb = StringBuilderCache.Acquire(value.Length);
@@ -610,22 +617,17 @@ namespace Datadog.Trace.Propagators
 
             for (var i = 0; i < sb.Length; i++)
             {
-                var c = sb[i];
+                var c = value[i];
 
                 if (c < lowerBound || c > upperBound)
                 {
                     sb[i] = outOfBoundsReplacement;
                 }
-                else
-                {
-                    foreach (var replacement in replacements)
-                    {
-                        if (c == replacement.Key)
-                        {
-                            sb[i] = replacement.Value;
-                        }
-                    }
-                }
+            }
+
+            foreach (var replacement in replacements)
+            {
+                sb.Replace(replacement.Key, replacement.Value);
             }
 
             return StringBuilderCache.GetStringAndRelease(sb);

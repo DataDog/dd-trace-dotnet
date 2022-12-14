@@ -58,6 +58,7 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData(null, null, "_dd.p.a=1", "dd=t.a:1")]
         [InlineData(null, null, "_dd.p.a=1,_dd.p.b=2", "dd=t.a:1;t.b:2")]
         [InlineData(null, null, "_dd.p.a=1,b=2", "dd=t.a:1")]
+        [InlineData(null, null, "_dd.p.usr.id=MTIzNDU=", "dd=t.usr.id:MTIzNDU~")] // convert '=' to '~'
         // combined
         [InlineData(SamplingPriorityValues.UserKeep, "rum", null, "dd=s:2;o:rum")]
         [InlineData(SamplingPriorityValues.AutoReject, null, "_dd.p.a=b", "dd=s:0;t.a:b")]
@@ -180,7 +181,7 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("dd=s:2", 2, null, null)]
         [InlineData("dd=o:rum", null, "rum", null)]
         [InlineData("dd=t.dm:-4;t.usr.id:12345", null, null, "_dd.p.dm=-4,_dd.p.usr.id=12345")]
-        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345")]
+        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345~", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345=")] // '~' is converted to '='
         // invalid propagated tag (first)
         [InlineData("dd=s:2;o:rum;:12345;t.dm:-4", 2, "rum", "_dd.p.dm=-4")]    // no key
         [InlineData("dd=s:2;o:rum;t.usr.id:;t.dm:-4", 2, "rum", "_dd.p.dm=-4")] // no value
@@ -438,7 +439,10 @@ namespace Datadog.Trace.Tests.Propagators
                 new('=', '_'),
             };
 
-            W3CTraceContextPropagator.ReplaceInvalidCharacters(value, lowerBound, upperBound, outOfBoundsReplacement, invalidCharacterReplacements).Should().Be(expected);
+            W3CTraceContextPropagator.ReplaceCharacters(value, lowerBound, upperBound, outOfBoundsReplacement, invalidCharacterReplacements)
+                                     .ToString() // NETCOREAPP returns ReadOnlySpan<char>
+                                     .Should()
+                                     .Be(expected);
         }
     }
 }
