@@ -19,8 +19,12 @@ public static class Program
         var serviceName = "MyServiceName";
         var serviceVersion = "1.0.x";
 
+        var otherLibraryName = "OtherLibrary";
+        var otherLibraryVersion = "4.0.0";
+
         using var tracerProvider = Sdk.CreateTracerProviderBuilder()
             .AddSource(serviceName)
+            .AddSource(otherLibraryName)
             .SetResourceBuilder(
                 ResourceBuilder.CreateDefault()
                     .AddService(serviceName: serviceName, serviceVersion: serviceVersion))
@@ -28,8 +32,8 @@ public static class Program
             .AddOtlpExporterIfEnvironmentVariablePresent()
             .Build();
 
-        _tracer = tracerProvider.GetTracer(serviceName);
-        var _otherLibraryTracer = tracerProvider.GetTracer("OtherLibrary", version: "4.0.0");
+        _tracer = tracerProvider.GetTracer(serviceName); // The version is omitted so the ActivitySource.Version / otel.library.version is not set
+        var _otherLibraryTracer = tracerProvider.GetTracer(otherLibraryName, version: otherLibraryVersion);
 
         TelemetrySpan span = null;
         using (span = _tracer.StartActiveSpan("SayHello"))
