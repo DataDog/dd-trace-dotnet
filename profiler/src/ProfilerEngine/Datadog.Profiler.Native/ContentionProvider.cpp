@@ -40,17 +40,11 @@ ContentionProvider::ContentionProvider(
 
 void ContentionProvider::OnContention(double contentionDuration)
 {
-    // sample contentions with a duration greater then a threshold (100ms by default)
-    if ((_sampleLimit > 0) && (contentionDuration < _contentionDurationThreshold))
+    // TODO: when upscaling will be done, implement per duration groups (100ms, 200ms, 500ms, +)
+    //       to ensure a  better "statistical" distribution
+    if (!_sampler.Sample())
     {
-        if (!_sampler.Sample())
-        {
-            return;
-        }
-    }
-    else
-    {
-    // TODO: should we call _sampler.Keep() to avoid swamping the profile with contention samples?
+        return;
     }
 
     std::shared_ptr<ManagedThreadInfo> threadInfo;
