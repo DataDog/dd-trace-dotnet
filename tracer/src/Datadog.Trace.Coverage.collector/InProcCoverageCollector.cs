@@ -85,7 +85,7 @@ public class InProcCoverageCollector : InProcDataCollection
         if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
         {
             var globalCoverage = coverageHandler.GetCodeCoveragePercentage();
-            var outputPath = $"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.json";
+            var outputPath = $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json";
             if (!string.IsNullOrEmpty(_outputPathValue))
             {
                 outputPath = Path.Combine(_outputPathValue, outputPath);

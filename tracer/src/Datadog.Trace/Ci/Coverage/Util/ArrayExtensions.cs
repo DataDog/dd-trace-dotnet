@@ -12,6 +12,14 @@ namespace Datadog.Trace.Ci.Coverage.Util;
 
 internal static class ArrayExtensions
 {
+    /// <summary>
+    /// Gets the item value reference of an array avoiding bound checks
+    /// WARNING: This method tries to avoid bound checks. This completely unsafe, use only if you know what you are doing.
+    /// </summary>
+    /// <param name="array">Array instance</param>
+    /// <param name="index">Index of the item</param>
+    /// <typeparam name="T">Type of the array</typeparam>
+    /// <returns>Index value reference of the array</returns>
 #if NETCOREAPP3_0_OR_GREATER
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 #else

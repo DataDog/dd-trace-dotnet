@@ -15,7 +15,7 @@ namespace Datadog.Trace.Coverage.Collector
 {
     internal class DataCollectorLogger : ICollectorLogger
     {
-        private readonly IDatadogLogger? _datadogLogger;
+        private readonly IDatadogLogger _datadogLogger = DatadogSerilogLogger.NullLogger;
         private readonly DataCollectionLogger _logger;
         private readonly bool _isDebugEnabled;
         private DataCollectionContext _collectionContext;
@@ -47,25 +47,25 @@ namespace Datadog.Trace.Coverage.Collector
         public void Error(string? text)
         {
             _logger.LogError(_collectionContext, text ?? string.Empty);
-            _datadogLogger?.Error(text);
+            _datadogLogger.Error(text);
         }
 
         public void Error(Exception exception)
         {
             _logger.LogError(_collectionContext, exception);
-            _datadogLogger?.Error(exception, exception.Message);
+            _datadogLogger.Error(exception, exception.Message);
         }
 
         public void Error(Exception exception, string? text)
         {
             _logger.LogError(_collectionContext, text ?? string.Empty, exception);
-            _datadogLogger?.Error(exception, text);
+            _datadogLogger.Error(exception, text);
         }
 
         public void Warning(string? text)
         {
             _logger.LogWarning(_collectionContext, text ?? string.Empty);
-            _datadogLogger?.Warning(text);
+            _datadogLogger.Warning(text);
         }
 
         public void Debug(string? text)
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Coverage.Collector
             if (_isDebugEnabled)
             {
                 _logger.LogWarning(_collectionContext, text ?? string.Empty);
-                _datadogLogger?.Debug(text);
+                _datadogLogger.Debug(text);
             }
         }
 

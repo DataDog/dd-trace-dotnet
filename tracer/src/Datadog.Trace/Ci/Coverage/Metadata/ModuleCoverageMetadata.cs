@@ -33,7 +33,7 @@ public abstract class ModuleCoverageMetadata
     /// Gets the total instructions number
     /// </summary>
 #pragma warning disable SA1401
-    public readonly long TotalInstructions;
+    protected readonly long TotalInstructions = 0;
 #pragma warning restore SA1401
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -60,4 +60,7 @@ public abstract class ModuleCoverageMetadata
         methodIdx = (int)(methodMetadataIndexes & 0xFFFF);
         typeIdx = (int)(methodMetadataIndexes >> 32);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal long GetTotalInstructions() => TotalInstructions;
 }

@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner;
 
@@ -71,33 +73,50 @@ internal static class CoverageUtils
             return false;
         }
 
-        var jsonFiles = Directory.GetFiles(inputFolder, "*.json", SearchOption.TopDirectoryOnly);
-        if (jsonFiles.Length == 0)
+        var jsonFiles = Array.Empty<string>();
+        try
         {
-            if (useStdOut)
+            jsonFiles = Directory.GetFiles(inputFolder, "*.json", SearchOption.TopDirectoryOnly);
+            if (jsonFiles.Length == 0)
             {
-                Utils.WriteError($"'{inputFolder}' doesn't contain any json file.");
-            }
+                if (useStdOut)
+                {
+                    Utils.WriteError($"'{inputFolder}' doesn't contain any json file.");
+                }
 
-            return false;
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Utils.WriteError("Error reading json files.");
+            AnsiConsole.WriteException(ex);
         }
 
         List<GlobalCoverageInfo> globalCoverages = new();
         foreach (var file in jsonFiles)
         {
             var fileContent = File.ReadAllText(file);
-            if (JsonConvert.DeserializeObject<GlobalCoverageInfo>(fileContent) is { } gCoverageInfo)
+            try
             {
-                if (useStdOut)
+                if (JsonConvert.DeserializeObject<GlobalCoverageInfo>(fileContent) is { } gCoverageInfo)
                 {
-                    Utils.WriteSuccess($"Processing: {file}");
-                }
+                    if (useStdOut)
+                    {
+                        Utils.WriteSuccess($"Processing: {file}");
+                    }
 
-                globalCoverages.Add(gCoverageInfo);
+                    globalCoverages.Add(gCoverageInfo);
+                }
+                else if (useStdOut)
+                {
+                    Utils.WriteSuccess($"Ignored: {file}");
+                }
             }
-            else if (useStdOut)
+            catch (Exception ex)
             {
-                Utils.WriteSuccess($"Ignored: {file}");
+                Utils.WriteError($"Error processing {file}");
+                AnsiConsole.WriteException(ex);
             }
         }
 

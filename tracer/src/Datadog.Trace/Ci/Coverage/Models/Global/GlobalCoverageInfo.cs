@@ -74,6 +74,11 @@ internal sealed class GlobalCoverageInfo : CoverageInfo
 
     public void Add(ComponentCoverageInfo componentCoverageInfo)
     {
+        if (componentCoverageInfo is null)
+        {
+            return;
+        }
+
         var previous = Components.SingleOrDefault(m => m.Name == componentCoverageInfo.Name);
         if (previous is not null)
         {

@@ -76,6 +76,11 @@ internal sealed class ComponentCoverageInfo : CoverageInfo
 
     public void Add(FileCoverageInfo fileCoverageInfo)
     {
+        if (fileCoverageInfo is null)
+        {
+            return;
+        }
+
         var previous = Files.SingleOrDefault(m => m.Path == fileCoverageInfo.Path);
         if (previous is not null)
         {

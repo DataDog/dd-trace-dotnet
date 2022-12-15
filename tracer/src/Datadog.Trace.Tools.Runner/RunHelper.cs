@@ -170,7 +170,7 @@ namespace Datadog.Trace.Tools.Runner
                                 }
                                 catch (Exception ex)
                                 {
-                                    AnsiConsole.WriteLine("Error creating folder for the global code coverage files:");
+                                    Utils.WriteError("Error creating folder for the global code coverage files:");
                                     AnsiConsole.WriteException(ex);
                                 }
                             }
