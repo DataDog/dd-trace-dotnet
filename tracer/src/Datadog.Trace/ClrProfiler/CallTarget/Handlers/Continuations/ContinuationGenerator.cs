@@ -40,14 +40,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 #endif
         }
 
-        internal abstract class ContinuationResolver
+        internal abstract class CallbackHandler
         {
-            public abstract TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
+            public abstract TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
         }
 
-        internal class NullContinuationResolver : ContinuationResolver
+        internal class NoOpCallbackHandler : CallbackHandler
         {
-            public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             {
                 return returnValue;
             }

@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
     internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn, TResult>
     {
-        private static readonly ContinuationResolver Resolver;
+        private static readonly CallbackHandler Resolver;
 
         static ValueTaskContinuationGenerator()
         {
@@ -25,17 +25,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
                 {
                     var asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
-                    Resolver = new AsyncContinuationResolver(asyncContinuation, result.PreserveContext);
+                    Resolver = new AsyncCallbackHandler(asyncContinuation, result.PreserveContext);
                 }
                 else
                 {
                     var continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
-                    Resolver = new SyncContinuationResolver(continuation, result.PreserveContext);
+                    Resolver = new SyncCallbackHandler(continuation, result.PreserveContext);
                 }
             }
             else
             {
-                Resolver = new NullContinuationResolver();
+                Resolver = new NoOpCallbackHandler();
             }
 
             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -46,21 +46,21 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            return Resolver.SetContinuation(instance, returnValue, exception, in state);
+            return Resolver.ExecuteCallback(instance, returnValue, exception, in state);
         }
 
-        private class SyncContinuationResolver : ContinuationResolver
+        private class SyncCallbackHandler : CallbackHandler
         {
             private readonly ContinuationMethodDelegate _continuation;
             private readonly bool _preserveContext;
 
-            public SyncContinuationResolver(ContinuationMethodDelegate continuation, bool preserveContext)
+            public SyncCallbackHandler(ContinuationMethodDelegate continuation, bool preserveContext)
             {
                 _continuation = continuation;
                 _preserveContext = preserveContext;
             }
 
-            public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             {
                 if (exception != null)
                 {
@@ -112,18 +112,18 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             }
         }
 
-        private class AsyncContinuationResolver : ContinuationResolver
+        private class AsyncCallbackHandler : CallbackHandler
         {
             private readonly AsyncContinuationMethodDelegate _asyncContinuation;
             private readonly bool _preserveContext;
 
-            public AsyncContinuationResolver(AsyncContinuationMethodDelegate asyncContinuation, bool preserveContext)
+            public AsyncCallbackHandler(AsyncContinuationMethodDelegate asyncContinuation, bool preserveContext)
             {
                 _asyncContinuation = asyncContinuation;
                 _preserveContext = preserveContext;
             }
 
-            public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             {
                 var previousValueTask = FromTReturn<ValueTask<TResult>>(returnValue);
                 return ToTReturn(ContinuationAction(previousValueTask, instance, state, exception));
