@@ -51,6 +51,7 @@ public class HMACMD5Tests : InstrumentationTestsBase
         Assert.Throws<ArgumentException>(() => new HMACMD5().ComputeHash(new byte[] { 5, 5, 5 }, 10, 2));
     }
 
+#pragma warning disable SYSLIB0045
     [Fact]
     public void GivenAHMACMD5_WhenComputeHashByte3Args_VulnerabilityIsLogged3()
     {
@@ -71,4 +72,5 @@ public class HMACMD5Tests : InstrumentationTestsBase
         HMAC.Create("HMACMD5").ComputeHash(new byte[] { });
         AssertVulnerable();
     }
+#pragma warning restore SYSLIB0045
 }
