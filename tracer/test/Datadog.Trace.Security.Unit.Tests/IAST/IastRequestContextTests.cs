@@ -3,8 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using System.Reflection;
 using Datadog.Trace.Iast;
 using Moq;
 using Xunit;
@@ -55,32 +58,7 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         }
 #endif
 
-#if NETFRAMEWORK
-
-        [Fact]
-        public void GivenAnIastRequestContext_WhenAddRequestDataWithHeaders_HeadersAreTainted()
-        {
-            var key1 = "key1";
-            var key2 = "key2";
-            var value1 = "value1";
-            var value2 = "value2";
-            var value3 = "value3";
-            IastRequestContext iastContext = new();
-            var path = "/apiname";
-            var url = "htpp://site.com" + path;
-            System.Web.HttpRequest request = new("file", url, string.Empty);
-            request.Headers.Add(key1, value1);
-            request.Headers[key1] = value2;
-            request.Headers[key2] = value3;
-
-            iastContext.AddRequestData(request, null);
-            Assert.NotNull(iastContext.GetTainted(key1));
-            Assert.NotNull(iastContext.GetTainted(key2));
-            Assert.NotNull(iastContext.GetTainted(value1));
-            Assert.NotNull(iastContext.GetTainted(value2));
-            Assert.NotNull(iastContext.GetTainted(value3));
-        }
-#else
+#if !NETFRAMEWORK
         [Fact]
         public void GivenAnIastRequestContext_WhenAddRequestDataWithHeaders_HeadersAreTainted()
         {
