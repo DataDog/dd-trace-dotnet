@@ -82,8 +82,6 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
                     AnsiConsole.WriteLine($"Instrumented Decompiled Code:{Environment.NewLine}{method.DecompiledCode.Value}");
                 }
             }
-
-            await ReportResult(AnsiConsole.ExportText()).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -92,11 +90,6 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
         }
 
         return allVerificationsPassed ? 0 : -1;
-    }
-
-    private Task<bool> ReportResult(string result)
-    {
-        return Task.FromResult(true);
     }
 
     /// <param name="tracerLogDir">Tracer logs directory</param>
