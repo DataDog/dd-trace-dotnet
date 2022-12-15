@@ -1,10 +1,16 @@
 using System;
 using System.Collections;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace Samples.Deduplication;
 
@@ -19,11 +25,39 @@ internal static class Program
     {
         for (int i = 0; i < times; i++)
         {
+            var bytes = new byte[] { 1, 5, 6 };
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             // Vulnerable section
-            MD5.Create().ComputeHash(new byte[] { 3, 5, 6 });
+            MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
+            Console.WriteLine("LINE1 ");
+            HashAlgorithm t = MD5.Create();
+            t.ComputeHash(new byte[] { 4, 5, 6 });
+            Console.WriteLine("LINE2 ");
+            SHA1.Create().ComputeHash(new byte[] { 5, 5, 6 });
+            Console.WriteLine("LINE3 ");
+            MD5.Create().ComputeHash(bytes);
+            Console.WriteLine("LINE4 ");
+            SHA1.Create().ComputeHash(bytes);
+            Console.WriteLine("LINE5 ");
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
+
+        Console.WriteLine("MAIN DUPLICATED OUT");
+    }
+
+    private static void testMethod()
+    {
+        Console.WriteLine("LINE21 ");
+        ((HashAlgorithm)(MD5.Create())).ComputeHash(new byte[] { 63, 5, 6 });
+        DES.Create();
+        Console.WriteLine("LINE22 ");
+
+        try
+        {
+            Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = true });
+        }
+        catch (Win32Exception) { }
+        Console.WriteLine("LINE23 ");
     }
 
     private static int GetExecutionTimes(string[] args)
@@ -45,5 +79,38 @@ internal static class Program
         }
 
         return times;
+    }
+
+    private static void testHashAlgorithm(HashAlgorithm algorithm)
+    {
+        var byteArg = new byte[] { 3, 5, 6 };
+        algorithm.ComputeHash(byteArg);
+    }
+
+    private static void PrintCode()
+    {
+        string code = "";
+        Assembly currentAssem = Assembly.GetExecutingAssembly();
+        var assembly = AssemblyDefinition.ReadAssembly(currentAssem.Location);
+        var types = assembly.MainModule.Types.Where(o => o.IsClass);
+        var methods = types.SelectMany(type => type.Methods);
+
+        foreach (var method in methods)
+        {
+            if ((method.Name == "Main") || (method.Name == "testHashAlgorithm") || (method.Name == "testMethod"))
+            {
+                code += "METHOD: " + method.Name + Environment.NewLine;
+                var instructions = method.Body?.Instructions;
+                if (instructions != null)
+                {
+                    foreach (var instruction in instructions)
+                    {
+                        code += instruction.ToString() + Environment.NewLine;
+                    }
+                }
+            }
+        }
+
+        Console.WriteLine(code);
     }
 }
