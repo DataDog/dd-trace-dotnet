@@ -93,7 +93,7 @@ internal class AnalyzeInstrumentationErrorsCommand : Command<AnalyzeInstrumentat
     }
 
     /// <param name="tracerLogDir">Tracer logs directory</param>
-    /// <returns>e.g. C:\ProgramData\Datadog .NET Tracer\logs\InstrumentationVerification\dotnet_12345_dd-mm-yyyy_hh-mm-ss</returns>
+    /// <returns>e.g. C:\ProgramData\Datadog .NET Tracer\logs\InstrumentationVerification\dotnet_12345_dd-mm-yyyy_hh-mm-ss or C:\ProgramData\Datadog-APM\logs\DotNet\dotnet_12345_dd-mm-yyyy_hh-mm-ss</returns>
     private string GetProcessInstrumentationVerificationLogDirectory(string tracerLogDir, AnalyzeInstrumentationErrorsSettings settings)
     {
         var instrumentationVerificationLogs = Path.Combine(tracerLogDir, InstrumentedAssemblyGeneratorConsts.InstrumentedAssemblyGeneratorLogsFolder);
