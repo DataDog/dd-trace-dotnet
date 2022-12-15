@@ -118,10 +118,10 @@ internal class AnalyzeInstrumentationErrorsCommand : Command<AnalyzeInstrumentat
             }
             else
             {
-                dir = dirs[0];
+                dir = dirs.FirstOrDefault();
             }
 
-            return dir.FullName;
+            return dir?.FullName;
         }
 
         var processName = string.IsNullOrEmpty(settings.ProcessName) ? "[A-Za-z0-9.]*" : $"({settings.ProcessName})";
