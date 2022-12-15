@@ -110,7 +110,18 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
 
         if (string.IsNullOrEmpty(settings.ProcessName) && settings.Pid == null)
         {
-            return dirs.Count == 1 ? dirs[0].FullName : null;
+            DirectoryInfo dir = null;
+            if (dirs.Count > 1)
+            {
+                AnsiConsole.WriteLine($"There is more than one directory in {instrumentationVerificationLogs}, taking the last modified one");
+                dir = dirs.OrderByDescending(dir => dir.LastWriteTime).First();
+            }
+            else
+            {
+                dir = dirs[0];
+            }
+
+            return dir.FullName;
         }
 
         var processName = string.IsNullOrEmpty(settings.ProcessName) ? "[A-Z0-9]" : $"({settings.ProcessName})";

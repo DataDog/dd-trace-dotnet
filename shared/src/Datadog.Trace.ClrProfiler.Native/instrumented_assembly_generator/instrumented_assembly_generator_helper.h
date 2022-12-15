@@ -120,10 +120,7 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
         const auto instrumentationVerificationEnv = shared::GetEnvironmentValue(cfg_instrumentation_verification_env);
         bool isInstrumentedAssemblyGeneratorEnabled;
         // default is true
-        if (instrumentationVerificationEnv.empty() ||
-            (shared::TryParseBooleanEnvironmentValue(instrumentationVerificationEnv,
-                                                    isInstrumentedAssemblyGeneratorEnabled) &&
-            isInstrumentedAssemblyGeneratorEnabled))
+        if (instrumentationVerificationEnv.empty() || shared::TryParseBooleanEnvironmentValue(instrumentationVerificationEnv, isInstrumentedAssemblyGeneratorEnabled) && isInstrumentedAssemblyGeneratorEnabled)
         {
 #if _WIN32
             if (const auto path = GetInstrumentedAssemblyGeneratorCurrentProcessFolder(); !path.empty())
