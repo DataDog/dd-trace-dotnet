@@ -7,6 +7,7 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace Datadog.Trace.Iast;
@@ -113,17 +114,6 @@ internal class DefaultTaintedMap : ITaintedMap
         {
             Purge();
         }
-
-        // If we flipped to flat mode:
-        // - Always override elements ignoring chaining.
-        // - Stop updating the estimated size.
-
-        _map[index] = entry;
-
-        if ((entry.PositiveHashCode & PurgeMask) == 0)
-        {
-            Purge();
-        }
     }
 
     /// <summary>
@@ -155,9 +145,6 @@ internal class DefaultTaintedMap : ITaintedMap
                 {
                     IsFlat = true;
                 }
-
-                TaintedObject entry = (TaintedObject)reference;
-                removedCount += Remove(entry);
             }
         }
         finally
