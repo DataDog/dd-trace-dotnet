@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class OpenTelemetrySdkTests : TracingIntegrationTest
     {
         public OpenTelemetrySdkTests(ITestOutputHelper output)
-            : base("OpenTelemetrySdk", @"test\test-applications\instrumentation", output, prependSamplesToAppName: false)
+            : base("OpenTelemetrySdk", output)
         {
             // Intentionally unset service name and version, which may be derived from OTEL SDK
             SetServiceName(string.Empty);

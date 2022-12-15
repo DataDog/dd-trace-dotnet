@@ -3,11 +3,10 @@ using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
-using OpenTelemetry.Exporter;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace OpenTelemetrySdk;
+namespace Samples.OpenTelemetrySdk;
 
 public static class Program
 {

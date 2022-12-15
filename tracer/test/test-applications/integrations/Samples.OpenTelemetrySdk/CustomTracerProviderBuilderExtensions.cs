@@ -2,7 +2,7 @@ using System;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Trace;
 
-namespace OpenTelemetrySdk;
+namespace Samples.OpenTelemetrySdk;
 public static class CustomTracerProviderBuilderExtensions
 {
     public static TracerProviderBuilder AddOtlpExporterIfEnvironmentVariablePresent(this TracerProviderBuilder builder)

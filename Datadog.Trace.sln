@@ -498,11 +498,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Deduplication", "tr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.V4InProcess", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4InProcess\Samples.AzureFunctions.V4InProcess.csproj", "{0F0F7D45-0E13-42B0-A158-8F303BBE8358}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTelemetrySdk", "tracer\test\test-applications\instrumentation\OpenTelemetrySdk\OpenTelemetrySdk.csproj", "{2AE4C969-05CF-4E7A-897D-34E95465F34D}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Debugger.IntegrationTests", "tracer\test\Datadog.Trace.Debugger.IntegrationTests\Datadog.Trace.Debugger.IntegrationTests.csproj", "{BB2D2ED3-4378-4B44-974E-8BE80F0021EF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Probes.TestRuns", "tracer\test\test-applications\debugger\dependency-libs\Samples.Probes.TestRuns\Samples.Probes.TestRuns.csproj", "{4F377216-3D76-4169-BE2B-8DA3A653DD5E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OpenTelemetrySdk", "tracer\test\test-applications\integrations\Samples.OpenTelemetrySdk\Samples.OpenTelemetrySdk.csproj", "{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -2520,18 +2520,18 @@ Global
 		{4F377216-3D76-4169-BE2B-8DA3A653DD5E}.Release|x64.Build.0 = Release|x64
 		{4F377216-3D76-4169-BE2B-8DA3A653DD5E}.Release|x86.ActiveCfg = Release|x86
 		{4F377216-3D76-4169-BE2B-8DA3A653DD5E}.Release|x86.Build.0 = Release|x86
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Debug|Any CPU.Build.0 = Debug|x64
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Debug|x64.ActiveCfg = Debug|x64
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Debug|x64.Build.0 = Debug|x64
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Debug|x86.ActiveCfg = Debug|x86
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Debug|x86.Build.0 = Debug|x86
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Release|Any CPU.ActiveCfg = Release|x64
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Release|Any CPU.Build.0 = Release|x64
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Release|x64.ActiveCfg = Release|x64
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Release|x64.Build.0 = Release|x64
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Release|x86.ActiveCfg = Release|x86
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D}.Release|x86.Build.0 = Release|x86
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Debug|Any CPU.Build.0 = Debug|x64
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Debug|x64.ActiveCfg = Debug|x64
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Debug|x64.Build.0 = Debug|x64
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Debug|x86.ActiveCfg = Debug|x86
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Debug|x86.Build.0 = Debug|x86
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Release|Any CPU.ActiveCfg = Release|x64
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Release|Any CPU.Build.0 = Release|x64
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Release|x64.ActiveCfg = Release|x64
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Release|x64.Build.0 = Release|x64
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Release|x86.ActiveCfg = Release|x86
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2723,7 +2723,7 @@ Global
 		{0F0F7D45-0E13-42B0-A158-8F303BBE8358} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{BB2D2ED3-4378-4B44-974E-8BE80F0021EF} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{4F377216-3D76-4169-BE2B-8DA3A653DD5E} = {0884B566-D22E-498C-BAA9-26D50ABCAE3A}
-		{2AE4C969-05CF-4E7A-897D-34E95465F34D} = {933F1D4B-1216-4BC1-956E-8C30818BAA0F}
+		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
