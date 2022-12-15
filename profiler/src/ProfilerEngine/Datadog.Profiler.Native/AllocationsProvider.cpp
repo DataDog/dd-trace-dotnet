@@ -51,7 +51,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
                                        uintptr_t address,
                                        uint64_t objectSize)
 {
-    if ((_sampleLimit > 0) && (!_sampler.Sample(classId)))
+    if ((_sampleLimit > 0) && (!_sampler.Sample()))
     {
         return;
     }

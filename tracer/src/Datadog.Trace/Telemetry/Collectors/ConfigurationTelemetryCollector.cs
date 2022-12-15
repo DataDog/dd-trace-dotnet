@@ -35,7 +35,7 @@ namespace Datadog.Trace.Telemetry
                 serviceName: defaultServiceName,
                 env: tracerSettings.Environment,
                 tracerVersion: TracerConstants.AssemblyVersion,
-                languageName: "dotnet",
+                languageName: TracerConstants.Language,
                 languageVersion: FrameworkDescription.Instance.ProductVersion)
             {
                 ServiceVersion = tracerSettings.ServiceVersion,

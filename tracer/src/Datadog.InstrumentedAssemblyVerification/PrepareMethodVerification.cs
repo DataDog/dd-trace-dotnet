@@ -21,7 +21,7 @@ namespace Datadog.InstrumentedAssemblyVerification
         private readonly List<string> _gacPaths;
         private bool _isNetCore;
         private readonly List<string> _errors;
-        private readonly List<string> _methods;
+        private readonly List<(string type, string method)> _methods;
 
         /// <summary>
         /// Run <see cref="RuntimeHelpers.PrepareMethod(System.RuntimeMethodHandle)"/> on each method in the assembly, thus forcing the .NET JIT to compile the method
@@ -29,7 +29,7 @@ namespace Datadog.InstrumentedAssemblyVerification
         /// <param name="assemblyLocation">The assembly that you want to verify</param>
         /// <param name="methods">methods that should b verified</param>
         /// <param name="logger">The logger</param>
-        public PrepareMethodVerification(string assemblyLocation, List<string> methods, InstrumentationVerificationLogger logger)
+        public PrepareMethodVerification(string assemblyLocation, List<(string type, string method)> methods, InstrumentationVerificationLogger logger)
         {
             _assemblyLocation = assemblyLocation;
             _methods = methods;
@@ -74,16 +74,14 @@ namespace Datadog.InstrumentedAssemblyVerification
                 AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
 
 
-                foreach (string method in _methods)
+                foreach ((string type, string method) in _methods)
                 {
                     try
                     {
-                        int methodNameIndex = method.Substring(0, method.LastIndexOf('(')).LastIndexOf(".", StringComparison.InvariantCulture);
-                        string typeName = method.Substring(0, methodNameIndex);
-                        var existingType = asm.GetType(typeName);
+                        var existingType = asm.GetType(type);
                         if (existingType == null)
                         {
-                            _logger.Warn($"{nameof(PrepareMethodVerification)} Type {typeName} not found in assembly {asm.FullName}");
+                            _logger.Warn($"{nameof(PrepareMethodVerification)} Type {type} not found in assembly {asm.FullName}");
                             continue;
                         }
 
@@ -99,15 +97,14 @@ namespace Datadog.InstrumentedAssemblyVerification
                             copyType = existingType;
                         }
 
-                        string methodName = method.Substring(methodNameIndex + 1);
                         var allMethods = copyType.GetMethods(Flags).Cast<MethodBase>().Union(copyType.GetConstructors(Flags)).ToList();
-                        var foundedMb = allMethods.SingleOrDefault(m => m.Name + $"({string.Join(",", m.GetParameters().Select(p => p.ParameterType.FullName))})" == methodName);
+                        var foundedMb = allMethods.SingleOrDefault(m => m.Name + $"({string.Join(",", m.GetParameters().Select(p => p.ParameterType.FullName))})" == method);
                         IEnumerable<MethodBase> foundedMbs;
                         if (foundedMb == null)
                         {
-                            string errorMessage = $"{nameof(PrepareMethodVerification)} Method {methodName} not found in type {copyType.FullName}";
+                            string errorMessage = $"{nameof(PrepareMethodVerification)} Method {method} not found in type {copyType.FullName}";
                             _logger.Debug(errorMessage);
-                            foundedMbs = allMethods.Where(m => methodName.StartsWith(m.Name));
+                            foundedMbs = allMethods.Where(m => method.StartsWith(m.Name));
                         }
                         else
                         {

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CollectorBase.h"
-#include "GroupSampler.h"
+#include "GenericSampler.h"
 #include "IAllocationsListener.h"
 #include "RawAllocationSample.h"
 
@@ -47,6 +47,6 @@ private:
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
     ISampledAllocationsListener* _pListener = nullptr;
-    GroupSampler<ClassID> _sampler;
+    GenericSampler _sampler;
     int32_t _sampleLimit;
 };

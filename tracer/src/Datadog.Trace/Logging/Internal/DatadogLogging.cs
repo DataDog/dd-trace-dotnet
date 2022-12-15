@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Core.Pipeline;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Logging
@@ -103,10 +102,29 @@ namespace Datadog.Trace.Logging
                         }
                     }
                 }
+
+                CleanInstrumentationVerificationLogFiles(logsDirectory, date);
             }
             catch
             {
                 // Abort on first catch when doing IO operation for performance reasons.
+            }
+        }
+
+        private static void CleanInstrumentationVerificationLogFiles(string logsDirectory, DateTime date)
+        {
+            var instrumentationVerificationLogs = Path.Combine(logsDirectory, "InstrumentationVerification");
+            if (!Directory.Exists(instrumentationVerificationLogs))
+            {
+                return;
+            }
+
+            foreach (var dir in Directory.EnumerateDirectories(instrumentationVerificationLogs))
+            {
+                if (Directory.GetLastWriteTime(dir) < date)
+                {
+                    Directory.Delete(dir);
+                }
             }
         }
     }
