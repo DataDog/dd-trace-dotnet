@@ -13,6 +13,6 @@
 
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="$(ApiVersion)" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 </Project>

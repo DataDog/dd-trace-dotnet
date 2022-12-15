@@ -1,1 +1,1 @@
-https://github.com/JamesNK/Newtonsoft.Json/archive/13.0.1.zip
+https://github.com/JamesNK/Newtonsoft.Json/archive/13.0.2.zip
