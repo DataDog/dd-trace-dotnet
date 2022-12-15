@@ -16,9 +16,9 @@ using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner;
 
-internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrumentationErrorsSettings>
+internal class AnalyzeInstrumentationErrorsCommand : Command<AnalyzeInstrumentationErrorsSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, AnalyzeInstrumentationErrorsSettings settings)
+    public override int Execute(CommandContext context, AnalyzeInstrumentationErrorsSettings settings)
     {
         var process = $"'{settings.ProcessName ?? "na"}'";
         if (settings.Pid != null)

@@ -26,7 +26,7 @@ To run a verification, simply:
 
 
 
-1. Verify that the environment variable `DD_WRITE_INSTRUMENTATION_TO_DISK` is set to “true” (it should be on by default).
+1. Verify that the environment variable `DD_WRITE_INSTRUMENTATION_TO_DISK` is not set to “false” (it should be on by default).
 2. Run your application. Observe that as we instrument the app, more and more files will appear under [Datadog Logs Folder]/InstrumentationVerification/{ProcessName}_{ProcessID}_{ProcessCreationTime}
 3. In order to run the analysis:
     1. To analyze a running process:
