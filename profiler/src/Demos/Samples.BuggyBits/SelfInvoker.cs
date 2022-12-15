@@ -100,6 +100,9 @@ namespace BuggyBits
 
                 case Scenario.FormatExceptions:
                     return $"{rootUrl}/Products/Sales";
+
+                case Scenario.ParallelLock:
+                    return $"{rootUrl}/Products/ParallelLock";
             }
         }
 
