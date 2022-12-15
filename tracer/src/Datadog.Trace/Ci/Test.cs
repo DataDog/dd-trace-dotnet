@@ -218,7 +218,7 @@ public sealed class Test
         duration ??= _scope.Span.Context.TraceContext.ElapsedSince(scope.Span.StartTime);
 
         // Set coverage
-        if (CIVisibility.Settings.CodeCoverageEnabled == true && Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.CoveragePayload coveragePayload)
+        if (CIVisibility.Settings.CodeCoverageEnabled == true && Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.Tests.CoveragePayload coveragePayload)
         {
             if (scope.Span is { } span)
             {

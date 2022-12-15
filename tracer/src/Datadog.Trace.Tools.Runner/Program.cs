@@ -154,6 +154,11 @@ namespace Datadog.Trace.Tools.Runner
                   .WithExample("analyze-instrumentation [--process-name dotnet]".Split(' '))
                   .WithExample("analyze-instrumentation [--pid 12345]".Split(' '))
                   .WithExample("analyze-instrumentation [--log-path \"C:\\ProgramData\\Datadog .NET Tracer\\logs\\\"]".Split(' '));
+
+            config.AddCommand<CoverageMergerCommand>("coverage-merge")
+                  .WithDescription("Merges all coverage json files into a single one.")
+                  .WithExample("coverage-merge c:\\coverage_folder\\ total-coverage.json".Split(' '))
+                  .IsHidden();
         }
 
         private static int ExecuteLegacyCommandLine(string[] args, ApplicationContext applicationContext)
