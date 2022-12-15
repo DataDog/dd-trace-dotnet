@@ -5,10 +5,7 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Xml.Linq;
 
 namespace Datadog.Trace.Iast;
 
@@ -111,7 +108,7 @@ internal class IastRequestContext
         }
     }
 
-    private void AddRequestHeaders(NameValueCollection? headers)
+    private void AddRequestHeaders(System.Collections.Specialized.NameValueCollection? headers)
     {
         if (headers is not null)
         {
