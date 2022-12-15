@@ -3181,6 +3181,13 @@ stages:
     pool:
       vmImage: ubuntu-20.04
 
+    strategy:
+      matrix:
+        poc:
+          WEBLOG_VARIANT: "poc"
+        uds:
+          WEBLOG_VARIANT: "uds"
+
     steps:
       - checkout: none
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
@@ -3211,18 +3218,7 @@ stages:
       - publish: system-tests/logs
         condition: always()
         displayName: System tests logs
-        artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-
-      - script: ./run.sh UDS
-        workingDirectory: system-tests
-        displayName: Run tests over UDS
-        env:
-          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-        
-      - publish: system-tests/logs_uds
-        condition: always()
-        displayName: System tests UDS logs
-        artifact: _$(System.StageName)_$(Agent.JobName)_logs_uds_$(System.JobAttempt)
+        artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)_$WEBLOG_VARIANT
         
       - script: ./run.sh REMOTE_CONFIG_MOCKED_BACKEND_LIVE_DEBUGGING
         workingDirectory: system-tests
@@ -3233,7 +3229,7 @@ stages:
       - publish: system-tests/logs_remote_config_mocked_backend_live_debugging
         condition: always()
         displayName: RCM tests logs
-        artifact: _$(System.StageName)_$(Agent.JobName)_logs_rcm_$(System.JobAttempt)
+        artifact: _$(System.StageName)_$(Agent.JobName)_logs_rcm_$(System.JobAttempt)_$WEBLOG_VARIANT
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
