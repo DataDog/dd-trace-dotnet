@@ -28,7 +28,9 @@ public class HMACSHA1Tests : InstrumentationTestsBase
     [Fact]
     public void GivenAHMACSHA1_WhenCreatingAlgortihm_VulnerabilityIsNotLogged()
     {
+#pragma warning disable SYSLIB0045 // Type or member is obsolete
         HMACSHA1.Create("alg");
+#pragma warning restore SYSLIB0045 // Type or member is obsolete
         AssertNotVulnerable();
     }
 

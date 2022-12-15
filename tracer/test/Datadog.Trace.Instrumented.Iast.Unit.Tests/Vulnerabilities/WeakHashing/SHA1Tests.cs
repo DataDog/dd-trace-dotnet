@@ -23,14 +23,18 @@ public class SHA1Tests : InstrumentationTestsBase
     [Fact]
     public void GivenASHA1_WhenCreatingAlgortihm_VulnerabilityIsNotLogged()
     {
+#pragma warning disable SYSLIB0045 // Type or member is obsolete
         SHA1.Create("alg");
+#pragma warning restore SYSLIB0045 // Type or member is obsolete
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASHA1_WhenCreatingNull_ExceptionIsThrown()
     {
+#pragma warning disable SYSLIB0045 // Type or member is obsolete
         Assert.Throws<ArgumentNullException>(() => SHA1.Create(null));
+#pragma warning restore SYSLIB0045 // Type or member is obsolete
     }
 
     [Fact]

@@ -23,14 +23,18 @@ public class MD5Tests : InstrumentationTestsBase
     [Fact]
     public void GivenAMD5_WhenCreatingAlgortihm_VulnerabilityIsNotLogged()
     {
+#pragma warning disable SYSLIB0045 // Type or member is obsolete
         MD5.Create("alg");
+#pragma warning restore SYSLIB0045 // Type or member is obsolete
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAMD5_WhenCreatingNull_ExceptionIsThrown()
     {
+#pragma warning disable SYSLIB0045 // Type or member is obsolete
         Assert.Throws<ArgumentNullException>(() => MD5.Create(null));
+#pragma warning restore SYSLIB0045 // Type or member is obsolete
     }
 
     [Fact]
