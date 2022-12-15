@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Agent;
-using Datadog.Trace.Ci.Coverage.Models;
+using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;

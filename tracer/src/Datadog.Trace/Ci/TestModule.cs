@@ -7,8 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
@@ -16,6 +19,7 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Ci;
@@ -307,11 +311,35 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
+        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
+            coverageHandler.GetCodeCoveragePercentage() is { } globalCoverage)
+        {
+            // Adds the global code coverage percentage to the module
+            span.SetTag(CommonTags.CodeCoverageTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+
+            // If the code coverage path environment variable is set, we store the json file
+            if (!string.IsNullOrWhiteSpace(CIVisibility.Settings.CodeCoveragePath))
+            {
+                var codeCoveragePath = Path.Combine(CIVisibility.Settings.CodeCoveragePath, $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json");
+                try
+                {
+                    using var fStream = File.OpenWrite(codeCoveragePath);
+                    using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
+                    new JsonSerializer().Serialize(sWriter, globalCoverage);
+                }
+                catch (Exception ex)
+                {
+                    CIVisibility.Log.Error(ex, "Error writing global code coverage.");
+                }
+            }
+        }
+
         span.Finish(duration.Value);
 
         Current = null;
         CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
         CIVisibility.FlushSpans();
+        CIVisibility.Log.Debug("### Data Flushed by Module: {name}", Name);
     }
 
     /// <summary>

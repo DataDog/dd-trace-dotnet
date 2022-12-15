@@ -169,5 +169,10 @@ namespace Datadog.Trace.Ci.Tags
         /// Code Coverage is enabled flag
         /// </summary>
         public const string CodeCoverageEnabled = "code_coverage.enabled";
+
+        /// <summary>
+        /// Code coverage global percentage value
+        /// </summary>
+        public const string CodeCoverageTotalLines = "test.codecov_lines_total";
     }
 }

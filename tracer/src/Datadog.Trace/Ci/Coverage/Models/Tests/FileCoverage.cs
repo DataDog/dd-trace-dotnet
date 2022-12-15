@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Ci.Coverage.Models
+namespace Datadog.Trace.Ci.Coverage.Models.Tests
 {
     /// <summary>
     /// Source file with executable code
