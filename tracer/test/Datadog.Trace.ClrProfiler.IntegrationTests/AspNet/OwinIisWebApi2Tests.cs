@@ -90,6 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/api/statuscode/503", 503, 2 },
             { "/api/constraints", 200, 2 },
             { "/api/constraints/201", 201, 2 },
+            // Transfer request doesn't work as expected with OWIN, but I'm not sure whether they should work, and seems relatively niche so ignoring them for now
             // { "/api/TransferRequest/401", 401, 4 },
             // { "/api/TransferRequest/503", 503, 4 },
             { "/api2/delay/0", 200, 2 },
