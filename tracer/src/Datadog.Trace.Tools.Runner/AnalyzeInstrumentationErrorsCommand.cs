@@ -135,7 +135,8 @@ internal class AnalyzeInstrumentationErrorsCommand : Command<AnalyzeInstrumentat
 
         if (candidates.Count == 0)
         {
-            AnsiConsole.WriteLine($"No directory was found matching pattern {pattern}");
+            AnsiConsole.WriteLine($"No directory was found matching pattern {pattern}, make sure {settings.Pid} is right");
+            return null;
         }
 
         AnsiConsole.WriteLine("There is more than one directory that match the argument, taking the last modified directory");
