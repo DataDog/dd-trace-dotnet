@@ -124,18 +124,22 @@ internal class AnalyzeInstrumentationErrorsCommand : Command<AnalyzeInstrumentat
             return dir.FullName;
         }
 
-        var processName = string.IsNullOrEmpty(settings.ProcessName) ? "[A-Z0-9]" : $"({settings.ProcessName})";
+        var processName = string.IsNullOrEmpty(settings.ProcessName) ? "[A-Za-z0-9.]*" : $"({settings.ProcessName})";
         var pid = settings.Pid == null ? "\\d+" : settings.Pid.ToString();
         var pattern = $"^{processName}(_){pid}(_)[0-9-_]+$";
-
         var candidates = dirs.Where(d => Regex.IsMatch(d.Name, pattern)).ToList();
         if (candidates.Count == 1)
         {
             return candidates[0].FullName;
         }
 
+        if (candidates.Count == 0)
+        {
+            AnsiConsole.WriteLine($"No directory was found matching pattern {pattern}");
+        }
+
         AnsiConsole.WriteLine("There is more than one directory that match the argument, taking the last modified directory");
-        return candidates.OrderByDescending(dir => dir.LastWriteTime).FirstOrDefault()?.FullName;
+        return candidates.OrderByDescending(dir => dir.LastWriteTime).First().FullName;
     }
 
     private string GetLogDirectory(int? pid)
