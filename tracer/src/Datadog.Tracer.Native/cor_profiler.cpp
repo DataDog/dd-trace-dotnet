@@ -2261,7 +2261,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
         if (SUCCEEDED(hr))
         {
             orig_sstream << std::endl
-                         << ". Local Var Signature: "
+                         << "  Local Var Signature: "
                          << shared::ToString(shared::HexStr(originalSignature, originalSignatureSize))
                          << std::endl;
         }
@@ -2280,29 +2280,19 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 {
                     if (currentEH.m_pTryBegin == cInstr)
                     {
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << ".try {" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "try" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                     if (currentEH.m_pTryEnd == cInstr)
                     {
                         indent--;
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << "}" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "}" << std::endl;
                     }
                     if (currentEH.m_pHandlerBegin == cInstr)
                     {
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << ".finally {" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "finally" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                 }
@@ -2314,29 +2304,25 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 {
                     if (currentEH.m_pTryBegin == cInstr)
                     {
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << ".try {" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "try" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                     if (currentEH.m_pTryEnd == cInstr)
                     {
                         indent--;
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << "}" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "}" << std::endl;
                     }
                     if (currentEH.m_pHandlerBegin == cInstr)
                     {
-                        if (indent > 0)
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "catch";
+                        if (currentEH.m_ClassToken != mdTokenNil)
                         {
-                            orig_sstream << indent_values[indent];
+                            const auto typeInfo = GetTypeInfo(metadata_import, (mdToken) currentEH.m_ClassToken);
+                            orig_sstream << " (" << shared::ToString(typeInfo.name) << " [mdToken: 0x" << std::hex << currentEH.m_ClassToken << "])";
                         }
-                        orig_sstream << ".catch {" << std::endl;
+                        orig_sstream << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                 }
@@ -2348,44 +2334,27 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 {
                     if (currentEH.m_pTryBegin == cInstr)
                     {
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << ".try {" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "try" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                     if (currentEH.m_pTryEnd == cInstr)
                     {
                         indent--;
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << "}" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "}" << std::endl;
                     }
                     if (currentEH.m_pFilter == cInstr)
                     {
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << ".filter {" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "filter" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                     if (currentEH.m_pHandlerBegin == cInstr)
                     {
                         indent--;
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << "}" << std::endl;
-                        if (indent > 0)
-                        {
-                            orig_sstream << indent_values[indent];
-                        }
-                        orig_sstream << ".catch {" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "}" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "catch" << std::endl;
+                        orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
                         indent++;
                     }
                 }
@@ -2410,12 +2379,12 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
         if (cInstr->m_pTarget != nullptr)
         {
             orig_sstream << "  ";
-            orig_sstream << cInstr->m_pTarget;
 
+            bool augmented = false;
             if (cInstr->m_opcode == CEE_CALL || cInstr->m_opcode == CEE_CALLVIRT || cInstr->m_opcode == CEE_NEWOBJ)
             {
                 const auto memberInfo = GetFunctionInfo(metadata_import, (mdMemberRef) cInstr->m_Arg32);
-                orig_sstream << "  | ";
+                augmented = true;
                 orig_sstream << shared::ToString(memberInfo.type.name);
                 orig_sstream << ".";
                 orig_sstream << shared::ToString(memberInfo.name);
@@ -2436,7 +2405,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                      cInstr->m_opcode == CEE_INITOBJ || cInstr->m_opcode == CEE_ISINST)
             {
                 const auto typeInfo = GetTypeInfo(metadata_import, (mdTypeRef) cInstr->m_Arg32);
-                orig_sstream << "  | ";
+                augmented = true;
                 orig_sstream << shared::ToString(typeInfo.name);
             }
             else if (cInstr->m_opcode == CEE_LDSTR)
@@ -2447,10 +2416,22 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                                                                          &szStringLength);
                 if (SUCCEEDED(hr))
                 {
-                    orig_sstream << "  | \"";
+                    augmented = true;
+                    orig_sstream << "\"";
                     orig_sstream << shared::ToString(shared::WSTRING(szString, szStringLength));
                     orig_sstream << "\"";
                 }
+            }
+
+            if (augmented)
+            {
+                orig_sstream << " [mdToken: ";
+                orig_sstream << cInstr->m_pTarget;
+                orig_sstream << "]";
+            }
+            else
+            {
+                orig_sstream << cInstr->m_pTarget;
             }
         }
         else if (cInstr->m_Arg64 != 0)
@@ -2475,11 +2456,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 if (currentEH.m_pHandlerEnd == cInstr)
                 {
                     indent--;
-                    if (indent > 0)
-                    {
-                        orig_sstream << indent_values[indent];
-                    }
-                    orig_sstream << "}" << std::endl;
+                    orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "}" << std::endl;
                 }
             }
         }
