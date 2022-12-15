@@ -326,12 +326,7 @@ partial class Build
 
             var toBuild = include.Except(exclude);
 
-            // Always AnyCPU
-            DotNetBuild(s => s
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoRestore()
-                .CombineWith(toBuild, (config, project) => config.SetProjectFile(project)));
+            DotnetBuild(toBuild, noDependencies: false);
         });
 
 
@@ -815,16 +810,7 @@ partial class Build
         .After(Restore, CompileManagedSrc)
         .Executes(() =>
         {
-            var projects = TracerDirectory.GlobFiles(
-                "src/**/Datadog.InstrumentedAssembly*.csproj"
-            );
-
-            // Always AnyCPU
-            DotNetBuild(s => s
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoRestore()
-                .CombineWith(projects, (config, project) => config.SetProjectFile(project)));
+            DotnetBuild(TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"), noDependencies: false);
         });
 
     Target CompileManagedTestHelpers => _ => _
@@ -835,19 +821,8 @@ partial class Build
         .Executes(() =>
         {
             //we need to build in this exact order 
-            Build(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj").First());
-            Build(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj").First());
-
-            void Build(AbsolutePath projPath)
-            {
-                // Always AnyCPU
-                DotNetBuild(s => s
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatformAnyCPU()
-                    .EnableNoRestore()
-                    .EnableNoDependencies()
-                    .SetProjectFile(projPath));
-            }
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"));
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"));
         });
 
     Target CompileManagedUnitTests => _ => _
@@ -859,17 +834,7 @@ partial class Build
         .DependsOn(CompileManagedTestHelpers)
         .Executes(() =>
         {
-            var projects = TracerDirectory.GlobFiles(
-                "test/**/*.Tests.csproj"
-            );
-
-            // Always AnyCPU
-            DotNetBuild(s => s
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoRestore()
-                .EnableNoDependencies()
-                .CombineWith(projects, (config, project) => config.SetProjectFile(project)));
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
         });
 
     Target RunManagedUnitTests => _ => _
@@ -968,13 +933,7 @@ partial class Build
                 "test/test-applications/integrations/**/*.vbproj"
             );
 
-            // Always AnyCPU
-            DotNetBuild(s => s
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoRestore()
-                .SetNoWarnDotNetCore3()
-                .CombineWith(projects, (settings, project) => settings.SetProjectFile(project)));
+            DotnetBuild(projects, noDependencies: false);
         });
 
     Target CompileRegressionDependencyLibs => _ => _
@@ -983,19 +942,13 @@ partial class Build
         .After(CompileManagedSrc)
         .Executes(() =>
         {
+            // We run linux integration tests in AnyCPU, but Windows on the specific architecture
+            var platform = !IsWin ? MSBuildTargetPlatform.MSIL : TargetPlatform;
             var projects = TracerDirectory.GlobFiles(
                 "test/test-applications/regression/dependency-libs/**/Datadog.StackExchange.Redis*.csproj"
             );
 
-            // We run linux integration tests in AnyCPU, but Windows on the specific architecture
-            var platform = !IsWin ? MSBuildTargetPlatform.MSIL : TargetPlatform;
-
-            DotNetBuild(s => s
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(platform)
-                .EnableNoRestore()
-                .SetNoWarnDotNetCore3()
-                .CombineWith(projects, (settings, project) => settings.SetProjectFile(project)));
+            DotnetBuild(projects, platform: platform, noDependencies: false);
         });
 
     Target CompileRegressionSamples => _ => _
@@ -1006,36 +959,26 @@ partial class Build
         .Requires(() => Framework)
         .Executes(() =>
         {
-            var regressionsDirectory = Solution.GetProject(Projects.DataDogThreadTest)
-                .Directory.Parent;
-
-            var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
-                 .Where(path =>
-                    (path, Solution.GetProject(path).TryGetTargetFrameworks()) switch
+            var regressionLibs = Solution.GetProject(Projects.DataDogThreadTest).Directory.Parent
+                .GlobFiles("**/*.csproj")
+                .Where(absPath =>
+                {
+                    var path = absPath.ToString();
+                    return (path, Solution.GetProject(path).TryGetTargetFrameworks()) switch
                     {
                         _ when path.Contains("ExpenseItDemo") => false,
                         _ when path.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject") => false,
                         _ when path.Contains("MismatchedTracerVersions") => false,
                         _ when path.Contains("dependency-libs") => false,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => path.Contains(SampleName),
-                        (_, var targets) when targets is not null => targets.Contains(Framework),
+                        (_, { } targets) => targets.Contains(Framework),
                         _ => true,
-                    }
-                  );
+                    };
+                });
 
-            // Allow restore here, otherwise things go wonky with runtime identifiers
-            // in some target frameworks. No, I don't know why
-            DotNetBuild(x => x
-                // .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(TargetPlatform)
-                .SetFramework(Framework)
-                .SetNoWarnDotNetCore3()
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                    o.SetPackageDirectory(NugetPackageDirectory))
-                .CombineWith(regressionLibs, (x, project) => x
-                    .SetProjectFile(project)));
+            //// Allow restore here, otherwise things go wonky with runtime identifiers
+            //// in some target frameworks. No, I don't know why
+            DotnetBuild(regressionLibs, platform: TargetPlatform, framework: Framework, noRestore: false, setNuget: true);
         });
 
     Target CompileFrameworkReproductions => _ => _
@@ -1072,35 +1015,19 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
-            var projects = TracerDirectory.GlobFiles(
-                "test/*.IntegrationTests/*.IntegrationTests.csproj"
-            );
-
-            var toBuild = projects
-                .Where(path => !path.Equals(Solution.GetProject(Projects.DebuggerIntegrationTests).Path))
-                .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework));
-
             if (!Framework.ToString().StartsWith("net46"))
             {
-                // we need to build Projects.RazorPages before integration tests
-                DotNetBuild(s => s
-                    .SetConfiguration(BuildConfiguration)
-                    .SetFramework(Framework)
-                    .SetTargetPlatformAnyCPU()
-                    .EnableNoRestore()
-                    .EnableNoDependencies()
-                    .SetNoWarnDotNetCore3()
-                    .SetProjectFile(Solution.GetProject(Projects.RazorPages)));
+                // we need to build RazorPages before integration tests for .net46x
+                DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
             }
 
-            DotNetBuild(s => s
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(Framework)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetNoWarnDotNetCore3()
-                .CombineWith(toBuild, (config, project) => config.SetProjectFile(project)));
+            var projects = TracerDirectory
+                    .GlobFiles("test/*.IntegrationTests/*.IntegrationTests.csproj")
+                    .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
+                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework))
+                ;
+
+            DotnetBuild(projects, framework: Framework);
         });
 
     Target CompileDebuggerIntegrationTests => _ => _
@@ -1112,14 +1039,7 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
-            DotNetBuild(s => s
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(Framework)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetNoWarnDotNetCore3()
-                .SetProjectFile(DebuggerIntegrationTests));
+            DotnetBuild(Solution.GetProject(Projects.DebuggerIntegrationTests), framework: Framework);
         });
 
     Target CompileDebuggerIntegrationTestsDependencies => _ => _
@@ -1128,21 +1048,9 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
-            DotNetBuild(s => s
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(Framework)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoRestore()
-                .SetNoWarnDotNetCore3()
-                .SetProjectFile(DebuggerSamplesTestRuns));            
-            
-            DotNetBuild(s => s
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(Framework)
-                .SetTargetPlatform(TargetPlatform)
-                .EnableNoRestore()
-                .SetNoWarnDotNetCore3()
-                .SetProjectFile(DebuggerSamplesTestRuns));
+            // we need to compile DebuggerSamplesTestRuns in AnyCPU and TargetPlatform
+            DotnetBuild(Solution.GetProject(Projects.DebuggerSamplesTestRuns), framework: Framework, noDependencies: false);
+            DotnetBuild(Solution.GetProject(Projects.DebuggerSamplesTestRuns), platform: TargetPlatform, framework: Framework, noDependencies: false);
         });
 
     Target CompileDebuggerIntegrationTestsSamples => _ => _
@@ -1152,14 +1060,7 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
-            DotNetBuild(s => s
-                .SetFramework(Framework)
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(TargetPlatform)
-                .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetNoWarnDotNetCore3()
-                .SetProjectFile(DebuggerSamples));
+            DotnetBuild(Solution.GetProject(Projects.DebuggerSamples), platform: TargetPlatform, framework: Framework);
 
             if (!IsWin)
             {
@@ -1366,24 +1267,18 @@ partial class Build
             var azureFunctions = TracerDirectory.GlobFiles("test/test-applications/azure-functions/**/*.csproj");
 
             var projects = azureFunctions
-                .Select(x => Solution.GetProject(x))
-                .Where(project =>
-                 (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
-                 {
-                     var (_, targets, _) when targets is not null => targets.Contains(Framework),
-                     _ => true,
-                 });
+                .Where(path =>
+                {
+                    var project = Solution.GetProject(path);
+                    return (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
+                    {
+                        var (_, targets, _) when targets is not null => targets.Contains(Framework),
+                        _ => true,
+                    };
+                });
 
-            // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            DotNetBuild(config => config
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(TargetPlatform)
-                .EnableNoDependencies()
-                .SetProperty("BuildInParallel", "true")
-                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                .CombineWith(projects, (s, project) => s
-                                                 .SetProjectFile(project)));
+            
+            DotnetBuild(projects, platform: TargetPlatform, noRestore: false, setNuget: true);
         });
 
     Target RunWindowsAzureFunctionsTests => _ => _
@@ -1647,23 +1542,12 @@ partial class Build
                         _ => true,
                     };
                 })
-                .Select(x => x.path);
+                .Select(x => x.path)
+                .ToArray();
 
             // do the build and publish separately to avoid dependency issues
 
-            // Always AnyCPU
-            DotNetBuild(x => x
-                    // .EnableNoRestore()
-                    .EnableNoDependencies()
-                    .SetConfiguration(BuildConfiguration)
-                    .SetFramework(Framework)
-                    // .SetTargetPlatform(Platform)
-                    .SetNoWarnDotNetCore3()
-                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                    .CombineWith(projectsToBuild, (c, project) => c
-                        .SetProjectFile(project)));
+            DotnetBuild(projectsToBuild, framework: Framework, noRestore: false, setNuget: true, setPackages: true);
 
             // Always AnyCPU
             DotNetPublish(x => x
@@ -1739,22 +1623,9 @@ partial class Build
             var integrationTestProjects =
                 TracerDirectory
                    .GlobFiles("test/*.IntegrationTests/*.csproj")
-                   .Where(path => Solution.GetProject(path).Name != Projects.DebuggerIntegrationTests);
-                ;
+                   .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests));
 
-            DotNetBuild(x => x
-                    // .EnableNoRestore()
-                    .EnableNoDependencies()
-                    .SetConfiguration(BuildConfiguration)
-                    .SetFramework(Framework)
-                    // .SetTargetPlatform(Platform)
-                    .SetNoWarnDotNetCore3()
-                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackageDirectory(NugetPackageDirectory))
-                    .CombineWith(integrationTestProjects, (c, project) => c
-                        .SetProjectFile(project)));
+            DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false, setNuget: true, setPackages: true);
 
             IntegrationTestLinuxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
             IntegrationTestLinuxProfilerDirFudge(Projects.AppSecIntegrationTests);
@@ -1871,12 +1742,7 @@ partial class Build
          .After(InstallDdTraceTool)
          .Executes(() =>
           {
-              DotNetBuild(x => x
-                  .SetProjectFile(Solution.GetProject(Projects.ToolArtifactsTests))
-                  .EnableNoDependencies()
-                  .EnableNoRestore()
-                  .SetConfiguration(BuildConfiguration)
-                  .SetNoWarnDotNetCore3());
+              DotnetBuild(Solution.GetProject(Projects.ToolArtifactsTests));
           });
 
     Target RunToolArtifactTests => _ => _
@@ -2338,4 +2204,41 @@ partial class Build
     }
 
     private record ParsedLogLine(DateTimeOffset Timestamp, LogLevel Level, string Message, AbsolutePath FileName);
+
+    private void DotnetBuild(
+        Project project,
+        MSBuildTargetPlatform platform = null,
+        TargetFramework framework = null,
+        bool noRestore = true,
+        bool noDependencies = true,
+        bool setNuget = false,
+        bool setPackages = false
+        )
+    {
+        DotnetBuild(new [] { project.Path }, platform, framework, noRestore, noDependencies, setNuget, setPackages); 
+    }
+
+    private void DotnetBuild(
+        IEnumerable<AbsolutePath> projPaths,
+        MSBuildTargetPlatform platform = null,
+        TargetFramework framework = null,
+        bool noRestore = true,
+        bool noDependencies = true,
+        bool setNuget = false,
+        bool setPackages = false
+        )
+    {
+        DotNetBuild(s => s
+            .SetConfiguration(BuildConfiguration)
+            .SetTargetPlatform(platform ?? MSBuildTargetPlatform.MSIL)
+            .When(noRestore, settings => settings.EnableNoRestore())
+            .When(noDependencies, settings => settings.EnableNoDependencies())
+            .When(framework is not null, settings => settings.SetFramework(framework))
+            .When(setNuget && !string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+            .When(setPackages && TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+            .When(setPackages && IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+            .SetNoWarnDotNetCore3()
+            .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+            .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));        
+    }
 }
