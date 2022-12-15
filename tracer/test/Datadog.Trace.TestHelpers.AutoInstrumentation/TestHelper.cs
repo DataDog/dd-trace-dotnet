@@ -32,7 +32,7 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper : IDisposable
     {
-        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, bool prependSamplesToAppName = false)
+        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, bool prependSamplesToAppName = true)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides, prependSamplesToAppName), output)
         {
         }
