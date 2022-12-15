@@ -129,7 +129,7 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
                 return true;
             }
 #else
-            Log::Warn("Instrumentation Verification is currently only supported on Windows and will be disabled.");
+            Log::Info("Instrumentation Verification is currently only supported on Windows and will be disabled.");
 #endif
         }
     }
