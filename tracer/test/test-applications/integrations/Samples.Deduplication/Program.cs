@@ -30,6 +30,7 @@ internal static class Program
             // Vulnerable section
             MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
             Console.WriteLine("LINE1 ");
+            testMethod();
             HashAlgorithm t = MD5.Create();
             t.ComputeHash(new byte[] { 4, 5, 6 });
             Console.WriteLine("LINE2 ");
@@ -39,9 +40,14 @@ internal static class Program
             Console.WriteLine("LINE4 ");
             SHA1.Create().ComputeHash(bytes);
             Console.WriteLine("LINE5 ");
+            testHashAlgorithm(SHA1.Create());
+            Console.WriteLine("LINE6 ");
+            testHashAlgorithm(MD5.Create());
+            Console.WriteLine("LINE7 ");
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
+        testHashAlgorithm(new SHA1CryptoServiceProvider());
         Console.WriteLine("MAIN DUPLICATED OUT");
     }
 
