@@ -4,10 +4,9 @@
 // </copyright>
 #nullable enable
 
-using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -16,32 +15,40 @@ namespace Datadog.Trace.Ci.Coverage;
 /// </summary>
 internal sealed class CoverageContextContainer
 {
-    private static readonly List<AsyncLocal<Tuple<ModuleValue, CoverageContextContainer>?>> AsyncLocals = new();
     private readonly List<ModuleValue> _container = new();
+    private ModuleValue? _currentModuleValue = null;
 
     /// <summary>
-    /// Gets or sets a value indicating whether if the coverage is enabled for the context
+    /// Gets the current module value
     /// </summary>
-    public bool Enabled
+    /// <param name="module">Module instance</param>
+    /// <returns>Current module instance</returns>
+    internal ModuleValue? GetModuleValue(Module module)
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal set;
+        if (_currentModuleValue is { } moduleValue && moduleValue.Module == module)
+        {
+            return moduleValue;
+        }
+
+        return GetModuleValueSlow(module);
     }
 
-        = true;
-
-    /// <summary>
-    /// Adds an AsyncLocal to be cleared on container close.
-    /// </summary>
-    /// <param name="asyncLocal">Async local of the module</param>
-    public static void AddAsyncLocal(AsyncLocal<Tuple<ModuleValue, CoverageContextContainer>?> asyncLocal)
+    private ModuleValue? GetModuleValueSlow(Module module)
     {
-        lock (AsyncLocals)
+        var container = _container;
+        lock (container)
         {
-            AsyncLocals.Add(asyncLocal);
+            for (var i = 0; i < container.Count; i++)
+            {
+                if (container[i] is { } moduleValueItem && moduleValueItem.Module == module)
+                {
+                    _currentModuleValue = moduleValueItem;
+                    return moduleValueItem;
+                }
+            }
         }
+
+        return null;
     }
 
     /// <summary>
@@ -49,18 +56,26 @@ internal sealed class CoverageContextContainer
     /// </summary>
     /// <param name="module">Module instance</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal bool TryAdd(ModuleValue module)
+    internal void Add(ModuleValue module)
     {
         var container = _container;
         lock (container)
         {
-            if (Enabled)
-            {
-                container.Add(module);
-                return true;
-            }
+            container.Add(module);
+            _currentModuleValue = module;
+        }
+    }
 
-            return false;
+    /// <summary>
+    /// Clear context data
+    /// </summary>
+    internal void Clear()
+    {
+        var container = _container;
+        lock (container)
+        {
+            container.Clear();
+            _currentModuleValue = null;
         }
     }
 
@@ -74,17 +89,8 @@ internal sealed class CoverageContextContainer
         var container = _container;
         lock (container)
         {
-            Enabled = false;
             var data = container.ToArray();
-            container.Clear();
-            lock (AsyncLocals)
-            {
-                foreach (var asyncLocal in AsyncLocals)
-                {
-                    asyncLocal.Value = null;
-                }
-            }
-
+            _currentModuleValue = null;
             return data;
         }
     }

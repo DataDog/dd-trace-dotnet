@@ -38,42 +38,68 @@ namespace Datadog.Trace.Coverage.Collector
 
             Initialize();
 
-            if (_events is not null)
+            if (events is not null)
             {
-                _events.SessionStart += OnSessionStart;
-                _events.SessionEnd += OnSessionEnd;
+                events.SessionStart += OnSessionStart;
+                events.SessionEnd += OnSessionEnd;
+                events.TestHostLaunched += (sender, args) =>
+                {
+                    _logger?.Debug($"Test host launched with PID: {args.TestHostProcessId} / SessionId: {args.Context?.SessionId?.Id.ToString() ?? "(empty)"}");
+                };
+                events.TestCaseStart += (sender, args) =>
+                {
+                    _logger?.Debug($"Test case start: {args.TestCaseName}");
+                };
+                events.TestCaseEnd += (sender, args) =>
+                {
+                    _logger?.Debug($"Test case end: {args.TestCaseName} | Status: {args.TestOutcome}");
+                };
             }
         }
 
         private void OnSessionStart(object? sender, SessionStartEventArgs e)
         {
             _logger?.SetContext(e.Context);
-            var testSources = e.GetPropertyValue("TestSources");
-            if (testSources is string testSourceString)
+            try
             {
-                // Process folder
-                var outputFolder = Path.GetDirectoryName(testSourceString);
-                if (outputFolder is not null)
+                var testSources = e.GetPropertyValue("TestSources");
+                if (testSources is string testSourceString)
                 {
-                    ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
-                }
-            }
-            else if (testSources is List<string> testSourcesList)
-            {
-                // Process folder
-                foreach (var source in testSourcesList)
-                {
-                    var outputFolder = Path.GetDirectoryName(source);
+                    // Process folder
+                    var outputFolder = Path.GetDirectoryName(testSourceString);
                     if (outputFolder is not null)
                     {
                         ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
                     }
                 }
+                else if (testSources is List<string> testSourcesList)
+                {
+                    // Process folder
+                    foreach (var source in testSourcesList)
+                    {
+                        var outputFolder = Path.GetDirectoryName(source);
+                        if (outputFolder is not null)
+                        {
+                            ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
+                        }
+                    }
+                }
+                else
+                {
+                    // Process folder
+                    ProcessFolder(Environment.CurrentDirectory, SearchOption.AllDirectories);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Process folder
-                ProcessFolder(Environment.CurrentDirectory, SearchOption.AllDirectories);
+                if (_logger is { } logger)
+                {
+                    logger.Error(ex);
+                }
+                else
+                {
+                    throw;
+                }
             }
         }
 
