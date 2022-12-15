@@ -19,6 +19,7 @@ internal class SymmetricAlgorithmIntegrationCommon
 
     internal static Scope? CreateScope<TTarget>(TTarget instance)
     {
+        Console.WriteLine("OnCypherAlgorithmCreateScope ");
         var iast = Iast.Iast.Instance;
 
         if (!iast.Settings.Enabled)

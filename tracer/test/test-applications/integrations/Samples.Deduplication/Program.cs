@@ -53,6 +53,7 @@ internal static class Program
 
     private static void testMethod()
     {
+        Console.WriteLine("LINE21 ");
         ((HashAlgorithm)(MD5.Create())).ComputeHash(new byte[] { 63, 5, 6 });
         DES.Create();
         Console.WriteLine("LINE22 ");
