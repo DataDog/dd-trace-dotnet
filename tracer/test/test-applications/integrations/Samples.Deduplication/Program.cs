@@ -30,7 +30,6 @@ internal static class Program
             // Vulnerable section
             temp = MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
             Console.WriteLine("LINE1 " + temp[0]);
-            testMethod();
             HashAlgorithm t = MD5.Create();
             temp = t.ComputeHash(new byte[] { 4, 5, 6 });
             Console.WriteLine("LINE2 " + temp[0]);
@@ -40,9 +39,6 @@ internal static class Program
             Console.WriteLine("LINE4 " + temp[0]);
             temp = SHA1.Create().ComputeHash(bytes);
             Console.WriteLine("LINE6 ");
-            testHashAlgorithm(MD5.Create());
-            testHashAlgorithm(SHA1.Create());
-            Console.WriteLine("LINE7 ");
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
@@ -56,13 +52,6 @@ internal static class Program
         ((HashAlgorithm)(MD5.Create())).ComputeHash(new byte[] { 63, 5, 6 });
         DES.Create();
         Console.WriteLine("LINE22 ");
-
-        try
-        {
-            Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = true });
-        }
-        catch (Win32Exception) { }
-        Console.WriteLine("LINE23 ");
     }
 
     private static int GetExecutionTimes(string[] args)
