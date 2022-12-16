@@ -39,12 +39,6 @@ internal static class Program
             temp = MD5.Create().ComputeHash(bytes);
             Console.WriteLine("LINE4 " + temp[0]);
             temp = SHA1.Create().ComputeHash(bytes);
-            Console.WriteLine("LINE5 " + temp[0]);
-            try
-            {
-                Process.Start(new ProcessStartInfo("nonexisting2.exe") { UseShellExecute = true });
-            }
-            catch (Win32Exception) { }
             Console.WriteLine("LINE6 ");
             testHashAlgorithm(MD5.Create());
             testHashAlgorithm(SHA1.Create());
