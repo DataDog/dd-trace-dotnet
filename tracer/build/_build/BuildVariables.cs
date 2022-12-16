@@ -30,6 +30,12 @@ partial class Build
 
         envVars.Add("CORECLR_ENABLE_PROFILING", "1");
         envVars.Add("CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}");
+        
+        
+        envVars.Add("DD_PROFILER_EXCLUDE_PROCESSES", "devenv.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;" +
+                                                     "ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;" +
+                                                     "ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;" +
+                                                     "ServiceHub.RoslynCodeAnalysisService32.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe;dotnet.exe");
 
         if (EnvironmentInfo.IsWin)
         {
