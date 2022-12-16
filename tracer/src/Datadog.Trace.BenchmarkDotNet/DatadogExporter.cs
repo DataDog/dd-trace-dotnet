@@ -168,7 +168,7 @@ namespace Datadog.Trace.BenchmarkDotNet
 
                 // Ensure all the spans gets flushed before we report the success.
                 // In some cases the process finishes without sending the traces in the buffer.
-                CIVisibility.FlushSpans();
+                CIVisibility.Flush();
             }
             catch (Exception ex)
             {
