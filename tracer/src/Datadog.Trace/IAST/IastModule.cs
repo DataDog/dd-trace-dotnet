@@ -93,6 +93,7 @@ internal static class IastModule
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
+            Console.WriteLine("InvalidHashByRequest");
             return null;
         }
 
@@ -100,6 +101,7 @@ internal static class IastModule
 
         if (!frameInfo.IsValid)
         {
+            Console.WriteLine("InvalidFrame");
             return null;
         }
 
@@ -116,10 +118,12 @@ internal static class IastModule
             }
             else
             {
+                Console.WriteLine("VulnerabilityAdded");
                 return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, vulnerability);
             }
         }
 
+        Console.WriteLine("HashExit");
         return null;
     }
 
@@ -163,6 +167,7 @@ internal static class IastModule
         {
             if (string.Equals(algorithm, weakHashAlgorithm, StringComparison.OrdinalIgnoreCase))
             {
+                Console.WriteLine("InvalidHashAlgorithm " + algorithm);
                 return true;
             }
         }

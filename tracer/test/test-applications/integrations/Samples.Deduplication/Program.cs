@@ -40,14 +40,19 @@ internal static class Program
             Console.WriteLine("LINE4 ");
             SHA1.Create().ComputeHash(bytes);
             Console.WriteLine("LINE5 ");
-            testHashAlgorithm(SHA1.Create());
+            try
+            {
+                Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = true });
+            }
+            catch (Win32Exception) { }
             Console.WriteLine("LINE6 ");
             testHashAlgorithm(MD5.Create());
+            testHashAlgorithm(SHA1.Create());
             Console.WriteLine("LINE7 ");
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
-        testHashAlgorithm(new SHA1CryptoServiceProvider());
+        MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
         Console.WriteLine("MAIN DUPLICATED OUT");
     }
 
