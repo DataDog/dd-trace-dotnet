@@ -104,15 +104,5 @@ namespace Datadog.Trace.TestHelpers
 
             return this;
         }
-
-        public SpanTagAssertion PassesThroughMetadata(string description, ISet<string> tagNames)
-        {
-            foreach (var tag in tagNames)
-            {
-                _tags.Remove(tag);
-            }
-
-            return this;
-        }
     }
 }

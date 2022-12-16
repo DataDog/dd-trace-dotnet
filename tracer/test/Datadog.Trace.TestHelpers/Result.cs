@@ -59,6 +59,13 @@ namespace Datadog.Trace.TestHelpers
             return this;
         }
 
+        public Result AdditionalTags(Action<SpanAdditionalTagsAssertion> tagAssertions)
+        {
+            var t = new SpanAdditionalTagsAssertion(this, this.Span.Tags);
+            tagAssertions(t);
+            return this;
+        }
+
         public override string ToString()
         {
             string errorMessage = string.Concat(Errors.Select(s => $"{Environment.NewLine}- {s}"));

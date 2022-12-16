@@ -354,6 +354,10 @@ otel.status_code | `STATUS_CODE_UNSET`; `STATUS_CODE_OK`; `STATUS_CODE_ERROR`
 otel.status_description | No
 otel.trace_id | Yes
 span.kind | `internal`; `server`; `client`; `producer`; `consumer`
+### AdditionalTags
+Source | Operation | Required |
+---------|-----------|----------------|
+OTEL Resource Attributes | PassThru | No
 
 ## Oracle
 ### Span properties
