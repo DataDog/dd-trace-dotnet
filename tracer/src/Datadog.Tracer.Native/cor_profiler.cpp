@@ -2238,13 +2238,32 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                                     const ComPtr<IMetaDataImport2>& metadata_import)
 {
     std::stringstream orig_sstream;
-    orig_sstream << title;
-    orig_sstream << shared::ToString(caller.type.name);
+    orig_sstream << title << std::endl << std::endl;
+    orig_sstream << "Name: " << shared::ToString(caller.type.name);
     orig_sstream << ".";
     orig_sstream << shared::ToString(caller.name);
-    orig_sstream << " => (max_stack: ";
-    orig_sstream << rewriter->GetMaxStackValue();
-    orig_sstream << ")" << std::endl;
+    const auto callerNumOfArgs = caller.signature.NumberOfArguments();
+    if (callerNumOfArgs > 0)
+    {
+        orig_sstream << "(";
+        orig_sstream << callerNumOfArgs;
+        if (callerNumOfArgs == 1)
+        {
+            orig_sstream << " argument";
+        }
+        else
+        {
+            orig_sstream << " arguments";
+        }
+        orig_sstream << ")";
+    }
+    else
+    {
+        orig_sstream << "()";
+    }
+    orig_sstream << std::endl << "Signature: " << ToString(caller.signature.str()) << std::endl;
+    orig_sstream << "Max Stack: ";
+    orig_sstream << rewriter->GetMaxStackValue() << std::endl;
 
     const auto ehCount = rewriter->GetEHCount();
     const auto ehPtr = rewriter->GetEHPointer();
@@ -2260,14 +2279,13 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize);
         if (SUCCEEDED(hr))
         {
-            orig_sstream << std::endl
-                         << "  Local Var Signature: "
+            orig_sstream << "Local Var Signature: "
                          << shared::ToString(shared::HexStr(originalSignature, originalSignatureSize))
                          << std::endl;
         }
     }
 
-    orig_sstream << std::endl;
+    orig_sstream << "{" << std::endl;
     for (ILInstr* cInstr = rewriter->GetILList()->m_pNext; cInstr != rewriter->GetILList(); cInstr = cInstr->m_pNext)
     {
 
@@ -2319,7 +2337,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                         if (currentEH.m_ClassToken != mdTokenNil)
                         {
                             const auto typeInfo = GetTypeInfo(metadata_import, (mdToken) currentEH.m_ClassToken);
-                            orig_sstream << " (" << shared::ToString(typeInfo.name) << " [mdToken: 0x" << std::hex << currentEH.m_ClassToken << "])";
+                            orig_sstream << " (" << shared::ToString(typeInfo.name) << " [0x" << std::hex << currentEH.m_ClassToken << "])";
                         }
                         orig_sstream << std::endl;
                         orig_sstream << indent_values[(indent >= 0) ? indent : 0] << "{" << std::endl;
@@ -2388,11 +2406,19 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 orig_sstream << shared::ToString(memberInfo.type.name);
                 orig_sstream << ".";
                 orig_sstream << shared::ToString(memberInfo.name);
-                if (memberInfo.signature.NumberOfArguments() > 0)
+                const auto numOfArgs = memberInfo.signature.NumberOfArguments();
+                if (numOfArgs > 0)
                 {
                     orig_sstream << "(";
-                    orig_sstream << memberInfo.signature.NumberOfArguments();
-                    orig_sstream << " argument{s}";
+                    orig_sstream << numOfArgs;
+                    if (numOfArgs == 1)
+                    {
+                        orig_sstream << " argument";
+                    }
+                    else
+                    {
+                        orig_sstream << " arguments";
+                    }
                     orig_sstream << ")";
                 }
                 else
@@ -2413,7 +2439,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 WCHAR szString[1024];
                 ULONG szStringLength;
                 auto hr = metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024,
-                                                                         &szStringLength);
+                                                         &szStringLength);
                 if (SUCCEEDED(hr))
                 {
                     augmented = true;
@@ -2425,7 +2451,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
 
             if (augmented)
             {
-                orig_sstream << " [mdToken: ";
+                orig_sstream << " [";
                 orig_sstream << cInstr->m_pTarget;
                 orig_sstream << "]";
             }
@@ -2461,6 +2487,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             }
         }
     }
+    orig_sstream << "}" << std::endl;
     return orig_sstream.str();
 }
 
