@@ -29,21 +29,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.IsOpenTelemetry(excludeTags: new HashSet<string>
-            {
-                "attribute-string",
-                "attribute-int",
-                "attribute-bool",
-                "attribute-double",
-                "attribute-stringArray",
-                "attribute-stringArrayEmpty",
-                "attribute-intArray",
-                "attribute-intArrayEmpty",
-                "attribute-boolArray",
-                "attribute-boolArrayEmpty",
-                "attribute-doubleArray",
-                "attribute-doubleArrayEmpty",
-            });
+            span.IsOpenTelemetry(
+                resources: new HashSet<string>
+                {
+                    "service.instance.id",
+                    "service.name",
+                    "service.version"
+                },
+                excludeTags: new HashSet<string>
+                {
+                    "attribute-string",
+                    "attribute-int",
+                    "attribute-bool",
+                    "attribute-double",
+                    "attribute-stringArray",
+                    "attribute-stringArrayEmpty",
+                    "attribute-intArray",
+                    "attribute-intArrayEmpty",
+                    "attribute-boolArray",
+                    "attribute-boolArrayEmpty",
+                    "attribute-doubleArray",
+                    "attribute-doubleArrayEmpty",
+                });
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
