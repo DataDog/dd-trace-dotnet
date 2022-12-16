@@ -560,49 +560,39 @@ namespace Datadog.Trace.Propagators
 
         private static string TrimAndJoinStrings(IEnumerable<string?> values)
         {
-            List<string> trimmedValues;
-
-            if (values is IReadOnlyList<string?> roList)
+            switch (values)
             {
-                var count = roList.Count;
-
-                if (count == 0)
-                {
-                    // short-circuit for empty collection
+                case IReadOnlyList<string?> { Count: 1 } list:
+                    // fast path for single values
+                    return list[0]?.Trim() ?? string.Empty;
+                case IReadOnlyCollection<string?> { Count: 0 }:
+                case null:
+                    // fast path for null or empty collections
                     return string.Empty;
-                }
-
-                if (count == 1)
-                {
-                    // short-circuit for single values
-                    return roList[0]?.Trim() ?? string.Empty;
-                }
-
-                // initialize list to maximum possible size
-                // (could have less items if some are null or empty)
-                trimmedValues = new List<string>(roList.Count);
+                default:
+                    return TrimAndJoinStringsRare(values);
             }
-            else
-            {
-                // fallback if we can't determine count
-                trimmedValues = new List<string>();
-            }
+        }
 
-            static void AddToList(List<string> list, string? value)
+        private static string TrimAndJoinStringsRare(IEnumerable<string?> values)
+        {
+            static void AppendIfNullOrWhiteSpace(StringBuilder sb, string? value)
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    list.Add(value!.Trim());
+                    sb.Append(value!.Trim()).Append(TraceStateHeaderValuesSeparator);
                 }
             }
+
+            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
             switch (values)
             {
                 case string?[] array:
-                    // converts into a for loop
+                    // converts into a `for` loop
                     foreach (var value in array)
                     {
-                        AddToList(trimmedValues, value);
+                        AppendIfNullOrWhiteSpace(sb, value);
                     }
 
                     break;
@@ -611,7 +601,7 @@ namespace Datadog.Trace.Propagators
                     // uses List<T>'s struct enumerator
                     foreach (var value in list)
                     {
-                        AddToList(trimmedValues, value);
+                        AppendIfNullOrWhiteSpace(sb, value);
                     }
 
                     break;
@@ -619,18 +609,13 @@ namespace Datadog.Trace.Propagators
                 default:
                     foreach (var value in values)
                     {
-                        AddToList(trimmedValues, value);
+                        AppendIfNullOrWhiteSpace(sb, value);
                     }
 
                     break;
             }
 
-            if (trimmedValues.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            return string.Join(TraceStateHeaderValuesSeparator, trimmedValues);
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
 #if NETCOREAPP
