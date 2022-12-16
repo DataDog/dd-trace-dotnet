@@ -269,6 +269,10 @@ namespace Datadog.Trace.ClrProfiler
                new ("nunit.framework", "NUnit.Framework.Internal.Execution.WorkItem", "WorkItemComplete",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"),
                new ("NUnit3.TestAdapter", "NUnit.VisualStudio.TestAdapter.NUnitTestAdapter", "Unload",  new[] { "System.Void" }, 3, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAdapterUnloadIntegration"),
 
+                // OpenTelemetry
+               new ("OpenTelemetry.Api", "OpenTelemetry.Trace.Tracer", "StartRootSpan",  new[] { "OpenTelemetry.Trace.TelemetrySpan", "System.String", "OpenTelemetry.Trace.SpanKind", "OpenTelemetry.Trace.SpanAttributes", "System.Collections.Generic.IEnumerable`1[OpenTelemetry.Trace.Link]", "System.DateTimeOffset" }, 1, 0, 0, 1, 0, 0, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartRootSpanIntegration"),
+               new ("OpenTelemetry.Api", "OpenTelemetry.Trace.Tracer", "StartSpan",  new[] { "OpenTelemetry.Trace.TelemetrySpan", "System.String", "OpenTelemetry.Trace.SpanKind", "OpenTelemetry.Trace.SpanContext&", "OpenTelemetry.Trace.SpanAttributes", "System.Collections.Generic.IEnumerable`1[OpenTelemetry.Trace.Link]", "System.DateTimeOffset" }, 1, 0, 0, 1, 0, 0, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartSpanIntegration"),
+
                 // Oracle
                new ("Oracle.DataAccess", "Oracle.DataAccess.Client.OracleCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 4, 122, 0, 4, 122, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
                new ("Oracle.DataAccess", "Oracle.DataAccess.Client.OracleCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 4, 122, 0, 4, 122, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),
@@ -737,6 +741,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAdapterUnloadIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NUnit,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartRootSpanIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartSpanIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.OpenTelemetry,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Process,

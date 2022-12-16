@@ -287,6 +287,20 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "Npgsql")
                 .Matches("span.kind", "client"));
 
+        public static Result IsOpenTelemetry(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => { })
+            .Tags(s => s
+                // .IsOptional("events") // aka span events, added by the trace agent when the OTLP span is populated with events
+                .IsPresent("otel.library.name")
+                .IsOptional("otel.library.version")
+                .IsPresent("otel.trace_id")
+                .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
+                .IsOptional("otel.status_description")
+                .MatchesOneOf("span.kind", "internal", "server", "client", "producer", "consumer"));
+                // .IsPresent("service.instance.id") // a "resource" attribute that may be set in code
+                // .IsPresent("service.name") // a "resource" attribute that may be set in code
+                // .IsPresent("service.version")); // a "resource" attribute that may be set in code
+
         public static Result IsOracle(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "oracle.query")
