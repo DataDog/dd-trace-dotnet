@@ -9,6 +9,9 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
+    /// <summary>
+    /// Ducktype for type OpenTelemetry.BaseProcessor`1
+    /// </summary>
     [DuckCopy]
     internal struct BaseProcessorStruct
     {

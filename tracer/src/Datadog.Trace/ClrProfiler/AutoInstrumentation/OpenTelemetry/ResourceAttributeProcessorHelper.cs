@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
