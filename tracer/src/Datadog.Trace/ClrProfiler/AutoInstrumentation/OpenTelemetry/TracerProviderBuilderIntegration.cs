@@ -14,7 +14,8 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
     /// <summary>
-    /// Msmq calltarget instrumentation
+    /// OpenTelemetry.Trace.TracerProviderBuilderExtensions.Build calltarget instrumentation,
+    /// aka Sdk.CreateTracerProviderBuilder().Build()
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "OpenTelemetry",

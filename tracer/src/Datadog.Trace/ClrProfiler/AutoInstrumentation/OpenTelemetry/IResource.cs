@@ -9,6 +9,9 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
+    /// <summary>
+    /// Ducktype for type OpenTelemetry.Resources.Resource
+    /// </summary>
     internal interface IResource
     {
         IEnumerable<KeyValuePair<string, object>> Attributes { get; }
