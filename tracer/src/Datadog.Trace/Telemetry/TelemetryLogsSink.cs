@@ -74,23 +74,23 @@ internal class TelemetryLogsSink : BatchingSink<LogMessageData>, ITelemetryLogsS
             for (var i = 0; i < transports.Length; i++)
             {
                 var transport = transports[_currentTransport];
-                if (!transport.IsEnabled)
+                if (transport.IsEnabled)
                 {
-                    continue;
+                    var success = await transport.Transport.PushTelemetry(telemetryData).ConfigureAwait(false);
+                    switch (success)
+                    {
+                        case TelemetryPushResult.Success:
+                            return true;
+                        case TelemetryPushResult.FatalError:
+                            transport.IsEnabled = false;
+                            break;
+                        case TelemetryPushResult.TransientFailure:
+                        default:
+                            break;
+                    }
                 }
 
-                var success = await transport.Transport.PushTelemetry(telemetryData).ConfigureAwait(false);
-                switch (success)
-                {
-                    case TelemetryPushResult.Success: return true;
-                    case TelemetryPushResult.FatalError:
-                        _currentTransport = (_currentTransport + 1) % transports.Length;
-                        transport.IsEnabled = false;
-                        break;
-                    default:
-                        _currentTransport = (_currentTransport + 1) % transports.Length;
-                        break;
-                }
+                _currentTransport = (_currentTransport + 1) % transports.Length;
             }
 
             return false;
@@ -101,10 +101,17 @@ internal class TelemetryLogsSink : BatchingSink<LogMessageData>, ITelemetryLogsS
         }
     }
 
-    internal struct TransportStatus
+    internal class TransportStatus
     {
-        public ITelemetryTransport Transport;
-        public bool IsEnabled;
+        public TransportStatus(ITelemetryTransport transport)
+        {
+            Transport = transport;
+            IsEnabled = true;
+        }
+
+        public ITelemetryTransport Transport { get; }
+
+        public bool IsEnabled { get; set; }
     }
 
     public class TelemetryConfiguration
@@ -122,7 +129,7 @@ internal class TelemetryLogsSink : BatchingSink<LogMessageData>, ITelemetryLogsS
 
             for (var i = 0; i < transports.Length; i++)
             {
-                Transports[i] = new TransportStatus { IsEnabled = true, Transport = transports[i] };
+                Transports[i] = new TransportStatus(transports[i]);
             }
         }
 

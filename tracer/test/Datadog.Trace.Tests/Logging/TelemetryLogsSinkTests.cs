@@ -195,6 +195,42 @@ public class TelemetryLogsSinkTests
             .And.OnlyContain(x => x.Length == 1);
     }
 
+    [Fact]
+    public async Task IfTransportFails_SendsWithNextAvailable_WhenAllFailInitially()
+    {
+        var options = new BatchingSinkOptions(
+            batchSizeLimit: 1,
+            queueLimit: 100,
+            period: TimeSpan.FromMilliseconds(100));
+        var sink = new TestTelemetryLogsSink(options);
+
+        // initialize
+        var transports = new[]
+        {
+            new TestTransport(TelemetryPushResult.FatalError),
+            new TestTransport(TelemetryPushResult.TransientFailure, TelemetryPushResult.Success),
+        };
+
+        sink.Initialize(AppData, HostData, new TelemetryDataBuilder(), transports);
+
+        sink.EnqueueLog(new LogMessageData("This is my message", TelemetryLogLevel.DEBUG));
+
+        WaitForBatchCount(sink, count: 1, seconds: 600);
+
+        await WaitForPushAttempts(transports[0], count: 1);
+        await WaitForPushAttempts(transports[1], count: 1);
+
+        sink.EnqueueLog(new LogMessageData("This is my second message", TelemetryLogLevel.DEBUG));
+        WaitForBatchCount(sink, count: 2, seconds: 600);
+
+        await WaitForPushAttempts(transports[0], count: 1);
+        await WaitForPushAttempts(transports[1], count: 2);
+
+        sink.Batches.Should()
+            .HaveCount(2)
+            .And.OnlyContain(x => x.Length == 1);
+    }
+
     private static void WaitForBatchCount(TestTelemetryLogsSink sink, int count, int seconds = 10)
     {
         var deadline = DateTime.UtcNow.AddSeconds(seconds);
