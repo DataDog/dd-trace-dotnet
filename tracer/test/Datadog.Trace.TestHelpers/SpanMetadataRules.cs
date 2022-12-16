@@ -297,11 +297,9 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("otel.trace_id")
                 .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
                 .IsOptional("otel.status_description")
-                .PassesThroughMetadata("OTEL Resource Attributes", resources)
-                .MatchesOneOf("span.kind", "internal", "server", "client", "producer", "consumer"));
-                // .IsPresent("service.instance.id") // a "resource" attribute that may be set in code
-                // .IsPresent("service.name") // a "resource" attribute that may be set in code
-                // .IsPresent("service.version")); // a "resource" attribute that may be set in code
+                .MatchesOneOf("span.kind", "internal", "server", "client", "producer", "consumer"))
+            .AdditionalTags(s => s
+                .PassesThroughSource("OTEL Resource Attributes", resources));
 
         public static Result IsOracle(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
