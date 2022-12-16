@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using System.Reflection;
 using System.Reflection.Emit;
-using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -35,6 +34,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         private static Func<object, object, object> _cachedAddProcessorDelegate;
         private static Type _cachedProcessorType;
 
+        static TracerProviderBuilderIntegration()
+        {
+            _cachedAddProcessorDelegate = (Func<object, object, object>)CreateAddProcessorDelegate();
+            _cachedProcessorType = CreateProcessorType();
+        }
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -47,9 +52,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         {
             if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                _cachedAddProcessorDelegate ??= (Func<object, object, object>)CreateAddProcessorDelegate();
-                _cachedProcessorType ??= CreateProcessorType();
-
                 if (_cachedAddProcessorDelegate is not null
                     && _cachedProcessorType is not null)
                 {
@@ -72,12 +74,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 return null;
             }
 
-            // Get actual extension method from the API
+            // Get the extension method from the API
             Type baseProcessorOfActivityType = baseProcessorType.MakeGenericType(activityType);
             var targetAddProcessorMethod = builderExtensionsType?.GetMethod("AddProcessor", new Type[] { builderType, baseProcessorOfActivityType });
+            if (targetAddProcessorMethod is null)
+            {
+                return null;
+            }
 
-            // Create a Delegate that accepts its inputs and outputs as object
-            // and will handle converting to/from object
             DynamicMethod dynMethod = new DynamicMethod(
                      $"{nameof(TracerProviderBuilderIntegration)}.AddProcessor",
                      typeof(object),
@@ -117,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             DuckType.EnsureTypeVisibility(moduleBuilder, typeof(TracerProviderBuilderIntegration));
 
             var typeBuilder = moduleBuilder.DefineType(
-                "ResourceAttributeProcessor",
+                $"{typeof(TracerProviderBuilderIntegration).Namespace}.ResourceAttributeProcessor",
                 TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed,
                 parent: baseProcessorOfActivityType,
                 interfaces: null);
@@ -125,12 +129,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             var methodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
 
             // OnStart
-            var onSetListenerMethodInfo = typeof(ResourceAttributeProcessorHelper).GetMethod(nameof(ResourceAttributeProcessorHelper.OnStart), BindingFlags.Static | BindingFlags.Public)!;
+            var onStartHelperMethodInfo = typeof(ResourceAttributeProcessorHelper).GetMethod(nameof(ResourceAttributeProcessorHelper.OnStart), BindingFlags.Static | BindingFlags.Public)!;
             var onStartMethod = typeBuilder.DefineMethod("OnStart", methodAttributes, typeof(void), new[] { activityType });
             var onStartMethodIl = onStartMethod.GetILGenerator();
             onStartMethodIl.Emit(OpCodes.Ldarg_0);
             onStartMethodIl.Emit(OpCodes.Ldarg_1);
-            onStartMethodIl.EmitCall(OpCodes.Call, onSetListenerMethodInfo, null);
+            onStartMethodIl.EmitCall(OpCodes.Call, onStartHelperMethodInfo, null);
             onStartMethodIl.Emit(OpCodes.Ret);
 
             return typeBuilder.CreateTypeInfo()?.AsType();
