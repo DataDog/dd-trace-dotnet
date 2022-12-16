@@ -274,6 +274,7 @@ public sealed class TestModule
     /// <summary>
     /// Close test module
     /// </summary>
+    /// <remarks>Use CloseAsync() version whenever possible.</remarks>
     public void Close()
     {
         Close(null);
@@ -282,6 +283,7 @@ public sealed class TestModule
     /// <summary>
     /// Close test module
     /// </summary>
+    /// <remarks>Use CloseAsync() version whenever possible.</remarks>
     /// <param name="duration">Duration of the test module</param>
     public void Close(TimeSpan? duration)
     {

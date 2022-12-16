@@ -147,7 +147,7 @@ namespace Datadog.Trace.Ci
                 SynchronizationContext.SetSynchronizationContext(null);
                 if (!FlushAsync().Wait(30_000))
                 {
-                    Log.Error("Timeout occurred when flushing spans.");
+                    Log.Error($"Timeout occurred when flushing spans.{Environment.NewLine}{Environment.StackTrace}");
                 }
             }
             finally

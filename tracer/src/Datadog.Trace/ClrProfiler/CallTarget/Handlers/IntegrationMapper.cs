@@ -590,7 +590,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *
              *      In case the continuation is for a Task/ValueTask, the returnValue type will be an object and the value null.
              *      In case the continuation is for a Task<T>/ValueTask<T>, the returnValue type will be T with the instance value after the task completes.
-             *
+             *      [Type] represents a type that we can reference directly, instead of using generics.
              */
 
             Log.Debug($"Creating AsyncEndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
