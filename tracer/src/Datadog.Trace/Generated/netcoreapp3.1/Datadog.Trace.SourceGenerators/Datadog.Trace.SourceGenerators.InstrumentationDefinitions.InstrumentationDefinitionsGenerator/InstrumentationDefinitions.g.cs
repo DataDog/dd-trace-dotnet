@@ -269,6 +269,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("nunit.framework", "NUnit.Framework.Internal.Execution.WorkItem", "WorkItemComplete",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"),
 
                 // OpenTelemetry
+               new ("OpenTelemetry", "OpenTelemetry.Trace.TracerProviderBuilderExtensions", "Build",  new[] { "OpenTelemetry.Trace.TracerProvider", "OpenTelemetry.Trace.TracerProviderBuilder" }, 1, 0, 0, 1, 0, 0, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.TracerProviderBuilderIntegration"),
                new ("OpenTelemetry.Api", "OpenTelemetry.Trace.Tracer", "StartRootSpan",  new[] { "OpenTelemetry.Trace.TelemetrySpan", "System.String", "OpenTelemetry.Trace.SpanKind", "OpenTelemetry.Trace.SpanAttributes", "System.Collections.Generic.IEnumerable`1[OpenTelemetry.Trace.Link]", "System.DateTimeOffset" }, 1, 0, 0, 1, 0, 0, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartRootSpanIntegration"),
                new ("OpenTelemetry.Api", "OpenTelemetry.Trace.Tracer", "StartSpan",  new[] { "OpenTelemetry.Trace.TelemetrySpan", "System.String", "OpenTelemetry.Trace.SpanKind", "OpenTelemetry.Trace.SpanContext&", "OpenTelemetry.Trace.SpanAttributes", "System.Collections.Generic.IEnumerable`1[OpenTelemetry.Trace.Link]", "System.DateTimeOffset" }, 1, 0, 0, 1, 0, 0, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartSpanIntegration"),
 
@@ -743,7 +744,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemPerformWorkIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NUnit,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartRootSpanIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.TracerProviderBuilderIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartRootSpanIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartSpanIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.OpenTelemetry,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
