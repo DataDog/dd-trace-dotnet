@@ -584,12 +584,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *      - [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, in CallTargetState state);
              *
              * Or as a Task<> return
-             *      - Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
-             *      - Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
-             *      - Task<[Type]> OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
-             *      - Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
-             *      - Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state);
-             *      - Task<[Type]> OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, in CallTargetState state);
+             *      - async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
+             *      - async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
+             *      - async Task<[Type]> OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
              *
              *      In case the continuation is for a Task/ValueTask, the returnValue type will be an object and the value null.
              *      In case the continuation is for a Task<T>/ValueTask<T>, the returnValue type will be T with the instance value after the task completes.
