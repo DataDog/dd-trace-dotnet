@@ -517,17 +517,44 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        private static bool TryGetSingle(IEnumerable<string?> values, out string? value)
+        private static bool TryGetSingle(IEnumerable<string?> values, out string value)
         {
-            var list = values as IReadOnlyList<string?> ?? values.Take(2).ToList();
-
-            if (list.Count == 1)
+            if (values is IReadOnlyList<string?> list)
             {
-                value = list[0];
-                return true;
+                if (list.Count == 1)
+                {
+                    value = list[0] ?? string.Empty;
+                    return true;
+                }
+
+                value = string.Empty;
+                return false;
             }
 
-            value = null;
+            return TryGetSingleRare(values, out value);
+        }
+
+        private static bool TryGetSingleRare(IEnumerable<string?> values, out string value)
+        {
+            value = string.Empty;
+            var hasValue = false;
+
+            foreach (var s in values)
+            {
+                if (!hasValue)
+                {
+                    // save first item
+                    value = s ?? string.Empty;
+                    hasValue = true;
+                }
+                else
+                {
+                    // we already saved the first item and there is a second one
+                    return false;
+                }
+            }
+
+            // there were no items
             return false;
         }
 
