@@ -29,22 +29,22 @@ internal static class Program
 
             temp = MD5.Create().ComputeHash(bytes);
             Console.WriteLine("LINE4 " + temp[0]);
-            temp = SHA1.Create().ComputeHash(bytes);
+            temp = SHA1.Create().ComputeHash(temp);
             Console.WriteLine("LINE3 " + temp[0]);
 
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             // Vulnerable section
-            temp = MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
+            temp = MD5.Create().ComputeHash(temp);
             Console.WriteLine("LINE1 " + temp[0]);
             HashAlgorithm t = MD5.Create();
-            temp = t.ComputeHash(new byte[] { 4, 5, 6 });
+            temp = t.ComputeHash(temp);
             Console.WriteLine("LINE2 " + temp[0]);
-            temp = SHA1.Create().ComputeHash(new byte[] { 5, 5, 6 });
+            temp = SHA1.Create().ComputeHash(temp);
             Console.WriteLine("LINE6 ");
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
-        temp = MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
+        temp = MD5.Create().ComputeHash(temp);
         Console.WriteLine("MAIN DUPLICATED OUT" + temp[0]);
     }
 
