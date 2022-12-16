@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                         var span = activityMapping.Scope.Span;
                         foreach (var attribute in resource.Attributes)
                         {
-                            // Set additional span fields for specific keys
+                            // In addition to copying the attribute as a tag, update span fields for specific keys
                             if (attribute.Key == "service.name")
                             {
                                 span.ServiceName = attribute.Value.ToString();
