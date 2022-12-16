@@ -155,9 +155,16 @@ internal class IastRequestContext
         {
             foreach (var header in headers)
             {
-                foreach (var singleValue in header.Value)
+                if (header.Value.Count > 1)
                 {
-                    AddHeaderData(header.Key, singleValue);
+                    foreach (var singleValue in header.Value)
+                    {
+                        AddHeaderData(header.Key, singleValue);
+                    }
+                }
+                else
+                {
+                    AddHeaderData(header.Key, header.Value);
                 }
             }
         }
