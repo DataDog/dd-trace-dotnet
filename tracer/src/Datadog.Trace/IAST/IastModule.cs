@@ -167,11 +167,12 @@ internal static class IastModule
         {
             if (string.Equals(algorithm, weakHashAlgorithm, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("InvalidHashAlgorithm " + algorithm);
+                Console.WriteLine("ValidHashAlgorithm " + algorithm);
                 return true;
             }
         }
 
+        Console.WriteLine("InvalidHashAlgorithm " + algorithm);
         return false;
     }
 

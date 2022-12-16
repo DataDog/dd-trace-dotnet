@@ -281,6 +281,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1>(TTarget instance, ref TArg1 arg1)
         {
+            Console.WriteLine("INVOKER");
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
                 IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();

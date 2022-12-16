@@ -28,21 +28,21 @@ internal static class Program
             var bytes = new byte[] { 1, 5, 6 };
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             // Vulnerable section
-            MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
-            Console.WriteLine("LINE1 ");
+            temp = MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
+            Console.WriteLine("LINE1 " + temp[0]);
             testMethod();
             HashAlgorithm t = MD5.Create();
-            t.ComputeHash(new byte[] { 4, 5, 6 });
-            Console.WriteLine("LINE2 ");
-            SHA1.Create().ComputeHash(new byte[] { 5, 5, 6 });
-            Console.WriteLine("LINE3 ");
-            MD5.Create().ComputeHash(bytes);
-            Console.WriteLine("LINE4 ");
-            SHA1.Create().ComputeHash(bytes);
-            Console.WriteLine("LINE5 ");
+            temp = t.ComputeHash(new byte[] { 4, 5, 6 });
+            Console.WriteLine("LINE2 " + temp[0]);
+            temp = SHA1.Create().ComputeHash(new byte[] { 5, 5, 6 });
+            Console.WriteLine("LINE3 " + temp[0]);
+            temp = MD5.Create().ComputeHash(bytes);
+            Console.WriteLine("LINE4 " + temp[0]);
+            temp = SHA1.Create().ComputeHash(bytes);
+            Console.WriteLine("LINE5 " + temp[0]);
             try
             {
-                Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo("nonexisting2.exe") { UseShellExecute = true });
             }
             catch (Win32Exception) { }
             Console.WriteLine("LINE6 ");
@@ -52,8 +52,8 @@ internal static class Program
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
-        MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
-        Console.WriteLine("MAIN DUPLICATED OUT");
+        temp = MD5.Create().ComputeHash(new byte[] { 2, 5, 6 });
+        Console.WriteLine("MAIN DUPLICATED OUT" + temp[0]);
     }
 
     private static void testMethod()
