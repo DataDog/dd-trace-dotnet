@@ -22,6 +22,7 @@ public class InstrumentationVerificationSanityCheckTests : TestHelper
     }
 
     [Fact]
+    [Trait("Category", "LinuxUnsupported")] // Linux support is not implemented yet
     public void WriteInstrumentationToDisk_IsEnabled_FilesGetWrittenToTheAppropriateFolder()
     {
         // Arrange
@@ -42,6 +43,7 @@ public class InstrumentationVerificationSanityCheckTests : TestHelper
     }
 
     [Fact]
+    [Trait("Category", "LinuxUnsupported")] // Linux support is not implemented yet
     public void WriteInstrumentationToDisk_IsDisabled_NothingGetsWrittenToDisk()
     {
         // Arrange
@@ -58,6 +60,7 @@ public class InstrumentationVerificationSanityCheckTests : TestHelper
     }
 
     [Fact]
+    [Trait("Category", "LinuxUnsupported")] // Linux support is not implemented yet
     public void WriteInstrumentationToDisk_IsNotSpecified_DefaultsToFalseAndNothingGetsWrittenToDisk()
     {
         // Act
