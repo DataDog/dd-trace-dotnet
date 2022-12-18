@@ -33,7 +33,7 @@ public class InstrumentationVerificationSanityCheckTests : TestHelper
         using var processResult = RunSampleAndWaitForExit(agent);
 
         // Assert
-        var folderFullPath = InstrumentationVerification.GetInstrumentationLogsFolder(processResult.Process, EnvironmentHelper.LogDirectory);
+        var folderFullPath = InstrumentationVerification.FindInstrumentationLogsFolder(processResult.Process, EnvironmentHelper.LogDirectory);
         folderFullPath.Should().NotBeNull();
         Directory.Exists(folderFullPath).Should().BeTrue();
         Directory.GetFiles(folderFullPath, "*", SearchOption.AllDirectories).Length.Should().BeGreaterThan(expected: 0);
@@ -54,7 +54,7 @@ public class InstrumentationVerificationSanityCheckTests : TestHelper
         using var processResult = RunSampleAndWaitForExit(agent);
 
         // Assert
-        InstrumentationVerification.GetInstrumentationLogsFolder(processResult.Process, EnvironmentHelper.LogDirectory)
+        InstrumentationVerification.FindInstrumentationLogsFolder(processResult.Process, EnvironmentHelper.LogDirectory)
                                    .Should()
                                    .BeNull();
     }
@@ -72,7 +72,7 @@ public class InstrumentationVerificationSanityCheckTests : TestHelper
                       EnvironmentVariables.ContainsKey(InstrumentationVerification.InstrumentationVerificationEnabled)
                      .Should().BeFalse();
 
-        InstrumentationVerification.GetInstrumentationLogsFolder(processResult.Process, EnvironmentHelper.LogDirectory)
+        InstrumentationVerification.FindInstrumentationLogsFolder(processResult.Process, EnvironmentHelper.LogDirectory)
                                    .Should()
                                    .BeNull();
     }

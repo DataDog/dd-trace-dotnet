@@ -31,7 +31,7 @@ public static class InstrumentationVerification
 
     public static void VerifyInstrumentation(Process process, string logDirectory)
     {
-        var instrumentedLogsPath = GetInstrumentationLogsFolder(process, logDirectory);
+        var instrumentedLogsPath = FindInstrumentationLogsFolder(process, logDirectory);
         if (instrumentedLogsPath == null)
         {
             throw new Exception($"Unable to find instrumentation verification directory for process {process.Id}");
@@ -56,7 +56,7 @@ public static class InstrumentationVerification
             "Instrumentation verification test failed:" + Environment.NewLine + string.Join(Environment.NewLine, results.Where(r => !r.IsValid).Select(r => r.FailureReason)));
     }
 
-    public static string GetInstrumentationLogsFolder(Process process, string logsFolder)
+    public static string FindInstrumentationLogsFolder(Process process, string logsFolder)
     {
         var processExecutableFileName = Path.GetFileNameWithoutExtension(process.StartInfo.FileName);
         Assert.NotNull(logsFolder);
