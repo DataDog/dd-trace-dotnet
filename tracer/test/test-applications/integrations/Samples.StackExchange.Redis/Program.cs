@@ -26,7 +26,7 @@ namespace Samples.StackExchangeRedis
 
         private static string Host()
         {
-            return Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
+            return Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6379,localhost:6380";
         }
 
         private static void RunStackExchange(string prefix)
@@ -79,7 +79,7 @@ namespace Samples.StackExchangeRedis
 
                 try
                 {
-                    redis.GetServer(Host()).FlushDatabase(1);
+                    redis.GetServer(Host().Split(',').First()).FlushDatabase(1);
                 }
                 catch
                 {
