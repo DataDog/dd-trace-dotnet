@@ -6,6 +6,7 @@
 using System;
 using System.Text;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -15,7 +16,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> interface
     /// </summary>
-    public static class SpanExtensions
+    public static partial class SpanExtensions
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
 
@@ -82,8 +83,10 @@ namespace Datadog.Trace
             {
                 setTag(Tags.User.Scope, userDetails.Scope);
             }
+#if NETFRAMEWORK
 
-            throw new BlockException();
+            RunBlockingCheck(userDetails.Id);
+#endif
         }
     }
 }

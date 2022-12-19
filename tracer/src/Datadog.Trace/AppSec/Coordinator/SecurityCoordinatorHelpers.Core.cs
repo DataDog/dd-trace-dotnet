@@ -88,17 +88,12 @@ internal static partial class SecurityCoordinatorHelpers
         {
             var transport = new SecurityCoordinator.HttpTransport(context);
             var userId = span.Context?.TraceContext?.Tags?.GetTag(Tags.User.Id);
-            if (!transport.Blocked && userId != null && !string.IsNullOrEmpty(userId))
+            if (userId != null && !string.IsNullOrEmpty(userId))
             {
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.UserId, userId } };
                 using var result = securityCoordinator.RunWaf(args);
-                Console.WriteLine(context.Response.HasStarted);
-                if (result?.ShouldBeReported is true)
-                {
-                    securityCoordinator.Report(result, result.Block);
-                    securityCoordinator.MarkBlocked();
-                }
+                securityCoordinator.CheckAndBlock(result);
             }
         }
     }

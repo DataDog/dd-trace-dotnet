@@ -69,8 +69,7 @@ internal readonly partial struct SecurityCoordinator
     internal IDictionary<string, object> GetPathParams() => _context.Request.RequestContext.RouteData.Values.ToDictionary(c => c.Key, c => c.Value);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Coordinator.SecurityCoordinator"/> class.
-    /// framework can do it all at once, but framework only unfortunately
+    /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
     internal void CheckAndBlock(Dictionary<string, object> args)
     {
