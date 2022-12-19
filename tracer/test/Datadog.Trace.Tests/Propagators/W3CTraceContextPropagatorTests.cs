@@ -204,7 +204,8 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("dd=s:2", 2, null, null, "")]                                                                                    // sampling priority
         [InlineData("dd=o:rum", null, "rum", null, "")]                                                                              // origin
         [InlineData("dd=t.dm:-4;t.usr.id:12345", null, null, "_dd.p.dm=-4,_dd.p.usr.id=12345", "")]                                  // propagated tags
-        [InlineData("key1=value1", null, null, null, "key1=value1")]                                                                 // additional values
+        [InlineData("key1=value1,key2=value2", null, null, null, "key1=value1,key2=value2")]                                         // additional values
+        [InlineData("key1=value1dd=,key2=value2", null, null, null, "key1=value1dd=,key2=value2")]                                   // additional values, ignore embedded "dd="
         [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345~,key1=value1", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345=", "key1=value1")] // all, and '~' is converted to '='
         // invalid propagated tag (first)
         [InlineData("dd=s:2;o:rum;:12345;t.dm:-4", 2, "rum", "_dd.p.dm=-4", "")]    // no key
