@@ -111,7 +111,7 @@ namespace Datadog.Trace
         /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
         internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
-            : this(parent?.TraceId ?? traceId, serviceName)
+            : this(parent?.TraceId > 0 ? parent.TraceId : traceId, serviceName)
         {
             SpanId = spanId ?? SpanIdGenerator.CreateNew();
             Parent = parent;
