@@ -16,9 +16,15 @@ internal class IastModule
 {
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
+    private const string OperationNameSqlInjection = "sql_injection";
 
     public IastModule()
     {
+    }
+
+    public static Scope? OnSqlQuery(string query, IntegrationId integrationId, Iast iast)
+    {
+        return GetScope(Tracer.Instance, query, integrationId, VulnerabilityType.SqlInjection, OperationNameSqlInjection, iast, true);
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
@@ -53,6 +59,13 @@ internal class IastModule
         }
 
         var traceContext = (tracer.ActiveScope as Scope)?.Span?.Context?.TraceContext;
+
+        TaintedObject? tainted = null;
+        if (taintedFromEvidenceRequired && ((tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue)) == null))
+        {
+            return null;
+        }
+
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
 
         TaintedObject? tainted = null;
