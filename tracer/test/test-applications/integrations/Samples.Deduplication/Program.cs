@@ -16,7 +16,9 @@ internal static class Program
 
         for (int i = 0; i < times; i++)
         {
+            Console.WriteLine("WriteHashIN");
             WriteHash();
+            Console.WriteLine("WriteHashOUT");
         }
     }
 
