@@ -16,9 +16,9 @@ using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner;
 
-internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrumentationErrorsSettings>
+internal class AnalyzeInstrumentationErrorsCommand : Command<AnalyzeInstrumentationErrorsSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, AnalyzeInstrumentationErrorsSettings settings)
+    public override int Execute(CommandContext context, AnalyzeInstrumentationErrorsSettings settings)
     {
         var process = $"'{settings.ProcessName ?? "na"}'";
         if (settings.Pid != null)
@@ -82,8 +82,6 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
                     AnsiConsole.WriteLine($"Instrumented Decompiled Code:{Environment.NewLine}{method.DecompiledCode.Value}");
                 }
             }
-
-            await ReportResult(AnsiConsole.ExportText()).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -94,13 +92,8 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
         return allVerificationsPassed ? 0 : -1;
     }
 
-    private Task<bool> ReportResult(string result)
-    {
-        return Task.FromResult(true);
-    }
-
     /// <param name="tracerLogDir">Tracer logs directory</param>
-    /// <returns>e.g. C:\ProgramData\Datadog .NET Tracer\logs\InstrumentationVerification\dotnet_12345_dd-mm-yyyy_hh-mm-ss</returns>
+    /// <returns>e.g. C:\ProgramData\Datadog .NET Tracer\logs\InstrumentationVerification\dotnet_12345_dd-mm-yyyy_hh-mm-ss or C:\ProgramData\Datadog-APM\logs\DotNet\dotnet_12345_dd-mm-yyyy_hh-mm-ss</returns>
     private string GetProcessInstrumentationVerificationLogDirectory(string tracerLogDir, AnalyzeInstrumentationErrorsSettings settings)
     {
         var instrumentationVerificationLogs = Path.Combine(tracerLogDir, InstrumentedAssemblyGeneratorConsts.InstrumentedAssemblyGeneratorLogsFolder);
@@ -117,21 +110,37 @@ internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrum
 
         if (string.IsNullOrEmpty(settings.ProcessName) && settings.Pid == null)
         {
-            return dirs.Count == 1 ? dirs[0].FullName : null;
+            DirectoryInfo dir = null;
+            if (dirs.Count > 1)
+            {
+                AnsiConsole.WriteLine($"There is more than one directory in {instrumentationVerificationLogs}, taking the last modified one");
+                dir = dirs.OrderByDescending(dir => dir.LastWriteTime).First();
+            }
+            else
+            {
+                dir = dirs.FirstOrDefault();
+            }
+
+            return dir?.FullName;
         }
 
-        var processName = string.IsNullOrEmpty(settings.ProcessName) ? "[A-Z0-9]" : $"({settings.ProcessName})";
+        var processName = string.IsNullOrEmpty(settings.ProcessName) ? "[A-Za-z0-9.]*" : $"({settings.ProcessName})";
         var pid = settings.Pid == null ? "\\d+" : settings.Pid.ToString();
         var pattern = $"^{processName}(_){pid}(_)[0-9-_]+$";
-
         var candidates = dirs.Where(d => Regex.IsMatch(d.Name, pattern)).ToList();
         if (candidates.Count == 1)
         {
             return candidates[0].FullName;
         }
 
+        if (candidates.Count == 0)
+        {
+            AnsiConsole.WriteLine($"No directory was found matching pattern {pattern}, make sure {settings.Pid} is right");
+            return null;
+        }
+
         AnsiConsole.WriteLine("There is more than one directory that match the argument, taking the last modified directory");
-        return candidates.OrderByDescending(dir => dir.LastWriteTime).FirstOrDefault()?.FullName;
+        return candidates.OrderByDescending(dir => dir.LastWriteTime).First().FullName;
     }
 
     private string GetLogDirectory(int? pid)
