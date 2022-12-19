@@ -40,7 +40,7 @@ public class DeduplicationTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = RunSampleAndWaitForExit(agent, "5");
-        var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
+        var spans = agent.WaitForSpans(expectedSpanCount, timeoutInMilliseconds: 40000, operationName: ExpectedOperationName);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
