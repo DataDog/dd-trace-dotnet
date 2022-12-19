@@ -89,25 +89,30 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateTraceStateHeader(SpanContext context)
         {
-            var samplingPriority = SamplingPriorityToString(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
-            StringBuilder? sb = null;
+            var sb = StringBuilderCache.Acquire(100);
 
             try
             {
-                sb = StringBuilderCache.Acquire(100);
                 sb.Append("dd=");
+
+                // sampling priority ("s:<value>")
+                var samplingPriority = SamplingPriorityToString(context.TraceContext?.SamplingPriority);
 
                 if (samplingPriority != null)
                 {
                     sb.Append("s:").Append(samplingPriority).Append(';');
                 }
 
-                if (!string.IsNullOrWhiteSpace(context.Origin))
+                // origin ("o:<value>")
+                var origin = context.TraceContext?.Origin;
+
+                if (!string.IsNullOrWhiteSpace(origin))
                 {
-                    var origin = ReplaceCharacters(context.Origin, LowerBound, UpperBound, OutOfBoundsReplacement, InjectOriginReplacements);
-                    sb.Append("o:").Append(origin).Append(';');
+                    var replacedOrigin = ReplaceCharacters(origin!, LowerBound, UpperBound, OutOfBoundsReplacement, InjectOriginReplacements);
+                    sb.Append("o:").Append(replacedOrigin).Append(';');
                 }
 
+                // propagated tags ("t.<key>:<value>")
                 if (context.TraceContext?.Tags?.ToArray() is { Length: > 0 } tags)
                 {
                     foreach (var tag in tags)
