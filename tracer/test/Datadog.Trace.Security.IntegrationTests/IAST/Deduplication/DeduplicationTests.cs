@@ -28,8 +28,8 @@ public class DeduplicationTests : TestHelper
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    [InlineData(false)]
     [InlineData(true)]
+    [InlineData(false)]
     public async Task SubmitsTraces(bool deduplicationEnabled)
     {
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
