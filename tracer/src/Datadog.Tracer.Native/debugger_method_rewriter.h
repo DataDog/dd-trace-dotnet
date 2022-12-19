@@ -99,6 +99,8 @@ public:
     static HRESULT IsTypeImplementIAsyncStateMachine(const ComPtr<IMetaDataImport2>& metadataImport, const ULONG32 typeToken, bool& isTypeImplementIAsyncStateMachine);
     HRESULT IsAsyncMethodProbe(const ComPtr<IMetaDataImport2>& metadataImport, const FunctionInfo* caller, bool& isAsyncMethod) const;
     static HRESULT GetTaskReturnType(const ILInstr* instruction, ModuleMetadata& moduleMetadata, const std::vector<TypeSignature>& methodLocals, TypeSignature* returnType);
+    static void MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
+                                     const WSTRING& reasoning);
 };
 
 } // namespace debugger

@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Debugger.ProbeStatuses;
+using Datadog.Trace.Debugger.Sink.Models;
 
 namespace Datadog.Trace.Debugger.PInvoke
 {
@@ -45,8 +46,17 @@ namespace Datadog.Trace.Debugger.PInvoke
                                  .Select(
                                       nativeProbeStatus =>
                                           new ProbeStatus(
-                                              Marshal.PtrToStringUni(nativeProbeStatus.ProbeId), nativeProbeStatus.Status))
+                                              Marshal.PtrToStringUni(nativeProbeStatus.ProbeId),
+                                              nativeProbeStatus.Status,
+                                              CreateErrorMessageIfNeeded(nativeProbeStatus)))
                                  .ToArray();
+        }
+
+        private static string CreateErrorMessageIfNeeded(NativeProbeStatus nativeProbeStatus)
+        {
+            return (nativeProbeStatus.Status == Status.ERROR && nativeProbeStatus.ErrorMessage != IntPtr.Zero) ?
+                       Marshal.PtrToStringUni(nativeProbeStatus.ErrorMessage) :
+                       null;
         }
 
         // the "dll" extension is required on .NET Framework

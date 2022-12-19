@@ -84,6 +84,20 @@ bool debugger::ProbesMetadataTracker::SetProbeStatus(const shared::WSTRING& prob
     return false;
 }
 
+bool debugger::ProbesMetadataTracker::SetErrorProbeStatus(const shared::WSTRING& probeId,
+                                                          const shared::WSTRING& errorMessage)
+{
+    std::shared_ptr<ProbeMetadata> probeMetadata;
+    if (TryGetMetadata(probeId, probeMetadata))
+    {
+        probeMetadata->status = ProbeStatus::_ERROR;
+        probeMetadata->errorMessage = errorMessage;
+        return true;
+    }
+
+    return false;
+}
+
 int debugger::ProbesMetadataTracker::RemoveProbes(const std::vector<shared::WSTRING>& probes)
  {
     std::lock_guard lock(_probeMetadataMapMutex);

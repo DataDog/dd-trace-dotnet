@@ -23,6 +23,7 @@ namespace Datadog.Trace.Debugger.Sink.Models
         [JsonProperty("status")]
         public Status Status { get; }
 
+        [JsonProperty("exception")]
         public ProbeException Exception { get; private set; }
 
         public void SetException(Exception exception, string errorMessage)
@@ -41,6 +42,7 @@ namespace Datadog.Trace.Debugger.Sink.Models
 
             if (!string.IsNullOrWhiteSpace(errorMessage))
             {
+                Exception.Type ??= "NO_TYPE";
                 Exception.Message = errorMessage;
             }
         }
