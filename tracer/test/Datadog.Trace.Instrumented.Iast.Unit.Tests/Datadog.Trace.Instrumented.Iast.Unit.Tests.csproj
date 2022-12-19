@@ -6,6 +6,7 @@
   
   <PropertyGroup>
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.runsettings</RunSettingsFilePath>
+    <MyItem>'&gt;'</MyItem>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,5 +23,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="echo $(MyItem) &gt; $(ProjectDir)zo" />
+  </Target>
 
 </Project>
