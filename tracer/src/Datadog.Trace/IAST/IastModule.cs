@@ -15,9 +15,15 @@ internal class IastModule
 {
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
+    private const string OperationNameSqlInjection = "sql_injection";
 
     public IastModule()
     {
+    }
+
+    public static Scope? OnSqlQuery(string query, IntegrationId integrationId, Iast iast)
+    {
+        return GetScope(Tracer.Instance, query, integrationId, VulnerabilityType.SqlInjection, OperationNameSqlInjection, iast, true);
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
@@ -42,7 +48,7 @@ internal class IastModule
         return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash, iast);
     }
 
-    private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast)
+    private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast, bool taintedFromEvidenceRequired = false)
     {
         if (!iast.Settings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
@@ -51,6 +57,13 @@ internal class IastModule
         }
 
         var traceContext = (tracer.ActiveScope as Scope)?.Span?.Context?.TraceContext;
+
+        TaintedObject? tainted = null;
+        if (taintedFromEvidenceRequired && ((tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue)) == null))
+        {
+            return null;
+        }
+
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
 
         if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
@@ -69,7 +82,7 @@ internal class IastModule
 
         // Sometimes we do not have the file/line but we have the method/class.
         var filename = frameInfo.StackFrame?.GetFileName();
-        var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
+        var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue, tainted?.Ranges));
 
         if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
