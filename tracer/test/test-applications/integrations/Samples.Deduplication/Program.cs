@@ -25,8 +25,6 @@ internal static class Program
     {
         for (int i = 0; i < times; i++)
         {
-            var bytes = new byte[] { 1, 5, 6 };
-
             temp = MD5.Create().ComputeHash(bytes);
             Console.WriteLine("LINE4 " + temp[0]);
             temp = SHA1.Create().ComputeHash(temp);
