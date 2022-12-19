@@ -221,6 +221,13 @@ namespace Datadog.Trace
         /// </summary>
         internal string RawSpanId { get; }
 
+        /// <summary>
+        /// Gets or sets additional key/value pairs from an upstream "tracestate" W3C header that we will propagate downstream.
+        /// This value will _not_ include the "dd" key, which is parsed out into other individual values
+        /// (e.g. sampling priority, origin, propagates tags, etc).
+        /// </summary>
+        internal string AdditionalW3CTraceState { get; set; }
+
         internal PathwayContext? PathwayContext { get; private set; }
 
         /// <inheritdoc/>

@@ -132,18 +132,28 @@ namespace Datadog.Trace.Propagators
                     }
                 }
 
-                // TODO: propagate other "tracestate" values we received from upstream service
-
                 if (sb.Length == 3)
                 {
-                    // "dd=", we never appended anything
-                    return string.Empty;
+                    // remove "dd=" since we never appended anything
+                    sb.Clear();
+                }
+                else if (sb[sb.Length - 1] == ';')
+                {
+                    // remove trailing ";"
+                    sb.Length--;
                 }
 
-                // remove trailing ";"
-                if (sb[sb.Length - 1] == ';')
+                // additional tracestate from other vendors
+                var additionalState = context.TraceContext?.AdditionalW3CTraceState;
+
+                if (!string.IsNullOrWhiteSpace(additionalState))
                 {
-                    sb.Length--;
+                    if (sb.Length > 0)
+                    {
+                        sb.Append(',');
+                    }
+
+                    sb.Append(additionalState!.Trim());
                 }
 
                 return sb.ToString();
@@ -399,57 +409,68 @@ namespace Datadog.Trace.Propagators
             }
 
             header = header.Trim();
+            int ddStartIndex;
 
-            var ddStart = header.IndexOf("dd=", StringComparison.Ordinal);
-
-            if (ddStart > 0)
+            if (header.StartsWith("dd=", StringComparison.Ordinal))
+            {
+                ddStartIndex = 0;
+            }
+            else
             {
                 // if "dd=" is not at start of header, make sure we find the one preceded by comma
-                // in case there is something like "key1=valuedd=whatisthis?,dd=..."
-                //                                                           ^ take this one
+                // in case there is something like "key1=valuedd=whatisthis,dd=..."
+                //                                                          ^ take this one
                 //                                            ^ ignore this one
-                ddStart = header.IndexOf(",dd=", ddStart - 1, StringComparison.Ordinal) + 1;
+                ddStartIndex = header.IndexOf(",dd=", StringComparison.Ordinal);
+
+                if (ddStartIndex >= 0)
+                {
+                    // skip the ',' (but don't add 1 if ddStartIndex == -1)
+                    ddStartIndex++;
+                }
             }
 
-            if (ddStart < 0)
+            if (ddStartIndex < 0)
             {
                 // "dd=" was not found in header
                 additionalValues = header;
                 return;
             }
 
-            var ddEnd = header.IndexOf(',', ddStart + 3);
+            var ddEndIndex = header.IndexOf(',', ddStartIndex + 3);
 
-            if (ddEnd < 0)
+            if (ddEndIndex < 0)
             {
                 // comma not found, "dd=" reaches the end of header
-                ddEnd = header.Length;
+                ddEndIndex = header.Length;
             }
 
-            ddValues = header.Substring(ddStart, ddEnd - ddStart);
+            ddValues = header.Substring(ddStartIndex, ddEndIndex - ddStartIndex);
 
-            if (ddStart == 0 && ddEnd == header.Length)
+            if (ddStartIndex == 0 && ddEndIndex == header.Length)
             {
                 // "dd" was the only key, no additional values
                 additionalValues = string.Empty;
             }
-            else if (ddStart == 0)
+            else if (ddStartIndex == 0)
             {
                 // "dd" first, additional values later
-                additionalValues = header.Substring(ddEnd + 1, header.Length - ddEnd - 1);
+                additionalValues = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
             }
-            else if (ddEnd == header.Length)
+            else if (ddEndIndex == header.Length)
             {
                 // additional values first, "dd" later
-                additionalValues = header.Substring(0, ddStart - 1);
+                additionalValues = header.Substring(0, ddStartIndex - 1);
             }
             else
             {
                 // additional values on both sides, "dd" in the middle
-                var otherValuesLeft = header.Substring(0, ddStart - 1);
-                var otherValuesRight = header.Substring(ddEnd + 1, header.Length - ddEnd - 1);
+                var otherValuesLeft = header.Substring(0, ddStartIndex - 1);
+                var otherValuesRight = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
                 additionalValues = string.Join(",", otherValuesLeft, otherValuesRight);
             }
+
+            additionalValues = additionalValues.Trim();
         }
 
         [return: NotNullIfNotNull("samplingPriority")]
@@ -535,6 +556,7 @@ namespace Datadog.Trace.Propagators
                 rawSpanId: traceParent.RawParentId);
 
             spanContext.PropagatedTags = traceState.PropagatedTags;
+            spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
             return true;
         }
 

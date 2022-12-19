@@ -70,6 +70,13 @@ namespace Datadog.Trace
         public string Origin { get; set; }
 
         /// <summary>
+        /// Gets or sets additional key/value pairs from upstream "tracestate" header that we will propagate downstream.
+        /// This value will _not_ include the "dd" key, which is parsed out into other individual values
+        /// (e.g. sampling priority, origin, propagates tags, etc).
+        /// </summary>
+        internal string AdditionalW3CTraceState { get; set; }
+
+        /// <summary>
         /// Gets the IAST context.
         /// </summary>
         internal IastRequestContext IastRequestContext => _iastRequestContext;
