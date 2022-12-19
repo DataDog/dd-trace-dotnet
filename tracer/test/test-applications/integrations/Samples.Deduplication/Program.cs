@@ -16,12 +16,17 @@ internal static class Program
 
         for (int i = 0; i < times; i++)
         {
-#pragma warning disable SYSLIB0021 // Type or member is obsolete
-            // Vulnerable section
-            var result = MD5.Create().ComputeHash(new byte[] { 3, 5, 6 });
-            Console.WriteLine(result[0]);
-#pragma warning restore SYSLIB0021 // Type or member is obsolete
+            WriteHash();
         }
+    }
+
+    private static void WriteHash()
+    {
+#pragma warning disable SYSLIB0021 // Type or member is obsolete
+        // Vulnerable section
+        var result = MD5.Create().ComputeHash(new byte[] { 3, 5, 6 });
+        Console.WriteLine(result[0]);
+#pragma warning restore SYSLIB0021 // Type or member is obsolete
     }
 
     private static int GetExecutionTimes(string[] args)
