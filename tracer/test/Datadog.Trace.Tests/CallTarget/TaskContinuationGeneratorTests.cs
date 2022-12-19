@@ -225,6 +225,43 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
+        [Fact]
+        public async Task SuccessGenericDuckTypeTest()
+        {
+            var tcg = new TaskContinuationGenerator<IntegrationWithDuckType, TaskContinuationGeneratorTests, Task<ReturnValue>, ReturnValue>();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, in state);
+
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue[Modified]", rValue.Value);
+
+            async Task<ReturnValue> GetPreviousTask()
+            {
+                await Task.Delay(1000).ConfigureAwait(false);
+                return new ReturnValue
+                {
+                    Value = "ReturnValue"
+                };
+            }
+        }
+
+        [Fact]
+        public async Task SuccessGenericKnownTypeTest()
+        {
+            var tcg = new TaskContinuationGenerator<IntegrationWithKnownType, TaskContinuationGeneratorTests, Task<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, in state);
+
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue[Modified]", rValue);
+
+            async Task<string> GetPreviousTask()
+            {
+                await Task.Delay(1000).ConfigureAwait(false);
+                return "ReturnValue";
+            }
+        }
+
         internal class CustomException : Exception
         {
             public CustomException(string message)
@@ -264,6 +301,34 @@ namespace Datadog.Trace.Tests.CallTarget
             public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             {
                 return returnValue;
+            }
+        }
+
+        internal class IntegrationWithDuckType
+        {
+            public interface IReturnValue
+            {
+                string Value { get; set; }
+            }
+
+            public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+                where TReturn : IReturnValue
+            {
+                returnValue.Value += "[Modified]";
+                return returnValue;
+            }
+        }
+
+        internal class ReturnValue
+        {
+            public string Value { get; set; }
+        }
+
+        internal class IntegrationWithKnownType
+        {
+            public static string OnAsyncMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, in CallTargetState state)
+            {
+                return returnValue + "[Modified]";
             }
         }
     }

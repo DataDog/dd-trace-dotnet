@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Propagators;
@@ -263,9 +264,50 @@ public sealed class TestSession
     /// <param name="duration">Duration of the test module</param>
     public void Close(TestStatus status, TimeSpan? duration)
     {
+        if (InternalClose(status, duration))
+        {
+            CIVisibility.Log.Debug("### Test Session Flushing after close: {command}", Command);
+            CIVisibility.Flush();
+        }
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <param name="status">Test session status</param>
+    /// <returns>Task instance</returns>
+    public Task CloseAsync(TestStatus status)
+    {
+        return CloseAsync(status, null);
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <param name="status">Test session status</param>
+    /// <param name="duration">Duration of the test module</param>
+    /// <returns>Task instance</returns>
+    public Task CloseAsync(TestStatus status, TimeSpan? duration)
+    {
+        if (InternalClose(status, duration))
+        {
+            CIVisibility.Log.Debug("### Test Session Flushing after close: {command}", Command);
+            return CIVisibility.FlushAsync();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <param name="status">Test session status</param>
+    /// <param name="duration">Duration of the test module</param>
+    private bool InternalClose(TestStatus status, TimeSpan? duration)
+    {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
-            return;
+            return false;
         }
 
         var span = _span;
@@ -299,7 +341,7 @@ public sealed class TestSession
 
         Current = null;
         CIVisibility.Log.Debug("### Test Session Closed: {command}", Command);
-        CIVisibility.FlushSpans();
+        return true;
     }
 
     /// <summary>

@@ -344,6 +344,17 @@ db.type | `postgres`
 out.host | Yes
 span.kind | `client`
 
+## OpenTelemetry
+### Tags
+Name | Required |
+---------|----------------|
+otel.library.name | Yes
+otel.library.version | No
+otel.status_code | `STATUS_CODE_UNSET`; `STATUS_CODE_OK`; `STATUS_CODE_ERROR`
+otel.status_description | No
+otel.trace_id | Yes
+span.kind | `internal`; `server`; `client`; `producer`; `consumer`
+
 ## Oracle
 ### Span properties
 Name | Required |

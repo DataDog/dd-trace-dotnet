@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -53,6 +55,7 @@ namespace Datadog.Trace.Tools.Runner
             var createTestSession = false;
             var testSkippingEnabled = false;
             var codeCoverageEnabled = false;
+            string codeCoveragePath = null;
             if (settings is RunCiSettings ciSettings)
             {
                 var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
@@ -144,6 +147,34 @@ namespace Datadog.Trace.Tools.Runner
                         {
                             arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
                         }
+
+                        // Sets the code coverage path to store the json files for each module.
+                        var lstOutputFolders = new List<string>
+                        {
+                            Environment.CurrentDirectory,
+                            Path.GetTempPath(),
+                        };
+
+                        foreach (var folder in lstOutputFolders)
+                        {
+                            var outputPath = Path.Combine(folder, $"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}");
+                            if (!Directory.Exists(outputPath))
+                            {
+                                try
+                                {
+                                    Directory.CreateDirectory(outputPath);
+                                    profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath] = outputPath;
+                                    EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, outputPath);
+                                    codeCoveragePath = outputPath;
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Utils.WriteError("Error creating folder for the global code coverage files:");
+                                    AnsiConsole.WriteException(ex);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -193,7 +224,24 @@ namespace Datadog.Trace.Tools.Runner
             }
             finally
             {
-                session?.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+                if (session is not null)
+                {
+                    // If the code coverage path is set we try to read all json files created, merge them into a single one and extract the
+                    // global code coverage percentage.
+                    // Note: we also write the total global code coverage to the `session-coverage-{date}.json` file
+                    if (!string.IsNullOrEmpty(codeCoveragePath))
+                    {
+                        var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.json");
+                        if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage, useStdOut: false) &&
+                            globalCoverage is not null)
+                        {
+                            // Adds the global code coverage percentage to the session
+                            session.SetTag(CommonTags.CodeCoverageTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+                        }
+                    }
+
+                    session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+                }
             }
         }
 

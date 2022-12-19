@@ -87,6 +87,9 @@ namespace Datadog.Trace.ClrProfiler
 
         /// <summary>
         /// Gets or sets the parameters type array for the target method to be intercepted.
+        /// <list type="bullet">
+        /// <item>Parameters passed by reference must be denoted with a trailing `&amp;` character.</item>
+        /// </list>
         /// </summary>
         public string[] ParameterTypeNames { get; set; }
 

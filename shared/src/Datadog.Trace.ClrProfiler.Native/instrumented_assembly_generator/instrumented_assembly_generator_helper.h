@@ -119,12 +119,10 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
     {
         const auto instrumentationVerificationEnv = shared::GetEnvironmentValue(cfg_instrumentation_verification_env);
         bool isInstrumentedAssemblyGeneratorEnabled;
-        // default is true
-        if (instrumentationVerificationEnv.empty() &&
-            shared::TryParseBooleanEnvironmentValue(instrumentationVerificationEnv,
-                                                    isInstrumentedAssemblyGeneratorEnabled) &&
-            isInstrumentedAssemblyGeneratorEnabled)
+        // default is false
+        if (shared::TryParseBooleanEnvironmentValue(instrumentationVerificationEnv, isInstrumentedAssemblyGeneratorEnabled) && isInstrumentedAssemblyGeneratorEnabled)
         {
+            Log::Info("Entered the if and the value was : ", isInstrumentedAssemblyGeneratorEnabled);
 #if _WIN32
             if (const auto path = GetInstrumentedAssemblyGeneratorCurrentProcessFolder(); !path.empty())
             {
@@ -132,7 +130,7 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
                 return true;
             }
 #else
-            Log::Warn("Instrumentation Verification is currently only supported on Windows and will be disabled.");
+            Log::Info("Instrumentation Verification is currently only supported on Windows and will be disabled.");
 #endif
         }
     }

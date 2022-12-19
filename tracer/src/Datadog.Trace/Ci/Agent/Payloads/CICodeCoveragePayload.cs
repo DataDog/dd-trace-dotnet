@@ -8,7 +8,7 @@ using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Coverage.Models;
+using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads

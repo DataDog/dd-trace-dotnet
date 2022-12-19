@@ -1882,6 +1882,11 @@ partial class Build
                new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodBegin.*", RegexOptions.Compiled),
                new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodEnd.*", RegexOptions.Compiled),
                new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
+               // CI Visibility known errors
+               new (@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled),
+               new (@".*DD_GIT_REPOSITORY_URL is set with.*", RegexOptions.Compiled),
+               new (@".*The Git commit sha couldn't be automatically extracted.*", RegexOptions.Compiled),
+               new (@".*DD_GIT_COMMIT_SHA must be a full-length git SHA.*", RegexOptions.Compiled),
                // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),

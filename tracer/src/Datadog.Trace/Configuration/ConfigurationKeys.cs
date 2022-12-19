@@ -398,6 +398,16 @@ namespace Datadog.Trace.Configuration
             public const string CodeCoverageSnkFile = "DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH";
 
             /// <summary>
+            /// Configuration key for enabling or disabling jit optimizations in the Code Coverage
+            /// </summary>
+            public const string CodeCoverageEnableJitOptimizations = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS";
+
+            /// <summary>
+            /// Configuration key for setting the code coverage jsons destination path.
+            /// </summary>
+            public const string CodeCoveragePath = "DD_CIVISIBILITY_CODE_COVERAGE_PATH";
+
+            /// <summary>
             /// Configuration key for enabling or disabling Uploading Git Metadata in CI Visibility
             /// Default Value is false (disabled)
             /// </summary>

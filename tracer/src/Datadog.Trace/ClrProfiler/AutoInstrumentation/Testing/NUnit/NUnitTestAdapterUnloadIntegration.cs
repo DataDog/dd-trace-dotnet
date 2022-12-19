@@ -34,7 +34,7 @@ public static class NUnitTestAdapterUnloadIntegration
     /// <returns>Return value of the method</returns>
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
-        Common.FlushSpans(NUnitIntegration.IntegrationId);
+        Common.Flush(NUnitIntegration.IntegrationId);
         return CallTargetReturn.GetDefault();
     }
 }
