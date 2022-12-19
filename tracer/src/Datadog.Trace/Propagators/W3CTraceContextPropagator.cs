@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -253,94 +252,71 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        internal static bool TryParseTraceState(string header, out W3CTraceState traceState)
+        internal static W3CTraceState ParseTraceState(string header)
         {
-            // "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
-            traceState = default;
+            var otherHeaderValues = string.Empty;
 
-            if (header == null!)
+            // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
+            if (string.IsNullOrWhiteSpace(header))
             {
-                return false;
+                return new W3CTraceState(null, null, null, otherHeaderValues);
             }
 
-            header = header.Trim();
+            SplitTraceStateValues(header, out var ddValues, out otherHeaderValues);
 
-            if (header.Length < 6)
+            if (ddValues.Length < 6)
             {
-                // shortest valid length is 6: "dd=s:1"
-                return false;
-            }
-
-            var ddStart = header.IndexOf("dd=", StringComparison.Ordinal);
-
-            if (ddStart < 0 || (ddStart > 0 && header[ddStart - 1] != ','))
-            {
-                // either "dd=" was not found, or it wasn't preceded by a separator comma
-                return false;
-            }
-
-            var ddEnd = header.IndexOf(',', ddStart + 3);
-
-            if (ddEnd < 0)
-            {
-                // comma not found, "dd=" reaches the end of header
-                ddEnd = header.Length;
+                // "dd" section too short, shortest length is 6, "dd=a:b"
+                return new W3CTraceState(null, null, null, otherHeaderValues);
             }
 
             int? samplingPriority = null;
             string? origin = null;
-            StringBuilder? propagatedTagsBuilder = null;
+            var propagatedTagsBuilder = StringBuilderCache.Acquire(50);
 
             try
             {
-                propagatedTagsBuilder = StringBuilderCache.Acquire(20);
+                // skip "dd="
+                var startIndex = 3;
 
                 // name1:value1;
-                //            ^ endIndex
+                //             ^ endIndex
                 //      ^ colonIndex
                 // ^ startIndex
-                var startIndex = ddStart + 3;
-
                 while (true)
                 {
-                    if (startIndex > ddEnd - 3)
+                    if (startIndex > ddValues.Length - 3)
                     {
-                        // not enough chars left in the header value
+                        // not enough chars left, we need at least 3, "a:b"
                         break;
                     }
 
-                    // search for next separator semicolon in "dd=<...>"
-                    var endIndex = header.IndexOf(';', startIndex, ddEnd - startIndex);
+                    // search for next separator semicolon
+                    var endIndex = ddValues.IndexOf(';', startIndex);
 
                     if (endIndex < 0)
                     {
-                        // no more semicolons left in "dd=" value,
-                        // this key/value pair goes on to the end of the value "dd="
-                        endIndex = ddEnd - 1;
-                    }
-                    else
-                    {
-                        // we want the char before the semicolon
-                        endIndex--;
+                        // no more semicolons left,
+                        // this key/value pair goes on to the end of ddValues
+                        endIndex = ddValues.Length;
                     }
 
-                    var length = endIndex - startIndex + 1;
-                    var colonIndex = header.IndexOf(':', startIndex, length);
+                    var colonIndex = ddValues.IndexOf(':', startIndex, endIndex - startIndex);
 
-                    if (colonIndex <= startIndex || endIndex <= colonIndex)
+                    if (colonIndex <= startIndex || endIndex - 1 <= colonIndex)
                     {
                         // not a valid key/value pair, skip past the semicolon
                         // conditions:
                         // - colon not found, or
                         // - key length is 0, or
                         // - value length is 0
-                        startIndex = endIndex + 2;
+                        startIndex = endIndex + 1;
                         continue;
                     }
 
 #if NETCOREAPP
-                    var name = header.AsSpan(start: startIndex, length: colonIndex - startIndex);
-                    var value = header.AsSpan(start: colonIndex + 1, length: endIndex - colonIndex);
+                    var name = ddValues.AsSpan(start: startIndex, length: colonIndex - startIndex);
+                    var value = ddValues.AsSpan(start: colonIndex + 1, length: endIndex - colonIndex - 1);
 
                     if (name.Equals("s", StringComparison.Ordinal))
                     {
@@ -357,8 +333,8 @@ namespace Datadog.Trace.Propagators
                         propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix).Append(name[2..]).Append('=').Append(value).Append(',');
                     }
 #else
-                    var name = header.Substring(startIndex, colonIndex - startIndex);
-                    var value = header.Substring(colonIndex + 1, endIndex - colonIndex);
+                    var name = ddValues.Substring(startIndex: startIndex, length: colonIndex - startIndex);
+                    var value = ddValues.Substring(startIndex: colonIndex + 1, length: endIndex - colonIndex - 1);
 
                     if (name == "s")
                     {
@@ -377,7 +353,7 @@ namespace Datadog.Trace.Propagators
 #endif
 
                     // skip past the semicolon
-                    startIndex = endIndex + 2;
+                    startIndex = endIndex + 1;
                 }
 
                 string? propagatedTags;
@@ -398,12 +374,76 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                traceState = new W3CTraceState(samplingPriority, origin, propagatedTags);
-                return true;
+                return new W3CTraceState(samplingPriority, origin, propagatedTags, otherHeaderValues);
             }
             finally
             {
                 StringBuilderCache.Release(propagatedTagsBuilder);
+            }
+        }
+
+        internal static void SplitTraceStateValues(string header, out string ddValues, out string additionalValues)
+        {
+            // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
+            ddValues = string.Empty;
+            additionalValues = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(header))
+            {
+                return;
+            }
+
+            header = header.Trim();
+
+            var ddStart = header.IndexOf("dd=", StringComparison.Ordinal);
+
+            if (ddStart > 0)
+            {
+                // if "dd=" is not at start of header, make sure we find the one preceded by comma
+                // in case there is something like "key1=valuedd=whatisthis?,dd=..."
+                //                                                           ^ take this one
+                //                                            ^ ignore this one
+                ddStart = header.IndexOf(",dd=", ddStart - 1, StringComparison.Ordinal) + 1;
+            }
+
+            if (ddStart < 0)
+            {
+                // "dd=" was not found in header
+                additionalValues = header;
+                return;
+            }
+
+            var ddEnd = header.IndexOf(',', ddStart + 3);
+
+            if (ddEnd < 0)
+            {
+                // comma not found, "dd=" reaches the end of header
+                ddEnd = header.Length;
+            }
+
+            ddValues = header.Substring(ddStart, ddEnd - ddStart);
+
+            if (ddStart == 0 && ddEnd == header.Length)
+            {
+                // "dd" was the only key, no additional values
+                additionalValues = string.Empty;
+            }
+            else if (ddStart == 0)
+            {
+                // "dd" first, additional values later
+                additionalValues = header.Substring(ddEnd + 1, header.Length - ddEnd - 1);
+            }
+            else if (ddEnd == header.Length)
+            {
+                // additional values first, "dd" later
+                additionalValues = header.Substring(0, ddStart - 1);
+            }
+            else
+            {
+                // additional values on both sides, "dd" in the middle
+                var otherValuesLeft = header.Substring(0, ddStart - 1);
+                var otherValuesRight = header.Substring(ddEnd + 1, header.Length - ddEnd - 1);
+                additionalValues = string.Join(",", otherValuesLeft, otherValuesRight);
             }
         }
 
@@ -461,8 +501,8 @@ namespace Datadog.Trace.Propagators
             var traceParentHeaders = carrierGetter.Get(carrier, TraceParentHeaderName);
 
             if (!TryGetSingle(traceParentHeaders, out var traceParentHeader) ||
-                string.IsNullOrEmpty(traceParentHeader) ||
-                !TryParseTraceParent(traceParentHeader!, out var traceParent))
+                string.IsNullOrWhiteSpace(traceParentHeader) ||
+                !TryParseTraceParent(traceParentHeader, out var traceParent))
             {
                 // a single "traceparent" header is required
                 return false;
@@ -471,12 +511,7 @@ namespace Datadog.Trace.Propagators
             // get the "tracestate" header
             var traceStateHeaders = carrierGetter.Get(carrier, TraceStateHeaderName);
             var traceStateHeader = TrimAndJoinStrings(traceStateHeaders);
-
-            if (string.IsNullOrEmpty(traceStateHeader) || !TryParseTraceState(traceStateHeader, out var traceState))
-            {
-                // "tracestate" header is optional
-                traceState = default;
-            }
+            var traceState = ParseTraceState(traceStateHeader);
 
             // if we can't get the more specific sampling priority from "tracestate",
             // then fallback to the boolean in "traceparent"
