@@ -19,7 +19,7 @@ namespace StackExchange.Redis.StackOverflowException
                 var connectionString = $"{host},allowAdmin=true,abortConnect=false,syncTimeout=10000";
                 using (var redis = ConnectionMultiplexer.Connect(connectionString))
                 {
-                    IServer server = redis.GetServer(host);
+                    IServer server = redis.GetServer(host.Split(',').First());
                     server.FlushDatabase(database);
 
                     var keyValuePairs = CreateKeyValuePairs().Take(20).ToArray();
