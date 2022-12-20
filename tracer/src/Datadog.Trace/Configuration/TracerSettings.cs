@@ -182,17 +182,35 @@ namespace Datadog.Trace.Configuration
 
             var propagationStyleInject = source?.GetString(ConfigurationKeys.PropagationStyleInject) ??
                                          source?.GetString("DD_PROPAGATION_STYLE_INJECT") ?? // deprecated setting name
-                                         source?.GetString(ConfigurationKeys.PropagationStyle) ??
-                                         ContextPropagationHeaderStyle.Datadog; // default value
+                                         source?.GetString(ConfigurationKeys.PropagationStyle);
 
             PropagationStyleInject = TrimSplitString(propagationStyleInject, commaSeparator);
 
+            if (PropagationStyleInject.Length == 0)
+            {
+                // default value
+                PropagationStyleInject = new[]
+                                         {
+                                             ContextPropagationHeaderStyle.W3CTraceContext,
+                                             ContextPropagationHeaderStyle.Datadog
+                                         };
+            }
+
             var propagationStyleExtract = source?.GetString(ConfigurationKeys.PropagationStyleExtract) ??
                                           source?.GetString("DD_PROPAGATION_STYLE_EXTRACT") ?? // deprecated setting name
-                                          source?.GetString(ConfigurationKeys.PropagationStyle) ??
-                                          ContextPropagationHeaderStyle.Datadog; // default value
+                                          source?.GetString(ConfigurationKeys.PropagationStyle);
 
             PropagationStyleExtract = TrimSplitString(propagationStyleExtract, commaSeparator);
+
+            if (PropagationStyleExtract.Length == 0)
+            {
+                // default value
+                PropagationStyleExtract = new[]
+                                          {
+                                              ContextPropagationHeaderStyle.W3CTraceContext,
+                                              ContextPropagationHeaderStyle.Datadog
+                                          };
+            }
 
             // If Activity support is enabled, we must enable the W3C Trace Context propagators.
             // It's ok to include W3C multiple times, we handle that later.
