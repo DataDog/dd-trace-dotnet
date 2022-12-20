@@ -10,9 +10,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 {
     internal class CoveragePayloadMessagePackFormatter : EventMessagePackFormatter<CoveragePayload>
     {
-        private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
-        private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
         private readonly byte[] _versionBytes = StringEncoding.UTF8.GetBytes("version");
+        private readonly byte[] _coveragesBytes = StringEncoding.UTF8.GetBytes("coverages");
+        private readonly byte[] _testSessionIdBytes = StringEncoding.UTF8.GetBytes("test_session_id");
+        private readonly byte[] _testSuiteIdBytes = StringEncoding.UTF8.GetBytes("test_suite_id");
+        private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
         private readonly byte[] _filesBytes = StringEncoding.UTF8.GetBytes("files");
         private readonly byte[] _filenameBytes = StringEncoding.UTF8.GetBytes("filename");
         private readonly byte[] _segmentsBytes = StringEncoding.UTF8.GetBytes("segments");
@@ -26,53 +28,70 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             var originalOffset = offset;
 
-            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 4);
-
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.TraceId);
-
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SpanId);
+            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionBytes);
             offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.Version);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filesBytes);
-
-            if (value.Files is not null)
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _coveragesBytes);
+            if (value.Coverages is { } coverages)
             {
-                offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)value.Files.Count);
+                offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)coverages.Count);
 
-                foreach (var file in value.Files)
+                foreach (var coverage in coverages)
                 {
-                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
+                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 4);
 
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filenameBytes);
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, file.FileName);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionIdBytes);
+                    offset += MessagePackBinary.WriteUInt64(ref bytes, offset, coverage.SessionId);
 
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _segmentsBytes);
-                    if (file.Segments is null)
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSuiteIdBytes);
+                    offset += MessagePackBinary.WriteUInt64(ref bytes, offset, coverage.SuiteId);
+
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
+                    offset += MessagePackBinary.WriteUInt64(ref bytes, offset, coverage.SpanId);
+
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filesBytes);
+                    if (coverage.Files is { } files)
                     {
-                        offset += MessagePackBinary.WriteNil(ref bytes, offset);
-                    }
-                    else
-                    {
-                        offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)file.Segments.Count);
-                        foreach (var segment in file.Segments)
+                        offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)files.Count);
+
+                        foreach (var file in files)
                         {
-                            if (segment is null)
+                            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
+
+                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filenameBytes);
+                            offset += MessagePackBinary.WriteString(ref bytes, offset, file.FileName);
+
+                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _segmentsBytes);
+                            if (file.Segments is null)
                             {
                                 offset += MessagePackBinary.WriteNil(ref bytes, offset);
                             }
                             else
                             {
-                                offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)segment.Length);
-                                foreach (var i in segment)
+                                offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)file.Segments.Count);
+                                foreach (var segment in file.Segments)
                                 {
-                                    offset += MessagePackBinary.WriteUInt32(ref bytes, offset, i);
+                                    if (segment is null)
+                                    {
+                                        offset += MessagePackBinary.WriteNil(ref bytes, offset);
+                                    }
+                                    else
+                                    {
+                                        offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)segment.Length);
+                                        foreach (var i in segment)
+                                        {
+                                            offset += MessagePackBinary.WriteUInt32(ref bytes, offset, i);
+                                        }
+                                    }
                                 }
                             }
                         }
+                    }
+                    else
+                    {
+                        offset += MessagePackBinary.WriteNil(ref bytes, offset);
                     }
                 }
             }
