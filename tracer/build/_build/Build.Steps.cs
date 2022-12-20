@@ -1100,7 +1100,7 @@ partial class Build
                     _ when exclude.Contains(project.Path) => false,
                     _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName),
                     (_, _, true) => false, // can't use docker on Windows
-                    var (_, targets, _) when targets is not null => targets.Contains(Framework),
+                    (_, { } targets, _) => targets.Contains(Framework),
                     _ => true,
                 }
             );
@@ -1272,7 +1272,7 @@ partial class Build
                     var project = Solution.GetProject(path);
                     return (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
                     {
-                        var (_, targets, _) when targets is not null => targets.Contains(Framework),
+                        (_, { } targets, _) => targets.Contains(Framework),
                         _ => true,
                     };
                 });
