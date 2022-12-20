@@ -3042,6 +3042,7 @@ stages:
   dependsOn: [package_linux, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
   pool: Throughput-AppSec
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -3066,13 +3067,26 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        cd $(CrankDir)
         chmod +x ./run-appsec.sh
         ./run-appsec.sh "linux"
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
+
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_linux_x64_asm_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
