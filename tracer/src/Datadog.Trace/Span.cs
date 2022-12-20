@@ -149,6 +149,8 @@ namespace Datadog.Trace
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
+        internal SpanContext GetContext() => _context;
+
         /// <summary>
         /// Add a the specified tag to this span.
         /// </summary>
