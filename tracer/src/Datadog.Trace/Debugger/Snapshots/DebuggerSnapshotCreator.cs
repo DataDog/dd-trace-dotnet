@@ -9,6 +9,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.Debugger.Conditions;
+using Datadog.Trace.Debugger.Instrumentation;
+using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -29,6 +32,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
 
             _jsonWriter.WriteStartObject();
+        }
+
+        internal void Initialize()
+        {
+            StartDebugger();
+            StartSnapshot();
+            StartCaptures();
         }
 
         internal void StartDebugger()
@@ -179,6 +189,86 @@ namespace Datadog.Trace.Debugger.Snapshots
             AddFrames(new StackTrace(ex).GetFrames() ?? Array.Empty<StackFrame>());
             _jsonWriter.WriteEndArray();
             _jsonWriter.WriteEndObject();
+        }
+
+        internal void CaptureEntryMethodStartMarker(ref MethodDebuggerState state)
+        {
+            StartEntry();
+            CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
+        }
+
+        internal void CaptureEntryMethodEndMarker(ref MethodDebuggerState state)
+        {
+            CaptureInstance(state.InvocationTarget, state.MethodMetadataInfo.DeclaringType);
+
+            var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
+                                       state.MethodMetadataInfo.ParameterNames.Length > 0 ||
+                                       !state.MethodMetadataInfo.Method.IsStatic;
+            state.HasLocalsOrReturnValue = false;
+            EndEntry(hasArgumentsOrLocals);
+        }
+
+        internal void CaptureExitMethodStartMarker<TReturn>(TReturn returnValue, Exception exception, ref MethodDebuggerState state)
+        {
+            StartReturn();
+            CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
+            if (exception != null)
+            {
+                CaptureException(exception);
+            }
+
+            if (returnValue != null)
+            {
+                CaptureLocal(returnValue, "@return");
+                state.HasLocalsOrReturnValue = true;
+            }
+        }
+
+        internal unsafe void CaptureExitMethodEndMarker(
+            ref MethodDebuggerState state,
+            delegate* managed<ref MethodDebuggerState, void> finalizeSnapshotFuncPointer)
+        {
+            CaptureInstance(state.InvocationTarget, state.MethodMetadataInfo.DeclaringType);
+
+            var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
+                                       state.MethodMetadataInfo.ParameterNames.Length > 0 ||
+                                       !state.MethodMetadataInfo.Method.IsStatic;
+            MethodProbeEndReturn(hasArgumentsOrLocals);
+            finalizeSnapshotFuncPointer(ref state);
+        }
+
+        internal void CaptureScopeMembers(ScopeMember[] members)
+        {
+            foreach (var member in members)
+            {
+                if (member.Type == null)
+                {
+                    // ArrayPool can allocate more items than we need, if "Type == null", this mean we can exit the loop
+                    break;
+                }
+
+                switch (member.ElementType)
+                {
+                    case ScopeMemberKind.Argument:
+                    {
+                        CaptureArgument(member.Value, member.Name, member.Type);
+                        break;
+                    }
+
+                    case ScopeMemberKind.Local:
+                    case ScopeMemberKind.Return:
+                    {
+                        CaptureLocal(member.Value, member.Name, member.Type);
+                        break;
+                    }
+
+                    case ScopeMemberKind.Exception:
+                    {
+                        CaptureException((Exception)member.Value);
+                        break;
+                    }
+                }
+            }
         }
 
         internal void FinalizeSnapshot(StackFrame[] frames, string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath)

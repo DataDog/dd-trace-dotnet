@@ -1,11 +1,11 @@
-// <copyright file="ProbeConditionExpressionParser.cs" company="Datadog">
+// <copyright file="ProbeExpressionParser.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,11 +16,13 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Conditions
 {
-    internal class ProbeConditionExpressionParser
+    internal class ProbeExpressionParser
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeConditionExpressionParser));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionParser));
 
         private static readonly Type UndefinedValueType = typeof(UndefinedValue);
+
+        private static readonly ConcurrentDictionary<ReflectionMethodIdentifier, MethodInfo> Methods = new();
 
         private int _arrayStack;
 
@@ -64,7 +66,7 @@ namespace Datadog.Trace.Debugger.Conditions
             var callExpression = Expression.Call(null, genericPredicateMethod, source, lambda);
             if (IsCollection(callExpression))
             {
-                var toListMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList));
+                var toListMethod = GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.ToList), null);
                 var genericToListMethod = toListMethod.MakeGenericMethod(source.Type.GetGenericArguments()[0]);
                 callExpression = Expression.Call(null, genericToListMethod, callExpression);
             }
@@ -112,7 +114,7 @@ namespace Datadog.Trace.Debugger.Conditions
             return left;
         }
 
-        private Expression ParseCondition(
+        private Expression ParseRoot(
             JsonTextReader reader,
             List<ParameterExpression> parameters)
         {
@@ -159,14 +161,14 @@ namespace Datadog.Trace.Debugger.Conditions
                             case "and":
                             case "&&":
                                 {
-                                    var right = ParseCondition(reader, parameters);
+                                    var right = ParseRoot(reader, parameters);
                                     return right;
                                 }
 
                             case "or":
                             case "||":
                                 {
-                                    var right = ParseCondition(reader, parameters);
+                                    var right = ParseRoot(reader, parameters);
                                     return right;
                                 }
 
@@ -305,25 +307,25 @@ namespace Datadog.Trace.Debugger.Conditions
                             case "startWith":
                                 {
                                     var startWithMethod = GetMethodByReflection(typeof(string), nameof(string.StartsWith), new[] { typeof(string) });
-                                    return StringCondition(reader, parameters, itParameter, startWithMethod);
+                                    return StringOperation(reader, parameters, itParameter, startWithMethod);
                                 }
 
                             case "endWith":
                                 {
                                     var endWithMethod = GetMethodByReflection(typeof(string), nameof(string.EndsWith), new[] { typeof(string) });
-                                    return StringCondition(reader, parameters, itParameter, endWithMethod);
+                                    return StringOperation(reader, parameters, itParameter, endWithMethod);
                                 }
 
                             case "contains":
                                 {
                                     var containsMethod = GetMethodByReflection(typeof(string), nameof(string.Contains), new[] { typeof(string) });
-                                    return StringCondition(reader, parameters, itParameter, containsMethod);
+                                    return StringOperation(reader, parameters, itParameter, containsMethod);
                                 }
 
                             case "matches":
                                 {
                                     var matchesMethod = GetMethodByReflection(typeof(Regex), nameof(Regex.Matches), new[] { typeof(string), typeof(string) });
-                                    return StringCondition(reader, parameters, itParameter, matchesMethod);
+                                    return StringOperation(reader, parameters, itParameter, matchesMethod);
                                 }
 
                             // collection operations
@@ -449,7 +451,7 @@ namespace Datadog.Trace.Debugger.Conditions
             return Expression.Equal(Expression.Constant(UndefinedValue.Instance), Expression.Constant(UndefinedValue.Instance));
         }
 
-        private Expression StringCondition(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, MethodInfo method)
+        private Expression StringOperation(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, MethodInfo method)
         {
             var source = ParseTree(reader, parameters, itParameter);
             if (source.Type == UndefinedValueType)
@@ -504,16 +506,23 @@ namespace Datadog.Trace.Debugger.Conditions
 
         private MethodInfo GetMethodByReflection(Type type, string name, Type[] parametersTypes)
         {
-            // todo: cache method in a static field
             const BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.InvokeMethod |
                                               BindingFlags.NonPublic | BindingFlags.Public;
-            var method = type.GetMethod(name, bindingFlags, null, parametersTypes, null);
-            if (method == null)
-            {
-                throw new NullReferenceException($"{type.FullName}.{name} method not found");
-            }
 
-            return method;
+            var reflectionMethodIdentifier = new ReflectionMethodIdentifier(type, name, parametersTypes);
+            return Methods.GetOrAdd(reflectionMethodIdentifier, GetMethodByReflectionInternal);
+
+            MethodInfo GetMethodByReflectionInternal(ReflectionMethodIdentifier methodIdentifier)
+            {
+                var method = parametersTypes == null ? methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags) : methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags, null, methodIdentifier.Parameters, null);
+
+                if (method == null)
+                {
+                    throw new NullReferenceException($"{methodIdentifier.Type.FullName}.{methodIdentifier.MethodName} method not found");
+                }
+
+                return method;
+            }
         }
 
         private MethodCallExpression CollectionCountExpression(Expression source)
@@ -552,11 +561,11 @@ namespace Datadog.Trace.Debugger.Conditions
             return source.Type.GetInterface("IList") != null || source.Type.GetInterface("IReadOnlyList") != null;
         }
 
-        private Tuple<Expression<Func<ScopeMember, ReadOnlyCollection<ScopeMember>, bool>>, string> ParseExpression(string conditionJson, ScopeMember @this, ReadOnlyCollection<ScopeMember> argsOrLocals)
+        private ExpressionBodyAndParameters ParseProbeExpression(string expressionJson, ScopeMember @this, ScopeMember[] argsOrLocals)
         {
-            if (string.IsNullOrEmpty(conditionJson) || @this.Type == null || argsOrLocals == null)
+            if (string.IsNullOrEmpty(expressionJson) || @this.Type == null || argsOrLocals == null)
             {
-                throw new ArgumentException($"{nameof(ParseExpression)} has been called with an invalid argument");
+                throw new ArgumentException($"{nameof(ParseProbeExpression)} has been called with an invalid argument");
             }
 
             var scopeMembers = new List<ParameterExpression>();
@@ -567,15 +576,15 @@ namespace Datadog.Trace.Debugger.Conditions
             scopeMembers.Add(thisVariable);
 
             var argsOrLocalsParameterExpression = Expression.Parameter(argsOrLocals.GetType());
-            var argsOrLocalsVariable = Expression.Variable(typeof(ScopeMember[]), "members");
-            var toArray = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.ToArray) && m.GetParameters().Length == 1);
-            var genericToArray = toArray.MakeGenericMethod(typeof(ScopeMember));
-            assigns.Add(Expression.Assign(argsOrLocalsVariable, Expression.Call(null, genericToArray, argsOrLocalsParameterExpression)));
-            scopeMembers.Add(argsOrLocalsVariable);
 
-            for (var index = 0; index < argsOrLocals.Count; index++)
+            for (var index = 0; index < argsOrLocals.Length; index++)
             {
-                var argOrLocal = ((IReadOnlyList<ScopeMember>)argsOrLocals)[index];
+                if (argsOrLocals[index].Type == null)
+                {
+                    break;
+                }
+
+                var argOrLocal = argsOrLocals[index];
                 var variable = Expression.Variable(argOrLocal.Type, argOrLocal.Name);
                 scopeMembers.Add(variable);
 
@@ -585,28 +594,26 @@ namespace Datadog.Trace.Debugger.Conditions
                         Expression.Convert(
                         Expression.Field(
                         Expression.ArrayIndex(
-                            argsOrLocalsVariable,
+                            argsOrLocalsParameterExpression,
                             Expression.Constant(index)),
                         "Value"),
                         argOrLocal.Type)));
             }
 
-            var reader = new JsonTextReader(new StringReader(conditionJson));
-            var dsl = GetDsl(reader);
-            GoToConditionPosition(reader);
+            var reader = new JsonTextReader(new StringReader(expressionJson));
+            SetReaderAtExpressionStart(reader);
 
-            assigns.Add(ParseCondition(reader, scopeMembers));
-            var conditions = (Expression)Expression.Block(scopeMembers, assigns);
-            if (conditions.CanReduce)
+            assigns.Add(ParseRoot(reader, scopeMembers));
+            var body = (Expression)Expression.Block(scopeMembers, assigns);
+            if (body.CanReduce)
             {
-                conditions = conditions.ReduceAndCheck();
+                body = body.ReduceAndCheck();
             }
 
-            var expression = Expression.Lambda<Func<ScopeMember, ReadOnlyCollection<ScopeMember>, bool>>(conditions, thisParameterExpression, argsOrLocalsParameterExpression);
-            return Tuple.Create(expression, dsl);
+            return new ExpressionBodyAndParameters(body, thisParameterExpression, argsOrLocalsParameterExpression);
         }
 
-        private void GoToConditionPosition(JsonTextReader reader)
+        private void SetReaderAtExpressionStart(JsonTextReader reader)
         {
             while (reader.Read())
             {
@@ -626,39 +633,44 @@ namespace Datadog.Trace.Debugger.Conditions
             throw new InvalidOperationException("DSL part not found in the json file");
         }
 
-        private string GetDsl(JsonTextReader reader)
+        internal static CompiledExpression<T> ParseExpression<T>(string expressionJson, ScopeMember @this, ScopeMember[] argsOrLocals)
         {
-            while (reader.Read())
-            {
-                if (reader.TokenType != JsonToken.PropertyName)
-                {
-                    continue;
-                }
-
-                if (reader.Value?.ToString() == "dsl")
-                {
-                    reader.Read();
-                    return reader.Value?.ToString();
-                }
-            }
-
-            throw new InvalidOperationException("DSL part not found in the json file");
+            var parser = new ProbeExpressionParser();
+            var parsedExpression = parser.ParseProbeExpression(expressionJson, @this, argsOrLocals);
+            var expression = Expression.Lambda<Func<ScopeMember, ScopeMember[], T>>(parsedExpression.ExpressionBody, parsedExpression.ThisParameterExpression, parsedExpression.ArgsAndLocalsParameterExpression);
+            return new CompiledExpression<T>(expression.Compile(), expression);
         }
 
-        public static Condition ToCondition(string conditionJson, ScopeMember @this, ReadOnlyCollection<ScopeMember> argsOrLocals)
+        internal readonly record struct ExpressionBodyAndParameters
         {
-            try
+            public ExpressionBodyAndParameters(Expression body, ParameterExpression thisParameterExpression, ParameterExpression argsOrLocalsParameterExpression)
             {
-                var parser = new ProbeConditionExpressionParser();
-                var parsedJson = parser.ParseExpression(conditionJson, @this, argsOrLocals);
-                var condition = new Condition { Expression = parsedJson.Item1, Predicate = parsedJson.Item1.Compile(), DSL = parsedJson.Item2 };
-                return condition;
+                ExpressionBody = body;
+                ThisParameterExpression = thisParameterExpression;
+                ArgsAndLocalsParameterExpression = argsOrLocalsParameterExpression;
             }
-            catch (Exception e)
+
+            internal Expression ExpressionBody { get; }
+
+            internal ParameterExpression ThisParameterExpression { get; }
+
+            internal ParameterExpression ArgsAndLocalsParameterExpression { get; }
+        }
+
+        internal readonly record struct ReflectionMethodIdentifier
+        {
+            public ReflectionMethodIdentifier(Type type, string methodName, Type[] parameters)
             {
-                Log.Error(e.ToString());
-                return new Condition { Predicate = (_, _) => true };
+                Type = type;
+                MethodName = methodName;
+                Parameters = parameters;
             }
+
+            internal Type Type { get; }
+
+            internal string MethodName { get; }
+
+            internal Type[] Parameters { get; }
         }
     }
 }

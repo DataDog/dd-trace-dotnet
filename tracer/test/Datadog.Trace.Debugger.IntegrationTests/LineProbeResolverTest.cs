@@ -10,6 +10,7 @@ using Datadog.Trace.Debugger.Models;
 using FluentAssertions;
 using Samples.Probes.TestRuns.SmokeTests;
 using Xunit;
+using SnapshotProbe = Datadog.Trace.Debugger.Configurations.Models.SnapshotProbe;
 
 namespace Datadog.Trace.Debugger.IntegrationTests;
 

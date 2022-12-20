@@ -1,0 +1,69 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "arguments": {
+            "arguments": {
+              "intArg": {
+                "type": "Int32",
+                "value": "3"
+              },
+              "this": {
+                "type": "GreaterThenArgumentTrue",
+                "value": "GreaterThenArgumentTrue"
+              }
+            },
+            "intArg": {
+              "type": "Int32",
+              "value": "3"
+            },
+            "locals": {
+              "return": {
+                "type": "String",
+                "value": "Dsl: {\r\n  \"dsl\": \"^intArg \\u003e 2\"\r\n}, Argument: 3"
+              }
+            },
+            "return": {
+              "staticFields": {
+                "Dsl": {
+                  "type": "String",
+                  "value": "{\r\n  \"dsl\": \"^intArg \\u003e 2\"\r\n}"
+                },
+                "Json": {
+                  "type": "String",
+                  "value": "{\r\n  \"json\": {\r\n    \"gt\": [\r\n      \"^intArg\",\r\n      2\r\n    ]\r\n  }\r\n}"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.ExpressionTests.GreaterThenArgumentTrue"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.GreaterThenArgumentTrue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "Probes"
+  }
+]

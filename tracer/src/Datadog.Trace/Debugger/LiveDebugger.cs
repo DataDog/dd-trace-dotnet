@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Debugger.Conditions;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Helpers;
@@ -20,6 +21,7 @@ using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using SnapshotProbe = Datadog.Trace.Debugger.Configurations.Models.SnapshotProbe;
 
 namespace Datadog.Trace.Debugger
 {
@@ -208,15 +210,29 @@ namespace Datadog.Trace.Debugger
 
                 foreach (var probe in addedProbes)
                 {
-                    if (probe is SnapshotProbe snapshotProbe && snapshotProbe.Sampling.HasValue)
+                    if (probe is SnapshotProbe snapshotProbe)
                     {
-                        ProbeRateLimiter.Instance.SetRate(probe.Id, (int)snapshotProbe.Sampling.Value.SnapshotsPerSecond);
+                        if (snapshotProbe.Sampling.HasValue)
+                        {
+                            ProbeRateLimiter.Instance.SetRate(probe.Id, (int)snapshotProbe.Sampling.Value.SnapshotsPerSecond);
+                        }
+
+                        if (snapshotProbe.When.HasValue)
+                        {
+                            ProbeExpressionsProcessor.Instance.AddExpressions(probe.Id, ProbeType.Snapshot, probe.EvaluateAt, new[] { snapshotProbe.When.Value });
+                        }
+                    }
+
+                    if (probe is LogProbe logProbe)
+                    {
+                        ProbeExpressionsProcessor.Instance.AddExpressions(probe.Id, ProbeType.Log, probe.EvaluateAt, logProbe.Template.Segments.Select(segment => segment.Expression).ToArray());
                     }
                 }
 
                 foreach (var probe in removedProbes)
                 {
                     ProbeRateLimiter.Instance.ResetRate(probe.Id);
+                    ProbeExpressionsProcessor.Instance.Remove(probe.Id);
                 }
 
                 // This log entry is being checked in integration test

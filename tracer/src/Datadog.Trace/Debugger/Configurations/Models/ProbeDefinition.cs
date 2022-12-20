@@ -24,6 +24,8 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public Where Where { get; set; }
 
+        public EvaluateAt EvaluateAt { get; set; }
+
         public string[] AdditionalIds { get; set; }
 
         public int? Version { get; set; }
@@ -40,7 +42,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
                 return true;
             }
 
-            return Language == other.Language && Id == other.Id && OrgId == other.OrgId && AppId == other.AppId && Active == other.Active && Equals(Where, other.Where) && Tags.NullableSequentialEquals(other.Tags) && Version == other.Version && AdditionalIds.NullableSequentialEquals(other.AdditionalIds);
+            return Language == other.Language && Id == other.Id && OrgId == other.OrgId && AppId == other.AppId && Active == other.Active && Equals(Where, other.Where) && Equals(EvaluateAt, other.EvaluateAt) && Tags.NullableSequentialEquals(other.Tags) && Version == other.Version && AdditionalIds.NullableSequentialEquals(other.AdditionalIds);
         }
 
         public override bool Equals(object obj)
@@ -73,6 +75,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
             hashCode.Add(Active);
             hashCode.Add(Tags);
             hashCode.Add(Where);
+            hashCode.Add(EvaluateAt);
             hashCode.Add(AdditionalIds);
             hashCode.Add(Version);
             return hashCode.ToHashCode();

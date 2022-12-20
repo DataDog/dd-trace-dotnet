@@ -60,7 +60,7 @@ public class ProbesTests : TestHelper
 
         var probes = new[]
         {
-            CreateProbe("GenericClass`1", "Run", guidGenerator)
+            DebuggerTestHelper.CreateDefaultSnapshotProbe("GenericClass`1", "Run", guidGenerator)
         };
 
         await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
@@ -78,8 +78,8 @@ public class ProbesTests : TestHelper
 
         var probes = new[]
         {
-            CreateProbe("SecurityTransparentTest", ".ctor", guidGenerator),
-            CreateProbe("CtorTransparentCodeTest", "Run", guidGenerator)
+            DebuggerTestHelper.CreateDefaultSnapshotProbe("SecurityTransparentTest", ".ctor", guidGenerator),
+            DebuggerTestHelper.CreateDefaultSnapshotProbe("CtorTransparentCodeTest", "Run", guidGenerator)
         };
 
         await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
@@ -187,22 +187,6 @@ public class ProbesTests : TestHelper
         await RunMethodProbeTests(testType);
     }
 #endif
-
-    private static SnapshotProbe CreateProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator)
-    {
-        return new SnapshotProbe
-        {
-            Id = guidGenerator.New().ToString(),
-            Language = TracerConstants.Language,
-            Active = true,
-            Where = new Where
-            {
-                TypeName = typeName,
-                MethodName = methodName
-            },
-            Sampling = new Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 }
-        };
-    }
 
     private async Task RunMethodProbeTests(Type testType)
     {

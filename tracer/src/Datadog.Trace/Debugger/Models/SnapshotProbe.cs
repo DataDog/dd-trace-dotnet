@@ -1,4 +1,4 @@
-// <copyright file="ProbeSnapshot.cs" company="Datadog">
+// <copyright file="SnapshotProbe.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,9 +10,9 @@ using System.Runtime.Serialization;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Debugger.Models
 {
-    internal record struct ProbeSnapshot
+    internal record struct SnapshotProbe
     {
         public ProbeMethodCapture Captures { get; set; }
 
@@ -21,6 +21,8 @@ namespace Datadog.Trace.Debugger
         public ThreadInfo Thread { get; set; }
 
         public StackInfo[] Stack { get; set; }
+
+        public EvaluationErrors[] EvaluationErrors { get; set; }
 
         public string Id { get; set; }
 
@@ -52,6 +54,13 @@ namespace Datadog.Trace.Debugger
         public string FileName { get; set; }
 
         public int LineNumber { get; set; }
+    }
+
+    internal record struct EvaluationErrors
+    {
+        public string Expression { get; set; }
+
+        public string Message { get; set; }
     }
 
     internal record struct ProbeLocation

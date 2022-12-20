@@ -6,7 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Debugger.Conditions;
+using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Snapshots;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -42,8 +42,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
         /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Instrumentation.MethodMetadataInfo"/></param>
         /// <param name="invocationTarget">The current invocation target ('this' object)</param>
-        /// <param name="condition">The probe condition or null if does not exist</param>
-        internal MethodDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, object invocationTarget, ProbeCondition condition)
+        internal MethodDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, object invocationTarget)
         {
             _probeId = probeId;
             _scope = scope;
@@ -52,8 +51,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
             HasLocalsOrReturnValue = false;
             SnapshotCreator = new DebuggerSnapshotCreator();
             InvocationTarget = invocationTarget;
-            Condition = condition;
+            MethodPhase = EvaluateAt.Entry;
         }
+
+        internal EvaluateAt MethodPhase { get; set; }
 
         internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
 
@@ -76,8 +77,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets the Id of the probe
         /// </summary>
         internal string ProbeId => _probeId;
-
-        internal ProbeCondition Condition { get; }
 
         /// <summary>
         /// Gets the default live debugger state (used by the native side to initialize the locals)

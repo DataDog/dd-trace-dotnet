@@ -1,4 +1,4 @@
-// <copyright file="SnapshotProbe.cs" company="Datadog">
+// <copyright file="LogProbe.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,15 +7,13 @@ using System;
 
 namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    internal class SnapshotProbe : ProbeDefinition, IEquatable<SnapshotProbe>
+    internal class LogProbe : ProbeDefinition, IEquatable<LogProbe>
     {
+        public Template Template { get; set; }
+
         public Capture? Capture { get; set; }
 
-        public Sampling? Sampling { get; set; }
-
-        public DebuggerExpression? When { get; set; }
-
-        public bool Equals(SnapshotProbe other)
+        public bool Equals(LogProbe other)
         {
             if (ReferenceEquals(null, other))
             {
@@ -27,7 +25,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
                 return true;
             }
 
-            return base.Equals(other) && Capture.Equals(other.Capture) && Sampling.Equals(other.Sampling) && When.Equals(other.When);
+            return base.Equals(other) && Template.Equals(other.Template);
         }
 
         public override bool Equals(object obj)
@@ -47,12 +45,12 @@ namespace Datadog.Trace.Debugger.Configurations.Models
                 return false;
             }
 
-            return Equals((SnapshotProbe)obj);
+            return Equals((LogProbe)obj);
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(base.GetHashCode(), Capture, Sampling, When);
+            return HashCode.Combine(base.GetHashCode(), Template);
         }
     }
 }

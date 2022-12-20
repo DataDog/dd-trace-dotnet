@@ -7,9 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using AgileObjects.ReadableExpressions;
 using Datadog.Trace.Debugger.Conditions;
+using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -33,49 +36,95 @@ namespace Datadog.Trace.Tests.Debugger
 
         internal TestStruct Test { get; set; }
 
-        public static IEnumerable<object[]> DSLExamples()
+        public static IEnumerable<object[]> ExpressionsResources()
         {
-            var path = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, "Debugger", "Resources");
-            return Directory.EnumerateFiles(path).Where(f => !Path.GetFileName(f).StartsWith("Skip")).Select(file => new object[] { file });
+            var sourceFilePath = GetSourceFilePath();
+            var path = Path.Combine(sourceFilePath, "..", "ProbeExpressionsResources");
+            return Directory.EnumerateFiles(path, "*.json", SearchOption.TopDirectoryOnly).Select(file => new object[] { file });
+        }
+
+        public static string GetSourceFilePath([CallerFilePath] string sourceFilePath = null)
+        {
+            return sourceFilePath ?? throw new InvalidOperationException("Can't obtain source file path");
         }
 
         [Theory]
-        [MemberData(nameof(DSLExamples))]
-        public async Task TestCondition(string conditionTestFilePath)
+        [MemberData(nameof(ExpressionsResources))]
+        public async Task TestExpression(string expressionTestFilePath)
         {
-            var conditionTest = File.ReadAllText(conditionTestFilePath);
-            var probeCondition = new ProbeCondition(" ", MethodPhase.End, conditionTest);
-            PopulateMembers(ref probeCondition);
-            var condition = ProbeConditionExpressionParser.ToCondition(conditionTest, probeCondition.InvocationTarget, probeCondition.ScopeMembers);
-            var result = probeCondition.Evaluate();
-            var toVerify = $"DSL: {condition.DSL}{Environment.NewLine}Expression: {condition.Expression.ToReadableString()}{Environment.NewLine}Result: {result}";
+            // Arrange
+            var evaluator = GetJsonExpression(expressionTestFilePath);
+            var settings = ConfigureVerifySettings(expressionTestFilePath);
 
-            var settings = new VerifySettings();
-            settings.UseFileName($"{nameof(DebuggerExpressionLanguageTests)}.{Path.GetFileNameWithoutExtension(conditionTestFilePath)}");
-            settings.DisableRequireUniquePrefix();
-            VerifierSettings.DerivePathInfo(
-                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "conditions")));
+            // Act
+            var compiledExpression = ProbeExpressionParser.ParseExpression<bool>(evaluator.DebuggerExpressions.First().Json, evaluator.MethodScopeMembers.InvocationTarget, evaluator.MethodScopeMembers.Members);
+            var result = evaluator.Evaluate();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var toVerify = $"Expression: {compiledExpression.ParsedExpression.ToReadableString()}{Environment.NewLine}Result: {result.Condition}";
             await Verifier.Verify(toVerify, settings);
         }
 
-        private void PopulateMembers(ref ProbeCondition probeCondition)
+        private static VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
         {
+            var settings = new VerifySettings();
+            settings.UseFileName($"{nameof(DebuggerExpressionLanguageTests)}.{Path.GetFileNameWithoutExtension(expressionTestFilePath)}");
+            settings.DisableRequireUniquePrefix();
+            VerifierSettings.DerivePathInfo(
+                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "ProbeExpressionsResources", "Approvals")));
+            return settings;
+        }
+
+        private ProbeConditionEvaluator GetJsonExpression(string expressionTestFilePath)
+        {
+            var jsonExpression = File.ReadAllText(expressionTestFilePath);
+            var dsl = GetDsl(jsonExpression);
+            var probeExpression = new ProbeConditionEvaluator(" ", EvaluateAt.Exit, new DebuggerExpression[] { new(dsl, jsonExpression) });
+            PopulateMembers(probeExpression);
+            return probeExpression;
+        }
+
+        private string GetDsl(string expressionJson)
+        {
+            var reader = new JsonTextReader(new StringReader(expressionJson));
+
+            while (reader.Read())
+            {
+                if (reader.TokenType != JsonToken.PropertyName)
+                {
+                    continue;
+                }
+
+                if (reader.Value?.ToString() == "dsl")
+                {
+                    reader.Read();
+                    return reader.Value?.ToString();
+                }
+            }
+
+            throw new InvalidOperationException("DSL part not found in the json file");
+        }
+
+        private void PopulateMembers(ProbeExpressionEvaluatorBase probeExpressionEvaluator)
+        {
+            probeExpressionEvaluator.CreateMethodScopeMembers(5, 5);
             // Add locals
-            probeCondition.AddLocal("IntLocal", Test.IntNumber.GetType(), Test.IntNumber);
-            probeCondition.AddLocal("DoubleLocal", Test.DoubleNumber.GetType(), Test.DoubleNumber);
-            probeCondition.AddLocal("StringLocal", Test.String.GetType(), Test.String);
-            probeCondition.AddLocal("CollectionLocal", Test.Collection.GetType(), Test.Collection);
-            probeCondition.AddLocal("NestedObjectLocal", Test.Nested.GetType(), Test.Nested);
+            probeExpressionEvaluator.AddMember("IntLocal", Test.IntNumber.GetType(), Test.IntNumber, ScopeMemberKind.Local);
+            probeExpressionEvaluator.AddMember("DoubleLocal", Test.DoubleNumber.GetType(), Test.DoubleNumber, ScopeMemberKind.Local);
+            probeExpressionEvaluator.AddMember("StringLocal", Test.String.GetType(), Test.String, ScopeMemberKind.Local);
+            probeExpressionEvaluator.AddMember("CollectionLocal", Test.Collection.GetType(), Test.Collection, ScopeMemberKind.Local);
+            probeExpressionEvaluator.AddMember("NestedObjectLocal", Test.Nested.GetType(), Test.Nested, ScopeMemberKind.Local);
 
             // Add arguments
-            probeCondition.AddArgument("IntArg", Test.IntNumber.GetType(), Test.IntNumber);
-            probeCondition.AddArgument("DoubleArg", Test.DoubleNumber.GetType(), Test.DoubleNumber);
-            probeCondition.AddArgument("StringArg", Test.String.GetType(), Test.String);
-            probeCondition.AddArgument("CollectionArg", Test.Collection.GetType(), Test.Collection);
-            probeCondition.AddArgument("NestedObjectArg", Test.Nested.GetType(), Test.Nested);
+            probeExpressionEvaluator.AddMember("IntArg", Test.IntNumber.GetType(), Test.IntNumber, ScopeMemberKind.Argument);
+            probeExpressionEvaluator.AddMember("DoubleArg", Test.DoubleNumber.GetType(), Test.DoubleNumber, ScopeMemberKind.Argument);
+            probeExpressionEvaluator.AddMember("StringArg", Test.String.GetType(), Test.String, ScopeMemberKind.Argument);
+            probeExpressionEvaluator.AddMember("CollectionArg", Test.Collection.GetType(), Test.Collection, ScopeMemberKind.Argument);
+            probeExpressionEvaluator.AddMember("NestedObjectArg", Test.Nested.GetType(), Test.Nested, ScopeMemberKind.Argument);
 
             // Add "this" member
-            probeCondition.SetInvocationTarget("this", Test.GetType(), Test);
+            probeExpressionEvaluator.AddInvocationTarget("this", Test.GetType(), Test);
         }
 
         internal struct TestStruct

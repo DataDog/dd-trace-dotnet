@@ -12,7 +12,6 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Samples.Probes;
 using Samples.Probes.TestRuns;
 using Xunit;
 
@@ -64,81 +63,140 @@ internal static class DebuggerTestHelper
 
     internal static (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
-        const BindingFlags allMask =
-            BindingFlags.Public |
-            BindingFlags.NonPublic |
-            BindingFlags.Static |
-            BindingFlags.Instance;
+        return GetAllMethodProbes(type, targetFramework, unlisted, guidGenerator)
+              .Concat(GetAllLineProbes(type, targetFramework, unlisted, guidGenerator))
+              .ToArray();
+    }
 
-        var snapshotMethodProbes = type.GetNestedTypes(allMask)
-                                       .SelectMany(nestedType =>
-                                                       nestedType.GetMethods(allMask | BindingFlags.DeclaredOnly)
-                                                                 .Concat(nestedType.GetConstructors(allMask | BindingFlags.DeclaredOnly).As<IEnumerable<MethodBase>>()))
-                                       .Concat(type.GetMethods(allMask | BindingFlags.DeclaredOnly)
-                                                   .Concat(type.GetConstructors(allMask | BindingFlags.DeclaredOnly).As<IEnumerable<MethodBase>>()))
-                                       .As<IEnumerable<MethodBase>>()
-                                       .Where(
-                                            m =>
-                                            {
-                                                var att = m.GetCustomAttribute<MethodProbeTestDataAttribute>();
-                                                return att?.Skip == false && att?.Unlisted == unlisted && att?.SkipOnFrameworks.Contains(targetFramework) == false;
-                                            })
-                                       .Select(m => (m.GetCustomAttribute<MethodProbeTestDataAttribute>().As<ProbeAttributeBase>(), CreateSnapshotMethodProbe(m, guidGenerator)))
-                                       .ToArray();
-
+    internal static IEnumerable<(ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)> GetAllLineProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
+    {
         var snapshotLineProbes = type.GetCustomAttributes<LineProbeTestDataAttribute>()
                                      .Where(att => att?.Skip == false && att?.Unlisted == unlisted && att?.SkipOnFrameworks.Contains(targetFramework) == false)
                                      .Select(att => (att.As<ProbeAttributeBase>(), CreateSnapshotLineProbe(type, att, guidGenerator)))
                                      .ToArray();
 
-        return snapshotLineProbes.Concat(snapshotMethodProbes).ToArray();
+        return snapshotLineProbes;
     }
 
-    private static SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
+    internal static IEnumerable<(ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)> GetAllMethodProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
-        var where = CreateLineProbeWhere(type, line);
-        return CreateSnapshotProbe(where, guidGenerator);
+        var snapshotMethodProbes = GetAllTestMethods<MethodProbeTestDataAttribute>(type, targetFramework, unlisted)
+           .Select(m =>
+            {
+                var testAttribute = m.GetCustomAttribute<MethodProbeTestDataAttribute>().As<ProbeAttributeBase>();
+                var probe = CreateSnapshotMethodProbe(m, guidGenerator);
+                if (testAttribute is ExpressionProbeTestDataAttribute expression)
+                {
+                    probe = probe.WithWhen(expression.Dsl, expression.Json, (EvaluateAt)expression.EvaluateAt);
+                }
+
+                return (testAttribute, probe);
+            });
+
+        return snapshotMethodProbes;
     }
 
-    private static Where CreateLineProbeWhere(Type type, LineProbeTestDataAttribute line)
+    internal static SnapshotProbe WithWhere(this SnapshotProbe snapshot, string typeName, string methodName, MethodProbeTestDataAttribute probeTestData = null)
     {
-        using var reader = DatadogPdbReader.CreatePdbReader(type.Assembly);
-        var symbolMethod = reader.ReadMethodSymbolInfo(type.GetMethods().First().MetadataToken);
-        var filePath = symbolMethod.SequencePoints.First().Document.URL;
-        return new Where() { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
+        var @where = new Where
+        {
+            TypeName = typeName,
+            MethodName = methodName
+        };
+
+        if (probeTestData != null)
+        {
+            var signature = probeTestData.ReturnTypeName;
+            if (probeTestData.ParametersTypeName?.Any() == true)
+            {
+                signature += "," + string.Join(",", probeTestData.ParametersTypeName);
+            }
+
+            @where.Signature = signature;
+        }
+
+        snapshot.Where = where;
+        return snapshot;
     }
 
-    private static SnapshotProbe CreateSnapshotMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
+    internal static SnapshotProbe WithWhen(this SnapshotProbe snapshot, string dsl, string json, EvaluateAt evaluateAt)
     {
-        var probeTestData = method.GetCustomAttribute<MethodProbeTestDataAttribute>();
-        var where = CreateMethodProbeWhere(method, probeTestData);
-        return CreateSnapshotProbe(where, guidGenerator);
+        snapshot.When = new DebuggerExpression(dsl, json);
+        snapshot.EvaluateAt = evaluateAt;
+        return snapshot;
     }
 
-    private static SnapshotProbe CreateSnapshotProbe(Where where, DeterministicGuidGenerator guidGenerator)
+    internal static SnapshotProbe WithSampling(this SnapshotProbe snapshot, double snapshotsPerSeconds = 1000000)
+    {
+        snapshot.Sampling = new Configurations.Models.Sampling { SnapshotsPerSecond = snapshotsPerSeconds };
+        return snapshot;
+    }
+
+    internal static SnapshotProbe CreateSnapshotProbe(DeterministicGuidGenerator guidGenerator)
     {
         return new SnapshotProbe
         {
             Id = guidGenerator.New().ToString(),
             Language = TracerConstants.Language,
             Active = true,
-            Where = where,
-            Sampling = new Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 }
         };
     }
 
-    private static Where CreateMethodProbeWhere(MethodBase method, MethodProbeTestDataAttribute probeTestData)
+    internal static SnapshotProbe CreateDefaultSnapshotProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator)
     {
-        var @where = new Where();
-        @where.TypeName = probeTestData.UseFullTypeName ? method.DeclaringType.FullName : method.DeclaringType.Name;
-        @where.MethodName = method.Name;
-        var signature = probeTestData.ReturnTypeName;
-        if (probeTestData.ParametersTypeName?.Any() == true)
+        return CreateSnapshotProbe(guidGenerator).WithWhere(typeName, methodName).WithSampling();
+    }
+
+    private static IEnumerable<MethodBase> GetAllTestMethods<T>(Type type, string targetFramework, bool unlisted)
+        where T : ProbeAttributeBase
+    {
+        const BindingFlags allMask =
+            BindingFlags.Public |
+            BindingFlags.NonPublic |
+            BindingFlags.Static |
+            BindingFlags.Instance;
+
+        return type.GetNestedTypes(allMask)
+                   .SelectMany(
+                        nestedType =>
+                            nestedType.GetMethods(allMask | BindingFlags.DeclaredOnly)
+                                      .Concat(nestedType.GetConstructors(allMask | BindingFlags.DeclaredOnly).As<IEnumerable<MethodBase>>()))
+                   .Concat(
+                        type.GetMethods(allMask | BindingFlags.DeclaredOnly)
+                            .Concat(type.GetConstructors(allMask | BindingFlags.DeclaredOnly).As<IEnumerable<MethodBase>>()))
+                   .As<IEnumerable<MethodBase>>()
+                   .Where(
+                        m =>
+                        {
+                            var att = m.GetCustomAttribute<T>();
+                            return att?.Skip == false && att?.Unlisted == unlisted && att?.SkipOnFrameworks.Contains(targetFramework) == false;
+                        });
+    }
+
+    private static SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
+    {
+        return CreateSnapshotProbe(guidGenerator).WithLineProbeWhere(type, line);
+    }
+
+    private static SnapshotProbe WithLineProbeWhere(this SnapshotProbe snapshot, Type type, LineProbeTestDataAttribute line)
+    {
+        using var reader = DatadogPdbReader.CreatePdbReader(type.Assembly);
+        var symbolMethod = reader.ReadMethodSymbolInfo(type.GetMethods().First().MetadataToken);
+        var filePath = symbolMethod.SequencePoints.First().Document.URL;
+        var where = new Where { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
+        snapshot.Where = where;
+        return snapshot;
+    }
+
+    private static SnapshotProbe CreateSnapshotMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
+    {
+        var probeTestData = method.GetCustomAttribute<MethodProbeTestDataAttribute>();
+        if (probeTestData == null)
         {
-            signature += "," + string.Join(",", probeTestData.ParametersTypeName);
+            throw new Xunit.Sdk.SkipException($"{nameof(MethodProbeTestDataAttribute)} has not found for method: {method.DeclaringType?.FullName}.{method.Name}");
         }
 
-        @where.Signature = signature;
-        return @where;
+        var typeName = probeTestData.UseFullTypeName ? method.DeclaringType.FullName : method.DeclaringType.Name;
+        return CreateSnapshotProbe(guidGenerator).WithWhere(typeName, method.Name, probeTestData).WithSampling();
     }
 }

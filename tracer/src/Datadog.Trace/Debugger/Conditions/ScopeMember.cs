@@ -7,28 +7,28 @@ using System;
 
 namespace Datadog.Trace.Debugger.Conditions
 {
+    internal enum ScopeMemberKind
+    {
+        Argument,
+        Local,
+        This,
+        Exception,
+        Return
+    }
+
     internal struct ScopeMember
     {
         public object Value;
         public string Name;
         public Type Type;
-        public MemberType ElementType;
+        public ScopeMemberKind ElementType;
 
-        public ScopeMember(string name, Type type, object value, MemberType elementType)
+        public ScopeMember(string name, Type type, object value, ScopeMemberKind elementType)
         {
             Name = name;
             Type = type;
             Value = value;
             ElementType = elementType;
-        }
-
-        internal enum MemberType
-        {
-            Argument,
-            Local,
-            This,
-            Exception,
-            Return
         }
     }
 }
