@@ -363,6 +363,7 @@ namespace Datadog.Trace
                     var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
                     traceContext.SetSamplingPriority(samplingPriority);
                     traceContext.Origin = parentSpanContext.Origin;
+                    traceContext.AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
                 }
             }
             else
