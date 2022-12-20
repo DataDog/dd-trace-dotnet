@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.TestHelpers;
 
-internal static class InstrumentationVerification
+public static class InstrumentationVerification
 {
     /// <summary>
     /// Configuration key for enabling or disabling writing the instrumentation changes to disk
@@ -31,7 +31,12 @@ internal static class InstrumentationVerification
 
     public static void VerifyInstrumentation(Process process, string logDirectory)
     {
-        var instrumentedLogsPath = GetInstrumentationLogsFolder(process, logDirectory);
+        var instrumentedLogsPath = FindInstrumentationLogsFolder(process, logDirectory);
+        if (instrumentedLogsPath == null)
+        {
+            throw new Exception($"Unable to find instrumentation verification directory for process {process.Id}");
+        }
+
         var copyOriginalsModulesToDisk = Environment.GetEnvironmentVariable(InstrumentationVerification.CopyingOriginalModulesEnabled);
         var generatorArgs = new AssemblyGeneratorArgs(instrumentedLogsPath, copyOriginalModulesToDisk: copyOriginalsModulesToDisk?.ToLower() is "true" or "1");
         var generatedModules = InstrumentedAssemblyGeneration.Generate(generatorArgs);
@@ -51,7 +56,7 @@ internal static class InstrumentationVerification
             "Instrumentation verification test failed:" + Environment.NewLine + string.Join(Environment.NewLine, results.Where(r => !r.IsValid).Select(r => r.FailureReason)));
     }
 
-    private static string GetInstrumentationLogsFolder(Process process, string logsFolder)
+    public static string FindInstrumentationLogsFolder(Process process, string logsFolder)
     {
         var processExecutableFileName = Path.GetFileNameWithoutExtension(process.StartInfo.FileName);
         Assert.NotNull(logsFolder);
@@ -59,7 +64,7 @@ internal static class InstrumentationVerification
 
         if (!instrumentationLogsFolder.Exists)
         {
-            throw new Exception($"Unable to find instrumentation verification directory at {instrumentationLogsFolder}");
+            return null;
         }
 
         string pattern = $"{processExecutableFileName}_{process.Id}_*"; // * wildcard matches process start time
@@ -69,11 +74,6 @@ internal static class InstrumentationVerification
                .OrderBy(d => d.CreationTime)
                .LastOrDefault();
 
-        if (processSpecificInstrumentationLogsFolder == null)
-        {
-            throw new Exception($"Unable to find instrumentation verification directory that matches pattern '{pattern}' in {instrumentationLogsFolder}");
-        }
-
-        return processSpecificInstrumentationLogsFolder.FullName;
+        return processSpecificInstrumentationLogsFolder?.FullName;
     }
 }

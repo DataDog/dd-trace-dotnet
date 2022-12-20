@@ -206,8 +206,6 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["COR_PROFILER_PATH"] = nativeLoaderPath;
             }
 
-            environmentVariables["DD_WRITE_INSTRUMENTATION_TO_DISK"] = profilerEnabled;
-
             if (DebugModeEnabled)
             {
                 environmentVariables["DD_TRACE_DEBUG"] = "1";

@@ -158,8 +158,9 @@ namespace Datadog.Trace.Activity
 
             static void ChangeActivityDefaultFormat(Type activityType)
             {
-                // We change the default ID format to W3C (so traceid and spanid gets populated)
-                if (Activator.CreateInstance(activityType, string.Empty).TryDuckCast<IActivityFormat>(out var activityFormat))
+                // Instantiate an (unused) Activity object so we can use DuckTyping to update the static property Activity.DefaultIdFormat, changing the default ID format to W3C (so traceid and spanid gets populated).
+                // Note: We're specifically passing in a non-empty string parameter to the Activity constructor because the constructor may throw an exception if the string is null or empty.
+                if (Activator.CreateInstance(activityType, "operationName").TryDuckCast<IActivityFormat>(out var activityFormat))
                 {
                     activityFormat.DefaultIdFormat = ActivityIdFormat.W3C;
                 }

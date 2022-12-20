@@ -236,8 +236,8 @@ namespace BuggyBits.Models
                 new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount * 4 },
                 (id) => // download each product and store them in a common list protected by a lock
                 {
-                    // "sync over async" anti-pattern
-                    var product = GetProductAsync(path, id).GetAwaiter().GetResult();
+                    // don't create too many spans
+                    var product = GetProduct(id);
                     lock (listLock)
                     {
                         products.Add(product);

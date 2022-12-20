@@ -3,8 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using System.Reflection;
 using Datadog.Trace.Iast;
 using Moq;
 using Xunit;
@@ -52,6 +55,40 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             Assert.NotNull(iastContext.GetTainted(idValue));
             Assert.NotNull(iastContext.GetTainted(path.Value));
             Assert.NotNull(iastContext.GetTainted(queryStringStr));
+        }
+#endif
+
+#if !NETFRAMEWORK
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestDataWithHeaders_HeadersAreTainted()
+        {
+            IastRequestContext iastContext = new();
+            // var dictionary = new IHeaderDictionaryForTest();
+
+            var key1 = "key1";
+            var key2 = "key2";
+            var value1 = "value1";
+            var value2 = "value2";
+            var value3 = "value3";
+
+            var innerDic = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>()
+            {
+                { key1, new Microsoft.Extensions.Primitives.StringValues(new string[] { value1, value2 }) },
+                { key2, value3 },
+            };
+            var dictionary = new Mock<Microsoft.AspNetCore.Http.IHeaderDictionary>();
+            Mock<Microsoft.AspNetCore.Http.HttpRequest> request = new();
+
+            var queryMock = new Mock<Microsoft.AspNetCore.Http.IQueryCollection>();
+            dictionary.Setup(x => x.GetEnumerator()).Returns(innerDic.GetEnumerator());
+            request.Setup(x => x.Headers).Returns(dictionary.Object);
+
+            iastContext.AddRequestData(request.Object, null);
+            Assert.NotNull(iastContext.GetTainted(key1));
+            Assert.NotNull(iastContext.GetTainted(key2));
+            Assert.NotNull(iastContext.GetTainted(value1));
+            Assert.NotNull(iastContext.GetTainted(value2));
+            Assert.NotNull(iastContext.GetTainted(value3));
         }
 #endif
     }

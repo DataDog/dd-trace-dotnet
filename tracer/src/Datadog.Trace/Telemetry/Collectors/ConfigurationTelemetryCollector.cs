@@ -144,7 +144,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.IastEnabled, value: _iastSettings?.Enabled),
                 new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
                 new(ConfigTelemetryData.TraceMethods, value: settings.TraceMethods),
-                new(ConfigTelemetryData.ActivityListenerEnabled, value: settings.IsActivityListenerEnabled),
+                new(ConfigTelemetryData.OpenTelemetryEnabled, value: settings.IsActivityListenerEnabled),
                 new(ConfigTelemetryData.ProfilerLoaded, value: _profiler?.Status.IsProfilerReady),
                 new(ConfigTelemetryData.CodeHotspotsEnabled, value: _profiler?.ContextTracker.IsEnabled),
                 new(ConfigTelemetryData.StatsComputationEnabled, value: settings.StatsComputationEnabled),

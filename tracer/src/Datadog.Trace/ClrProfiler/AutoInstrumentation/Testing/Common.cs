@@ -16,14 +16,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
     {
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
 
-        internal static void FlushSpans(IntegrationId integrationInfo)
+        internal static void Flush(IntegrationId integrationInfo)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationInfo))
             {
                 return;
             }
 
-            CIVisibility.FlushSpans();
+            CIVisibility.Flush();
         }
 
         internal static string GetParametersValueData(object paramValue)

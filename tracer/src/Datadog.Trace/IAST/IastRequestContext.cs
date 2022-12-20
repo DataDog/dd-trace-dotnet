@@ -15,7 +15,7 @@ internal class IastRequestContext
     private object _vulnerabilityLock = new();
     private TaintedObjects _taintedObjects = new();
     private bool _routedParametersAdded = false;
-    private bool _queryPathParametersAdded = false;
+    private bool _querySourcesAdded = false;
 
     internal void AddIastVulnerabilitiesToSpan(Span span)
     {
@@ -66,11 +66,14 @@ internal class IastRequestContext
     {
         if (!_routedParametersAdded)
         {
-            foreach (var item in routeData)
+            if (routeData != null)
             {
-                if (item.Value is string valueAsString)
+                foreach (var item in routeData)
                 {
-                    AddRoutedParameter(item.Key, valueAsString);
+                    if (item.Value is string valueAsString)
+                    {
+                        AddRoutedParameter(item.Key, valueAsString);
+                    }
                 }
             }
 
@@ -87,7 +90,7 @@ internal class IastRequestContext
     // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(System.Web.HttpRequest request)
     {
-        if (!_queryPathParametersAdded)
+        if (!_querySourcesAdded)
         {
             if (request.QueryString != null)
             {
@@ -99,8 +102,20 @@ internal class IastRequestContext
                 AddQueryStringRaw(request.QueryString.ToString());
             }
 
+            AddRequestHeaders(request.Headers);
             AddQueryPath(request.Path);
-            _queryPathParametersAdded = true;
+            _querySourcesAdded = true;
+        }
+    }
+
+    private void AddRequestHeaders(System.Collections.Specialized.NameValueCollection? headers)
+    {
+        if (headers is not null)
+        {
+            foreach (var header in headers.AllKeys)
+            {
+                AddHeaderData(header, headers[header]);
+            }
         }
     }
 
@@ -110,13 +125,14 @@ internal class IastRequestContext
         AddRouteData(routeData);
         AddRequestData(request);
     }
+
 #else
     // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(Microsoft.AspNetCore.Http.HttpRequest request, IDictionary<string, object> routeParameters)
     {
         AddRouteData(routeParameters);
 
-        if (!_queryPathParametersAdded)
+        if (!_querySourcesAdded)
         {
             if (request.Query != null)
             {
@@ -128,8 +144,37 @@ internal class IastRequestContext
 
             AddQueryPath(request.Path);
             AddQueryStringRaw(request.QueryString.Value);
-            _queryPathParametersAdded = true;
+            AddRequestHeaders(request.Headers);
+            _querySourcesAdded = true;
         }
     }
+
+    private void AddRequestHeaders(Microsoft.AspNetCore.Http.IHeaderDictionary? headers)
+    {
+        if (headers is not null)
+        {
+            foreach (var header in headers)
+            {
+                if (header.Value.Count > 1)
+                {
+                    foreach (var singleValue in header.Value)
+                    {
+                        AddHeaderData(header.Key, singleValue);
+                    }
+                }
+                else
+                {
+                    AddHeaderData(header.Key, header.Value);
+                }
+            }
+        }
+    }
+
 #endif
+
+    private void AddHeaderData(string name, string value)
+    {
+        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestHeader), name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderName), name, null));
+    }
 }
