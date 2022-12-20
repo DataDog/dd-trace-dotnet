@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -49,6 +50,8 @@ namespace Datadog.Trace
             }
         }
 
+        internal TraceContext TraceContext => _context.TraceContext;
+
         /// <summary>
         /// Gets or sets operation name
         /// </summary>
@@ -90,6 +93,14 @@ namespace Datadog.Trace
         /// </summary>
         internal ulong SpanId => _context.SpanId;
 
+        internal ulong? ParentId => _context.Parent?.SpanId;
+
+        internal string RawTraceId => _context.RawTraceId;
+
+        internal string RawSpanId => _context.RawSpanId;
+
+        internal ISpanContext Parent => _context.Parent;
+
         /// <summary>
         /// Gets <i>local root span id</i>, i.e. the <c>SpanId</c> of the span that is the root of the local, non-reentrant
         /// sub-operation of the distributed operation that is represented by the trace that contains this span.
@@ -110,6 +121,8 @@ namespace Datadog.Trace
         internal TimeSpan Duration { get; private set; }
 
         internal bool IsFinished { get; private set; }
+
+        internal PathwayContext? PathwayContext => _context.PathwayContext;
 
         internal bool IsRootSpan => _context.TraceContext?.RootSpan == this;
 
@@ -461,5 +474,19 @@ namespace Datadog.Trace
         {
             Duration = duration;
         }
+
+        /// <summary>
+        /// Sets a DataStreams checkpoint
+        /// </summary>
+        /// <param name="manager">The <see cref="DataStreamsManager"/> to use</param>
+        /// <param name="edgeTags">The edge tags for this checkpoint. NOTE: These MUST be sorted alphabetically</param>
+        internal void SetCheckpoint(DataStreamsManager manager, string[] edgeTags) => _context.SetCheckpoint(manager, edgeTags);
+
+        /// <summary>
+        /// Merges two DataStreams <see cref="PathwayContext"/>
+        /// Should be called when a pathway context is extracted from an incoming span
+        /// Used to merge contexts in a "fan in" scenario.
+        /// </summary>
+        internal void MergePathwayContext(PathwayContext? pathwayContext) => _context.MergePathwayContext(pathwayContext);
     }
 }
