@@ -295,20 +295,18 @@ namespace Datadog.Trace.Propagators
 
         internal static W3CTraceState ParseTraceState(string header)
         {
-            var otherHeaderValues = string.Empty;
-
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
-                return new W3CTraceState(null, null, null, otherHeaderValues);
+                return default;
             }
 
-            SplitTraceStateValues(header, out var ddValues, out otherHeaderValues);
+            SplitTraceStateValues(header, out var ddValues, out var additionalValues);
 
             if (ddValues.Length < 6)
             {
-                // "dd" section too short, shortest length is 6, "dd=a:b"
-                return new W3CTraceState(null, null, null, otherHeaderValues);
+                // "dd" section too short, shortest valid length is 6 as in "dd=a:b"
+                return new W3CTraceState(null, null, null, additionalValues);
             }
 
             int? samplingPriority = null;
@@ -425,7 +423,7 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                return new W3CTraceState(samplingPriority, origin, propagatedTags, otherHeaderValues);
+                return new W3CTraceState(samplingPriority, origin, propagatedTags, additionalValues);
             }
             finally
             {
