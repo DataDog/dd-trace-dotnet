@@ -91,6 +91,12 @@ partial class Build : NukeBuild
                 {
                     foreach (var targetPlatform in targetPlatforms)
                     {
+                        if (targetPlatform == "x86" && (framework.Equals(TargetFramework.NETCOREAPP3_1) || framework.Equals(TargetFramework.NET6_0)))
+                        {
+                            // fails on CI with error "apphost.exe" not found.
+                            continue;
+                        }
+
                         matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform });
                     }
                 }
