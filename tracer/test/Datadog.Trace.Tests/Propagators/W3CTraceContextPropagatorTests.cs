@@ -5,8 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
@@ -487,14 +485,6 @@ namespace Datadog.Trace.Tests.Propagators
                                      .ToString() // NETCOREAPP returns ReadOnlySpan<char>
                                      .Should()
                                      .Be(expected);
-        }
-
-        private static SpanContext CreateSpanContext(ulong traceId, ulong spanId, string rawTraceId, string rawSpanId)
-        {
-            var settings = new TracerSettings();
-            var agentWriter = new Mock<IAgentWriter>();
-            var tracer = new Tracer(settings, agentWriter.Object, sampler: null, scopeManager: null, statsd: null);
-            return tracer.CreateSpanContext(parent: SpanContext.None, serviceName: null, traceId, spanId, rawTraceId, rawSpanId);
         }
     }
 }
