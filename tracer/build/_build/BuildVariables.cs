@@ -30,7 +30,7 @@ partial class Build
 
         envVars.Add("CORECLR_ENABLE_PROFILING", "1");
         envVars.Add("CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}");
-        
+
         if (EnvironmentInfo.IsWin)
         {
             var loaderPath32 = MonitoringHomeDirectory / "win-x86" / $"{FileNames.NativeLoader}.dll";
