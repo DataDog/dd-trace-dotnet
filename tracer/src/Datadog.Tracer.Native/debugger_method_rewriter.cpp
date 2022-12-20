@@ -1263,7 +1263,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                      function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
 
         const WSTRING& reasoning = caller->name == WStr(".ctor") || caller->name == WStr(".cctor")
-                                       ? invalid_probe_probe_static_ctor_not_supported
+                                       ? invalid_probe_probe_cctor_ctor_not_supported
                                        : invalid_probe_probe_byreflike_return_not_supported;
         MarkAllProbesAsError(methodProbes, lineProbes, reasoning);
         return E_NOTIMPL;
