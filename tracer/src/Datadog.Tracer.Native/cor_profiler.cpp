@@ -220,7 +220,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     // Check if we have to disable tiered compilation (due to https://github.com/dotnet/runtime/issues/77973)
     bool disableTieredCompilation = false;
-    bool internal_workaround_77973_enabled = true;
+    bool internal_workaround_77973_enabled = false;
     shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(environment::internal_workaround_77973_enabled), internal_workaround_77973_enabled);
     if (internal_workaround_77973_enabled)
     {
