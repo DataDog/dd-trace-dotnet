@@ -978,7 +978,7 @@ partial class Build
 
             //// Allow restore here, otherwise things go wonky with runtime identifiers
             //// in some target frameworks. No, I don't know why
-            DotnetBuild(regressionLibs, platform: TargetPlatform, framework: Framework, noRestore: false, setNuget: true);
+            DotnetBuild(regressionLibs, platform: TargetPlatform, framework: Framework, noRestore: false);
         });
 
     Target CompileFrameworkReproductions => _ => _
@@ -1278,7 +1278,7 @@ partial class Build
                 });
 
             
-            DotnetBuild(projects, platform: TargetPlatform, noRestore: false, setNuget: true);
+            DotnetBuild(projects, platform: TargetPlatform, noRestore: false);
         });
 
     Target RunWindowsAzureFunctionsTests => _ => _
@@ -1547,7 +1547,7 @@ partial class Build
 
             // do the build and publish separately to avoid dependency issues
 
-            DotnetBuild(projectsToBuild, framework: Framework, noRestore: false, setNuget: true, setPackages: true);
+            DotnetBuild(projectsToBuild, framework: Framework, noRestore: false);
 
             // Always AnyCPU
             DotNetPublish(x => x
@@ -1625,7 +1625,7 @@ partial class Build
                    .GlobFiles("test/*.IntegrationTests/*.csproj")
                    .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests));
 
-            DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false, setNuget: true, setPackages: true);
+            DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false);
 
             IntegrationTestLinuxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
             IntegrationTestLinuxProfilerDirFudge(Projects.AppSecIntegrationTests);
@@ -2215,7 +2215,7 @@ partial class Build
         bool setPackages = false
         )
     {
-        DotnetBuild(new [] { project.Path }, platform, framework, noRestore, noDependencies, setNuget, setPackages); 
+        DotnetBuild(new [] { project.Path }, platform, framework, noRestore, noDependencies); 
     }
 
     private void DotnetBuild(
@@ -2223,9 +2223,7 @@ partial class Build
         MSBuildTargetPlatform platform = null,
         TargetFramework framework = null,
         bool noRestore = true,
-        bool noDependencies = true,
-        bool setNuget = false,
-        bool setPackages = false
+        bool noDependencies = true
         )
     {
         DotNetBuild(s => s
@@ -2234,9 +2232,9 @@ partial class Build
             .When(noRestore, settings => settings.EnableNoRestore())
             .When(noDependencies, settings => settings.EnableNoDependencies())
             .When(framework is not null, settings => settings.SetFramework(framework))
-            .When(setNuget && !string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-            .When(setPackages && TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-            .When(setPackages && IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+            .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+            .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+            .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
             .SetNoWarnDotNetCore3()
             .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));        
