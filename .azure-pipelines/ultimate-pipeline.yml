@@ -2909,6 +2909,7 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     # By default all throughput tests happen on release or master branches only, or when running a benchmarks only build. Overridable by setting 'run_extended_throughput_tests' to true
     runExtendedThroughputTests: $[or(eq(variables.isMainOrReleaseBranch, 'true'), not(eq(variables['isBenchmarksOnlyBuild'], 'False')), eq(variables.run_extended_throughput_tests, 'true'))]
+    CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
   pool: Throughput
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -2933,7 +2934,7 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "linux" "$(runExtendedThroughputTests)"
       displayName: Crank
@@ -2942,6 +2943,19 @@ stages:
         DD_ENV: CI
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
         DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_linux_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
   - job: Windows64
     timeoutInMinutes: 60
@@ -2960,7 +2974,7 @@ stages:
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
-        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "windows" "$(runExtendedThroughputTests)"
       displayName: Crank
@@ -2969,6 +2983,19 @@ stages:
         DD_ENV: CI
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
         DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_windows_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
   - job: LinuxArm64
     timeoutInMinutes: 60
@@ -2996,6 +3023,19 @@ stages:
         DD_ENV: CI
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
         DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_linux_arm64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
 - stage: throughput_appsec
   condition: and(succeeded(), eq(variables.isMainRepository, true))
