@@ -272,6 +272,11 @@ public class ProbesTests : TestHelper
                     agent.ClearSnapshots();
                 }
 
+                // The Datadog-Agent is continuously receiving probe statuses.
+                // We may have outdated probe statuses that were sent before the instrumentation took place.
+                // To ensure consistency, we are clearing the probe statuses and requesting a fresh batch.
+                // This will ensure that the next set of probe statuses received will be up-to-date and accurate.
+                agent.ClearProbeStatuses();
                 var statuses = await agent.WaitForProbesStatuses(probeData.Length);
 
                 Assert.Equal(probeData.Length, statuses?.Length);
@@ -430,9 +435,10 @@ public class ProbesTests : TestHelper
 
                             case "message":
                                 if (!value.Contains("Installed probe ") && !value.Contains("Error installing probe ") &&
-                                    !IsParentName(item, parentName: "throwable"))
+                                    !IsParentName(item, parentName: "throwable") &&
+                                    !IsParentName(item, parentName: "exception"))
                                 {
-                                    // remove snapshot message (not probe status and not an exception message)
+                                    // remove snapshot message (not probe status)
                                     item.Value.Replace("ScrubbedValue");
                                 }
 

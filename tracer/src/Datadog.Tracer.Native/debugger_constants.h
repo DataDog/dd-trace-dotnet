@@ -61,8 +61,7 @@ const WSTRING general_error_message = WStr("Failed to instrument the method.");
 
 inline std::wstring GetDynamicInstrumentationErrorMessage(DynamicInstrumentationErrorCode errorCode)
 {
-    return general_error_message + L" [Error Code: " +
-        std::to_wstring(static_cast<int>(errorCode));
+    return general_error_message + L" [Error Code: " + std::to_wstring(static_cast<int>(errorCode)) + L"]";
 }
 
 const WSTRING invalid_probe_method_already_instrumented =

@@ -1,12 +1,12 @@
-[
+﻿[
   {
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": {
-          "Message": null,
-          "StackTrace": null,
-          "Type": null
+        "exception": {
+          "message": "Instrumentation of constructors are not supported for now.",
+          "stacktrace": null,
+          "type": "NO_TYPE"
         },
         "probeId": "8286d046-9740-a3e4-95cf-ff46699c73c4",
         "status": "ERROR"

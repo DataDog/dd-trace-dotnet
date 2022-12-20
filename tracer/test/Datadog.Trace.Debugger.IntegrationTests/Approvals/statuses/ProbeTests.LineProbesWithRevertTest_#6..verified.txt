@@ -3,7 +3,7 @@
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": null,
+        "exception": null,
         "probeId": "35543785-ac9a-85ea-44af-13938dff3136",
         "status": "INSTALLED"
       }
