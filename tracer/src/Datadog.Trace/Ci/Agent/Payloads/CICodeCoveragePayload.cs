@@ -31,16 +31,6 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public override string EventPlatformPath => "api/v2/citestcov";
 
-        public override bool HasEvents
-        {
-            get
-            {
-                // The List will always have at least 1 item due the backend limitation.
-                // By comparing > 1 will avoid sending an empty payload each second.
-                return Count > 1;
-            }
-        }
-
         public override bool CanProcessEvent(IEvent @event)
         {
             return @event is TestCoverage;
@@ -48,9 +38,10 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         protected override MultipartFormItem CreateMultipartFormItem(EventsBuffer<IEvent> eventsBuffer)
         {
-            CIVisibility.Log.Debug<int>("Serializing {count} test code coverage as a single multipart item.", eventsBuffer.Count);
-            var index = Count + 1;
+            var totalEvents = eventsBuffer.Count;
+            var index = Count;
             var eventInBytes = MessagePackSerializer.Serialize(new CoveragePayload(eventsBuffer), _formatterResolver);
+            CIVisibility.Log.Debug<int, int>("CICodeCoveragePayload: Serialized {count} test code coverage as a single multipart item with {size} bytes.", eventsBuffer.Count, eventInBytes.Length);
             return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", new ArraySegment<byte>(eventInBytes));
         }
 
