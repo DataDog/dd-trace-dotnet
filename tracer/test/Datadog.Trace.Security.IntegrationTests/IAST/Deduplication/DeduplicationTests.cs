@@ -36,6 +36,7 @@ public class DeduplicationTests : TestHelper
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", deduplicationEnabled.ToString());
         SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "DeduplicationLogs"));
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
 
         int expectedSpanCount = deduplicationEnabled ? 1 : 5;
         var filename = deduplicationEnabled ? "iast.deduplication.deduplicated" : "iast.deduplication.duplicated";
