@@ -59,9 +59,9 @@ enum class DynamicInstrumentationErrorCode
 
 const WSTRING general_error_message = WStr("Failed to instrument the method.");
 
-inline std::wstring GetDynamicInstrumentationErrorMessage(DynamicInstrumentationErrorCode errorCode)
+inline WSTRING GetDynamicInstrumentationErrorMessage(DynamicInstrumentationErrorCode errorCode)
 {
-    return general_error_message + L" [Error Code: " + std::to_wstring(static_cast<int>(errorCode)) + L"]";
+    return general_error_message + WStr("[Error Code:") + shared::ToWSTRING(static_cast<int>(errorCode)) + WStr("]");
 }
 
 const WSTRING invalid_probe_method_already_instrumented =
