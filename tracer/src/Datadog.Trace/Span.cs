@@ -5,7 +5,6 @@
 
 using System;
 using System.Globalization;
-using System.Security.Cryptography;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -26,7 +25,7 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -47,7 +46,7 @@ namespace Datadog.Trace
                     "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{tagsType}])",
                     new object[] { SpanId, Context.ParentId, TraceId, Tags, tagsType });
             }
-         }
+        }
 
         /// <summary>
         /// Gets or sets operation name
