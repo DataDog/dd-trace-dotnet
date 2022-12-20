@@ -50,6 +50,9 @@ ENV DD_PROFILING_ENABLED=1 \
     DD_PROFILING_LOG_DIR="C:\logs" \
     ASPNETCORE_URLS=http://localhost:5000
 
+# see https://github.com/DataDog/dd-trace-dotnet/pull/3579
+ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
+
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
