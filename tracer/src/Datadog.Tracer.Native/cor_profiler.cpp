@@ -219,6 +219,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     Logger::Info("Runtime Information: ", runtimeType, " ", runtime_information_.major_version, ".", runtime_information_.minor_version, ".", runtime_information_.build_version);
 
     // Check if we have to disable tiered compilation (due to https://github.com/dotnet/runtime/issues/77973)
+    // see https://github.com/DataDog/dd-trace-dotnet/pull/3579 for more details
     bool disableTieredCompilation = false;
     bool internal_workaround_77973_enabled = false;
     shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(environment::internal_workaround_77973_enabled), internal_workaround_77973_enabled);

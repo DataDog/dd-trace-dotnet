@@ -190,7 +190,7 @@ namespace Datadog.Trace.TestHelpers
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = MonitoringHome;
 
-            // see https://github.com/dotnet/runtime/issues/77973
+            // see https://github.com/DataDog/dd-trace-dotnet/pull/3579
             environmentVariables["DD_INTERNAL_WORKAROUND_77973_ENABLED"] = "1";
 
             // Everything should be using the native loader now
