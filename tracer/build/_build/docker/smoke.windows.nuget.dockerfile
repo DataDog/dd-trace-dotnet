@@ -46,6 +46,9 @@ ENV CORECLR_ENABLE_PROFILING=1 \
     DD_PROFILING_ENABLED=1 \
     ASPNETCORE_URLS=http://localhost:5000
 
+# see https://github.com/dotnet/runtime/issues/77973
+ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
+
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
