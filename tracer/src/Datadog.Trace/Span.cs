@@ -30,6 +30,7 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
+        private readonly SpanContext _context;
         private int _isFinished;
         private bool _baseServiceTagSet;
 
@@ -40,9 +41,9 @@ namespace Datadog.Trace
 
         internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
         {
-            Tags = tags ?? new CommonTags();
-            Context = context;
+            _context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
+            Tags = tags ?? new CommonTags();
 
             if (IsLogLevelDebugEnabled)
             {
@@ -119,7 +120,7 @@ namespace Datadog.Trace
 
         internal ITags Tags { get; set; }
 
-        internal SpanContext Context { get; }
+        internal SpanContext Context => _context;
 
         internal DateTimeOffset StartTime { get; private set; }
 
