@@ -75,7 +75,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             RemoteConfigurationSettings settings,
             string serviceName,
             string? environment,
-            string? serviceVersion)
+            string? serviceVersion,
+            IReadOnlyList<string> tags)
         {
             lock (LockObject)
             {
@@ -83,7 +84,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     discoveryService,
                     remoteConfigurationApi,
                     id: settings.Id,
-                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, environment, serviceVersion),
+                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, environment, serviceVersion, tags),
                     pollInterval: settings.PollInterval);
             }
 
