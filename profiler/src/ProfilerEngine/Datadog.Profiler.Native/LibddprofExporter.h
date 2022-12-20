@@ -5,6 +5,7 @@
 
 #include "IConfiguration.h"
 #include "IExporter.h"
+#include "MetricsRegistry.h"
 #include "Sample.h"
 #include "TagsHelper.h"
 #include <mutex>
@@ -34,7 +35,8 @@ public:
         IConfiguration* configuration,
         IApplicationStore* applicationStore,
         IRuntimeInfo* runtimeInfo,
-        IEnabledProfilers* enabledProfilers);
+        IEnabledProfilers* enabledProfilers,
+        MetricsRegistry& metricsRegistry);
     ~LibddprofExporter() override;
     bool Export() override;
     void Add(std::shared_ptr<Sample> const& sample) override;
@@ -119,16 +121,23 @@ private:
     static ddog_prof_Exporter* CreateExporter(const ddog_Vec_Tag* tags, ddog_Endpoint endpoint);
     ddog_prof_Profile* CreateProfile();
 
-    ddog_prof_Exporter_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter,  const Tags& additionalTags) const;
+    ddog_prof_Exporter_Request* CreateRequest(
+        SerializedProfile const& encodedProfile,
+        ddog_prof_Exporter* exporter,
+        const Tags& additionalTags,
+        const std::string& metricsFilename,
+        uint8_t* pBuffer,
+        uint64_t bufferSize
+        ) const;
     ddog_Endpoint CreateEndpoint(IConfiguration* configuration);
     ProfileInfoScope GetInfo(std::string_view runtimeId);
 
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
+    void SaveMetricsToDisk(std::string& content) const;
 
     bool Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter) const;
     std::string GeneratePprofFilePath(const std::string& applicationName, int idx) const;
     fs::path CreatePprofOutputPath(IConfiguration* configuration) const;
-
 
     static tags CommonTags;
     static std::string const ProcessId;
@@ -158,6 +167,10 @@ private:
     IApplicationStore* const _applicationStore;
 
     std::mutex _perAppInfoLock;
+    MetricsRegistry& _metricsRegistry;
+    std::filesystem::path _metricsFileFolder;
+
+    const std::string _metricsFilename = "metrics.json";
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

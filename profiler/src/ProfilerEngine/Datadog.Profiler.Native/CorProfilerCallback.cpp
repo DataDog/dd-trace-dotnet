@@ -316,9 +316,14 @@ bool CorProfilerCallback::InitializeServices()
         _pConfiguration.get(),
         _pApplicationStore,
         _pRuntimeInfo.get(),
-        _pEnabledProfilers.get());
+        _pEnabledProfilers.get(),
+        _metricsRegistry);
 
-    _pSamplesCollector = RegisterService<SamplesCollector>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get());
+    _pSamplesCollector = RegisterService<SamplesCollector>(
+        _pConfiguration.get(),
+        _pThreadsCpuManager,
+        _pExporter.get(),
+        _metricsSender.get());
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
