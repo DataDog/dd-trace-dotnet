@@ -125,7 +125,7 @@ partial class Build
             var envVars = new Dictionary<string, string> { { "ASPNETCORE_URLS", "http://*:5003" } };
             AddTracerEnvironmentVariables(envVars);
             //we're not supplying a dll file so process will be independent and wont be hosted by dotnet
-            envVars["DD_PROFILER_EXCLUDE_PROCESSES"] = $"{envVars["DD_PROFILER_EXCLUDE_PROCESSES"]};dotnet.exe";
+            envVars.Add("DD_PROFILER_EXCLUDE_PROCESSES", "dotnet.exe");
             AddExtraEnvVariables(envVars, ExtraEnvVars);
 
             string project = Solution.GetProject(SampleName)?.Path;
