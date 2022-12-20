@@ -687,7 +687,7 @@ namespace Datadog.Trace.Propagators
 
         private static string TrimAndJoinStringsRare(IEnumerable<string?> values)
         {
-            static void AppendIfNullOrWhiteSpace(StringBuilder sb, string? value)
+            static void AppendIfNotNullOrWhiteSpace(StringBuilder sb, string? value)
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
@@ -703,7 +703,7 @@ namespace Datadog.Trace.Propagators
                     // converts into a `for` loop
                     foreach (var value in array)
                     {
-                        AppendIfNullOrWhiteSpace(sb, value);
+                        AppendIfNotNullOrWhiteSpace(sb, value);
                     }
 
                     break;
@@ -712,7 +712,7 @@ namespace Datadog.Trace.Propagators
                     // uses List<T>'s struct enumerator
                     foreach (var value in list)
                     {
-                        AppendIfNullOrWhiteSpace(sb, value);
+                        AppendIfNotNullOrWhiteSpace(sb, value);
                     }
 
                     break;
@@ -720,7 +720,7 @@ namespace Datadog.Trace.Propagators
                 default:
                     foreach (var value in values)
                     {
-                        AppendIfNullOrWhiteSpace(sb, value);
+                        AppendIfNotNullOrWhiteSpace(sb, value);
                     }
 
                     break;
