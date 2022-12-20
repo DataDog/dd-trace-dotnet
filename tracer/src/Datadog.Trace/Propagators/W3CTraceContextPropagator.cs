@@ -668,20 +668,15 @@ namespace Datadog.Trace.Propagators
         }
 
         private static string TrimAndJoinStrings(IEnumerable<string?> values)
-        {
-            switch (values)
-            {
-                case IReadOnlyList<string?> { Count: 1 } list:
-                    // fast path for single values
-                    return list[0]?.Trim() ?? string.Empty;
-                case IReadOnlyCollection<string?> { Count: 0 }:
-                case null:
-                    // fast path for null or empty collections
-                    return string.Empty;
-                default:
-                    return TrimAndJoinStringsRare(values);
-            }
-        }
+            => values switch
+               {
+                   // fast path for single value
+                   IReadOnlyList<string?> { Count: 1 } list => list[0]?.Trim() ?? string.Empty,
+                   // fast path for null or empty collections
+                   IReadOnlyCollection<string?> { Count: 0 } or null => string.Empty,
+                   // fallback
+                   _ => TrimAndJoinStringsRare(values),
+               };
 
         private static string TrimAndJoinStringsRare(IEnumerable<string?> values)
         {
