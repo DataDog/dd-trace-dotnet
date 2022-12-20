@@ -44,6 +44,7 @@ namespace Samples.StackExchangeRedis
                 RunCommands(new TupleList<string, Func<object>>
                 {
                     { "PING", () => db.PingAsync().Result },
+                    { "PING_SLAVE", () => db.PingAsync(CommandFlags.DemandSlave).Result },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR") },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR", 1.25) },
                     { "GET", () => db.StringGet($"{prefix}INCR") },
