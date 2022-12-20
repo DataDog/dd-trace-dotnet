@@ -303,9 +303,10 @@ namespace Datadog.Trace.Propagators
 
             SplitTraceStateValues(header, out var ddValues, out var additionalValues);
 
-            if (ddValues.Length < 6)
+            if (ddValues is null or { Length: < 6 })
             {
-                // "dd" section too short, shortest valid length is 6 as in "dd=a:b"
+                // "dd" section not found or it is too short
+                // shortest valid length is 6 as in "dd=a:b"
                 return new W3CTraceState(null, null, null, additionalValues);
             }
 
@@ -431,14 +432,14 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal static void SplitTraceStateValues(string header, out string ddValues, out string additionalValues)
+        internal static void SplitTraceStateValues(string header, out string? ddValues, out string? additionalValues)
         {
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
-            ddValues = string.Empty;
-            additionalValues = string.Empty;
 
             if (string.IsNullOrWhiteSpace(header))
             {
+                ddValues = null;
+                additionalValues = null;
                 return;
             }
 
@@ -469,6 +470,7 @@ namespace Datadog.Trace.Propagators
                 // "dd=" was not found in header, the entire header is "additional values"
                 // example tracestate: "foo=bar"
                 //                      ^^^^^^^
+                ddValues = null;
                 additionalValues = header;
                 return;
             }
@@ -488,7 +490,7 @@ namespace Datadog.Trace.Propagators
             {
                 // "dd" was the only key, no additional values
                 // example tracestate: "dd=s:1;o:rum"
-                additionalValues = string.Empty;
+                additionalValues = null;
             }
             else if (ddStartIndex == 0)
             {
@@ -517,7 +519,7 @@ namespace Datadog.Trace.Propagators
                 additionalValues = StringBuilderCache.GetStringAndRelease(sb);
             }
 
-            additionalValues = additionalValues.Trim();
+            additionalValues = additionalValues?.Trim();
         }
 
         [return: NotNullIfNotNull("samplingPriority")]

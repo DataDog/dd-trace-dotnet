@@ -188,33 +188,33 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        // invalid "dd" value
-        [InlineData(null, null, null, null, "")]                 // null
-        [InlineData("", null, null, null, "")]                   // empty
-        [InlineData(" ", null, null, null, "")]                  // whitespace
-        [InlineData("dd=", null, null, null, "")]                // "dd=" prefix only
-        [InlineData("dd=:2", null, null, null, "")]              // no key
-        [InlineData("dd=s:", null, null, null, "")]              // no value
-        [InlineData("dd=s", null, null, null, "")]               // no colon
-        [InlineData("dd=xyz:123", null, null, null, "")]         // unknown key
-        [InlineData("s:2;o:rum", null, null, null, "s:2;o:rum")] // missing "dd=" prefix, interpreted as additional values
         // valid
-        [InlineData("dd=s:2", 2, null, null, "")]                                                                                    // sampling priority
-        [InlineData("dd=o:rum", null, "rum", null, "")]                                                                              // origin
-        [InlineData("dd=t.dm:-4;t.usr.id:12345", null, null, "_dd.p.dm=-4,_dd.p.usr.id=12345", "")]                                  // propagated tags
+        [InlineData("dd=s:2", 2, null, null, null)]                                                                                  // sampling priority
+        [InlineData("dd=s:-1", -1, null, null, null)]                                                                                // sampling priority
+        [InlineData("dd=o:rum", null, "rum", null, null)]                                                                            // origin
+        [InlineData("dd=t.dm:-4;t.usr.id:12345", null, null, "_dd.p.dm=-4,_dd.p.usr.id=12345", null)]                                // propagated tags
         [InlineData("key1=value1,key2=value2", null, null, null, "key1=value1,key2=value2")]                                         // additional values
         [InlineData("key1=value1dd=,key2=value2", null, null, null, "key1=value1dd=,key2=value2")]                                   // additional values, ignore embedded "dd="
         [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345~,key1=value1", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345=", "key1=value1")] // all, and '~' is converted to '='
+        // invalid "dd" value
+        [InlineData(null, null, null, null, null)]         // null
+        [InlineData("", null, null, null, null)]           // empty
+        [InlineData(" ", null, null, null, null)]          // whitespace
+        [InlineData("dd=", null, null, null, null)]        // "dd=" prefix only
+        [InlineData("dd=:2", null, null, null, null)]      // no key
+        [InlineData("dd=s:", null, null, null, null)]      // no value
+        [InlineData("dd=s", null, null, null, null)]       // no colon
+        [InlineData("dd=xyz:123", null, null, null, null)] // unknown key
         // invalid propagated tag (first)
-        [InlineData("dd=s:2;o:rum;:12345;t.dm:-4", 2, "rum", "_dd.p.dm=-4", "")]    // no key
-        [InlineData("dd=s:2;o:rum;t.usr.id:;t.dm:-4", 2, "rum", "_dd.p.dm=-4", "")] // no value
-        [InlineData("dd=s:2;o:rum;:;t.dm:-4", 2, "rum", "_dd.p.dm=-4", "")]         // no key or value
-        [InlineData("dd=s:2;o:rum;t.abc;t.dm:-4", 2, "rum", "_dd.p.dm=-4", "")]     // no colon
+        [InlineData("dd=s:2;o:rum;:12345;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)]    // no key
+        [InlineData("dd=s:2;o:rum;t.usr.id:;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)] // no value
+        [InlineData("dd=s:2;o:rum;:;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)]         // no key or value
+        [InlineData("dd=s:2;o:rum;t.abc;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)]     // no colon
         // invalid propagated tag (last)
-        [InlineData("dd=s:2;o:rum;t.dm:-4;:12345", 2, "rum", "_dd.p.dm=-4", "")]    // no key
-        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:", 2, "rum", "_dd.p.dm=-4", "")] // no value
-        [InlineData("dd=s:2;o:rum;t.dm:-4;:", 2, "rum", "_dd.p.dm=-4", "")]         // no key or value
-        [InlineData("dd=s:2;o:rum;t.dm:-4;t.abc", 2, "rum", "_dd.p.dm=-4", "")]     // no colon
+        [InlineData("dd=s:2;o:rum;t.dm:-4;:12345", 2, "rum", "_dd.p.dm=-4", null)]    // no key
+        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:", 2, "rum", "_dd.p.dm=-4", null)] // no value
+        [InlineData("dd=s:2;o:rum;t.dm:-4;:", 2, "rum", "_dd.p.dm=-4", null)]         // no key or value
+        [InlineData("dd=s:2;o:rum;t.dm:-4;t.abc", 2, "rum", "_dd.p.dm=-4", null)]     // no colon
         // multiple top-level key/value pairs
         [InlineData("key1=value1,key2=value2,dd=s:2;o:rum;t.dm:-4;t.usr.id:12345", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1,key2=value2")]                                                 // before "dd"
         [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345,key3=value3,key4=value4", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key3=value3,key4=value4")]                                                 // after "dd"
