@@ -179,7 +179,7 @@ namespace Datadog.Trace.Propagators
                         sb.Append(TraceStateHeaderValuesSeparator);
                     }
 
-                    sb.Append(additionalState!.Trim());
+                    sb.Append(additionalState);
                 }
 
                 return sb.ToString();
@@ -518,8 +518,6 @@ namespace Datadog.Trace.Propagators
                 sb.Append(otherValuesLeft).Append(TraceStateHeaderValuesSeparator).Append(otherValuesRight);
                 additionalValues = StringBuilderCache.GetStringAndRelease(sb);
             }
-
-            additionalValues = additionalValues?.Trim();
         }
 
         [return: NotNullIfNotNull("samplingPriority")]
