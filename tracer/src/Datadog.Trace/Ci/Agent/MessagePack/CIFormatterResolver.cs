@@ -32,7 +32,7 @@ internal class CIFormatterResolver : IFormatterResolver
     private readonly Type _testSuiteEventType = typeof(TestSuiteEvent);
     private readonly Type _testModuleEventType = typeof(TestModuleEvent);
     private readonly Type _testSessionEventType = typeof(TestSessionEvent);
-    private readonly Type _coveragePayloadType = typeof(CoveragePayload);
+    private readonly Type _coveragePayloadType = typeof(CICodeCoveragePayload.CoveragePayload);
     private readonly Type _testCoverageType = typeof(TestCoverage);
     private readonly Type _iEventType = typeof(IEvent);
 

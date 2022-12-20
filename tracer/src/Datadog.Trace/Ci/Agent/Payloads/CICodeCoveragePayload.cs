@@ -7,6 +7,7 @@ using System;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Vendors.MessagePack;
@@ -20,7 +21,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         public CICodeCoveragePayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
             : base(settings, maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
         {
-            _formatterResolver = formatterResolver;
+            _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
 
             // We call reset here to add the dummy event
             Reset();
@@ -47,6 +48,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         protected override MultipartFormItem CreateMultipartFormItem(EventsBuffer<IEvent> eventsBuffer)
         {
+            CIVisibility.Log.Debug<int>("Serializing {count} test code coverage as a single multipart item.", eventsBuffer.Count);
             var index = Count + 1;
             var eventInBytes = MessagePackSerializer.Serialize(new CoveragePayload(eventsBuffer), _formatterResolver);
             return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", new ArraySegment<byte>(eventInBytes));
