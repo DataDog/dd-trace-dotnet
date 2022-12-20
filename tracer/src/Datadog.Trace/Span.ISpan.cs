@@ -58,7 +58,7 @@ namespace Datadog.Trace
         ulong ISpan.SpanId => SpanId;
 
         /// <inheritdoc />
-        ISpanContext ISpan.Context => Context;
+        ISpanContext ISpan.Context => _context;
 
         /// <inheritdoc />
         ISpan ISpan.SetTag(string key, string value) => SetTag(key, value);
