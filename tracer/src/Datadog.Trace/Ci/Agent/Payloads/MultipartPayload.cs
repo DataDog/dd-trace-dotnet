@@ -17,70 +17,49 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         internal const int DefaultMaxItemsPerPayload = 100;
         internal const int DefaultMaxBytesPerPayload = 48_000_000;
 
+        private readonly EventsBuffer<IEvent> _events;
         private readonly List<MultipartFormItem> _items;
         private readonly IFormatterResolver _formatterResolver;
         private readonly int _maxItemsPerPayload;
         private readonly int _maxBytesPerPayload;
-        private long _bytesCount;
 
         public MultipartPayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
             : base(settings)
         {
             _maxItemsPerPayload = maxItemsPerPayload;
             _maxBytesPerPayload = maxBytesPerPayload;
-            _bytesCount = 0;
             _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
             _items = new List<MultipartFormItem>(Math.Min(maxItemsPerPayload, DefaultMaxItemsPerPayload));
+
+            // Because we don't know the size of the events array envelope we left 1024kb for that.
+            _events = new EventsBuffer<IEvent>(Math.Min(_maxBytesPerPayload, DefaultMaxBytesPerPayload) - (1024 * 1024), _formatterResolver);
         }
 
         public override bool HasEvents => _items.Count > 0;
 
         public override int Count => _items.Count;
 
-        public long BytesCount => _bytesCount;
-
-        protected abstract MultipartFormItem CreateMultipartFormItem(ArraySegment<byte> eventInBytes);
+        protected abstract MultipartFormItem CreateMultipartFormItem(EventsBuffer<IEvent> eventsBuffer);
 
         protected void AddMultipartFormItem(MultipartFormItem item)
         {
             lock (_items)
             {
-                _items.Add(item);
+                if (_items.Count < _maxItemsPerPayload - 1)
+                {
+                    _items.Add(item);
+                }
             }
         }
 
-        public override bool TryProcessEvent(IEvent @event)
-        {
-            lock (_items)
-            {
-                if (_items.Count >= _maxItemsPerPayload)
-                {
-                    return false;
-                }
-
-                if (_bytesCount >= _maxBytesPerPayload)
-                {
-                    return false;
-                }
-
-                var eventInBytes = MessagePackSerializer.Serialize(@event, _formatterResolver);
-                if (_bytesCount + eventInBytes.Length > _maxBytesPerPayload)
-                {
-                    return false;
-                }
-
-                _items.Add(CreateMultipartFormItem(new ArraySegment<byte>(eventInBytes)));
-                _bytesCount += eventInBytes.Length;
-                return true;
-            }
-        }
+        public override bool TryProcessEvent(IEvent @event) => _events.TryWrite(@event);
 
         public override void Reset()
         {
             lock (_items)
             {
+                _events.Clear();
                 _items.Clear();
-                _bytesCount = 0;
             }
         }
 
@@ -88,6 +67,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         {
             lock (_items)
             {
+                _items.Add(CreateMultipartFormItem(_events));
                 return _items.ToArray();
             }
         }

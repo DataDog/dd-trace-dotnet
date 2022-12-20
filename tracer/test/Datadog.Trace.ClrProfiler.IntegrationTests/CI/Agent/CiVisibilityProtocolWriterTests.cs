@@ -60,9 +60,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var settings = CIVisibility.Settings;
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
-            var coveragePayload = new CoveragePayload
+            var coveragePayload = new TestCoverage
             {
-                TraceId = 42,
+                SessionId = 42,
+                SuiteId = 56,
                 SpanId = 84,
                 Files =
                 {
@@ -253,9 +254,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             int bufferSize = 256;
             int maxBufferSize = (int)(4.5 * 1024 * 1024);
-            var coveragePayload = new CoveragePayload
+            var coveragePayload = new TestCoverage
             {
-                TraceId = 42,
+                SessionId = 42,
+                SuiteId = 56,
                 SpanId = 84,
                 Files =
                 {
