@@ -9,14 +9,16 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Source
 {
+    private readonly byte _origin;
+
     public Source(byte origin, string? name, string? value)
     {
-        this.Origin = origin;
+        this._origin = origin;
         this.Name = name;
         this.Value = value;
     }
 
-    public byte Origin { get; }
+    public string Origin => SourceType.GetString(_origin);
 
     public string? Name { get; }
 
@@ -24,6 +26,6 @@ internal readonly struct Source
 
     public override int GetHashCode()
     {
-        return IastUtils.GetHashCode(Origin, Name, Value);
+        return IastUtils.GetHashCode(_origin, Name, Value);
     }
 }
