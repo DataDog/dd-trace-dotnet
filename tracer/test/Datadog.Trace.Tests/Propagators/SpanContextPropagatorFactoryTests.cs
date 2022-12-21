@@ -51,7 +51,7 @@ public class SpanContextPropagatorFactoryTests
     [InlineData("TraceContext")]              // case-insensitive
     [InlineData("tracecontext,TraceContext")] // multiple entries returns one instance
     [InlineData("W3C")]                       // deprecated value
-    public void W3CContextPropagator(string headerStyles)
+    public void W3CTraceContextPropagator(string headerStyles)
     {
         var propagators = SpanContextPropagatorFactory.GetPropagators<IContextExtractor>(headerStyles.Split(','));
 
