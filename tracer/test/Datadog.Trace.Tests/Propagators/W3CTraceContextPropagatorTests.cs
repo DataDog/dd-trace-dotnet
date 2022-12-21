@@ -42,34 +42,42 @@ namespace Datadog.Trace.Tests.Propagators
 
         [Theory]
         // null/empty/whitespace
-        [InlineData(null, null, null, "")]
-        [InlineData(null, "", "", "")]
-        [InlineData(null, " ", " ", "")]
+        [InlineData(null, null, null, null, "")]
+        [InlineData(null, "", "", "", "")]
+        [InlineData(null, " ", " ", " ", "")]
         // sampling priority only
-        [InlineData(SamplingPriorityValues.UserReject, null, null, "dd=s:-1")]
-        [InlineData(SamplingPriorityValues.AutoReject, null, null, "dd=s:0")]
-        [InlineData(SamplingPriorityValues.AutoKeep, null, null, "dd=s:1")]
-        [InlineData(SamplingPriorityValues.UserKeep, null, null, "dd=s:2")]
-        [InlineData(3, null, null, "dd=s:3")]
-        [InlineData(-5, null, null, "dd=s:-5")]
+        [InlineData(SamplingPriorityValues.UserReject, null, null, null, "dd=s:-1")]
+        [InlineData(SamplingPriorityValues.AutoReject, null, null, null, "dd=s:0")]
+        [InlineData(SamplingPriorityValues.AutoKeep, null, null, null, "dd=s:1")]
+        [InlineData(SamplingPriorityValues.UserKeep, null, null, null, "dd=s:2")]
+        [InlineData(3, null, null, null, "dd=s:3")]
+        [InlineData(-5, null, null, null, "dd=s:-5")]
         // origin only
-        [InlineData(null, "abc", null, "dd=o:abc")]
+        [InlineData(null, "abc", null, null, "dd=o:abc")]
         // propagated tags only
-        [InlineData(null, null, "_dd.p.a=1", "dd=t.a:1")]
-        [InlineData(null, null, "_dd.p.a=1,_dd.p.b=2", "dd=t.a:1;t.b:2")]
-        [InlineData(null, null, "_dd.p.a=1,b=2", "dd=t.a:1")]
-        [InlineData(null, null, "_dd.p.usr.id=MTIzNDU=", "dd=t.usr.id:MTIzNDU~")] // convert '=' to '~'
+        [InlineData(null, null, "_dd.p.a=1", null, "dd=t.a:1")]
+        [InlineData(null, null, "_dd.p.a=1,_dd.p.b=2", null, "dd=t.a:1;t.b:2")]
+        [InlineData(null, null, "_dd.p.a=1,b=2", null, "dd=t.a:1")]
+        [InlineData(null, null, "_dd.p.usr.id=MTIzNDU=", null, "dd=t.usr.id:MTIzNDU~")] // convert '=' to '~'
+        // additional state only
+        [InlineData(null, null, null, "key1=value1,key2=value2", "key1=value1,key2=value2")]
         // combined
-        [InlineData(SamplingPriorityValues.UserKeep, "rum", null, "dd=s:2;o:rum")]
-        [InlineData(SamplingPriorityValues.AutoReject, null, "_dd.p.a=b", "dd=s:0;t.a:b")]
-        [InlineData(null, "rum", "_dd.p.a=b", "dd=o:rum;t.a:b")]
-        [InlineData(SamplingPriorityValues.AutoKeep, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "dd=s:1;o:rum;t.dm:-4;t.usr.id:12345")]
-        public void CreateTraceStateHeader(int? samplingPriority, string origin, string tags, string expected)
+        [InlineData(SamplingPriorityValues.UserKeep, "rum", null, "key1=value1", "dd=s:2;o:rum,key1=value1")]
+        [InlineData(SamplingPriorityValues.AutoReject, null, "_dd.p.a=b", "key1=value1", "dd=s:0;t.a:b,key1=value1")]
+        [InlineData(null, "rum", "_dd.p.a=b", "key1=value1", "dd=o:rum;t.a:b,key1=value1")]
+        [InlineData(SamplingPriorityValues.AutoKeep, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1", "dd=s:1;o:rum;t.dm:-4;t.usr.id:12345,key1=value1")]
+        public void CreateTraceStateHeader(int? samplingPriority, string origin, string tags, string additionalState, string expected)
         {
             var propagatedTags = TagPropagation.ParseHeader(tags, 100);
-            var traceContext = new TraceContext(tracer: null, propagatedTags) { Origin = origin };
+
+            var traceContext = new TraceContext(tracer: null, propagatedTags)
+                               {
+                                   Origin = origin,
+                                   AdditionalW3CTraceState = additionalState
+                               };
+
             traceContext.SetSamplingPriority(samplingPriority, mechanism: null, notifyDistributedTracer: false);
-            var spanContext = new SpanContext(parent: null, traceContext, serviceName: null, traceId: 1, spanId: 2);
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: 1, spanId: 2);
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
 
@@ -80,7 +88,7 @@ namespace Datadog.Trace.Tests.Propagators
         public void CreateTraceStateHeader_WithPublicPropagatedTags()
         {
             var traceContext = new TraceContext(tracer: null);
-            var spanContext = new SpanContext(parent: null, traceContext, serviceName: null, traceId: 1, spanId: 2);
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: 1, spanId: 2);
             var span = new Span(spanContext, DateTimeOffset.Now);
 
             var user = new UserDetails("12345")
@@ -102,38 +110,40 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_IHeadersCollection()
         {
-            var context = new SpanContext(
-                traceId: 123456789,
-                spanId: 987654321,
-                SamplingPriorityValues.UserKeep,
-                serviceName: null,
-                "origin");
+            var traceContext = new TraceContext(tracer: null, tags: null)
+                               {
+                                   Origin = "origin",
+                                   AdditionalW3CTraceState = "key1=value1"
+                               };
 
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: 123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
             var headers = new Mock<IHeadersCollection>();
 
-            W3CPropagator.Inject(context, headers.Object);
+            W3CPropagator.Inject(spanContext, headers.Object);
 
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
-            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin,key1=value1"), Times.Once());
             headers.VerifyNoOtherCalls();
         }
 
         [Fact]
         public void Inject_CarrierAndDelegate()
         {
-            var context = new SpanContext(
-                traceId: 123456789,
-                spanId: 987654321,
-                SamplingPriorityValues.UserKeep,
-                serviceName: null,
-                "origin");
+            var traceContext = new TraceContext(tracer: null, tags: null)
+                               {
+                                   Origin = "origin",
+                                   AdditionalW3CTraceState = "key1=value1"
+                               };
 
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: 123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
             var headers = new Mock<IHeadersCollection>();
 
-            W3CPropagator.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
+            W3CPropagator.Inject(spanContext, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
-            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin,key1=value1"), Times.Once());
             headers.VerifyNoOtherCalls();
         }
 
@@ -178,40 +188,42 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData("dd=s:2", 2, null, null)]
-        [InlineData("dd=o:rum", null, "rum", null)]
-        [InlineData("dd=t.dm:-4;t.usr.id:12345", null, null, "_dd.p.dm=-4,_dd.p.usr.id=12345")]
-        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345~", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345=")] // '~' is converted to '='
+        // valid
+        [InlineData("dd=s:2", 2, null, null, null)]                                                                                  // sampling priority
+        [InlineData("dd=s:-1", -1, null, null, null)]                                                                                // sampling priority
+        [InlineData("dd=o:rum", null, "rum", null, null)]                                                                            // origin
+        [InlineData("dd=t.dm:-4;t.usr.id:12345", null, null, "_dd.p.dm=-4,_dd.p.usr.id=12345", null)]                                // propagated tags
+        [InlineData("key1=value1,key2=value2", null, null, null, "key1=value1,key2=value2")]                                         // additional values
+        [InlineData("key1=value1dd=,key2=value2", null, null, null, "key1=value1dd=,key2=value2")]                                   // additional values, ignore embedded "dd="
+        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345~,key1=value1", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345=", "key1=value1")] // all, and '~' is converted to '='
+        // invalid "dd" value
+        [InlineData(null, null, null, null, null)]         // null
+        [InlineData("", null, null, null, null)]           // empty
+        [InlineData(" ", null, null, null, null)]          // whitespace
+        [InlineData("dd=", null, null, null, null)]        // "dd=" prefix only
+        [InlineData("dd=:2", null, null, null, null)]      // no key
+        [InlineData("dd=s:", null, null, null, null)]      // no value
+        [InlineData("dd=s", null, null, null, null)]       // no colon
+        [InlineData("dd=xyz:123", null, null, null, null)] // unknown key
         // invalid propagated tag (first)
-        [InlineData("dd=s:2;o:rum;:12345;t.dm:-4", 2, "rum", "_dd.p.dm=-4")]    // no key
-        [InlineData("dd=s:2;o:rum;t.usr.id:;t.dm:-4", 2, "rum", "_dd.p.dm=-4")] // no value
-        [InlineData("dd=s:2;o:rum;:;t.dm:-4", 2, "rum", "_dd.p.dm=-4")]         // no key or value
-        [InlineData("dd=s:2;o:rum;t.abc;t.dm:-4", 2, "rum", "_dd.p.dm=-4")]     // no colon
+        [InlineData("dd=s:2;o:rum;:12345;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)]    // no key
+        [InlineData("dd=s:2;o:rum;t.usr.id:;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)] // no value
+        [InlineData("dd=s:2;o:rum;:;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)]         // no key or value
+        [InlineData("dd=s:2;o:rum;t.abc;t.dm:-4", 2, "rum", "_dd.p.dm=-4", null)]     // no colon
         // invalid propagated tag (last)
-        [InlineData("dd=s:2;o:rum;t.dm:-4;:12345", 2, "rum", "_dd.p.dm=-4")]    // no key
-        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:", 2, "rum", "_dd.p.dm=-4")] // no value
-        [InlineData("dd=s:2;o:rum;t.dm:-4;:", 2, "rum", "_dd.p.dm=-4")]         // no key or value
-        [InlineData("dd=s:2;o:rum;t.dm:-4;t.abc", 2, "rum", "_dd.p.dm=-4")]     // no colon
+        [InlineData("dd=s:2;o:rum;t.dm:-4;:12345", 2, "rum", "_dd.p.dm=-4", null)]    // no key
+        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:", 2, "rum", "_dd.p.dm=-4", null)] // no value
+        [InlineData("dd=s:2;o:rum;t.dm:-4;:", 2, "rum", "_dd.p.dm=-4", null)]         // no key or value
+        [InlineData("dd=s:2;o:rum;t.dm:-4;t.abc", 2, "rum", "_dd.p.dm=-4", null)]     // no colon
         // multiple top-level key/value pairs
-        [InlineData("abc=123,dd=s:2;o:rum;t.dm:-4;t.usr.id:12345,foo=bar", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345")]
-        public void TryParseTraceState(string header, int? samplingPriority, string origin, string propagatedTags)
+        [InlineData("key1=value1,key2=value2,dd=s:2;o:rum;t.dm:-4;t.usr.id:12345", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1,key2=value2")]                                                 // before "dd"
+        [InlineData("dd=s:2;o:rum;t.dm:-4;t.usr.id:12345,key3=value3,key4=value4", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key3=value3,key4=value4")]                                                 // after "dd"
+        [InlineData("key1=value1,key2=value2,dd=s:2;o:rum;t.dm:-4;t.usr.id:12345,key3=value3,key4=value4", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1,key2=value2,key3=value3,key4=value4")] // both sides
+        public void ParseTraceState(string header, int? samplingPriority, string origin, string propagatedTags, string additionalValues)
         {
-            var expected = new W3CTraceState(samplingPriority, origin, propagatedTags);
-
-            W3CTraceContextPropagator.TryParseTraceState(header, out var traceState).Should().BeTrue();
-
-            traceState.Should().NotBeNull().And.BeEquivalentTo(expected);
-        }
-
-        [Theory]
-        [InlineData(null)]        // null
-        [InlineData("")]          // empty
-        [InlineData(" ")]         // whitespace
-        [InlineData("s:2;o:rum")] // missing "dd=" prefix
-        [InlineData("dd=")]       // "dd=" prefix only
-        public void TryParseTraceState_Invalid(string header)
-        {
-            W3CTraceContextPropagator.TryParseTraceState(header, out _).Should().BeFalse();
+            var traceState = W3CTraceContextPropagator.ParseTraceState(header);
+            var expected = new W3CTraceState(samplingPriority, origin, propagatedTags, additionalValues);
+            traceState.Should().BeEquivalentTo(expected);
         }
 
         [Fact]

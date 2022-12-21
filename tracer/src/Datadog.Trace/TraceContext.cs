@@ -70,6 +70,13 @@ namespace Datadog.Trace
         public string Origin { get; set; }
 
         /// <summary>
+        /// Gets or sets additional key/value pairs from upstream "tracestate" header that we will propagate downstream.
+        /// This value will _not_ include the "dd" key, which is parsed out into other individual values
+        /// (e.g. sampling priority, origin, propagates tags, etc).
+        /// </summary>
+        internal string AdditionalW3CTraceState { get; set; }
+
+        /// <summary>
         /// Gets the IAST context.
         /// </summary>
         internal IastRequestContext IastRequestContext => _iastRequestContext;
@@ -113,10 +120,10 @@ namespace Datadog.Trace
                         }
                     }
 
-                    // if the trace's origin is not set and this span has an origin
-                    // (probably propagated from an upstream service),
-                    // copy the span's origin into the trace
+                    // if these trace attributes are not set yet, copy them from the span context if present
+                    // (probably propagated from an upstream service)
                     Origin ??= span.Context.Origin;
+                    AdditionalW3CTraceState ??= span.Context.AdditionalW3CTraceState;
                 }
 
                 _openSpans++;
