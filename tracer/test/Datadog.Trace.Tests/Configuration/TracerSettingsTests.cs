@@ -14,7 +14,7 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.Tests.Configuration
 {
     public class TracerSettingsTests
     {
