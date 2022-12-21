@@ -43,7 +43,7 @@ namespace Datadog.Trace.Ci.Processors
                 for (var i = trace.Offset + trace.Count - 1; i >= trace.Offset; i--)
                 {
                     var span = trace.Array![i];
-                    if (span.Context.Parent is null &&
+                    if (span.Parent is null &&
                         span.Type != SpanTypes.Test &&
                         span.Type != SpanTypes.TestSuite &&
                         span.Type != SpanTypes.TestModule &&
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Ci.Processors
             if (!_isCiVisibilityProtocol)
             {
                 // Sets the origin tag on the TraceContext to ensure the CI track.
-                var traceContext = trace.Array![trace.Offset].Context.TraceContext;
+                var traceContext = trace.Array![trace.Offset].TraceContext;
 
                 if (traceContext is not null)
                 {
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Ci.Processors
         public Span Process(Span span)
         {
             // Sets the origin tag on the TraceContext to ensure the CI track.
-            var traceContext = span.Context.TraceContext;
+            var traceContext = span.TraceContext;
 
             if (traceContext is not null)
             {

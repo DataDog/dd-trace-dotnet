@@ -208,7 +208,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
                     else
                     {
-                        span.Context.MergePathwayContext(pathwayContext);
+                        span.MergePathwayContext(pathwayContext);
 
                         // TODO: we could pool these arrays to reduce allocations
                         // NOTE: the tags must be sorted in alphabetical order
@@ -216,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                                            ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
                                            : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
 
-                        span.Context.SetCheckpoint(dataStreamsManager, edgeTags);
+                        span.SetCheckpoint(dataStreamsManager, edgeTags);
                     }
                 }
             }

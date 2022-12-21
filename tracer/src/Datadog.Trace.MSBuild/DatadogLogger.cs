@@ -108,7 +108,7 @@ namespace Datadog.Trace.MSBuild
                 _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
                 _buildSpan.SetMetric(Tags.Analytics, 1.0d);
 
-                if (_buildSpan.Context.TraceContext is { } traceContext)
+                if (_buildSpan.TraceContext is { } traceContext)
                 {
                     traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
                     traceContext.Origin = TestTags.CIAppTestOriginName;
@@ -181,14 +181,14 @@ namespace Datadog.Trace.MSBuild
                 string projectName = Path.GetFileName(e.ProjectFile);
 
                 string targetName = string.IsNullOrEmpty(e.TargetNames) ? "build" : e.TargetNames?.ToLowerInvariant();
-                Span projectSpan = _tracer.StartSpan($"msbuild.{targetName}", parent: parentSpan.Context);
+                Span projectSpan = _tracer.StartSpan($"msbuild.{targetName}", parent: parentSpan);
 
                 if (projectName != null)
                 {
                     projectSpan.ServiceName = projectName;
                 }
 
-                projectSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+                projectSpan.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
                 projectSpan.Type = SpanTypes.Build;
 
                 string targetFramework = null;

@@ -71,7 +71,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
         {
-            var context = value.Context;
             var testSessionTags = value.Tags as TestSessionSpanTags;
             var testModuleTags = value.Tags as TestModuleSpanTags;
             var testSuiteTags = value.Tags as TestSuiteSpanTags;
@@ -80,7 +79,9 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // It should be the number of members of the object to be serialized.
             var len = 9;
 
-            if (context.ParentId is not null)
+            var parentId = value.ParentId;
+
+            if (parentId is not null)
             {
                 len++;
             }
@@ -119,10 +120,10 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             if (isSpan)
             {
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.TraceId);
 
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SpanId);
             }
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
@@ -143,10 +144,10 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _durationBytes);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.Duration.ToNanoseconds());
 
-            if (context.ParentId is not null)
+            if (parentId is not null)
             {
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.ParentId.Value);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, parentId.Value);
             }
 
             if (testSuiteTags is not null)
@@ -171,7 +172,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteByte(ref bytes, offset, (byte)(value.Error ? 1 : 0));
 
             ITagProcessor[] tagProcessors = null;
-            if (context.TraceContext?.Tracer is Tracer tracer)
+            if (value.TraceContext?.Tracer is Tracer tracer)
             {
                 tagProcessors = tracer.TracerManager.TagProcessors;
             }
@@ -196,7 +197,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private int WriteTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
         {
             int originalOffset = offset;
-            var traceContext = span.Context.TraceContext;
+            var traceContext = span.TraceContext;
 
             // Start of "meta" dictionary. Do not add any string tags before this line.
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaBytes);
@@ -252,7 +253,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             }
 
             // add "version" tags to all spans whose service name is the default service name
-            if (string.Equals(span.Context.ServiceName, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(span.ServiceName, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
                 var version = traceContext?.ServiceVersion;
 
@@ -337,7 +338,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 }
 
                 // add "_sampling_priority_v1" tag
-                if (span.Context.TraceContext.SamplingPriority is { } samplingPriority)
+                if (span.TraceContext.SamplingPriority is { } samplingPriority)
                 {
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);

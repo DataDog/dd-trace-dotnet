@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                 if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)
                 {
-                    span.Context.TraceContext?.SetSamplingPriority(existingSpanContext.SamplingPriority.Value);
+                    span.TraceContext?.SetSamplingPriority(existingSpanContext.SamplingPriority.Value);
                 }
 
                 GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);
@@ -137,10 +137,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     methodName: method.Name,
                     serviceName: method.ServiceName,
                     startTime: span.StartTime,
-                    parentContext: span.Context.Parent);
+                    parentContext: span.Parent);
 
                 // Add the propagation headers
-                SpanContextPropagator.Instance.Inject(span.Context, collection);
+                SpanContextPropagator.Instance.Inject(span.GetContext(), collection);
             }
             catch (Exception ex)
             {
@@ -208,11 +208,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             span.Type = SpanTypes.Grpc;
             span.ResourceName = methodFullName;
 
-            if (span.Context.TraceContext.SamplingPriority == null)
+            if (span.TraceContext.SamplingPriority == null)
             {
                 // If we don't add the span to the trace context, then we need to manually call the sampler
                 var samplingDecision = tracer.TracerManager.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
-                span.Context.TraceContext.SetSamplingPriority(samplingDecision);
+                span.TraceContext.SetSamplingPriority(samplingDecision);
             }
 
             return span;

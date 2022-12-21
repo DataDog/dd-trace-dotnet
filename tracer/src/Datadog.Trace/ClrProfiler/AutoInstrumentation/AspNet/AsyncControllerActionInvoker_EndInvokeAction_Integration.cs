@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // Additionally, update the scope so it does not finish the span on close. This allows
                     // us to defer finishing the span later while making sure callers of this method do not
                     // get this scope when calling Tracer.ActiveScope
-                    var now = scope.Span.Context.TraceContext.UtcNow;
+                    var now = scope.Span.TraceContext.UtcNow;
                     httpContext.AddOnRequestCompleted(h => OnRequestCompletedAfterException(h, scope, now));
 
                     scope.SetFinishOnClose(false);

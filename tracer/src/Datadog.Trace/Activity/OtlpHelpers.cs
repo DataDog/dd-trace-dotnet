@@ -89,7 +89,7 @@ namespace Datadog.Trace.Activity
             // TODO: Add container tags from attributes if the tag isn't already in the span
 
             // Fixup "env" tag
-            if (span.Context.TraceContext?.Environment is null
+            if (span.TraceContext?.Environment is null
                 && span.GetTag("deployment.environment") is string otelServiceEnv
                 && !string.IsNullOrEmpty(otelServiceEnv))
             {

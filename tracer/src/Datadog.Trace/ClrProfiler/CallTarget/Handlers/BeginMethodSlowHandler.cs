@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             var activeScope = Tracer.Instance.InternalActiveScope;
             // We don't use Tracer.Instance.DistributedSpanContext directly because we already retrieved the
             // active scope from an AsyncLocal instance, and we want to avoid retrieving twice.
-            var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
+            var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.GetContext();
             return new CallTargetState(activeScope, spanContextRaw, _invokeDelegate(instance, arguments));
         }
     }

@@ -300,7 +300,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             // Create a child span for the MVC action
             var mvcSpanTags = new AspNetCoreMvcTags();
-            var mvcScope = tracer.StartActiveInternal(MvcOperationName, parentSpan.Context, tags: mvcSpanTags);
+            var mvcScope = tracer.StartActiveInternal(MvcOperationName, parentSpan.GetContext(), tags: mvcSpanTags);
             var span = mvcScope.Span;
             span.Type = SpanTypes.Web;
 
@@ -563,7 +563,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    span.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
+                    span?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
             }
         }
@@ -608,7 +608,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldUseIast)
                 {
-                    parentSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
+                    parentSpan.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
         }

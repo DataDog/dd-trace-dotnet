@@ -37,7 +37,7 @@ namespace Datadog.Trace.Activity.Handlers
             var activeSpan = (Span?)Tracer.Instance.ActiveScope?.Span;
 
             // Propagate Trace and Parent Span ids
-            SpanContext? parent = null;
+            Span? parent = null;
             ulong? traceId = null;
             ulong? spanId = null;
             string? rawTraceId = null;
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Activity.Handlers
                     && w3cActivity.ParentId is string parentId
                     && ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
                 {
-                    parent = mapping.Scope.Span.Context;
+                    parent = mapping.Scope.Span;
                 }
 
                 if (parent is null && activeSpan is not null)
@@ -64,12 +64,12 @@ namespace Datadog.Trace.Activity.Handlers
                     if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
                     {
                         // TraceId
-                        w3cActivity.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
-                                                  activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
+                        w3cActivity.TraceId = string.IsNullOrWhiteSpace(activeSpan.RawTraceId) ?
+                                                  activeSpan.TraceId.ToString("x32") : activeSpan.RawTraceId;
 
                         // SpanId
-                        w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
-                                                       activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
+                        w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.RawSpanId) ?
+                                                       activeSpan.SpanId.ToString("x16") : activeSpan.RawSpanId;
 
                         // We clear internals Id and ParentId values to force recalculation.
                         w3cActivity.RawId = null;
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Activity.Handlers
                 Log.Error(ex, "Error processing the OnActivityStarted callback");
             }
 
-            static Scope CreateScopeFromActivity(T activity, SpanContext? parent, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId)
+            static Scope CreateScopeFromActivity(T activity, Span? parent, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId)
             {
                 string? serviceName = activity switch
                 {
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Activity.Handlers
                     _ => null
                 };
 
-                var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, serviceName: serviceName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+                var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent?.GetContext(), serviceName: serviceName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
                 Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
                 return Tracer.Instance.ActivateSpan(span, false);

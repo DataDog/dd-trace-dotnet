@@ -56,8 +56,8 @@ public sealed class TestSession
 
         span.Type = SpanTypes.TestSession;
         span.ResourceName = $"{span.OperationName}.{command}";
-        span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep);
-        span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
+        span.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep);
+        span.TraceContext.Origin = TestTags.CIAppTestOriginName;
 
         tags.SessionId = span.SpanId;
 
@@ -313,7 +313,7 @@ public sealed class TestSession
         var span = _span;
 
         // Calculate duration beforehand
-        duration ??= span.Context.TraceContext.ElapsedSince(span.StartTime);
+        duration ??= span.TraceContext.ElapsedSince(span.StartTime);
 
         // Set status
         switch (status)
@@ -391,7 +391,7 @@ public sealed class TestSession
         };
 
         SpanContextPropagator.Instance.Inject(
-            span.Context,
+            span.GetContext(),
             (IDictionary)environmentVariables,
             new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 

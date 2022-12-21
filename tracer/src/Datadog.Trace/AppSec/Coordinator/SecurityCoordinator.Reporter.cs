@@ -80,7 +80,7 @@ internal readonly partial struct SecurityCoordinator
             _localRootSpan.SetTag(Tags.ActorIp, clientIp);
         }
 
-        if (_localRootSpan.Context.TraceContext is { Origin: null } traceContext)
+        if (_localRootSpan.TraceContext is { Origin: null } traceContext)
         {
             _localRootSpan.SetTag(Tags.Origin, "appsec");
             traceContext.Origin = "appsec";
@@ -106,7 +106,7 @@ internal readonly partial struct SecurityCoordinator
         {
             span = TryGetRoot(span);
             security.WafInitResult.Reported = true;
-            span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+            span.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, security.WafInitResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, security.WafInitResult.FailedToLoadRules);
             if (security.WafInitResult.HasErrors)

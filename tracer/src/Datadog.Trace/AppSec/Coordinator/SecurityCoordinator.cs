@@ -89,5 +89,5 @@ internal readonly partial struct SecurityCoordinator
         _httpTransport.DisposeAdditiveContext();
     }
 
-    private static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;
+    private static Span TryGetRoot(Span span) => span.TraceContext?.RootSpan ?? span;
 }

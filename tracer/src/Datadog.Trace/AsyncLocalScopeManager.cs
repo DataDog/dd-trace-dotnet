@@ -32,7 +32,7 @@ namespace Datadog.Trace
             var scope = new Scope(newParent, span, this, finishOnClose);
 
             Active = scope;
-            DistributedTracer.Instance.SetSpanContext(scope.Span.Context);
+            DistributedTracer.Instance.SetSpanContext(scope.Span.GetContext());
 
             return scope;
         }
@@ -52,7 +52,7 @@ namespace Datadog.Trace
             Active = scope.Parent;
 
             // scope.Parent is null for distributed traces, so use scope.Span.Context.Parent
-            DistributedTracer.Instance.SetSpanContext(scope.Span.Context.Parent as SpanContext);
+            DistributedTracer.Instance.SetSpanContext(scope.Span.Parent as SpanContext);
         }
 
         private static AsyncLocal<Scope> CreateScope()

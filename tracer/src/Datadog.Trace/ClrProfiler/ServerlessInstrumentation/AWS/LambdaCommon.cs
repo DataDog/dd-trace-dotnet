@@ -97,12 +97,12 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 Serverless.Debug("samplingPriority not found");
 
                 var samplingDecision = tracer.TracerManager.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
-                span.Context.TraceContext?.SetSamplingPriority(samplingDecision);
+                span.TraceContext?.SetSamplingPriority(samplingDecision);
             }
             else
             {
                 Serverless.Debug($"setting the placeholder sampling priority to = {samplingPriority}");
-                span.Context.TraceContext?.SetSamplingPriority(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
+                span.TraceContext?.SetSamplingPriority(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
             }
 
             return tracer.TracerManager.ScopeManager.Activate(span, false);

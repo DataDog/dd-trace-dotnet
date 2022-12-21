@@ -163,7 +163,7 @@ namespace Datadog.Trace.AspNet
                 // (e.g. WCF being hosted in IIS)
                 if (HttpRuntime.UsingIntegratedPipeline)
                 {
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, httpRequest.Headers.Wrap());
+                    SpanContextPropagator.Instance.Inject(scope.Span.GetContext(), httpRequest.Headers.Wrap());
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -192,7 +192,7 @@ namespace Datadog.Trace.AspNet
 
                 if (Iast.Iast.Instance.Settings.Enabled && OverheadController.Instance.AcquireRequest())
                 {
-                    var traceContext = scope?.Span?.Context?.TraceContext;
+                    var traceContext = scope.Span.TraceContext;
                     traceContext?.EnableIastInRequest();
                     traceContext?.IastRequestContext?.AddRequestData(httpRequest);
                 }

@@ -38,7 +38,7 @@ namespace Datadog.Trace
             TraceContext traceContext = null;
             if (span is Span spanClass)
             {
-                traceContext = spanClass.Context.TraceContext;
+                traceContext = spanClass.TraceContext;
             }
 
             Action<string, string> setTag =

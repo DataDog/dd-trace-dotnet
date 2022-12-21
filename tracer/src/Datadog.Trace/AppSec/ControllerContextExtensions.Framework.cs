@@ -64,7 +64,7 @@ namespace Datadog.Trace.AppSec
 
             if (iastEnabled)
             {
-                scope?.Span?.Context?.TraceContext?.IastRequestContext?.AddRequestData(context.Request, controllerContext.RouteData.Values);
+                scope?.Span?.TraceContext?.IastRequestContext?.AddRequestData(context.Request, controllerContext.RouteData.Values);
             }
         }
     }

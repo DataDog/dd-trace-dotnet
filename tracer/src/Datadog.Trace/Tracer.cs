@@ -181,7 +181,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active span context dictionary by consulting DistributedTracer.Instance
         /// </summary>
-        internal IReadOnlyDictionary<string, string> DistributedSpanContext => DistributedTracer.Instance.GetSpanContextRaw() ?? InternalActiveScope?.Span?.Context;
+        internal IReadOnlyDictionary<string, string> DistributedSpanContext => DistributedTracer.Instance.GetSpanContextRaw() ?? InternalActiveScope?.Span?.GetContext();
 
         /// <summary>
         /// Gets the active scope
@@ -341,7 +341,7 @@ namespace Datadog.Trace
         internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
         {
             // null parent means use the currently active span
-            parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
+            parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.GetContext();
 
             TraceContext traceContext;
 
