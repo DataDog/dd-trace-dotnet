@@ -61,6 +61,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
                     sinkAlreadyAdded = true;
                     break;
                 }
+
+                // they may have created a sub logger that we've already added the sink to
+                // Unfortunately there's no way to "detect" the logger being created will
+                // be a sub-logger, so we have to retrospectively disable it instead.
+                // We don't look for instances of the public datadog serilog sink, just our internal
+                // direct submission one - if they're using the public sink we already
+                // essentially disable direct submission to avoid duplicate logs.
+                if (logEventSink is not null
+                  && logEventSink.TryDuckCast<SecondaryLoggerSinkProxy>(out var secondarySink)
+                    && secondarySink.Logger is var secondaryLogger)
+                {
+                    if (secondaryLogger.Sink is DirectSubmissionSerilogSink subSink1)
+                    {
+                        subSink1.Disable();
+                    }
+                    else
+                    {
+                        if (secondaryLogger.Sink.TryDuckCast<AggregateSinkProxy>(out var aggregateSink))
+                        {
+                            foreach (var subSink in aggregateSink.LogEventSinks)
+                            {
+                                if (subSink is DirectSubmissionSerilogSink subSink2)
+                                {
+                                    subSink2.Disable();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if (!sinkAlreadyAdded)
