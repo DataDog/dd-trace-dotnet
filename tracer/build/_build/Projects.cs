@@ -27,6 +27,7 @@ public static class Projects
     public const string DebuggerSamples = "Samples.Probes";
     public const string DebuggerSamplesTestRuns = "Samples.Probes.TestRuns";
 
+    public const string RazorPages = "Samples.AspNetCoreRazorPages";
 }
 
 public static class FileNames
