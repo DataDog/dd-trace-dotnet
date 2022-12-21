@@ -39,6 +39,8 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public override int Count => _items.Count + (_events.Count > 0 ? 1 : 0);
 
+        internal EventsBuffer<IEvent> Events => _events;
+
         protected abstract MultipartFormItem CreateMultipartFormItem(EventsBuffer<IEvent> eventsBuffer);
 
         protected void AddMultipartFormItem(MultipartFormItem item)

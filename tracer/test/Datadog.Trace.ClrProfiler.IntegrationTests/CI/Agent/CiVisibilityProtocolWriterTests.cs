@@ -285,7 +285,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 // The number of items in the events should be the same as the num calculated
                 // without decimals (items that doesn't fit doesn't get added)
                 var numItemsTrunc = bufferSize / coveragePayloadInBytes.Length;
-                Assert.Equal(numItemsTrunc + 1, payloadBuffer.Count);
+                Assert.Equal(numItemsTrunc + 1, payloadBuffer.Events.Count);
 
                 bufferSize *= 2;
             }
