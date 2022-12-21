@@ -1,7 +1,5 @@
-using System;
 using System.Data.SQLite;
 using System.Security.Cryptography;
-using System.Threading;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Samples.Security.AspNetCore5.Controllers
@@ -12,18 +10,10 @@ namespace Samples.Security.AspNetCore5.Controllers
     {
         static SQLiteConnection dbConnection = null;
 
-        public IastController() 
-        {
-            if (dbConnection is null)
-            {
-                dbConnection = CreateDatabase();
-            }
-        }
         public IActionResult Index()
         {
             return Content("Ok\n");
         }
-
 
         [HttpGet("WeakHashing")]
         [Route("WeakHashing/{delay1}")]
@@ -42,6 +32,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("SqlQuery")]
         public IActionResult SqlQuery(string username, string query)
         {
+            if (dbConnection is null)
+            {
+                dbConnection = CreateDatabase();
+            }
+
             if (!string.IsNullOrEmpty(username))
             {
                 var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";

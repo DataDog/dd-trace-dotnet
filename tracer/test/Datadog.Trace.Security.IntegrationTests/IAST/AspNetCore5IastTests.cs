@@ -183,6 +183,30 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetHttpPort(Fixture.HttpPort);
         }
 
+        [SkippableTheory]
+        [InlineData(true)]
+        [InlineData(false)]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastSqlInjectionRequest(bool enableIast)
+        {
+            var filename = enableIast ? "Iast.SqlInjection.AspNetCore5.IastEnabled" : "Iast.SqlInjection.AspNetCore5.IastDisabled";
+            var url = "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27";
+            EnableIast(enableIast);
+            IncludeAllHttpSpans = true;
+            var agent = await RunOnSelfHosted(enableSecurity: false);
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+            settings.AddRegexScrubber(ClientIp, string.Empty);
+            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
+            settings.AddRegexScrubber(HashRegex, string.Empty);
+            await VerifyHelper.VerifySpans(spansFiltered, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
+
         protected async Task TestWeakHashing(string filename, MockTracerAgent agent)
         {
             var url = "/Iast/WeakHashing";
