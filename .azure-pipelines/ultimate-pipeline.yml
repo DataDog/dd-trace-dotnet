@@ -1886,6 +1886,7 @@ stages:
   dependsOn: [build_linux, build_arm64, build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
   pool: Throughput
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1909,12 +1910,25 @@ stages:
     - script: |
         test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
-        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "linux"
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_linux_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
   - job: Windows64
     timeoutInMinutes: 60
@@ -1932,12 +1946,25 @@ stages:
     - script: |
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
-        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "windows"
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_windows_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
   - job: LinuxArm64
     timeoutInMinutes: 60
@@ -1962,11 +1989,25 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_linux_arm64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: throughput_appsec
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: [build_linux, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
   pool: Throughput-AppSec
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1991,11 +2032,25 @@ stages:
         test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        cd $(CrankDir)
         chmod +x ./run-appsec.sh
         ./run-appsec.sh "linux"
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet-appsec
+
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_linux_x64_asm_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
