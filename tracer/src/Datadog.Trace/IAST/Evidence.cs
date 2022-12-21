@@ -5,22 +5,49 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Datadog.Trace.Iast;
 
 internal readonly struct Evidence
 {
+    private readonly Range[]? _ranges;
+
     public Evidence(string value, Range[]? ranges = null)
     {
         this.Value = value;
-        this.Ranges = ranges;
+        this._ranges = ranges;
     }
 
     public string Value { get; }
 
-    public Range[]? Ranges { get; }
+    public List<ValuePart>? ValueParts => GetValuePartsFromRanges();
+
+    private List<ValuePart>? GetValuePartsFromRanges()
+    {
+        if (_ranges is null || _ranges.Count() == 0)
+        {
+            return null;
+        }
+
+        var valueParts = new List<ValuePart>();
+
+        foreach (var range in _ranges)
+        {
+            valueParts.Add(new ValuePart(Value.Substring(range.Start, range.Length), range.Source.GetInternalId()));
+        }
+
+        return valueParts;
+    }
+
+    public Range[]? GetRanges()
+    {
+        return _ranges;
+    }
 
     public override int GetHashCode()
     {
-        return IastUtils.GetHashCode(Value, Ranges);
+        return IastUtils.GetHashCode(Value, _ranges);
     }
 }

@@ -7,9 +7,10 @@
 
 namespace Datadog.Trace.Iast;
 
-internal readonly struct Source
+internal struct Source
 {
     private readonly byte _origin;
+    private int _internalId;
 
     public Source(byte origin, string? name, string? value)
     {
@@ -23,6 +24,16 @@ internal readonly struct Source
     public string? Name { get; }
 
     public string? Value { get; }
+
+    public void SetInternalId(int id)
+    {
+        _internalId = id;
+    }
+
+    public int GetInternalId()
+    {
+        return _internalId;
+    }
 
     public override int GetHashCode()
     {
