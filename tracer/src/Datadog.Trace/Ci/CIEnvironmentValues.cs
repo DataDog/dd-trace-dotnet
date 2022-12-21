@@ -288,6 +288,12 @@ namespace Datadog.Trace.Ci
             else if (EnvironmentHelpers.GetEnvironmentVariable("TF_BUILD") != null)
             {
                 SetupAzurePipelinesEnvironment();
+                VariablesToBypass = new Dictionary<string, string>
+                {
+                    ["SYSTEM_TEAMPROJECTID"] = EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMPROJECTID"),
+                    ["BUILD_BUILDID"] = EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDID"),
+                    ["SYSTEM_JOBID"] = EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_JOBID"),
+                };
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_COMMIT") != null)
             {
