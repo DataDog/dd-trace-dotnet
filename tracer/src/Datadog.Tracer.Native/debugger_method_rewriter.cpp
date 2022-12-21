@@ -354,7 +354,7 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     if (FAILED(hr))
     {
         // Note we are not sabotaging the whole rewriting upon failure to lookup for a specific bytecode offset.
-        // TODO Upon implementing the Probe Statuses, we'll need to reflect that.
+        ProbesMetadataTracker::Instance()->SetErrorProbeStatus(lineProbe->probeId, line_probe_il_offset_lookup_failure);
         return E_NOTIMPL;
     }
 
@@ -449,7 +449,7 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
 
 HRESULT DebuggerMethodRewriter::ApplyLineProbes(
     const int instrumentedMethodIndex,
-    const LineProbeDefinitions& lineProbes, 
+    LineProbeDefinitions& lineProbes, 
     CorProfiler* corProfiler, 
     ModuleID module_id, 
     ModuleMetadata& module_metadata, 
@@ -471,6 +471,7 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
     {
         Logger::Warn("Async generic methods in optimized code are not supported at the moment. Skipping on placing ",
                      lineProbes.size(), " line probe(s).");
+        MarkAllLineProbesAsError(lineProbes, line_probe_in_async_generic_method_in_optimized_code);
         return E_NOTIMPL;
     }
 
@@ -485,8 +486,7 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
                                    branchTargets, lineProbe, isAsyncMethod);
         if (hr == E_NOTIMPL)
         {
-            ProbesMetadataTracker::Instance()->SetErrorProbeStatus(lineProbe->probeId,invalid_line_probe_probe_is_not_supported);
-            // Appropriate error message is already logged in CallLineProbe.
+            // Appropriate error message and Probe Status is already logged in CallLineProbe.
             return E_NOTIMPL;
         }
 
@@ -1227,11 +1227,21 @@ HRESULT DebuggerMethodRewriter::GetTaskReturnType(const ILInstr* instruction, Mo
 void DebuggerMethodRewriter::MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes, const WSTRING& reasoning)
 {
     // Mark all probes as Error
-    for (const auto& probe : methodProbes)
+    MarkAllLineProbesAsError(lineProbes, reasoning);
+    MarkAllMethodProbesAsError(methodProbes, reasoning);
+}
+
+void DebuggerMethodRewriter::MarkAllLineProbesAsError(LineProbeDefinitions& lineProbes, const WSTRING& reasoning)
+{
+    for (const auto& probe : lineProbes)
     {
         ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probe->probeId, reasoning);
     }
-    for (const auto& probe : lineProbes)
+}
+
+void DebuggerMethodRewriter::MarkAllMethodProbesAsError(MethodProbeDefinitions& methodProbes, const WSTRING& reasoning)
+{
+    for (const auto& probe : methodProbes)
     {
         ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probe->probeId, reasoning);
     }

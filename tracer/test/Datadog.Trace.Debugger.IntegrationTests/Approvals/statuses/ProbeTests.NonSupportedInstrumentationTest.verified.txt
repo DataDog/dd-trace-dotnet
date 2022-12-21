@@ -4,7 +4,7 @@
     "debugger": {
       "diagnostics": {
         "exception": {
-          "message": "Failed to instrument the method. [Error Code: 3]",
+          "message": "Failed to instrument the method. [Error Code: 1]",
           "stacktrace": null,
           "type": "NO_TYPE"
         },
