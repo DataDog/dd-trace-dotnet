@@ -140,7 +140,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             logs
                .Where(x => !x.Message.Contains(ExcludeMessagePrefix))
                .Should()
-               .NotBeEmpty()
+               .HaveCount(1)
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.TraceId))
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.SpanId));
             VerifyInstrumentation(processResult.Process);
