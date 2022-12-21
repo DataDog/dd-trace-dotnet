@@ -18,12 +18,12 @@ namespace Datadog.Trace.Tests.Configuration
     [Collection(nameof(ConfigurationSourceTests))]
     public class ConfigurationSourceTests : IDisposable
     {
-        private static readonly Dictionary<string, string> TagsK1V1K2V2 = new Dictionary<string, string> { { "k1", "v1" }, { "k2", "v2" } };
-        private static readonly Dictionary<string, string> TagsK2V2 = new Dictionary<string, string> { { "k2", "v2" } };
-        private static readonly Dictionary<string, string> TagsWithColonsInValue = new Dictionary<string, string> { { "k1", "v1" }, { "k2", "v2:with:colons" }, { "trailing", "colon:good:" } };
-        private static readonly Dictionary<string, string> HeaderTagsWithOptionalMappings = new Dictionary<string, string> { { "header1", "tag1" }, { "header2", "content-type" }, { "header3", "content-type" }, { "header4", "c___ont_____ent----typ_/_e" }, { "validheaderonly", string.Empty }, { "validheaderwithoutcolon", string.Empty } };
-        private static readonly Dictionary<string, string> HeaderTagsWithDots = new Dictionary<string, string> { { "header3", "my.header.with.dot" }, { "my.new.header.with.dot", string.Empty } };
-        private static readonly Dictionary<string, string> HeaderTagsSameTag = new Dictionary<string, string> { { "header1", "tag1" }, { "header2", "tag1" } };
+        private static readonly Dictionary<string, string> TagsK1V1K2V2 = new() { { "k1", "v1" }, { "k2", "v2" } };
+        private static readonly Dictionary<string, string> TagsK2V2 = new() { { "k2", "v2" } };
+        private static readonly Dictionary<string, string> TagsWithColonsInValue = new() { { "k1", "v1" }, { "k2", "v2:with:colons" }, { "trailing", "colon:good:" } };
+        private static readonly Dictionary<string, string> HeaderTagsWithOptionalMappings = new() { { "header1", "tag1" }, { "header2", "content-type" }, { "header3", "content-type" }, { "header4", "c___ont_____ent----typ_/_e" }, { "validheaderonly", string.Empty }, { "validheaderwithoutcolon", string.Empty } };
+        private static readonly Dictionary<string, string> HeaderTagsWithDots = new() { { "header3", "my.header.with.dot" }, { "my.new.header.with.dot", string.Empty } };
+        private static readonly Dictionary<string, string> HeaderTagsSameTag = new() { { "header1", "tag1" }, { "header2", "tag1" } };
 
         private readonly Dictionary<string, string> _envVars;
 
