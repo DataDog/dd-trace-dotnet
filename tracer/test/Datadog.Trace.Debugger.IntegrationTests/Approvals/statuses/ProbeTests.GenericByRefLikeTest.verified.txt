@@ -4,7 +4,7 @@
     "debugger": {
       "diagnostics": {
         "exception": {
-          "message": "Instrumnetation of methods with Byref-like return type are not supported for now.",
+          "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
           "stacktrace": null,
           "type": "NO_TYPE"
         },
@@ -20,7 +20,7 @@
     "debugger": {
       "diagnostics": {
         "exception": {
-          "message": "Byref-like types are not supported for now.",
+          "message": "Dynamic Instrumentation of methods in a `ref-struct` is not yet supported.",
           "stacktrace": null,
           "type": "NO_TYPE"
         },
@@ -36,7 +36,7 @@
     "debugger": {
       "diagnostics": {
         "exception": {
-          "message": "Byref-like types are not supported for now.",
+          "message": "Dynamic Instrumentation of methods in a `ref-struct` is not yet supported.",
           "stacktrace": null,
           "type": "NO_TYPE"
         },
@@ -52,7 +52,7 @@
     "debugger": {
       "diagnostics": {
         "exception": {
-          "message": "Instrumnetation of methods with Byref-like return type are not supported for now.",
+          "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
           "stacktrace": null,
           "type": "NO_TYPE"
         },
@@ -68,7 +68,7 @@
     "debugger": {
       "diagnostics": {
         "exception": {
-          "message": "Instrumnetation of methods with Byref-like return type are not supported for now.",
+          "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
           "stacktrace": null,
           "type": "NO_TYPE"
         },

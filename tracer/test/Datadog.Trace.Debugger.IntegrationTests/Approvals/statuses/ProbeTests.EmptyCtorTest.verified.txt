@@ -4,7 +4,7 @@
     "debugger": {
       "diagnostics": {
         "exception": {
-          "message": "Instrumentation of constructors are not supported for now.",
+          "message": "Instrumentation of static/non-static constructors is not supported.",
           "stacktrace": null,
           "type": "NO_TYPE"
         },
