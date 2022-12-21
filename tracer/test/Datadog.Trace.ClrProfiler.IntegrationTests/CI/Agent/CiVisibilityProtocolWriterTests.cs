@@ -250,9 +250,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public void CoverageBufferTest()
         {
+            int headerSize = Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize + Ci.Agent.Payloads.MultipartPayload.HeaderSize;
+
             var settings = CIVisibility.Settings;
 
-            int bufferSize = 256;
+            int bufferSize = headerSize + 1024;
             int maxBufferSize = (int)(4.5 * 1024 * 1024);
             var coveragePayload = new TestCoverage
             {
@@ -284,8 +286,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
                 // The number of items in the events should be the same as the num calculated
                 // without decimals (items that doesn't fit doesn't get added)
-                var numItemsTrunc = bufferSize / coveragePayloadInBytes.Length;
-                Assert.Equal(numItemsTrunc + 1, payloadBuffer.Events.Count);
+                var numItemsTrunc = (bufferSize - headerSize) / coveragePayloadInBytes.Length;
+                Assert.Equal(numItemsTrunc, payloadBuffer.Events.Count);
 
                 bufferSize *= 2;
             }
