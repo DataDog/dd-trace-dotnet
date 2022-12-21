@@ -32,10 +32,12 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_All_IHeadersCollection()
         {
-            ulong traceId = 123456789;
-            ulong spanId = 987654321;
-            var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: "rum");
+            var traceContext = new TraceContext(tracer: null);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.Origin = "rum";
+
+            var context = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, 123456789, 987654321);
+
             var headers = new Mock<IHeadersCollection>();
 
             Propagator.Inject(context, headers.Object);
@@ -61,10 +63,11 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_All_CarrierAndDelegate()
         {
-            const ulong traceId = 123456789;
-            const ulong spanId = 987654321;
-            const int samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: "rum");
+            var traceContext = new TraceContext(tracer: null);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.Origin = "rum";
+
+            var context = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, 123456789, 987654321);
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
