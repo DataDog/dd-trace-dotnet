@@ -26,16 +26,41 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
 
         var originalOffset = offset;
 
-        offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 4);
+        var len = 1;
+        if (value.SessionId != 0)
+        {
+            len++;
+        }
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionIdBytes);
-        offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SessionId);
+        if (value.SuiteId != 0)
+        {
+            len++;
+        }
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSuiteIdBytes);
-        offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SuiteId);
+        if (value.SpanId != 0)
+        {
+            len++;
+        }
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-        offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SpanId);
+        offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
+
+        if (value.SessionId != 0)
+        {
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionIdBytes);
+            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SessionId);
+        }
+
+        if (value.SuiteId != 0)
+        {
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSuiteIdBytes);
+            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SuiteId);
+        }
+
+        if (value.SpanId != 0)
+        {
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
+            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SpanId);
+        }
 
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filesBytes);
         if (value.Files is { } files)
