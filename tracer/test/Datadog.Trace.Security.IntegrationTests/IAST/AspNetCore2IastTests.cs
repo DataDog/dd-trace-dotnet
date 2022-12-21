@@ -143,6 +143,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         protected static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
         protected static readonly Regex ClientIp = new(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}");
         protected static readonly Regex NetworkClientIp = new(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}");
+        protected static readonly Regex HashRegex = new(@"(\S)*""hash"": (-){0,1}([0-9]){1,12},(\r|\n){1,2}      ");
 
         public AspNetCore2IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null)
             : base("AspNetCore2", outputHelper, "/shutdown", testName: testName)
@@ -189,6 +190,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
             settings.AddRegexScrubber(ClientIp, string.Empty);
             settings.AddRegexScrubber(NetworkClientIp, string.Empty);
+            settings.AddRegexScrubber(HashRegex, string.Empty);
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
