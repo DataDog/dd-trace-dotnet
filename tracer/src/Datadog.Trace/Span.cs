@@ -131,8 +131,6 @@ namespace Datadog.Trace
 
         internal ITags Tags { get; set; }
 
-        internal SpanContext Context => _context;
-
         internal DateTimeOffset StartTime { get; private set; }
 
         internal TimeSpan Duration { get; private set; }
