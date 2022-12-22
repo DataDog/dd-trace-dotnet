@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private static string GetVersionSuffix(string packageVersion)
         {
-            var version = new Version(string.IsNullOrEmpty(packageVersion) ? "3.4.0" : packageVersion); // default version in csproj
+            var version = new Version(string.IsNullOrEmpty(packageVersion) ? "3.4.1" : packageVersion); // default version in csproj
             if (version < new Version("3.2.0"))
             {
                 return "_3_0";
@@ -93,6 +93,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (version < new Version("3.3.0"))
             {
                 return "_3_2";
+            }
+
+            if (version <= new Version("3.4.0"))
+            {
+                return "_3_4";
             }
 
             return string.Empty;
