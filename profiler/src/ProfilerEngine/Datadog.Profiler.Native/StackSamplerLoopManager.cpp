@@ -58,9 +58,9 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _pWallTimeCollector{pWallTimeCollector},
     _pCpuTimeCollector{pCpuTimeCollector},
     _deadlockInterventionInProgress{0},
-    _suspensionTimeMetric{metricsRegistry.GetOrRegister<MeanMaxMetric>("suspension_time_ns")},
-    _collectionTimeMetric{metricsRegistry.GetOrRegister<MeanMaxMetric>("collection_time_ns")},
-    _deadlockCounterMetric{metricsRegistry.GetOrRegister<CounterMetric>("deadlocks")}
+    _suspensionTimeMetric{metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_suspension_time_ns")},
+    _collectionTimeMetric{metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_collection_time_ns")},
+    _deadlockCounterMetric{metricsRegistry.GetOrRegister<CounterMetric>("dotnet_internal_deadlocks")}
 {
     _pCorProfilerInfo->AddRef();
     _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
@@ -514,7 +514,7 @@ void StackSamplerLoopManager::NotifyCollectionEnd()
 
     std::int64_t collectionEndTimeNs = OpSysTools::GetHighPrecisionNanoseconds();
     auto collectionDuration = collectionEndTimeNs - _collectionStartNs;
-    _collectionTimeMetric->Add(collectionDuration);
+    _collectionTimeMetric->Add((double_t)collectionDuration);
     _currentStatistics->AddCollectionTime(collectionDuration);
 
     _collectionStartNs = 0;
@@ -534,7 +534,7 @@ void StackSamplerLoopManager::NotifyIterationFinished()
 
     std::int64_t threadCollectionEndTimeNs = OpSysTools::GetHighPrecisionNanoseconds();
     auto suspensionDuration = threadCollectionEndTimeNs - _threadSuspensionStart;
-    _suspensionTimeMetric->Add(suspensionDuration);
+    _suspensionTimeMetric->Add((double_t)suspensionDuration);
     _currentStatistics->AddSuspensionTime(suspensionDuration);
 
     if (threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())

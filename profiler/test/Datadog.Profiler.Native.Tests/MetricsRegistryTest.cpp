@@ -25,7 +25,12 @@ TEST(MetricsRegistryTest, CheckAddOnMetric)
     metric->Add(43);
     metric->Add(-1);
 
-    std::unordered_map<std::string, double_t> expectedResults = {{"metric1_mean", 21}, {"metric1_max", 43}};
+    std::unordered_map<std::string, double_t> expectedResults =
+    {
+        {"metric1_sum", 42},
+        {"metric1_mean", 21},
+        {"metric1_max", 43}
+    };
 
     {
         auto metrics = registry.Collect();
@@ -97,6 +102,7 @@ TEST(MetricsRegistryTest, CheckAddOnMultipleMetrics)
     auto metrics = registry.Collect();
 
     std::unordered_map<std::string, double_t> expectedResults = {
+        {"metric1_sum", 36},
         {"metric1_mean", 12},
         {"metric1_max", 43},
         {"metric2_count", 6}};
@@ -257,7 +263,12 @@ TEST(MetricsRegistryTest, CheckConcurrencyForMeanMaxMetric)
 
     auto metrics = registry.Collect();
 
-    std::unordered_map<std::string, double_t> expectedResults = {{"metric1_mean", 10.5}, {"metric1_max", 20}};
+    std::unordered_map<std::string, double_t> expectedResults =
+    {
+        {"metric1_sum", 210},
+        {"metric1_mean", 10.5},
+        {"metric1_max", 20}
+    };
 
     ASSERT_EQ(metrics.size(), expectedResults.size());
     for (auto const& [name, value] : metrics)

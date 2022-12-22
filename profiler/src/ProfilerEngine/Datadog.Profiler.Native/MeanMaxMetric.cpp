@@ -38,6 +38,7 @@ std::list<MetricBase::Metric> MeanMaxMetric::GetMetrics()
     max = std::numeric_limits<double_t>::min() == max ? 0 : max;
 
     return std::list<Metric>{
+        {_name + "_sum", value},
         {_name + "_mean", mean},
         {_name + "_max", max}};
 }

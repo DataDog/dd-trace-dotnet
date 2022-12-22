@@ -38,7 +38,9 @@ namespace Datadog.Profiler.IntegrationTests
             };
 
             runner.Run(agent);
-            Thread.Sleep(10000000);
+
+            // uncomment to debug multipart http request
+            // Thread.Sleep(10000000);
 
             Assert.True(hasMetrics);
         }

@@ -27,6 +27,7 @@
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
 #include "MetricsRegistry.h"
+#include "ProxyMetric.h"
 
 #include "shared/src/native-src/string.h"
 
@@ -232,6 +233,8 @@ private :
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;
 
     MetricsRegistry _metricsRegistry;
+    std::shared_ptr<ProxyMetric> _managedThreadsMetric;
+    std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
 
 private:
     static void ConfigureDebugLog();
