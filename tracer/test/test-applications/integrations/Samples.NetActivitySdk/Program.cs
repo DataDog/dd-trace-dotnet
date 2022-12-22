@@ -7,6 +7,7 @@ using OpenTelemetry.Exporter;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
+using System.Runtime.CompilerServices;
 
 namespace NetActivitySdk;
 
@@ -33,17 +34,18 @@ public static class Program
 
         _source = new ActivitySource(serviceName, serviceVersion);
 
-        using (var rootSpan = _source.StartActivity("RootSpan"))
+        using (var rootSpan = _source.StartActivity("RootSpan")) // 1 span (total 1)
         {
-            RunActivityAddTags();
-            RunActivitySetTags();
-            RunActivityAddEvent();
-            RunActivityAddBaggage();
-            RunActivityLink();
+            RunActivityAddTags(); // 1 span (total 2)
+            RunActivitySetTags(); // 1 span (total 3)
+            RunActivityAddEvent(); // 5 spans (total 8)
+            RunActivityAddBaggage(); // 2 spans (total 10)
         }
 
         // needs to be outside of the above root span as we don't want a parent here
-        RunActivityUpdate();
+        RunActivityUpdate(); //  9 spans (total 19)
+        //RunActivityLink();
+        await Task.Delay(1000);
     }
 
     private static void RunActivityAddTags()
@@ -75,7 +77,6 @@ public static class Program
         span?.AddTag("set-string", "test");
         span?.SetTag("set-string", "str");
 
-        // TODO should we attempt to change these as well?
         span?.SetTag("attribute-string", "str");
         span?.SetTag("attribute-int", 1);
         span?.SetTag("attribute-bool", true);
@@ -119,11 +120,19 @@ public static class Program
 
     private static void RunActivityLink()
     {
-        var context1 = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.None);
-        var context2 = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.None);
-        var contexts = new[] { context1, context2 };
+        using var span1 = _source.StartActivity("SomeUnrelatedSpan");
+        //var context1 = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.None);
+        //var context2 = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.None);
+        //var contexts = new[] { context1, context2 };
 
-        using var span = _source.StartActivity(name: "ActivityLinks", kind: ActivityKind.Internal, links: contexts.Select(context => new ActivityLink(context)));
+        //var links = contexts.Select(context => new ActivityLink(context));
+        List<ActivityLink> links;
+        if(span1 is not null)
+        {
+            links = new List<ActivityLink>() { new ActivityLink(span1.Context) };
+            using var span2 = _source.StartActivity(name: "ActivityLinks", kind: ActivityKind.Internal, links: links);
+        }
+
     }
 
     private static void RunActivityAddBaggage()
@@ -190,24 +199,6 @@ public static class Program
         using var nameOnly2 = _source.StartActivity(ActivityKind.Client, nameOnly.Context, tags, null, DateTimeOffset.Now, "OperationName");
 
 
-    }
-
-    private static void RunAddBaggage(Activity span)
-    {
-        span.AddBaggage("AddBaggage-null", null);
-        span.AddBaggage("AddBaggage-empty", string.Empty);
-        span.AddBaggage("AddBaggage-str", "str");
-    }
-
-    private static void RunSetBaggage(Activity span)
-    {
-        // update an existing key
-        span.AddBaggage("SetBaggage", "");
-        span.SetBaggage("SetBaggage", "set-baggage");
-        // create new keys
-        span.SetBaggage("SetBaggage-null", null);
-        span.SetBaggage("SetBaggage-empty", string.Empty);
-        span.SetBaggage("SetBaggage-str", "str");
     }
 
     private static IEnumerable<KeyValuePair<string, object?>> GenerateKeyValuePairs()

@@ -1,1 +1,367 @@
-﻿
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: MyServiceName.internal,
+    Resource: ErrorSpan,
+    Service: MyServiceName,
+    Type: custom,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      error.msg: SetStatus-Error,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: MyServiceName.internal,
+    Resource: OkSpan,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      span.kind: internal
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: MyServiceName.internal,
+    Resource: UnsetStatusSpan,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      span.kind: internal
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: MyServiceName.internal,
+    Resource: ParentSpan,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_4,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      span.kind: internal
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: opentelemetry.internal,
+    Resource: ChildSpan,
+    Service: ,
+    Type: custom,
+    ParentId: Id_5,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: ,
+      otel.library.version: ,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_7,
+    Name: MyServiceName.internal,
+    Resource: W3CParentSpan,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_5,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      span.kind: internal
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_8,
+    Name: opentelemetry.internal,
+    Resource: W3CChildSpan,
+    Service: ,
+    Type: custom,
+    ParentId: Id_7,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: ,
+      otel.library.version: ,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_9,
+    Name: MyServiceName.internal,
+    Resource: IAmMiscSpan,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_7,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      span.kind: internal
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_10,
+    Name: opentelemetry.internal,
+    Resource: MiscSpan2,
+    Service: ,
+    Type: custom,
+    ParentId: Id_9,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: ,
+      otel.library.version: ,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_12,
+    Name: MyServiceName.internal,
+    Resource: RootSpan,
+    Service: MyServiceName,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_13,
+    Name: Saying hello!,
+    Resource: AddTagsActivity,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_12,
+    Tags: {
+      attribute-bool: true,
+      attribute-boolArray: [false,true,false],
+      attribute-boolArrayEmpty: [],
+      attribute-doubleArray: [4.1,5.0,6.0],
+      attribute-doubleArrayEmpty: [],
+      attribute-intArray: [1,2,3],
+      attribute-intArrayEmpty: [],
+      attribute-string: str,
+      attribute-stringArray: ["str1","str2","str3"],
+      attribute-stringArrayEmpty: [],
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal
+    },
+    Metrics: {
+      attribute-double: 2.0,
+      attribute-int: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_14,
+    Name: MyServiceName.internal,
+    Resource: SetTagsActivity,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_12,
+    Tags: {
+      attribute-bool: true,
+      attribute-boolArray: [false,true,false],
+      attribute-boolArrayEmpty: [],
+      attribute-doubleArray: [4.1,5.0,6.0],
+      attribute-doubleArrayEmpty: [],
+      attribute-intArray: [1,2,3],
+      attribute-intArrayEmpty: [],
+      attribute-string: str,
+      attribute-stringArray: ["str1","str2","str3"],
+      attribute-stringArrayEmpty: [],
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      set-string: str,
+      span.kind: internal
+    },
+    Metrics: {
+      attribute-double: 2.0,
+      attribute-int: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_15,
+    Name: MyServiceName.internal,
+    Resource: NameEvent,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_12,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_16,
+    Name: MyServiceName.internal,
+    Resource: NameDateEvent,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_15,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_17,
+    Name: MyServiceName.internal,
+    Resource: EmptyTagsEvent,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_16,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_18,
+    Name: MyServiceName.internal,
+    Resource: TagsEvent,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_17,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_19,
+    Name: MyServiceName.internal,
+    Resource: MultipleEvents,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_18,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.library.version: 1.0.x,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal
+    }
+  }
+]
