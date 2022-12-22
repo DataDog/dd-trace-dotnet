@@ -40,11 +40,14 @@ namespace Samples.Security.AspNetCore5.Controllers
                 var rname = new SQLiteCommand(taintedQuery, dbConnection).ExecuteScalar();
                 return Content($"Result: " + rname);
             }
-            else
+
+            if (!string.IsNullOrEmpty(query))
             {
                 var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
                 return Content($"Result: " + rname);
             }
+
+            return Content($"No query or username was provided");
         }
 
         public static SQLiteConnection CreateDatabase()
