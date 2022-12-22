@@ -28,7 +28,7 @@ public class ProbeConfigurationComparerTests
     public void CurrentSamplingNull_IncomingSamplingEmpty_RateLimitChanged()
     {
         var current = new ProbeConfiguration();
-        var incoming = new ProbeConfiguration { Sampling = new Trace.Debugger.Configurations.Models.Sampling() };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling() } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -38,8 +38,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSamplingEmpty_IncomingSamplingEmpty_RateLimitNotChanged()
     {
-        var current = new ProbeConfiguration { Sampling = new Trace.Debugger.Configurations.Models.Sampling() };
-        var incoming = new ProbeConfiguration { Sampling = new Trace.Debugger.Configurations.Models.Sampling() };
+        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling() } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling() } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -49,8 +49,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSamplingHasValue_IncomingSamplingEmpty_RateLimitChanged()
     {
-        var current = new ProbeConfiguration { Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } };
-        var incoming = new ProbeConfiguration { Sampling = new Trace.Debugger.Configurations.Models.Sampling() };
+        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling() } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -60,8 +60,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSamplingHasValue_IncomingSamplingSameValue_RateLimitNotChanged()
     {
-        var current = new ProbeConfiguration { Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } };
-        var incoming = new ProbeConfiguration { Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } };
+        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -72,7 +72,7 @@ public class ProbeConfigurationComparerTests
     public void CurrentFilterNull_IncomingFilterEmpty_FilterRelatedChanged()
     {
         var current = new ProbeConfiguration();
-        var incoming = new ProbeConfiguration { AllowList = new FilterList() };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { AllowList = new FilterList() } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
@@ -82,8 +82,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentFilterEmpty_IncomingFilterEmpty_FilterRelatedNotChanged()
     {
-        var current = new ProbeConfiguration { AllowList = new FilterList() };
-        var incoming = new ProbeConfiguration { AllowList = new FilterList() };
+        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { AllowList = new FilterList() } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { AllowList = new FilterList() } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -93,8 +93,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentFilterNotEmpty_IncomingFilterEmpty_FilterRelatedChanged()
     {
-        var current = new ProbeConfiguration { AllowList = new FilterList() };
-        var incoming = new ProbeConfiguration { AllowList = new FilterList { Classes = Array.Empty<string>() } };
+        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { AllowList = new FilterList() } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { AllowList = new FilterList { Classes = Array.Empty<string>() } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
@@ -104,8 +104,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentFilterValue_IncomingFilterSameValue_FilterRelatedNotChanged()
     {
-        var current = new ProbeConfiguration { AllowList = new FilterList { Classes = new string[] { "1", "2" } } };
-        var incoming = new ProbeConfiguration { AllowList = new FilterList { Classes = new string[] { "1", "2" } } };
+        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { AllowList = new FilterList { Classes = new string[] { "1", "2" } } } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { AllowList = new FilterList { Classes = new string[] { "1", "2" } } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -115,8 +115,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentFilterValue_IncomingFilterDifferentValue_FilterRelatedNotChanged()
     {
-        var current = new ProbeConfiguration { AllowList = new FilterList { Classes = new string[] { "1", "2" } } };
-        var incoming = new ProbeConfiguration { AllowList = new FilterList { Classes = new string[] { "1", "2", "3" } } };
+        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { AllowList = new FilterList { Classes = new string[] { "1", "2" } } } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { AllowList = new FilterList { Classes = new string[] { "1", "2", "3" } } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();

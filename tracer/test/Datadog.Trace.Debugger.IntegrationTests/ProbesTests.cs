@@ -30,7 +30,8 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 public class ProbesTests : TestHelper
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
-    private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
+    private const string AddedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument added probes definitions completed.";
+    private const string RemovedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument removed probes definitions completed.";
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
     private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack" };
@@ -121,7 +122,7 @@ public class ProbesTests : TestHelper
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
 
             SetProbeConfiguration(agent, probes.Select(p => p.Probe).ToArray());
-            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
 
             await sample.RunCodeSample();
 
@@ -254,7 +255,7 @@ public class ProbesTests : TestHelper
             async Task RunPhase(SnapshotProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
             {
                 SetProbeConfiguration(agent, snapshotProbes);
-                await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+                await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
 
                 await sample.RunCodeSample();
 
@@ -306,13 +307,15 @@ public class ProbesTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
 
         SetDebuggerEnvironment(agent);
+
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
         try
         {
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
 
             SetProbeConfiguration(agent, probes);
-            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
 
             await sample.RunCodeSample();
 
@@ -327,7 +330,8 @@ public class ProbesTests : TestHelper
             agent.ClearProbeStatuses();
 
             SetProbeConfiguration(agent, Array.Empty<SnapshotProbe>());
-            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+
+            await logEntryWatcher.WaitForLogEntry(RemovedProbesInstrumentedLogEntry);
             Assert.True(await agent.WaitForNoSnapshots(6000), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
         }
         finally
@@ -509,11 +513,9 @@ public class ProbesTests : TestHelper
 
     private void SetProbeConfiguration(MockTracerAgent agent, SnapshotProbe[] snapshotProbes)
     {
-        var probeConfiguration = new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = snapshotProbes };
-        var configurations = new List<(object Config, string Id)>
-        {
-            new(probeConfiguration, EnvironmentHelper.SampleName.ToUUID())
-        };
+        var configurations = snapshotProbes
+            .Select(snapshotProbe => (snapshotProbe, $"{DefinitionPaths.SnapshotProbe}{Guid.NewGuid()}"))
+            .Select(dummy => ((object Config, string Id))dummy);
 
         agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);
     }
