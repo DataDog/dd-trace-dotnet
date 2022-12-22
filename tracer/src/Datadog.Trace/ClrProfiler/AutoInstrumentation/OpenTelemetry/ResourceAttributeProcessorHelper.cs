@@ -50,8 +50,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                             {
                                 span.SetTag(Tags.Version, attribute.Value.ToString());
                             }
-
-                            span.SetTag(attribute.Key, attribute.Value.ToString());
+                            else
+                            {
+                                span.SetTag(attribute.Key, attribute.Value.ToString());
+                            }
                         }
                     }
                 }
