@@ -64,7 +64,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            return CouchbaseCommon.CommonOnMethodEnd(returnValue, exception, in state);
+            state.Scope?.DisposeWithException(exception);
+            return returnValue;
         }
     }
 }
