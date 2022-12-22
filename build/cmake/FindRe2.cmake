@@ -2,9 +2,17 @@ include(ExternalProject)
 
 SET(RE2_VERSION "2018-10-01")
 
+set(FRESH_DOWNLOAD off CACHE BOOL "download a fresh copy of all dependencies")
+
+if (NOT FRESH_DOWNLOAD)
+    set(DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${RE2_VERSION} --config advice.detachedHead=false https://github.com/google/re2.git)
+else()
+    set(DOWNLOAD_COMMAND)
+endif()
+
 if (ISMACOS)
     ExternalProject_Add(re2
-        DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${RE2_VERSION} --config advice.detachedHead=false https://github.com/google/re2.git
+        DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
         TIMEOUT 5
         INSTALL_COMMAND ""
         CONFIGURE_COMMAND ""
@@ -14,7 +22,7 @@ if (ISMACOS)
     )
 elseif(ISLINUX)
     ExternalProject_Add(re2
-        DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${RE2_VERSION} --config advice.detachedHead=false https://github.com/google/re2.git
+        DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
         TIMEOUT 5
         INSTALL_COMMAND ""
         CONFIGURE_COMMAND ""

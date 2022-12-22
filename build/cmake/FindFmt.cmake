@@ -2,6 +2,14 @@ include(ExternalProject)
 
 SET(FMT_VERSION "5.3.0")
 
+set(FRESH_DOWNLOAD off CACHE BOOL "download a fresh copy of all dependencies")
+
+if (NOT FRESH_DOWNLOAD)
+    set(DOWNLOAD_COMMAND  git clone --quiet --depth 1 --branch ${FMT_VERSION} --config advice.detachedHead=false https://github.com/DataDog/fmt.git)
+else()
+    set(DOWNLOAD_COMMAND)
+endif()
+
 if (ISMACOS)
 	SET(FMT_CXXFLAGS "-target\ ${OSX_ARCH}-apple-darwin${CMAKE_HOST_SYSTEM_VERSION}\ -D_GLIBCXX_USE_CXX11_ABI=0")
 elseif(ISLINUX)
@@ -9,7 +17,7 @@ elseif(ISLINUX)
 endif()
 
 ExternalProject_Add(fmt
-    DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${FMT_VERSION} --config advice.detachedHead=false https://github.com/DataDog/fmt.git
+    DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
     TIMEOUT 5
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE TRUE
