@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "attribute-boolArrayEmpty",
                 "attribute-doubleArray",
                 "attribute-doubleArrayEmpty",
+                "set-string"
             });
 
         [SkippableFact]
