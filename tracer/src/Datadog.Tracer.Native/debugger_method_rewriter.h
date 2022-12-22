@@ -51,7 +51,7 @@ private:
                                  int numLocals, ILRewriterWrapper& rewriterWrapper, ULONG lineProbeCallTargetStateIndex,
                                  std::vector<EHClause>& lineProbesEHClauses, const std::vector<ILInstr*>& branchTargets,
                                  const std::shared_ptr<LineProbeDefinition>& lineProbe, bool isAsyncMethod);
-    HRESULT ApplyLineProbes(int instrumentedMethodIndex, const LineProbeDefinitions& lineProbes,
+    HRESULT ApplyLineProbes(int instrumentedMethodIndex, LineProbeDefinitions& lineProbes,
                            CorProfiler* corProfiler, ModuleID module_id, ModuleMetadata& module_metadata,
                            FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken function_token, bool isStatic,
                            std::vector<TypeSignature>& methodArguments, int numArgs, ILRewriter& rewriter,
@@ -99,6 +99,9 @@ public:
     static HRESULT IsTypeImplementIAsyncStateMachine(const ComPtr<IMetaDataImport2>& metadataImport, const ULONG32 typeToken, bool& isTypeImplementIAsyncStateMachine);
     HRESULT IsAsyncMethodProbe(const ComPtr<IMetaDataImport2>& metadataImport, const FunctionInfo* caller, bool& isAsyncMethod) const;
     static HRESULT GetTaskReturnType(const ILInstr* instruction, ModuleMetadata& moduleMetadata, const std::vector<TypeSignature>& methodLocals, TypeSignature* returnType);
+    static void MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes, const WSTRING& reasoning);
+    static void MarkAllLineProbesAsError(LineProbeDefinitions& lineProbes, const WSTRING& reasoning);
+    static void MarkAllMethodProbesAsError(MethodProbeDefinitions& methodProbes, const WSTRING& reasoning);
 };
 
 } // namespace debugger

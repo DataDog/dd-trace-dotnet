@@ -531,8 +531,15 @@ int DebuggerProbesInstrumentationRequester::GetProbesStatuses(WCHAR** probeIds, 
         std::shared_ptr<ProbeMetadata> probeMetadata;
         if (ProbesMetadataTracker::Instance()->TryGetMetadata(probeId, probeMetadata))
         {
-            probeStatuses[probeStatusesCount] = 
-                {probeMetadata->probeId.c_str(), probeMetadata->status};
+            if (probeMetadata->status == ProbeStatus::_ERROR)
+            {
+                probeStatuses[probeStatusesCount] = {probeMetadata->probeId.c_str(), probeMetadata->errorMessage.c_str(), probeMetadata->status};
+            }
+            else
+            {
+                probeStatuses[probeStatusesCount] = {probeMetadata->probeId.c_str(), /* errorMessage */ nullptr,
+                                                     probeMetadata->status};
+            }
             probeStatusesCount++;
         }
         else
@@ -717,7 +724,7 @@ HRESULT DebuggerProbesInstrumentationRequester::NotifyReJITError(ModuleID module
         for (const auto& probeId : probeIds)
         {
             Logger::Info("Marking ", probeId, " as Error.");
-            ProbesMetadataTracker::Instance()->SetProbeStatus(probeId, ProbeStatus::_ERROR);
+            ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probeId, invalid_probe_failed_to_instrument_method_probe);
         }
     }
 
