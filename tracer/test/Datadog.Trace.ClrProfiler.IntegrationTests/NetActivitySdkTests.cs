@@ -73,22 +73,5 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
             }
         }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public void IntegrationDisabled()
-        {
-            using (var telemetry = this.ConfigureTelemetry())
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent))
-            {
-                var spans = agent.WaitForSpans(1, 2000);
-
-                using var s = new AssertionScope();
-                spans.Should().BeEmpty();
-                telemetry.AssertIntegrationDisabled(IntegrationId.OpenTelemetry);
-            }
-        }
     }
 }
