@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Web.Mvc;
 using System.Data.SQLite;
+using System;
+using System.Text;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -29,25 +31,58 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("SqlQuery")]
         public ActionResult SqlQuery(string username, string query)
         {
-            if (dbConnection is null)
-            {
-                dbConnection = CreateDatabase();
-            }
+            try
+            { 
+                if (dbConnection is null)
+                {
+                    dbConnection = CreateDatabase();
+                }
 
-            if (!string.IsNullOrEmpty(username))
-            {
-                var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";
-                var rname = new SQLiteCommand(taintedQuery, dbConnection).ExecuteScalar();
-                return Content($"Result: " + rname);
-            }
+                if (!string.IsNullOrEmpty(username))
+                {
+                    var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";
+                    var rname = new SQLiteCommand(taintedQuery, dbConnection).ExecuteScalar();
+                    return Content($"Result: " + rname);
+                }
 
-            if (!string.IsNullOrEmpty(query))
+                if (!string.IsNullOrEmpty(query))
+                {
+                    var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+                    return Content($"Result: " + rname);
+                }
+            }
+            catch (Exception ex)
             {
-                var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
-                return Content($"Result: " + rname);
+                return Content(ToFormattedString(ex));
             }
 
             return Content($"No query or username was provided");
+        }
+
+        public static string ToFormattedString(Exception ex)
+        {
+            var message = new StringBuilder();
+            if (ex != null)
+            {
+                message.AppendFormat("Name:       {0}", ex.GetType().FullName);
+                message.Append(Environment.NewLine);
+                message.AppendFormat("Message:    {0}", GetFullMessage(ex));
+                message.Append(Environment.NewLine);
+                message.AppendFormat("StackTrace: {0}", ex.StackTrace);
+                message.Append(Environment.NewLine);
+            }
+            return message.ToString();
+        }
+
+        public static string GetFullMessage(Exception err)
+        {
+            string res = "";
+            while (err != null)
+            {
+                res += err.Message + " ";
+                err = err.InnerException;
+            }
+            return res;
         }
 
         public static SQLiteConnection CreateDatabase()
