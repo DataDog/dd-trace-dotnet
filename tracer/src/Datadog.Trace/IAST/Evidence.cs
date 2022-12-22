@@ -13,16 +13,18 @@ namespace Datadog.Trace.Iast;
 internal readonly struct Evidence
 {
     private readonly Range[]? _ranges;
+    private readonly List<ValuePart>? _valueParts = null;
 
     public Evidence(string value, Range[]? ranges = null)
     {
         this.Value = value;
         this._ranges = ranges;
+        _valueParts = GetValuePartsFromRanges();
     }
 
     public string Value { get; }
 
-    public List<ValuePart>? ValueParts => GetValuePartsFromRanges();
+    public List<ValuePart>? ValueParts => _valueParts;
 
     private List<ValuePart>? GetValuePartsFromRanges()
     {
