@@ -53,9 +53,40 @@ namespace shared {
         return WSTRING(reinterpret_cast<const WCHAR*>(ustr.c_str()));
 #endif
     }
+    template <typename T, typename std::enable_if<std::is_signed<T>::value>::type* = nullptr>
+    constexpr bool IsValueNegative(T value)
+    {
+        static_assert(std::is_arithmetic<T>::value, "Argument must be numeric.");
+        return value < 0;
+    }
 
-    WSTRING ToWSTRING(const uint64_t i) {
-        return WSTRING(reinterpret_cast<const WCHAR*>(std::to_wstring(i).c_str()));
+    template <typename T, typename std::enable_if<!std::is_signed<T>::value>::type* = nullptr>
+    constexpr bool IsValueNegative(T)
+    {
+        static_assert(std::is_arithmetic<T>::value, "Argument must be numeric.");
+        return false;
+    }
+
+    // taken from https://chromium.googlesource.com/chromium/src/base/+/refs/heads/main/strings/string_number_conversions_internal.h
+    // static STR IntToStringT(INT value)
+    // simplified for our case
+    WSTRING ToWSTRING(const uint64_t value) {
+        // log10(2) ~= 0.3 bytes needed per bit or per byte log10(2**8) ~= 2.4.
+        const size_t bufferSize = 3 * sizeof(uint64_t);
+
+        // Create the string in a temporary buffer, write it back to front, and
+        // then return the substr of what we ended up using.
+        WCHAR outbuf[bufferSize];
+        WCHAR* end = outbuf + bufferSize;
+        WCHAR* i = end;
+        auto res = value;
+        do
+        {
+            --i;
+            *i = static_cast<WCHAR>((res % 10) + '0');
+            res /= 10;
+        } while (res != 0);
+        return WSTRING(i, end);
     }
 
     bool TryParse(WSTRING const& s, int& result) {

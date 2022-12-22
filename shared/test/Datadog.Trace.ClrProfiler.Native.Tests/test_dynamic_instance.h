@@ -78,10 +78,10 @@ const std::string TestDynamicInstanceFilePath = "Test";
 #endif
 const std::string TestDynamicInstanceIid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
-inline TestDynamicInstanceImpl* CreateTestDynamicInstance(bool useTracerFilePath)
+inline std::unique_ptr<TestDynamicInstanceImpl> CreateTestDynamicInstance(bool useTracerFilePath)
 {
     if (useTracerFilePath)
-        return new TestDynamicInstanceImpl(TestDynamicInstanceFilePath, TestDynamicInstanceIid);
+        return std::make_unique<TestDynamicInstanceImpl>("Test", TestDynamicInstanceIid);
 
-    return new TestDynamicInstanceImpl("Test", TestDynamicInstanceIid);
+    return std::make_unique<TestDynamicInstanceImpl>("Test", TestDynamicInstanceIid);
 }

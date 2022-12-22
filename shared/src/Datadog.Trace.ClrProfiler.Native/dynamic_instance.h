@@ -18,7 +18,7 @@ namespace datadog::shared::nativeloader
     class IDynamicInstance
     {
     public:
-        virtual ~IDynamicInstance() {};
+        virtual ~IDynamicInstance() = default;
         virtual HRESULT LoadClassFactory(REFIID riid) = 0;
         virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) = 0;
         virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() = 0;
