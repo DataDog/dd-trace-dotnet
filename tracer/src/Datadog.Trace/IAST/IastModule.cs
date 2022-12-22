@@ -59,6 +59,13 @@ internal class IastModule
         }
 
         var traceContext = (tracer.ActiveScope as Scope)?.Span?.Context?.TraceContext;
+        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
+
+        // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
+        if (!isRequest && vulnerabilityType == VulnerabilityType.SqlInjection)
+        {
+            return null;
+        }
 
         TaintedObject? tainted = null;
         if (taintedFromEvidenceRequired && ((tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue)) == null))
