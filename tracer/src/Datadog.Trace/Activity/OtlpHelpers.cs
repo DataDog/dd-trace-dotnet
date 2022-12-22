@@ -90,7 +90,7 @@ namespace Datadog.Trace.Activity
 
             // Fixup "env" tag
             if (span.Context.TraceContext?.Environment is null
-                && span.GetTag("deployment.environment") is { Length: > 1 } otelServiceEnv)
+                && span.GetTag("deployment.environment") is { Length: > 0 } otelServiceEnv)
             {
                 span.SetTag(Tags.Env, otelServiceEnv);
             }
