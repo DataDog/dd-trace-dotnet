@@ -13,18 +13,17 @@ namespace Datadog.Trace.Iast;
 internal readonly struct Evidence
 {
     private readonly Range[]? _ranges;
-    private readonly List<ValuePart>? _valueParts = null;
 
     public Evidence(string value, Range[]? ranges = null)
     {
         this.Value = value;
         this._ranges = ranges;
-        _valueParts = GetValuePartsFromRanges();
     }
 
     public string Value { get; }
 
-    public List<ValuePart>? ValueParts => _valueParts;
+    // This method is only used once when serializing to json (and it is also called from unit tests)
+    public List<ValuePart>? ValueParts => GetValuePartsFromRanges();
 
     private List<ValuePart>? GetValuePartsFromRanges()
     {
