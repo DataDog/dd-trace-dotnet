@@ -12,7 +12,7 @@ TEST(cor_profiler, CallBackTests)
     auto test_dispatcher = std::make_unique<TestDynamicDispatcherImpl>();
 
     // Test dynamic instance
-    std::unique_ptr<TestDynamicInstanceImpl> test_instance{CreateTestDynamicInstance(false)};
+    std::unique_ptr<TestDynamicInstanceImpl> test_instance{CreateTestDynamicInstance()};
     // Internal Test cor profiler instance
     auto test_instance_profiler = std::make_unique<TestCorProfiler>();
     // Add test profiler to the dynamic instance
@@ -21,7 +21,7 @@ TEST(cor_profiler, CallBackTests)
     test_dispatcher->SetContinuousProfilerInstance(std::move(test_instance));
 
     // Test dynamic instance 2
-    auto test_instance2 = CreateTestDynamicInstance(false);
+    auto test_instance2 = CreateTestDynamicInstance();
     // Internal Test cor profiler instance 2
     auto test_instance_profiler2 = std::make_unique<TestCorProfiler>();
     // Add test profiler to the dynamic instance 2
@@ -30,7 +30,7 @@ TEST(cor_profiler, CallBackTests)
     test_dispatcher->SetTracerInstance(std::move(test_instance2));
 
     // Test dynamic instance 3
-    auto test_instance3 = CreateTestDynamicInstance(false);
+    auto test_instance3 = CreateTestDynamicInstance();
     // Internal Test cor profiler instance 3
     TestCorProfiler* test_instance_profiler3 = new TestCorProfiler();
     // Add test profiler to the dynamic instance 3

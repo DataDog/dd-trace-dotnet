@@ -71,7 +71,7 @@ namespace shared
 
     WSTRING Trim(const WSTRING& str)
     {
-        return Trim(str, WStr(" \t\n"));
+        return Trim(str, WStr(" \f\n\r\t\v"));
     }
 
     std::string Trim(const std::string& str)

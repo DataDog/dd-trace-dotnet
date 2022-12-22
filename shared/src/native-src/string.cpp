@@ -53,19 +53,6 @@ namespace shared {
         return WSTRING(reinterpret_cast<const WCHAR*>(ustr.c_str()));
 #endif
     }
-    template <typename T, typename std::enable_if<std::is_signed<T>::value>::type* = nullptr>
-    constexpr bool IsValueNegative(T value)
-    {
-        static_assert(std::is_arithmetic<T>::value, "Argument must be numeric.");
-        return value < 0;
-    }
-
-    template <typename T, typename std::enable_if<!std::is_signed<T>::value>::type* = nullptr>
-    constexpr bool IsValueNegative(T)
-    {
-        static_assert(std::is_arithmetic<T>::value, "Argument must be numeric.");
-        return false;
-    }
 
     // taken from https://chromium.googlesource.com/chromium/src/base/+/refs/heads/main/strings/string_number_conversions_internal.h
     // static STR IntToStringT(INT value)

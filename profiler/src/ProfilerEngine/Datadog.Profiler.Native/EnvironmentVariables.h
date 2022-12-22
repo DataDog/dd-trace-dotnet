@@ -5,11 +5,6 @@
 
 #include "shared/src/native-src/string.h"
 
-shared::WSTRING operator""_wstr(const WCHAR* s, std::size_t len)
-{
-    return WStr(s);
-}
-
 class EnvironmentVariables final
 {
 public:
