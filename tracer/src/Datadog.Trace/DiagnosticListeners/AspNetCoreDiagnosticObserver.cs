@@ -429,6 +429,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
                     if (shouldSecure)
                     {
+                        CoreHttpContextStore.Instance.Set(httpContext);
                         SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
                     }
                 }

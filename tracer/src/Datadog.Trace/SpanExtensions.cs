@@ -38,8 +38,10 @@ namespace Datadog.Trace
             }
 
             TraceContext traceContext = null;
-            if (span is Span spanClass)
+            Span spanClass = null;
+            if (span is Span spanClassTemp)
             {
+                spanClass = spanClassTemp;
                 traceContext = spanClass.Context.TraceContext;
             }
 
@@ -83,10 +85,11 @@ namespace Datadog.Trace
             {
                 setTag(Tags.User.Scope, userDetails.Scope);
             }
-#if NETFRAMEWORK
 
-            RunBlockingCheck(userDetails.Id);
-#endif
+            if (spanClass != null)
+            {
+                RunBlockingCheck(spanClass, userDetails.Id);
+            }
         }
     }
 }

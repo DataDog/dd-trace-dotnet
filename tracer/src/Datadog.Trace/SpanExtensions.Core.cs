@@ -1,17 +1,20 @@
-// <copyright file="SpanExtensions.Framework.cs" company="Datadog">
+// <copyright file="SpanExtensions.Core.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-#if NETFRAMEWORK
+#if !NETFRAMEWORK
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Routing.Template;
 
 namespace Datadog.Trace
 {
@@ -22,14 +25,17 @@ namespace Datadog.Trace
     {
         private static void RunBlockingCheck(Span span, string userId)
         {
-            var securityCoordinator = new SecurityCoordinator(Security.Instance, HttpContext.Current, span);
+            var security = Security.Instance;
+
+            var httpContext = CoreHttpContextStore.Instance.Get();
+            var securityCoordinator = new SecurityCoordinator(security, httpContext, span);
 
             var wafArgs = new Dictionary<string, object>()
             {
                 { AddressesConstants.UserId, userId },
             };
 
-            securityCoordinator.CheckAndBlock(wafArgs);
+            security.CheckUser(httpContext, span, userId);
         }
     }
 }
