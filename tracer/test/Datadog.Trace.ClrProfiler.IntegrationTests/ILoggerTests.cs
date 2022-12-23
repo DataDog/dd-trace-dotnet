@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -125,6 +126,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 logs.Should().Contain(x => x.Message.Contains("Building pipeline")); // these should not be filtered out
             }
+
+            logs.Where(x => !x.Message.Contains("Waiting for app started handling requests"))
+                .Should()
+                .HaveCount(expectedLogCount);
 
             VerifyInstrumentation(processResult.Process);
         }
