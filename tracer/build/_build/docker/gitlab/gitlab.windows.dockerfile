@@ -3,8 +3,8 @@ FROM ${BASE_IMAGE}
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 # VS Build tool link found from https://learn.microsoft.com/en-gb/visualstudio/releases/2022/release-history#release-dates-and-build-numbers
-ENV DOTNET_VERSION="7.0.100" \
-    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/5b9d1f0d-9c56-4bef-b950-c1b439489b27/b4aa387715207faa618a99e9b2dd4e35/dotnet-sdk-7.0.100-win-x64.exe" \
+ENV DOTNET_VERSION="7.0.101" \
+    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/5b9d1f0d-9c56-4bef-b950-c1b439489b27/b4aa387715207faa618a99e9b2dd4e35/dotnet-sdk-7.0.101-win-x64.exe" \
     DOTNET_SHA512="32dceb94ca6b2445ec39802d7bb962e2d389801609ffb6706925539380fcb9c9ed75b932daae734ea8d5189d34c956494f50648d3dc3e292392607360bb47f35" \
     VSBUILDTOOLS_VERSION="17.4.33110.190" \
     VSBUILDTOOLS_SHA256="FABDA7E422ADA90C229262A4447C08933EC5BF66A9F38129CD19490EEA2DD180" \
