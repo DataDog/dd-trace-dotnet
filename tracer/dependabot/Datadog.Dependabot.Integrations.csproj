@@ -151,6 +151,11 @@
     <!-- Latest package https://www.nuget.org/packages/NUnit3TestAdapter/4.3.1 -->
     <PackageReference Include="NUnit3TestAdapter" Version="4.3.1" />
 
+    <!-- Integration: OpenTelemetry.Api -->
+    <!-- Assembly: OpenTelemetry.Api -->
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.3.2 -->
+    <PackageReference Include="OpenTelemetry.Api" Version="1.3.2" />
+
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
     <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/21.8.0 -->
