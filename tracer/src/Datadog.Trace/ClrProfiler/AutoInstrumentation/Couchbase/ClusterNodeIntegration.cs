@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 if ((int)(object)returnValue != 0)
                 {
                     span.Error = true;
-                    span.SetTag(Trace.Tags.ErrorType, returnValue.ToString());
+                    span.SetTag(Trace.Tags.ErrorMsg, returnValue.ToString());
                 }
             }
 
