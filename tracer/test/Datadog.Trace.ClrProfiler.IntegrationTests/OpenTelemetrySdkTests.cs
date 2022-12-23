@@ -44,16 +44,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "attribute-doubleArrayEmpty",
             });
 
-        [SkippableFact]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces()
+        [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
+        public async Task SubmitsTraces(string packageVersion)
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent))
+            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 const int expectedSpanCount = 11;
                 var spans = agent.WaitForSpans(expectedSpanCount);
@@ -69,20 +70,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(nameof(OpenTelemetrySdkTests));
+                                  .UseFileName(nameof(OpenTelemetrySdkTests))
+                                  .DisableRequireUniquePrefix();
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
             }
         }
 
-        [SkippableFact]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void IntegrationDisabled()
+        [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
+        public void IntegrationDisabled(string packageVersion)
         {
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent))
+            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2000);
 
