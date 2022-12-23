@@ -80,8 +80,6 @@ internal class BlockingMiddleware
 
     internal async Task Invoke(HttpContext context)
     {
-        System.Diagnostics.Debugger.Launch();
-
         var security = Security.Instance;
         var endedResponse = false;
         var securityCoordinator = new SecurityCoordinator(security, context, (Span)Tracer.Instance.ActiveScope.Span);
@@ -102,7 +100,7 @@ internal class BlockingMiddleware
                     securityCoordinator.MarkBlocked();
                 }
 
-                securityCoordinator.Report(result, endedResponse);
+                securityCoordinator.Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, endedResponse);
                 // security will be disposed in endrequest of diagnostic observer in any case
             }
         }
@@ -121,7 +119,7 @@ internal class BlockingMiddleware
                 {
                     if (!e.Reported)
                     {
-                        securityCoordinator.Report(e.Result, endedResponse);
+                        securityCoordinator.Report(e.TriggerData, e.AggregatedTotalRuntime, e.AggregatedTotalRuntimeWithBindings, endedResponse);
                     }
 
                     securityCoordinator.Cleanup();

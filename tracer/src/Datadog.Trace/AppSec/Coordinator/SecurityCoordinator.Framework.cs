@@ -83,7 +83,7 @@ internal readonly partial struct SecurityCoordinator
                 _httpTransport.MarkBlocked();
             }
 
-            Report(result, blocked);
+            Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, blocked);
         }
     }
 

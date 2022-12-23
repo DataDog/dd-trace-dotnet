@@ -994,6 +994,53 @@ partial class Build
             DotnetBuild(projects, framework: Framework);
         });
 
+<<<<<<< HEAD
+=======
+    Target CompileDebuggerIntegrationTests => _ => _
+        .Unlisted()
+        .After(CompileManagedSrc)
+        .DependsOn(CompileDebuggerIntegrationTestsDependencies)
+        .DependsOn(CompileDebuggerIntegrationTestsSamples)
+        .Requires(() => Framework)
+        .Requires(() => MonitoringHomeDirectory != null)
+        .Executes(() =>
+        {
+            DotnetBuild(Solution.GetProject(Projects.DebuggerIntegrationTests), framework: Framework);
+        });
+
+    Target CompileDebuggerIntegrationTestsDependencies => _ => _
+        .Unlisted()
+        .Requires(() => Framework)
+        .Requires(() => MonitoringHomeDirectory != null)
+        .Executes(() =>
+        {
+            // we need to compile DebuggerSamplesTestRuns in AnyCPU and TargetPlatform
+            DotnetBuild(Solution.GetProject(Projects.DebuggerSamplesTestRuns), framework: Framework, noDependencies: false);
+            DotnetBuild(Solution.GetProject(Projects.DebuggerSamplesTestRuns), platform: TargetPlatform, framework: Framework, noDependencies: false);
+        });
+
+    Target CompileDebuggerIntegrationTestsSamples => _ => _
+        .Unlisted()
+        .DependsOn(CompileDebuggerIntegrationTestsDependencies)
+        .Requires(() => Framework)
+        .Requires(() => MonitoringHomeDirectory != null)
+        .Executes(() =>
+        {
+            DotnetBuild(Solution.GetProject(Projects.DebuggerSamples), platform: TargetPlatform, framework: Framework);
+
+            if (!IsWin)
+            {
+                // The sample helper in the test library assumes that the sample has
+                // been published when running on Linux
+                DotNetPublish(x => x
+                    .SetFramework(Framework)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetNoWarnDotNetCore3()
+                    .SetProject(DebuggerSamples));
+            }
+        });
+
+>>>>>>> 23ce9a8e3 (Tests for user blocking core working)
     Target CompileSamplesWindows => _ => _
         .Unlisted()
         .After(CompileDependencyLibs)
@@ -1081,6 +1128,24 @@ partial class Build
             EnsureExistingDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
+
+            foreach(var project in ParallelIntegrationTests.Concat(ClrProfilerIntegrationTests))
+            {
+                var existingDir = project.Directory / "bin" / BuildConfiguration;
+                var newDir = project.Directory / "bin" / $"{TargetPlatform}" / BuildConfiguration;
+                if (DirectoryExists(newDir))
+                {
+                    Logger.Info($"Skipping '{newDir}' as already exists");
+                }
+                else
+                {
+                    Logger.Info($"Mapping '{existingDir}' to '{newDir}'");
+                    EnsureExistingDirectory(newDir.Parent);
+                    Cmd.Value(arguments: $"cmd /c mklink /J \"{newDir}\" \"{existingDir}\"");
+                }
+            }
+
+
 
             try
             {

@@ -28,12 +28,6 @@ namespace Datadog.Trace
             var security = Security.Instance;
 
             var httpContext = CoreHttpContextStore.Instance.Get();
-            var securityCoordinator = new SecurityCoordinator(security, httpContext, span);
-
-            var wafArgs = new Dictionary<string, object>()
-            {
-                { AddressesConstants.UserId, userId },
-            };
 
             security.CheckUser(httpContext, span, userId);
         }

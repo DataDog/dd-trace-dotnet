@@ -33,11 +33,9 @@ internal readonly partial struct SecurityCoordinator
     {
         if (result?.ShouldBeReported is true)
         {
-            // todo, report from the filter exception / exception middleware, after exception has been thrown, as theoretically at this point, request hasn't been blocked yet
-            Report(result, result.ShouldBlock);
             if (result.ShouldBlock)
             {
-                throw new BlockException(result);
+                throw new BlockException(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
             }
         }
     }
