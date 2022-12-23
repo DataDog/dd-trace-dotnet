@@ -287,7 +287,6 @@
     <ClInclude Include="GCBaseRawSample.h">
       <Filter>GarbageCollections</Filter>
     </ClInclude>
-<<<<<<< HEAD
     <ClInclude Include="IBatchedSamplesProvider.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="LiveObjectsProvider.h">
@@ -295,8 +294,6 @@
     </ClInclude>
     <ClInclude Include="LiveObjectInfo.h">
       <Filter>Allocations</Filter>
-=======
->>>>>>> 744d90f04 (Add MetricsRegistry support)
     <ClInclude Include="MetricsRegistry.h">
       <Filter>Metrics</Filter>
     </ClInclude>
@@ -312,12 +309,12 @@
     <ClInclude Include="CounterMetric.h">
       <Filter>Metrics</Filter>
     </ClInclude>
-<<<<<<< HEAD
     <ClInclude Include="SumMetric.h">
       <Filter>Metrics</Filter>
     </ClInclude>
-=======
->>>>>>> 744d90f04 (Add MetricsRegistry support)
+    <ClInclude Include="SumMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -465,9 +462,6 @@
     </ClCompile>
     <ClCompile Include="MetricsRegistry.cpp">
       <Filter>Metrics</Filter>
-    </ClCompile>
-    <ClCompile Include="ThreadsInfo.cpp">
-      <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="MeanMaxMetric.cpp">
       <Filter>Metrics</Filter>
