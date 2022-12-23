@@ -830,8 +830,16 @@ partial class Build
         .Executes(() =>
         {
             //we need to build in this exact order
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"));
+            var helperLibs = TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj");
+            var autoHelperLibs = TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj");
+            DotnetBuild(helperLibs);
+            DotnetBuild(autoHelperLibs);
+            
+            // we need to build the platform-specific versions because the integration tests
+            // currently target x64/x86
+            DotnetBuild(helperLibs, platform: TargetPlatform);
+            DotnetBuild(autoHelperLibs, platform: TargetPlatform);
+            
         });
 
     Target CompileManagedUnitTests => _ => _
@@ -1043,7 +1051,7 @@ partial class Build
                     .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework))
                 ;
 
-            DotnetBuild(projects, framework: Framework);
+            DotnetBuild(projects, framework: Framework, platform: TargetPlatform);
         });
 
     Target CompileDebuggerIntegrationTests => _ => _
