@@ -309,6 +309,9 @@
     <ClInclude Include="CounterMetric.h">
       <Filter>Metrics</Filter>
     </ClInclude>
+    <ClInclude Include="SumMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -457,9 +460,6 @@
     <ClCompile Include="MetricsRegistry.cpp">
       <Filter>Metrics</Filter>
     </ClCompile>
-    <ClCompile Include="ThreadsInfo.cpp">
-      <Filter>Profiler-Driver</Filter>
-    </ClCompile>
     <ClCompile Include="MeanMaxMetric.cpp">
       <Filter>Metrics</Filter>
     </ClCompile>
@@ -467,6 +467,9 @@
       <Filter>Metrics</Filter>
     </ClCompile>
     <ClCompile Include="CounterMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="SumMetric.cpp">
       <Filter>Metrics</Filter>
     </ClCompile>
   </ItemGroup>

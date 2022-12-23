@@ -181,7 +181,8 @@ bool CorProfilerCallback::InitializeServices()
                     _pThreadsCpuManager,
                     _pAppDomainStore.get(),
                     pRuntimeIdStore,
-                    _pConfiguration.get());
+                    _pConfiguration.get(),
+                    _metricsRegistry);
                 valuesOffset += static_cast<uint32_t>(valueTypes.size());
 
                 valueTypes = AllocationsProvider::SampleTypeDefinitions;
@@ -195,7 +196,8 @@ bool CorProfilerCallback::InitializeServices()
                     _pAppDomainStore.get(),
                     pRuntimeIdStore,
                     _pConfiguration.get(),
-                    _pLiveObjectsProvider
+                    _pLiveObjectsProvider,
+                    _metricsRegistry
                     );
                 valuesOffset += static_cast<uint32_t>(valueTypes.size());
 
@@ -224,7 +226,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                nullptr  // no listener
+                nullptr,  // no listener
+                _metricsRegistry
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
@@ -266,7 +269,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get()
+                _pConfiguration.get(),
+                _metricsRegistry
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }

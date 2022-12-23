@@ -5,6 +5,7 @@
 #include "CounterMetric.h"
 #include "MeanMaxMetric.h"
 #include "ProxyMetric.h"
+#include "SumMetric.h"
 
 #include "gtest/gtest.h"
 
@@ -21,15 +22,20 @@ TEST(MetricsRegistryTest, CheckAddOnMetric)
     auto registry = MetricsRegistry();
 
     auto metric = registry.GetOrRegister<MeanMaxMetric>("metric1");
+    auto sumMetric = registry.GetOrRegister<SumMetric>("metric2");
 
     metric->Add(43);
     metric->Add(-1);
+
+    sumMetric->Add(1024);
+    sumMetric->Add(2048);
 
     std::unordered_map<std::string, double_t> expectedResults =
     {
         {"metric1_sum", 42},
         {"metric1_mean", 21},
-        {"metric1_max", 43}
+        {"metric1_max", 43},
+        {"metric2", 1024+2048}
     };
 
     {
@@ -87,6 +93,7 @@ TEST(MetricsRegistryTest, CheckAddOnMultipleMetrics)
 
     auto metric = registry.GetOrRegister<MeanMaxMetric>("metric1");
     auto metric2 = registry.GetOrRegister<CounterMetric>("metric2");
+    auto sumMetric = registry.GetOrRegister<SumMetric>("metric3");
 
     metric->Add(43);
     metric->Add(-12);
@@ -99,13 +106,20 @@ TEST(MetricsRegistryTest, CheckAddOnMultipleMetrics)
     metric2->Incr();
     metric2->Incr();
 
+    sumMetric->Add(1024);
+    sumMetric->Add(2048);
+    sumMetric->Add(4096);
+
+
     auto metrics = registry.Collect();
 
     std::unordered_map<std::string, double_t> expectedResults = {
         {"metric1_sum", 36},
         {"metric1_mean", 12},
         {"metric1_max", 43},
-        {"metric2_count", 6}};
+        {"metric2_count", 6},
+        {"metric3", 1024+2048+4096}
+        };
 
     ASSERT_EQ(metrics.size(), expectedResults.size());
 
@@ -275,4 +289,35 @@ TEST(MetricsRegistryTest, CheckConcurrencyForMeanMaxMetric)
     {
         ASSERT_EQ(value, expectedResults[name]);
     }
+}
+
+TEST(MetricsRegistryTest, CheckConcurrencyForSumMetric)
+{
+    std::promise<void> startPromise;
+    auto startFuture = startPromise.get_future();
+
+    std::atomic<int16_t> counter = 0;
+    std::function<void(std::future<void>&, std::shared_ptr<SumMetric>)> doWork =
+        [&counter](std::future<void>& waitFuture, std::shared_ptr<SumMetric> metric) {
+            waitFuture.wait();
+            metric->Add(++counter);
+        };
+
+    auto registry = MetricsRegistry();
+    auto metric = registry.GetOrRegister<SumMetric>("metric1");
+
+    std::vector<std::future<void>> tasks;
+    for (int i = 0; i < 20; i++)
+        tasks.push_back(std::async(doWork, std::ref(startFuture), metric));
+
+    startPromise.set_value();
+
+    ASSERT_TRUE(wait_all(tasks, 100ms));
+
+    auto metrics = registry.Collect();
+
+    ASSERT_EQ(metrics.size(), 1);
+    auto const& [name, value] = metrics.front();
+    ASSERT_EQ(name, "metric1");
+    ASSERT_EQ(value, 210);
 }
