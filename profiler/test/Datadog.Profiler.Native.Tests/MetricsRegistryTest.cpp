@@ -214,7 +214,7 @@ static bool wait_all(std::vector<std::future<void>> const& tasks, std::chrono::m
     {
         allFinished = std::accumulate(tasks.cbegin(), tasks.cend(), true,
                                       [](bool result, std::future<void> const& f) {
-                                          return f.valid() && result;
+                                          return f.wait_for(10ms) == std::future_status::ready && result;
                                       });
         std::this_thread::sleep_for(sleepTime);
     } while (!allFinished && ++nbRuns < maxRuns);
