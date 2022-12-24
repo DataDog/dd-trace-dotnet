@@ -600,42 +600,35 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
     // profile
     auto start = encodedProfile.GetStart();
     auto end = encodedProfile.GetEnd();
-    auto buffer = encodedProfile.GetBuffer();
-    ddog_prof_Exporter_File profile{FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_U8_as_slice(&buffer)};
+    auto profileBuffer = encodedProfile.GetBuffer();
+    ddog_prof_Exporter_File profile{FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_U8_as_slice(&profileBuffer)};
+
+    ddog_prof_Exporter_File filesArray[2]{};
+    // profile
+    filesArray[0] = profile;
 
     struct ddog_prof_Exporter_Slice_File files{};
+    files.len = 1;
+    files.ptr = filesArray;
 
+    std::unique_ptr<uint8_t[]> buffer;
     auto metricsFileContent = CreateMetricsFileContent();
 
-    if (metricsFileContent.empty())
+    if (!metricsFileContent.empty())
     {
-        // profile only
-        files.len = 1;
-        files.ptr = &profile;
-    }
-    else
-    {
-
+        // Add metric files
 #ifdef _DEBUG
         SaveMetricsToDisk(metricsFileContent);
 #endif
 
         auto bufferSize = metricsFileContent.size();
-        auto buffer = std::make_unique<uint8_t[]>(bufferSize);
+        buffer = std::make_unique<uint8_t[]>(bufferSize);
         memcpy(buffer.get(), metricsFileContent.c_str(), bufferSize);
 
         ddog_Slice_U8 metricsFileSlice{buffer.get(), bufferSize};
 
-        ddog_prof_Exporter_File metricsFile{FfiHelper::StringToCharSlice(MetricsFilename), metricsFileSlice};
-
-        // profile + metrics
-        ddog_prof_Exporter_File filesArray[2]
-        {
-            profile,
-            metricsFile
-        };
+        filesArray[1] = {FfiHelper::StringToCharSlice(MetricsFilename), metricsFileSlice};
         files.len = 2;
-        files.ptr = filesArray;
     }
 
     return ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, RequestTimeOutMs);
