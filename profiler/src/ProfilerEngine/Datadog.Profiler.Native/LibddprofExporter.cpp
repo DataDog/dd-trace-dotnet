@@ -611,7 +611,6 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
     files.len = 1;
     files.ptr = filesArray;
 
-    std::unique_ptr<uint8_t[]> buffer;
     auto metricsFileContent = CreateMetricsFileContent();
 
     if (!metricsFileContent.empty())
@@ -620,12 +619,7 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
 #ifdef _DEBUG
         SaveMetricsToDisk(metricsFileContent);
 #endif
-
-        auto bufferSize = metricsFileContent.size();
-        buffer = std::make_unique<uint8_t[]>(bufferSize);
-        memcpy(buffer.get(), metricsFileContent.c_str(), bufferSize);
-
-        ddog_Slice_U8 metricsFileSlice{buffer.get(), bufferSize};
+        ddog_Slice_U8 metricsFileSlice{reinterpret_cast<const uint8_t*>(metricsFileContent.c_str()), metricsFileContent.size()};
 
         filesArray[1] = {FfiHelper::StringToCharSlice(MetricsFilename), metricsFileSlice};
         files.len = 2;
