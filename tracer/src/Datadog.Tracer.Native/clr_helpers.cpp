@@ -1010,13 +1010,31 @@ HRESULT FunctionLocalSignature::TryParse(PCCOR_SIGNATURE pbBase, unsigned len, s
     return S_OK;
 }
 
+std::wstring GetStringValueFromBlob(PCCOR_SIGNATURE& signature)
+{
+    // If it's null
+    if (*signature == UINT8_MAX)
+    {
+        signature += 1;
+        return std::wstring();
+    }
+
+    // Read size and advance
+    size_t convertedChars = 0;
+    ULONG size{CorSigUncompressData(signature)};
+    std::wstring wstr;
+    wstr.resize(size);
+    mbstowcs_s(&convertedChars, &wstr[0], size + 1, reinterpret_cast<const char*>(signature), size);
+    signature += size;
+    return wstr;
+}
+
 HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, const mdMethodDef methodDefToken, bool& hasAsyncAttribute)
 {
     const void* ppData = nullptr;
     ULONG pcbData = 0;
     auto hr = metadataImport->GetCustomAttributeByName(
         methodDefToken, WStr("System.Runtime.CompilerServices.AsyncStateMachineAttribute"), &ppData, &pcbData);
-
     IfFailRet(hr);
     hasAsyncAttribute = pcbData > 0;
     return hr;
