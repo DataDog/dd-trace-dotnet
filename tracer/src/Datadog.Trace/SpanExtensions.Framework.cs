@@ -22,6 +22,8 @@ namespace Datadog.Trace
     {
         private static void RunBlockingCheck(Span span, string userId)
         {
+            Console.WriteLine("SpanExtensions.SpanExtensions");
+
             var securityCoordinator = new SecurityCoordinator(Security.Instance, HttpContext.Current, span);
 
             var wafArgs = new Dictionary<string, object>()

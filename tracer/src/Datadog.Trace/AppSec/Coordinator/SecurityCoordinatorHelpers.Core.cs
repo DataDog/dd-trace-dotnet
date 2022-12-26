@@ -53,7 +53,7 @@ internal static partial class SecurityCoordinatorHelpers
             {
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.UserId, userId } };
-                using var result = securityCoordinator.RunWaf(args);
+                var result = securityCoordinator.RunWaf(args);
                 securityCoordinator.CheckAndBlock(result);
             }
         }
@@ -107,7 +107,7 @@ internal static partial class SecurityCoordinatorHelpers
             {
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.UserId, userId } };
-                using var result = securityCoordinator.RunWaf(args);
+                var result = securityCoordinator.RunWaf(args);
                 securityCoordinator.CheckAndBlock(result);
             }
         }

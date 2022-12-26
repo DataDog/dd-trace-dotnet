@@ -52,7 +52,7 @@ namespace Datadog.Trace.TestHelpers
             GetRcmRequest request = null;
             while (DateTime.UtcNow < deadline)
             {
-                while (agent.RemoteConfigRequests.IsEmpty)
+                while (agent.RemoteConfigRequests.IsEmpty && DateTime.UtcNow < deadline)
                 {
                     await Task.Delay(200);
                 }

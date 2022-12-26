@@ -55,6 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         internal static CallTargetState OnMethodBegin<TTarget, TController>(TTarget instance, TController controllerContext, CancellationToken cancellationToken)
             where TController : IHttpControllerContext
         {
+            System.Diagnostics.Debugger.Launch();
             // Make sure to box the controllerContext proxy only once
             var boxedControllerContext = (IHttpControllerContext)controllerContext;
 
@@ -82,6 +83,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         [PreserveContext]
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
         {
+            System.Diagnostics.Debugger.Launch();
+
             var httpContext = HttpContext.Current;
 
             var scope = state.Scope;
