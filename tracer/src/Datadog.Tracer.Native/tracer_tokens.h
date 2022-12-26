@@ -41,6 +41,8 @@ public:
 
     HRESULT WriteLogException(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo* currentType,
                               ILInstr** instruction);
+
+    const shared::WSTRING& GetTraceAttributeType();
 };
 
 } // namespace trace

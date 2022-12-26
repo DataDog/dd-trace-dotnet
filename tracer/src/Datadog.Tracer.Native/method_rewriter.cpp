@@ -113,8 +113,6 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<trace::TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     std::vector<trace::TypeSignature> traceAnnotationArguments;
-    COR_SIGNATURE runtimeMethodHandleBuffer[10];
-    COR_SIGNATURE runtimeTypeHandleBuffer[10];
     int numArgs = caller->method_signature.NumberOfArguments();
     auto metaEmit = module_metadata.metadata_emit;
     auto metaImport = module_metadata.metadata_import;
@@ -305,32 +303,47 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
     else
     {
-        // Load the methodDef token to produce a RuntimeMethodHandle on the stack
-        reWriterWrapper.LoadToken(caller->id);
+        const auto [resourceName, operationName] = GetResourceNameAndOperationName(metaImport, caller, tracerTokens);
 
-        runtimeMethodHandleBuffer[0] = ELEMENT_TYPE_VALUETYPE;
-        ULONG runtimeMethodHandleTokenLength =
-            CorSigCompressToken(tracerTokens->GetRuntimeMethodHandleTypeRef(), &runtimeMethodHandleBuffer[1]);
+        // Define ResourceName as string and load it
+        mdString resourceNameToken;
+        hr = module_metadata.metadata_emit->DefineUserString(
+            resourceName.data(), static_cast<ULONG>(resourceName.length()), &resourceNameToken);
 
-        // Load the typeDef token to produce a RuntimeTypeHandle on the stack
-        reWriterWrapper.LoadToken(caller->type.id);
+        if (FAILED(hr))
+        {
+            Logger::Warn("*** CallTarget_RewriterCallback(): failed to define ResourceName.");
+            reWriterWrapper.LoadNull();
+        }
+        else
+        {
+            reWriterWrapper.LoadStr(resourceNameToken);
+        }
 
-        runtimeTypeHandleBuffer[0] = ELEMENT_TYPE_VALUETYPE;
-        ULONG runtimeTypeHandleTokenLength =
-            CorSigCompressToken(tracerTokens->GetRuntimeTypeHandleTypeRef(), &runtimeTypeHandleBuffer[1]);
+        // Define OperationName as string and load it
+        mdString operationNameToken;
+        hr = module_metadata.metadata_emit->DefineUserString(
+            operationName.data(), static_cast<ULONG>(operationName.length()), &operationNameToken);
 
-        // Replace method arguments with one RuntimeMethodHandle argument and one RuntimeTypeHandle argument
-        trace::TypeSignature runtimeMethodHandleArgument{};
-        runtimeMethodHandleArgument.pbBase = runtimeMethodHandleBuffer;
-        runtimeMethodHandleArgument.length = runtimeMethodHandleTokenLength + 1;
-        runtimeMethodHandleArgument.offset = 0;
-        traceAnnotationArguments.push_back(runtimeMethodHandleArgument);
+        if (FAILED(hr))
+        {
+            Logger::Warn("*** CallTarget_RewriterCallback(): failed to define OperationName.");
+            reWriterWrapper.LoadNull();
+        }
+        else
+        {
+            reWriterWrapper.LoadStr(operationNameToken);
+        }
 
-        trace::TypeSignature runtimeTypeHandleArgument{};
-        runtimeTypeHandleArgument.pbBase = runtimeTypeHandleBuffer;
-        runtimeTypeHandleArgument.length = runtimeTypeHandleTokenLength + 1;
-        runtimeTypeHandleArgument.offset = 0;
-        traceAnnotationArguments.push_back(runtimeTypeHandleArgument);
+        // Replace method arguments with two string arguments, one for ResourceName and one for OperationName
+        COR_SIGNATURE stringSignature[1];
+        stringSignature[0] = ELEMENT_TYPE_STRING;
+        trace::TypeSignature stringTypeSig{};
+        stringTypeSig.pbBase = stringSignature;
+        stringTypeSig.length = 1;
+        stringTypeSig.offset = 0;
+        traceAnnotationArguments.push_back(stringTypeSig); // OperationName
+        traceAnnotationArguments.push_back(stringTypeSig); // ResourceName
 
         methodArguments = traceAnnotationArguments;
     }
@@ -644,6 +657,58 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                  "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
                  ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs, "]");
     return S_OK;
+}
+
+std::tuple<std::wstring, std::wstring>
+TracerMethodRewriter::GetResourceNameAndOperationName(const ComPtr<IMetaDataImport2>& metadataImport,
+                                                      const FunctionInfo* caller, TracerTokens* tracerTokens) const
+{
+    const BYTE* data = nullptr;
+    ULONG pcbData = 0;
+    auto hr = metadataImport->GetCustomAttributeByName(caller->id, tracerTokens->GetTraceAttributeType().data(),
+                                              reinterpret_cast<const void**>(&data), &pcbData);
+    std::wstring resourceName{};
+    std::wstring operationName{};
+
+    // Parse the TraceAttribute
+    if (hr == S_OK)
+    {
+        PCCOR_SIGNATURE signature = data;
+        signature += 2; // skip prolog
+        const ULONG numOfNamedArgs{CorSigUncompressData(signature)};
+        signature += 1; // skip fixed arguments length
+
+        for (ULONG argIndex = 0; argIndex < numOfNamedArgs; argIndex++)
+        {
+            signature += 2; // skip FIELD/PROPERTY and ELEM
+
+            ULONG argNameLength{CorSigUncompressData(signature)}; // length of the name
+            // OperationName (13 characters), ResourceName (12 characters)
+            const bool isOperationName = argNameLength == 13;
+            signature += argNameLength; // skip the argument name
+            const auto value = GetStringValueFromBlob(signature);
+            if (isOperationName)
+            {
+                operationName = value;
+            }
+            else
+            {
+                resourceName = value;
+            }
+        }
+    }
+
+    if (resourceName.empty())
+    {
+        resourceName = caller->type.name.empty() ? caller->name : caller->type.name + L"." + caller->name;
+    }
+
+    if (operationName.empty())
+    {
+        operationName = L"trace.annotation";
+    }
+
+    return {resourceName, operationName };
 }
 
 } // namespace trace

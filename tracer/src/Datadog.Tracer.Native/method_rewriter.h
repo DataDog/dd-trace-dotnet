@@ -3,6 +3,7 @@
 
 #include "../../../shared/src/native-src/util.h"
 #include "cor.h"
+#include "module_metadata.h"
 
 namespace trace
 {
@@ -23,6 +24,9 @@ class TracerMethodRewriter : public MethodRewriter, public shared::Singleton<Tra
 
 private:
     TracerMethodRewriter(){}
+    std::tuple<std::wstring, std::wstring>
+    GetResourceNameAndOperationName(const ComPtr<IMetaDataImport2>& metadataImport,
+                                    const FunctionInfo* caller, TracerTokens* tracerTokens) const;
 
 public:
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
