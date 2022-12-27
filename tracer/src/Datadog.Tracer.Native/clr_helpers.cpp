@@ -1,3 +1,4 @@
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 #include "clr_helpers.h"
 
 #include <cstring>
@@ -10,6 +11,8 @@
 #include <stack>
 
 #include "../../../shared/src/native-src/pal.h"
+
+#include <codecvt>
 
 namespace trace
 {
@@ -1020,12 +1023,12 @@ std::wstring GetStringValueFromBlob(PCCOR_SIGNATURE& signature)
     }
 
     // Read size and advance
-    size_t convertedChars = 0;
     ULONG size{CorSigUncompressData(signature)};
     std::wstring wstr;
-    wstr.resize(size);
-    mbstowcs_s(&convertedChars, &wstr[0], size + 1, reinterpret_cast<const char*>(signature), size);
-    signature += size;
+    wstr.reserve(size);
+
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    wstr = converter.from_bytes(reinterpret_cast<const char*>(signature), reinterpret_cast<const char*>(signature) + size);
     return wstr;
 }
 
