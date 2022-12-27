@@ -632,7 +632,7 @@ HRESULT ResolveType(ICorProfilerInfo4* info, const ComPtr<IMetaDataImport2>& met
                     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
                     mdTypeRef typeRefToken, mdTypeDef& resolvedTypeDefToken,
                     ComPtr<IMetaDataImport2>& resolvedMetadataImport);
-std::wstring GetStringValueFromBlob(PCCOR_SIGNATURE& signature);
+shared::WSTRING GetStringValueFromBlob(PCCOR_SIGNATURE& signature);
 
 void LogManagedProfilerAssemblyDetails();
 } // namespace trace
