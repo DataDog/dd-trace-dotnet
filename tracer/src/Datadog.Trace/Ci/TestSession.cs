@@ -303,7 +303,7 @@ public sealed class TestSession
     /// </summary>
     /// <param name="status">Test session status</param>
     /// <param name="duration">Duration of the test module</param>
-    private bool InternalClose(TestStatus status, TimeSpan? duration)
+    internal bool InternalClose(TestStatus status, TimeSpan? duration)
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
