@@ -253,7 +253,6 @@ namespace Datadog.Trace.Ci.Agent
                         Log.Debug<int>("CIAgentlessWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
                         await watermarkCountDown.WaitAsync().ConfigureAwait(false);
                         Log.Debug<int>("CIAgentlessWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
-                        watermarkCountDown = null;
                     }
                 }
                 catch (ThreadAbortException ex)
