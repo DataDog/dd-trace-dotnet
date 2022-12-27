@@ -22,14 +22,19 @@ namespace Datadog.Trace
     {
         private static void RunBlockingCheck(Span span, string userId)
         {
-            var securityCoordinator = new SecurityCoordinator(Security.Instance, HttpContext.Current, span);
+            var security = Security.Instance;
 
-            var wafArgs = new Dictionary<string, object>()
+            if (security.Settings.Enabled)
             {
-                { AddressesConstants.UserId, userId },
-            };
+                var securityCoordinator = new SecurityCoordinator(Security.Instance, HttpContext.Current, span);
 
-            securityCoordinator.CheckAndBlock(wafArgs);
+                var wafArgs = new Dictionary<string, object>()
+                {
+                    { AddressesConstants.UserId, userId },
+                };
+
+                securityCoordinator.CheckAndBlock(wafArgs);
+            }
         }
     }
 }
