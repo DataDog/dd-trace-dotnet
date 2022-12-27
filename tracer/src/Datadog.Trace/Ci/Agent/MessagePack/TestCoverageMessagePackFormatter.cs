@@ -63,10 +63,9 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
         }
 
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filesBytes);
-        if (value.Files is { } files)
+        if (value.Files is { Count: > 0 } files)
         {
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)files.Count);
-
             foreach (var file in files)
             {
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
@@ -75,14 +74,10 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
                 offset += MessagePackBinary.WriteString(ref bytes, offset, file.FileName);
 
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _segmentsBytes);
-                if (file.Segments is null)
+                if (file.Segments is { Count: > 0 } segments)
                 {
-                    offset += MessagePackBinary.WriteNil(ref bytes, offset);
-                }
-                else
-                {
-                    offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)file.Segments.Count);
-                    foreach (var segment in file.Segments)
+                    offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)segments.Count);
+                    foreach (var segment in segments)
                     {
                         if (segment is null)
                         {
@@ -97,6 +92,10 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
                             }
                         }
                     }
+                }
+                else
+                {
+                    offset += MessagePackBinary.WriteNil(ref bytes, offset);
                 }
             }
         }
