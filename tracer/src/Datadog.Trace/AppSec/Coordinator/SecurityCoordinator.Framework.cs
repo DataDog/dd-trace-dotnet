@@ -89,54 +89,41 @@ internal readonly partial struct SecurityCoordinator
 
     private bool WriteAndEndResponse()
     {
-        try
+        var httpResponse = _context.Response;
+        httpResponse.Clear();
+        httpResponse.Cookies.Clear();
+
+        var template = _security.Settings.BlockedJsonTemplate;
+        if (CanAccessHeaders)
         {
-            var httpResponse = _context.Response;
-            httpResponse.Clear();
-            httpResponse.Cookies.Clear();
-
-            var template = _security.Settings.BlockedJsonTemplate;
-            if (CanAccessHeaders)
+            // cant clear headers, on some iis version we get a platform not supported exception
+            var keys = httpResponse.Headers.Keys.Cast<string>().ToList();
+            foreach (var key in keys)
             {
-                // cant clear headers, on some iis version we get a platform not supported exception
-                var keys = httpResponse.Headers.Keys.Cast<string>().ToList();
-                foreach (var key in keys)
-                {
-                    httpResponse.Headers.Remove(key);
-                }
+                httpResponse.Headers.Remove(key);
+            }
 
-                if (_context.Request.Headers["Accept"] == "text/html")
-                {
-                    httpResponse.ContentType = "text/html";
-                    template = _security.Settings.BlockedHtmlTemplate;
-                }
-                else
-                {
-                    httpResponse.ContentType = "application/json";
-                }
+            if (_context.Request.Headers["Accept"] == "text/html")
+            {
+                httpResponse.ContentType = "text/html";
+                template = _security.Settings.BlockedHtmlTemplate;
             }
             else
             {
                 httpResponse.ContentType = "application/json";
             }
-
-            Console.WriteLine("WriteAndEndResponse - set status code");
-            httpResponse.StatusCode = 403;
-            httpResponse.Write(template);
-
-            httpResponse.End();
-            // TODO try throwing blocking exception here?
-            // TODO try throwing http exception here?
-
-            // httpResponse.Flush();
-            // httpResponse.Close();
-            // _context.ApplicationInstance.CompleteRequest();
         }
-        catch (Exception ex)
+        else
         {
-            Console.WriteLine("Ignoring exception: " + ex);
-            return false;
+            httpResponse.ContentType = "application/json";
         }
+
+        httpResponse.StatusCode = 403;
+        httpResponse.Write(template);
+
+        httpResponse.Flush();
+        httpResponse.Close();
+        _context.ApplicationInstance.CompleteRequest();
 
         return true;
     }

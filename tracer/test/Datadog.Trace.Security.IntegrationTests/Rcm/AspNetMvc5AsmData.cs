@@ -63,10 +63,9 @@ public abstract class AspNetMvc5AsmData : RcmBase, IClassFixture<IisFixture>
     private readonly string _testName;
 
     public AspNetMvc5AsmData(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-        : base("AspNetMvc5", output, "/home/shutdown", @"test\test-applications\security\aspnet", testName: nameof(AspNetMvc5AsmData))
+        : base("AspNetMvc5", output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         SetSecurity(enableSecurity);
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
         _iisFixture = iisFixture;
         _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
@@ -105,7 +104,7 @@ public abstract class AspNetMvc5AsmData : RcmBase, IClassFixture<IisFixture>
         var request1 = await _iisFixture.Agent.WaitRcmRequestAndReturnLast();
         if (SecurityEnabled)
         {
-            await logEntryWatcher.WaitForLogEntry($"1 {RulesUpdatedMessage()}", LogEntryWatcherTimeout);
+            await logEntryWatcher.WaitForLogEntry(RulesUpdatedMessage(), LogEntryWatcherTimeout);
         }
         else
         {
@@ -126,35 +125,43 @@ public abstract class AspNetMvc5AsmData : RcmBase, IClassFixture<IisFixture>
     [Trait("LoadFromGAC", "True")]
     public async Task TestBlockedRequestUser(string test, string url)
     {
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(parameters: new object[] { test, sanitisedUrl });
-        var spanBeforeAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
+        SetClientIp("90.91.8.235");
+        try
+        {
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(parameters: new object[] { test, sanitisedUrl });
+            var spanBeforeAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
 
-        var product = new AsmDataProduct();
-        _iisFixture.Agent.SetupRcm(
-            Output,
-            new[]
-            {
+            var product = new AsmDataProduct();
+            _iisFixture.Agent.SetupRcm(
+                Output,
+                new[]
+                {
                     ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, "asm_data")
-            },
-            product.Name);
+                },
+                product.Name);
 
-        var request1 = await _iisFixture.Agent.WaitRcmRequestAndReturnLast();
-        if (SecurityEnabled)
-        {
-            await logEntryWatcher.WaitForLogEntry($"1 {RulesUpdatedMessage()}", LogEntryWatcherTimeout);
-        }
-        else
-        {
-            await Task.Delay(1500);
-        }
+            var request1 = await _iisFixture.Agent.WaitRcmRequestAndReturnLast();
+            if (SecurityEnabled)
+            {
+                await logEntryWatcher.WaitForLogEntry(RulesUpdatedMessage(), LogEntryWatcherTimeout);
+            }
+            else
+            {
+                await Task.Delay(1500);
+            }
 
-        var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
-        var spans = new List<MockSpan>();
-        spans.AddRange(spanBeforeAsmData);
-        spans.AddRange(spanAfterAsmData);
-        await VerifySpans(spans.ToImmutableList(), settings, true);
+            var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
+            var spans = new List<MockSpan>();
+            spans.AddRange(spanBeforeAsmData);
+            spans.AddRange(spanAfterAsmData);
+            await VerifySpans(spans.ToImmutableList(), settings, true);
+        }
+        finally
+        {
+            SetClientIp(MainIp);
+        }
     }
 
     protected override string GetTestName() => _testName;

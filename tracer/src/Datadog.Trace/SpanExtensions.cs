@@ -27,8 +27,6 @@ namespace Datadog.Trace
         /// <param name="userDetails">The details of the current logged on user</param>
         public static void SetUser(this ISpan span, UserDetails userDetails)
         {
-            System.Diagnostics.Debugger.Launch();
-
             if (span is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(span));

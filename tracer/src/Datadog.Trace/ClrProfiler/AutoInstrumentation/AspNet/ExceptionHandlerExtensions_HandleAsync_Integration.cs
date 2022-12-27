@@ -7,6 +7,7 @@
 
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
@@ -51,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             var scope = Tracer.Instance.ActiveScope;
             var exception = context.Exception;
 
-            if (scope is not null && exception is not null)
+            if (scope is not null && exception is not null && exception is not BlockException)
             {
                 // Only try setting an exception if there's an active span
                 // The rest of the instrumentation will handle disposing the scope

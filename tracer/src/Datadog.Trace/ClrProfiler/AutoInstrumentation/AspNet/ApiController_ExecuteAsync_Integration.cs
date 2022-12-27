@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Web;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -55,7 +56,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         internal static CallTargetState OnMethodBegin<TTarget, TController>(TTarget instance, TController controllerContext, CancellationToken cancellationToken)
             where TController : IHttpControllerContext
         {
-            System.Diagnostics.Debugger.Launch();
             // Make sure to box the controllerContext proxy only once
             var boxedControllerContext = (IHttpControllerContext)controllerContext;
 
@@ -83,8 +83,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         [PreserveContext]
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
         {
-            System.Diagnostics.Debugger.Launch();
-
             var httpContext = HttpContext.Current;
 
             var scope = state.Scope;
@@ -100,7 +98,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             // some fields aren't set till after execution, so populate anything missing
             AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, (AspNetTags)scope.Span.Tags, Enumerable.Empty<KeyValuePair<string, string>>());
 
-            if (exception != null)
+            var isBlocked = exception is BlockException;
+            if (exception != null && !isBlocked)
             {
                 scope.Span.SetException(exception);
 
@@ -128,7 +127,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             else
             {
                 HttpContextHelper.AddHeaderTagsFromHttpResponse(HttpContext.Current, scope);
-                scope.Span.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true, Tracer.Instance.Settings);
+                var statusCode = isBlocked ? 403 : responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode;
+                scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
                 scope.Dispose();
             }
 

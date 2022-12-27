@@ -40,7 +40,7 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 
     protected TimeSpan LogEntryWatcherTimeout => TimeSpan.FromSeconds(20);
 
-    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetTestName()}Logs");
+    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetType().Name}Logs");
 
     public override void Dispose()
     {

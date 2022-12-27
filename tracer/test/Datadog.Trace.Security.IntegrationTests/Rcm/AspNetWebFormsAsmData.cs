@@ -64,10 +64,9 @@ public abstract class AspNetWebFormsAsmData : RcmBase, IClassFixture<IisFixture>
     private readonly string _testName;
 
     public AspNetWebFormsAsmData(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-        : base("WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet", testName: nameof(AspNetWebFormsAsmData))
+        : base("WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         SetSecurity(enableSecurity);
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
         _iisFixture = iisFixture;
         _enableSecurity = enableSecurity;
@@ -78,35 +77,93 @@ public abstract class AspNetWebFormsAsmData : RcmBase, IClassFixture<IisFixture>
         SetHttpPort(iisFixture.HttpPort);
     }
 
+    [SkippableTheory]
+    [InlineData("blocking-ips", "/")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
-    [Theory]
-    [InlineData("/Health?test&[$slice]", null)]
-    [InlineData("/Health/Params/appscan_fingerprint", null)]
-    [InlineData("/Health/wp-config", null)]
-    [InlineData("/Health?arg=[$slice]", null)]
-    [InlineData("/Health", "ctl00%24MainContent%24testBox=%5B%24slice%5D")]
-    public Task TestSecurity(string url, string body)
+    public async Task TestBlockedRequestIp(string test, string url)
     {
-        // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
-        // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
+        HttpStatusCode expectedStatusCode = SecurityEnabled ? HttpStatusCode.OK : HttpStatusCode.Forbidden;
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body);
-        return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 1, settings, "application/x-www-form-urlencoded");
+        // we want to see the ip here
+        var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
+        var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, sanitisedUrl });
+        var spanBeforeAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
+
+        var product = new AsmDataProduct();
+        _iisFixture.Agent.SetupRcm(
+            Output,
+            new[]
+            {
+                    (
+                        (object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, "asm_data"),
+                    (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, "asm_data_servicea"),
+            },
+            product.Name);
+
+        var request1 = await _iisFixture.Agent.WaitRcmRequestAndReturnLast();
+        if (SecurityEnabled)
+        {
+            await logEntryWatcher.WaitForLogEntry(RulesUpdatedMessage(), LogEntryWatcherTimeout);
+        }
+        else
+        {
+            await Task.Delay(1500);
+        }
+
+        var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
+        var spans = new List<MockSpan>();
+        spans.AddRange(spanBeforeAsmData);
+        spans.AddRange(spanAfterAsmData);
+        await VerifySpans(spans.ToImmutableList(), settings, true);
     }
 
+    [SkippableTheory]
+    [InlineData("blocking-user", "/user")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData("blocking")]
-    public async Task TestBlockedRequest(string test)
+    public async Task TestBlockedRequestUser(string test, string url)
     {
-        var url = "/Health";
+        SetClientIp("90.91.8.235");
+        try
+        {
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(parameters: new object[] { test, sanitisedUrl });
+            var spanBeforeAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
 
-        var settings = VerifyHelper.GetSpanVerifierSettings(test);
-        await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, SecurityEnabled ? 1 : 2, settings, userAgent: "Hello/V");
+            var product = new AsmDataProduct();
+            _iisFixture.Agent.SetupRcm(
+                Output,
+                new[]
+                {
+                        ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, "asm_data")
+                },
+                product.Name);
+
+            var request1 = await _iisFixture.Agent.WaitRcmRequestAndReturnLast();
+            if (SecurityEnabled)
+            {
+                await logEntryWatcher.WaitForLogEntry(RulesUpdatedMessage(), LogEntryWatcherTimeout);
+            }
+            else
+            {
+                await Task.Delay(1500);
+            }
+
+            var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
+            var spans = new List<MockSpan>();
+            spans.AddRange(spanBeforeAsmData);
+            spans.AddRange(spanAfterAsmData);
+            await VerifySpans(spans.ToImmutableList(), settings, true);
+        }
+        finally
+        {
+            SetClientIp(MainIp);
+        }
     }
 
     protected override string GetTestName() => _testName;

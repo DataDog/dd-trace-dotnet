@@ -6,6 +6,7 @@
 using System;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 #pragma warning disable SA1649 // File name must match first type name
