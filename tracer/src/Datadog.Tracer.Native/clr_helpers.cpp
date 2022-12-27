@@ -1013,22 +1013,23 @@ HRESULT FunctionLocalSignature::TryParse(PCCOR_SIGNATURE pbBase, unsigned len, s
     return S_OK;
 }
 
-std::wstring GetStringValueFromBlob(PCCOR_SIGNATURE& signature)
+shared::WSTRING GetStringValueFromBlob(PCCOR_SIGNATURE& signature)
 {
     // If it's null
     if (*signature == UINT8_MAX)
     {
         signature += 1;
-        return std::wstring();
+        return shared::WSTRING();
     }
 
     // Read size and advance
     ULONG size{CorSigUncompressData(signature)};
-    std::wstring wstr;
+    shared::WSTRING wstr;
     wstr.reserve(size);
 
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     wstr = converter.from_bytes(reinterpret_cast<const char*>(signature), reinterpret_cast<const char*>(signature) + size);
+    signature += size;
     return wstr;
 }
 
