@@ -331,7 +331,8 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
                                          ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                          ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                          mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                         mdToken* callTargetReturnToken,  ULONG* exceptionValueIndex, bool isAsyncMethod)
+                                         mdToken* callTargetReturnToken, ULONG* exceptionValueIndex,
+                                         ULONG* exceptionVaueEndIndex, bool isAsyncMethod)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -368,7 +369,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     }
 
     const auto additionalLocalsCount = GetAdditionalLocalsCount();
-    ULONG newLocalsCount = 4 + additionalLocalsCount;
+    ULONG newLocalsCount = 5 + additionalLocalsCount;
 
     // Gets the calltarget state type buffer and size
     unsigned callTargetStateTypeRefBuffer;
@@ -415,7 +416,9 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     }
 
     // New signature size
-    ULONG newSignatureSize = originalSignatureSize + returnSignatureTypeSize + (1 + exTypeRefSize) + (1 + exTypeRefSize) +
+    ULONG newSignatureSize = originalSignatureSize + returnSignatureTypeSize + (1 + exTypeRefSize) +
+                             (1 + exTypeRefSize) + (1 + exTypeRefSize) +
+                             // the 2 exceptions for call target filters CallTargetBubbleUpException
                              callTargetReturnSizeForNewSignature + (1 + callTargetStateTypeRefSize);
     ULONG newSignatureOffset = 0;
 
@@ -473,6 +476,11 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     memcpy(&newSignatureBuffer[newSignatureOffset], &exTypeRefBuffer, exTypeRefSize);
     newSignatureOffset += exTypeRefSize;
 
+    // Exception value for calltarget exception filters (end of method)
+    newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&newSignatureBuffer[newSignatureOffset], &exTypeRefBuffer, exTypeRefSize);
+    newSignatureOffset += exTypeRefSize;
+
     // CallTarget Return value
     if (callTargetReturnSignature != nullptr)
     {
@@ -507,19 +515,17 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *exceptionToken = exTypeRef;
     *callTargetReturnToken = callTargetReturn;
 
-
     if (returnSignatureType != nullptr)
     {
-        *returnValueIndex = newLocalsCount - 5 - additionalLocalsCount;
+        *returnValueIndex = newLocalsCount - 6 - additionalLocalsCount;
     }
     else
     {
         *returnValueIndex = static_cast<ULONG>(ULONG_MAX);
     }
-    *exceptionValueIndex = newLocalsCount - 4 - additionalLocalsCount;
-    Logger::Warn("Exceptionvalue index in ModifyLocalSig is", *exceptionValueIndex);
+    *exceptionValueIndex = newLocalsCount - 5 - additionalLocalsCount;
+    *exceptionVaueEndIndex = newLocalsCount - 4 - additionalLocalsCount;
     *exceptionIndex = newLocalsCount - 3 - additionalLocalsCount;
-    Logger::Warn("exceptionIndex index in ModifyLocalSig is", *exceptionIndex);
     *callTargetReturnIndex = newLocalsCount - 2 - additionalLocalsCount;
     *callTargetStateIndex = newLocalsCount - 1; // Must be the last local.
     return hr;
@@ -826,7 +832,8 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
                                                       ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                                       mdToken* callTargetStateToken, mdToken* exceptionToken,
                                                       mdToken* callTargetReturnToken, ILInstr** firstInstruction,
-                                                      ULONG* exceptionValueIndex, bool isAsyncMethod)
+                                                      ULONG* exceptionValueIndex, ULONG* exceptionValueEndIndex,
+                                                      bool isAsyncMethod)
 {
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
 
@@ -834,7 +841,8 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
 
     auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(), methodReturnType, callTargetStateIndex,
                              exceptionIndex, callTargetReturnIndex, returnValueIndex, callTargetStateToken,
-                             exceptionToken, callTargetReturnToken, exceptionValueIndex, isAsyncMethod);
+                             exceptionToken, callTargetReturnToken, exceptionValueIndex, exceptionValueEndIndex,
+                             isAsyncMethod);
 
     if (FAILED(hr))
     {

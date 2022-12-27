@@ -7,23 +7,46 @@ using System;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget;
 
-internal class CallTargetBubbleUpException : Exception
+/// <summary>
+/// Initializes a new instance of the <see cref="CallTargetBubbleUpException"/> class.
+/// Any exception which wants to bypass the catch handler, thrown from an integration, should inherit from it.
+/// </summary>
+[System.ComponentModel.Browsable(false)]
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+public class CallTargetBubbleUpException : Exception
 {
-    internal CallTargetBubbleUpException()
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CallTargetBubbleUpException"/> class.
+    /// </summary>
+    public CallTargetBubbleUpException()
     {
     }
 
-    internal CallTargetBubbleUpException(string message)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CallTargetBubbleUpException"/> class.
+    /// </summary>
+    /// <param name="message">message</param>
+    public CallTargetBubbleUpException(string message)
         : base(message)
     {
     }
 
-    internal CallTargetBubbleUpException(string message, Exception inner)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CallTargetBubbleUpException"/> class.
+    /// </summary>
+    /// <param name="message">message</param>
+    /// <param name="inner">inner</param>
+    public CallTargetBubbleUpException(string message, Exception inner)
         : base(message, inner)
     {
     }
 
-    internal CallTargetBubbleUpException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CallTargetBubbleUpException"/> class.
+    /// </summary>
+    /// <param name="info">info</param>
+    /// <param name="context">context</param>
+    public CallTargetBubbleUpException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
         : base(info, context)
     {
     }

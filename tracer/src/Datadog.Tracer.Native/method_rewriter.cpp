@@ -176,6 +176,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ULONG callTargetReturnIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG returnValueIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG exceptionValueIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG exceptionValueEndIndex = static_cast<ULONG>(ULONG_MAX);
 
     mdToken callTargetStateToken = mdTokenNil;
     mdToken exceptionToken = mdTokenNil;
@@ -184,7 +185,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     auto returnType = caller->method_signature.GetReturnValue();
     tracerTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, &returnType, &callTargetStateIndex, &exceptionIndex,
                                               &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
-                                              &exceptionToken, &callTargetReturnToken, &firstInstruction, &exceptionValueIndex, false);
+                                              &exceptionToken, &callTargetReturnToken, &firstInstruction, &exceptionValueIndex, &exceptionValueEndIndex, false);
 
     // ***
     // BEGIN METHOD PART
@@ -530,12 +531,12 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ILInstr* endMethodTryLeave = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** Filter exception
-    ILInstr* filterEnd = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(), bubbleUpExceptionTypeRef, exceptionValueIndex);
+    ILInstr* filterEnd = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(), bubbleUpExceptionTypeRef, exceptionValueEndIndex);
     
     // transfer->m_pTarget = endFilter;
     // *** EndMethod call catch
     ILInstr* endMethodCatchFirstInstr = nullptr;
-    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type, &endMethodCatchFirstInstr, exceptionValueIndex);
+    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type, &endMethodCatchFirstInstr, exceptionValueEndIndex);
 
     ILInstr* endMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
