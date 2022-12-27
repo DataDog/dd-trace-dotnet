@@ -24,8 +24,7 @@ class TracerMethodRewriter : public MethodRewriter, public shared::Singleton<Tra
 
 private:
     TracerMethodRewriter(){}
-    std::tuple<std::wstring, std::wstring>
-    GetResourceNameAndOperationName(const ComPtr<IMetaDataImport2>& metadataImport,
+    std::tuple<WSTRING, WSTRING> GetResourceNameAndOperationName(const ComPtr<IMetaDataImport2>& metadataImport,
                                     const FunctionInfo* caller, TracerTokens* tracerTokens) const;
 
 public:

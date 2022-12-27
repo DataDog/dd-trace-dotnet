@@ -336,12 +336,8 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         }
 
         // Replace method arguments with two string arguments, one for ResourceName and one for OperationName
-        COR_SIGNATURE stringSignature[1];
-        stringSignature[0] = ELEMENT_TYPE_STRING;
-        trace::TypeSignature stringTypeSig{};
-        stringTypeSig.pbBase = stringSignature;
-        stringTypeSig.length = 1;
-        stringTypeSig.offset = 0;
+        COR_SIGNATURE stringSignature[1] = {ELEMENT_TYPE_STRING};
+        trace::TypeSignature stringTypeSig{0, 1, stringSignature};
         traceAnnotationArguments.push_back(stringTypeSig); // OperationName
         traceAnnotationArguments.push_back(stringTypeSig); // ResourceName
 
@@ -659,7 +655,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     return S_OK;
 }
 
-std::tuple<std::wstring, std::wstring>
+std::tuple<WSTRING, WSTRING>
 TracerMethodRewriter::GetResourceNameAndOperationName(const ComPtr<IMetaDataImport2>& metadataImport,
                                                       const FunctionInfo* caller, TracerTokens* tracerTokens) const
 {
@@ -667,8 +663,8 @@ TracerMethodRewriter::GetResourceNameAndOperationName(const ComPtr<IMetaDataImpo
     ULONG pcbData = 0;
     auto hr = metadataImport->GetCustomAttributeByName(caller->id, tracerTokens->GetTraceAttributeType().data(),
                                               reinterpret_cast<const void**>(&data), &pcbData);
-    std::wstring resourceName{};
-    std::wstring operationName{};
+    WSTRING resourceName;
+    WSTRING operationName;
 
     // Parse the TraceAttribute
     if (hr == S_OK)
@@ -683,7 +679,15 @@ TracerMethodRewriter::GetResourceNameAndOperationName(const ComPtr<IMetaDataImpo
             signature += 2; // skip FIELD/PROPERTY and ELEM
 
             ULONG argNameLength{CorSigUncompressData(signature)}; // length of the name
+
             // OperationName (13 characters), ResourceName (12 characters)
+            if (argNameLength != 12 && argNameLength != 13)
+            {
+                Logger::Error("TracerMethodRewriter::Rewrite: Failed to parse Trace Attribute for ",
+                     " token=", caller->id, " caller_name=", caller->type.name, ".", caller->name, "()");
+                break;
+            }
+
             const bool isOperationName = argNameLength == 13;
             signature += argNameLength; // skip the argument name
             const auto value = GetStringValueFromBlob(signature);
@@ -700,7 +704,17 @@ TracerMethodRewriter::GetResourceNameAndOperationName(const ComPtr<IMetaDataImpo
 
     if (resourceName.empty())
     {
-        resourceName = caller->type.name.empty() ? caller->name : caller->type.name + L"." + caller->name;
+        if (caller->type.name.empty())
+        {
+            resourceName = caller->name;
+        }
+        else
+        {
+            resourceName =
+                caller->type.name.empty()
+                    ? caller->name
+                    : caller->type.name.substr(caller->type.name.find_last_of(L'.') + 1) + L"." + caller->name;
+        }
     }
 
     if (operationName.empty())
@@ -708,7 +722,7 @@ TracerMethodRewriter::GetResourceNameAndOperationName(const ComPtr<IMetaDataImpo
         operationName = L"trace.annotation";
     }
 
-    return {resourceName, operationName };
+    return {std::move(resourceName), std::move(operationName) };
 }
 
 } // namespace trace
