@@ -72,7 +72,6 @@ namespace Datadog.Trace.Coverage.Collector
         {
             if (_isDebugEnabled)
             {
-                _logger.LogWarning(_collectionContext, text ?? string.Empty);
                 _datadogLogger.Debug(text);
             }
         }
