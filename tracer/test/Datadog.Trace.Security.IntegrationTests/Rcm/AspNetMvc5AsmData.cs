@@ -164,6 +164,6 @@ public abstract class AspNetMvc5AsmData : RcmBase, IClassFixture<IisFixture>
         }
     }
 
-    protected override string GetTestName() => _testName;
+    protected override string GetTestName() => Prefix + _testName;
 }
 #endif
