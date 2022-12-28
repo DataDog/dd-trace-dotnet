@@ -63,7 +63,7 @@ internal class AsyncManualResetEvent
             if (completedTask == task)
             {
                 delayCancellation.Cancel();
-                await completedTask.ConfigureAwait(false);
+                await task.ConfigureAwait(false);
             }
         }
     }
