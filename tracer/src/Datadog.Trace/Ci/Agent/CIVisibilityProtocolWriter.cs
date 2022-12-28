@@ -90,7 +90,7 @@ namespace Datadog.Trace.Ci.Agent
                     new CICodeCoveragePayload(settings, formatterResolver: formatterResolver));
                 _buffersArray[i] = buffers;
                 var tskFlush = Task.Run(() => InternalFlushEventsAsync(this, buffers));
-                tskFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
+                tskFlush.ContinueWith(t => Log.Error(t.Exception, "CIVisibilityProtocolWriter: Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
                 _buffersArray[i].SetFlushTask(tskFlush);
             }
 
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Ci.Agent
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error Writing event in a queue.");
+                Log.Error(ex, "CIVisibilityProtocolWriter: Error Writing event in a queue.");
             }
         }
 
@@ -200,7 +200,7 @@ namespace Datadog.Trace.Ci.Agent
                             // We get the countdown event and exit this loop
                             // to flush buffers (in case there's any event)
                             watermarkCountDown = watermarkEvent.Countdown;
-                            Log.Debug<int>("CIAgentlessWriter: Watermark detected on [Buffer: {bufferIndex}]", index);
+                            Log.Debug<int>("CIVisibilityProtocolWriter: Watermark detected on [Buffer: {bufferIndex}]", index);
                             break;
                         }
 
