@@ -226,7 +226,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                Log.Information($"Live Debugger.InstrumentProbes: Request to remove {removedProbesIds.Length} definitions");
+                Log.Information($"Live Debugger.InstrumentProbes: Request to remove {removedProbesIds.Length} probes.");
 
                 RemoveUnboundProbes(removedProbesIds);
 
@@ -243,7 +243,7 @@ namespace Datadog.Trace.Debugger
                 }
 
                 // This log entry is being checked in integration test
-                Log.Information("Live Debugger.InstrumentProbes: Request to instrument removed probes definitions completed.");
+                Log.Information("Live Debugger.InstrumentProbes: Request to de-instrument probes definitions completed.");
             }
         }
 
@@ -302,25 +302,32 @@ namespace Datadog.Trace.Debugger
 
             foreach (var configContent in args.ConfigContents)
             {
-                switch (configContent.Path.Id)
+                try
                 {
-                    case { } id when id.StartsWith(DefinitionPaths.SnapshotProbe):
-                        snapshots.Add(configContent.Deserialize<SnapshotProbe>().TypedFile);
-                        break;
-                    case { } id when id.StartsWith(DefinitionPaths.MetricProbeProbe):
-                        metrics.Add(configContent.Deserialize<MetricProbe>().TypedFile);
-                        break;
-                    case { } id when id.StartsWith(DefinitionPaths.ServiceConfiguration):
-                        serviceConfig = configContent.Deserialize<ServiceConfiguration>().TypedFile;
-                        break;
-                    case { } id when id.StartsWith(DefinitionPaths.LogProbe):
-                        // not supported yet
-                        break;
-                    case { } id when id.StartsWith(DefinitionPaths.SpanProbe):
-                        // not supported yet
-                        break;
-                    default:
-                        break;
+                    switch (configContent.Path.Id)
+                    {
+                        case { } id when id.StartsWith(DefinitionPaths.SnapshotProbe):
+                            snapshots.Add(configContent.Deserialize<SnapshotProbe>().TypedFile);
+                            break;
+                        case { } id when id.StartsWith(DefinitionPaths.MetricProbeProbe):
+                            metrics.Add(configContent.Deserialize<MetricProbe>().TypedFile);
+                            break;
+                        case { } id when id.StartsWith(DefinitionPaths.ServiceConfiguration):
+                            serviceConfig = configContent.Deserialize<ServiceConfiguration>().TypedFile;
+                            break;
+                        case { } id when id.StartsWith(DefinitionPaths.LogProbe):
+                            // not supported yet
+                            break;
+                        case { } id when id.StartsWith(DefinitionPaths.SpanProbe):
+                            // not supported yet
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Log.Warning($"Failed to deserialize configuration with path {configContent.Path.Path}", exception);
                 }
             }
 
@@ -337,10 +344,15 @@ namespace Datadog.Trace.Debugger
         private void AcceptRemovedConfiguration(ProductConfigChangedEventArgs args)
         {
             var removedIds = args.ConfigContents
-                   .Select(file => file.Path.Id)
+                   .Select(TrimProbeTypeFromPath)
                    .ToArray();
 
             _configurationUpdater.AcceptRemoved(removedIds);
+
+            string TrimProbeTypeFromPath(NamedRawFile file)
+            {
+                return file.Path.Id.Split('_').Last();
+            }
         }
 
         internal void AddSnapshot(string snapshot)

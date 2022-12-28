@@ -265,9 +265,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     }
 
                     product.RemoveConfigs(removedConfigurations);
-                    foreach (var remoteConfiguration in removedConfigurations)
+                    foreach (var removedConfiguration in removedConfigurations)
                     {
-                        product.AppliedConfigurations.Remove(remoteConfiguration.Path.Path);
+                        product.AppliedConfigurations.Remove(removedConfiguration.Path.Path);
                     }
                 }
                 catch (Exception e)
@@ -305,7 +305,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             List<RemoteConfigurationCache>? GetRemovedConfigurations(Product product)
             {
-                List<RemoteConfigurationCache>? remove = null;
+                List<RemoteConfigurationCache>? removed = null;
 
                 foreach (var appliedConfiguration in product.AppliedConfigurations)
                 {
@@ -314,11 +314,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                         continue;
                     }
 
-                    remove ??= new List<RemoteConfigurationCache>();
-                    remove.Add(appliedConfiguration.Value);
+                    removed ??= new List<RemoteConfigurationCache>();
+                    removed.Add(appliedConfiguration.Value);
                 }
 
-                return remove;
+                return removed;
             }
         }
 

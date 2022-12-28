@@ -31,7 +31,7 @@ public class ProbesTests : TestHelper
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string AddedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument added probes definitions completed.";
-    private const string RemovedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument removed probes definitions completed.";
+    private const string RemovedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to de-instrument probes definitions completed.";
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
     private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack" };
@@ -255,7 +255,15 @@ public class ProbesTests : TestHelper
             async Task RunPhase(SnapshotProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
             {
                 SetProbeConfiguration(agent, snapshotProbes);
-                await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+                if (phaseNumber == 1)
+                {
+                    await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+                }
+                else
+                {
+                    await logEntryWatcher.WaitForLogEntries(new[] { AddedProbesInstrumentedLogEntry, RemovedProbesInstrumentedLogEntry });
+                }
 
                 await sample.RunCodeSample();
 
@@ -514,7 +522,7 @@ public class ProbesTests : TestHelper
     private void SetProbeConfiguration(MockTracerAgent agent, SnapshotProbe[] snapshotProbes)
     {
         var configurations = snapshotProbes
-            .Select(snapshotProbe => (snapshotProbe, $"{DefinitionPaths.SnapshotProbe}{Guid.NewGuid()}"))
+            .Select(snapshotProbe => (snapshotProbe, $"{DefinitionPaths.SnapshotProbe}{snapshotProbe.Id}"))
             .Select(dummy => ((object Config, string Id))dummy);
 
         agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);
