@@ -60,7 +60,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetWebApi(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
             : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet")
         {
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "true");
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
