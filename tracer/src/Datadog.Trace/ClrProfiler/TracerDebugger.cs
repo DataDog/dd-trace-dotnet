@@ -54,7 +54,6 @@ internal static class TracerDebugger
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void Break()
     {
-        Task.Delay(1000).GetAwaiter().GetResult();
         Log.Information("Breaking form: " + Environment.StackTrace);
         System.Diagnostics.Debugger.Break();
     }
