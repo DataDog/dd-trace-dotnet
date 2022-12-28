@@ -713,13 +713,13 @@ TracerMethodRewriter::GetResourceNameAndOperationName(const ComPtr<IMetaDataImpo
             resourceName =
                 caller->type.name.empty()
                     ? caller->name
-                    : caller->type.name.substr(caller->type.name.find_last_of(L'.') + 1) + L"." + caller->name;
+                    : caller->type.name.substr(caller->type.name.find_last_of(L'.') + 1) + WStr(".") + caller->name;
         }
     }
 
     if (operationName.empty())
     {
-        operationName = L"trace.annotation";
+        operationName = WStr("trace.annotation");
     }
 
     return {std::move(resourceName), std::move(operationName) };

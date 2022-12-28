@@ -1028,9 +1028,11 @@ shared::WSTRING GetStringValueFromBlob(PCCOR_SIGNATURE& signature)
     wstr.reserve(size);
 
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    wstr = converter.from_bytes(reinterpret_cast<const char*>(signature), reinterpret_cast<const char*>(signature) + size);
+    std::wstring temp =
+        converter.from_bytes(reinterpret_cast<const char*>(signature), reinterpret_cast<const char*>(signature) + size);
+    wstr.assign(temp.begin(), temp.end());
     signature += size;
-    return wstr;
+    return std::move(wstr);
 }
 
 HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, const mdMethodDef methodDefToken, bool& hasAsyncAttribute)
