@@ -46,8 +46,6 @@ internal static class TracerDebugger
             Task.Delay(1000).GetAwaiter().GetResult();
         }
 
-        Console.WriteLine("Debugger attached.");
-        Log.Information("Debugger attached.");
         Break();
     }
 
