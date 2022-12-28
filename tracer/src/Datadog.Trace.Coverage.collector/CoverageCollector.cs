@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Ci.Configuration;
@@ -29,6 +30,7 @@ namespace Datadog.Trace.Coverage.Collector
         private DataCollectionEvents? _events;
         private CIVisibilitySettings? _ciVisibilitySettings;
         private string? _tracerHome;
+        private int _testNumber;
 
         /// <inheritdoc />
         public override void Initialize(XmlElement configurationElement, DataCollectionEvents events, DataCollectionSink dataSink, DataCollectionLogger logger, DataCollectionEnvironmentContext environmentContext)
@@ -48,7 +50,7 @@ namespace Datadog.Trace.Coverage.Collector
                 };
                 events.TestCaseStart += (sender, args) =>
                 {
-                    _logger?.Debug($"Test case start: {args.TestCaseName}");
+                    _logger?.Debug($"Test case start [{Interlocked.Increment(ref _testNumber)}]: {args.TestCaseName}");
                 };
                 events.TestCaseEnd += (sender, args) =>
                 {
