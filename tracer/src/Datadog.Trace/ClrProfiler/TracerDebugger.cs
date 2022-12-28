@@ -6,7 +6,10 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler;
 
@@ -18,6 +21,7 @@ internal static class TracerDebugger
     {
         if (System.Diagnostics.Debugger.IsAttached)
         {
+            Break();
             return;
         }
 
@@ -33,13 +37,21 @@ internal static class TracerDebugger
         }
 
         Console.WriteLine("Waiting for debugger attach...");
+        Log.Information("Waiting for debugger attach...");
         var currentProcess = Process.GetCurrentProcess();
         Console.WriteLine("Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
+        Log.Information<int, string>("Process Id: {id}, Name: {name}", currentProcess.Id, currentProcess.ProcessName);
         while (!System.Diagnostics.Debugger.IsAttached)
         {
-            Task.Delay(1000).GetAwaiter().GetResult();
+            Thread.Sleep(1000);
         }
 
+        Break();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Break()
+    {
         System.Diagnostics.Debugger.Break();
     }
 }

@@ -6,6 +6,8 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader;
@@ -16,8 +18,9 @@ internal static class TracerDebugger
     // Based on: https://github.com/microsoft/vstest/blob/main/src/Microsoft.TestPlatform.Execution.Shared/DebuggerBreakpoint.cs#L140
     internal static void WaitForDebugger(string environmentVariable)
     {
-        if (System.Diagnostics.Debugger.IsAttached)
+        if (Debugger.IsAttached)
         {
+            Break();
             return;
         }
 
@@ -33,13 +36,21 @@ internal static class TracerDebugger
         }
 
         Console.WriteLine("Waiting for debugger attach...");
+        StartupLogger.Log("Waiting for debugger attach...");
         var currentProcess = Process.GetCurrentProcess();
         Console.WriteLine("Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
-        while (!System.Diagnostics.Debugger.IsAttached)
+        StartupLogger.Log("Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
+        while (!Debugger.IsAttached)
         {
-            Task.Delay(1000).GetAwaiter().GetResult();
+            Thread.Sleep(1000);
         }
 
-        System.Diagnostics.Debugger.Break();
+        Break();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Break()
+    {
+        Debugger.Break();
     }
 }
