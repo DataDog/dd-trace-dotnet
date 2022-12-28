@@ -155,9 +155,6 @@
       ],
       "transformers": [
         "lowercase"
-      ],
-      "on_match": [
-        "block"
       ]
     },
     {

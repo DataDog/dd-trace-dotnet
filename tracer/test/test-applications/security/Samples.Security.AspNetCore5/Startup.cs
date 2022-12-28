@@ -40,6 +40,9 @@ namespace Samples.Security.AspNetCore5
             }
             else
             {
+                // todo, for now disable to test that the block exception isn't caught by the call target integrations. 
+                // later an exception filter should be added closer to the mvc pipeline so that this can't trigger because of a BlockException
+                
                 // app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
