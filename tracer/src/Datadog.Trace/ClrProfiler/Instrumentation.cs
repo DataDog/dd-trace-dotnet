@@ -228,6 +228,7 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            TracerDebugger.WaitForDebugger(ConfigurationKeys.DebuggerEnabled);
             Log.Debug("Initialization of non native parts started.");
 
             try

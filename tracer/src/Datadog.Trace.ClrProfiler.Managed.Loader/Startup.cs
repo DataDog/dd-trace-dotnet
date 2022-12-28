@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private const string AasCustomTracingKey = "DD_AAS_ENABLE_CUSTOM_TRACING";
         private const string AasCustomMetricsKey = "DD_AAS_ENABLE_CUSTOM_METRICS";
         private const string TraceEnabledKey = "DD_TRACE_ENABLED";
+        private const string DebuggerEnabled = "DD_TRACE_DEBUGGER";
 
         /// <summary>
         /// Initializes static members of the <see cref="Startup"/> class.
@@ -27,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         /// </summary>
         static Startup()
         {
+            TracerDebugger.WaitForDebugger(DebuggerEnabled);
             ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
             StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
 
