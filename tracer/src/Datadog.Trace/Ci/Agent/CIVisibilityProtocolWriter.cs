@@ -18,14 +18,14 @@ using Datadog.Trace.Vendors.MessagePack;
 namespace Datadog.Trace.Ci.Agent
 {
     /// <summary>
-    /// CI Visibility Agentless Writer
+    /// CI Visibility Protocol Writer
     /// </summary>
     /*
      *  Current Architecture of the writer:
      *
      *         ┌────────────────────────────────────────────────────────────────┐
      *         │                                                                │
-     *         │ CIAgentlessWriter         ┌────────────────────────────────┐   │
+     *         │ CIVisibilityProtocolWriter┌────────────────────────────────┐   │
      *         │                           │ Buffers                        │   │
      *         │                         ┌─┤                                │   │
      *         │                         │ │ ┌────────────────────────────┐ │   │
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Ci.Agent
                 _buffersArray[i].SetFlushTask(tskFlush);
             }
 
-            Log.Information<int>($"CIAgentlessWriter Initialized with concurrency level of: {concurrencyLevel}", concurrencyLevel);
+            Log.Information<int>($"CIVisibilityProtocolWriter Initialized with concurrency level of: {concurrencyLevel}", concurrencyLevel);
         }
 
         public void WriteEvent(IEvent @event)
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Ci.Agent
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error Writing event in a queue.");
+                Log.Error(ex, "CIVisibilityProtocolWriter: Error Writing event in a queue.");
                 return Task.FromException(ex);
             }
         }
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Ci.Agent
             var ciCodeCoverageBufferWatch = buffers.CiCodeCoverageBufferWatch;
             var completionSource = buffers.FlushTaskCompletionSource;
 
-            Log.Debug("CIAgentlessWriter: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
+            Log.Debug("CIVisibilityProtocolWriter: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
 
             while (!eventQueue.IsCompleted)
             {
@@ -250,9 +250,9 @@ namespace Datadog.Trace.Ci.Agent
                     if (watermarkCountDown is not null)
                     {
                         watermarkCountDown.Signal();
-                        Log.Debug<int>("CIAgentlessWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
                         await watermarkCountDown.WaitAsync().ConfigureAwait(false);
-                        Log.Debug<int>("CIAgentlessWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
                     }
                 }
                 catch (ThreadAbortException ex)
@@ -263,15 +263,15 @@ namespace Datadog.Trace.Ci.Agent
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning(ex, "Error in CIAgentlessWriter.InternalFlushEventsAsync");
+                    Log.Warning(ex, "CIVisibilityProtocolWriter: Error in InternalFlushEventsAsync");
 
                     // If there's a flush watermark we marked as resolved.
                     if (watermarkCountDown is not null)
                     {
                         watermarkCountDown.Signal();
-                        Log.Debug<int>("CIAgentlessWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
                         await watermarkCountDown.WaitAsync().ConfigureAwait(false);
-                        Log.Debug<int>("CIAgentlessWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
                     }
                 }
                 finally
@@ -286,7 +286,7 @@ namespace Datadog.Trace.Ci.Agent
             }
 
             completionSource?.TrySetResult(true);
-            Log.Debug("CIAgentlessWriter: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
+            Log.Debug("CIVisibilityProtocolWriter: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
         }
 
         internal class WatermarkEvent : IEvent

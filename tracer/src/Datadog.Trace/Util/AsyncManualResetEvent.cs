@@ -4,13 +4,12 @@
 // </copyright>
 #nullable enable
 
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Util;
 
-// Stripped down version of: https://github.com/StephenCleary/AsyncEx/blob/master/src/Nito.AsyncEx.Coordination/AsyncManualResetEvent.cs
+// Based on: https://github.com/StephenCleary/AsyncEx/blob/master/src/Nito.AsyncEx.Coordination/AsyncManualResetEvent.cs
 
 internal class AsyncManualResetEvent
 {
@@ -54,20 +53,17 @@ internal class AsyncManualResetEvent
     public Task WaitAsync(int millisecondTimeout)
     {
         var waitTask = WaitAsync();
-        if (waitTask.IsCompleted)
-        {
-            return waitTask;
-        }
 
-        return InternalWaitAsync();
+        return waitTask.IsCompleted ? waitTask : InternalWaitAsync(waitTask, millisecondTimeout);
 
-        async Task InternalWaitAsync()
+        static async Task InternalWaitAsync(Task task, int timeout)
         {
-            var delayCancellation = new CancellationTokenSource();
-            var completedTask = await Task.WhenAny(waitTask, Task.Delay(millisecondTimeout, delayCancellation.Token)).ConfigureAwait(false);
-            if (completedTask == waitTask)
+            using var delayCancellation = new CancellationTokenSource();
+            var completedTask = await Task.WhenAny(task, Task.Delay(timeout, delayCancellation.Token)).ConfigureAwait(false);
+            if (completedTask == task)
             {
                 delayCancellation.Cancel();
+                await completedTask.ConfigureAwait(false);
             }
         }
     }

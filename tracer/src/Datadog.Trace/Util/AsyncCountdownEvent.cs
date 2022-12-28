@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Util;
 
-// Stripped down version of: https://github.com/StephenCleary/AsyncEx/blob/master/src/Nito.AsyncEx.Coordination/AsyncCountdownEvent.cs
+// Based on: https://github.com/StephenCleary/AsyncEx/blob/master/src/Nito.AsyncEx.Coordination/AsyncCountdownEvent.cs
 
 internal class AsyncCountdownEvent
 {
