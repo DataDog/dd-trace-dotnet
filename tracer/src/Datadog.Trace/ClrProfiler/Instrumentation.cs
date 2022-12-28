@@ -77,6 +77,8 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            TracerDebugger.WaitForDebugger(ConfigurationKeys.DebuggerEnabled);
+
             Log.Debug("Initialization started.");
 
             try
