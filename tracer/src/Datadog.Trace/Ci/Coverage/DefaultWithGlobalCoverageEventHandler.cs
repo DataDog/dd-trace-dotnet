@@ -24,128 +24,138 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
     protected override void OnSessionStart(CoverageContextContainer context)
     {
-        _coverages.Add(context);
-        base.OnSessionStart(context);
+        if (context is not null)
+        {
+            lock (_coverages)
+            {
+                _coverages.Add(context);
+            }
+
+            base.OnSessionStart(context);
+        }
     }
 
     public void Clear()
     {
-        foreach (var coverage in _coverages)
+        lock (_coverages)
         {
-            coverage.Clear();
-        }
+            foreach (var coverage in _coverages)
+            {
+                coverage?.Clear();
+            }
 
-        _coverages.Clear();
-        GlobalContainer.Clear();
+            _coverages.Clear();
+            GlobalContainer.Clear();
+        }
     }
 
     public GlobalCoverageInfo GetCodeCoveragePercentage()
     {
-        var sw = Stopwatch.StartNew();
-        const int HIDDEN = 0xFEEFEE;
-        var globalCoverage = new GlobalCoverageInfo();
-        var moduleProcessed = new HashSet<Module>();
-        var fromGlobalContainer = GlobalContainer?.CloseContext() ?? Array.Empty<ModuleValue>();
-        var fromTestsContainers = _coverages?.SelectMany(c => c?.CloseContext() ?? Array.Empty<ModuleValue>()) ?? Array.Empty<ModuleValue>();
-        foreach (var moduleValue in fromGlobalContainer.Concat(fromTestsContainers))
+        lock (_coverages)
         {
-            if (moduleValue is null)
+            var sw = Stopwatch.StartNew();
+            const int HIDDEN = 0xFEEFEE;
+            var globalCoverage = new GlobalCoverageInfo();
+            var moduleProcessed = new HashSet<Module>();
+            var fromGlobalContainer = GlobalContainer?.CloseContext() ?? Array.Empty<ModuleValue>();
+            var fromTestsContainers = _coverages.SelectMany(c => c?.CloseContext() ?? Array.Empty<ModuleValue>());
+            foreach (var moduleValue in fromGlobalContainer.Concat(fromTestsContainers))
             {
-                continue;
-            }
-
-            var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValue.Module);
-            if (moduleDef is null)
-            {
-                continue;
-            }
-
-            List<TypeDef>? moduleTypes;
-            lock (TypeDefsFromModuleDefs)
-            {
-                if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out moduleTypes))
-                {
-                    moduleTypes = moduleDef.GetTypes().ToList();
-                    TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
-                }
-            }
-
-            var componentCoverageInfo = new ComponentCoverageInfo(moduleDef.FullName);
-            for (var mIdx = 0; mIdx < moduleValue.Metadata.GetMethodsCount(); mIdx++)
-            {
-                var methodValue = moduleValue.Methods[mIdx];
-                if (methodValue is null && moduleProcessed.Contains(moduleValue.Module))
+                if (moduleValue is null)
                 {
                     continue;
                 }
 
-                moduleValue.Metadata.GetMethodsMetadata(mIdx, out var typeIndex, out var methodIndex);
-                var typeDef = moduleTypes[typeIndex];
-                var methodDef = typeDef.Methods[methodIndex];
-
-                if (methodDef.HasBody && methodDef.Body.HasInstructions)
+                var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValue.Module);
+                if (moduleDef is null)
                 {
-                    var seqPoints = new List<SequencePoint>(methodValue?.SequencePoints?.Length ?? methodDef.Body.Instructions.Count);
-                    foreach (var instruction in methodDef.Body.Instructions)
+                    continue;
+                }
+
+                List<TypeDef>? moduleTypes;
+                lock (TypeDefsFromModuleDefs)
+                {
+                    if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out moduleTypes))
                     {
-                        if (instruction.SequencePoint is null ||
-                            instruction.SequencePoint.StartLine == HIDDEN ||
-                            instruction.SequencePoint.EndLine == HIDDEN)
-                        {
-                            continue;
-                        }
-
-                        seqPoints.Add(instruction.SequencePoint);
-                    }
-
-                    FileCoverageInfo? fileCoverageInfo = null;
-                    var seqPointsCount = methodValue?.SequencePoints?.Length ?? seqPoints.Count;
-                    for (var x = 0; x < seqPointsCount; x++)
-                    {
-                        var seqPoint = seqPoints[x];
-                        fileCoverageInfo ??= new FileCoverageInfo(CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false));
-
-                        var repInSeqPoints = 0;
-                        if (methodValue?.SequencePoints?.Length > x)
-                        {
-                            repInSeqPoints = methodValue.SequencePoints[x];
-                        }
-                        else if (methodValue?.SequencePoints is not null)
-                        {
-                            Log.Warning($"Index doesn't found: {fileCoverageInfo.Path} | {seqPoint.StartLine}:{seqPoint.StartColumn}:{seqPoint.EndLine}:{seqPoint.EndColumn} | {methodDef.FullName} | {x} | {methodValue.SequencePoints.Length}");
-                        }
-
-                        fileCoverageInfo.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
-                    }
-
-                    if (fileCoverageInfo is not null)
-                    {
-                        componentCoverageInfo.Add(fileCoverageInfo);
+                        moduleTypes = moduleDef.GetTypes().ToList();
+                        TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
                     }
                 }
+
+                var componentCoverageInfo = new ComponentCoverageInfo(moduleDef.FullName);
+                for (var mIdx = 0; mIdx < moduleValue.Metadata.GetMethodsCount(); mIdx++)
+                {
+                    var methodValue = moduleValue.Methods[mIdx];
+                    if (methodValue is null && moduleProcessed.Contains(moduleValue.Module))
+                    {
+                        continue;
+                    }
+
+                    moduleValue.Metadata.GetMethodsMetadata(mIdx, out var typeIndex, out var methodIndex);
+                    var typeDef = moduleTypes[typeIndex];
+                    var methodDef = typeDef.Methods[methodIndex];
+
+                    if (methodDef.HasBody && methodDef.Body.HasInstructions)
+                    {
+                        var seqPoints = new List<SequencePoint>(methodValue?.SequencePoints?.Length ?? methodDef.Body.Instructions.Count);
+                        foreach (var instruction in methodDef.Body.Instructions)
+                        {
+                            if (instruction.SequencePoint is null ||
+                                instruction.SequencePoint.StartLine == HIDDEN ||
+                                instruction.SequencePoint.EndLine == HIDDEN)
+                            {
+                                continue;
+                            }
+
+                            seqPoints.Add(instruction.SequencePoint);
+                        }
+
+                        FileCoverageInfo? fileCoverageInfo = null;
+                        var seqPointsCount = methodValue?.SequencePoints?.Length ?? seqPoints.Count;
+                        for (var x = 0; x < seqPointsCount; x++)
+                        {
+                            var seqPoint = seqPoints[x];
+                            fileCoverageInfo ??= new FileCoverageInfo(CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false));
+
+                            var repInSeqPoints = 0;
+                            if (methodValue?.SequencePoints?.Length > x)
+                            {
+                                repInSeqPoints = methodValue.SequencePoints[x];
+                            }
+                            else if (methodValue?.SequencePoints is not null)
+                            {
+                                Log.Warning($"Index doesn't found: {fileCoverageInfo.Path} | {seqPoint.StartLine}:{seqPoint.StartColumn}:{seqPoint.EndLine}:{seqPoint.EndColumn} | {methodDef.FullName} | {x} | {methodValue.SequencePoints.Length}");
+                            }
+
+                            fileCoverageInfo.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
+                        }
+
+                        if (fileCoverageInfo is not null)
+                        {
+                            componentCoverageInfo.Add(fileCoverageInfo);
+                        }
+                    }
+                }
+
+                moduleProcessed.Add(moduleValue.Module);
+                globalCoverage.Add(componentCoverageInfo);
             }
 
-            moduleProcessed.Add(moduleValue.Module);
-            globalCoverage.Add(componentCoverageInfo);
-        }
-
-        if (Log.IsEnabled(LogEventLevel.Debug))
-        {
-            Log.Debug("Global Coverage payload: {payload}", JsonConvert.SerializeObject(globalCoverage));
-        }
-
-        // Clean coverages
-        if (_coverages is { } coverages)
-        {
-            foreach (var coverage in coverages)
+            if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                coverage.Clear();
+                Log.Debug("Global Coverage payload: {payload}", JsonConvert.SerializeObject(globalCoverage));
             }
+
+            // Clean coverages
+            foreach (var coverage in _coverages)
+            {
+                coverage?.Clear();
+            }
+
+            GlobalContainer?.Clear();
+
+            Log.Information($"Total time to calculate global coverage: {sw.Elapsed.TotalMilliseconds}ms");
+            return globalCoverage;
         }
-
-        GlobalContainer?.Clear();
-
-        Log.Information($"Total time to calculate global coverage: {sw.Elapsed.TotalMilliseconds}ms");
-        return globalCoverage;
     }
 }
