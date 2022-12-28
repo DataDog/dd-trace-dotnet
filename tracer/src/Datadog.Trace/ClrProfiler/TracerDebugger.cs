@@ -41,11 +41,6 @@ internal static class TracerDebugger
         var currentProcess = Process.GetCurrentProcess();
         Console.WriteLine("Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
         Log.Information<int, string>("Process Id: {id}, Name: {name}", currentProcess.Id, currentProcess.ProcessName);
-        if (!System.Diagnostics.Debugger.IsAttached)
-        {
-            System.Diagnostics.Debugger.Launch();
-        }
-
         while (!System.Diagnostics.Debugger.IsAttached)
         {
             Task.Delay(1000).GetAwaiter().GetResult();
