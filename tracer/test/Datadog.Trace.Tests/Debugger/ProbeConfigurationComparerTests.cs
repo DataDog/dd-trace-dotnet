@@ -127,7 +127,7 @@ public class ProbeConfigurationComparerTests
     public void CurrentSnaphotsEmpty_IncomingSnapshotsWithDefault_ProbeRelatedChanged()
     {
         var current = new ProbeConfiguration {  };
-        var incoming = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() } };
+        var incoming = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
@@ -137,8 +137,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSnaphotsNotEmptyWithDefault_IncomingSnapshotsNotEmptyWithDefault_ProbeRelatedNotChanged()
     {
-        var current = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() } };
-        var incoming = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() } };
+        var current = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() } };
+        var incoming = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -148,8 +148,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSnaphotsValue_IncomingSnapshotsBaseValue_ProbeRelatedChanged()
     {
-        var current = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() } };
-        var incoming = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() { Version = 5 } } };
+        var current = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() } };
+        var incoming = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() { Version = 5 } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
@@ -159,8 +159,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSnaphotsValue_IncomingSnapshotsTypeValue_ProbeRelatedChanged()
     {
-        var current = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() } };
-        var incoming = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() { Capture = new Capture() } } };
+        var current = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() } };
+        var incoming = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() { Capture = new Capture() } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
@@ -170,8 +170,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSnaphotsWhereValue_IncomingSnapshotsWhereSameValue_ProbeRelatedChanged()
     {
-        var current = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "c:/temp/temp.log" } } } };
-        var incoming = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "c:/temp/temp.log" } } } };
+        var current = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "c:/temp/temp.log" } } } };
+        var incoming = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "c:/temp/temp.log" } } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -181,8 +181,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSnaphotsWhereValue_IncomingSnapshotsWhereAnotherValue_ProbeRelatedChanged()
     {
-        var current = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "d:/temp/temp.log" } } } };
-        var incoming = new ProbeConfiguration { SnapshotProbes = new SnapshotProbe[] { new SnapshotProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "c:/temp/temp.log" } } } };
+        var current = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "d:/temp/temp.log" } } } };
+        var incoming = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "c:/temp/temp.log" } } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();

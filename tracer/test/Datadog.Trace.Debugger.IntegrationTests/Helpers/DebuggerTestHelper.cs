@@ -62,7 +62,7 @@ internal static class DebuggerTestHelper
         return probes.Aggregate(0, (accuNumOfSnapshots, next) => accuNumOfSnapshots + next.ExpectedNumberOfSnapshots);
     }
 
-    internal static (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
+    internal static (ProbeAttributeBase ProbeTestData, LogProbe Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
         const BindingFlags allMask =
             BindingFlags.Public |
@@ -94,7 +94,7 @@ internal static class DebuggerTestHelper
         return snapshotLineProbes.Concat(snapshotMethodProbes).ToArray();
     }
 
-    private static SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
+    private static LogProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
     {
         var where = CreateLineProbeWhere(type, line);
         return CreateSnapshotProbe(where, guidGenerator);
@@ -108,18 +108,19 @@ internal static class DebuggerTestHelper
         return new Where() { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
     }
 
-    private static SnapshotProbe CreateSnapshotMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
+    private static LogProbe CreateSnapshotMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
     {
         var probeTestData = method.GetCustomAttribute<MethodProbeTestDataAttribute>();
         var where = CreateMethodProbeWhere(method, probeTestData);
         return CreateSnapshotProbe(where, guidGenerator);
     }
 
-    private static SnapshotProbe CreateSnapshotProbe(Where where, DeterministicGuidGenerator guidGenerator)
+    private static LogProbe CreateSnapshotProbe(Where where, DeterministicGuidGenerator guidGenerator)
     {
-        return new SnapshotProbe
+        return new LogProbe
         {
             Id = guidGenerator.New().ToString(),
+            CaptureSnapshot = true,
             Language = TracerConstants.Language,
             Active = true,
             Where = where,

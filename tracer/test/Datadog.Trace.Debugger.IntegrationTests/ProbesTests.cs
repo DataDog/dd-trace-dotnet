@@ -189,11 +189,12 @@ public class ProbesTests : TestHelper
     }
 #endif
 
-    private static SnapshotProbe CreateProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator)
+    private static LogProbe CreateProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator)
     {
-        return new SnapshotProbe
+        return new LogProbe()
         {
             Id = guidGenerator.New().ToString(),
+            CaptureSnapshot = true,
             Language = TracerConstants.Language,
             Active = true,
             Where = new Where
@@ -252,7 +253,7 @@ public class ProbesTests : TestHelper
                 }
             }
 
-            async Task RunPhase(SnapshotProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
+            async Task RunPhase(LogProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
             {
                 SetProbeConfiguration(agent, snapshotProbes);
 
@@ -310,7 +311,7 @@ public class ProbesTests : TestHelper
         }
     }
 
-    private async Task RunSingleTestWithApprovals(Type testType, bool isMultiPhase, int expectedNumberOfSnapshots, params SnapshotProbe[] probes)
+    private async Task RunSingleTestWithApprovals(Type testType, bool isMultiPhase, int expectedNumberOfSnapshots, params LogProbe[] probes)
     {
         using var agent = EnvironmentHelper.GetMockAgent();
 
@@ -337,7 +338,7 @@ public class ProbesTests : TestHelper
             await ApproveStatuses(statuses, testType, isMultiPhase: true, phaseNumber: 1);
             agent.ClearProbeStatuses();
 
-            SetProbeConfiguration(agent, Array.Empty<SnapshotProbe>());
+            SetProbeConfiguration(agent, Array.Empty<LogProbe>());
 
             await logEntryWatcher.WaitForLogEntry(RemovedProbesInstrumentedLogEntry);
             Assert.True(await agent.WaitForNoSnapshots(6000), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
@@ -497,7 +498,7 @@ public class ProbesTests : TestHelper
                .Replace(@"\n", @"\r\n");
     }
 
-    private (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)
+    private (ProbeAttributeBase ProbeTestData, LogProbe Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
         var probes = DebuggerTestHelper.GetAllProbes(testType, EnvironmentHelper.GetTargetFramework(), unlisted, guidGenerator);
         if (!probes.Any())
@@ -516,13 +517,13 @@ public class ProbesTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");
-        SetProbeConfiguration(agent, Array.Empty<SnapshotProbe>());
+        SetProbeConfiguration(agent, Array.Empty<LogProbe>());
     }
 
-    private void SetProbeConfiguration(MockTracerAgent agent, SnapshotProbe[] snapshotProbes)
+    private void SetProbeConfiguration(MockTracerAgent agent, LogProbe[] snapshotProbes)
     {
         var configurations = snapshotProbes
-            .Select(snapshotProbe => (snapshotProbe, $"{DefinitionPaths.SnapshotProbe}{snapshotProbe.Id}"))
+            .Select(snapshotProbe => (snapshotProbe, $"{DefinitionPaths.LogProbe}{snapshotProbe.Id}"))
             .Select(dummy => ((object Config, string Id))dummy);
 
         agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);

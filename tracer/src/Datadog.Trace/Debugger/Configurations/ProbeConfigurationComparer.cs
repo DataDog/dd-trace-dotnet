@@ -14,10 +14,16 @@ namespace Datadog.Trace.Debugger.Configurations
     {
         public ProbeConfigurationComparer(ProbeConfiguration currentConfiguration, ProbeConfiguration incomingConfiguration)
         {
-            var addedSnapshots = incomingConfiguration.SnapshotProbes.Where(ip => !currentConfiguration.SnapshotProbes.Contains(ip));
+            var addedLogs = incomingConfiguration.LogProbes.Where(ip => !currentConfiguration.LogProbes.Contains(ip));
             var addedMetrics = incomingConfiguration.MetricProbes.Where(ip => !currentConfiguration.MetricProbes.Contains(ip));
+            var addedSpans = incomingConfiguration.SpanProbes.Where(ip => !currentConfiguration.SpanProbes.Contains(ip));
 
-            AddedDefinitions = addedSnapshots.Cast<ProbeDefinition>().Concat(addedMetrics).ToList();
+            AddedDefinitions =
+                addedLogs
+                   .Cast<ProbeDefinition>()
+                   .Concat(addedMetrics)
+                   .Concat(addedSpans)
+                   .ToList();
 
             var isFilteredListChanged =
                 (!currentConfiguration.ServiceConfiguration?.AllowList?.Equals(incomingConfiguration.ServiceConfiguration?.AllowList) ?? incomingConfiguration.ServiceConfiguration?.AllowList != null)

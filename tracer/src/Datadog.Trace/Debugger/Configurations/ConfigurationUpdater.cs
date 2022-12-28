@@ -13,7 +13,7 @@ namespace Datadog.Trace.Debugger.Configurations
 {
     internal class ConfigurationUpdater
     {
-        private const int MaxAllowedSnapshotProbes = 100;
+        private const int MaxAllowedLogProbes = 100;
         private const int MaxAllowedMetricProbes = 100;
         private readonly string? _env;
         private readonly string? _version;
@@ -79,7 +79,7 @@ namespace Datadog.Trace.Debugger.Configurations
             return new ProbeConfiguration()
             {
                 ServiceConfiguration = configuration.ServiceConfiguration,
-                SnapshotProbes = Filter(configuration.SnapshotProbes, MaxAllowedSnapshotProbes),
+                LogProbes = Filter(configuration.LogProbes, MaxAllowedLogProbes),
                 MetricProbes = Filter(configuration.MetricProbes, MaxAllowedMetricProbes)
             };
 

@@ -206,7 +206,7 @@ namespace Datadog.Trace.Debugger
 
                 foreach (var probe in addedProbes)
                 {
-                    if (probe is SnapshotProbe snapshotProbe && snapshotProbe.Sampling.HasValue)
+                    if (probe is LogProbe { CaptureSnapshot: true, Sampling: { } } snapshotProbe)
                     {
                         ProbeRateLimiter.Instance.SetRate(probe.Id, (int)snapshotProbe.Sampling.Value.SnapshotsPerSecond);
                     }
@@ -296,8 +296,9 @@ namespace Datadog.Trace.Debugger
 
         private void AcceptAddedConfiguration(ProductConfigChangedEventArgs args)
         {
-            var snapshots = new List<SnapshotProbe>();
+            var logs = new List<LogProbe>();
             var metrics = new List<MetricProbe>();
+            var spans = new List<SpanProbe>();
             ServiceConfiguration serviceConfig = null;
 
             foreach (var configContent in args.ConfigContents)
@@ -306,20 +307,17 @@ namespace Datadog.Trace.Debugger
                 {
                     switch (configContent.Path.Id)
                     {
-                        case { } id when id.StartsWith(DefinitionPaths.SnapshotProbe):
-                            snapshots.Add(configContent.Deserialize<SnapshotProbe>().TypedFile);
+                        case { } id when id.StartsWith(DefinitionPaths.LogProbe):
+                            logs.Add(configContent.Deserialize<LogProbe>().TypedFile);
                             break;
-                        case { } id when id.StartsWith(DefinitionPaths.MetricProbeProbe):
+                        case { } id when id.StartsWith(DefinitionPaths.MetricProbe):
                             metrics.Add(configContent.Deserialize<MetricProbe>().TypedFile);
+                            break;
+                        case { } id when id.StartsWith(DefinitionPaths.SpanProbe):
+                            spans.Add(configContent.Deserialize<SpanProbe>().TypedFile);
                             break;
                         case { } id when id.StartsWith(DefinitionPaths.ServiceConfiguration):
                             serviceConfig = configContent.Deserialize<ServiceConfiguration>().TypedFile;
-                            break;
-                        case { } id when id.StartsWith(DefinitionPaths.LogProbe):
-                            // not supported yet
-                            break;
-                        case { } id when id.StartsWith(DefinitionPaths.SpanProbe):
-                            // not supported yet
                             break;
                         default:
                             break;
@@ -335,7 +333,8 @@ namespace Datadog.Trace.Debugger
             {
                 ServiceConfiguration = serviceConfig,
                 MetricProbes = metrics.ToArray(),
-                SnapshotProbes = snapshots.ToArray()
+                LogProbes = logs.ToArray(),
+                SpanProbes = spans.ToArray()
             };
 
             _configurationUpdater.AcceptAdded(probeConfiguration);
