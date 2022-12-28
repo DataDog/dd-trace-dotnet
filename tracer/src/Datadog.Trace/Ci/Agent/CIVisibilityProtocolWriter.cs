@@ -278,7 +278,7 @@ namespace Datadog.Trace.Ci.Agent
                 {
                     if (watermarkCountDown is null)
                     {
-                        // In case there's no flush watermark, we wait before start procesing new events.
+                        // In case there's no flush watermark, we wait before start processing new events.
                         await flushDelayEvent.WaitAsync(batchInterval).ConfigureAwait(false);
                         flushDelayEvent.Reset();
                     }
