@@ -56,7 +56,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 {
                     foreach (var item in filteredConfigs)
                     {
-                        Log.Error($"Failed to apply Remote Configuration record {item.Name} for product {Name}", ex);
+                        Log.Debug($"Failed to apply Remote Configuration record {item.Name} for product {Name}", ex);
                         e.Error(item.Name, ex.Message);
                     }
                 }
