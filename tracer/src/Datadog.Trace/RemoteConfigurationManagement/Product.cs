@@ -42,6 +42,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
             }
 
+            Log.Debug($"Received {changedConfigs.Count} Remote Configuration records for product {Name}, " +
+                      $"of which {filteredConfigs?.Count ?? 0} matched the predicate.");
+
             if (filteredConfigs is not null)
             {
                 var e = new ProductConfigChangedEventArgs(filteredConfigs);
@@ -53,6 +56,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 {
                     foreach (var item in filteredConfigs)
                     {
+                        Log.Error($"Failed to apply probe configuration {item.Name} for product {Name}", ex);
                         e.Error(item.Name, ex.Message);
                     }
                 }

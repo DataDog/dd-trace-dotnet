@@ -6,10 +6,8 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -19,6 +17,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
@@ -229,6 +228,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private void ProcessResponse(GetRcmResponse response, IDictionary<string, Product> products)
         {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Received Remote Configuration response with the following paths: " +
+                          string.Join(",", response.TargetFiles.Select(t => t.Path)));
+            }
+
             var actualConfigPath =
                 response
                    .ClientConfigs

@@ -100,11 +100,11 @@ namespace Datadog.Trace.Debugger
             try
             {
                 Log.Information("Live Debugger initialization started");
-
+                Product.ConfigChanged += (sender, args) => AcceptConfiguration(args);
                 _remoteConfigurationManager.RegisterProduct(Product);
 
                 DebuggerSnapshotSerializer.SetConfig(_settings);
-                Product.ConfigChanged += (sender, args) => AcceptConfiguration(args);
+
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
 
                 await StartAsync().ConfigureAwait(false);
@@ -112,6 +112,10 @@ namespace Datadog.Trace.Debugger
             catch (Exception e)
             {
                 Log.Error(e, "Initializing Live Debugger failed.");
+            }
+            finally
+            {
+                Log.Information("Live Debugger initialization finished");
             }
 
             bool CanInitialize()
