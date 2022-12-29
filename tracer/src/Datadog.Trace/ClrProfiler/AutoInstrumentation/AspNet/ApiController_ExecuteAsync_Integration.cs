@@ -98,8 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             // some fields aren't set till after execution, so populate anything missing
             AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, (AspNetTags)scope.Span.Tags, Enumerable.Empty<KeyValuePair<string, string>>());
 
-            var isBlocked = exception is BlockException;
-            if (exception != null && !isBlocked)
+            if (exception != null)
             {
                 scope.Span.SetException(exception);
 
@@ -127,6 +126,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             else
             {
                 HttpContextHelper.AddHeaderTagsFromHttpResponse(HttpContext.Current, scope);
+                // when blocking the status code is never flushed into the HttpResponseMessage type in WebApi
+                var isBlocked = httpContext.Items["block"] is true;
                 var statusCode = isBlocked ? 403 : responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode;
                 scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
                 scope.Dispose();

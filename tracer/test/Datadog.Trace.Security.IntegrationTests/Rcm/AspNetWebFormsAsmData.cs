@@ -166,6 +166,6 @@ public abstract class AspNetWebFormsAsmData : RcmBase, IClassFixture<IisFixture>
         }
     }
 
-    protected override string GetTestName() => Prefix + _testName;
+    protected override string GetTestName() => _testName;
 }
 #endif

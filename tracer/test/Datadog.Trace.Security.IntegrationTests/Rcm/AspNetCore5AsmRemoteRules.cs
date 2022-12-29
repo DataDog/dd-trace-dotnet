@@ -50,7 +50,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await VerifySpans(spans.ToImmutableList(), settings);
         }
 
-        protected override string GetTestName() => nameof(AspNetCore5AsmRemoteRules);
+        protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmRemoteRules);
 
         private string GetRules(string version)
         {
