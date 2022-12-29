@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Security.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetWebApiIntegratedWithSecurity : AspNetWebApiAsmData
+    public class AspNetWebApiIntegratedWithSecurity : AspNetWebApi
     {
         public AspNetWebApiIntegratedWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: false, enableSecurity: true)
@@ -26,7 +26,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     }
 
     [Collection("IisTests")]
-    public class AspNetWebApiIntegratedWithoutSecurity : AspNetWebApiAsmData
+    public class AspNetWebApiIntegratedWithoutSecurity : AspNetWebApi
     {
         public AspNetWebApiIntegratedWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: false, enableSecurity: false)
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     }
 
     [Collection("IisTests")]
-    public class AspNetWebApiClassicWithSecurity : AspNetWebApiAsmData
+    public class AspNetWebApiClassicWithSecurity : AspNetWebApi
     {
         public AspNetWebApiClassicWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: true, enableSecurity: true)
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     }
 
     [Collection("IisTests")]
-    public class AspNetWebApiClassicWithoutSecurity : AspNetWebApiAsmData
+    public class AspNetWebApiClassicWithoutSecurity : AspNetWebApi
     {
         public AspNetWebApiClassicWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: true, enableSecurity: false)
@@ -52,12 +52,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
-    public abstract class AspNetWebApiAsmData : AspNetBase, IClassFixture<IisFixture>
+    public abstract class AspNetWebApi : AspNetBase, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        public AspNetWebApiAsmData(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
+        public AspNetWebApi(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
             : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
-            _testName = "Security." + nameof(AspNetWebApiAsmData)
+            _testName = "Security." + nameof(AspNetWebApi)
                      + (classicMode ? ".Classic" : ".Integrated")
                      + ".enableSecurity=" + enableSecurity; // assume that arm is the same
             SetHttpPort(iisFixture.HttpPort);

@@ -626,7 +626,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var scope = tracer.InternalActiveScope;
 
-            if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName) && arg.TryDuckCast<AfterActionStruct>(out var typedArg))
+            if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
                 try
                 {
@@ -766,13 +766,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public RouteData RouteData;
-        }
-
-        [DuckCopy]
-        internal struct AfterActionStruct
-        {
-            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
-            public HttpContext HttpContext;
         }
 
         [DuckCopy]
