@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 HttpContextHelper.AddHeaderTagsFromHttpResponse(HttpContext.Current, scope);
                 // when blocking the status code is never flushed into the HttpResponseMessage type in WebApi
-                var isBlocked = httpContext.Items["block"] is true;
+                var isBlocked = httpContext?.Items["block"] is true;
                 var statusCode = isBlocked ? 403 : responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode;
                 scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
                 scope.Dispose();
