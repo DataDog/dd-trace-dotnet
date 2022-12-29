@@ -96,21 +96,5 @@ internal static partial class SecurityCoordinatorHelpers
             securityCoordinator.CheckAndBlock(result);
         }
     }
-
-    internal static void CheckUser(this Security security, HttpContext context, Span span)
-    {
-        if (security.Settings.Enabled)
-        {
-            var transport = new SecurityCoordinator.HttpTransport(context);
-            var userId = span.Context?.TraceContext?.Tags?.GetTag(Tags.User.Id);
-            if (userId != null && !string.IsNullOrEmpty(userId))
-            {
-                var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
-                var args = new Dictionary<string, object> { { AddressesConstants.UserId, userId } };
-                var result = securityCoordinator.RunWaf(args);
-                securityCoordinator.CheckAndBlock(result);
-            }
-        }
-    }
 }
 #endif
