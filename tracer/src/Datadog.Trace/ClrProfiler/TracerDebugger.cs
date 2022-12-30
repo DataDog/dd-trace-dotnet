@@ -63,6 +63,11 @@ internal static class TracerDebugger
         if (!string.IsNullOrEmpty(nativeDebugEnabled) && nativeDebugEnabled.Equals("1", StringComparison.Ordinal)
                                                       && FrameworkDescription.Instance.IsWindows())
         {
+            Console.WriteLine("Waiting for native debugger attach...");
+            Log.Information("Waiting for native debugger attach...");
+            var currentProcess = Process.GetCurrentProcess();
+            Console.WriteLine("Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
+            Log.Information<int, string>("Process Id: {id}, Name: {name}", currentProcess.Id, currentProcess.ProcessName);
             while (!IsDebuggerPresent())
             {
                 Task.Delay(1000).Wait();
