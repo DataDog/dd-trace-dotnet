@@ -28,13 +28,13 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.103.4 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.103.4" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.103.7 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.103.7" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.100.42 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.100.42" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.100.45 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.100.45" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -43,8 +43,8 @@
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.4.0 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.4.1 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.4.1" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
@@ -113,8 +113,8 @@
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/2.2.10 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.0.2 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="3.0.2" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.TestFramework -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.TestFramework -->
@@ -128,13 +128,13 @@
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.2.3 -->
-    <PackageReference Include="MySqlConnector" Version="2.2.3" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.2.4 -->
+    <PackageReference Include="MySqlConnector" Version="2.2.4" />
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/5.1.0 -->
-    <PackageReference Include="NLog" Version="5.1.0" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/5.1.1 -->
+    <PackageReference Include="NLog" Version="5.1.1" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -146,10 +146,10 @@
     <!-- Latest package https://www.nuget.org/packages/NUnit/3.13.3 -->
     <PackageReference Include="NUnit" Version="3.13.3" />
 
-    <!-- Integration: NUnit3.TestAdapter -->
-    <!-- Assembly: NUnit3.TestAdapter -->
-    <!-- Latest package https://www.nuget.org/packages/NUnit3TestAdapter/4.3.1 -->
-    <PackageReference Include="NUnit3TestAdapter" Version="4.3.1" />
+    <!-- Integration: OpenTelemetry.Api -->
+    <!-- Assembly: OpenTelemetry.Api -->
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.3.2 -->
+    <PackageReference Include="OpenTelemetry.Api" Version="1.3.2" />
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
