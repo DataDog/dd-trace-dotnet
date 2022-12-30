@@ -50,9 +50,9 @@ namespace Datadog.Trace.Ci.Agent
      *         │                         │ └──────────────────────────────┬─┘   │
      *         │                         │                                │     │
      *         │                         └────────────────────────────────┘     │
-     *         │                                   1 .. N Consumers             │
+     *         │                                   2 .. N Consumers             │
      *         │                                                                │
-     *         │                                      Max N = 4                 │
+     *         │                                      Max N = 6                 │
      *         │                                                                │
      *         └────────────────────────────────────────────────────────────────┘
      */
@@ -78,9 +78,9 @@ namespace Datadog.Trace.Ci.Agent
             _eventQueue = new BlockingCollection<IEvent>(maxItemsInQueue);
             _batchInterval = batchInterval;
 
-            // Concurrency Level is a simple algorithm where we select a number between 1 and 4 depending on the number of Logical Processor Count
+            // Concurrency Level is a simple algorithm where we select a number between 2 and 6 depending on the number of Logical Processor Count
             // To scale the number of senders with a hard limit.
-            var concurrencyLevel = concurrency ?? Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 4);
+            var concurrencyLevel = concurrency ?? Math.Min(Math.Max(Environment.ProcessorCount / 2, 2), 6);
             _buffersArray = new Buffers[concurrencyLevel];
             for (var i = 0; i < _buffersArray.Length; i++)
             {
