@@ -74,7 +74,7 @@ internal static class TracerDebugger
 
         return false;
     }
-    
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void Break()
     {
