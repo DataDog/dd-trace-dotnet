@@ -59,8 +59,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public AspNetCore5AsmDataBlockingRequestIp(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
             : base(fixture, outputHelper, enableSecurity, testName: testName)
         {
-            this.EnableDebugMode();
-            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
 
         [SkippableTheory]
