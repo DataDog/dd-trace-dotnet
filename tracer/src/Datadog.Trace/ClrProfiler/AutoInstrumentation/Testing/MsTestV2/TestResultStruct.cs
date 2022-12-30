@@ -6,6 +6,8 @@
 using System;
 using Datadog.Trace.DuckTyping;
 
+#pragma warning disable CS0649
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 /// <summary>

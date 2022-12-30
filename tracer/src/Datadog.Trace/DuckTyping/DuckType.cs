@@ -620,15 +620,39 @@ namespace Datadog.Trace.DuckTyping
                 {
                     case DuckKind.Property:
                         PropertyInfo? targetProperty = null;
-                        try
+                        if (duckAttribute.Name.IndexOf(',') == -1)
                         {
-                            targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
+                            try
+                            {
+                                targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
+                            }
+                            catch
+                            {
+                                // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
+                                // In this case we make sure we select the indexer we want
+                                targetProperty = targetType.GetProperty(duckAttribute.Name, proxyProperty.PropertyType, proxyProperty.GetIndexParameters().Select(i => i.ParameterType).ToArray());
+                            }
                         }
-                        catch
+                        else
                         {
-                            // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
-                            // In this case we make sure we select the indexer we want
-                            targetProperty = targetType.GetProperty(duckAttribute.Name, proxyProperty.PropertyType, proxyProperty.GetIndexParameters().Select(i => i.ParameterType).ToArray());
+                            foreach (var name in duckAttribute.Name.Split(','))
+                            {
+                                try
+                                {
+                                    targetProperty = targetType.GetProperty(name, duckAttribute.BindingFlags);
+                                }
+                                catch
+                                {
+                                    // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
+                                    // In this case we make sure we select the indexer we want
+                                    targetProperty = targetType.GetProperty(name, proxyProperty.PropertyType, proxyProperty.GetIndexParameters().Select(i => i.ParameterType).ToArray());
+                                }
+
+                                if (targetProperty is not null)
+                                {
+                                    break;
+                                }
+                            }
                         }
 
                         if (targetProperty is null)
@@ -711,7 +735,23 @@ namespace Datadog.Trace.DuckTyping
                         break;
 
                     case DuckKind.Field:
-                        FieldInfo? targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
+                        FieldInfo? targetField = null;
+                        if (duckAttribute.Name.IndexOf(',') == -1)
+                        {
+                            targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
+                        }
+                        else
+                        {
+                            foreach (var name in duckAttribute.Name.Split(','))
+                            {
+                                targetField = targetType.GetField(name, duckAttribute.BindingFlags);
+                                if (targetField is not null)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+
                         if (targetField is null)
                         {
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
@@ -904,7 +944,23 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
-                        PropertyInfo? targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
+                        PropertyInfo? targetProperty = null;
+                        if (duckAttribute.Name.IndexOf(',') == -1)
+                        {
+                            targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
+                        }
+                        else
+                        {
+                            foreach (var name in duckAttribute.Name.Split(','))
+                            {
+                                targetProperty = targetType.GetProperty(name, duckAttribute.BindingFlags);
+                                if (targetProperty is not null)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+
                         if (targetProperty is null)
                         {
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
@@ -936,7 +992,23 @@ namespace Datadog.Trace.DuckTyping
                         break;
 
                     case DuckKind.Field:
-                        FieldInfo? targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
+                        FieldInfo? targetField = null;
+                        if (duckAttribute.Name.IndexOf(',') == -1)
+                        {
+                            targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
+                        }
+                        else
+                        {
+                            foreach (var name in duckAttribute.Name.Split(','))
+                            {
+                                targetField = targetType.GetField(name, duckAttribute.BindingFlags);
+                                if (targetField is not null)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+
                         if (targetField is null)
                         {
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
