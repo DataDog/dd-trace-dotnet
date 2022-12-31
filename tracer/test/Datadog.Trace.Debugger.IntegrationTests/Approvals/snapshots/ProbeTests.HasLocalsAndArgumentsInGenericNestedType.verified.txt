@@ -472,6 +472,6 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

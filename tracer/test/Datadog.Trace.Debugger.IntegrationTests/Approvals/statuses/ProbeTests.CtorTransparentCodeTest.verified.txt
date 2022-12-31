@@ -13,7 +13,7 @@
       }
     },
     "message": "Error installing probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "ddsource": "dd_debugger",
@@ -25,6 +25,6 @@
       }
     },
     "message": "Installed probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

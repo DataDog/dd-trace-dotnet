@@ -39,6 +39,7 @@ public class ProbesTests : TestHelper
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
+        EnableDebugMode();
     }
 
     public static IEnumerable<object[]> ProbeTests()
@@ -512,7 +513,7 @@ public class ProbesTests : TestHelper
         var probeConfiguration = new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = snapshotProbes };
         var configurations = new List<(object Config, string Id)>
         {
-            new(probeConfiguration, EnvironmentHelper.SampleName.ToUUID())
+            new(probeConfiguration, EnvironmentHelper.SampleName.ToLowerInvariant().ToUUID())
         };
 
         agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);
