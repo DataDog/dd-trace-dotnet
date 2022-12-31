@@ -230,8 +230,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("Received Remote Configuration response with the following paths: " +
-                          string.Join(",", response.TargetFiles.Select(t => t.Path)));
+                Log.Debug("Received Remote Configuration response " +
+                          (response.TargetFiles.Count > 0 ?
+                              "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path)) :
+                              "that is empty."));
             }
 
             var actualConfigPath =

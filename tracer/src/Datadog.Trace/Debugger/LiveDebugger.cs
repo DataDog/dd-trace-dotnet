@@ -113,10 +113,6 @@ namespace Datadog.Trace.Debugger
             {
                 Log.Error(e, "Initializing Live Debugger failed.");
             }
-            finally
-            {
-                Log.Information("Live Debugger initialization finished");
-            }
 
             bool CanInitialize()
             {
