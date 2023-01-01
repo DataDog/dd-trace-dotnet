@@ -87,6 +87,12 @@ partial class Build : NukeBuild
     [Parameter("Should we build and run tests against _all_ target frameworks, or just the reduced set. Defaults to true locally, false in PRs, and true in CI on main branch only", List = false)]
     readonly bool IncludeAllTestFrameworks = true;
 
+    [Parameter("Specifies the type of debugging information that should be included in the compiled assembly. Used for debugger integrations tests", List = false)]
+    readonly string DebugType;
+
+    [Parameter("Optimize generated code. Used for debugger integrations tests", List = false)]
+    readonly bool? Optimize;
+
     Target Info => _ => _
         .Description("Describes the current configuration")
         .Before(Clean, Restore, BuildTracerHome)

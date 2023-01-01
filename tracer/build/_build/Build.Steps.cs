@@ -130,9 +130,6 @@ partial class Build
         ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, }
         : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
 
-    TargetFramework[] TestingFrameworksDebugger =>
-        TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, TargetFramework.NETCOREAPP3_0, TargetFramework.NET5_0 });
-
     bool HaveIntegrationsChanged =>
         GetGitChangedFiles(baseBranch: "origin/master")
            .Any(s => new []
@@ -142,11 +139,6 @@ partial class Build
                 "tracer/src/Datadog.Trace/Generated/netcoreapp3.1/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
                 "tracer/src/Datadog.Trace/Generated/net6.0/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
             }.Any(s.Contains));
-
-    Project DebuggerIntegrationTests => Solution.GetProject(Projects.DebuggerIntegrationTests);
-    Project DebuggerSamples => Solution.GetProject(Projects.DebuggerSamples);
-    Project DebuggerSamplesTestRuns => Solution.GetProject(Projects.DebuggerSamplesTestRuns);
-
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
     {
@@ -1046,50 +1038,6 @@ partial class Build
             DotnetBuild(projects, framework: Framework);
         });
 
-    Target CompileDebuggerIntegrationTests => _ => _
-        .Unlisted()
-        .After(CompileManagedSrc)
-        .DependsOn(CompileDebuggerIntegrationTestsDependencies)
-        .DependsOn(CompileDebuggerIntegrationTestsSamples)
-        .Requires(() => Framework)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Executes(() =>
-        {
-            DotnetBuild(Solution.GetProject(Projects.DebuggerIntegrationTests), framework: Framework);
-        });
-
-    Target CompileDebuggerIntegrationTestsDependencies => _ => _
-        .Unlisted()
-        .Requires(() => Framework)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Executes(() =>
-        {
-            // we need to compile DebuggerSamplesTestRuns in AnyCPU and TargetPlatform
-            DotnetBuild(Solution.GetProject(Projects.DebuggerSamplesTestRuns), framework: Framework, noDependencies: false);
-            DotnetBuild(Solution.GetProject(Projects.DebuggerSamplesTestRuns), platform: TargetPlatform, framework: Framework, noDependencies: false);
-        });
-
-    Target CompileDebuggerIntegrationTestsSamples => _ => _
-        .Unlisted()
-        .DependsOn(CompileDebuggerIntegrationTestsDependencies)
-        .Requires(() => Framework)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Executes(() =>
-        {
-            DotnetBuild(Solution.GetProject(Projects.DebuggerSamples), platform: TargetPlatform, framework: Framework);
-
-            if (!IsWin)
-            {
-                // The sample helper in the test library assumes that the sample has
-                // been published when running on Linux
-                DotNetPublish(x => x
-                    .SetFramework(Framework)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetNoWarnDotNetCore3()
-                    .SetProject(DebuggerSamples));
-            }
-        });
-
     Target CompileSamplesWindows => _ => _
         .Unlisted()
         .After(CompileDependencyLibs)
@@ -1217,53 +1165,6 @@ partial class Build
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
                         .SetProjectFile(project)));
-            }
-            finally
-            {
-                CopyDumpsToBuildData();
-            }
-        });
-
-    Target RunDebuggerIntegrationTests => _ => _
-        .Unlisted()
-        .After(BuildTracerHome)
-        .After(BuildDebuggerIntegrationTests)
-        .Requires(() => Framework)
-        .Triggers(PrintSnapshotsDiff)
-        .Executes(() =>
-        {
-            EnsureExistingDirectory(TestLogsDirectory);
-            EnsureResultsDirectory(DebuggerIntegrationTests);
-
-            try
-            {
-                DotNetTest(config => config
-                    .SetDotnetPath(TargetPlatform)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(TargetPlatform)
-                    .SetFramework(Framework)
-                    .EnableCrashDumps()
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetFilter(GetTestFilter())
-                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                    .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
-                    .EnableTrxLogOutput(GetResultsDirectory(DebuggerIntegrationTests))
-                    .WithDatadogLogger()
-                    .SetProjectFile(DebuggerIntegrationTests));
-
-                string GetTestFilter()
-                {
-                    var filter = (IsWin, IsArm64) switch
-                    {
-                        (true, _) => "(RunOnWindows=True)",
-                        (_, true) => "(Category!=ArmUnsupported)",
-                        _ => "(Category!=LinuxUnsupported)",
-                    };
-
-                    return Filter is null ? filter : $"{Filter}&{filter}";
-                }
             }
             finally
             {
@@ -2227,10 +2128,7 @@ partial class Build
         MSBuildTargetPlatform platform = null,
         TargetFramework framework = null,
         bool noRestore = true,
-        bool noDependencies = true,
-        bool setNuget = false,
-        bool setPackages = false
-        )
+        bool noDependencies = true)
     {
         DotnetBuild(new [] { project.Path }, platform, framework, noRestore, noDependencies);
     }
@@ -2240,8 +2138,7 @@ partial class Build
         MSBuildTargetPlatform platform = null,
         TargetFramework framework = null,
         bool noRestore = true,
-        bool noDependencies = true
-        )
+        bool noDependencies = true)
     {
         DotNetBuild(s => s
             .SetConfiguration(BuildConfiguration)
@@ -2249,6 +2146,8 @@ partial class Build
             .When(noRestore, settings => settings.EnableNoRestore())
             .When(noDependencies, settings => settings.EnableNoDependencies())
             .When(framework is not null, settings => settings.SetFramework(framework))
+            .When(DebugType is not null, settings => settings.SetProperty(nameof(DebugType), DebugType))
+            .When(Optimize is not null, settings => settings.SetProperty(nameof(Optimize), Optimize))
             .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
             .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
             .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))

@@ -954,7 +954,7 @@ stages:
     
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1648,7 +1648,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64"
+        command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
         apikey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
@@ -1973,9 +1973,6 @@ stages:
   dependsOn: [package_arm64, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    TestAllPackageVersions: true
-    IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
-    baseImage: debian
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1985,13 +1982,8 @@ stages:
     - job: Test
       timeoutInMinutes: 60 #default value
       strategy:
-        matrix:
-          net5_0:
-            publishTargetFramework: net5.0
-          net6_0:
-            publishTargetFramework: net6.0
-          net7_0:
-            publishTargetFramework: net7.0
+        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_arm64_debugger_matrix']]
+
       workspace:
         clean: all
       pool:
@@ -2010,7 +2002,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64"
+            command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2

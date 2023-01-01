@@ -28,6 +28,7 @@ partial class Build : NukeBuild
                        GenerateIntegrationTestsLinuxMatrices();
                        GenerateExplorationTestMatrices();
                        GenerateSmokeTestsMatrices();
+                       GenerateIntegrationTestsDebuggerArm64Matrices();
                    });
 
             void GenerateConditionVariables()
@@ -39,6 +40,7 @@ partial class Build : NukeBuild
                     "tracer/src/Datadog.Tracer.Native", 
                     "tracer/test/Datadog.Trace.Debugger.IntegrationTests",
                     "tracer/test/test-applications/debugger",
+                    "tracer/build/_build/Build.Steps.Debugger.cs"
                 }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src" }, new string[] { });
 
@@ -75,16 +77,37 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsWindowsMatrices()
             {
-                GenerateIntegrationTestsWindowsMatrix(TestingFrameworks, "integration_tests_windows_matrix");
-                GenerateIntegrationTestsWindowsMatrix(TestingFrameworksDebugger, "integration_tests_windows_debugger_matrix");
+                GenerateIntegrationTestsWindowsMatrix();
+                GenerateIntegrationTestsDebuggerWindowsMatrix();
                 GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET462);
                 GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET462);
                 GenerateIntegrationTestsWindowsAzureFunctionsMatrix();
             }
 
-            void GenerateIntegrationTestsWindowsMatrix(TargetFramework[] targetFrameworks, string matrixName)
+            void GenerateIntegrationTestsWindowsMatrix()
             {
+                var targetFrameworks = TestingFrameworks;
                 var targetPlatforms = new[] { "x86", "x64" };
+                var matrix = new Dictionary<string, object>();
+
+                foreach (var framework in targetFrameworks)
+                {
+                    foreach (var targetPlatform in targetPlatforms)
+                    {
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, });
+                    }
+                }
+
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+            }            
+            
+            void GenerateIntegrationTestsDebuggerWindowsMatrix()
+            {
+                var targetFrameworks = TestingFrameworksDebugger;
+                var targetPlatforms = new[] { "x86", "x64" };
+                var debugTypes = new[] { "portable", "full" };
+                var optimizations = new[] { "true", "false" };
                 var matrix = new Dictionary<string, object>();
 
                 foreach (var framework in targetFrameworks)
@@ -97,13 +120,25 @@ partial class Build : NukeBuild
                             continue;
                         }
 
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform });
+                        foreach (var debugType in debugTypes)
+                        {
+                            foreach (var optimize in optimizations)
+                            {
+                                matrix.Add($"{targetPlatform}_{framework}_{debugType}_{optimize}", 
+                                           new
+                                           {
+                                               framework = framework, 
+                                               targetPlatform = targetPlatform,
+                                               debugType = debugType,
+                                               optimize = optimize,
+                                           });
+                            }
+                        }
                     }
                 }
 
-                Logger.Info(matrixName);
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable(matrixName, JsonConvert.SerializeObject(matrix, Formatting.None));
+                AzurePipelines.Instance.SetVariable("integration_tests_windows_debugger_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }            
             
             void GenerateIntegrationTestsWindowsAzureFunctionsMatrix()
@@ -172,13 +207,15 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrices()
             {
-                GenerateIntegrationTestsLinuxMatrix(TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 }), "integration_tests_linux_matrix");
-                GenerateIntegrationTestsLinuxMatrix(TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 }), "integration_tests_linux_debugger_matrix");
+                GenerateIntegrationTestsLinuxMatrix();
+                GenerateIntegrationTestsDebuggerLinuxMatrix();
             }
 
-            void GenerateIntegrationTestsLinuxMatrix(IEnumerable<TargetFramework> targetFrameworks, string matrixName)
+            void GenerateIntegrationTestsLinuxMatrix()
             {
                 var baseImages = new[] { "centos7", "alpine" };
+                var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
+
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -189,9 +226,36 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Info(matrixName);
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable(matrixName, JsonConvert.SerializeObject(matrix, Formatting.None));
+                AzurePipelines.Instance.SetVariable("integration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+            }
+
+            void GenerateIntegrationTestsDebuggerLinuxMatrix()
+            {
+                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 });
+                var baseImages = new[] { "debian" };
+                var optimizations = new[] { "true", "false" };
+
+                var matrix = new Dictionary<string, object>();
+                foreach (var framework in targetFrameworks)
+                {
+                    foreach (var baseImage in baseImages)
+                    {
+                        foreach (var optimize in optimizations)
+                        {
+                            matrix.Add($"{baseImage}_{framework}_{optimize}", 
+                                       new
+                                       {
+                                           publishTargetFramework = framework, 
+                                           baseImage = baseImage,
+                                           optimize = optimize,
+                                       });
+                        }
+                    }
+                }
+
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_linux_debugger_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateExplorationTestMatrices()
@@ -921,6 +985,34 @@ partial class Build : NukeBuild
                 static string GetInstallerChannel(string publishFramework) =>
                     publishFramework.Replace("netcoreapp", string.Empty)
                                     .Replace("net", string.Empty);
+            }
+
+            void GenerateIntegrationTestsDebuggerArm64Matrices()
+            {
+                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_1,  });
+                var baseImages = new[] { "centos7", "alpine" };
+                var optimizations = new[] { "True", "False" };
+
+                var matrix = new Dictionary<string, object>();
+                foreach (var framework in targetFrameworks)
+                {
+                    foreach (var baseImage in baseImages)
+                    {
+                        foreach (var optimize in optimizations)
+                        {
+                            matrix.Add($"{baseImage}_{framework}_{optimize}",
+                                       new
+                                       {
+                                           publishTargetFramework = framework,
+                                           baseImage = baseImage,
+                                           optimize = optimize,
+                                       });
+                        }
+                    }
+                }
+
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_arm64_debugger_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
         };
 
