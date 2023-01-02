@@ -5,8 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -67,10 +65,19 @@ namespace Samples.Computer01
 
             while (!IsEventSet() && (count <= _objectsToAllocateCount))
             {
-                root.Add(new byte[BufferSize]);
-                GC.Collect();
+                try
+                {
+                    root.Add(new byte[BufferSize]);
+                    GC.Collect();
 
-                count++;
+                    count++;
+                }
+                catch (OutOfMemoryException)
+                {
+                    // deal with Out Of Memory exceptions (important for x86 tests)
+                    root.Clear();
+                    GC.Collect();
+                }
             }
         }
 
