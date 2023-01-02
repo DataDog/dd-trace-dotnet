@@ -86,9 +86,6 @@ message(STATUS "Libdatadog library " ${LIBDATADOG_VERSION})
 find_package(GoogleTest REQUIRED)
 message(STATUS "GoogleTest library")
 
-# put this a the top level, so all the targets (tracer, profiler...) will have it too
-add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-
 add_subdirectory(tracer)
 
 # profiler cannot be built on MacOS (yet)

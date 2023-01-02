@@ -175,6 +175,7 @@ add_library("Datadog.Tracer.Native.static" STATIC
 )
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
+target_compile_definitions("Datadog.Tracer.Native.static" PUBLIC "-D_GLIBCXX_USE_CXX11_ABI=0")
 
 # Define linker libraries
 if (ISMACOS)

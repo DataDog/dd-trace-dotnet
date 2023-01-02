@@ -107,6 +107,8 @@ if (NOT RUN_ASAN AND NOT RUN_UBSAN)
     target_link_libraries(${PROFILER_STATIC_LIB_NAME} -Wl,--no-undefined)
 endif()
 
+target_compile_definitions(${PROFILER_STATIC_LIB_NAME} PUBLIC "-D_GLIBCXX_USE_CXX11_ABI=0")
+
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     fmt-lib
     libunwind-lib
