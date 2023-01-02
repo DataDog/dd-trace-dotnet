@@ -9,11 +9,8 @@ elseif(ISLINUX)
 endif()
 
 ExternalProject_Add(fmt
-    GIT_REPOSITORY https://github.com/DataDog/fmt.git
-    GIT_TAG ${FMT_VERSION}
-    GIT_PROGRESS "false"
-    GIT_CONFIG "advice.detachedHead=false"
-    GIT_SHALLOW "true"
+    DOWNLOAD_COMMAND ${CMAKE_COMMAND} -DPROJECT_NAME=fmt -DPROJECT_REPOSITORY=https://github.com/DataDog/fmt.git -DPROJECT_BRANCH=${FMT_VERSION} -P ${CMAKE_SOURCE_DIR}/build/cmake/download_project.cmake
+    UPDATE_COMMAND ""
     TIMEOUT 5
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE TRUE

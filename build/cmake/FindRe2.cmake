@@ -2,13 +2,11 @@ include(ExternalProject)
 
 SET(RE2_VERSION "2018-10-01")
 
+set (DOWNLOAD_COMMAND ${CMAKE_COMMAND} -DPROJECT_NAME=re2 -DPROJECT_REPOSITORY=https://github.com/google/re2.git -DPROJECT_BRANCH=${RE2_VERSION} -P ${CMAKE_SOURCE_DIR}/build/cmake/download_project.cmake)
+
 if (ISMACOS)
     ExternalProject_Add(re2
-        GIT_REPOSITORY https://github.com/google/re2.git
-        GIT_TAG ${RE2_VERSION}
-        GIT_PROGRESS "false"
-        GIT_CONFIG "advice.detachedHead=false"
-        GIT_SHALLOW "true"
+        DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
         TIMEOUT 5
         INSTALL_COMMAND ""
         CONFIGURE_COMMAND ""
@@ -19,11 +17,7 @@ if (ISMACOS)
     )
 elseif(ISLINUX)
     ExternalProject_Add(re2
-        GIT_REPOSITORY https://github.com/google/re2.git
-        GIT_TAG ${RE2_VERSION}
-        GIT_PROGRESS "false"
-        GIT_CONFIG "advice.detachedHead=false"
-        GIT_SHALLOW "true"
+        DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
         TIMEOUT 5
         INSTALL_COMMAND ""
         CONFIGURE_COMMAND ""
