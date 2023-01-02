@@ -9,7 +9,7 @@ elseif(ISLINUX)
 endif()
 
 ExternalProject_Add(fmt
-    DOWNLOAD_COMMAND ${CMAKE_COMMAND} -DPROJECT_NAME=fmt -DPROJECT_REPOSITORY=https://github.com/DataDog/fmt.git -DPROJECT_BRANCH=${FMT_VERSION} -P ${CMAKE_SOURCE_DIR}/build/cmake/download_project.cmake
+    DOWNLOAD_COMMAND ${CMAKE_COMMAND} -DPROJECT_NAME=fmt -DPROJECT_REPOSITORY=https://github.com/DataDog/fmt.git -DPROJECT_BRANCH=${FMT_VERSION} -P ${CMAKE_SOURCE_DIR}/build/cmake/git-clone-quiet-once.cmake
     UPDATE_COMMAND ""
     TIMEOUT 5
     INSTALL_COMMAND ""
