@@ -30,9 +30,6 @@ namespace Datadog.Trace.AspNet
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class TracingHttpModule : IHttpModule
     {
-        private const string IgnorableHttpMessage = "Server cannot set status after HTTP headers have been sent.";
-        private const string WebApiControllerHandlerTypeFullname = "System.Web.Http.WebHost.HttpControllerHandler";
-
         internal static readonly IntegrationId IntegrationId = IntegrationId.AspNet;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracingHttpModule));
@@ -329,24 +326,12 @@ namespace Datadog.Trace.AspNet
 
                     if (exception != null && !is404)
                     {
-                        // when blocking WebApi request we'll get an exception as the WebApi framework tries
-                        // to send a second response after our blocking response. If we know we're in this case
-                        // we ignore the exception.
-                        var isBlocked = httpContext.Items["block"] is true;
-                        var ignoreException =
-                            isBlocked
-                            && httpContext?.CurrentHandler?.GetType()?.FullName == WebApiControllerHandlerTypeFullname
-                            && exception.Message == IgnorableHttpMessage;
-
-                        if (!ignoreException)
+                        scope.Span.SetException(exception);
+                        if (!HttpRuntime.UsingIntegratedPipeline)
                         {
-                            scope.Span.SetException(exception);
-                            if (!HttpRuntime.UsingIntegratedPipeline)
-                            {
-                                // in classic mode, the exception won't cause the correct status code to be set
-                                // even though a 500 response will be sent ultimately, so set it manually
-                                scope.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
-                            }
+                            // in classic mode, the exception won't cause the correct status code to be set
+                            // even though a 500 response will be sent ultimately, so set it manually
+                            scope.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
                         }
                     }
                 }

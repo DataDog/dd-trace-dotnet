@@ -8,7 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Net;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Web;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
@@ -18,7 +21,13 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal readonly partial struct SecurityCoordinator
 {
+    private const string WebApiControllerHandlerTypeFullname = "System.Web.Http.WebHost.HttpControllerHandler";
+
     private static readonly bool? UsingIntegratedPipeline;
+    private static readonly object _sync = new object();
+    private static bool? _throwHttpResponseExceptionInitSuccess = null;
+    private static Action<string, string> _throwHttpResponseException;
+
     private readonly HttpContext _context = null;
 
     static SecurityCoordinator()
@@ -76,15 +85,78 @@ internal readonly partial struct SecurityCoordinator
         var result = RunWaf(args);
         if (result.ShouldBeReported)
         {
+            var reporting = MakeReportingFunction(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
+
             var blocked = false;
             if (result.ShouldBlock)
             {
-                blocked = WriteAndEndResponse();
-                _httpTransport.MarkBlocked();
+                blocked = ChooseBlockingMethodAndBlock(reporting);
             }
 
-            Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, blocked);
+            reporting(blocked);
         }
+    }
+
+    private Action<bool> MakeReportingFunction(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
+    {
+        var securityCoordinator = this;
+        return blocked =>
+        {
+            if (blocked)
+            {
+                securityCoordinator._httpTransport.MarkBlocked();
+            }
+
+            securityCoordinator.Report(triggerData, aggregatedTotalRuntime, aggregatedTotalRuntimeWithBindings, blocked);
+        };
+    }
+
+    private ResponseDetails GetResponseDetails()
+    {
+        string contentType;
+        string body;
+        if (_context.Request.Headers["Accept"] == "text/html")
+        {
+            body = _security.Settings.BlockedHtmlTemplate;
+            contentType = "text/html";
+        }
+        else
+        {
+            body = _security.Settings.BlockedHtmlTemplate;
+            contentType = "application/json";
+        }
+
+        return new ResponseDetails() { Body = body, ContentType = contentType };
+    }
+
+    private bool ChooseBlockingMethodAndBlock(Action<bool> reporting)
+    {
+        var isWebApiRequest = _context.CurrentHandler?.GetType()?.FullName == WebApiControllerHandlerTypeFullname;
+        if (isWebApiRequest)
+        {
+            var canThrow = false;
+            lock (_sync)
+            {
+                if (_throwHttpResponseExceptionInitSuccess == null)
+                {
+                    _throwHttpResponseExceptionInitSuccess =
+                        TryCreateThrowHttpResponseExceptionDynMeth(out _throwHttpResponseException);
+                }
+
+                canThrow = _throwHttpResponseExceptionInitSuccess.Value;
+            }
+
+            if (canThrow)
+            {
+                var responseDetails = GetResponseDetails();
+                // ideally we'd report after we block, but when blocking with an exception we can't
+                reporting(true);
+                _throwHttpResponseException(responseDetails.Body, responseDetails.ContentType);
+            }
+        }
+
+        // we will only hit this next line if we didn't throw
+        return WriteAndEndResponse();
     }
 
     private bool WriteAndEndResponse()
@@ -103,15 +175,9 @@ internal readonly partial struct SecurityCoordinator
                 httpResponse.Headers.Remove(key);
             }
 
-            if (_context.Request.Headers["Accept"] == "text/html")
-            {
-                httpResponse.ContentType = "text/html";
-                template = _security.Settings.BlockedHtmlTemplate;
-            }
-            else
-            {
-                httpResponse.ContentType = "application/json";
-            }
+            var responseDetails = GetResponseDetails();
+            template = responseDetails.Body;
+            httpResponse.ContentType = responseDetails.ContentType;
         }
         else
         {
@@ -126,6 +192,73 @@ internal readonly partial struct SecurityCoordinator
         _context.ApplicationInstance.CompleteRequest();
 
         return true;
+    }
+
+    private bool TryCreateThrowHttpResponseExceptionDynMeth(out Action<string, string> throwHttpResponseException)
+    {
+        throwHttpResponseException = null;
+
+        try
+        {
+            var exceptionType = Type.GetType("System.Web.Http.HttpResponseException, System.Web.Http");
+            if (exceptionType == null)
+            {
+                return false;
+            }
+
+            var exceptionCtor = exceptionType.GetConstructor(new Type[] { typeof(HttpStatusCode) });
+            var exceptionResponseProperty = exceptionType.GetProperty("Response");
+
+            var messageType = Type.GetType("System.Net.Http.HttpResponseMessage, System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            if (messageType == null)
+            {
+                return false;
+            }
+
+            var messageContentProperty = messageType.GetProperty("Content");
+
+            var contentType = Type.GetType("System.Net.Http.StringContent, System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            if (contentType == null)
+            {
+                return false;
+            }
+
+            var contentCtor = contentType.GetConstructor(new Type[] { typeof(string), typeof(Encoding), typeof(string) });
+
+            var encodingType = typeof(Encoding);
+            var encodingUtf8Prop = encodingType.GetProperty("UTF8");
+
+            var dynMethod = new DynamicMethod(
+                "ThrowHttpResponseExceptionDynMeth",
+                typeof(void),
+                new[] { typeof(string), typeof(string) },
+                GetType().Module,
+                true);
+
+            var il = dynMethod.GetILGenerator();
+
+            il.DeclareLocal(exceptionType);
+            il.Emit(OpCodes.Ldc_I4, 403);
+            il.Emit(OpCodes.Newobj, exceptionCtor);
+            il.Emit(OpCodes.Stloc_0);
+            il.Emit(OpCodes.Ldloc_0);
+            il.EmitCall(OpCodes.Callvirt, exceptionResponseProperty.GetMethod, null);
+            il.Emit(OpCodes.Ldarg_0);
+            il.EmitCall(OpCodes.Call, encodingUtf8Prop.GetMethod, null);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Newobj, contentCtor);
+            il.EmitCall(OpCodes.Callvirt, messageContentProperty.SetMethod, null);
+            il.Emit(OpCodes.Ldloc_0);
+            il.Emit(OpCodes.Throw);
+
+            throwHttpResponseException = (Action<string, string>)dynMethod.CreateDelegate(typeof(Action<string, string>));
+
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     public Dictionary<string, object> GetBasicRequestArgsForWaf()
@@ -250,6 +383,14 @@ internal readonly partial struct SecurityCoordinator
 
             return new NameValueHeadersCollection(new NameValueCollection());
         }
+    }
+
+    private class ResponseDetails
+    {
+#pragma warning disable SA1401
+        public string Body;
+        public string ContentType;
+#pragma warning restore SA1401
     }
 }
 #endif
