@@ -41,6 +41,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
 add_executable(${TEST_EXECUTABLE_NAME}
     pch.cpp
     integration_test.cpp
+    version_struct_test.cpp
 )
 
 # Define directories includes
