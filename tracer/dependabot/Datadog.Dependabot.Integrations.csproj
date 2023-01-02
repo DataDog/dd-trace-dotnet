@@ -229,12 +229,12 @@
     <!-- Integration: Grpc.AspNetCore.Server -->
     <!-- Assembly: Grpc.AspNetCore.Server -->
     <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.50.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.50.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.51.0" />
 
     <!-- Integration: Grpc.Net.Client -->
     <!-- Assembly: Grpc.Net.Client -->
     <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.50.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.50.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.51.0" />
 
     <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
     <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
