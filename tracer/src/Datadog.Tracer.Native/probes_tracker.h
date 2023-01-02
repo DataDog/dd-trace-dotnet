@@ -28,6 +28,7 @@ namespace debugger
         void CreateNewProbeIfNotExists(const shared::WSTRING& probeId);
         void AddMethodToProbe(const shared::WSTRING& probeId, const ModuleID moduleId, const mdMethodDef methodId);
         bool SetProbeStatus(const shared::WSTRING& probeId, ProbeStatus newStatus);
+        bool SetErrorProbeStatus(const shared::WSTRING& probeId, const shared::WSTRING& errorMessage);
         int RemoveProbes(const std::vector<shared::WSTRING>& probes);
     };
 

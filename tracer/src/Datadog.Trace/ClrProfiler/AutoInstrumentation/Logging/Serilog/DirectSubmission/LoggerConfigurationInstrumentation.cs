@@ -55,11 +55,57 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
             // if we've already added the sink, nothing more to do.
             foreach (var logEventSink in instance.LogEventSinks)
             {
-                if (logEventSink is DirectSubmissionSerilogSink
+                if (logEventSink is IDuckType { Instance: DirectSubmissionSerilogSink }
                  || logEventSink?.GetType().FullName == "Serilog.Sinks.Datadog.Logs.DatadogSink")
                 {
                     sinkAlreadyAdded = true;
                     break;
+                }
+
+                // they may have created a sub logger that we've already added the sink to
+                // Unfortunately there's no way to "detect" the logger being created will
+                // be a sub-logger, so we have to retrospectively disable it instead.
+                // We don't look for instances of the public datadog serilog sink, just our internal
+                // direct submission one - if they're using the public sink we already
+                // essentially disable direct submission to avoid duplicate logs.
+                // Also, early versions of Serilog use a different pattern, so we add an additional
+                // check on .NET FX
+                if (logEventSink is not null)
+                {
+                    LoggerProxy? secondaryLogger = null;
+
+                    if (logEventSink.TryDuckCast<SecondaryLoggerSinkProxy>(out var proxy1))
+                    {
+                        secondaryLogger = proxy1.Logger;
+                    }
+#if NETFRAMEWORK
+                    else if (logEventSink.TryDuckCast<CopyingSinkProxy>(out var proxy2))
+                    {
+                        secondaryLogger = proxy2.Logger;
+                    }
+#endif
+
+                    if (secondaryLogger is { Sink: { } secondarySink })
+                    {
+                        if (secondarySink is DirectSubmissionSerilogSink subSink1)
+                        {
+                            subSink1.Disable();
+                        }
+                        else
+                        {
+                            if (secondarySink.TryDuckCast<AggregateSinkProxy>(out var aggregateSink))
+                            {
+                                foreach (var subSink in aggregateSink.LogEventSinks)
+                                {
+                                    if (subSink is IDuckType { Instance: DirectSubmissionSerilogSink subSink2 })
+                                    {
+                                        subSink2.Disable();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

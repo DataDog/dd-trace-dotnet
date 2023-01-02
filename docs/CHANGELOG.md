@@ -14,6 +14,75 @@
 
 
 
+
+## [Release 2.21.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.21.0)
+
+## Summary
+
+> **Warning** We identified [a bug in the .NET Runtime](https://github.com/dotnet/runtime/issues/77973) in .NET 5+ that can cause crashes in rare cases. You can mitigate the issue by setting `DD_INTERNAL_WORKAROUND_77973_ENABLED=1`. However, this disables tiered JIT in affected runtimes (.NET 5, .NET 6, .NET 7), which may have a significant impact on application throughput.
+>
+> Note that setting this flag will have no effect or impact when set for unaffected runtimes. The root issue in the .NET runtime has been resolved and will be released in versions `6.0.13` and `7.0.2` of the runtime. No fix is available for .NET 5. Other .NET versions are not affected.
+
+- [Tracer] Update ActivityListener to handle OpenTelemetry API methods
+- [Continuous Profiler] Remove 100+ ms threshold for lock contention
+- [CI Visibility] Improvements to Code Coverage
+
+## Changes
+
+### Tracer
+* [tracer] W3C Trace Context part 2: `dd` values in `tracestate` header (#3491)
+* [CLI] Check if DD_TRACE_ENABLED is set And Log if set to false (#3500)
+* Keep single sampled spans when stats enabled (#3536)
+* Small refactor for managed logging (#3541)
+* Add support for CallTarget async continuations (`OnAsyncMethodEnd` returning a Task) (#3555)
+* Updated Newtonsoft.Json to 13.0.2 (#3559)
+* Adds a workaround for the dotnet runtime issue 77973 (#3506, #3579)
+* Add environment variable DD_TRACE_OTEL_ENABLED  (#3531)
+* [Tracer] Update ActivityListener to handle OpenTelemetry API methods (#3556)
+
+### CI Visibility
+* [CI Visibility] - Code Coverage rewrite and improvements (#3494)
+* [CI Visibility] - Add validation for git metadata env vars (#3560)
+* [CIVisibility] - Add CIVisibility known errors to the CheckBuildLogs task (#3564)
+
+### ASM
+* asm/waf rules enabling (#3321)
+* [ASM] Security refactoring : removing instrumentation gateway and simplifying (#3442)
+* [ASM] Taint request parameters (#3513)
+* [ASM] Taint request headers (#3563)
+
+### Continuous Profiler
+* [Profiler] Improve Linux stackwalk (#3485)
+* [Profiler] Bump libdatadog version from 0.9.0 to 1.0.0 (#3538)
+* [Profiler] Move GC labels from enum to text (#3545)
+* [Profiler] Bump libdatadog version from 1.0.0 to 1.0.1 (#3557)
+* [Profiler] Remove per type allocation (#3561)
+* [Profiler] Remove 100+ ms threshold for lock contention (#3565)
+* [Profiler] Remove async call for parallel buggybits (#3569)
+
+### Debugger
+* Move debugger tests to separate project (#3526)
+* Fix bug which caused `DD_WRITE_INSTRUMENTATION_TO_DISK` to stop working (#3566)
+* [Debugger] Temporary disable debugger tests for `x86`, .net 3.1 and .net6.0 (#3575)
+
+### Fixes
+* Refactor launchSettings.json to load the CLR Profiler from the monitoring-home directory (#3532)
+
+### Build / Test
+* Add "analyze-instrumentation" command to dd-trace diagnostic tool  (#3408)
+* Test against `net462` to fix code coverage (#3520)
+* Log error code when fetching kafka topic (#3527)
+* Set QUIC_LTTng=0 in docker images (#3529)
+* Run arm64 and Lambda integration tests on .NET 7 (#3530)
+* Add some output to the runtime metrics test (#3535)
+* [Build] Add missing labels to auto labeller (#3537)
+* Reduce number of testing frameworks in PRs (again) (#3542)
+* Fix json fluent assertion comparion (#3546)
+* UDS is a variant, not a scenario in system tests (#3567)
+* Temporarily ignore error in logs from CI app (#3571)
+
+[Changes since 2.20.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.20.0...v2.21.0)
+
 ## [Release 2.20.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.20.0)
 
 ## Summary

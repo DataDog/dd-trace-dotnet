@@ -262,7 +262,7 @@ void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHan
     {
         Logger::Warn("Tried to place Debugger Probe on a method that have been instrumented already be the Tracer/Ci instrumentation.",
             "ProbeId: ", probe->probeId);
-        ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::_ERROR);
+        ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probe->probeId, invalid_probe_method_already_instrumented);
         return;
     }
 

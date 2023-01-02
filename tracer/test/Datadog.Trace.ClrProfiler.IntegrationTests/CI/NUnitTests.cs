@@ -125,6 +125,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // CI Library Language
                             AssertTargetSpanEqual(targetSpan, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
 
+                            // Session data
+                            AssertTargetSpanExists(targetSpan, TestTags.Command);
+                            AssertTargetSpanExists(targetSpan, TestTags.CommandWorkingDirectory);
+
                             // check specific test span
                             switch (targetSpan.Tags[TestTags.Name])
                             {

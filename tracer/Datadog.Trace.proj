@@ -5,70 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj;src/Datadog.Trace.Tools.Runner/*.csproj;src\**\Datadog.InstrumentedAssembly*.csproj" />
-    <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
-    <CsharpInstrumentationVerificationLibrary Include="src\**\Datadog.InstrumentedAssembly*.csproj"/>
-    <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj" />
-    <CsharpIntegrationTestProject Remove="test\Datadog.Trace.Tools.Runner.IntegrationTests\Datadog.Trace.Tools.Runner.IntegrationTests.csproj" Condition="$(TargetFramework.StartsWith('net4'))" />
-    <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
-    <CsharpIntegrationTestDebuggerProject Include="test\Datadog.Trace.Debugger.IntegrationTests\Datadog.Trace.Debugger.IntegrationTests.csproj" />
-    <RazorPagesProject Include="test/test-applications/**/Samples.AspNetCoreRazorPages.csproj" />
-    <ExcludeExpenseItDemoProject Remove="test/test-applications/regression/**/ExpenseItDemo*.csproj" />
-    <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
-    <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj;test\**\*.TestHelpers.AutoInstrumentation.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
-    <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
-    <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" />
-    <RegressionSampleLibProject Include="test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <FrameworkReproduction Include="test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
   </ItemGroup>
-
-  <!--  Used by CompileManagedSrc-->
-  <Target Name="BuildCsharpSrc">
-    <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileManagedTestHelpers-->
-  <Target Name="BuildInstrumentationVerificationLibrary">
-    <MSBuild Targets="Build" Projects="@(CsharpInstrumentationVerificationLibrary)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileManagedTestHelpers-->
-  <Target Name="BuildCsharpTestHelpers">
-    <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileManagedUnitTests-->
-  <Target Name="BuildCsharpUnitTests">
-    <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject);@(CsharpUnitTestProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!-- Used by CompileIntegrationTests-->
-  <Target Name="BuildCsharpIntegrationTests">
-
-    <!-- Filter the sample projects by TargetFramework -->
-    <ItemGroup>
-      <IntegrationTestProjects Include="@(RazorPagesProject)" Condition="!$(TargetFramework.StartsWith('net4'))" />
-      <IntegrationTestProjects Include="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeLegacyRedisProject)" />
-      <IntegrationTestProjects Remove="@(CsharpIntegrationTestDebuggerProject)" />
-    </ItemGroup>
-
-    <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject);@(IntegrationTestProjects)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
 
   <!--  Used by CompileNativeSrcWindows-->
   <Target Name="BuildCppSrc">
@@ -77,16 +17,9 @@
     </MSBuild>
   </Target>
 
-  <!--  Used by CompileDependencyLibs-->
-  <Target Name="BuildDependencyLibs">
-    <MSBuild Targets="Build" Projects="@(SampleLibProject);@(VbSampleLibProject);">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileRegressionDependencyLibs-->
-  <Target Name="BuildRegressionDependencyLibs">
-    <MSBuild Targets="Build" Projects="@(RegressionSampleLibProject)">
+  <!--  Used by CompileNativeTestsWindows-->
+  <Target Name="BuildCppTests">
+    <MSBuild Targets="Build" Projects="@(CppTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -94,13 +27,6 @@
   <!--  Used by CompileFrameworkReproductions-->
   <Target Name="BuildFrameworkReproductions">
     <MSBuild Targets="Build" Projects="@(FrameworkReproduction)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileNativeTestsWindows-->
-  <Target Name="BuildCppTests">
-    <MSBuild Targets="Build" Projects="@(CppTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>

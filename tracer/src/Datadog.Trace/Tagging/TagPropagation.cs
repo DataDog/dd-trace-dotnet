@@ -32,8 +32,8 @@ internal static class TagPropagation
     public const string PropagatedTagPrefix = "_dd.p.";
 
     // "x-datadog-tags" header format is "key1=value1,key2=value2"
-    private const char TagPairSeparator = ',';
-    private const char KeyValueSeparator = '=';
+    public const char TagPairSeparator = ',';
+    public const char KeyValueSeparator = '=';
 
     private const int PropagatedTagPrefixLength = 6; // "_dd.p.".Length
 

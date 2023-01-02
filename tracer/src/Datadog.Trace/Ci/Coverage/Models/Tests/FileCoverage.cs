@@ -6,23 +6,22 @@
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Ci.Coverage.Models.Tests
+namespace Datadog.Trace.Ci.Coverage.Models.Tests;
+
+/// <summary>
+/// Source file with executable code
+/// </summary>
+internal sealed class FileCoverage
 {
     /// <summary>
-    /// Source file with executable code
+    /// Gets or sets path/name of the file
     /// </summary>
-    internal sealed class FileCoverage
-    {
-        /// <summary>
-        /// Gets or sets path/name of the file
-        /// </summary>
-        [JsonProperty("filename")]
-        public string FileName { get; set; }
+    [JsonProperty("filename")]
+    public string FileName { get; set; }
 
-        /// <summary>
-        /// Gets or sets the limits of regions with executable code, where region begin/ends or changes count
-        /// </summary>
-        [JsonProperty("segments")]
-        public List<uint[]> Segments { get; set; } = new();
-    }
+    /// <summary>
+    /// Gets or sets the limits of regions with executable code, where region begin/ends or changes count
+    /// </summary>
+    [JsonProperty("segments")]
+    public List<uint[]> Segments { get; set; } = new();
 }

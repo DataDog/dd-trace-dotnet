@@ -27,14 +27,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 public static class NUnitWorkItemWorkItemCompleteIntegration
 {
     /// <summary>
-    /// OnMethodEnd callback
+    /// OnMethodBegin callback
     /// </summary>
     /// <typeparam name="TTarget">Type of the target</typeparam>
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-    /// <param name="state">Calltarget state value</param>
-    /// <returns>Return value of the method</returns>
-    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+    /// <returns>Calltarget state value</returns>
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         where TTarget : IWorkItem
     {
         var item = instance.Test;
@@ -42,12 +40,13 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
         {
             case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
                 module.Close();
+                CIVisibility.Log.Information("### Test Module Flushing Done.");
                 break;
             case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is { } suite:
                 suite.Close();
                 break;
         }
 
-        return CallTargetReturn.GetDefault();
+        return CallTargetState.GetDefault();
     }
 }

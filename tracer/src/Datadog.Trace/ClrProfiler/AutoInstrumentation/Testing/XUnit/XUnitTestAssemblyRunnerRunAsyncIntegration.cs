@@ -15,7 +15,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
-/// Xunit.Sdk.TestAssemblyRunner`1.RunTestCollectionAsync calltarget instrumentation
+/// Xunit.Sdk.TestAssemblyRunner`1.RunAsync calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },

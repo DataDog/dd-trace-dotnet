@@ -11,7 +11,6 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -364,6 +363,7 @@ namespace Datadog.Trace
                     var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
                     traceContext.SetSamplingPriority(samplingPriority);
                     traceContext.Origin = parentSpanContext.Origin;
+                    traceContext.AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
                 }
             }
             else

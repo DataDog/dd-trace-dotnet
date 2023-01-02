@@ -25,6 +25,7 @@ internal static class SourceType
             SourceTypeName.RequestParameterValue => "http.request.parameter.value",
             SourceTypeName.RoutedParameterValue => "http.request.path.parameter",
             SourceTypeName.RequestHeader => "http.request.header",
+            SourceTypeName.RequestHeaderName => "http.request.header.name",
             SourceTypeName.RequestQueryString => "http.request.querystring",
             _ => string.Empty
         };

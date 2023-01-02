@@ -301,15 +301,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
                      " line probes on methodDef: ", methodHandler->GetMethodDef());
 
         const auto hr = Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes);
-
-        if (FAILED(hr))
-        {
-            // Mark all probes as Error
-            for (const auto& probe : probes)
-            {
-                ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::_ERROR);
-            }
-        }
     }
 
     return S_OK;
@@ -363,7 +354,7 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     if (FAILED(hr))
     {
         // Note we are not sabotaging the whole rewriting upon failure to lookup for a specific bytecode offset.
-        // TODO Upon implementing the Probe Statuses, we'll need to reflect that.
+        ProbesMetadataTracker::Instance()->SetErrorProbeStatus(lineProbe->probeId, line_probe_il_offset_lookup_failure);
         return E_NOTIMPL;
     }
 
@@ -458,7 +449,7 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
 
 HRESULT DebuggerMethodRewriter::ApplyLineProbes(
     const int instrumentedMethodIndex,
-    const LineProbeDefinitions& lineProbes, 
+    LineProbeDefinitions& lineProbes, 
     CorProfiler* corProfiler, 
     ModuleID module_id, 
     ModuleMetadata& module_metadata, 
@@ -480,6 +471,7 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
     {
         Logger::Warn("Async generic methods in optimized code are not supported at the moment. Skipping on placing ",
                      lineProbes.size(), " line probe(s).");
+        MarkAllLineProbesAsError(lineProbes, line_probe_in_async_generic_method_in_optimized_code);
         return E_NOTIMPL;
     }
 
@@ -494,7 +486,7 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
                                    branchTargets, lineProbe, isAsyncMethod);
         if (hr == E_NOTIMPL)
         {
-            // Appropriate error message is already logged in CallLineProbe.
+            // Appropriate error message and Probe Status is already logged in CallLineProbe.
             return E_NOTIMPL;
         }
 
@@ -1232,6 +1224,29 @@ HRESULT DebuggerMethodRewriter::GetTaskReturnType(const ILInstr* instruction, Mo
     return E_FAIL;
 }
 
+void DebuggerMethodRewriter::MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes, const WSTRING& reasoning)
+{
+    // Mark all probes as Error
+    MarkAllLineProbesAsError(lineProbes, reasoning);
+    MarkAllMethodProbesAsError(methodProbes, reasoning);
+}
+
+void DebuggerMethodRewriter::MarkAllLineProbesAsError(LineProbeDefinitions& lineProbes, const WSTRING& reasoning)
+{
+    for (const auto& probe : lineProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probe->probeId, reasoning);
+    }
+}
+
+void DebuggerMethodRewriter::MarkAllMethodProbesAsError(MethodProbeDefinitions& methodProbes, const WSTRING& reasoning)
+{
+    for (const auto& probe : methodProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probe->probeId, reasoning);
+    }
+}
+
 HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                         RejitHandlerModuleMethod* methodHandler,
                                         MethodProbeDefinitions& methodProbes,
@@ -1256,6 +1271,11 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         // Internal Jira ticket: DEBUG-1063, DEBUG-1065.
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Placing probes on a method with ref return/constructor is not supported for now. token=",
                      function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
+
+        const WSTRING& reasoning = caller->name == WStr(".ctor") || caller->name == WStr(".cctor")
+                                       ? invalid_probe_probe_cctor_ctor_not_supported
+                                       : invalid_probe_probe_byreflike_return_not_supported;
+        MarkAllProbesAsError(methodProbes, lineProbes, reasoning);
         return E_NOTIMPL;
     }
 
@@ -1266,6 +1286,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                      "not yet been loaded into AppDomain with id=",
                      module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
                      caller->name, "()");
+        MarkAllProbesAsError(methodProbes, lineProbes, profiler_assemly_is_not_loaded);
         return S_FALSE;
     }
 
@@ -1276,6 +1297,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Import() failed for ", module_id, " ",
                      function_token);
+        MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_failed_to_import_method_il);
         return E_FAIL;
     }
 
@@ -1295,6 +1317,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() failed to parse locals signature for ", module_id, " ",
                      function_token);
+        MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_failed_to_parse_locals);
         return E_FAIL;
     }
 
@@ -1322,12 +1345,24 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     bool isAsyncMethod;
     auto isAsyncMethodProbeHr = IsAsyncMethodProbe(module_metadata.metadata_import, caller, isAsyncMethod);
-    IfFailRet(isAsyncMethodProbeHr);
+
+    if (FAILED(isAsyncMethodProbeHr))
+    {
+        MarkAllProbesAsError(methodProbes, lineProbes, failed_to_determine_if_method_is_async);
+        return isAsyncMethodProbeHr;
+    }
+
     TypeSignature methodReturnType{};
     if (isAsyncMethod)
     {
         hr = GetTaskReturnType(rewriterWrapper.GetILRewriter()->GetILList(), module_metadata, methodLocals, &methodReturnType);
-        IfFailRet(hr);
+
+        if (FAILED(hr))
+        {
+            MarkAllProbesAsError(methodProbes, lineProbes, failed_to_retrieve_task_return_type);
+            return hr;
+        }
+        
         if (hr == S_FALSE) // return type is System.Void
         {
             methodReturnType = caller->method_signature.GetReturnValue();
@@ -1344,6 +1379,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     if (FAILED(hr))
     {
+        MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_failed_to_add_di_locals);
         // Error message is already written in ModifyLocalSigAndInitialize
         return S_FALSE; // TODO https://datadoghq.atlassian.net/browse/DEBUG-706
     }
@@ -1361,6 +1397,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         }
         else if (isTypeIsByRefLike)
         {
+            MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_probe_byreflike_return_not_supported);
             return E_NOTIMPL;
         }
     }
@@ -1374,6 +1411,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
     else if (isTypeIsByRefLike)
     {
+        MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_type_is_by_ref_like);
         return E_NOTIMPL;
     }
 
@@ -1386,6 +1424,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     if (FAILED(hr))
     {
         Logger::Error("Fail to get DebuggerLocals for ", module_id, " ", function_token);
+        MarkAllProbesAsError(methodProbes, lineProbes, failed_to_get_debugger_locals);
         return E_FAIL;
     }
 
@@ -1418,12 +1457,14 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
         if (hr != E_NOTIMPL && FAILED(hr))
         {
+            MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_failed_to_instrument_line_probe);
             // Appropriate error message is already logged in ApplyLineProbes.
             return E_FAIL;            
         }
 
         if (hr == E_NOTIMPL)
         {
+            // Probe status already marked in ApplyLineProbes for the E_NOTIMPL scenario
             Logger::Info("Emplacement of a line probe is not supported.");
         }
 
@@ -1460,12 +1501,14 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
         if (hr != E_NOTIMPL && FAILED(hr))
         {
+            MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_failed_to_instrument_method_probe);
             // Appropriate error message is already logged in ApplyMethodProbe / ApplyAsyncMethodProbe.
             return E_FAIL;
         }
 
         if (hr == E_NOTIMPL)
         {
+            ProbesMetadataTracker::Instance()->SetErrorProbeStatus(methodProbeId,invalid_method_probe_probe_is_not_supported);
             Logger::Info("Emplacement of a method probe is not supported.");
         }
 
@@ -1515,6 +1558,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Export() failed for "
                      "ModuleID=",
                      module_id, " ", function_token);
+        MarkAllProbesAsError(methodProbes, lineProbes, failed_to_export_method_il);
         return E_FAIL;
     }
 

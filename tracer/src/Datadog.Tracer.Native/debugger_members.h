@@ -139,7 +139,8 @@ enum class ProbeStatus
 
 struct ProbeMetadata
 {
-    shared::WSTRING probeId;
+    WSTRING probeId;
+    WSTRING errorMessage;
     std::set<trace::MethodIdentifier> methods;
     ProbeStatus status = ProbeStatus::RECEIVED;
 
@@ -147,10 +148,17 @@ struct ProbeMetadata
     ProbeMetadata(const ProbeMetadata& other) = default;
     ProbeMetadata(ProbeMetadata&& other) = default;
 
-    ProbeMetadata(const shared::WSTRING& probeId, std::set<trace::MethodIdentifier>&& methods, ProbeStatus initialStatus) : probeId(probeId), methods(std::move(methods)), status(initialStatus)
+    ProbeMetadata(const WSTRING& probeId, std::set<trace::MethodIdentifier>&& methods,
+                  ProbeStatus initialStatus) :
+        probeId(probeId), methods(std::move(methods)), status(initialStatus)
     {
     }
-    
+
+    ProbeMetadata(const WSTRING& probeId, const WSTRING& errorMessage,
+                  std::set<trace::MethodIdentifier>&& methods, ProbeStatus initialStatus) :
+        probeId(probeId), errorMessage(errorMessage), methods(std::move(methods)), status(initialStatus)
+    {
+    }
 
     inline bool operator==(const ProbeMetadata& other) const
     {
@@ -169,6 +177,7 @@ typedef struct _ProbeStatusesRequest
 typedef struct _DebuggerProbeStatus
 {
     const WCHAR* probeId;
+    const WCHAR* errorMessage;
     ProbeStatus status;
 } DebuggerProbeStatus;
 

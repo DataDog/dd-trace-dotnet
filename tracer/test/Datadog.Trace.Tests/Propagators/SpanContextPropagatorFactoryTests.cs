@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Linq;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
 using Xunit;
@@ -23,6 +24,17 @@ public class SpanContextPropagatorFactoryTests
         propagators.Should().NotBeNull().And.BeEmpty();
     }
 
+    [Fact]
+    public void MixOfValidAndInvalidContextPropagator()
+    {
+        string[] headerStyles = { "1", "datadog", "3", "tracecontext" };
+        var propagators = SpanContextPropagatorFactory.GetPropagators<IContextExtractor>(headerStyles).ToArray();
+
+        propagators.Should().NotBeNull().And.HaveCount(2);
+        propagators[0].Should().BeSameAs(Datadog.Trace.Propagators.DatadogContextPropagator.Instance);
+        propagators[1].Should().BeSameAs(Datadog.Trace.Propagators.W3CTraceContextPropagator.Instance);
+    }
+
     [Theory]
     [InlineData("Datadog")]
     [InlineData("datadog")]         // case-insensitive
@@ -39,7 +51,7 @@ public class SpanContextPropagatorFactoryTests
     [InlineData("TraceContext")]              // case-insensitive
     [InlineData("tracecontext,TraceContext")] // multiple entries returns one instance
     [InlineData("W3C")]                       // deprecated value
-    public void W3CContextPropagator(string headerStyles)
+    public void W3CTraceContextPropagator(string headerStyles)
     {
         var propagators = SpanContextPropagatorFactory.GetPropagators<IContextExtractor>(headerStyles.Split(','));
 

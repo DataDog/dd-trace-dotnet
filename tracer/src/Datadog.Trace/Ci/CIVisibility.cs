@@ -142,13 +142,19 @@ namespace Datadog.Trace.Ci
         internal static void Flush()
         {
             var sContext = SynchronizationContext.Current;
+            using var cts = new CancellationTokenSource(30_000);
             try
             {
                 SynchronizationContext.SetSynchronizationContext(null);
-                if (!FlushAsync().Wait(30_000))
+                AsyncUtil.RunSync(() => FlushAsync(), cts.Token);
+                if (cts.IsCancellationRequested)
                 {
                     Log.Error($"Timeout occurred when flushing spans.{Environment.NewLine}{Environment.StackTrace}");
                 }
+            }
+            catch (TaskCanceledException)
+            {
+                Log.Error($"Timeout occurred when flushing spans.{Environment.NewLine}{Environment.StackTrace}");
             }
             finally
             {
