@@ -77,7 +77,7 @@ public abstract class AspNetWebApiAsmData : RcmBase, IClassFixture<IisFixture>
     }
 
     [SkippableTheory]
-    [InlineData("blocking-ips", "/api/home")]
+    [InlineData("blocking-ips", "/api/health")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]

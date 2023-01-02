@@ -72,6 +72,14 @@ namespace Datadog.Trace.TestHelpers
 
                     IisExpress.Process.Dispose();
 
+                    try
+                    {
+                        File.Delete(IisExpress.ConfigFile);
+                    }
+                    catch
+                    {
+                    }
+
                     // If the operation fails, it could leave files in the GAC and impact the next tests
                     // Therefore, we don't wrap this in a try/catch
                     RemoveAssembliesFromGac();
