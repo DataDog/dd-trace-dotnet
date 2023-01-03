@@ -361,13 +361,20 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
 
     // Labels
     auto const& labels = sample->GetLabels();
+    auto const& numericLabels = sample->GetNumericLabels();
     std::vector<ddog_prof_Label> ffiLabels;
-    ffiLabels.reserve(labels.size());
+    ffiLabels.reserve(labels.size() + numericLabels.size());
 
     for (auto const& [label, value] : labels)
     {
         ffiLabels.push_back({{label.data(), label.size()}, {value.data(), value.size()}});
     }
+
+    for (auto const& [label, value] : numericLabels)
+    {
+        ffiLabels.push_back({{label.data(), label.size()}, {nullptr, 0}, value});
+    }
+
     ffiSample.labels = {ffiLabels.data(), ffiLabels.size()};
 
     // values
