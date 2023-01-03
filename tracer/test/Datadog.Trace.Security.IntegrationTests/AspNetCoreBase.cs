@@ -57,9 +57,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/dataapi/model", "{\"property\":\"appscan_fingerprint\", \"property2\":\"test2\"}")]
         [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/datarazorpage", "property=appscan_fingerprint&property2=value2")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBody(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
+        public async Task TestBlockedBody(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
         {
-            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: "blockin-ruleset.json");
+            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: "blocking-ruleset.json");
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl, body);
