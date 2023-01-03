@@ -130,7 +130,14 @@ partial class Build
         ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, }
         : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
 
+<<<<<<< HEAD
     bool HaveIntegrationsChanged =>
+=======
+    TargetFramework[] TestingFrameworksDebugger =>
+        TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, TargetFramework.NETCOREAPP3_0, TargetFramework.NET5_0 });
+
+    bool HaveIntegrationsChanged =>
+>>>>>>> 1ecccdb3b (undo changes to build file, as this could be breaking stuff)
         GetGitChangedFiles(baseBranch: "origin/master")
            .Any(s => new []
             {
@@ -1081,24 +1088,6 @@ partial class Build
             EnsureExistingDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
-
-            foreach(var project in ParallelIntegrationTests.Concat(ClrProfilerIntegrationTests))
-            {
-                var existingDir = project.Directory / "bin" / BuildConfiguration;
-                var newDir = project.Directory / "bin" / $"{TargetPlatform}" / BuildConfiguration;
-                if (DirectoryExists(newDir))
-                {
-                    Logger.Info($"Skipping '{newDir}' as already exists");
-                }
-                else
-                {
-                    Logger.Info($"Mapping '{existingDir}' to '{newDir}'");
-                    EnsureExistingDirectory(newDir.Parent);
-                    Cmd.Value(arguments: $"cmd /c mklink /J \"{newDir}\" \"{existingDir}\"");
-                }
-            }
-
-
 
             try
             {
