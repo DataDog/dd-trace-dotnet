@@ -587,21 +587,14 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
             Logger::Warn("Wrapper profilerAssemblyRef could not be defined.");
             return hr;
         }
+    }
 
-        // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException type ref
-        // for tracer < 22, this type didnt exist yet so we fall back to appsec block exception..
-        if (bubbleUpExceptionTypeRef == mdTypeRefNil)
-        {
-            auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
-                profilerAssemblyRef,
-                assemblyReference.version.minor >= 22 ? CallTargetBubbleUpException : AppSecBlockException,
-                &bubbleUpExceptionTypeRef);
-            if (FAILED(hr))
-            {
-                Logger::Warn("Wrapper bubbleUpExceptionTypeRef could not be defined.");
-                return hr;
-            }
-        }
+    // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException type ref
+    if (bubbleUpExceptionTypeRef == mdTypeRefNil)
+    {
+        module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef,
+                                                            calltargetbubbleexception_tracer_type_name.c_str(),
+                                                            &bubbleUpExceptionTypeRef);
     }
 
     // *** Ensure calltarget type ref

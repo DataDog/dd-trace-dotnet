@@ -665,11 +665,13 @@ HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef inte
         Logger::Warn("Error creating log exception method spec.");
         return hr;
     }
-    *instruction = rewriterWrapper->Pop();
-    Logger::Warn("Exceptionvalue index is in writelogexception.", exceptionValueIndex);
-
-    rewriterWrapper->LoadLocal(exceptionValueIndex);
-    rewriterWrapper->CallMember(logExceptionMethodSpec, false);
+    if(bubbleUpExceptionTypeRef != mdTokenNil)
+    {
+        Logger::Info("bubbleUpExceptionTypeRef is found.");
+        *instruction = rewriterWrapper->Pop();
+        rewriterWrapper->LoadLocal(exceptionValueIndex);
+        rewriterWrapper->CallMember(logExceptionMethodSpec, false);
+    }
     return S_OK;
 }
 } // namespace trace

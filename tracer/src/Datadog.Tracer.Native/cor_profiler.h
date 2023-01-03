@@ -61,7 +61,7 @@ private:
     std::unique_ptr<TypeReference> trace_annotation_integration_type = nullptr;
     std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
     bool trace_annotations_enabled = false;
-
+    bool call_target_bubble_up_exception_available = true;
     //
     // Debugger Members
     //
