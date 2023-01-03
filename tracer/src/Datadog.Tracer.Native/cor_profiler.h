@@ -53,7 +53,7 @@ private:
     bool corlib_module_loaded = false;
     AppDomainID corlib_app_domain_id = 0;
     bool managed_profiler_loaded_domain_neutral = false;
-    std::unordered_set<AppDomainID> managed_profiler_loaded_app_domains;
+    std::unordered_map<AppDomainID, Version> managed_profiler_loaded_app_domains;
     std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
     bool is_desktop_iis = false;
 
@@ -100,6 +100,7 @@ private:
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
+    Version GetProfilerAssemblyVersion(AppDomainID app_domain_id);
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
                            const ComPtr<IMetaDataImport2>& metadata_import);
     HRESULT RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id);
