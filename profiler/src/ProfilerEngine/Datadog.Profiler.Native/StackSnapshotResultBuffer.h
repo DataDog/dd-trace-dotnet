@@ -44,7 +44,7 @@ public:
 
     inline void DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo);
 
-    void Reset(void);
+    void Reset();
 
     inline bool AddFrame(std::uintptr_t ip);
     inline bool AddFakeFrame();

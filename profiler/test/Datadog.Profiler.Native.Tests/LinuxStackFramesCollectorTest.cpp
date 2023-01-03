@@ -293,7 +293,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     auto collector = LinuxStackFramesCollector(signalManager);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
-    threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)nullptr);
+    threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -310,12 +310,12 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
 TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCall)
 {
     SimulateInPthreadCreate();
-  
+
     auto* signalManager = ProfilerSignalManager::Get();
     auto collector = LinuxStackFramesCollector(signalManager);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
-    threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)nullptr);
+    threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -331,7 +331,7 @@ TEST_F(LinuxStackFramesCollectorFixture, MustNotCollectIfUnknownThreadId)
     auto collector = LinuxStackFramesCollector(signalManager);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
-    threadInfo.SetOsInfo(0, (HANDLE)nullptr);
+    threadInfo.SetOsInfo(0, (HANDLE)0);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;

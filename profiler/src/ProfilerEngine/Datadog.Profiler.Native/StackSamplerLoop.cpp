@@ -329,7 +329,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
     PROFILING_TYPE profilingType)
 {
     HANDLE osThreadHandle = pThreadInfo->GetOsThreadHandle();
-    if (osThreadHandle == static_cast<HANDLE>(nullptr))
+    if (osThreadHandle == static_cast<HANDLE>(0))
     {
         // The thread was already registered, but the OS handle is not associated yet.
         return;
