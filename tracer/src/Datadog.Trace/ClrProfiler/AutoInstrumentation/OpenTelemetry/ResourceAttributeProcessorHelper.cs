@@ -41,18 +41,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                         var span = activityMapping.Scope.Span;
                         foreach (var attribute in resource.Attributes)
                         {
+                            span.SetTag(attribute.Key, attribute.Value?.ToString());
+
                             // In addition to copying the attribute as a tag, update span fields for specific keys
-                            if (attribute.Key == "service.name")
+                            if (attribute.Value is not null)
                             {
-                                span.ServiceName = attribute.Value.ToString();
-                            }
-                            else if (attribute.Key == "service.version")
-                            {
-                                span.SetTag(Tags.Version, attribute.Value.ToString());
-                            }
-                            else
-                            {
-                                span.SetTag(attribute.Key, attribute.Value.ToString());
+                                if (attribute.Key == "service.name")
+                                {
+                                    span.ServiceName = attribute.Value.ToString();
+                                }
+                                else if (attribute.Key == "service.version")
+                                {
+                                    span.SetTag(Tags.Version, attribute.Value.ToString());
+                                }
                             }
                         }
                     }
