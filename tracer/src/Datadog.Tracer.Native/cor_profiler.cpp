@@ -856,15 +856,15 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                 else
                 {
                     RewriteForDistributedTracing(module_metadata, module_id);
-
-                    // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException available
-                    mdTypeDef bubbleUpException;
-                    const auto bubble_up_type_name = calltargetbubbleexception_tracer_type_name.c_str();
-                    const auto found_call_target_bubble_up_exception_type = module_metadata.metadata_import->
-                        FindTypeDefByName(bubble_up_type_name, mdTokenNil, &bubbleUpException);
-                    call_target_bubble_up_exception_available = SUCCEEDED(found_call_target_bubble_up_exception_type);
-                    Logger::Debug("CallTargetBubbleUpException type available ", bubble_up_type_name);
                 }
+
+                // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException available
+                mdTypeDef bubbleUpException;
+                const auto bubble_up_type_name = calltargetbubbleexception_tracer_type_name.c_str();
+                const auto found_call_target_bubble_up_exception_type = module_metadata.metadata_import->
+                    FindTypeDefByName(bubble_up_type_name, mdTokenNil, &bubbleUpException);
+                call_target_bubble_up_exception_available = SUCCEEDED(found_call_target_bubble_up_exception_type);
+                Logger::Debug("CallTargetBubbleUpException type available test, hresult is: ", found_call_target_bubble_up_exception_type);
             }
         }
         else

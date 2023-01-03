@@ -583,7 +583,7 @@ HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRe
 
 // write log exception
 HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                        const TypeInfo* currentType, ILInstr** instruction, ULONG exceptionValueIndex)
+                                        const TypeInfo* currentType, ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -665,12 +665,11 @@ HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef inte
         Logger::Warn("Error creating log exception method spec.");
         return hr;
     }
-    if(bubbleUpExceptionTypeRef != mdTokenNil)
+    ILInstr* call_instruction = rewriterWrapper->CallMember(logExceptionMethodSpec, false);
+    // if we have an exception filter, this instruction can't be the first as the filter needs to pop and load first (with a filter, catch clauses dont automatically get the exception in the eval. stack)
+    if (*instruction == nullptr)
     {
-        Logger::Info("bubbleUpExceptionTypeRef is found.");
-        *instruction = rewriterWrapper->Pop();
-        rewriterWrapper->LoadLocal(exceptionValueIndex);
-        rewriterWrapper->CallMember(logExceptionMethodSpec, false);
+        *instruction = call_instruction;
     }
     return S_OK;
 }

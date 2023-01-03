@@ -389,16 +389,18 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     // *** Filter exception
     mdTypeRef bubbleUpExceptionTypeRef = tracerTokens->GetBubbleUpExceptionTypeRef();
-    ILInstr* filter;
+    ILInstr* filter = nullptr;
+    ILInstr* beginMethodCatchFirstInstr = nullptr;
     if (corProfiler->call_target_bubble_up_exception_available)
     {
         filter = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(), bubbleUpExceptionTypeRef,
                                                           exceptionValueIndex);
+        Logger::Debug("Creating filter for try / catch for CallTargetBubbleUpException. (begin method)");
+        beginMethodCatchFirstInstr = reWriterWrapper.Pop();
+        reWriterWrapper.LoadLocal(exceptionValueIndex);
     }
     // *** BeginMethod call catch
-    ILInstr* beginMethodCatchFirstInstr = nullptr;
-    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type, &beginMethodCatchFirstInstr,
-                                    exceptionValueIndex);
+    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type, &beginMethodCatchFirstInstr);
     ILInstr* beginMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** BeginMethod exception handling clause
@@ -549,18 +551,21 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     ILInstr* endMethodTryLeave = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
-    ILInstr* filterEnd;
+    ILInstr* filterEnd = nullptr;
+    ILInstr* endMethodCatchFirstInstr = nullptr;
     if (corProfiler->call_target_bubble_up_exception_available)
     {
-        filterEnd = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(), bubbleUpExceptionTypeRef,
-                                                          exceptionValueIndex);
+        Logger::Debug("Creating filter for try / catch for CallTargetBubbleUpException (end method).");
+        filterEnd = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(),
+                                                             bubbleUpExceptionTypeRef,
+                                                             exceptionValueIndex);
+        endMethodCatchFirstInstr = reWriterWrapper.Pop();
+        reWriterWrapper.LoadLocal(exceptionValueIndex);
     }
 
     // transfer->m_pTarget = endFilter;
     // *** EndMethod call catch
-    ILInstr* endMethodCatchFirstInstr = nullptr;
-    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type, &endMethodCatchFirstInstr,
-                                    exceptionValueEndIndex);
+    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type, &endMethodCatchFirstInstr);
 
     ILInstr* endMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
@@ -579,7 +584,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     {
         endMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
         endMethodExClause.m_pTryBegin = endMethodTryStartInstr;
-        endMethodExClause.m_pTryEnd = beginMethodCatchFirstInstr;
+        endMethodExClause.m_pTryEnd = endMethodCatchFirstInstr;
         endMethodExClause.m_pHandlerBegin = endMethodCatchFirstInstr;
         endMethodExClause.m_pHandlerEnd = endMethodCatchLeaveInstr;
         endMethodExClause.m_ClassToken = tracerTokens->GetExceptionTypeRef();
