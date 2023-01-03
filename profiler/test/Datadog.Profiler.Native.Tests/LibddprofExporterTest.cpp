@@ -504,6 +504,9 @@ TEST(LibddprofExporterTest, CheckNoEnabledProfilers)
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(0).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(0).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false);
 
     std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
@@ -518,6 +521,9 @@ TEST(LibddprofExporterTest, CheckAllEnabledProfilers)
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(true));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(true));
+    EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(1).WillOnce(Return(true));
+    EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(1).WillOnce(Return(true));
+    EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true);
 
     std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
@@ -526,6 +532,9 @@ TEST(LibddprofExporterTest, CheckAllEnabledProfilers)
     ASSERT_TRUE(tag.find("cpu") != std::string::npos);
     ASSERT_TRUE(tag.find("exceptions") != std::string::npos);
     ASSERT_TRUE(tag.find("allocations") != std::string::npos);
+    ASSERT_TRUE(tag.find("lock") != std::string::npos);
+    ASSERT_TRUE(tag.find("gc") != std::string::npos);
+    ASSERT_TRUE(tag.find("heap") != std::string::npos);
 }
 
 TEST(LibddprofExporterTest, CheckCpuIsEnabled)
@@ -596,4 +605,103 @@ TEST(LibddprofExporterTest, CheckAllocationIsDisabledWhenNoEvents)
     std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
+}
+
+TEST(LibddprofExporterTest, CheckLockContentionIsEnabledWhenEvents)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(1).WillOnce(Return(true));
+    EnabledProfilers enabledProfilers(configuration.get(), true);
+
+    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+
+    ASSERT_TRUE(tag == "lock");
+}
+
+TEST(LibddprofExporterTest, CheckLockContentionIsDisabledWhenNoEvents)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(0).WillOnce(Return(true));
+    EnabledProfilers enabledProfilers(configuration.get(), false);
+
+    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+
+    ASSERT_TRUE(tag.empty());
+}
+
+TEST(LibddprofExporterTest, CheckGarbageCollectionIsEnabledWhenEvents)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(1).WillOnce(Return(true));
+    EnabledProfilers enabledProfilers(configuration.get(), true);
+
+    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+
+    ASSERT_TRUE(tag == "gc");
+}
+
+TEST(LibddprofExporterTest, CheckGarbageCollectionIsDisabledWhenNoEvents)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(0).WillOnce(Return(true));
+    EnabledProfilers enabledProfilers(configuration.get(), false);
+
+    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+
+    ASSERT_TRUE(tag.empty());
+}
+
+TEST(LibddprofExporterTest, CheckHeapIsEnabledWhenEvents)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).Times(1).WillOnce(Return(true));
+    EnabledProfilers enabledProfilers(configuration.get(), true);
+
+    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+
+    ASSERT_TRUE(tag.find("heap") != std::string::npos);
+}
+
+TEST(LibddprofExporterTest, CheckHeapIsDisabledWhenNoEvents)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).Times(0).WillOnce(Return(true));
+    EnabledProfilers enabledProfilers(configuration.get(), false);
+
+    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+
+    ASSERT_TRUE(tag.empty());
+}
+
+TEST(LibddprofExporterTest, CheckAllocationIsEnabledWhenHeapIsEnabled)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).Times(1).WillOnce(Return(true));
+    EnabledProfilers enabledProfilers(configuration.get(), true);
+
+    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+
+    ASSERT_TRUE(tag.find("allocations") != std::string::npos);
+    ASSERT_TRUE(tag.find("heap") != std::string::npos);
 }

@@ -29,6 +29,7 @@ namespace Samples.Computer01
         private GenericsAllocation _genericsAllocation;
         private ContentionGenerator _contentionGenerator;
         private GarbageCollections _garbageCollections;
+        private MemoryLeak _memoryLeak;
 
 #if NET6_0_OR_GREATER
         private LinuxSignalHandler _linuxSignalHandler;
@@ -101,6 +102,10 @@ namespace Samples.Computer01
                     StartGarbageCollections(parameter);
                     break;
 
+                case Scenario.MemoryLeak:
+                    StartMemoryLeak(parameter);
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -167,6 +172,10 @@ namespace Samples.Computer01
 
                 case Scenario.GarbageCollection:
                     StopGarbageCollections();
+                    break;
+
+                case Scenario.MemoryLeak:
+                    StopMemoryLeak();
                     break;
             }
         }
@@ -236,6 +245,10 @@ namespace Samples.Computer01
 #endif
                     case Scenario.GarbageCollection:
                         RunGarbageCollections(parameter);
+                        break;
+
+                    case Scenario.MemoryLeak:
+                        RunMemoryLeak(parameter);
                         break;
 
                     default:
@@ -339,6 +352,14 @@ namespace Samples.Computer01
             _garbageCollections.Start();
         }
 
+        private void StartMemoryLeak(int parameter)
+        {
+            // by default, no limit to allocations
+
+            _memoryLeak = new MemoryLeak(parameter);
+            _memoryLeak.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -413,6 +434,11 @@ namespace Samples.Computer01
         private void StopGarbageCollections()
         {
             _garbageCollections.Stop();
+        }
+
+        private void StopMemoryLeak()
+        {
+            _memoryLeak.Stop();
         }
 
         private void RunComputer()
@@ -501,6 +527,12 @@ namespace Samples.Computer01
 
             var garbageCollections = new GarbageCollections(parameter);
             garbageCollections.Run();
+        }
+
+        private void RunMemoryLeak(int parameter)
+        {
+            var memoryLeak = new MemoryLeak(parameter);
+            memoryLeak.Run();
         }
 
         public class MySpecialClassA

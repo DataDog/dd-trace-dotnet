@@ -152,9 +152,14 @@ jobs:
       matrix:
         framework:
           - net60
+          - net70
         scenario:
           - Allocations
           - Contention
+          - LiveHeap
+        exclude:
+          - framework: net60
+            scenario: LiveHeap
     services:
       dd-agent:
         image: 'datadog/agent:latest'
@@ -201,7 +206,7 @@ jobs:
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
-      - name: Execute PiComputation benchmark
+      - name: Execute CLR events benchmark
         run: |
           cd profiler/build
           ./run.sh  ${{ matrix.scenario }} ${{ matrix.framework }}
@@ -576,9 +581,14 @@ jobs:
       matrix:
         framework:
           - net60
+          - net70
         scenario:
           - Allocations
           - Contention
+          - LiveHeap
+        exclude:
+          - framework: net60
+            scenario: LiveHeap
     steps:
 
       - uses: actions/setup-dotnet@v2

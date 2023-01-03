@@ -23,6 +23,7 @@
 #include "SamplesCollector.h"
 #include "GarbageCollectionProvider.h"
 #include "StopTheWorldGCProvider.h"
+#include "LiveObjectsProvider.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
 #include "shared/src/native-src/string.h"
@@ -194,6 +195,8 @@ private :
     std::atomic<ULONG> _refCount{0};
     ICorProfilerInfo5* _pCorProfilerInfo = nullptr;
     ICorProfilerInfo12* _pCorProfilerInfoEvents = nullptr;
+    ICorProfilerInfo13* _pCorProfilerInfoLiveHeap = nullptr;
+
     std::unique_ptr<ClrEventsParser> _pClrEventsParser = nullptr;
     EVENTPIPE_SESSION _session{0};
     inline static bool _isNet46OrGreater = false;
@@ -215,6 +218,7 @@ private :
     SamplesCollector* _pSamplesCollector = nullptr;
     StopTheWorldGCProvider* _pStopTheWorldProvider = nullptr;
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
+    LiveObjectsProvider* _pLiveObjectsProvider = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
 

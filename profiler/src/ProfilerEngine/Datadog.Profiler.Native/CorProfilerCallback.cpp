@@ -160,7 +160,52 @@ bool CorProfilerCallback::InitializeServices()
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
     if (_pCorProfilerInfoEvents != nullptr)
     {
-        if (_pConfiguration->IsAllocationProfilingEnabled())
+        // live objects profiling requires allocations profiling
+        if (_pConfiguration->IsHeapProfilingEnabled())
+        {
+            if (_pCorProfilerInfoLiveHeap != nullptr)
+            {
+                auto valueTypes = LiveObjectsProvider::SampleTypeDefinitions;
+                sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+                _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
+                    valuesOffset,
+                    _pCorProfilerInfoLiveHeap,
+                    _pManagedThreadList,
+                    _pFrameStore.get(),
+                    _pThreadsCpuManager,
+                    _pAppDomainStore.get(),
+                    pRuntimeIdStore,
+                    _pConfiguration.get());
+                valuesOffset += static_cast<uint32_t>(valueTypes.size());
+
+                valueTypes = AllocationsProvider::SampleTypeDefinitions;
+                sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+                _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                    valuesOffset,
+                    _pCorProfilerInfo,
+                    _pManagedThreadList,
+                    _pFrameStore.get(),
+                    _pThreadsCpuManager,
+                    _pAppDomainStore.get(),
+                    pRuntimeIdStore,
+                    _pConfiguration.get(),
+                    _pLiveObjectsProvider
+                    );
+                valuesOffset += static_cast<uint32_t>(valueTypes.size());
+
+                if (!_pConfiguration->IsAllocationProfilingEnabled())
+                {
+                    Log::Warn("Allocations profiling is enabled due to activated live objects profiling.");
+                }
+            }
+            else
+            {
+                Log::Warn("Live Heap profiling requires .NET 7+ so it is disabled.");
+            }
+        }
+
+        // check for allocations profiling only (without heap profiling)
+        if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
         {
             auto valueTypes = AllocationsProvider::SampleTypeDefinitions;
             sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
@@ -172,7 +217,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get()
+                _pConfiguration.get(),
+                nullptr  // no listener
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
@@ -228,9 +274,18 @@ bool CorProfilerCallback::InitializeServices()
             _pCorProfilerInfoEvents,
             _pAllocationsProvider,
             _pContentionProvider,
-            _pStopTheWorldProvider,
-            _pGarbageCollectionProvider
+            _pStopTheWorldProvider
             );
+
+        if (_pGarbageCollectionProvider != nullptr)
+        {
+            _pClrEventsParser->Register(_pGarbageCollectionProvider);
+        }
+        if (_pLiveObjectsProvider != nullptr)
+        {
+            _pClrEventsParser->Register(_pLiveObjectsProvider);
+        }
+        // TODO: register any provider that needs to get notified when GCs start and end
     }
 
     // Avoid iterating twice on all providers in order to inject this value in each constructor
@@ -286,6 +341,13 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
             _pSamplesCollector->Register(_pAllocationsProvider);
+        }
+
+        // Live heap profiling required .NET 7+ and ICorProfilerInfo13 in _pCorProfilerInfoLiveHeap
+        // --> _pLiveObjectsProvider is null otherwise
+        if (_pConfiguration->IsHeapProfilingEnabled() && (_pLiveObjectsProvider != nullptr))
+        {
+            _pSamplesCollector->RegisterBatchedProvider(_pLiveObjectsProvider);
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -497,11 +559,18 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
 {
     runtimeMajor = 0;
     runtimeMinor = 0;
-    IUnknown* tstVerProfilerInfo;  // ICorProfilerInfo13 will ship with .NET 7
+    IUnknown* tstVerProfilerInfo;
+    if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&tstVerProfilerInfo))
+    {
+        _isNet46OrGreater = true;
+        Log::Info("ICorProfilerInfo13 available. Profiling API compatibility: .NET Core 7.0 or later.");
+        tstVerProfilerInfo->Release();
+    }
+    else
     if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&tstVerProfilerInfo))
     {
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
+        Log::Info("ICorProfilerInfo12 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
@@ -509,7 +578,7 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
         runtimeMajor = 3;
         runtimeMinor = 1;
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.1 or later.");
+        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 3.1 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**)&tstVerProfilerInfo))
@@ -773,12 +842,26 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // If no such provider is enabled, no need to trigger it.
     // TODO: update the test when a new CLR events-based profiler is added (contention, GC, ...)
     bool AreEventBasedProfilersEnabled =
+        _pConfiguration->IsHeapProfilingEnabled() ||
         _pConfiguration->IsAllocationProfilingEnabled() ||
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled()
         ;
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
+        // Live heap profiling requires .NET 7+ and ICorProfilerInfo13
+        if (major >= 7)
+        {
+            HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&_pCorProfilerInfoLiveHeap);
+            if (FAILED(hr))
+            {
+                Log::Error("Failed to get ICorProfilerInfo13: 0x", std::hex, hr, std::dec, ".");
+                _pCorProfilerInfoLiveHeap = nullptr;
+
+                // we continue: the live heap profiler will be disabled...
+            }
+        }
+
         HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
         if (FAILED(hr))
         {
@@ -800,7 +883,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         {
             if (AreEventBasedProfilersEnabled)
             {
-                Log::Warn("Event-based profilers (Allocation, Contention) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
+                Log::Warn("Event-based profilers (Allocation, LockContention) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
             }
         }
     }
@@ -843,7 +926,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
 
-        if (_pConfiguration->IsAllocationProfilingEnabled())
+        if (
+            _pConfiguration->IsAllocationProfilingEnabled() ||
+            _pConfiguration->IsHeapProfilingEnabled()
+            )
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
 
@@ -941,6 +1027,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     {
         _pGarbageCollectionProvider->Stop();
     }
+
+    if (_pLiveObjectsProvider != nullptr)
+    {
+        _pLiveObjectsProvider->Stop();
+    }
+
 
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();

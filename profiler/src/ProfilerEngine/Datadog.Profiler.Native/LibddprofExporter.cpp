@@ -216,13 +216,33 @@ std::string LibddprofExporter::GetEnabledProfilersTag(IEnabledProfilers* enabled
         emptyList = false;
     }
 
-    if (enabledProfilers->IsEnabled(RuntimeProfiler::Contention))
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::LockContention))
     {
         if (!emptyList)
         {
             buffer << separator;
         }
-        buffer << "contention";
+        buffer << "lock";
+        emptyList = false;
+    }
+
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::GC))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "gc";
+        emptyList = false;
+    }
+
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::Heap))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "heap";
         emptyList = false;
     }
 

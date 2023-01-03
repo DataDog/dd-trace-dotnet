@@ -1045,8 +1045,25 @@ partial class Build : NukeBuild
                    else
                    {
                        var matrix = job.Strategy.Matrix;
-                       foreach (var product in CartesianProduct(matrix.Values))
+                       var excludedConfigurations = matrix.SingleOrDefault(kv => kv.Key == "exclude").Value;
+
+                       List<List<string>> exclusions = new();
+
+                       if (excludedConfigurations != null)
                        {
+                           foreach (Dictionary<object, object> exc in excludedConfigurations)
+                           {
+                               exclusions.Add(exc.Values.Cast<string>().ToList());
+                           }
+                       }
+
+                       foreach (var product in CartesianProduct(matrix.Where(kv => kv.Key != "exclude").Select(kv => kv.Value)))
+                       {
+                           if (exclusions.Any(l => l.All(e => product.Contains(e))))
+                           {
+                               continue;
+                           }
+
                            yield return $"{jobName} ({string.Join(", ", product)})";
                        }
                    }
@@ -1117,7 +1134,7 @@ partial class Build : NukeBuild
 
         public class StrategyDefinition
         {
-            public Dictionary<string, List<string>> Matrix { get; set; }
+            public Dictionary<string, List<object>> Matrix { get; set; }
         }
     }
 }

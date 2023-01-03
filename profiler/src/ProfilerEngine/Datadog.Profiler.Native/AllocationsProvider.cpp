@@ -9,6 +9,7 @@
 #include "IThreadsCpuManager.h"
 #include "IAppDomainStore.h"
 #include "IRuntimeIdStore.h"
+#include "ISampledAllocationsListener.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "shared/src/native-src/com_ptr.h"
@@ -30,14 +31,16 @@ AllocationsProvider::AllocationsProvider(
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration)
+    IConfiguration* pConfiguration,
+    ISampledAllocationsListener* pListener)
     :
     CollectorBase<RawAllocationSample>("AllocationsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
-    _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval())
+    _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
+    _pListener(pListener)
 {
 }
 
@@ -80,12 +83,20 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     result->CopyInstructionPointers(rawSample.Stack);
     rawSample.ThreadInfo = threadInfo;
     rawSample.AllocationSize = objectSize;
+    rawSample.Address = address;
+    rawSample.MethodTable = classId;
 
     // The provided type name contains the metadata-based `xx syntax for generics instead of <>
     // So rely on the frame store to get a C#-like representation like what is done for frames
     if (!_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
     {
         rawSample.AllocationClass = shared::ToString(shared::WSTRING(typeName));
+    }
+
+    // the listener is the live objects profiler: could be null if disabled
+    if (_pListener != nullptr)
+    {
+        _pListener->OnAllocation(rawSample);
     }
 
     Add(std::move(rawSample));

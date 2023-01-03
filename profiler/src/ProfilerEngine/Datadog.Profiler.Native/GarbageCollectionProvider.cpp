@@ -21,7 +21,7 @@ GarbageCollectionProvider::GarbageCollectionProvider(
 {
 }
 
-void GarbageCollectionProvider::OnGarbageCollection(
+void GarbageCollectionProvider::OnGarbageCollectionEnd(
     int32_t number,
     uint32_t generation,
     GCReason reason,
@@ -50,4 +50,13 @@ void GarbageCollectionProvider::OnGarbageCollection(
     rawSample.IsCompacting = isCompacting;
 
     Add(std::move(rawSample));
+}
+
+void GarbageCollectionProvider::OnGarbageCollectionStart(
+    int32_t number,
+    uint32_t generation,
+    GCReason reason,
+    GCType type
+    )
+{
 }
