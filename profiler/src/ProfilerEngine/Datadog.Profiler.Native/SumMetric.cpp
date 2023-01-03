@@ -27,5 +27,5 @@ std::list<MetricBase::Metric> SumMetric::GetMetrics()
         value = std::exchange(_value, value);
     }
 
-    return std::list<Metric>{ {_name, value} };
+    return std::list<Metric>{{_name, value}};
 }
