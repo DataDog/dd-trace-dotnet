@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 
         static TracerProviderBuilderIntegration()
         {
-            _cachedAddProcessorDelegate = (Func<object, object, object>)CreateAddProcessorDelegate();
+            _cachedAddProcessorDelegate = CreateAddProcessorDelegate();
             _cachedProcessorType = CreateProcessorType();
         }
 
