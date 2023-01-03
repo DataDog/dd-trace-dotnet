@@ -184,6 +184,7 @@ partial class Build : NukeBuild
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(BuildRunnerTool)
+        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileManagedUnitTests)
         .DependsOn(RunManagedUnitTests);
 

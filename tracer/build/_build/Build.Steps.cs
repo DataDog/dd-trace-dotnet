@@ -667,8 +667,8 @@ partial class Build
                 $"src/**/bin/{BuildConfiguration}",
                 $"src/Datadog.Trace.Tools.Runner/obj/{BuildConfiguration}",
                 $"src/Datadog.Trace.Tools.Runner/bin/{BuildConfiguration}",
-                $"test/Datadog.Trace.TestHelpers/**/obj/{BuildConfiguration}",
-                $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
+                $"test/Datadog.Trace.TestHelpers*/**/obj/{BuildConfiguration}",
+                $"test/Datadog.Trace.TestHelpers*/**/bin/{BuildConfiguration}",
                 $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
             );
 
@@ -830,16 +830,8 @@ partial class Build
         .Executes(() =>
         {
             //we need to build in this exact order
-            var helperLibs = TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj");
-            var autoHelperLibs = TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj");
-            DotnetBuild(helperLibs);
-            DotnetBuild(autoHelperLibs);
-            
-            // we need to build the platform-specific versions because the integration tests
-            // currently target x64/x86
-            DotnetBuild(helperLibs, platform: TargetPlatform);
-            DotnetBuild(autoHelperLibs, platform: TargetPlatform);
-            
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"));
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"));
         });
 
     Target CompileManagedUnitTests => _ => _
@@ -847,6 +839,7 @@ partial class Build
         .After(Restore)
         .After(CompileManagedSrc)
         .After(BuildRunnerTool)
+        .After(CreatePlatformlessSymlinks)
         .DependsOn(CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CompileManagedTestHelpers)
         .Executes(() =>
