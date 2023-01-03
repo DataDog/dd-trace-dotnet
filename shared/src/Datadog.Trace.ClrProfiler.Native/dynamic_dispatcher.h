@@ -19,6 +19,7 @@ namespace datadog::shared::nativeloader
     class IDynamicDispatcher
     {
     public:
+        virtual ~IDynamicDispatcher() = default;
         virtual void LoadConfiguration(fs::path&& configFilePath) = 0;
         virtual HRESULT LoadClassFactory(REFIID riid) = 0;
         virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) = 0;
