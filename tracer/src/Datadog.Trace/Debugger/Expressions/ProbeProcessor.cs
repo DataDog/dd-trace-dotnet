@@ -179,14 +179,16 @@ namespace Datadog.Trace.Debugger.Expressions
                     snapshotCreator.CaptureEntryAsyncMethod(ref info);
                     break;
                 case MethodState.EntryEnd:
-                    snapshotCreator.ProcessQueue(ref info);
-                    snapshotCreator.CaptureEntryMethodEndMarker(info.Value, info.Type, info.HasLocalOrArgument.Value);
                     if (!ProbeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, evaluationResult.Template, ref info, evaluationResult.Errors);
                         LiveDebugger.Instance.AddSnapshot(snapshot);
                         snapshotCreator.CaptureBehaviour = CaptureBehaviour.NoCapture;
+                        break;
                     }
+
+                    snapshotCreator.ProcessQueue(ref info);
+                    snapshotCreator.CaptureEntryMethodEndMarker(info.Value, info.Type, info.HasLocalOrArgument.Value);
 
                     break;
                 case MethodState.ExitStart:
@@ -196,9 +198,18 @@ namespace Datadog.Trace.Debugger.Expressions
                 case MethodState.ExitEnd:
                 case MethodState.ExitEndAsync:
                     {
+                        string snapshot = null;
+                        if (!ProbeInfo.IsFullSnapshot)
+                        {
+                            snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, evaluationResult.Template, ref info, evaluationResult.Errors);
+                            LiveDebugger.Instance.AddSnapshot(snapshot);
+                            snapshotCreator.CaptureBehaviour = CaptureBehaviour.NoCapture;
+                            break;
+                        }
+
                         snapshotCreator.ProcessQueue(ref info);
                         snapshotCreator.CaptureExitMethodEndMarker(ref info);
-                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, evaluationResult.Template, ref info, evaluationResult.Errors);
+                        snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, evaluationResult.Template, ref info, evaluationResult.Errors);
                         LiveDebugger.Instance.AddSnapshot(snapshot);
                         break;
                     }

@@ -85,12 +85,19 @@ internal static class DebuggerTestHelper
             {
                 var testAttribute = m.GetCustomAttribute<MethodProbeTestDataAttribute>().As<ProbeAttributeBase>();
                 var probe = CreateSnapshotMethodProbe(m, guidGenerator);
-                probe = testAttribute switch
+
+                if (testAttribute is ExpressionProbeTestDataAttribute expression)
                 {
-                    ExpressionProbeTestDataAttribute { IsCondition: true } condition => probe.WithWhen(condition.Dsl, condition.Json, (EvaluateAt)condition.EvaluateAt),
-                    ExpressionProbeTestDataAttribute { IsCondition: false } template => probe.WithTemplate(template.Template, template.Dsl, template.Json, template.Str, (EvaluateAt)template.EvaluateAt),
-                    _ => probe
-                };
+                    if (expression.ConditionJson != null)
+                    {
+                        probe = probe.WithWhen(expression.ConditionDsl, expression.ConditionJson, (EvaluateAt)expression.EvaluateAt);
+                    }
+
+                    if (expression.TemplateJson != null)
+                    {
+                        probe = probe.WithTemplate(expression.TemplateDsl, expression.TemplateJson, expression.TemplateStr, (EvaluateAt)expression.EvaluateAt);
+                    }
+                }
 
                 return (testAttribute, probe);
             });
@@ -110,7 +117,9 @@ internal static class DebuggerTestHelper
 
     internal static SnapshotProbe CreateDefaultSnapshotProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator, MethodProbeTestDataAttribute probeTestData = null)
     {
-        return CreateSnapshotProbe(guidGenerator).WithCapture().WithWhere(typeName, methodName, probeTestData).WithSampling().WithTemplate();
+        var snapshot = CreateSnapshotProbe(guidGenerator).WithWhere(typeName, methodName, probeTestData).WithSampling().WithTemplate();
+        var isFullSnapshot = probeTestData?.IsFullSnapshot ?? true;
+        return isFullSnapshot ? snapshot.WithCapture() : snapshot;
     }
 
     internal static SnapshotProbe WithWhere(this SnapshotProbe snapshot, string typeName, string methodName, MethodProbeTestDataAttribute probeTestData = null)
@@ -165,7 +174,7 @@ internal static class DebuggerTestHelper
 
     internal static SnapshotProbe WithTemplate(this SnapshotProbe snapshot)
     {
-        if (snapshot.Template != null)
+        if (snapshot.Segments != null)
         {
             return snapshot;
         }
@@ -181,9 +190,8 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    internal static SnapshotProbe WithTemplate(this SnapshotProbe snapshot, string template, string dsl, string json, string str, EvaluateAt evaluateAt)
+    internal static SnapshotProbe WithTemplate(this SnapshotProbe snapshot, string dsl, string json, string str, EvaluateAt evaluateAt)
     {
-        snapshot.Template = template;
         snapshot.Segments = new DebuggerExpression[] { new(dsl, json, null), new(null, null, str) };
         snapshot.EvaluateAt = evaluateAt;
         return snapshot;

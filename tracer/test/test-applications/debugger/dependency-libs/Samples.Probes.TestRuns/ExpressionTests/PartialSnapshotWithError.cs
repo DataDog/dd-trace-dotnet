@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    public class GreaterThenArgumentFalse : IRun
+    internal class PartialSnapshotWithError : IRun
     {
         private const string Dsl = @"{
   ""dsl"": ""^intArg \u003e 2""
@@ -11,7 +11,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         private const string Json = @"{
   ""json"": {
     ""gt"": [
-      ""^intArg"",
+      ""^undefine"",
       2
     ]
   }
@@ -20,17 +20,17 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
-            Method(1);
+            Method(3);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [ExpressionProbeTestData(conditionDsl: Dsl,
-                                 conditionJson: Json,
-                                 isFullSnapshot: true,
-                                 evaluateAt: 1,
-                                 expectedNumberOfSnapshots: 0,
-                                 returnTypeName: "System.String",
-                                 parametersTypeName: new[] { "System.Int32" })]
+        [ExpressionProbeTestData(
+            conditionDsl: Dsl,
+            conditionJson: Json,
+            isFullSnapshot: false,
+            evaluateAt: 1,
+            returnTypeName: "System.String",
+            parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)
         {
             return $"Dsl: {Dsl}, Argument: {intArg}";
