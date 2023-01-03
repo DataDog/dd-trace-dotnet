@@ -247,8 +247,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentMetricsWhereValue_IncomingMetricsWhereAnotherValue_ProbeRelatedChanged()
     {
-        var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new MetricProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "c:/temp/temp.log" } } } };
-        var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new MetricProbe() { Where = new Where() { Lines = new[] { "57" }, SourceFile = "c:/temp/temp.log" } } } };
+        var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "c:/temp/temp.log" } } } };
+        var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Where = new Where() { Lines = new[] { "57" }, SourceFile = "c:/temp/temp.log" } } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
@@ -258,8 +258,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentMetricsValue_IncomingMetricsAnotherValue_ProbeRelatedChanged()
     {
-        var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new MetricProbe() { Value = new MetricValue() { Expr = "Some" } } } };
-        var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new MetricProbe() { Value = new MetricValue() { Expr = "AweSome" } } } };
+        var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new DebuggerExpression { Dsl = "Some" } } } };
+        var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new DebuggerExpression { Dsl = "AweSome" } } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
@@ -269,8 +269,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentMetricsValue_IncomingMetricsSameValue_ProbeRelatedChanged()
     {
-        var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new MetricProbe() { Value = new MetricValue() { Expr = "Some" } } } };
-        var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new MetricProbe() { Value = new MetricValue() { Expr = "Some" } } } };
+        var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new DebuggerExpression { Dsl = "Some" } } } };
+        var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new DebuggerExpression { Dsl = "Some" } } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();

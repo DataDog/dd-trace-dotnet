@@ -5,16 +5,5 @@
 
 namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    internal record struct DebuggerExpression
-    {
-        public DebuggerExpression(string dsl, string json)
-        {
-            Dsl = dsl;
-            Json = json;
-        }
-
-        public string Dsl { get; }
-
-        public string Json { get; }
-    }
+    internal record struct DebuggerExpression(string Dsl, string Json, string Str);
 }

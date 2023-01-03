@@ -10,8 +10,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using AgileObjects.ReadableExpressions;
-using Datadog.Trace.Debugger.Conditions;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using VerifyTests;
 using VerifyXunit;
@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.Debugger
     {
         public DebuggerExpressionLanguageTests()
         {
-            Test = new TestStruct()
+            Test = new TestStruct
             {
                 Collection = new List<string> { "hello", "1st Item", "2nd item", "3rd item" },
                 IntNumber = 42,
@@ -53,20 +53,26 @@ namespace Datadog.Trace.Tests.Debugger
         public async Task TestExpression(string expressionTestFilePath)
         {
             // Arrange
-            var evaluator = GetJsonExpression(expressionTestFilePath);
+            var evaluator = GetEvaluator(expressionTestFilePath);
             var settings = ConfigureVerifySettings(expressionTestFilePath);
 
             // Act
-            var compiledExpression = ProbeExpressionParser.ParseExpression<bool>(evaluator.DebuggerExpressions.First().Json, evaluator.MethodScopeMembers.InvocationTarget, evaluator.MethodScopeMembers.Members);
-            var result = evaluator.Evaluate();
+            var compiledExpression = ProbeExpressionParser<bool>.ParseExpression(evaluator.Condition.Value.Json, evaluator.ScopeMembers.InvocationTarget, evaluator.ScopeMembers.Members);
+            var result = Evaluate(evaluator);
 
             // Assert
             Assert.True(result.Succeeded);
-            var toVerify = $"Expression: {compiledExpression.ParsedExpression.ToReadableString()}{Environment.NewLine}Result: {result.Condition}";
+            var toVerify = $"Json: {compiledExpression.RawExpression}{Environment.NewLine}Expression: {compiledExpression.ParsedExpression.ToReadableString()}{Environment.NewLine}Result: {result.ConditionResult}";
             await Verifier.Verify(toVerify, settings);
         }
 
-        private static VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
+        private (bool Succeeded, bool ConditionResult) Evaluate(ProbeExpressionEvaluator evaluator)
+        {
+            var result = evaluator.Evaluate();
+            return (result.Succeeded, result.Condition.Value);
+        }
+
+        private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
         {
             var settings = new VerifySettings();
             settings.UseFileName($"{nameof(DebuggerExpressionLanguageTests)}.{Path.GetFileNameWithoutExtension(expressionTestFilePath)}");
@@ -76,13 +82,13 @@ namespace Datadog.Trace.Tests.Debugger
             return settings;
         }
 
-        private ProbeConditionEvaluator GetJsonExpression(string expressionTestFilePath)
+        private ProbeExpressionEvaluator GetEvaluator(string expressionTestFilePath)
         {
             var jsonExpression = File.ReadAllText(expressionTestFilePath);
             var dsl = GetDsl(jsonExpression);
-            var probeExpression = new ProbeConditionEvaluator(" ", EvaluateAt.Exit, new DebuggerExpression[] { new(dsl, jsonExpression) });
-            PopulateMembers(probeExpression);
-            return probeExpression;
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = new ProbeExpressionEvaluator(null, new DebuggerExpression(dsl, jsonExpression, null), null, scopeMembers);
+            return evaluator;
         }
 
         private string GetDsl(string expressionJson)
@@ -106,25 +112,28 @@ namespace Datadog.Trace.Tests.Debugger
             throw new InvalidOperationException("DSL part not found in the json file");
         }
 
-        private void PopulateMembers(ProbeExpressionEvaluatorBase probeExpressionEvaluator)
+        private MethodScopeMembers CreateScopeMembers()
         {
-            probeExpressionEvaluator.CreateMethodScopeMembers(5, 5);
+            var scope = new MethodScopeMembers(5, 5);
+
             // Add locals
-            probeExpressionEvaluator.AddMember("IntLocal", Test.IntNumber.GetType(), Test.IntNumber, ScopeMemberKind.Local);
-            probeExpressionEvaluator.AddMember("DoubleLocal", Test.DoubleNumber.GetType(), Test.DoubleNumber, ScopeMemberKind.Local);
-            probeExpressionEvaluator.AddMember("StringLocal", Test.String.GetType(), Test.String, ScopeMemberKind.Local);
-            probeExpressionEvaluator.AddMember("CollectionLocal", Test.Collection.GetType(), Test.Collection, ScopeMemberKind.Local);
-            probeExpressionEvaluator.AddMember("NestedObjectLocal", Test.Nested.GetType(), Test.Nested, ScopeMemberKind.Local);
+            scope.AddMember(new ScopeMember("IntLocal", Test.IntNumber.GetType(), Test.IntNumber, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("DoubleLocal", Test.DoubleNumber.GetType(), Test.DoubleNumber, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("StringLocal", Test.String.GetType(), Test.String, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("CollectionLocal", Test.Collection.GetType(), Test.Collection, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("NestedObjectLocal", Test.Nested.GetType(), Test.Nested, ScopeMemberKind.Local));
 
             // Add arguments
-            probeExpressionEvaluator.AddMember("IntArg", Test.IntNumber.GetType(), Test.IntNumber, ScopeMemberKind.Argument);
-            probeExpressionEvaluator.AddMember("DoubleArg", Test.DoubleNumber.GetType(), Test.DoubleNumber, ScopeMemberKind.Argument);
-            probeExpressionEvaluator.AddMember("StringArg", Test.String.GetType(), Test.String, ScopeMemberKind.Argument);
-            probeExpressionEvaluator.AddMember("CollectionArg", Test.Collection.GetType(), Test.Collection, ScopeMemberKind.Argument);
-            probeExpressionEvaluator.AddMember("NestedObjectArg", Test.Nested.GetType(), Test.Nested, ScopeMemberKind.Argument);
+            scope.AddMember(new ScopeMember("IntArg", Test.IntNumber.GetType(), Test.IntNumber, ScopeMemberKind.Argument));
+            scope.AddMember(new ScopeMember("DoubleArg", Test.DoubleNumber.GetType(), Test.DoubleNumber, ScopeMemberKind.Argument));
+            scope.AddMember(new ScopeMember("StringArg", Test.String.GetType(), Test.String, ScopeMemberKind.Argument));
+            scope.AddMember(new ScopeMember("CollectionArg", Test.Collection.GetType(), Test.Collection, ScopeMemberKind.Argument));
+            scope.AddMember(new ScopeMember("NestedObjectArg", Test.Nested.GetType(), Test.Nested, ScopeMemberKind.Argument));
 
             // Add "this" member
-            probeExpressionEvaluator.AddInvocationTarget("this", Test.GetType(), Test);
+            scope.InvocationTarget = new ScopeMember("this", Test.GetType(), Test, ScopeMemberKind.This);
+
+            return scope;
         }
 
         internal struct TestStruct

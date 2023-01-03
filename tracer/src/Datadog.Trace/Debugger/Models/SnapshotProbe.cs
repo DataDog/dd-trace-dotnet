@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger.Models
 
         public StackInfo[] Stack { get; set; }
 
-        public EvaluationErrors[] EvaluationErrors { get; set; }
+        public EvaluationError[] EvaluationErrors { get; set; }
 
         public string Id { get; set; }
 
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Debugger.Models
         public int LineNumber { get; set; }
     }
 
-    internal record struct EvaluationErrors
+    internal record struct EvaluationError
     {
         public string Expression { get; set; }
 

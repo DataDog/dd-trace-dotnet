@@ -57,7 +57,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _lineNumber = lineNumber;
             _probeFilePath = probeFilePath;
             HasLocalsOrReturnValue = false;
-            SnapshotCreator = new DebuggerSnapshotCreator();
+            SnapshotCreator = new DebuggerSnapshotCreator(probeId);
             _moveNextInvocationTarget = invocationTarget;
             _kickoffInvocationTarget = kickoffInvocationTarget;
         }

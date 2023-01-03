@@ -1,4 +1,25 @@
-﻿DSL: filter(#CollectionLocal, { len(@it) > 4 })
+﻿Json: {
+  "dsl": "filter(#CollectionLocal, { len(@it) > 4 })",
+  "json": {
+    "gt": [
+      {
+        "count": {
+          "filter": [
+            "#CollectionLocal",
+            {
+              "gt": [
+                { "len": "@it" },
+                4
+              ]
+            }
+          ]
+        }
+      },
+      2
+    ]
+  },
+  "ignored": true
+}
 Expression: (scopeMember, scopeMemberArray) =>
 {
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
@@ -12,8 +33,10 @@ Expression: (scopeMember, scopeMemberArray) =>
     var StringArg = (string)scopeMemberArray[7].Value;
     var CollectionArg = (List<string>)scopeMemberArray[8].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
-    CollectionLocal
+    var $result = CollectionLocal
         .Where(@string => @string.Length > 4)
         .ToList().Count > 2;
+
+    return $result;
 }
 Result: True

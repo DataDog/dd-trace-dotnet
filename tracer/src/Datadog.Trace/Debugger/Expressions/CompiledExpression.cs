@@ -5,19 +5,30 @@
 
 using System;
 using System.Linq.Expressions;
+using Datadog.Trace.Debugger.Models;
 
-namespace Datadog.Trace.Debugger.Conditions
+namespace Datadog.Trace.Debugger.Expressions
 {
     internal readonly record struct CompiledExpression<T>
     {
-        public CompiledExpression(Func<ScopeMember, ScopeMember[], T> @delegate, Expression parsedExpression)
+        public CompiledExpression(
+            Func<ScopeMember, ScopeMember[], T> @delegate,
+            Expression parsedExpression,
+            string rawExpression,
+            EvaluationError[] errors)
         {
             Delegate = @delegate;
             ParsedExpression = parsedExpression;
+            RawExpression = rawExpression;
+            Errors = errors;
         }
 
         internal Func<ScopeMember, ScopeMember[], T> Delegate { get; }
 
         internal Expression ParsedExpression { get; }
+
+        public string RawExpression { get; }
+
+        public EvaluationError[] Errors { get; }
     }
 }

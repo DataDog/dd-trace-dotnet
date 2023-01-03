@@ -49,8 +49,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _startTime = startTime;
             _methodMetadataIndex = methodMetadataIndex;
             HasLocalsOrReturnValue = false;
-            SnapshotCreator = new DebuggerSnapshotCreator();
             InvocationTarget = invocationTarget;
+            SnapshotCreator = new DebuggerSnapshotCreator(probeId);
             MethodPhase = EvaluateAt.Entry;
         }
 

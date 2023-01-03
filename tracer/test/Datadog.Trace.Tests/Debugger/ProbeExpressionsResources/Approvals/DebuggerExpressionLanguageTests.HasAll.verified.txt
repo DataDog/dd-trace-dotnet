@@ -1,4 +1,18 @@
-﻿DSL: hasAll(#CollectionLocal, { len(@it) > 3 })
+﻿Json: {
+  "dsl": "hasAll(#CollectionLocal, { len(@it) > 3 })",
+  "json": {
+    "hasAll": [
+      "#CollectionLocal",
+      {
+        "gt": [
+          { "len": "@it" },
+          3
+        ]
+      }
+    ]
+  },
+  "ignored": true
+}
 Expression: (scopeMember, scopeMemberArray) =>
 {
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
@@ -12,7 +26,8 @@ Expression: (scopeMember, scopeMemberArray) =>
     var StringArg = (string)scopeMemberArray[7].Value;
     var CollectionArg = (List<string>)scopeMemberArray[8].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
+    var $result = CollectionLocal.All(@string => @string.Length > 3);
 
-    return CollectionLocal.All(@string => @string.Length > 3);
+    return $result;
 }
 Result: True

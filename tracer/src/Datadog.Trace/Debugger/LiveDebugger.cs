@@ -9,9 +9,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Debugger.Conditions;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.PInvoke;
@@ -21,6 +21,7 @@ using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.StatsdClient;
 using SnapshotProbe = Datadog.Trace.Debugger.Configurations.Models.SnapshotProbe;
 
 namespace Datadog.Trace.Debugger
@@ -210,22 +211,13 @@ namespace Datadog.Trace.Debugger
 
                 foreach (var probe in addedProbes)
                 {
+                    ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
                     if (probe is SnapshotProbe snapshotProbe)
                     {
                         if (snapshotProbe.Sampling.HasValue)
                         {
                             ProbeRateLimiter.Instance.SetRate(probe.Id, (int)snapshotProbe.Sampling.Value.SnapshotsPerSecond);
                         }
-
-                        if (snapshotProbe.When.HasValue)
-                        {
-                            ProbeExpressionsProcessor.Instance.AddExpressions(probe.Id, ProbeType.Snapshot, probe.EvaluateAt, new[] { snapshotProbe.When.Value });
-                        }
-                    }
-
-                    if (probe is LogProbe logProbe)
-                    {
-                        ProbeExpressionsProcessor.Instance.AddExpressions(probe.Id, ProbeType.Log, probe.EvaluateAt, logProbe.Template.Segments.Select(segment => segment.Expression).ToArray());
                     }
                 }
 
@@ -316,6 +308,11 @@ namespace Datadog.Trace.Debugger
         internal void AddErrorProbeStatus(string probeId, Exception exception = null, string errorMessage = null)
         {
             _debuggerSink.AddErrorProbeStatus(probeId, exception, errorMessage);
+        }
+
+        internal void SendMetrics()
+        {
+            // IDogStatsd _statsd...
         }
 
         private void DiscoveryCallback(AgentConfiguration x)

@@ -4,12 +4,11 @@
 // </copyright>
 
 using System;
-
 #if !NET461
 using System.Buffers;
 #endif
 
-namespace Datadog.Trace.Debugger.Conditions;
+namespace Datadog.Trace.Debugger.Expressions;
 
 internal class MethodScopeMembers
 {
@@ -17,11 +16,11 @@ internal class MethodScopeMembers
 
     public MethodScopeMembers(int numberOfLocals, int numberOfArguments)
     {
-        // 3 = return, exception, one to spare
+        // 2 for 'return' and 'exception'
 #if NET461
-        Members = new ScopeMember[numberOfLocals + numberOfArguments + 3];
+        Members = new ScopeMember[numberOfLocals + numberOfArguments + 2];
 #else
-        Members = ArrayPool<ScopeMember>.Shared.Rent(numberOfLocals + numberOfArguments + 3);
+        Members = ArrayPool<ScopeMember>.Shared.Rent(numberOfLocals + numberOfArguments + 2);
 #endif
     }
 
@@ -40,8 +39,9 @@ internal class MethodScopeMembers
         _index++;
     }
 
-    internal void Clean()
+    internal void Reset()
     {
+        _index = 0;
 #if NET461
         Members = null;
 #else

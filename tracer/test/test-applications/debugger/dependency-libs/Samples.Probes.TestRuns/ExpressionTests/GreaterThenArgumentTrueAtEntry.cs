@@ -1,8 +1,9 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    public class GreaterThenArgumentFalse : IRun
+    public class GreaterThenArgumentTrueAtEntry : IRun
     {
         private const string Dsl = @"{
   ""dsl"": ""^intArg \u003e 2""
@@ -20,11 +21,11 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
-            Method(1);
+            Method(3);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [ExpressionProbeTestData(Dsl, Json, isCondition: true, evaluateAt: 1, "System.String", new[] { "System.Int32" }, expectedNumberOfSnapshots: 0)]
+        [ExpressionProbeTestData(Dsl, Json, isCondition: true, evaluateAt: 0, "System.String", new[] { "System.Int32" })]
         public string Method(int intArg)
         {
             return $"Dsl: {Dsl}, Argument: {intArg}";

@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.Conditions
+namespace Datadog.Trace.Debugger.Expressions
 {
     internal enum ScopeMemberKind
     {
@@ -13,7 +13,8 @@ namespace Datadog.Trace.Debugger.Conditions
         Local,
         This,
         Exception,
-        Return
+        Return,
+        None
     }
 
     internal struct ScopeMember
@@ -24,6 +25,22 @@ namespace Datadog.Trace.Debugger.Conditions
         public ScopeMemberKind ElementType;
 
         public ScopeMember(string name, Type type, object value, ScopeMemberKind elementType)
+        {
+            Name = name;
+            Type = type;
+            Value = value;
+            ElementType = elementType;
+        }
+    }
+
+    internal struct ScopeMember<T>
+    {
+        public T Value;
+        public string Name;
+        public Type Type;
+        public ScopeMemberKind ElementType;
+
+        public ScopeMember(string name, Type type, T value, ScopeMemberKind elementType)
         {
             Name = name;
             Type = type;

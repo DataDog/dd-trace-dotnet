@@ -1,4 +1,12 @@
-﻿DSL: .IntNumber > 2
+﻿Json: {
+  "dsl": ".IntNumber \u003e 2",
+  "json": {
+    "gt": [
+      ".IntNumber",
+      2
+    ]
+  }
+}
 Expression: (scopeMember, scopeMemberArray) =>
 {
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
@@ -12,6 +20,8 @@ Expression: (scopeMember, scopeMemberArray) =>
     var StringArg = (string)scopeMemberArray[7].Value;
     var CollectionArg = (List<string>)scopeMemberArray[8].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
-    this.IntNumber > 2;
+    var $result = this.IntNumber > 2;
+
+    return $result;
 }
 Result: True

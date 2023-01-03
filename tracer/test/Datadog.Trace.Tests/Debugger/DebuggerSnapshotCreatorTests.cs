@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -98,7 +97,7 @@ namespace Datadog.Trace.Tests.Debugger
         /// </summary>
         private static string GenerateSnapshot(object instance, object[] args, object[] locals)
         {
-            var snapshotCreator = new DebuggerSnapshotCreator();
+            var snapshotCreator = new DebuggerSnapshotCreator(string.Empty);
             snapshotCreator.StartDebugger();
             snapshotCreator.StartSnapshot();
             snapshotCreator.StartCaptures();
@@ -136,10 +135,10 @@ namespace Datadog.Trace.Tests.Debugger
                     snapshotCreator.CaptureInstance(instance, instance.GetType());
                 }
 
-                snapshotCreator.MethodProbeEndReturn(hasArgumentsOrLocals: args.Length + locals.Length > 0);
+                snapshotCreator.EndReturn(hasArgumentsOrLocals: args.Length + locals.Length > 0);
             }
 
-            snapshotCreator.FinalizeSnapshot(Array.Empty<StackFrame>(), "Foo", "Bar", DateTimeOffset.MinValue, "foo");
+            snapshotCreator.FinalizeSnapshot("Foo", "Bar", DateTimeOffset.MinValue, "foo", null);
 
             var snapshot = snapshotCreator.GetSnapshotJson();
             return JsonPrettify(snapshot);

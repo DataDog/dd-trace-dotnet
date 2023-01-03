@@ -1,4 +1,18 @@
-﻿DSL: hasAny(#CollectionLocal, { @it == 'hello' })
+﻿Json: {
+  "dsl": "hasAny(#CollectionLocal, { @it == 'hello' })",
+  "json": {
+    "hasAny": [
+      "#CollectionLocal",
+      {
+        "eq": [
+          "@it",
+          "hello"
+        ]
+      }
+    ]
+  },
+  "ignored": true
+}
 Expression: (scopeMember, scopeMemberArray) =>
 {
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
@@ -12,7 +26,8 @@ Expression: (scopeMember, scopeMemberArray) =>
     var StringArg = (string)scopeMemberArray[7].Value;
     var CollectionArg = (List<string>)scopeMemberArray[8].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
+    var $result = CollectionLocal.Any(@string => @string == "hello");
 
-    return CollectionLocal.Any(@string => @string == "hello");
+    return $result;
 }
 Result: True

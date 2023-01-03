@@ -24,6 +24,10 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public Where Where { get; set; }
 
+        public string Template { get; set; }
+
+        public DebuggerExpression[] Segments { get; set; }
+
         public EvaluateAt EvaluateAt { get; set; }
 
         public string[] AdditionalIds { get; set; }

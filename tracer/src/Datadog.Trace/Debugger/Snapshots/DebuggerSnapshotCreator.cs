@@ -4,20 +4,23 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.Debugger.Conditions;
-using Datadog.Trace.Debugger.Instrumentation;
+using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal readonly struct DebuggerSnapshotCreator : IDisposable
+    internal class DebuggerSnapshotCreator : IDisposable
     {
         private const string LoggerVersion = "2";
         private const string DDSource = "dd_debugger";
@@ -25,20 +28,119 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private readonly JsonTextWriter _jsonWriter;
         private readonly StringBuilder _jsonUnderlyingString;
+        private readonly bool _isFullSnapshot;
+        private readonly ProbeLocation _probeLocation;
+        private readonly DateTimeOffset? _startTime;
+        private MethodScopeMembers _methodScopeMembers;
 
-        public DebuggerSnapshotCreator()
+        public DebuggerSnapshotCreator(string probeId)
         {
-            _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
+            try
+            {
+                var probeInfo = ProbeExpressionsProcessor.Instance.GetProbeInfo(probeId);
+                if (probeInfo.HasValue)
+                {
+                    _isFullSnapshot = probeInfo.Value.IsFullSnapshot;
+                    _probeLocation = probeInfo.Value.ProbeLocation;
+                    _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                    _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
+                    _methodScopeMembers = null;
+                    CaptureBehaviour = CaptureBehaviour.Capture;
+                    _startTime = DateTimeOffset.UtcNow;
+                    IsInitialized = false;
+                    Initialize();
+                    return;
+                }
+            }
+            catch
+            {
+                // ignored
+            }
 
-            _jsonWriter.WriteStartObject();
+            _jsonWriter = null;
+            _jsonUnderlyingString = null;
+            _isFullSnapshot = false;
+            _probeLocation = ProbeLocation.Method;
+            _methodScopeMembers = null;
+            _startTime = null;
+            IsInitialized = false;
+            CaptureBehaviour = CaptureBehaviour.NoCapture;
+        }
+
+        internal bool IsInitialized { get; private set; }
+
+        internal MethodScopeMembers MethodScopeMembers => _methodScopeMembers;
+
+        internal CaptureBehaviour CaptureBehaviour { get; set; }
+
+        internal CaptureBehaviour DefineSnapshotBehavior<TCapture>(CaptureInfo<TCapture> info, EvaluateAt evaluateAt, bool hasCondition)
+        {
+            if (hasCondition &&
+                evaluateAt == EvaluateAt.Exit &&
+                info.MethodState is MethodState.BeginLine or MethodState.EntryStart)
+            {
+                // in case there is a condition in exit but we are in the entry, don't save entry scope members
+                CaptureBehaviour = CaptureBehaviour.NoCapture;
+                return CaptureBehaviour;
+            }
+
+            if (!hasCondition && _isFullSnapshot)
+            {
+                CaptureBehaviour = CaptureBehaviour.Capture;
+            }
+            else
+            {
+                CaptureBehaviour = CaptureBehaviour.Delayed;
+            }
+
+            if (info.MethodState.IsInAsyncMethod())
+            {
+                CreateMethodScopeMembers(info.AsyncCaptureInfo.HoistedLocals.Length, info.AsyncCaptureInfo.HoistedArguments.Length);
+            }
+            else
+            {
+                CreateMethodScopeMembers(info.LocalsCount.Value, info.ArgumentsCount.Value);
+            }
+
+            return CaptureBehaviour;
+        }
+
+        internal void CreateMethodScopeMembers(int numberOfLocals, int numberOfArguments)
+        {
+            Interlocked.CompareExchange(ref _methodScopeMembers, new MethodScopeMembers(numberOfLocals, numberOfArguments), null);
+        }
+
+        internal void AddScopeMember<T>(string name, Type type, T value, ScopeMemberKind memberKind)
+        {
+            switch (memberKind)
+            {
+                case ScopeMemberKind.This:
+                    MethodScopeMembers.InvocationTarget = new ScopeMember(name, type, value, ScopeMemberKind.This);
+                    return;
+                case ScopeMemberKind.Exception:
+                    MethodScopeMembers.Exception = value as Exception;
+                    break;
+                case ScopeMemberKind.Return:
+                    MethodScopeMembers.Return = new ScopeMember("return", type, value, ScopeMemberKind.Return);
+                    break;
+                case ScopeMemberKind.None:
+                    return;
+            }
+
+            MethodScopeMembers.AddMember(new ScopeMember(name, type, value, memberKind));
         }
 
         internal void Initialize()
         {
+            _jsonWriter.WriteStartObject();
             StartDebugger();
             StartSnapshot();
-            StartCaptures();
+            if (_isFullSnapshot)
+            {
+                StartCaptures();
+            }
+
+            IsInitialized = true;
         }
 
         internal void StartDebugger()
@@ -88,11 +190,16 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void StartReturn()
         {
+            if (!_isFullSnapshot)
+            {
+                StartCaptures();
+            }
+
             _jsonWriter.WritePropertyName("return");
             _jsonWriter.WriteStartObject();
         }
 
-        internal void MethodProbeEndReturn(bool hasArgumentsOrLocals)
+        internal void EndReturn(bool hasArgumentsOrLocals)
         {
             if (hasArgumentsOrLocals)
             {
@@ -100,26 +207,27 @@ namespace Datadog.Trace.Debugger.Snapshots
                 _jsonWriter.WriteEndObject();
             }
 
-            // end return
+            // end line number or method return
             _jsonWriter.WriteEndObject();
-            // end capture
+            if (_probeLocation == ProbeLocation.Line)
+            {
+                // end lines
+                _jsonWriter.WriteEndObject();
+            }
+
+            // end captures
+            EndCapture();
+        }
+
+        internal void EndCapture()
+        {
             _jsonWriter.WriteEndObject();
         }
 
-        internal void LineProbeEndReturn(bool hasArgumentsOrLocals)
+        internal DebuggerSnapshotCreator EndDebugger()
         {
-            if (hasArgumentsOrLocals)
-            {
-                // end arguments or locals
-                _jsonWriter.WriteEndObject();
-            }
-
-            // end line number
             _jsonWriter.WriteEndObject();
-            // end lines
-            _jsonWriter.WriteEndObject();
-            // end captures
-            _jsonWriter.WriteEndObject();
+            return this;
         }
 
         internal DebuggerSnapshotCreator EndSnapshot(DateTimeOffset? startTime)
@@ -141,12 +249,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator EndDebugger()
-        {
-            _jsonWriter.WriteEndObject();
-            return this;
-        }
-
         internal void CaptureInstance<TInstance>(TInstance instance, Type type)
         {
             if (instance == null)
@@ -157,23 +259,30 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureArgument(instance, "this", type);
         }
 
-        public void CaptureStaticFields(Type declaringType)
+        public void CaptureStaticFields<T>(ref CaptureInfo<T> info)
         {
-            DebuggerSnapshotSerializer.SerializeStaticFields(declaringType, _jsonWriter);
+            if (info.MethodState.IsInAsyncMethod())
+            {
+                DebuggerSnapshotSerializer.SerializeStaticFields(info.AsyncCaptureInfo.KickoffInvocationTargetType, _jsonWriter);
+            }
+            else
+            {
+                DebuggerSnapshotSerializer.SerializeStaticFields(info.InvocationTargetType, _jsonWriter);
+            }
         }
 
-        internal void CaptureArgument<TArg>(TArg argument, string name, Type argType = null)
+        internal void CaptureArgument<TArg>(TArg value, string name, Type type = null)
         {
             StartLocalsOrArgsIfNeeded("arguments");
             // in case TArg is object and we have the concrete type, use it
-            DebuggerSnapshotSerializer.Serialize(argument, argType ?? typeof(TArg), name, _jsonWriter);
+            DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TArg), name, _jsonWriter);
         }
 
-        internal void CaptureLocal<TLocal>(TLocal local, string name, Type localType = null)
+        internal void CaptureLocal<TLocal>(TLocal value, string name, Type type = null)
         {
             StartLocalsOrArgsIfNeeded("locals");
             // in case TLocal is object and we have the concrete type, use it
-            DebuggerSnapshotSerializer.Serialize(local, localType ?? typeof(TLocal), name, _jsonWriter);
+            DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TLocal), name, _jsonWriter);
         }
 
         internal void CaptureException(Exception ex)
@@ -191,50 +300,186 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteEndObject();
         }
 
-        internal void CaptureEntryMethodStartMarker(ref MethodDebuggerState state)
+        internal void CaptureEntryMethodStartMarker<T>(ref CaptureInfo<T> info)
         {
             StartEntry();
-            CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
+            CaptureStaticFields(ref info);
         }
 
-        internal void CaptureEntryMethodEndMarker(ref MethodDebuggerState state)
+        internal void CaptureEntryMethodEndMarker<TTarget>(TTarget value, Type type, bool hasArgumentsOrLocal)
         {
-            CaptureInstance(state.InvocationTarget, state.MethodMetadataInfo.DeclaringType);
-
-            var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
-                                       state.MethodMetadataInfo.ParameterNames.Length > 0 ||
-                                       !state.MethodMetadataInfo.Method.IsStatic;
-            state.HasLocalsOrReturnValue = false;
-            EndEntry(hasArgumentsOrLocals);
+            CaptureInstance(value, type);
+            EndEntry(hasArgumentsOrLocal || value != null);
         }
 
-        internal void CaptureExitMethodStartMarker<TReturn>(TReturn returnValue, Exception exception, ref MethodDebuggerState state)
+        internal void CaptureExitMethodStartMarker<TReturnOrException>(ref CaptureInfo<TReturnOrException> info)
         {
             StartReturn();
-            CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
-            if (exception != null)
+            switch (info.MethodState)
             {
-                CaptureException(exception);
-            }
-
-            if (returnValue != null)
-            {
-                CaptureLocal(returnValue, "@return");
-                state.HasLocalsOrReturnValue = true;
+                case MethodState.ExitStart:
+                case MethodState.ExitEnd:
+                    ExitMethodStart(ref info);
+                    break;
+                case MethodState.ExitStartAsync:
+                    ExitAsyncMethodStart(ref info);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
-        internal unsafe void CaptureExitMethodEndMarker(
-            ref MethodDebuggerState state,
-            delegate* managed<ref MethodDebuggerState, void> finalizeSnapshotFuncPointer)
+        private void ExitMethodStart<TReturnOrException>(ref CaptureInfo<TReturnOrException> info)
         {
-            CaptureInstance(state.InvocationTarget, state.MethodMetadataInfo.DeclaringType);
+            CaptureStaticFields(ref info);
 
-            var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
-                                       state.MethodMetadataInfo.ParameterNames.Length > 0 ||
-                                       !state.MethodMetadataInfo.Method.IsStatic;
-            MethodProbeEndReturn(hasArgumentsOrLocals);
-            finalizeSnapshotFuncPointer(ref state);
+            if (info.MemberKind == ScopeMemberKind.Exception && info.Value != null)
+            {
+                CaptureException(info.Value as Exception);
+            }
+            else if (info.MemberKind == ScopeMemberKind.Return)
+            {
+                CaptureLocal(info.Value, "@return");
+            }
+        }
+
+        internal void CaptureExitMethodEndMarker<TTarget>(ref CaptureInfo<TTarget> info)
+        {
+            CaptureInstance(info.Value, info.Type);
+            if (info.MethodState == MethodState.ExitEndAsync)
+            {
+                CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
+            }
+
+            EndReturn(info.HasLocalOrArgument.Value);
+        }
+
+        internal void CaptureEntryAsyncMethod<T>(ref CaptureInfo<T> info)
+        {
+            CaptureEntryMethodStartMarker(ref info);
+            bool hasArgument = CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
+            CaptureEntryMethodEndMarker(info.Value, info.Type, hasArgument);
+        }
+
+        private bool CaptureAsyncMethodArguments(System.Reflection.FieldInfo[] asyncHoistedArguments, object moveNextInvocationTarget)
+        {
+            // capture hoisted arguments
+            var hasArgument = false;
+            for (var index = 0; index < asyncHoistedArguments.Length; index++)
+            {
+                ref var argument = ref asyncHoistedArguments[index];
+                if (argument == default)
+                {
+                    continue;
+                }
+
+                var argumentValue = argument.GetValue(moveNextInvocationTarget);
+                CaptureArgument(argumentValue, argument.Name, argument.FieldType);
+                hasArgument = true;
+            }
+
+            return hasArgument;
+        }
+
+        private void CaptureAsyncMethodLocals(AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, object moveNextInvocationTarget)
+        {
+            // In the async scenario MethodMetadataInfo stores locals from MoveNext's localVarSig,
+            // which isn't enough because we need to extract more locals that may be hoisted in the builder object
+            // and we need to remove some locals that exist in the localVarSig but are just part of the async machinery and do not represent actual variables in the user's code.
+            for (var index = 0; index < asyncMethodHoistedLocals.Length; index++)
+            {
+                ref var local = ref asyncMethodHoistedLocals[index];
+                if (local == default)
+                {
+                    continue;
+                }
+
+                var localValue = local.Field.GetValue(moveNextInvocationTarget);
+                CaptureLocal(localValue, local.SanitizedName, local.Field.FieldType);
+            }
+        }
+
+        private void ExitAsyncMethodStart<T>(ref CaptureInfo<T> info)
+        {
+            ExitMethodStart(ref info);
+            ExitAsyncMethodLogLocals(info.AsyncCaptureInfo.HoistedLocals, info.AsyncCaptureInfo.MoveNextInvocationTarget);
+        }
+
+        private void ExitAsyncMethodLogLocals(AsyncHelper.FieldInfoNameSanitized[] hoistedLocals, object moveNextInvocationTarget)
+        {
+            // MethodMetadataInfo saves locals from MoveNext localVarSig,
+            // this isn't enough in async scenario because we need to extract more locals the may hoisted in the builder object
+            // and we need to subtract some locals that exist in the localVarSig but they are not belongs to the kickoff method
+            // For know we capturing here all locals the are hoisted (except known generated locals)
+            // and we capturing in LogLocal the locals form localVarSig
+            for (var index = 0; index < hoistedLocals.Length; index++)
+            {
+                ref var local = ref hoistedLocals[index];
+                if (local == default)
+                {
+                    continue;
+                }
+
+                var localValue = local.Field.GetValue(moveNextInvocationTarget);
+                CaptureLocal(localValue, local.SanitizedName, local.Field.FieldType);
+            }
+        }
+
+        internal void CaptureBeginLine<T>(ref CaptureInfo<T> info)
+        {
+            StartLines(info.LineCaptureInfo.LineNumber);
+        }
+
+        internal void CaptureEndLine<TTarget>(ref CaptureInfo<TTarget> info)
+        {
+            switch (info.MethodState)
+            {
+                case MethodState.EndLine:
+                    EndLine(ref info);
+                    break;
+                case MethodState.EndLineAsync:
+                    EndAsyncLine(ref info);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void EndLine<TTarget>(ref CaptureInfo<TTarget> info)
+        {
+            CaptureInstance(info.Value, info.Type);
+            EndReturn(info.HasLocalOrArgument.Value);
+        }
+
+        private void EndAsyncLine<TTarget>(ref CaptureInfo<TTarget> info)
+        {
+            CaptureAsyncMethodLocals(info.AsyncCaptureInfo.HoistedLocals, info.AsyncCaptureInfo.MoveNextInvocationTarget);
+            CaptureInstance(info.AsyncCaptureInfo.KickoffInvocationTarget, info.AsyncCaptureInfo.KickoffInvocationTargetType);
+            CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
+            CaptureStaticFields(ref info);
+            EndReturn(info.HasLocalOrArgument.Value);
+        }
+
+        internal void ProcessQueue<TCapture>(ref CaptureInfo<TCapture> captureInfo)
+        {
+            if (CaptureBehaviour == CaptureBehaviour.Delayed)
+            {
+                switch (captureInfo.MethodState)
+                {
+                    case MethodState.EntryEnd:
+                        CaptureEntryMethodStartMarker(ref captureInfo);
+                        break;
+                    case MethodState.ExitEnd:
+                        CaptureExitMethodStartMarker(ref captureInfo);
+                        break;
+                    case MethodState.EndLine:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(captureInfo.MethodState), captureInfo.MethodState, null);
+                }
+
+                CaptureScopeMembers(MethodScopeMembers.Members);
+            }
         }
 
         internal void CaptureScopeMembers(ScopeMember[] members)
@@ -250,36 +495,197 @@ namespace Datadog.Trace.Debugger.Snapshots
                 switch (member.ElementType)
                 {
                     case ScopeMemberKind.Argument:
-                    {
-                        CaptureArgument(member.Value, member.Name, member.Type);
-                        break;
-                    }
+                        {
+                            CaptureArgument(member.Value, member.Name, member.Type);
+                            break;
+                        }
 
                     case ScopeMemberKind.Local:
                     case ScopeMemberKind.Return:
-                    {
-                        CaptureLocal(member.Value, member.Name, member.Type);
-                        break;
-                    }
+                        {
+                            CaptureLocal(member.Value, member.Name, member.Type);
+                            break;
+                        }
 
                     case ScopeMemberKind.Exception:
-                    {
-                        CaptureException((Exception)member.Value);
-                        break;
-                    }
+                        {
+                            CaptureException((Exception)member.Value);
+                            break;
+                        }
                 }
             }
         }
 
-        internal void FinalizeSnapshot(StackFrame[] frames, string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath)
+        private void StartLocalsOrArgsIfNeeded(string newParent)
         {
-            AddStackInfo(frames)
+            var currentParent = _jsonWriter.Path.Split('.').LastOrDefault(p => p is "locals" or "arguments");
+            if (currentParent == newParent)
+            {
+                // We're already there!
+                return;
+            }
+
+            // "locals" should always come after "arguments"
+            if ((currentParent == "locals" && newParent == "arguments") ||
+                (currentParent == "arguments" && newParent == "locals"))
+            {
+                // We need to close the previous node first.
+                _jsonWriter.WriteEndObject();
+            }
+
+            _jsonWriter.WritePropertyName(newParent);
+            _jsonWriter.WriteStartObject();
+        }
+
+        // Finalize snapshot
+        internal string FinalizeLineSnapshot<T>(string probeId, string message, ref CaptureInfo<T> info, List<EvaluationError> evaluationErrors = null)
+        {
+            using (this)
+            {
+                var methodName = info.MethodState == MethodState.EndLineAsync
+                                     ? info.AsyncCaptureInfo.KickoffMethod?.Name
+                                     : info.Method?.Name;
+
+                var typeFullName = info.MethodState == MethodState.EndLineAsync
+                                       ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
+                                       : info.InvocationTargetType?.FullName;
+
+                AddEvaluationErrors(evaluationErrors).
+                AddProbeInfo(
+                        probeId,
+                        info.LineCaptureInfo.LineNumber,
+                        info.LineCaptureInfo.ProbeFilePath)
+                   .FinalizeSnapshot(
+                        methodName,
+                        typeFullName,
+                        _startTime,
+                        info.LineCaptureInfo.ProbeFilePath,
+                        message);
+
+                var snapshot = GetSnapshotJson();
+                return snapshot;
+            }
+        }
+
+        internal string FinalizeMethodSnapshot<T>(string probeId, string message, ref CaptureInfo<T> info, List<EvaluationError> evaluationErrors = null)
+        {
+            using (this)
+            {
+                var methodName = info.MethodState == MethodState.ExitEndAsync
+                                     ? info.AsyncCaptureInfo.KickoffMethod?.Name
+                                     : info.Method?.Name;
+
+                var typeFullName = info.MethodState == MethodState.ExitEndAsync
+                                       ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
+                                       : info.InvocationTargetType?.FullName;
+                AddEvaluationErrors(evaluationErrors).
+                AddProbeInfo(
+                        probeId,
+                        methodName,
+                        typeFullName)
+                   .FinalizeSnapshot(
+                        methodName,
+                        typeFullName,
+                        _startTime,
+                        null,
+                        message);
+
+                var snapshot = GetSnapshotJson();
+                return snapshot;
+            }
+        }
+
+        internal void FinalizeSnapshot(string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath, string message)
+        {
+            AddStackInfo()
             .EndSnapshot(startTime)
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
             .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, null, null) // internal ticket ID 929
-            .AddMessage()
+            .AddMessage(message)
             .Complete();
+        }
+
+        internal DebuggerSnapshotCreator AddEvaluationErrors(List<EvaluationError> errors)
+        {
+            if (errors == null || errors.Count == 0)
+            {
+                return this;
+            }
+
+            _jsonWriter.WritePropertyName("errors");
+            _jsonWriter.WriteStartArray();
+            foreach (var error in errors)
+            {
+                _jsonWriter.WriteStartObject();
+                _jsonWriter.WritePropertyName("expression");
+                _jsonWriter.WriteValue(error.Expression);
+                _jsonWriter.WritePropertyName("message");
+                _jsonWriter.WriteValue(error.Message);
+                _jsonWriter.WriteEndObject();
+            }
+
+            _jsonWriter.WriteEndArray();
+            return this;
+        }
+
+        internal DebuggerSnapshotCreator AddProbeInfo<T>(string probeId, T methodNameOrLineNumber, string typeFullNameOrFilePath)
+        {
+            _jsonWriter.WritePropertyName("probe");
+            _jsonWriter.WriteStartObject();
+
+            _jsonWriter.WritePropertyName("id");
+            _jsonWriter.WriteValue(probeId);
+
+            _jsonWriter.WritePropertyName("location");
+            _jsonWriter.WriteStartObject();
+
+            if (_probeLocation == ProbeLocation.Method)
+            {
+                _jsonWriter.WritePropertyName("method");
+                _jsonWriter.WriteValue(methodNameOrLineNumber);
+
+                _jsonWriter.WritePropertyName("type");
+                _jsonWriter.WriteValue(typeFullNameOrFilePath ?? UnknownValue);
+            }
+            else
+            {
+                _jsonWriter.WritePropertyName("file");
+                _jsonWriter.WriteValue(SanitizePath(typeFullNameOrFilePath));
+
+                _jsonWriter.WritePropertyName("lines");
+                _jsonWriter.WriteStartArray();
+                _jsonWriter.WriteValue(methodNameOrLineNumber);
+                _jsonWriter.WriteEndArray();
+            }
+
+            _jsonWriter.WriteEndObject();
+            _jsonWriter.WriteEndObject();
+
+            return this;
+        }
+
+        private static string SanitizePath(string probeFilePath)
+        {
+            return string.IsNullOrEmpty(probeFilePath) ? null : probeFilePath.Replace('\\', '/');
+        }
+
+        private DebuggerSnapshotCreator AddStackInfo()
+        {
+            if (!_isFullSnapshot)
+            {
+                return this;
+            }
+
+            var stackFrames = (new StackTrace(true).GetFrames() ?? Array.Empty<StackFrame>())
+                             .SkipWhile(frame => frame?.GetMethod()?.DeclaringType?.Namespace?.StartsWith("Datadog") == true).ToArray();
+
+            _jsonWriter.WritePropertyName("stack");
+            _jsonWriter.WriteStartArray();
+            AddFrames(stackFrames);
+            _jsonWriter.WriteEndArray();
+
+            return this;
         }
 
         private void AddFrames(StackFrame[] frames)
@@ -302,69 +708,6 @@ namespace Datadog.Trace.Debugger.Snapshots
                 _jsonWriter.WriteValue(frame.GetFileLineNumber());
                 _jsonWriter.WriteEndObject();
             }
-        }
-
-        internal DebuggerSnapshotCreator AddMethodProbeInfo(string probeId, string methodName, string typeFullName)
-        {
-            _jsonWriter.WritePropertyName("probe");
-            _jsonWriter.WriteStartObject();
-
-            _jsonWriter.WritePropertyName("id");
-            _jsonWriter.WriteValue(probeId);
-
-            _jsonWriter.WritePropertyName("location");
-            _jsonWriter.WriteStartObject();
-
-            _jsonWriter.WritePropertyName("method");
-            _jsonWriter.WriteValue(methodName ?? UnknownValue);
-
-            _jsonWriter.WritePropertyName("type");
-            _jsonWriter.WriteValue(typeFullName ?? UnknownValue);
-
-            _jsonWriter.WriteEndObject();
-            _jsonWriter.WriteEndObject();
-
-            return this;
-        }
-
-        internal DebuggerSnapshotCreator AddLineProbeInfo(string probeId, string probeFilePath, int lineNumber)
-        {
-            _jsonWriter.WritePropertyName("probe");
-            _jsonWriter.WriteStartObject();
-
-            _jsonWriter.WritePropertyName("id");
-            _jsonWriter.WriteValue(probeId);
-
-            _jsonWriter.WritePropertyName("location");
-            _jsonWriter.WriteStartObject();
-
-            _jsonWriter.WritePropertyName("file");
-            _jsonWriter.WriteValue(SanitizePath(probeFilePath));
-
-            _jsonWriter.WritePropertyName("lines");
-            _jsonWriter.WriteStartArray();
-            _jsonWriter.WriteValue(lineNumber);
-            _jsonWriter.WriteEndArray();
-
-            _jsonWriter.WriteEndObject();
-            _jsonWriter.WriteEndObject();
-
-            return this;
-        }
-
-        private static string SanitizePath(string probeFilePath)
-        {
-            return string.IsNullOrEmpty(probeFilePath) ? null : probeFilePath.Replace('\\', '/');
-        }
-
-        internal DebuggerSnapshotCreator AddStackInfo(StackFrame[] stackFrames)
-        {
-            _jsonWriter.WritePropertyName("stack");
-            _jsonWriter.WriteStartArray();
-            AddFrames(stackFrames);
-            _jsonWriter.WriteEndArray();
-
-            return this;
         }
 
         internal DebuggerSnapshotCreator AddLoggerInfo(string methodName, string typeFullName, string probeFilePath)
@@ -414,13 +757,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        public DebuggerSnapshotCreator AddMessage()
+        public DebuggerSnapshotCreator AddMessage(string message)
         {
-            _jsonUnderlyingString.Append('}');
-            var snapshotObject = JsonConvert.DeserializeObject<Snapshot>(_jsonUnderlyingString.ToString());
-            _jsonUnderlyingString.Remove(_jsonUnderlyingString.Length - 1, 1);
-
-            var message = SnapshotSummary.FormatMessage(snapshotObject);
+            message ??= GenerateDefaultMessage();
             _jsonWriter.WritePropertyName("message");
             _jsonWriter.WriteValue(message);
             return this;
@@ -432,25 +771,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        private void StartLocalsOrArgsIfNeeded(string newParent)
+        private string GenerateDefaultMessage()
         {
-            var currentParent = _jsonWriter.Path.Split('.').LastOrDefault(p => p is "locals" or "arguments");
-            if (currentParent == newParent)
-            {
-                // We're already there!
-                return;
-            }
-
-            // "locals" should always come after "arguments"
-            if ((currentParent == "locals" && newParent == "arguments") ||
-                (currentParent == "arguments" && newParent == "locals"))
-            {
-                // We need to close the previous node first.
-                _jsonWriter.WriteEndObject();
-            }
-
-            _jsonWriter.WritePropertyName(newParent);
-            _jsonWriter.WriteStartObject();
+            _jsonUnderlyingString.Append("}");
+            var snapshotObject = JsonConvert.DeserializeObject<Snapshot>(_jsonUnderlyingString.ToString());
+            _jsonUnderlyingString.Remove(_jsonUnderlyingString.Length - 1, 1);
+            var message = SnapshotSummary.FormatMessage(snapshotObject);
+            return message;
         }
 
         internal string GetSnapshotJson()
@@ -460,7 +787,16 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public void Dispose()
         {
-            _jsonWriter?.Close();
+            try
+            {
+                MethodScopeMembers.Reset();
+                _methodScopeMembers = null;
+                _jsonWriter?.Close();
+            }
+            catch
+            {
+                // ignored
+            }
         }
     }
 }

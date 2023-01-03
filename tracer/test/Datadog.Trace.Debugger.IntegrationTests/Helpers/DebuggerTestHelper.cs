@@ -71,7 +71,7 @@ internal static class DebuggerTestHelper
     internal static IEnumerable<(ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)> GetAllLineProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
         var snapshotLineProbes = type.GetCustomAttributes<LineProbeTestDataAttribute>()
-                                     .Where(att => att?.Skip == false && att?.Unlisted == unlisted && att?.SkipOnFrameworks.Contains(targetFramework) == false)
+                                     .Where(att => att.Skip == false && att.Unlisted == unlisted && att.SkipOnFrameworks.Contains(targetFramework) == false)
                                      .Select(att => (att.As<ProbeAttributeBase>(), CreateSnapshotLineProbe(type, att, guidGenerator)))
                                      .ToArray();
 
@@ -85,15 +85,32 @@ internal static class DebuggerTestHelper
             {
                 var testAttribute = m.GetCustomAttribute<MethodProbeTestDataAttribute>().As<ProbeAttributeBase>();
                 var probe = CreateSnapshotMethodProbe(m, guidGenerator);
-                if (testAttribute is ExpressionProbeTestDataAttribute expression)
+                probe = testAttribute switch
                 {
-                    probe = probe.WithWhen(expression.Dsl, expression.Json, (EvaluateAt)expression.EvaluateAt);
-                }
+                    ExpressionProbeTestDataAttribute { IsCondition: true } condition => probe.WithWhen(condition.Dsl, condition.Json, (EvaluateAt)condition.EvaluateAt),
+                    ExpressionProbeTestDataAttribute { IsCondition: false } template => probe.WithTemplate(template.Template, template.Dsl, template.Json, template.Str, (EvaluateAt)template.EvaluateAt),
+                    _ => probe
+                };
 
                 return (testAttribute, probe);
             });
 
         return snapshotMethodProbes;
+    }
+
+    internal static SnapshotProbe CreateSnapshotProbe(DeterministicGuidGenerator guidGenerator)
+    {
+        return new SnapshotProbe
+        {
+            Id = guidGenerator.New().ToString(),
+            Language = TracerConstants.Language,
+            Active = true,
+        };
+    }
+
+    internal static SnapshotProbe CreateDefaultSnapshotProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator, MethodProbeTestDataAttribute probeTestData = null)
+    {
+        return CreateSnapshotProbe(guidGenerator).WithCapture().WithWhere(typeName, methodName, probeTestData).WithSampling().WithTemplate();
     }
 
     internal static SnapshotProbe WithWhere(this SnapshotProbe snapshot, string typeName, string methodName, MethodProbeTestDataAttribute probeTestData = null)
@@ -119,9 +136,23 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
+    internal static SnapshotProbe WithCapture(this SnapshotProbe snapshot)
+    {
+        var capture = new Capture
+        {
+            MaxCollectionSize = 1000,
+            MaxFieldCount = 10000,
+            MaxFieldDepth = 3,
+            MaxLength = int.MaxValue,
+            MaxReferenceDepth = 3
+        };
+        snapshot.Capture = capture;
+        return snapshot;
+    }
+
     internal static SnapshotProbe WithWhen(this SnapshotProbe snapshot, string dsl, string json, EvaluateAt evaluateAt)
     {
-        snapshot.When = new DebuggerExpression(dsl, json);
+        snapshot.When = new DebuggerExpression(dsl, json, null);
         snapshot.EvaluateAt = evaluateAt;
         return snapshot;
     }
@@ -132,19 +163,63 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    internal static SnapshotProbe CreateSnapshotProbe(DeterministicGuidGenerator guidGenerator)
+    internal static SnapshotProbe WithTemplate(this SnapshotProbe snapshot)
     {
-        return new SnapshotProbe
+        if (snapshot.Template != null)
         {
-            Id = guidGenerator.New().ToString(),
-            Language = TracerConstants.Language,
-            Active = true,
-        };
+            return snapshot;
+        }
+
+        snapshot.Template = "Test {1}";
+        var json = @"{
+  ""json"": {
+    ""num"": ""1""
+  }
+}";
+        snapshot.Segments = new DebuggerExpression[] { new("1", json, null), new(null, null, "Test") };
+        snapshot.EvaluateAt = EvaluateAt.Entry;
+        return snapshot;
     }
 
-    internal static SnapshotProbe CreateDefaultSnapshotProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator)
+    internal static SnapshotProbe WithTemplate(this SnapshotProbe snapshot, string template, string dsl, string json, string str, EvaluateAt evaluateAt)
     {
-        return CreateSnapshotProbe(guidGenerator).WithWhere(typeName, methodName).WithSampling();
+        snapshot.Template = template;
+        snapshot.Segments = new DebuggerExpression[] { new(dsl, json, null), new(null, null, str) };
+        snapshot.EvaluateAt = evaluateAt;
+        return snapshot;
+    }
+
+    private static SnapshotProbe CreateSnapshotMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
+    {
+        var probeTestData = method.GetCustomAttribute<MethodProbeTestDataAttribute>();
+        if (probeTestData == null)
+        {
+            throw new Xunit.Sdk.SkipException($"{nameof(MethodProbeTestDataAttribute)} has not found for method: {method.DeclaringType?.FullName}.{method.Name}");
+        }
+
+        var typeName = probeTestData.UseFullTypeName ? method.DeclaringType?.FullName : method.DeclaringType?.Name;
+
+        if (typeName == null)
+        {
+            throw new Xunit.Sdk.SkipException($"{nameof(CreateSnapshotMethodProbe)} failed in getting type name for method: {method.Name}");
+        }
+
+        return CreateDefaultSnapshotProbe(typeName, method.Name, guidGenerator, probeTestData);
+    }
+
+    private static SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
+    {
+        return CreateSnapshotProbe(guidGenerator).WithLineProbeWhere(type, line).WithTemplate().WithCapture();
+    }
+
+    private static SnapshotProbe WithLineProbeWhere(this SnapshotProbe snapshot, Type type, LineProbeTestDataAttribute line)
+    {
+        using var reader = DatadogPdbReader.CreatePdbReader(type.Assembly);
+        var symbolMethod = reader.ReadMethodSymbolInfo(type.GetMethods().First().MetadataToken);
+        var filePath = symbolMethod.SequencePoints.First().Document.URL;
+        var where = new Where { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
+        snapshot.Where = where;
+        return snapshot;
     }
 
     private static IEnumerable<MethodBase> GetAllTestMethods<T>(Type type, string targetFramework, bool unlisted)
@@ -169,34 +244,7 @@ internal static class DebuggerTestHelper
                         m =>
                         {
                             var att = m.GetCustomAttribute<T>();
-                            return att?.Skip == false && att?.Unlisted == unlisted && att?.SkipOnFrameworks.Contains(targetFramework) == false;
+                            return att?.Skip == false && att.Unlisted == unlisted && att.SkipOnFrameworks.Contains(targetFramework) == false;
                         });
-    }
-
-    private static SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
-    {
-        return CreateSnapshotProbe(guidGenerator).WithLineProbeWhere(type, line);
-    }
-
-    private static SnapshotProbe WithLineProbeWhere(this SnapshotProbe snapshot, Type type, LineProbeTestDataAttribute line)
-    {
-        using var reader = DatadogPdbReader.CreatePdbReader(type.Assembly);
-        var symbolMethod = reader.ReadMethodSymbolInfo(type.GetMethods().First().MetadataToken);
-        var filePath = symbolMethod.SequencePoints.First().Document.URL;
-        var where = new Where { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
-        snapshot.Where = where;
-        return snapshot;
-    }
-
-    private static SnapshotProbe CreateSnapshotMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
-    {
-        var probeTestData = method.GetCustomAttribute<MethodProbeTestDataAttribute>();
-        if (probeTestData == null)
-        {
-            throw new Xunit.Sdk.SkipException($"{nameof(MethodProbeTestDataAttribute)} has not found for method: {method.DeclaringType?.FullName}.{method.Name}");
-        }
-
-        var typeName = probeTestData.UseFullTypeName ? method.DeclaringType.FullName : method.DeclaringType.Name;
-        return CreateSnapshotProbe(guidGenerator).WithWhere(typeName, method.Name, probeTestData).WithSampling();
     }
 }

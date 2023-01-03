@@ -1,4 +1,50 @@
-﻿DSL: len(.String) > 2 || count(#CollectionLocal) > 2
+﻿Json: {
+  "dsl": "len(.String) > 2 || count(#CollectionLocal) > 2",
+  "json": {
+    "and": [
+      {
+        "gt": [
+          { "len": ".String" },
+          2
+        ]
+      },
+      {
+        "or": [
+          {
+            "gt": [
+              { "count": "#CollectionLocal" },
+              2
+            ]
+          },
+          {
+            "hasAny": [
+              {
+                "filter": [
+                  "#CollectionLocal",
+                  {
+                    "gt": [
+                      { "len": "@it" },
+                      4
+                    ]
+                  }
+                ]
+              },
+              {
+                "eq": [
+                  "@it",
+                  "hello"
+                ]
+              }
+            ]
+          }
+
+        ]
+
+      }
+    ]
+  },
+  "ignored": true
+}
 Expression: (scopeMember, scopeMemberArray) =>
 {
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
@@ -12,9 +58,11 @@ Expression: (scopeMember, scopeMemberArray) =>
     var StringArg = (string)scopeMemberArray[7].Value;
     var CollectionArg = (List<string>)scopeMemberArray[8].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
-    (this.String.Length > 2) && ((CollectionLocal.Count > 2) || CollectionLocal
+    var $result = (this.String.Length > 2) && ((CollectionLocal.Count > 2) || CollectionLocal
         .Where(string1 => string1.Length > 4)
         .ToList()
         .Any(string2 => string2 == "hello"));
+
+    return $result;
 }
 Result: True
