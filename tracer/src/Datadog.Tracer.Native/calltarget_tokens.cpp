@@ -582,7 +582,6 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
         }
     }
 
-    bool what = false;
     // *** Ensure calltarget type ref
     if (callTargetTypeRef == mdTypeRefNil)
     {
@@ -592,18 +591,6 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
         {
             Logger::Warn("Wrapper callTargetTypeRef could not be defined.");
             return hr;
-        }
-
-        if (what)
-        {
-            mdTypeRef random = mdTypeRefNil;
-            auto hr2 =
-                module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, WStr("randasdom"), &random);
-
-            if (FAILED(hr2))
-            {
-                Logger::Warn("WTF!!!");
-            }   
         }
     }
 
