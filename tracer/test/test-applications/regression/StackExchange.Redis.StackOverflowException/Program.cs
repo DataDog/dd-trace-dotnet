@@ -13,13 +13,13 @@ namespace StackExchange.Redis.StackOverflowException
             {
                 Console.WriteLine($"Profiler attached: {Samples.SampleHelpers.IsProfilerAttached()}");
 
-                string host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
+                string host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_SINGLE_HOST") ?? "localhost:6389";
                 const int database = 1;
 
                 var connectionString = $"{host},allowAdmin=true,abortConnect=false,syncTimeout=10000";
                 using (var redis = ConnectionMultiplexer.Connect(connectionString))
                 {
-                    IServer server = redis.GetServer(host.Split(',').First());
+                    IServer server = redis.GetServer(host);
                     server.FlushDatabase(database);
 
                     var keyValuePairs = CreateKeyValuePairs().Take(20).ToArray();
