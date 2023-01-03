@@ -1035,7 +1035,7 @@ partial class Build
             if (!Framework.ToString().StartsWith("net46"))
             {
                 // we need to build RazorPages before integration tests for .net46x
-                DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
+                DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework, platform: TargetPlatform);
             }
 
             var projects = TracerDirectory
