@@ -133,7 +133,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                       ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs,
                       "]");
     }
-
+    
     // First we check if the managed profiler has not been loaded yet
     if (!corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
     {
@@ -144,7 +144,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
             caller->name, "()");
         return S_FALSE;
     }
-
+    
     // *** Create rewriter
     ILRewriter rewriter(corProfiler->info_, methodHandler->GetFunctionControl(), module_id, function_token);
     bool modified = false;
@@ -303,45 +303,90 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
     else
     {
-        const auto [resourceName, operationName] = GetResourceNameAndOperationName(metaImport, caller, tracerTokens);
+        const auto profilerAssemblyVersion = corProfiler->GetProfilerAssemblyVersion(module_metadata.app_domain_id);
 
-        // Define ResourceName as string and load it
-        mdString resourceNameToken;
-        hr = module_metadata.metadata_emit->DefineUserString(
-            resourceName.data(), static_cast<ULONG>(resourceName.length()), &resourceNameToken);
-
-        if (FAILED(hr))
+        // The version when ResourceName and GroupName moved to the native part (passed as strings to TraceAnnotationsIntegration).
+        const auto resourceNameAndGroupNameAsStringVersionMinimumViableVersion = Version(2, 22, 0, 0);
+        if (profilerAssemblyVersion.major == 255 ||
+            profilerAssemblyVersion < resourceNameAndGroupNameAsStringVersionMinimumViableVersion)
         {
-            Logger::Warn("*** CallTarget_RewriterCallback(): failed to define ResourceName.");
-            reWriterWrapper.LoadNull();
+            // 255 major version denotes Datadog.Trace that is used for testing older tracer version (mismatch)
+
+            COR_SIGNATURE runtimeMethodHandleBuffer[10];
+            COR_SIGNATURE runtimeTypeHandleBuffer[10];
+
+                    // Load the methodDef token to produce a RuntimeMethodHandle on the stack
+            reWriterWrapper.LoadToken(caller->id);
+
+            runtimeMethodHandleBuffer[0] = ELEMENT_TYPE_VALUETYPE;
+            ULONG runtimeMethodHandleTokenLength =
+                CorSigCompressToken(tracerTokens->GetRuntimeMethodHandleTypeRef(), &runtimeMethodHandleBuffer[1]);
+
+            // Load the typeDef token to produce a RuntimeTypeHandle on the stack
+            reWriterWrapper.LoadToken(caller->type.id);
+
+            runtimeTypeHandleBuffer[0] = ELEMENT_TYPE_VALUETYPE;
+            ULONG runtimeTypeHandleTokenLength =
+                CorSigCompressToken(tracerTokens->GetRuntimeTypeHandleTypeRef(), &runtimeTypeHandleBuffer[1]);
+
+            // Replace method arguments with one RuntimeMethodHandle argument and one RuntimeTypeHandle argument
+            trace::TypeSignature runtimeMethodHandleArgument{};
+            runtimeMethodHandleArgument.pbBase = runtimeMethodHandleBuffer;
+            runtimeMethodHandleArgument.length = runtimeMethodHandleTokenLength + 1;
+            runtimeMethodHandleArgument.offset = 0;
+            traceAnnotationArguments.push_back(runtimeMethodHandleArgument);
+
+            trace::TypeSignature runtimeTypeHandleArgument{};
+            runtimeTypeHandleArgument.pbBase = runtimeTypeHandleBuffer;
+            runtimeTypeHandleArgument.length = runtimeTypeHandleTokenLength + 1;
+            runtimeTypeHandleArgument.offset = 0;
+            traceAnnotationArguments.push_back(runtimeTypeHandleArgument);
+
+            methodArguments = traceAnnotationArguments;
         }
         else
         {
-            reWriterWrapper.LoadStr(resourceNameToken);
+            const auto [resourceName, operationName] =
+                GetResourceNameAndOperationName(metaImport, caller, tracerTokens);
+
+            // Define ResourceName as string and load it
+            mdString resourceNameToken;
+            hr = module_metadata.metadata_emit->DefineUserString(
+                resourceName.data(), static_cast<ULONG>(resourceName.length()), &resourceNameToken);
+
+            if (FAILED(hr))
+            {
+                Logger::Warn("*** CallTarget_RewriterCallback(): failed to define ResourceName.");
+                reWriterWrapper.LoadNull();
+            }
+            else
+            {
+                reWriterWrapper.LoadStr(resourceNameToken);
+            }
+
+            // Define OperationName as string and load it
+            mdString operationNameToken;
+            hr = module_metadata.metadata_emit->DefineUserString(
+                operationName.data(), static_cast<ULONG>(operationName.length()), &operationNameToken);
+
+            if (FAILED(hr))
+            {
+                Logger::Warn("*** CallTarget_RewriterCallback(): failed to define OperationName.");
+                reWriterWrapper.LoadNull();
+            }
+            else
+            {
+                reWriterWrapper.LoadStr(operationNameToken);
+            }
+
+            // Replace method arguments with two string arguments, one for ResourceName and one for OperationName
+            COR_SIGNATURE stringSignature[1] = {ELEMENT_TYPE_STRING};
+            trace::TypeSignature stringTypeSig{0, 1, stringSignature};
+            traceAnnotationArguments.push_back(stringTypeSig); // OperationName
+            traceAnnotationArguments.push_back(stringTypeSig); // ResourceName
+
+            methodArguments = traceAnnotationArguments;   
         }
-
-        // Define OperationName as string and load it
-        mdString operationNameToken;
-        hr = module_metadata.metadata_emit->DefineUserString(
-            operationName.data(), static_cast<ULONG>(operationName.length()), &operationNameToken);
-
-        if (FAILED(hr))
-        {
-            Logger::Warn("*** CallTarget_RewriterCallback(): failed to define OperationName.");
-            reWriterWrapper.LoadNull();
-        }
-        else
-        {
-            reWriterWrapper.LoadStr(operationNameToken);
-        }
-
-        // Replace method arguments with two string arguments, one for ResourceName and one for OperationName
-        COR_SIGNATURE stringSignature[1] = {ELEMENT_TYPE_STRING};
-        trace::TypeSignature stringTypeSig{0, 1, stringSignature};
-        traceAnnotationArguments.push_back(stringTypeSig); // OperationName
-        traceAnnotationArguments.push_back(stringTypeSig); // ResourceName
-
-        methodArguments = traceAnnotationArguments;
     }
 
     // *** Emit BeginMethod call

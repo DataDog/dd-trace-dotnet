@@ -40,9 +40,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
                 new RuntimeHandleTuple(methodHandle, typeHandle),
                 key => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)));
 
+            return OnMethodBeginInternal(instance, info.ResourceName, info.OperationName);
+        }
+
+        /// <summary>
+        /// OnMethodBegin callback
+        /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="resourceName">The resource name</param>
+        /// <param name="operationName">The operation name</param>
+        /// <returns>Calltarget state value</returns>
+        internal static CallTargetState OnMethodBeginInternal<TTarget>(TTarget instance, string? resourceName, string? operationName)
+        {
             var tags = new TraceAnnotationTags();
-            var scope = Tracer.Instance.StartActiveInternal(info.OperationName, tags: tags);
-            scope.Span.ResourceName = info.ResourceName;
+            var scope = Tracer.Instance.StartActiveInternal(operationName, tags: tags);
+            scope.Span.ResourceName = resourceName;
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
@@ -50,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         }
 
         /// <summary>
-        /// OnMethodBegin callback
+        /// OnMethodBegin callback, available from Tracer Version >= 2.22.0.0
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
