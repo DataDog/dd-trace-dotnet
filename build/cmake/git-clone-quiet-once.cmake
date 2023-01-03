@@ -1,3 +1,8 @@
+# This is is a hacky solution until https://gitlab.kitware.com/cmake/cmake/-/merge_requests/8011
+# is merged and depoyed.
+# The previous attempt (passing git clone command in the DOWNLOAD_COMMAND arg) was failing
+# if the download is run more than once.
+
 if (EXISTS "${PROJECT_NAME}_gitclone")
   message (STATUS "Module ${PROJECT_NAME} was already cloned. Skip the download step")
   return()
