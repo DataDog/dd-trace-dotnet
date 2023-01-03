@@ -6,7 +6,7 @@
 
 std::atomic<std::uint32_t> ManagedThreadInfo::s_nextProfilerThreadInfoId{1};
 
-std::uint32_t ManagedThreadInfo::GenerateProfilerThreadInfoId(void)
+std::uint32_t ManagedThreadInfo::GenerateProfilerThreadInfoId()
 {
     std::uint32_t newId = s_nextProfilerThreadInfoId.fetch_add(1);
     while (newId >= MaxProfilerThreadInfoId)

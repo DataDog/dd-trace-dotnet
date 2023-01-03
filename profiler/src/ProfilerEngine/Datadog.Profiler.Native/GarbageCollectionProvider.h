@@ -25,14 +25,14 @@ public:
         IConfiguration* pConfiguration);
 
     // Inherited via IGarbageCollectionsListener
-    virtual void OnGarbageCollectionStart(
+    void OnGarbageCollectionStart(
         int32_t number,
         uint32_t generation,
         GCReason reason,
         GCType type
         ) override;
 
-    virtual void OnGarbageCollectionEnd(
+    void OnGarbageCollectionEnd(
         int32_t number,
         uint32_t generation,
         GCReason reason,

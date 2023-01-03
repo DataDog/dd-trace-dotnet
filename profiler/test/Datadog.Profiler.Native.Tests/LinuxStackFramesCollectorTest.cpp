@@ -310,7 +310,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
 TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCall)
 {
     SimulateInPthreadCreate();
-  
+
     auto* signalManager = ProfilerSignalManager::Get();
     auto collector = LinuxStackFramesCollector(signalManager);
 
