@@ -175,6 +175,12 @@ jobs:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
 
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.100
+            7.0.101
+
       - name: Download profiler artifact
         uses: actions/download-artifact@v3
         with:
@@ -231,6 +237,12 @@ jobs:
     steps:
       - name: Install libasan
         run: sudo apt-get install -y libasan6
+
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.100
+            7.0.101
 
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
@@ -295,6 +307,12 @@ jobs:
     steps:
       - name: Install libubsan
         run: sudo apt-get install -y libubsan1
+
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.100
+            7.0.101
 
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
