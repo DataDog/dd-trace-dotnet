@@ -4130,6 +4130,7 @@ stages:
       dd_agent: dd_agent
 
     steps:
+    - template: steps/install-latest-dotnet-sdk.yml
     - bash: dotnet run $(Build.BuildId)
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
