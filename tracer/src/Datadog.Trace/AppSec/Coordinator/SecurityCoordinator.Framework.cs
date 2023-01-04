@@ -149,7 +149,8 @@ internal readonly partial struct SecurityCoordinator
             if (canThrow)
             {
                 var responseDetails = GetResponseDetails();
-                // ideally we'd report after we block, but when blocking with an exception we can't
+                // in the normal case reporting will be by the caller function after we block
+                // in the webapi case we blocking with an exception, so can't report afterwards
                 reporting(true);
                 _throwHttpResponseException(responseDetails.Body, responseDetails.ContentType);
             }

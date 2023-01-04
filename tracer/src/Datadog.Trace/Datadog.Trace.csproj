@@ -11,6 +11,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- remove LangVersion=preview when 7.0 is supported within all IDEs  -->
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
