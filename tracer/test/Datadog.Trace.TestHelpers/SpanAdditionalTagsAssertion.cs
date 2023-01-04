@@ -15,7 +15,7 @@ namespace Datadog.Trace.TestHelpers
         internal SpanAdditionalTagsAssertion(Result result, IDictionary<string, string> tags)
         {
             _result = result;
-            _tags = new Dictionary<string, string>(tags);
+            _tags = tags;
         }
 
         public SpanAdditionalTagsAssertion PassesThroughSource(string description, ISet<string> tagNames)

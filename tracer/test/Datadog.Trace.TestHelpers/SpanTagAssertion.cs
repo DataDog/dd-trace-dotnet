@@ -16,7 +16,7 @@ namespace Datadog.Trace.TestHelpers
         internal SpanTagAssertion(Result result, IDictionary<string, string> tags)
         {
             _result = result;
-            _tags = new Dictionary<string, string>(tags);
+            _tags = tags;
         }
 
         public static void DefaultTagAssertions(SpanTagAssertion s) => s
