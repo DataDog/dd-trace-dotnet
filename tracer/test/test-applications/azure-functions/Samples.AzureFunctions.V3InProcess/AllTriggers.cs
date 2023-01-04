@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -22,7 +24,26 @@ namespace Samples.AzureFunctions.AllTriggers
             log.LogInformation($"Profiler assembly location: {SampleHelpers.GetTracerAssemblyLocation()}");
 
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-            await CallFunctionHttp("trigger", log);
+            try
+            {
+                await CallFunctionHttp("trigger", log);
+            }
+            catch (HttpRequestException e)
+            {
+                log.LogError($"CallFunctionHttp - exception: {e}");
+                throw;
+            }
+            catch (HttpResponseException e)
+            {
+                log.LogError($"CallFunctionHttp - exception: {e}");
+                log.LogError($"CallFunctionHttp - e.Response.Content: {e.Response.Content}");
+                throw;
+            }
+            catch (Exception e)
+            {
+                log.LogError($"CallFunctionHttp - exception: {e}");
+                throw;
+            }
             log.LogInformation($"Shutting down: {DateTime.Now}");
         }
 
