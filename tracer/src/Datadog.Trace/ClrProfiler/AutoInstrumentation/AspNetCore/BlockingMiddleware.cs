@@ -9,12 +9,15 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 
 internal class BlockingMiddleware
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BlockingMiddleware>();
+
     private readonly bool _endPipeline;
     // if we add support for ASP.NET Core on .NET Framework, we can't directly reference RequestDelegate, so this would need to be written
     private readonly RequestDelegate? _next;
@@ -83,25 +86,32 @@ internal class BlockingMiddleware
         var security = Security.Instance;
         var endedResponse = false;
 
-        if (security.Settings.Enabled && Tracer.Instance?.ActiveScope?.Span is Span span)
+        if (security.Settings.Enabled)
         {
-            var securityCoordinator = new SecurityCoordinator(security, context, span);
-            if (_endPipeline && !context.Response.HasStarted)
+            if (Tracer.Instance?.ActiveScope?.Span is Span span)
             {
-                context.Response.StatusCode = 404;
-            }
-
-            var result = securityCoordinator.Scan();
-            if (result?.ShouldBeReported is true)
-            {
-                if (result.ShouldBlock)
+                var securityCoordinator = new SecurityCoordinator(security, context, span);
+                if (_endPipeline && !context.Response.HasStarted)
                 {
-                    await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
-                    securityCoordinator.MarkBlocked();
+                    context.Response.StatusCode = 404;
                 }
 
-                securityCoordinator.Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, endedResponse);
-                // security will be disposed in endrequest of diagnostic observer in any case
+                using var result = securityCoordinator.Scan();
+                if (result?.ShouldBeReported is true)
+                {
+                    if (result.ShouldBlock)
+                    {
+                        await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
+                        securityCoordinator.MarkBlocked();
+                    }
+
+                    securityCoordinator.Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, endedResponse);
+                    // security will be disposed in endrequest of diagnostic observer in any case
+                }
+            }
+            else
+            {
+                Log.Error("No span available, can't check the request");
             }
         }
 
@@ -115,15 +125,22 @@ internal class BlockingMiddleware
             catch (BlockException e)
             {
                 await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
-                if (security.Settings.Enabled && Tracer.Instance?.ActiveScope?.Span is Span blockedSpan)
+                if (security.Settings.Enabled)
                 {
-                    var securityCoordinator = new SecurityCoordinator(security, context, blockedSpan);
-                    if (!e.Reported)
+                    if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {
-                        securityCoordinator.Report(e.TriggerData, e.AggregatedTotalRuntime, e.AggregatedTotalRuntimeWithBindings, endedResponse);
-                    }
+                        var securityCoordinator = new SecurityCoordinator(security, context, span);
+                        if (!e.Reported)
+                        {
+                            securityCoordinator.Report(e.TriggerData, e.AggregatedTotalRuntime, e.AggregatedTotalRuntimeWithBindings, endedResponse);
+                        }
 
-                    securityCoordinator.Cleanup();
+                        securityCoordinator.Cleanup();
+                    }
+                    else
+                    {
+                        Log.Error("No span available, can't report the request");
+                    }
                 }
             }
         }
