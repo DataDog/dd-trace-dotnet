@@ -1,0 +1,20 @@
+{
+  "dsl": "getmember(ref Nested, NestedString) > 2",
+  "json": {
+    "gt": [
+      {
+        "len": [
+          {
+            "getmember": [
+              {
+                "ref": "Nested"
+              },
+              "NestedString"
+            ]
+          }
+        ]
+      },
+      2
+    ]
+  }
+}

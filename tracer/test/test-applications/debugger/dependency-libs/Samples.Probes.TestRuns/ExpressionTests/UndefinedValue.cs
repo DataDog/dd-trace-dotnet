@@ -5,13 +5,13 @@ namespace Samples.Probes.TestRuns.ExpressionTests
     public class UndefinedValue : IRun
     {
         private const string Dsl = @"{
-  ""dsl"": ""^intArg \u003e 2""
+  ""dsl"": ""ref undefined > 2""
 }";
 
         private const string Json = @"{
   ""json"": {
     ""gt"": [
-      ""^undefine"",
+      {""ref"": ""undefined""},
       2
     ]
   }

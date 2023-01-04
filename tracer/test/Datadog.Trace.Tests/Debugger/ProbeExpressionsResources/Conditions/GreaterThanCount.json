@@ -1,0 +1,15 @@
+{
+  "dsl": "count(ref CollectionLocal) > 2",
+  "json": {
+    "gt": [
+      {
+        "count": [
+          {
+            "ref": "CollectionLocal"
+          }
+        ]
+      },
+      2
+    ]
+  }
+}

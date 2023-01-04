@@ -1,16 +1,29 @@
-﻿Json: {
-  "dsl": "len(.String) > 2 || count(#CollectionLocal) > 2",
+﻿Condition:
+Json:{
+  "dsl": "len(ref String) > 2 || count(ref CollectionLocal) > 2",
   "json": {
     "or": [
       {
         "gt": [
-          { "len": ".String" },
+          {
+            "len": [
+              {
+                "ref": "String"
+              }
+            ]
+          },
           2
         ]
       },
       {
         "gt": [
-          { "count": "#CollectionLocal" },
+          {
+            "count": [
+              {
+                "ref": "CollectionLocal"
+              }
+            ]
+          },
           2
         ]
       }

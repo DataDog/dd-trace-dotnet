@@ -1,29 +1,13 @@
 ﻿Condition:
 Json:{
-  "dsl": "filter(ref CollectionLocal, { len(@it) > 4 })",
-  "json": {
-    "gt": [
-      {
-        "count": {
-          "filter": [
-            {
-              "ref": "CollectionLocal"
-            },
-            {
-              "gt": [
-                {
-                  "len": "@it"
-                },
-                4
-              ]
-            }
-          ]
-        }
-      },
-      2
-    ]
-  },
-  "ignored": true
+    "dsl": "SomeLocal > 2",
+    "json": {
+        "gt": [
+            "# SomeLocal should have a 'ref' prefix",
+            "SomeLocal",
+            2
+        ]
+    }
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {
@@ -38,10 +22,10 @@ Expression: (scopeMember, scopeMemberArray) =>
     var StringArg = (string)scopeMemberArray[7].Value;
     var CollectionArg = (List<string>)scopeMemberArray[8].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
-    var $result = CollectionLocal
-        .Where(@string => @string.Length > 4)
-        .ToList().Count > 2;
+    var $result = return true;
 
     return $result;
 }
 Result: True
+Errors:
+EvaluationError { Expression = 2, Message = The binary operator GreaterThan is not defined for the types 'System.String' and 'System.Int32'. }

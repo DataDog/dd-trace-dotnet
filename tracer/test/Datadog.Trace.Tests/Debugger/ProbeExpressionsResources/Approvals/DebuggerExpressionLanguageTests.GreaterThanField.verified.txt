@@ -1,8 +1,11 @@
-﻿Json: {
-  "dsl": ".IntNumber \u003e 2",
+﻿Condition:
+Json:{
+  "dsl": "ref IntNumber > 2",
   "json": {
     "gt": [
-      ".IntNumber",
+      {
+        "ref": "IntNumber"
+      },
       2
     ]
   }

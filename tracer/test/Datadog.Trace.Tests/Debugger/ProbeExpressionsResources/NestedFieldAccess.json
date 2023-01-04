@@ -1,9 +1,0 @@
-{
-  "dsl": ".Nested.NestedString \u003e 2",
-  "json": {
-    "gt": [
-      { "len": ".Nested.NestedString" },
-      2
-    ]
-  }
-}

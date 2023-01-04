@@ -1,29 +1,18 @@
-﻿Condition:
-Json:{
-  "dsl": "filter(ref CollectionLocal, { len(@it) > 4 })",
-  "json": {
-    "gt": [
-      {
-        "count": {
-          "filter": [
-            {
-              "ref": "CollectionLocal"
-            },
-            {
-              "gt": [
+﻿Json: {
+    "dsl": "ref Nested.NestedString == Hello from nested object",
+    "json": {
+        "eq": [
+        {
+            "getmember": [
                 {
-                  "len": "@it"
+                    "ref": "Nested"
                 },
-                4
-              ]
-            }
-          ]
-        }
-      },
-      2
-    ]
-  },
-  "ignored": true
+                "NestedString"
+            ]
+        },
+        "Hello from nested object"
+        ]
+    }
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {
@@ -38,9 +27,7 @@ Expression: (scopeMember, scopeMemberArray) =>
     var StringArg = (string)scopeMemberArray[7].Value;
     var CollectionArg = (List<string>)scopeMemberArray[8].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
-    var $result = CollectionLocal
-        .Where(@string => @string.Length > 4)
-        .ToList().Count > 2;
+    var $result = this.Nested.NestedString == "Hello from nested object";
 
     return $result;
 }

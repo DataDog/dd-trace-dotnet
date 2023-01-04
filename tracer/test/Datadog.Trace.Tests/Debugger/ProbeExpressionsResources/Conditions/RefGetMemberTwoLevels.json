@@ -1,0 +1,21 @@
+{
+    "dsl": "getmember(getmember(ref Nested, NestedObject), AnotherNested) == Hello from another nested object",
+    "json": {
+        "eq": [
+            {
+                "getmember": [
+                    {
+                        "getmember": [
+                            {
+                                "ref": "Nested"
+                            },
+                            "Nested"
+                        ]
+                    },
+                    "NestedString"
+                ]
+            },
+            "Hello from another nested object"
+        ]
+    }
+}

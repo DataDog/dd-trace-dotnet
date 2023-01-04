@@ -5,13 +5,13 @@ namespace Samples.Probes.TestRuns.ExpressionTests
     public class GreaterThenArgumentTrueAtExit : IRun
     {
         private const string Dsl = @"{
-  ""dsl"": ""^intArg \u003e 2""
+  ""dsl"": ""ref intArg > 2""
 }";
 
         private const string Json = @"{
   ""json"": {
     ""gt"": [
-      ""^intArg"",
+      {""ref"": ""intArg""},
       2
     ]
   }

@@ -1,8 +1,20 @@
-﻿Json: {
-  "dsl": ".Nested.NestedString \u003e 2",
+﻿Condition:
+Json:{
+  "dsl": "getmember(ref Nested, NestedString) > 2",
   "json": {
     "gt": [
-      { "len": ".Nested.NestedString" },
+      {
+        "len": [
+          {
+            "getmember": [
+              {
+                "ref": "Nested"
+              },
+              "NestedString"
+            ]
+          }
+        ]
+      },
       2
     ]
   }

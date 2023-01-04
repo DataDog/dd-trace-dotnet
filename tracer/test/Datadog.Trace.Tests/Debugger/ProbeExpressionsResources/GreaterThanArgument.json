@@ -1,9 +1,0 @@
-{
-  "dsl": "^IntArg \u003e 2",
-  "json": {
-    "gt": [
-      "^IntArg",
-      2
-    ]
-  }
-}

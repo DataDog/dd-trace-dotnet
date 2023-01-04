@@ -1,8 +1,13 @@
-﻿Json: {
-  "dsl": ".UndefinedField \u003e 2",
+﻿Condition:
+Json:{
+  "dsl": "ref UndefinedField > 2",
   "json": {
     "gt": [
-      ".UndefinedField",
+      [
+        {
+          "ref": "UndefinedField"
+        }
+      ],
       2
     ]
   }
@@ -20,8 +25,10 @@ Expression: (scopeMember, scopeMemberArray) =>
     var StringArg = (string)scopeMemberArray[7].Value;
     var CollectionArg = (List<string>)scopeMemberArray[8].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
-    var $result = return false;
+    var $result = return true;
 
     return $result;
 }
-Result: False
+Result: True
+Errors:
+EvaluationError { Expression = this, Message = Can't find 'UndefinedField' member in 'this' }

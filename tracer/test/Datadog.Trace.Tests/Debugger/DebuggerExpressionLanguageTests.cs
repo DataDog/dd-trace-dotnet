@@ -8,10 +8,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 using AgileObjects.ReadableExpressions;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using VerifyTests;
 using VerifyXunit;
@@ -22,6 +24,14 @@ namespace Datadog.Trace.Tests.Debugger
     [UsesVerify]
     public class DebuggerExpressionLanguageTests
     {
+        private const string DefaultDslTemplate = @"{""dsl"": ""Ignore""}";
+
+        private const string DefaultJsonTemplate = @"{""json"": {""Ignore"": ""Ignore""}}";
+
+        private const string ConditionsFolder = "Conditions";
+
+        private const string TemplatesFolder = "Templates";
+
         public DebuggerExpressionLanguageTests()
         {
             Test = new TestStruct
@@ -36,10 +46,17 @@ namespace Datadog.Trace.Tests.Debugger
 
         internal TestStruct Test { get; set; }
 
-        public static IEnumerable<object[]> ExpressionsResources()
+        public static IEnumerable<object[]> TemplatesResources()
         {
             var sourceFilePath = GetSourceFilePath();
-            var path = Path.Combine(sourceFilePath, "..", "ProbeExpressionsResources");
+            var path = Path.Combine(sourceFilePath, "..", "ProbeExpressionsResources", TemplatesFolder);
+            return Directory.EnumerateFiles(path, "*.json", SearchOption.TopDirectoryOnly).Select(file => new object[] { file });
+        }
+
+        public static IEnumerable<object[]> ConditionsResources()
+        {
+            var sourceFilePath = GetSourceFilePath();
+            var path = Path.Combine(sourceFilePath, "..", "ProbeExpressionsResources", ConditionsFolder);
             return Directory.EnumerateFiles(path, "*.json", SearchOption.TopDirectoryOnly).Select(file => new object[] { file });
         }
 
@@ -49,27 +66,61 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
-        [MemberData(nameof(ExpressionsResources))]
-        public async Task TestExpression(string expressionTestFilePath)
+        [MemberData(nameof(TemplatesResources))]
+        public async Task TestTemplates(string expressionTestFilePath)
         {
             // Arrange
             var evaluator = GetEvaluator(expressionTestFilePath);
             var settings = ConfigureVerifySettings(expressionTestFilePath);
 
             // Act
-            var compiledExpression = ProbeExpressionParser<bool>.ParseExpression(evaluator.Condition.Value.Json, evaluator.ScopeMembers.InvocationTarget, evaluator.ScopeMembers.Members);
             var result = Evaluate(evaluator);
 
             // Assert
-            Assert.True(result.Succeeded);
-            var toVerify = $"Json: {compiledExpression.RawExpression}{Environment.NewLine}Expression: {compiledExpression.ParsedExpression.ToReadableString()}{Environment.NewLine}Result: {result.ConditionResult}";
+            Assert.NotNull(result.Template);
+            Assert.True(result.Condition.HasValue);
+            Assert.True(evaluator.CompiledTemplates.Value.Length > 0);
+            var toVerify = GetStringToVerify(evaluator, result);
             await Verifier.Verify(toVerify, settings);
         }
 
-        private (bool Succeeded, bool ConditionResult) Evaluate(ProbeExpressionEvaluator evaluator)
+        [Theory]
+        [MemberData(nameof(ConditionsResources))]
+        public async Task TestConditions(string expressionTestFilePath)
         {
-            var result = evaluator.Evaluate();
-            return (result.Succeeded, result.Condition.Value);
+            // Arrange
+            var evaluator = GetEvaluator(expressionTestFilePath);
+            var settings = ConfigureVerifySettings(expressionTestFilePath);
+
+            // Act
+            var result = Evaluate(evaluator);
+
+            // Assert
+            Assert.NotNull(result.Template);
+            Assert.True(result.Condition.HasValue);
+            Assert.True(evaluator.CompiledTemplates.Value.Length > 0);
+            var toVerify = GetStringToVerify(evaluator, result);
+            await Verifier.Verify(toVerify, settings);
+        }
+
+        private ProbeExpressionEvaluator GetEvaluator(string expressionTestFilePath)
+        {
+            var jsonExpression = File.ReadAllText(expressionTestFilePath);
+            var dsl = GetDsl(jsonExpression);
+            var scopeMembers = CreateScopeMembers();
+            DebuggerExpression? condition = null;
+            DebuggerExpression[] templates;
+            if (new DirectoryInfo(Path.GetDirectoryName(expressionTestFilePath)).Name == ConditionsFolder)
+            {
+                condition = new DebuggerExpression(dsl, jsonExpression, null);
+                templates = new DebuggerExpression[] { new(DefaultDslTemplate, DefaultJsonTemplate, string.Empty) };
+            }
+            else
+            {
+                templates = new DebuggerExpression[] { new(dsl, jsonExpression, string.Empty) };
+            }
+
+            return new ProbeExpressionEvaluator(templates, condition, null, scopeMembers);
         }
 
         private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
@@ -80,15 +131,6 @@ namespace Datadog.Trace.Tests.Debugger
             VerifierSettings.DerivePathInfo(
                 (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "ProbeExpressionsResources", "Approvals")));
             return settings;
-        }
-
-        private ProbeExpressionEvaluator GetEvaluator(string expressionTestFilePath)
-        {
-            var jsonExpression = File.ReadAllText(expressionTestFilePath);
-            var dsl = GetDsl(jsonExpression);
-            var scopeMembers = CreateScopeMembers();
-            var evaluator = new ProbeExpressionEvaluator(null, new DebuggerExpression(dsl, jsonExpression, null), null, scopeMembers);
-            return evaluator;
         }
 
         private string GetDsl(string expressionJson)
@@ -136,6 +178,40 @@ namespace Datadog.Trace.Tests.Debugger
             return scope;
         }
 
+        private (string Template, bool? Condition, List<EvaluationError> Errors) Evaluate(ProbeExpressionEvaluator evaluator)
+        {
+            var result = evaluator.Evaluate();
+            return (result.Template, result.Condition, result.Errors);
+        }
+
+        private string GetStringToVerify(ProbeExpressionEvaluator evaluator, (string Template, bool? Condition, List<EvaluationError> Errors) evaluationResult)
+        {
+            var builder = new StringBuilder();
+            if (evaluationResult.Condition.HasValue)
+            {
+                builder.AppendLine("Condition:");
+                builder.AppendLine($"Json:{evaluator.Condition.Value.Json}");
+                builder.AppendLine($"Expression: {evaluator.CompiledCondition.Value.Value.ParsedExpression.ToReadableString()}");
+                builder.AppendLine($"Result: {evaluationResult.Condition}");
+            }
+
+            if (evaluator.Templates.Any(t => t.Dsl != DefaultDslTemplate))
+            {
+                builder.AppendLine("Template:");
+                builder.AppendLine($"Segments: {string.Join(Environment.NewLine, evaluator.Templates.Select(t => t.Json))}");
+                builder.AppendLine($"Expressions: {evaluator.CompiledTemplates.Value.Select(t => t.ParsedExpression.ToReadableString())}");
+                builder.AppendLine($"Result: {evaluationResult.Template}");
+            }
+
+            if (evaluationResult.Errors is { Count: > 0 })
+            {
+                builder.AppendLine("Errors:");
+                builder.AppendLine($"{string.Join(Environment.NewLine, evaluationResult.Errors)}");
+            }
+
+            return builder.ToString();
+        }
+
         internal struct TestStruct
         {
             public int IntNumber;
@@ -148,9 +224,11 @@ namespace Datadog.Trace.Tests.Debugger
 
             public NestedObject Nested;
 
-            internal struct NestedObject
+            internal class NestedObject
             {
-                public string NestedString;
+                public string NestedString { get; set; }
+
+                public NestedObject Nested { get; set; }
             }
         }
     }

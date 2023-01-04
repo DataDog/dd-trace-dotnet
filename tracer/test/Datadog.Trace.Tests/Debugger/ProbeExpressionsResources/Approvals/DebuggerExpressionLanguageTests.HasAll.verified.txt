@@ -1,11 +1,16 @@
-﻿Json: {
-  "dsl": "hasAll(#CollectionLocal, { len(@it) > 3 })",
+﻿Condition:
+Json:{
+  "dsl": "hasAll(ref CollectionLocal, { len(@it) > 3 })",
   "json": {
     "hasAll": [
-      "#CollectionLocal",
+      {
+        "ref": "CollectionLocal"
+      },
       {
         "gt": [
-          { "len": "@it" },
+          {
+            "len": "@it"
+          },
           3
         ]
       }

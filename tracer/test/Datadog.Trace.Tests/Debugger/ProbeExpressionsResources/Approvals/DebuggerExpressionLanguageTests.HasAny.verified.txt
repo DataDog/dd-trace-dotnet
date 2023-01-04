@@ -1,8 +1,11 @@
-﻿Json: {
-  "dsl": "hasAny(#CollectionLocal, { @it == 'hello' })",
+﻿Condition:
+Json:{
+  "dsl": "hasAny(ref CollectionLocal, { @it == 'hello' })",
   "json": {
     "hasAny": [
-      "#CollectionLocal",
+      {
+        "ref": "CollectionLocal"
+      },
       {
         "eq": [
           "@it",

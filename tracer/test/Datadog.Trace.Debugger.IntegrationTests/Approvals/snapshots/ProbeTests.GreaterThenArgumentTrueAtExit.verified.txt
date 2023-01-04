@@ -21,17 +21,17 @@
             "locals": {
               "@return": {
                 "type": "String",
-                "value": "Dsl: {\r\n  \"dsl\": \"^intArg \\u003e 2\"\r\n}, Argument: 3"
+                "value": "Dsl: {\r\n  \"dsl\": \"ref intArg > 2\"\r\n}, Argument: 3"
               }
             },
             "staticFields": {
               "Dsl": {
                 "type": "String",
-                "value": "{\r\n  \"dsl\": \"^intArg \\u003e 2\"\r\n}"
+                "value": "{\r\n  \"dsl\": \"ref intArg > 2\"\r\n}"
               },
               "Json": {
                 "type": "String",
-                "value": "{\r\n  \"json\": {\r\n    \"gt\": [\r\n      \"^intArg\",\r\n      2\r\n    ]\r\n  }\r\n}"
+                "value": "{\r\n  \"json\": {\r\n    \"gt\": [\r\n      {\"ref\": \"intArg\"},\r\n      2\r\n    ]\r\n  }\r\n}"
               }
             }
           }

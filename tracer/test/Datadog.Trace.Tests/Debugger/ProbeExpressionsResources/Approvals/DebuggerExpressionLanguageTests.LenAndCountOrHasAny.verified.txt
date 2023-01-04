@@ -1,10 +1,17 @@
-﻿Json: {
-  "dsl": "len(.String) > 2 || count(#CollectionLocal) > 2",
+﻿Condition:
+Json:{
+  "dsl": "len(ref String) > 2 || count(ref CollectionLocal) > 2 || hasAny(filter(ref CollectionLocal {@it > 4}) { @it == hello})",
   "json": {
     "and": [
       {
         "gt": [
-          { "len": ".String" },
+          {
+            "len": [
+              {
+                "ref": "String"
+              }
+            ]
+          },
           2
         ]
       },
@@ -12,7 +19,13 @@
         "or": [
           {
             "gt": [
-              { "count": "#CollectionLocal" },
+              {
+                "count": [
+                  {
+                    "ref": "CollectionLocal"
+                  }
+                ]
+              },
               2
             ]
           },
@@ -20,10 +33,14 @@
             "hasAny": [
               {
                 "filter": [
-                  "#CollectionLocal",
+                  {
+                    "ref": "CollectionLocal"
+                  },
                   {
                     "gt": [
-                      { "len": "@it" },
+                      {
+                        "len": "@it"
+                      },
                       4
                     ]
                   }
@@ -37,9 +54,7 @@
               }
             ]
           }
-
         ]
-
       }
     ]
   },

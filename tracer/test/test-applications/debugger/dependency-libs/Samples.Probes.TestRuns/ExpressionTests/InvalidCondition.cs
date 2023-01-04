@@ -2,16 +2,16 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    internal class PartialSnapshotAtExit : IRun
+    public class InvalidCondition : IRun
     {
         private const string Dsl = @"{
-  ""dsl"": ""ref intArg > 2""
+  ""dsl"": ""undefined > 2""
 }";
 
         private const string Json = @"{
   ""json"": {
     ""gt"": [
-      {""ref"": ""intArg""},
+       ""undefined"",
       2
     ]
   }
@@ -20,14 +20,14 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
-            Method(3);
+            Method(1);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [ExpressionProbeTestData(
             conditionDsl: Dsl,
             conditionJson: Json,
-            isFullSnapshot: false,
+            isFullSnapshot: true,
             evaluateAt: 1,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]

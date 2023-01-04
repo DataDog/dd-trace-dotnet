@@ -1,9 +1,0 @@
-{
-  "dsl": ".IntNumber \u003e 2",
-  "json": {
-    "gt": [
-      ".IntNumber",
-      2
-    ]
-  }
-}

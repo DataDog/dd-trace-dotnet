@@ -1,0 +1,13 @@
+{
+  "dsl": "ref UndefinedField > 2",
+  "json": {
+    "gt": [
+      [
+        {
+          "ref": "UndefinedField"
+        }
+      ],
+      2
+    ]
+  }
+}

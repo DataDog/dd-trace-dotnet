@@ -1,0 +1,11 @@
+{
+  "dsl": "ref IntNumber > 2",
+  "json": {
+    "gt": [
+      {
+        "ref": "IntNumber"
+      },
+      2
+    ]
+  }
+}

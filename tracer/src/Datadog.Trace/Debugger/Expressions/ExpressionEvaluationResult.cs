@@ -16,7 +16,5 @@ internal ref struct ExpressionEvaluationResult
 
     public double? Metric { get; set; }
 
-    public bool Succeeded { get; set; }
-
     public List<EvaluationError> Errors { get; set; }
 }

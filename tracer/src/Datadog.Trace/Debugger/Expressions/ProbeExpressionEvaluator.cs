@@ -101,13 +101,11 @@ internal class ProbeExpressionEvaluator
             {
                 (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
             }
-
-            result.Succeeded = true;
         }
         catch (Exception e)
         {
             HandleException(result, compiledExpression, e.Message);
-            result.Succeeded = false;
+            result.Condition = true;
         }
     }
 
@@ -186,6 +184,6 @@ internal class ProbeExpressionEvaluator
             result.Errors.AddRange(compiledExpression.Errors);
         }
 
-        result.Errors.Add(new EvaluationError { Expression = compiledExpression.ParsedExpression.ToString(), Message = message });
+        result.Errors.Add(new EvaluationError { Expression = compiledExpression.ParsedExpression?.ToString() ?? "null", Message = message });
     }
 }
