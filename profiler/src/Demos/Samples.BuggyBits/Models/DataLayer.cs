@@ -233,7 +233,7 @@ namespace BuggyBits.Models
             Parallel.For(
                 0,
                 productCount,
-                new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount * 4 },
+                new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 },
                 (id) => // download each product and store them in a common list protected by a lock
                 {
                     // don't create too many spans
@@ -241,6 +241,7 @@ namespace BuggyBits.Models
                     lock (listLock)
                     {
                         products.Add(product);
+                        Thread.Sleep(1);
                     }
                 });
 

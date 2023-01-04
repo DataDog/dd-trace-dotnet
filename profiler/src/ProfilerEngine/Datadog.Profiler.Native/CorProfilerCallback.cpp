@@ -44,7 +44,6 @@
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
-
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
@@ -113,8 +112,14 @@ bool CorProfilerCallback::InitializeServices()
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
 
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
+    _managedThreadsMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads", [this]() {
+        return _pManagedThreadList->Count();
+    });
 
     _pCodeHotspotsThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
+    _managedThreadsWithContextMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads_with_context", [this]() {
+        return _pCodeHotspotsThreadList->Count();
+    });
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
@@ -153,7 +158,8 @@ bool CorProfilerCallback::InitializeServices()
             _pConfiguration.get(),
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
-            pRuntimeIdStore);
+            pRuntimeIdStore,
+            _metricsRegistry);
         valuesOffset += static_cast<uint32_t>(valueTypes.size());
     }
 
@@ -175,7 +181,8 @@ bool CorProfilerCallback::InitializeServices()
                     _pThreadsCpuManager,
                     _pAppDomainStore.get(),
                     pRuntimeIdStore,
-                    _pConfiguration.get());
+                    _pConfiguration.get(),
+                    _metricsRegistry);
                 valuesOffset += static_cast<uint32_t>(valueTypes.size());
 
                 valueTypes = AllocationsProvider::SampleTypeDefinitions;
@@ -189,7 +196,8 @@ bool CorProfilerCallback::InitializeServices()
                     _pAppDomainStore.get(),
                     pRuntimeIdStore,
                     _pConfiguration.get(),
-                    _pLiveObjectsProvider
+                    _pLiveObjectsProvider,
+                    _metricsRegistry
                     );
                 valuesOffset += static_cast<uint32_t>(valueTypes.size());
 
@@ -218,7 +226,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                nullptr  // no listener
+                nullptr,  // no listener
+                _metricsRegistry
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
@@ -235,7 +244,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get()
+                _pConfiguration.get(),
+                _metricsRegistry
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
@@ -259,7 +269,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get()
+                _pConfiguration.get(),
+                _metricsRegistry
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
@@ -304,7 +315,8 @@ bool CorProfilerCallback::InitializeServices()
         _pManagedThreadList,
         _pCodeHotspotsThreadList,
         _pWallTimeProvider,
-        _pCpuTimeProvider);
+        _pCpuTimeProvider,
+        _metricsRegistry);
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
@@ -315,9 +327,14 @@ bool CorProfilerCallback::InitializeServices()
         _pConfiguration.get(),
         _pApplicationStore,
         _pRuntimeInfo.get(),
-        _pEnabledProfilers.get());
+        _pEnabledProfilers.get(),
+        _metricsRegistry);
 
-    _pSamplesCollector = RegisterService<SamplesCollector>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get());
+    _pSamplesCollector = RegisterService<SamplesCollector>(
+        _pConfiguration.get(),
+        _pThreadsCpuManager,
+        _pExporter.get(),
+        _metricsSender.get());
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {

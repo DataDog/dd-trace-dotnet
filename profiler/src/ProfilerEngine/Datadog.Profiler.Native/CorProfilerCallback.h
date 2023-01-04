@@ -26,6 +26,9 @@
 #include "LiveObjectsProvider.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
+#include "MetricsRegistry.h"
+#include "ProxyMetric.h"
+
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
@@ -228,6 +231,10 @@ private :
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;
+
+    MetricsRegistry _metricsRegistry;
+    std::shared_ptr<ProxyMetric> _managedThreadsMetric;
+    std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
 
 private:
     static void ConfigureDebugLog();
