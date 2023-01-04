@@ -24,26 +24,7 @@ namespace Samples.AzureFunctions.AllTriggers
             log.LogInformation($"Profiler assembly location: {SampleHelpers.GetTracerAssemblyLocation()}");
 
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-            try
-            {
-                await CallFunctionHttp("trigger", log);
-            }
-            catch (HttpRequestException e)
-            {
-                log.LogError($"CallFunctionHttp - exception: {e}");
-                throw;
-            }
-            catch (HttpResponseException e)
-            {
-                log.LogError($"CallFunctionHttp - exception: {e}");
-                log.LogError($"CallFunctionHttp - e.Response.Content: {e.Response.Content}");
-                throw;
-            }
-            catch (Exception e)
-            {
-                log.LogError($"CallFunctionHttp - exception: {e}");
-                throw;
-            }
+            await CallFunctionHttp("trigger", log);
             log.LogInformation($"Shutting down: {DateTime.Now}");
         }
 
@@ -85,13 +66,20 @@ namespace Samples.AzureFunctions.AllTriggers
             return new OkObjectResult("Attempting triggers.");
         }
 
-        private async Task<string> CallFunctionHttp(string path, ILogger logger)
+        private async Task<HttpResponseMessage> CallFunctionHttp(string path, ILogger logger)
         {
             var httpFunctionUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071";
             var uri = $"{$"http://{httpFunctionUrl}"}/api/{path}";
             logger.LogInformation("Calling Uri {Uri}", uri);
-            var simpleResponse = await HttpClient.GetStringAsync(uri);
-            return simpleResponse;
+            var response = await HttpClient.GetAsync(uri);
+            if (!response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                logger.LogError($"http call to uri: {uri}, failed with status-code: {response.StatusCode}, body: {content}");
+                // calling this creates an exception with very little info about why the service failed
+                response.EnsureSuccessStatusCode();
+            }
+            return response;
         }
 
         private async Task Attempt(Func<Task> action, ILogger log)
