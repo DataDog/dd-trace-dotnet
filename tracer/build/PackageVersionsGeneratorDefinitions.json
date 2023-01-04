@@ -100,10 +100,10 @@
       "12.*.*"
     ],
     "VersionConditions": [{
-        "MaxVersionExclusive": "13.0.0",
-        "ExcludeTargetFrameworks": [ "net461", "netcoreapp2.1", "netcoreapp3.0" ]
+      "MaxVersionExclusive": "13.0.0",
+      "ExcludeTargetFrameworks": [ "net461", "netcoreapp2.1", "netcoreapp3.0" ]
     }]
-  },  
+  },
   {
     "IntegrationName": "Npgsql",
     "SampleProjectName": "Samples.Npgsql",
@@ -235,7 +235,12 @@
       "5.*.*",
       "6.*.*",
       "7.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "3.1.32",
+      "MaxVersionExclusive": "4.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "XUnit",
