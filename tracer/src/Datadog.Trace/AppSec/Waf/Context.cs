@@ -43,7 +43,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
-            var pwArgs = encoder.Encode(addresses, argCache, applySafetyLimits: true);
+            using var pwArgs = encoder.Encode(addresses, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
