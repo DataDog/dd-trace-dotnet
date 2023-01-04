@@ -82,10 +82,10 @@ internal class BlockingMiddleware
     {
         var security = Security.Instance;
         var endedResponse = false;
-        var securityCoordinator = new SecurityCoordinator(security, context, (Span)Tracer.Instance.ActiveScope.Span);
 
-        if (security.Settings.Enabled)
+        if (security.Settings.Enabled && Tracer.Instance?.ActiveScope?.Span is Span span)
         {
+            var securityCoordinator = new SecurityCoordinator(security, context, span);
             if (_endPipeline && !context.Response.HasStarted)
             {
                 context.Response.StatusCode = 404;
@@ -115,8 +115,9 @@ internal class BlockingMiddleware
             catch (BlockException e)
             {
                 await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
-                if (security.Settings.Enabled)
+                if (security.Settings.Enabled && Tracer.Instance?.ActiveScope?.Span is Span blockedSpan)
                 {
+                    var securityCoordinator = new SecurityCoordinator(security, context, blockedSpan);
                     if (!e.Reported)
                     {
                         securityCoordinator.Report(e.TriggerData, e.AggregatedTotalRuntime, e.AggregatedTotalRuntimeWithBindings, endedResponse);
