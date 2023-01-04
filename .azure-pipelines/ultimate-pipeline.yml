@@ -4127,6 +4127,10 @@ stages:
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
         GITHUB_TOKEN: $(GITHUB_TOKEN)
 
+    - publish: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/throughput_report.md
+      displayName: Upload report
+      artifact: crank_throughput_report
+
 - stage: trace_pipeline
   condition: eq(variables['isBenchmarksOnlyBuild'], 'False')
   dependsOn:

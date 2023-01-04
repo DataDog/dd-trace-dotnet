@@ -1013,6 +1013,9 @@ partial class Build
 
              var markdown = CompareThroughput.GetMarkdown(sources);
 
+             // save the report so we can upload it as an atefact for prosperity
+             await File.WriteAllTextAsync(throughputDir / "throughput_report.md", markdown);
+
              await HideCommentsInPullRequest(prNumber, "## Throughput/Crank Report");
              await PostCommentToPullRequest(prNumber, markdown);
 
