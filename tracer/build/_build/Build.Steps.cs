@@ -820,6 +820,7 @@ partial class Build
         .Executes(() =>
         {
             DotnetBuild(TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"), noDependencies: false);
+            DotnetBuild(TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"), noDependencies: false, platform: TargetPlatform);
         });
 
     Target CompileManagedTestHelpers => _ => _
@@ -1056,7 +1057,7 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
-            DotnetBuild(Solution.GetProject(Projects.DebuggerIntegrationTests), framework: Framework);
+            DotnetBuild(Solution.GetProject(Projects.DebuggerIntegrationTests), framework: Framework, platform: TargetPlatform);
         });
 
     Target CompileDebuggerIntegrationTestsDependencies => _ => _
