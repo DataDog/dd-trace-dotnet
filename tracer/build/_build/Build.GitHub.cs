@@ -964,24 +964,28 @@ partial class Build
          .Requires(() => GitHubToken)
          .Executes(async () =>
          {
-             if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
-             {
-                 Logger.Warn("No PR_NUMBER variable found. Skipping throughput comparison");
-                 return;
-             }
+             var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
 
              var testedCommit = Environment.GetEnvironmentVariable("OriginalCommitId"); 
              if (string.IsNullOrEmpty(testedCommit))
              {
-                 Logger.Warn("No OriginalCommitId variable found. Skipping throughput comparison");
-                 return;
+                 testedCommit = GitTasks.Git($"rev-parse HEAD").FirstOrDefault().Text;
+                 if(string.IsNullOrEmpty(testedCommit))
+                 {
+                    Logger.Warn("No OriginalCommitId variable found and unable to infer commit. Skipping throughput comparison");
+                    return;
+                 }
+                 else
+                 {
+                    Logger.Info($"No OriginalCommitId variable found. Using inferred commit {testedCommit}");
+                 }
              }
 
              var throughputDir = BuildDataDirectory / "throughput";
              var masterDir = throughputDir / "master";
              var oldBenchmarksDir = throughputDir / "benchmarks_2_9_0";
              var latestBenchmarksDir = throughputDir / "latest_benchmarks";
-             var prDir = throughputDir / "pr";
+             var commitDir = throughputDir / "current";
 
              FileSystemTasks.EnsureCleanDirectory(masterDir);
              FileSystemTasks.EnsureCleanDirectory(oldBenchmarksDir);
@@ -999,9 +1003,10 @@ partial class Build
              var oldBenchmarkBuild = await GetCrankArtifacts(buildHttpClient, "refs/heads/benchmarks/2.9.0", oldBenchmarksDir);
              var (newBenchmarkBuild, benchmarkVersion) = await GetCrankArtifactsForLatestBenchmarkBranch(buildHttpClient, latestBenchmarksDir);
              
+             var commitName = isPr ? $"This PR ({PullRequestNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
              var sources = new List<CrankResultSource>
              {
-                 new($"This PR ({PullRequestNumber})", testedCommit, CrankSourceType.Pr, prDir),
+                 new(commitName, testedCommit, CrankSourceType.CurrentCommit, commitDir),
                  new("master", masterBuild.SourceVersion, CrankSourceType.Master, masterDir),
                  new("benchmarks/2.9.0", oldBenchmarkBuild.SourceVersion, CrankSourceType.OldBenchmark, oldBenchmarksDir),
              };
@@ -1013,11 +1018,17 @@ partial class Build
 
              var markdown = CompareThroughput.GetMarkdown(sources);
 
+             Logger.Info("Markdown build complete, writing report");
+
              // save the report so we can upload it as an atefact for prosperity
              await File.WriteAllTextAsync(throughputDir / "throughput_report.md", markdown);
 
-             await HideCommentsInPullRequest(prNumber, "## Throughput/Crank Report");
-             await PostCommentToPullRequest(prNumber, markdown);
+             if(isPr)
+             {
+                 Logger.Info("Updating PR comment on GitHub");
+                 await HideCommentsInPullRequest(prNumber, "## Throughput/Crank Report");
+                 await PostCommentToPullRequest(prNumber, markdown);
+             }
 
              async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, string Version)> GetCrankArtifactsForLatestBenchmarkBranch(BuildHttpClient httpClient, AbsolutePath directory)
              {

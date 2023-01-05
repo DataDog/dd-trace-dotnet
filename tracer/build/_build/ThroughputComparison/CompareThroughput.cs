@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
+using Nuke.Common;
 using Nuke.Common.IO;
 
 namespace ThroughputComparison;
@@ -14,9 +15,11 @@ public class CompareThroughput
 
     public static string GetMarkdown(List<CrankResultSource> sources)
     {
+        Logger.Info("Reading crank results");
         var crankResults = sources.SelectMany(ReadJsonResults).ToList();
 
         // Group crankResults by test suite (result type), then 
+        Logger.Info($"Found {crankResults.Count} results: building markdown");
         var charts = crankResults
                     .GroupBy(x => x.TestSuite)
                     .Select(group =>
@@ -57,7 +60,7 @@ public class CompareThroughput
         {
             var formattedRequests = (result.Requests / 1_000_000m).ToString("N3");
             var format = threshold.HasValue
-                      && result.Source.SourceType == CrankSourceType.Pr
+                      && result.Source.SourceType == CrankSourceType.CurrentCommit
                       && scenario != CrankScenario.Baseline
                       && result.Requests <= threshold.Value
                              ? "crit ,"
@@ -141,7 +144,7 @@ public class CompareThroughput
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error reading {fileName}: {ex.Message}. Skipping");
+                Logger.Info($"Error reading {fileName}: {ex.Message}. Skipping");
             }
         }
 
@@ -176,7 +179,7 @@ public record CrankResultSource(string BranchName, string CommitSha, CrankSource
 
 public enum CrankSourceType
 {
-    Pr,
+    CurrentCommit,
     Master,
     LatestBenchmark,
     OldBenchmark,
