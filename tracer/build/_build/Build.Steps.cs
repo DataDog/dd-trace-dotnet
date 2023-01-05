@@ -639,45 +639,6 @@ partial class Build
             }
         });
 
-    /// <summary>
-    /// This target is a bit of a hack, but means that we actually use the All CPU builds in intgration tests etc
-    /// </summary>
-    Target CreatePlatformlessSymlinks => _ => _
-        .Description("Copies the build output from 'All CPU' platforms to platform-specific folders")
-        .Unlisted()
-        .OnlyWhenStatic(() => IsWin)
-        .After(CompileManagedSrc)
-        .After(CompileDependencyLibs)
-        .After(CompileManagedTestHelpers)
-        .After(BuildRunnerTool)
-        .Executes(() =>
-        {
-            // create junction for each directory
-            var directories = TracerDirectory.GlobDirectories(
-                $"src/**/obj/{BuildConfiguration}",
-                $"src/**/bin/{BuildConfiguration}",
-                $"src/Datadog.Trace.Tools.Runner/obj/{BuildConfiguration}",
-                $"src/Datadog.Trace.Tools.Runner/bin/{BuildConfiguration}",
-                $"test/Datadog.Trace.TestHelpers/**/obj/{BuildConfiguration}",
-                $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
-                $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
-            );
-
-            directories.ForEach(existingDir =>
-            {
-                var newDir = existingDir.Parent / $"{TargetPlatform}" / BuildConfiguration;
-                if (DirectoryExists(newDir))
-                {
-                    Logger.Info($"Skipping '{newDir}' as already exists");
-                }
-                else
-                {
-                    EnsureExistingDirectory(newDir.Parent);
-                    Cmd.Value(arguments: $"cmd /c mklink /J \"{newDir}\" \"{existingDir}\"");
-                }
-            });
-        });
-
     Target ZipSymbols => _ => _
         .Unlisted()
         .After(BuildTracerHome)
@@ -959,7 +920,6 @@ partial class Build
     Target CompileRegressionSamples => _ => _
         .Unlisted()
         .After(Restore)
-        .After(CreatePlatformlessSymlinks)
         .After(CompileRegressionDependencyLibs)
         .Requires(() => Framework)
         .Executes(() =>
@@ -991,7 +951,6 @@ partial class Build
         .Description("Builds .NET Framework projects (non SDK-based projects)")
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
-        .After(CreatePlatformlessSymlinks)
         .Requires(() => IsWin)
         .Executes(() =>
         {
@@ -1038,7 +997,6 @@ partial class Build
     Target CompileSamplesWindows => _ => _
         .Unlisted()
         .After(CompileDependencyLibs)
-        .After(CreatePlatformlessSymlinks)
         .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
@@ -1173,7 +1131,6 @@ partial class Build
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
         .Unlisted()
-        .After(CreatePlatformlessSymlinks)
         .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
