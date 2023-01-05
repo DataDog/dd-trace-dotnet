@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
@@ -18,6 +19,8 @@ namespace Datadog.Trace.AppSec.Waf
     internal class Encoder
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
+        private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
+
         private readonly WafNative _wafNative;
 
         public Encoder(WafNative wafNative) => _wafNative = wafNative;
@@ -60,11 +63,47 @@ namespace Datadog.Trace.AppSec.Waf
         public Obj Encode(object o, List<Obj>? argCache = null, bool applySafetyLimits = true) =>
             EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits);
 
+        public object Decode(Obj o)
+        {
+            switch (o.ArgsType)
+            {
+                case ObjType.Invalid:
+                    return new object();
+                case ObjType.SignedNumber:
+                    return o.IntValue;
+                case ObjType.UnsignedNumber:
+                    return o.UintValue;
+                case ObjType.String:
+                    return Marshal.PtrToStringAnsi(o.InnerPtr) ?? string.Empty;
+                case ObjType.Array:
+                    var arr = new object[o.NbEntries];
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        arr[i] = Decode(new Obj(o.InnerPtr + (i * ObjectStructSize)));
+                    }
+
+                    return arr;
+                case ObjType.Map:
+                    var map = new Dictionary<string, object>(o.NbEntries);
+                    for (int i = 0; i < o.NbEntries; i++)
+                    {
+                        var next = new Obj(o.InnerPtr + (i * ObjectStructSize));
+                        var key = Marshal.PtrToStringAnsi(next.ParameterName, next.ParameterNameLength) ?? string.Empty;
+                        var nextO = Decode(next);
+                        map[key] = nextO;
+                    }
+
+                    return map;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
         private Obj EncodeUnknownType(object o)
         {
-            Log.Warning("Couldn't encode object of unknown type {type}, falling back to ToString", o?.GetType());
+            Log.Warning("Couldn't encode object of unknown type {type}, falling back to ToString", o.GetType());
 
-            var s = o?.ToString() ?? string.Empty;
+            var s = o.ToString() ?? string.Empty;
 
             return CreateNativeString(s, applyLimits: true);
         }
