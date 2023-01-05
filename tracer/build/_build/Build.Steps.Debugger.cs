@@ -14,6 +14,12 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 partial class Build
 {
+    [Parameter("Specifies the type of debugging information that should be included in the compiled assembly. Used for debugger integrations tests", List = false)]
+    readonly string DebugType;
+
+    [Parameter("Optimize generated code. Used for debugger integrations tests", List = false)]
+    readonly bool? Optimize;
+
     TargetFramework[] TestingFrameworksDebugger =>
         TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, TargetFramework.NETCOREAPP3_0, TargetFramework.NET5_0 });
 
@@ -23,9 +29,20 @@ partial class Build
 
     Project DebuggerSamplesTestRuns => Solution.GetProject(Projects.DebuggerSamplesTestRuns);
 
+    Target BuildAndRunDebuggerIntegrationTests => _ => _
+        .Description("Builds and runs the debugger integration tests")
+        .DependsOn(BuildDebuggerIntegrationTests)
+        .DependsOn(RunDebuggerIntegrationTests);
+
+    Target BuildDebuggerIntegrationTests => _ => _
+        .Unlisted()
+        .Description("Builds the debugger integration tests")
+        .DependsOn(CompileDebuggerIntegrationTests);
+
     Target CompileDebuggerIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
+        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileDebuggerIntegrationTestsDependencies)
         .DependsOn(CompileDebuggerIntegrationTestsSamples)
         .Requires(() => Framework)
