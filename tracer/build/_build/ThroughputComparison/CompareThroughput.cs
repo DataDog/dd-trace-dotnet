@@ -82,12 +82,9 @@ public class CompareThroughput
             Throughput results for AspNetCoreSimpleController comparing the following branches/commits:
             {string.Join('\n', GetSourceMarkdown(sources))}
 
-            Cases where throughput results for the PR are worse than latest master ({(int)((1 - ThresholdForCritical) * 100)}% drop or greater),
-            results are shown in **red**.
-            Note that these results are based on a _single_ point-in-time result for each branch.
-            For full results, see [one](https://ddstaging.datadoghq.com/dashboard/fnz-afi-c2i/apm-net-crank) 
-            of the [many](https://ddstaging.datadoghq.com/dashboard/c5g-i7d-kcy/ciapp-apm-net-throughput-tests),
-            [many](https://ddstaging.datadoghq.com/dashboard/uxh-m8j-qhi/ciapp-apm-net-throughput-tests-kevin) dashboards!
+            Cases where throughput results for the PR are worse than latest master ({(int)((1 - ThresholdForCritical) * 100)}% drop or greater), results are shown in **red**.
+
+            Note that these results are based on a _single_ point-in-time result for each branch. For full results, see [one](https://ddstaging.datadoghq.com/dashboard/fnz-afi-c2i/apm-net-crank) of the [many](https://ddstaging.datadoghq.com/dashboard/c5g-i7d-kcy/ciapp-apm-net-throughput-tests), [many](https://ddstaging.datadoghq.com/dashboard/uxh-m8j-qhi/ciapp-apm-net-throughput-tests-kevin) dashboards!
 
             {string.Join('\n', charts)}
             """;
