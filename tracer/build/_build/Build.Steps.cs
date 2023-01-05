@@ -862,7 +862,7 @@ partial class Build
             var exceptions = new List<Exception>();
             try
             {
-                foreach (var targetFramework in TestingFrameworks)
+                foreach (var targetFramework in TestingFrameworks.Where(x => x == Framework || Framework is null))
                 {
                     try
                     {

@@ -1,4 +1,4 @@
-// <copyright file="BodyExtractor.cs" company="Datadog">
+// <copyright file="ObjectExtractor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,9 +14,9 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec
 {
-    internal static class BodyExtractor
+    internal static class ObjectExtractor
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BodyExtractor));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ObjectExtractor));
         private static readonly IReadOnlyDictionary<string, object> EmptyDictionary = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>(0));
 
         private static readonly HashSet<Type> AdditionalPrimitives = new()
@@ -142,14 +142,15 @@ namespace Datadog.Trace.AppSec
             {
                 var dictKey = keyProp.GetValue(item)?.ToString();
                 var dictValue = valueProp.GetValue(item);
-                if (dictValue is null || IsOurKindOfPrimitive(dictValue.GetType()))
+
+                if (dictValue is null)
                 {
-                    items.Add(dictKey, dictValue?.ToString());
+                    items.Add(dictKey, null);
                 }
                 else
                 {
-                    var nestedDict = ExtractProperties(dictValue, depth, visited);
-                    items.Add(dictKey, nestedDict);
+                    var extractedvalue = ExtractType(dictValue.GetType(), dictValue, depth + 1, visited);
+                    items.Add(dictKey, extractedvalue);
                 }
 
                 if (items.Count >= WafConstants.MaxContainerSize)
@@ -169,14 +170,14 @@ namespace Datadog.Trace.AppSec
 
             foreach (var item in sourceList)
             {
-                if (IsOurKindOfPrimitive(item.GetType()))
+                if (item is null)
                 {
                     items.Add(item);
                 }
                 else
                 {
-                    var nestedDict = ExtractProperties(item, depth, visited);
-                    items.Add(nestedDict);
+                    var extractedvalue = ExtractType(item.GetType(), item, depth + 1, visited);
+                    items.Add(extractedvalue);
                 }
 
                 if (items.Count >= WafConstants.MaxContainerSize)
