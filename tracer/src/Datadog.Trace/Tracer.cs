@@ -345,18 +345,17 @@ namespace Datadog.Trace
 
             TraceContext traceContext;
 
-            // try to get the trace context (from local spans),
-            // otherwise start a new trace context and get sampling priority (from propagated spans)
             if (parent is SpanContext parentSpanContext)
             {
-                // if traceContext is not null, parent is from a local (non-propagated) span
-                // and this child span belongs in the same TraceContext
+                // if the parent's TraceContext is not null, parent is a local span
+                // and the new span we are creating belongs in the same TraceContext
                 traceContext = parentSpanContext.TraceContext;
 
                 if (traceContext == null)
                 {
-                    // if traceContext is null, parent was extracted from propagation headers.
-                    // start a new trace and keep the sampling priority, origin, and trace tags.
+                    // if parent is SpanContext but its TraceContext is null, then it was extracted from
+                    // propagation headers. create a new TraceContext (this will start a new trace) and initialize
+                    // it with the propagated values (sampling priority, origin, tags, W3C trace state, etc).
                     var traceTags = TagPropagation.ParseHeader(parentSpanContext.PropagatedTags, Settings.OutgoingTagPropagationHeaderMaxLength);
                     traceContext = new TraceContext(this, traceTags);
 
@@ -368,10 +367,13 @@ namespace Datadog.Trace
             }
             else
             {
-                // parent is not a SpanContext, start a new trace
-                var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
-
+                // if parent is not a SpanContext, it must be either a ReadOnlySpanContext or
+                // a user-defined ISpanContext implementation. we don't have a TraceContext,
+                // so create a new one (this will start a new trace).
                 traceContext = new TraceContext(this, tags: null);
+
+                // in a version-mismatch scenario, try to get the sampling priority from the "other" tracer
+                var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
                 traceContext.SetSamplingPriority(samplingPriority);
 
                 if (traceId == null)
