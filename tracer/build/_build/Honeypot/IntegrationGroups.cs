@@ -79,6 +79,7 @@ namespace Honeypot
             NugetPackages.Add("Grpc.Core", new string[] { "Grpc" });
             NugetPackages.Add("Microsoft.AspNetCore.Mvc.Core", new [] { "Microsoft.AspNetCore.Mvc.Core" });
             NugetPackages.Add("OpenTelemetry.Api", new [] { "OpenTelemetry.Api" });
+            NugetPackages.Add("OpenTelemetry", new [] { "OpenTelemetry" });
         }
 
         private IntegrationMap()
