@@ -11,7 +11,9 @@
 #include "IRuntimeIdStore.h"
 #include "ISampledAllocationsListener.h"
 #include "Log.h"
+#include "MetricsRegistry.h"
 #include "OsSpecificApi.h"
+
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
@@ -32,7 +34,8 @@ AllocationsProvider::AllocationsProvider(
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
-    ISampledAllocationsListener* pListener)
+    ISampledAllocationsListener* pListener,
+    MetricsRegistry& metricsRegistry)
     :
     CollectorBase<RawAllocationSample>("AllocationsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo(pCorProfilerInfo),
@@ -42,6 +45,11 @@ AllocationsProvider::AllocationsProvider(
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
     _pListener(pListener)
 {
+    _allocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_allocations");
+    _allocationsSizeMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_allocations_size");
+    _sampledAllocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_allocations");
+    _sampledAllocationsSizeMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_sampled_allocations_size");
+    _totalAllocationsSizeMetric = metricsRegistry.GetOrRegister<SumMetric>("dotnet_total_allocations_size");
 }
 
 
@@ -49,8 +57,13 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
                                        ClassID classId,
                                        const WCHAR* typeName,
                                        uintptr_t address,
-                                       uint64_t objectSize)
+                                       uint64_t objectSize,
+                                       uint64_t allocationAmount)
 {
+    _allocationsCountMetric->Incr();
+    _allocationsSizeMetric->Add((double_t)objectSize);
+    _totalAllocationsSizeMetric->Add((double_t)allocationAmount);
+
     if ((_sampleLimit > 0) && (!_sampler.Sample()))
     {
         return;
@@ -100,4 +113,6 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     }
 
     Add(std::move(rawSample));
+    _sampledAllocationsCountMetric->Incr();
+    _sampledAllocationsSizeMetric->Add((double_t)objectSize);
 }

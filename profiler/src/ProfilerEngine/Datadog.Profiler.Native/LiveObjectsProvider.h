@@ -41,7 +41,8 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration);
+        IConfiguration* pConfiguration,
+        MetricsRegistry& metricsRegistry);
 
 public:
     // Inherited via IService

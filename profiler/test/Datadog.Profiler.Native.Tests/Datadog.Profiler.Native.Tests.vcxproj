@@ -52,6 +52,7 @@
     <ClCompile Include="LinuxStackFramesCollectorTest.cpp" />
     <ClCompile Include="LogTest.cpp" />
     <ClCompile Include="ManagedThreadListTest.cpp" />
+    <ClCompile Include="MetricsRegistryTest.cpp" />
     <ClCompile Include="OpSysToolsTest.cpp" />
     <ClCompile Include="ProfilerMockedInterface.cpp" />
     <ClCompile Include="ProfilerSignalManagerTest.cpp" />

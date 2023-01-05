@@ -30,7 +30,8 @@ LiveObjectsProvider::LiveObjectsProvider(
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration)
+    IConfiguration* pConfiguration,
+    MetricsRegistry& metricsRegistry)
     :
     _valueOffset(valueOffset),
     _pCorProfilerInfo(pCorProfilerInfo),
@@ -48,7 +49,8 @@ LiveObjectsProvider::LiveObjectsProvider(
         pAppDomainStore,
         pRuntimeIdStore,
         pConfiguration,
-        nullptr);
+        nullptr,
+        metricsRegistry);
 }
 
 const char* LiveObjectsProvider::GetName()

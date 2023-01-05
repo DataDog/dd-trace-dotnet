@@ -53,22 +53,27 @@ std::string const LibddprofExporter::ProfilePeriodType = "RealTime";
 
 std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
 
+std::string const LibddprofExporter::MetricsFilename = "metrics.json";
+
 LibddprofExporter::LibddprofExporter(
     std::vector<SampleValueType>&& sampleTypeDefinitions,
     IConfiguration* configuration,
     IApplicationStore* applicationStore,
     IRuntimeInfo* runtimeInfo,
-    IEnabledProfilers* enabledProfilers)
+    IEnabledProfilers* enabledProfilers,
+    MetricsRegistry& metricsRegistry)
     :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
-    _applicationStore{applicationStore}
+    _applicationStore{applicationStore},
+    _metricsRegistry{metricsRegistry}
 {
     _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
     _pprofOutputPath = CreatePprofOutputPath(configuration);
     _locations.resize(_locationsAndLinesSize);
     _lines.resize(_locationsAndLinesSize);
+    _metricsFileFolder = configuration->GetProfilesOutputDirectory();
 }
 
 LibddprofExporter::~LibddprofExporter()
@@ -500,7 +505,19 @@ bool LibddprofExporter::Export()
         }
         ddog_prof_Exporter_drop(exporter);
     }
+
     return exported;
+}
+
+void LibddprofExporter::SaveMetricsToDisk(const std::string& content) const
+{
+    std::stringstream filename;
+    filename << "metrics-" << std::to_string(OpSysTools::GetProcId()) << ".json";
+    auto filepath = fs::path(_metricsFileFolder) / filename.str();
+    std::ofstream file{filepath.string(), std::ios::out | std::ios::binary};
+
+    file.write(content.c_str(), content.size());
+    file.close();
 }
 
 std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicationName, int32_t idx) const
@@ -552,19 +569,68 @@ void LibddprofExporter::ExportToDisk(const std::string& applicationName, Seriali
     }
 }
 
+std::string LibddprofExporter::CreateMetricsFileContent() const
+{
+    // prepare metrics to be sent if any
+    std::stringstream builder;
+    auto metrics = _metricsRegistry.Collect();
+    auto count = metrics.size();
+
+    if (!metrics.empty())
+    {
+        builder << "[";
+        for (auto const& metric : metrics)
+        {
+            builder << "["
+                    << "\"" << metric.first << "\""
+                    << ","
+                    << metric.second
+                    << "]";
+
+            count--;
+            if (count > 0)
+            {
+                builder << ", ";
+            }
+        }
+        builder << "]";
+
+    }
+    return builder.str();
+}
+
 ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter, const Tags& additionalTags) const
 {
-    auto start = encodedProfile.GetStart();
-    auto end = encodedProfile.GetEnd();
-    auto buffer = encodedProfile.GetBuffer();
+    // endpoints
     auto* endpointsStats = encodedProfile.GetEndpointsStats();
 
-    ddog_prof_Exporter_File file{FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_U8_as_slice(&buffer)};
+    // profile
+    auto start = encodedProfile.GetStart();
+    auto end = encodedProfile.GetEnd();
+    auto profileBuffer = encodedProfile.GetBuffer();
+    ddog_prof_Exporter_File profile{FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_U8_as_slice(&profileBuffer)};
 
-    struct ddog_prof_Exporter_Slice_File files
+    ddog_prof_Exporter_File filesArray[2]{};
+    // profile
+    filesArray[0] = profile;
+
+    struct ddog_prof_Exporter_Slice_File files{};
+    files.len = 1;
+    files.ptr = filesArray;
+
+    auto metricsFileContent = CreateMetricsFileContent();
+
+    if (!metricsFileContent.empty())
     {
-        &file, 1
-    };
+        // Add metric files
+#ifdef _DEBUG
+        SaveMetricsToDisk(metricsFileContent);
+#endif
+        ddog_Slice_U8 metricsFileSlice{reinterpret_cast<const uint8_t*>(metricsFileContent.c_str()), metricsFileContent.size()};
+
+        filesArray[1] = {FfiHelper::StringToCharSlice(MetricsFilename), metricsFileSlice};
+        files.len = 2;
+    }
 
     return ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, RequestTimeOutMs);
 }

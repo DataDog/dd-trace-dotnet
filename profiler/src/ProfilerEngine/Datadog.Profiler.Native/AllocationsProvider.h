@@ -4,9 +4,13 @@
 #pragma once
 
 #include "CollectorBase.h"
+#include "CounterMetric.h"
 #include "GenericSampler.h"
 #include "IAllocationsListener.h"
+#include "MeanMaxMetric.h"
+#include "MetricsRegistry.h"
 #include "RawAllocationSample.h"
+#include "SumMetric.h"
 
 class IManagedThreadList;
 class IFrameStore;
@@ -34,13 +38,15 @@ public:
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
-        ISampledAllocationsListener* pListener);
+        ISampledAllocationsListener* pListener,
+        MetricsRegistry& metricsRegistry);
 
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,
-                      const WCHAR* TypeName,
-                      uintptr_t Address,
-                      uint64_t ObjectSize) override;
+                      const WCHAR* typeName,
+                      uintptr_t address,
+                      uint64_t objectSize,
+                      uint64_t allocationAmount) override;
 
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
@@ -49,4 +55,9 @@ private:
     ISampledAllocationsListener* _pListener = nullptr;
     GenericSampler _sampler;
     int32_t _sampleLimit;
+    std::shared_ptr<CounterMetric> _allocationsCountMetric;
+    std::shared_ptr<MeanMaxMetric> _allocationsSizeMetric;
+    std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;
+    std::shared_ptr<MeanMaxMetric> _sampledAllocationsSizeMetric;
+    std::shared_ptr<SumMetric> _totalAllocationsSizeMetric;
 };

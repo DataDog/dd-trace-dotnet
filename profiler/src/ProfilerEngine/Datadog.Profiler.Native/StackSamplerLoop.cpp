@@ -230,7 +230,7 @@ void StackSamplerLoop::WalltimeProfilingIteration()
 
 }
 
-void StackSamplerLoop::CpuProfilingIteration(void)
+void StackSamplerLoop::CpuProfilingIteration()
 {
     int32_t managedThreadsCount = _pManagedThreadList->Count();
     // TODO: as an optimization, don't scan more threads than nb logical cores
