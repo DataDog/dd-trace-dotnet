@@ -60,30 +60,12 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        public int NbEntries
+        public DdwafObjectStruct InnerStruct
         {
             get
             {
                 Initialize();
-                return (int)innerObj.NbEntries;
-            }
-        }
-
-        public nint ParameterName
-        {
-            get
-            {
-                Initialize();
-                return innerObj.ParameterName;
-            }
-        }
-
-        public int ParameterNameLength
-        {
-            get
-            {
-                Initialize();
-                return (int)innerObj.ParameterNameLength;
+                return innerObj;
             }
         }
 

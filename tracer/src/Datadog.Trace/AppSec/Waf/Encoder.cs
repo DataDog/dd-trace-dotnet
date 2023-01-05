@@ -65,7 +65,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         public object Decode(Obj o)
         {
-            switch (o.ArgsType)
+            return InnerDecode(o.InnerStruct);
+        }
+
+        public object InnerDecode(DdwafObjectStruct o)
+        {
+            switch (DecodeArgsType(o.Type))
             {
                 case ObjType.Invalid:
                     return new object();
@@ -74,23 +79,34 @@ namespace Datadog.Trace.AppSec.Waf
                 case ObjType.UnsignedNumber:
                     return o.UintValue;
                 case ObjType.String:
-                    return Marshal.PtrToStringAnsi(o.InnerPtr) ?? string.Empty;
+                    return Marshal.PtrToStringAnsi(o.Array) ?? string.Empty;
                 case ObjType.Array:
                     var arr = new object[o.NbEntries];
                     for (int i = 0; i < arr.Length; i++)
                     {
-                        arr[i] = Decode(new Obj(o.InnerPtr + (i * ObjectStructSize)));
+                        var nextObj = Marshal.PtrToStructure(o.Array + (i * ObjectStructSize), typeof(DdwafObjectStruct));
+                        if (nextObj != null)
+                        {
+                            var next = (DdwafObjectStruct)nextObj;
+                            arr[i] = InnerDecode(next);
+                        }
                     }
 
                     return arr;
                 case ObjType.Map:
-                    var map = new Dictionary<string, object>(o.NbEntries);
-                    for (int i = 0; i < o.NbEntries; i++)
+                    int entries = (int)o.NbEntries;
+                    var map = new Dictionary<string, object>(entries);
+                    for (int i = 0; i < entries; i++)
                     {
-                        var next = new Obj(o.InnerPtr + (i * ObjectStructSize));
-                        var key = Marshal.PtrToStringAnsi(next.ParameterName, next.ParameterNameLength) ?? string.Empty;
-                        var nextO = Decode(next);
-                        map[key] = nextO;
+                        var nextObj = Marshal.PtrToStructure(o.Array + (i * ObjectStructSize), typeof(DdwafObjectStruct));
+                        if (nextObj != null)
+                        {
+                            var next = (DdwafObjectStruct)nextObj;
+                            var key = Marshal.PtrToStringAnsi(next.ParameterName, (int)next.ParameterNameLength) ?? string.Empty;
+                            map[key] = InnerDecode(next);
+                            var nextO = InnerDecode(next);
+                            map[key] = nextO;
+                        }
                     }
 
                     return map;
