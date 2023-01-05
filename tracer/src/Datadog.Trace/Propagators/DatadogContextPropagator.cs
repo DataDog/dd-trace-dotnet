@@ -13,6 +13,10 @@ namespace Datadog.Trace.Propagators
     {
         public static readonly DatadogContextPropagator Instance = new();
 
+        private DatadogContextPropagator()
+        {
+        }
+
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
