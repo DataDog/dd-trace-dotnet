@@ -22,7 +22,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public static IEnumerable<Label> Labels(this Perftools.Profiles.Sample sample, Profile profile)
         {
             return sample.Label.Select(
-                label => new Label { Name = profile.StringTable[(int)label.Key], Value = profile.StringTable[(int)label.Str] });
+                label =>
+                {
+                    if (label.Str == 0)
+                    {
+                        return new Label { Name = profile.StringTable[(int)label.Key], Value = label.Num.ToString() };
+                    }
+                    else
+                    {
+                        return new Label { Name = profile.StringTable[(int)label.Key], Value = profile.StringTable[(int)label.Str] };
+                    }
+                });
         }
 
         public static StackTrace StackTrace(this Perftools.Profiles.Sample sample, Profile profile)
