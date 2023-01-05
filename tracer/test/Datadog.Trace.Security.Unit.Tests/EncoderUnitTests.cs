@@ -35,6 +35,8 @@ public class EncoderUnitTests
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Length);
+
+        Dispose(l);
     }
 
     [SkippableTheory]
@@ -56,6 +58,8 @@ public class EncoderUnitTests
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Length);
+
+        Dispose(l);
     }
 
     [SkippableTheory]
@@ -77,6 +81,8 @@ public class EncoderUnitTests
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Count);
+
+        Dispose(l);
     }
 
     [SkippableTheory]
@@ -98,6 +104,8 @@ public class EncoderUnitTests
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, CountNestedListDepth(result));
+
+        Dispose(l);
     }
 
     [SkippableTheory]
@@ -119,6 +127,16 @@ public class EncoderUnitTests
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, CountNestedMapDepth(result));
+
+        Dispose(l);
+    }
+
+    private static void Dispose(List<Obj> l)
+    {
+        foreach (var obj in l)
+        {
+            obj.Dispose();
+        }
     }
 
     private static List<object> MakeNestedList(int nestingDepth)
