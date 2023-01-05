@@ -233,7 +233,7 @@ partial class Build : NukeBuild
             void GenerateIntegrationTestsDebuggerLinuxMatrix()
             {
                 var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 });
-                var baseImages = new[] { "debian" };
+                var baseImages = new[] { "centos7", "alpine" };
                 var optimizations = new[] { "true", "false" };
 
                 var matrix = new Dictionary<string, object>();
@@ -990,8 +990,8 @@ partial class Build : NukeBuild
             void GenerateIntegrationTestsDebuggerArm64Matrices()
             {
                 var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_1,  });
-                var baseImages = new[] { "centos7", "alpine" };
-                var optimizations = new[] { "True", "False" };
+                var baseImages = new[] { "debian" };
+                var optimizations = new[] { "true", "false" };
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
