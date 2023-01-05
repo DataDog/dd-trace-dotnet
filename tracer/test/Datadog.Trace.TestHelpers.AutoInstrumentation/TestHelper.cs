@@ -53,6 +53,7 @@ namespace Datadog.Trace.TestHelpers
             Output = output;
 
             Output.WriteLine($"Platform: {EnvironmentTools.GetPlatform()}");
+            Output.WriteLine($"TargetPlatform: {EnvironmentTools.GetTestTargetPlatform()}");
             Output.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");

@@ -79,6 +79,15 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeInformation.ProcessArchitecture.ToString();
         }
 
+        public static string GetTestTargetPlatform()
+        {
+            var requested = Environment.GetEnvironmentVariable("TargetPlatform");
+            return string.IsNullOrEmpty(requested) ? GetPlatform() : requested;
+        }
+
+        public static bool IsTestTarget64BitProcess()
+            => GetTestTargetPlatform() != "X86";
+
         public static string GetBuildConfiguration()
         {
 #if DEBUG
