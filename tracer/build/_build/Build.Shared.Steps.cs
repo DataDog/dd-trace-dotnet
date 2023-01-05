@@ -85,7 +85,7 @@ partial class Build
             EnsureExistingDirectory(NativeBuildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={(BuildConfiguration == Configuration.Release ? "Release" : "Debug")}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
                 arguments: $"--build . --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
                 workingDirectory: NativeBuildDirectory);
@@ -99,7 +99,7 @@ partial class Build
             EnsureExistingDirectory(NativeBuildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={(BuildConfiguration == Configuration.Release ? "Release" : "Debug")}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
                 arguments: $"--build . --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoaderTests}",
                 workingDirectory: NativeBuildDirectory);
@@ -137,7 +137,7 @@ partial class Build
 
                 // Build native
                 CMake.Value(
-                    arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={(BuildConfiguration == Configuration.Release ? "Release" : "Debug")}",
+                    arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
                     environmentVariables: envVariables);
                 CMake.Value(
                     arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
