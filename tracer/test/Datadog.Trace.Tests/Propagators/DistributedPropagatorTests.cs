@@ -20,7 +20,8 @@ public class DistributedPropagatorTests
     private const string Origin = "origin";
     private const string RawTraceId = "1";
     private const string RawSpanId = "2";
-    private const string PropagatedTags = "key1=value1;key2=value2";
+    private const string PropagatedTags = "key1=value1;key2=value2";          // note: semicolon separator
+    private const string AdditionalW3CTraceState = "key3=value3,key3=value3"; // note: comma separator
 
     private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -35,6 +36,7 @@ public class DistributedPropagatorTests
         new("__DistributedKey-RawTraceId", RawTraceId),
         new("__DistributedKey-RawSpanId", RawSpanId),
         new("__DistributedKey-PropagatedTags", PropagatedTags),
+        new("__DistributedKey-AdditionalW3CTraceState", AdditionalW3CTraceState),
     };
 
     static DistributedPropagatorTests()
@@ -70,13 +72,17 @@ public class DistributedPropagatorTests
                        Origin = Origin,
                        SamplingPriority = SamplingPriority,
                        PropagatedTags = PropagatedTags,
+                       AdditionalW3CTraceState = AdditionalW3CTraceState,
                    });
     }
 
     [Fact]
     public void Extract_EmptyHeadersReturnsNull()
     {
+        // empty
         var headers = new Mock<IReadOnlyDictionary<string, string>>();
+
+        // extract SpanContext
         var result = Propagator.Extract(headers.Object);
 
         result.Should().BeNull();
@@ -85,11 +91,13 @@ public class DistributedPropagatorTests
     [Fact]
     public void Extract_TraceIdOnly()
     {
-        var headers = new Mock<IReadOnlyDictionary<string, string>>();
+        var value = TraceId.ToString(InvariantCulture);
 
         // only setup TraceId, other properties remain null/empty
-        var value = TraceId.ToString(InvariantCulture);
+        var headers = new Mock<IReadOnlyDictionary<string, string>>();
         headers.Setup(h => h.TryGetValue("__DistributedKey-TraceId", out value)).Returns(true);
+
+        // extract SpanContext
         var result = Propagator.Extract(headers.Object);
 
         result.Should().BeEquivalentTo(new SpanContextMock { TraceId = TraceId });
@@ -98,7 +106,12 @@ public class DistributedPropagatorTests
     [Fact]
     public void SpanContextRoundTrip()
     {
-        var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTags };
+        var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin)
+                      {
+                          PropagatedTags = PropagatedTags,
+                          AdditionalW3CTraceState = AdditionalW3CTraceState
+                      };
+
         var result = Propagator.Extract(context);
 
         result.Should().NotBeSameAs(context);
@@ -142,6 +155,7 @@ public class DistributedPropagatorTests
                        Origin = Origin,
                        SamplingPriority = SamplingPriority,
                        PropagatedTags = PropagatedTags,
+                       AdditionalW3CTraceState = AdditionalW3CTraceState
                    });
     }
 
@@ -154,7 +168,7 @@ public class DistributedPropagatorTests
     public void Extract_InvalidSamplingPriority(string samplingPriority, int? expectedSamplingPriority)
     {
         // if the extracted sampling priority is a valid integer, pass it along as-is,
-        // even if we don't recognize its value to allow forward compatibility with newly added values.
+        // even if we don't recognize its value (to allow forward compatibility with newly added values).
         // ignore the extracted sampling priority if it is not a valid integer.
 
         var headers = SetupMockReadOnlyDictionary();
@@ -174,6 +188,7 @@ public class DistributedPropagatorTests
                        Origin = Origin,
                        SamplingPriority = expectedSamplingPriority,
                        PropagatedTags = PropagatedTags,
+                       AdditionalW3CTraceState = AdditionalW3CTraceState,
                    });
     }
 

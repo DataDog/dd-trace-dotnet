@@ -375,6 +375,8 @@ namespace Datadog.Trace.Tests.Propagators
 
         public string PropagatedTags { get; set; }
 
+        public string AdditionalW3CTraceState { get; set; }
+
         public ISpanContext Parent { get; set; }
 
         public ulong? ParentId { get; set; }
