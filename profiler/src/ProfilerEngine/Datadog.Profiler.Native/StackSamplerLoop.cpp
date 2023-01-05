@@ -267,11 +267,11 @@ void StackSamplerLoop::CpuProfilingIteration()
                     int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
 
                     // detect overlapping CPU usage
-                    if (lastCpuTimestamp + cpuForSample * 1000000 > thisSampleTimestampNanosecs)
+                    if ((int64_t)(lastCpuTimestamp + cpuForSample * 1000000) > thisSampleTimestampNanosecs)
                     {
                         int64_t cpuOverlap = (lastCpuTimestamp + cpuForSample * 1000000 - thisSampleTimestampNanosecs) / 1000000;
 #ifndef NDEBUG
-                        Log::Warn("Overlapping CPU samples off ", cpuOverlap, " ms\n");
+                        Log::Warn("Overlapping CPU samples off ", cpuOverlap, " ms (", currentConsumption, " - ", lastConsumption, ")");
 #endif
                         // ensure that we don't overlap
                         // -> only the largest possibly CPU consumption is accounted = diff between the 2 timestamps
