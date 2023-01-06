@@ -4,11 +4,14 @@
 // </copyright>
 #nullable enable
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.RcmModels.Asm;
 
 internal class Payload
 {
     [JsonProperty("rules_override")]
-    public RuleStatus[]? RuleStatus { get; set; }
+    public RuleOverride[]? RuleOverride { get; set; }
+
+    public JArray Exclusions { get; set; } = new JArray();
 }

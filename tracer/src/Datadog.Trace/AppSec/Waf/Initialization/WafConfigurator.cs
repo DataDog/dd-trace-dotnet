@@ -26,6 +26,25 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
         public WafConfigurator(WafLibraryInvoker wafLibraryInvoker) => _wafLibraryInvoker = wafLibraryInvoker;
 
+        private static void AddInExclusionsAndActions(JObject root, JArray exclusions, Dictionary<string, List<string>> onMatch)
+        {
+            var exclusionsProp = new JProperty("exclusions", exclusions);
+            root.Add(exclusionsProp);
+
+            var rules = (JArray)root.GetValue("rules");
+            foreach (var rule in rules)
+            {
+                var ruleObject = (JObject)rule;
+                var id = (string)ruleObject.GetValue("id");
+
+                if (onMatch.TryGetValue(id, out var actions))
+                {
+                    var prop = new JProperty("on_match", new JArray(actions));
+                    ruleObject.Add(prop);
+                }
+            }
+        }
+
         private static void LogRuleDetailsIfDebugEnabled(JToken root)
         {
             if (Log.IsEnabled(LogEventLevel.Debug))

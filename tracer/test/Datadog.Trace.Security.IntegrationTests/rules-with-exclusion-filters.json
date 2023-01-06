@@ -5,6 +5,7 @@
     },
     "exclusions": [
       {
+        "id": "865D405F-0CA7-4810-847D-EEE5107DD4E1",
         "conditions": [
           {
             "operator": "ip_match",
@@ -33,6 +34,7 @@
         ]
       },
       {
+        "id": "0FD9CE7B-3C2C-4EDE-9AEA-B0A5B5F18014",
         "conditions": [
           {
             "operator": "match_regex",
@@ -58,37 +60,6 @@
           },
           {
             "rule_id": "sqr-000-011"
-          }
-        ]
-      },
-      {
-        "inputs": [
-          {
-            "address": "server.request.body",
-            "key_path": [
-              "content"
-            ]
-          }
-        ],
-        "rules_target": [
-          {
-            "tags": {
-              "category": "attack_attempt",
-              "type": "xss"
-            }
-          }
-        ]
-      },
-      {
-        "rules_target": [
-          {
-            "tags": {
-              "category": "attack_attempt",
-              "type": "sql_injection"
-            }
-          },
-          {
-            "rule_id": "dog-420-042"
           }
         ]
       }

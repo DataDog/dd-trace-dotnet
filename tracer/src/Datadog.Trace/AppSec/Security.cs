@@ -17,6 +17,10 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec
 {
@@ -196,7 +200,12 @@ namespace Datadog.Trace.AppSec
             var asmDD = e.GetConfigurationAsString().FirstOrDefault();
             if (!string.IsNullOrEmpty(asmDD.TypedFile))
             {
-                _remoteRulesJson = asmDD.TypedFile;
+                lock (_sync)
+                {
+                    _wafInitializationState =
+                        _wafInitializationState.WithRules(asmDD.TypedFile);
+                }
+
                 UpdateStatus(true);
             }
 
@@ -222,12 +231,17 @@ namespace Datadog.Trace.AppSec
                 return;
             }
 
-            _asmDataConfigs ??= new Dictionary<string, Payload>();
+            var nextAsmDataConfig = new Dictionary<string, Payload>();
             var asmDataConfigs = e.GetDeserializedConfigurations<Payload>();
             foreach (var asmDataConfig in asmDataConfigs)
             {
-                _asmDataConfigs[asmDataConfig.Name] = asmDataConfig.TypedFile;
+                nextAsmDataConfig[asmDataConfig.Name] = asmDataConfig.TypedFile;
                 e.Acknowledge(asmDataConfig.Name);
+            }
+
+            lock (_sync)
+            {
+                _asmDataConfigs = new ReadOnlyDictionary<string, Payload>(nextAsmDataConfig);
             }
 
             var updated = UpdateRulesData();
@@ -251,22 +265,40 @@ namespace Datadog.Trace.AppSec
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
             int ruleCount = 0;
             var ruleStatus = new Dictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase);
+            var onMatch = new Dictionary<string, List<string>>(StringComparer.InvariantCultureIgnoreCase);
             foreach (var asmConfig in asmConfigs)
             {
                 try
                 {
-                    var rulesStatus = asmConfig.TypedFile.RuleStatus;
+                    var rulesStatus = asmConfig.TypedFile.RuleOverride;
                     foreach (var data in rulesStatus)
                     {
-                        if (data.Id == null || data.Enabled == null)
+                        if (data.Id == null || (data.Enabled == null && (data.OnMatch == null && data.OnMatch.Count == 0)))
                         {
                             var id = data.Id ?? "NULL";
                             var enabled = data.Enabled?.ToString() ?? "NULL";
-                            e.Error(asmConfig.Name, $"Received Null values on message ({id}={enabled}).");
+                            var actions = string.Join(",", data.OnMatch ?? Enumerable.Empty<string>());
+                            e.Error(asmConfig.Name, $"Received Null values on message ({id}= {enabled}, {actions}).");
                             continue;
                         }
 
-                        ruleStatus[data.Id] = data.Enabled.Value;
+                        if (data.Enabled != null)
+                        {
+                            ruleStatus[data.Id] = data.Enabled.Value;
+                        }
+
+                        if (data.OnMatch != null)
+                        {
+                            if (onMatch.TryGetValue(data.Id, out var actions))
+                            {
+                                actions.AddRange(data.OnMatch);
+                            }
+                            else
+                            {
+                                onMatch[data.Id] = data.OnMatch;
+                            }
+                        }
+
                         ruleCount++;
                     }
 
@@ -285,7 +317,15 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
+            var exclusionsFullList = asmConfigs.SelectMany(x => x.TypedFile.Exclusions);
+            var exclusions = new JArray(exclusionsFullList);
+
+            lock (_sync)
+            {
+                _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
+                _wafInitializationState.WithExclusionsAndOnMatch(exclusions, onMatch);
+            }
+
             UpdateRuleStatus(_ruleStatus);
         }
 
