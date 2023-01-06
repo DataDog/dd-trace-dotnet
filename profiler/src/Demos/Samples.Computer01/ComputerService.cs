@@ -51,6 +51,9 @@ namespace Samples.Computer01
                     StartFibonacciComputation(nbThreads);
                     StartSleep(nbThreads);
                     StartAsyncComputation(nbThreads);
+                    StartIteratorComputation(nbThreads);
+                    StartGenericsAllocation(nbThreads);
+                    StartContentionGenerator(nbThreads, parameter);
                     break;
 
                 case Scenario.Computer:
@@ -122,6 +125,10 @@ namespace Samples.Computer01
                     StopPiComputation();
                     StopFibonacciComputation();
                     StopSleep();
+                    StopAsyncComputation();
+                    StopIteratorComputation();
+                    StopGenericsAllocation();
+                    StopContentionGenerator();
                     break;
 
                 case Scenario.Computer:
@@ -196,6 +203,11 @@ namespace Samples.Computer01
                         RunSimpleWallTime();
                         RunPiComputation();
                         RunFibonacciComputation(nbThreads);
+                        RunSleep(nbThreads);
+                        RunAsyncComputation(nbThreads);
+                        RunIteratorComputation(nbThreads);
+                        RunGenericsAllocation(nbThreads);
+                        RunContentionGenerator(nbThreads, parameter);
                         break;
 
                     case Scenario.Computer:
