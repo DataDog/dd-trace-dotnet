@@ -251,6 +251,8 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            Origin = "rum",
                            PropagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345",
@@ -284,6 +286,8 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            Origin = "rum",
                            PropagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345",
@@ -350,9 +354,12 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            Origin = "rum",
                            PropagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345",
+                           AdditionalW3CTraceState = "abc=123,foo=bar",
                            Parent = null,
                            ParentId = null,
                        });
@@ -383,6 +390,8 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                            Origin = null,
                            PropagatedTags = null,
