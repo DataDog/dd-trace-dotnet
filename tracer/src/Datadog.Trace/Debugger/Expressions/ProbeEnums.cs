@@ -45,7 +45,18 @@ internal enum MethodState
 
 internal enum CaptureBehaviour
 {
+    /// <summary>
+    /// Regualt state of capturing
+    /// </summary>
     Capture,
+
+    /// <summary>
+    /// Delayed the capture process until expression will be evaluated, or in case we are in entry method and we need to capture only at exit
+    /// </summary>
     Delayed,
+
+    /// <summary>
+    /// Do not capture if condition has evaluated to false or unpredicted error occurred
+    /// </summary>
     NoCapture
 }

@@ -118,7 +118,7 @@ internal static class DebuggerTestHelper
     internal static SnapshotProbe CreateDefaultSnapshotProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator, MethodProbeTestDataAttribute probeTestData = null)
     {
         var snapshot = CreateSnapshotProbe(guidGenerator).WithWhere(typeName, methodName, probeTestData).WithSampling().WithTemplate();
-        var isFullSnapshot = probeTestData?.IsFullSnapshot ?? true;
+        var isFullSnapshot = probeTestData?.CaptureSnapshot ?? true;
         return isFullSnapshot ? snapshot.WithCapture() : snapshot;
     }
 

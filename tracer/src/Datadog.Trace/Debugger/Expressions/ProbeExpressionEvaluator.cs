@@ -63,10 +63,17 @@ internal class ProbeExpressionEvaluator
             {
                 try
                 {
-                    resultBuilder.Append(!string.IsNullOrEmpty(Templates[i].Str) ? Templates[i].Str : compiledExpressions[i].Delegate(ScopeMembers.InvocationTarget, ScopeMembers.Members));
-                    if (compiledExpressions[i].Errors != null)
+                    if (!string.IsNullOrEmpty(Templates[i].Str))
                     {
-                        (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpressions[i].Errors);
+                        resultBuilder.Append(Templates[i].Str);
+                    }
+                    else
+                    {
+                        resultBuilder.Append(compiledExpressions[i].Delegate(ScopeMembers.InvocationTarget, ScopeMembers.Members));
+                        if (compiledExpressions[i].Errors != null)
+                        {
+                            (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpressions[i].Errors);
+                        }
                     }
                 }
                 catch (Exception e)

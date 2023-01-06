@@ -27,7 +27,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         [ExpressionProbeTestData(
             conditionDsl: Dsl,
             conditionJson: Json,
-            isFullSnapshot: true,
+            captureSnapshot: true,
             evaluateAt: 0,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]

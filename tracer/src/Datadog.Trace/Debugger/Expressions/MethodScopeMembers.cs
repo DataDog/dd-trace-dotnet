@@ -17,7 +17,7 @@ internal class MethodScopeMembers
     public MethodScopeMembers(int numberOfLocals, int numberOfArguments)
     {
         // 2 for 'return' and 'exception'
-#if NET461
+#if NETFRAMEWORK
         Members = new ScopeMember[numberOfLocals + numberOfArguments + 2];
 #else
         Members = ArrayPool<ScopeMember>.Shared.Rent(numberOfLocals + numberOfArguments + 2);
@@ -28,7 +28,9 @@ internal class MethodScopeMembers
 
     public Exception Exception { get; internal set; }
 
+    // food for thought:
     // we can save Return and InvocationTarget as T if we will change the native side so we will have MethodDebuggerState<T, TReturn> instead MethodDebuggerState
+    // but note that it will require change in the ref struct.
     public ScopeMember Return { get; internal set; }
 
     public ScopeMember InvocationTarget { get; internal set; }
@@ -42,7 +44,7 @@ internal class MethodScopeMembers
     internal void Reset()
     {
         _index = 0;
-#if NET461
+#if NETFRAMEWORK
         Members = null;
 #else
         ArrayPool<ScopeMember>.Shared.Return(Members);

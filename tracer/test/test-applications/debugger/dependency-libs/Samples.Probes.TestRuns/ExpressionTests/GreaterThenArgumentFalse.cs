@@ -26,7 +26,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         [ExpressionProbeTestData(conditionDsl: Dsl,
                                  conditionJson: Json,
-                                 isFullSnapshot: true,
+                                 captureSnapshot: true,
                                  evaluateAt: 1,
                                  expectedNumberOfSnapshots: 0,
                                  returnTypeName: "System.String",

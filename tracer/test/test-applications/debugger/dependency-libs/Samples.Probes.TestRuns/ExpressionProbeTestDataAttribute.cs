@@ -11,7 +11,7 @@ public class ExpressionProbeTestDataAttribute : MethodProbeTestDataAttribute
         string templateDsl = null,
         string templateJson = null,
         string templateStr = null,
-        bool isFullSnapshot = true,
+        bool captureSnapshot = true,
         int evaluateAt = 1,
         string returnTypeName = null,
         string[] parametersTypeName = null,
@@ -21,7 +21,7 @@ public class ExpressionProbeTestDataAttribute : MethodProbeTestDataAttribute
         int expectedNumberOfSnapshots = 1,
         bool useFullTypeName = true,
         params string[] skipOnFramework)
-        : base(returnTypeName, parametersTypeName, skip, phase, unlisted, expectedNumberOfSnapshots, useFullTypeName, isFullSnapshot, evaluateAt, skipOnFramework)
+        : base(returnTypeName, parametersTypeName, skip, phase, unlisted, expectedNumberOfSnapshots, useFullTypeName, captureSnapshot, evaluateAt, skipOnFramework)
     {
 
         ConditionDsl = conditionDsl;
