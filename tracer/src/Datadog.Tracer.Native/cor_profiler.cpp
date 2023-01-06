@@ -579,7 +579,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
         if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
         {
-            const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(rejitModuleIds, integration_definitions_);
+            std::promise<ULONG> promise;
+            std::future<ULONG> future = promise.get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(rejitModuleIds, integration_definitions_,
+                                                                                &promise);
+
+            // wait and get the value from the future<int>
+            const auto& numReJITs = future.get();
+
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
     }
@@ -1079,7 +1086,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
         if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
         {
-            const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_);
+            std::promise<ULONG> promise;
+            std::future<ULONG> future = promise.get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_,
+                                                                                &promise);
+
+            // wait and get the value from the future<int>
+            const auto& numReJITs = future.get();
             Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
         }
     }
@@ -1321,7 +1334,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                                       caller.name == WStr("InvokePreStartInitMethods");
     }
     else if (module_metadata->assemblyName == WStr("System") ||
-             module_metadata->assemblyName == WStr("System.Net.Http"))
+             module_metadata->assemblyName == WStr("System.Net.Http") ||
+             module_metadata->assemblyName == WStr("System.Linq")) // Avoid instrumenting System.Linq which is used as part of the async state machine
     {
         valid_startup_hook_callsite = false;
     }
