@@ -294,6 +294,7 @@
     </ClInclude>
     <ClInclude Include="LiveObjectInfo.h">
       <Filter>Allocations</Filter>
+    </ClInclude>
     <ClInclude Include="MetricsRegistry.h">
       <Filter>Metrics</Filter>
     </ClInclude>
@@ -457,8 +458,6 @@
     </ClCompile>
     <ClCompile Include="RawGarbageCollectionSample.cpp">
       <Filter>GarbageCollections</Filter>
-    <ClCompile Include="RawGarbageCollectionSample.cpp">
-      <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="MetricsRegistry.cpp">
       <Filter>Metrics</Filter>
