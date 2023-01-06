@@ -79,6 +79,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(AddressesConstants.RequestQuery, "/api/Health/?arg=[$slice]", null)]
         [InlineData(AddressesConstants.RequestQuery, "/api/Health/?arg&[$slice]", null)]
         [InlineData(AddressesConstants.RequestPathParams, "/api/Health/appscan_fingerprint", null)]
+        [InlineData(AddressesConstants.RequestPathParams, "/api/route/2?arg=[$slice]", null)]
+        [InlineData(AddressesConstants.RequestPathParams, "/api/route/TwoMember?arg=[$slice]", null)]
         [InlineData(AddressesConstants.RequestBody, "/api/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
         public Task TestSecurity(string test, string url, string body)
         {

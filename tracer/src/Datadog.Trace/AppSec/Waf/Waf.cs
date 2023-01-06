@@ -122,7 +122,7 @@ namespace Datadog.Trace.AppSec.Waf
                 return false;
             }
 
-            var encoded = encoder.Encode(ruleStatus);
+            using var encoded = encoder.Encode(ruleStatus);
             var ret = wafNative.ToggleRules(ruleHandle.Value, encoded.RawPtr);
             Log.Information("{number} rule status have been updated and waf status is {status}", ruleStatus.Count, ret);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
