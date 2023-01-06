@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
 
@@ -43,30 +44,12 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void EnumerateKeys()
         {
-            const ulong traceId = 1;
-            const ulong spanId = 2;
-            const int samplingPriority = SamplingPriorityValues.UserReject;
-            const string origin = "origin";
-            const string rawTraceId = "1a";
-            const string rawSpanId = "2b";
-            const string propagatedTags = "key1=value1;key2=value2";          // note: semicolon separator
-            const string additionalW3CTraceState = "key3=value3,key4=value4"; // note: comma separator
+            var context = CreateSpanContext();
 
-            IReadOnlyDictionary<string, string> context = new SpanContext(
-                                                              traceId,
-                                                              spanId,
-                                                              samplingPriority,
-                                                              serviceName: null,
-                                                              origin,
-                                                              rawTraceId,
-                                                              rawSpanId)
-                                                          {
-                                                              PropagatedTags = propagatedTags,
-                                                              AdditionalW3CTraceState = additionalW3CTraceState
-                                                          };
+            // fail test if new keys are added
+            context.Keys.Should().HaveCount(12);
 
-            context.Keys.Should().HaveCount(8);
-
+            // fail tests if any key is missing
             context.Keys.Should()
                    .Contain(
                         new[]
@@ -79,12 +62,87 @@ namespace Datadog.Trace.Tests
                             "__DistributedKey-RawSpanId",
                             "__DistributedKey-PropagatedTags",
                             "__DistributedKey-AdditionalW3CTraceState",
-
                             "x-datadog-trace-id",
                             "x-datadog-parent-id",
                             "x-datadog-sampling-priority",
                             "x-datadog-origin",
                         });
+        }
+
+        [Fact]
+        public void EnumerateValues()
+        {
+            var context = CreateSpanContext();
+
+            context.Values.Should().HaveCount(12);
+
+            context.Values.Should()
+                   .Contain(
+                        new[]
+                        {
+                            "1",      // twice
+                            "2",      // twice
+                            "-1",     // twice
+                            "origin", // twice
+                            "1a",
+                            "2b",
+                            "_dd.p.key1=value1,_dd.p.key2=value2",
+                            "key3=value3,key4=value4",
+                        });
+        }
+
+        [Fact]
+        public void EnumeratePairs()
+        {
+            var context = CreateSpanContext();
+
+            // fail test if new keys are added
+            context.Should().HaveCount(12);
+
+            // fail tests if any key is missing
+            context.Should()
+                   .Contain(
+                        new("__DistributedKey-TraceId", "1"),
+                        new("__DistributedKey-ParentId", "2"),
+                        new("__DistributedKey-SamplingPriority", "-1"),
+                        new("__DistributedKey-Origin", "origin"),
+                        new("__DistributedKey-RawTraceId", "1a"),
+                        new("__DistributedKey-RawSpanId", "2b"),
+                        new("__DistributedKey-PropagatedTags", "_dd.p.key1=value1,_dd.p.key2=value2"),
+                        new("__DistributedKey-AdditionalW3CTraceState", "key3=value3,key4=value4"),
+                        new("x-datadog-trace-id", "1"),
+                        new("x-datadog-parent-id", "2"),
+                        new("x-datadog-sampling-priority", "-1"),
+                        new("x-datadog-origin", "origin"));
+        }
+
+        private static IReadOnlyDictionary<string, string> CreateSpanContext()
+        {
+            const ulong traceId = 1;
+            const ulong spanId = 2;
+            const string rawTraceId = "1a";
+            const string rawSpanId = "2b";
+            const int samplingPriority = SamplingPriorityValues.UserReject;
+            const string origin = "origin";
+            const string additionalW3CTraceState = "key3=value3,key4=value4";
+
+            var propagatedTags = new TraceTagCollection(100);
+            propagatedTags.SetTag("_dd.p.key1", "value1");
+            propagatedTags.SetTag("_dd.p.key2", "value2");
+
+            var traceContext = new TraceContext(tracer: null, propagatedTags);
+            traceContext.SetSamplingPriority(samplingPriority);
+            traceContext.Origin = origin;
+            traceContext.AdditionalW3CTraceState = additionalW3CTraceState;
+
+            return new SpanContext(
+                parent: SpanContext.None,
+                traceContext,
+                serviceName: null,
+                traceId,
+                spanId,
+                rawTraceId,
+                rawSpanId);
         }
     }
 }
