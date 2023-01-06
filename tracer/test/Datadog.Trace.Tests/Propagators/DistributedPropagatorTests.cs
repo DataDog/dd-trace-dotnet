@@ -21,7 +21,7 @@ public class DistributedPropagatorTests
     private const string RawTraceId = "1";
     private const string RawSpanId = "2";
     private const string PropagatedTags = "key1=value1;key2=value2";          // note: semicolon separator
-    private const string AdditionalW3CTraceState = "key3=value3,key3=value3"; // note: comma separator
+    private const string AdditionalW3CTraceState = "key3=value3,key4=value4"; // note: comma separator
 
     private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -106,7 +106,7 @@ public class DistributedPropagatorTests
     [Fact]
     public void SpanContextRoundTrip()
     {
-        var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin)
+        var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin, RawTraceId, RawSpanId)
                       {
                           PropagatedTags = PropagatedTags,
                           AdditionalW3CTraceState = AdditionalW3CTraceState
