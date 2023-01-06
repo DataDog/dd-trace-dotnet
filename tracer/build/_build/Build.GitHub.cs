@@ -1003,7 +1003,7 @@ partial class Build
              var oldBenchmarkBuild = await GetCrankArtifacts(buildHttpClient, "refs/heads/benchmarks/2.9.0", oldBenchmarksDir);
              var (newBenchmarkBuild, benchmarkVersion) = await GetCrankArtifactsForLatestBenchmarkBranch(buildHttpClient, latestBenchmarksDir);
              
-             var commitName = isPr ? $"This PR ({PullRequestNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
+             var commitName = isPr ? $"This PR ({prNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
              var sources = new List<CrankResultSource>
              {
                  new(commitName, testedCommit, CrankSourceType.CurrentCommit, commitDir),
