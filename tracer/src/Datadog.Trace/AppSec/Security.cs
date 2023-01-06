@@ -323,9 +323,10 @@ namespace Datadog.Trace.AppSec
             lock (_sync)
             {
                 _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
-                _wafInitializationState.WithExclusionsAndOnMatch(exclusions, onMatch);
+                _wafInitializationState = _wafInitializationState.WithExclusionsAndOnMatch(exclusions, onMatch);
             }
 
+            UpdateStatus(true);
             UpdateRuleStatus(_ruleStatus);
         }
 
