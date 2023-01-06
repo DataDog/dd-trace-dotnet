@@ -39,7 +39,7 @@
         "duration": "ScrubbedValue",
         "errors": [
           {
-            "expression": "2",
+            "expression": "\"undefined\" > 2",
             "message": "ScrubbedValue"
           }
         ],

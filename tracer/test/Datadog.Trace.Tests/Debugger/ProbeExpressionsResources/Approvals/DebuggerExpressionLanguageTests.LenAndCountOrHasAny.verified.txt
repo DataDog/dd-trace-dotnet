@@ -1,7 +1,7 @@
 ﻿Condition:
-Json:{
-  "dsl": "len(ref String) > 2 || count(ref CollectionLocal) > 2 || hasAny(filter(ref CollectionLocal {@it > 4}) { @it == hello})",
-  "json": {
+Json:
+{
+"json": {
     "and": [
       {
         "gt": [
@@ -67,17 +67,18 @@ Expression: (scopeMember, scopeMemberArray) =>
     var DoubleLocal = (double)scopeMemberArray[1].Value;
     var StringLocal = (string)scopeMemberArray[2].Value;
     var CollectionLocal = (List<string>)scopeMemberArray[3].Value;
-    var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[4].Value;
-    var IntArg = (int)scopeMemberArray[5].Value;
-    var DoubleArg = (double)scopeMemberArray[6].Value;
-    var StringArg = (string)scopeMemberArray[7].Value;
-    var CollectionArg = (List<string>)scopeMemberArray[8].Value;
-    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[9].Value;
-    var $result = (this.String.Length > 2) && ((CollectionLocal.Count > 2) || CollectionLocal
+    var DictionaryLocal = (Dictionary<string, string>)scopeMemberArray[4].Value;
+    var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[5].Value;
+    var IntArg = (int)scopeMemberArray[6].Value;
+    var DoubleArg = (double)scopeMemberArray[7].Value;
+    var StringArg = (string)scopeMemberArray[8].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[9].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[10].Value;
+    var $dd_el_result = (this.String.Length > 2) && ((CollectionLocal.Count > 2) || CollectionLocal
         .Where(string1 => string1.Length > 4)
         .ToList()
         .Any(string2 => string2 == "hello"));
 
-    return $result;
+    return $dd_el_result;
 }
 Result: True

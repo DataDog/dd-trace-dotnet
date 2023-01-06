@@ -1,17 +1,18 @@
-﻿Condition:
-Json:
+﻿Template:
+Segments: 
+
 {
 "json": {
-    "gt": [
-      {
-        "ref": "IntLocal"
-      },
-      2
-    ]
-  }
+        "count": [
+            "# SomeCollection should have a 'ref' prefix",
+            "SomeCollection"
+        ]
+    }
 }
-Expression: (scopeMember, scopeMemberArray) =>
+Expressions: 
+(scopeMember, scopeMemberArray) =>
 {
+    string $dd_el_result;
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
     var IntLocal = (int)scopeMemberArray[0].Value;
     var DoubleLocal = (double)scopeMemberArray[1].Value;
@@ -24,8 +25,9 @@ Expression: (scopeMember, scopeMemberArray) =>
     var StringArg = (string)scopeMemberArray[8].Value;
     var CollectionArg = (List<string>)scopeMemberArray[9].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[10].Value;
-    var $dd_el_result = IntLocal > 2;
 
-    return $dd_el_result;
+    return "UndefinedValue";
 }
-Result: True
+Result: The result of the expression is: UndefinedValue
+Errors:
+EvaluationError { Expression = "SomeCollection".Count, Message = Source must be an array or implement ICollection or IReadOnlyCollection }

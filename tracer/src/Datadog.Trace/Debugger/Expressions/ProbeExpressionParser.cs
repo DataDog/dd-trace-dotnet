@@ -6,23 +6,20 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text.RegularExpressions;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
-internal class ProbeExpressionParser<T>
+internal partial class ProbeExpressionParser<T>
 {
     private static readonly LabelTarget ReturnTarget = Expression.Label(typeof(T));
     private static readonly Func<ScopeMember, ScopeMember[], T> DefaultDelegate;
 
     private List<EvaluationError> _errors;
-
     private int _arrayStack;
 
     static ProbeExpressionParser()
@@ -40,57 +37,38 @@ internal class ProbeExpressionParser<T>
 
     private delegate Expression Combiner(Expression left, Expression right);
 
-    private Expression ParseHasAny(JsonTextReader reader, List<ParameterExpression> parameters)
+    private Expression ParseRoot(
+        JsonTextReader reader,
+        List<ParameterExpression> parameters)
     {
-        var any = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 2);
-        return CollectionPredicate(reader, parameters, any);
-    }
-
-    private Expression ParseHasAll(JsonTextReader reader, List<ParameterExpression> parameters)
-    {
-        var all = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.All) && m.GetParameters().Length == 2);
-        return CollectionPredicate(reader, parameters, all);
-    }
-
-    private Expression ParseFilter(JsonTextReader reader, List<ParameterExpression> parameters)
-    {
-        var where = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.Where) && m.GetParameters().Length == 2 && m.GetParameters()[1].ParameterType.GenericTypeArguments.Length == 2);
-        return CollectionPredicate(reader, parameters, where);
-    }
-
-    private Expression CollectionPredicate(JsonTextReader reader, List<ParameterExpression> parameters, MethodInfo predicateMethod)
-    {
-        var source = ParseTree(reader, parameters, null);
-        if (source.Type == UndefinedValueType || (source is ConstantExpression constant && constant.Value.ToString() == "True"))
+        var readerValue = reader.Value?.ToString();
+        switch (reader.TokenType)
         {
-            return source;
+            case JsonToken.PropertyName:
+                switch (readerValue)
+                {
+                    case "and":
+                        {
+                            return ConditionalOperator(reader, Expression.AndAlso, parameters);
+                        }
+
+                    case "or":
+                        {
+                            return ConditionalOperator(reader, Expression.OrElse, parameters);
+                        }
+
+                    default:
+                        return ParseTree(reader, parameters, null, false);
+                }
         }
 
-        if (!IsSafeCollection(source))
-        {
-            return source;
-            // throw new InvalidOperationException("Source must be an array or implement ICollection or IReadOnlyCollection");
-        }
-
-        var itParameter = Expression.Parameter(source.Type.GetGenericArguments()[0]);
-        var predicate = ParseTree(reader, new List<ParameterExpression> { Expression.Parameter(source.Type) }, itParameter);
-        var lambda = Expression.Lambda<Func<string, bool>>(predicate, itParameter);
-        var genericPredicateMethod = predicateMethod.MakeGenericMethod(source.Type.GetGenericArguments()[0]);
-        var callExpression = Expression.Call(null, genericPredicateMethod, source, lambda);
-        if (IsCollection(callExpression))
-        {
-            var toListMethod = GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.ToList), null);
-            var genericToListMethod = toListMethod.MakeGenericMethod(source.Type.GetGenericArguments()[0]);
-            callExpression = Expression.Call(null, genericToListMethod, callExpression);
-        }
-
-        return callExpression;
+        return null;
     }
 
     private Expression ConditionalOperator(JsonTextReader reader, Combiner combiner, List<ParameterExpression> parameters)
     {
         Expression Combine(Expression leftOperand, Expression rightOperand) =>
-            leftOperand == null ? rightOperand : combiner(leftOperand, rightOperand.Type != UndefinedValueType ? rightOperand : Expression.Constant(true));
+            leftOperand == null ? rightOperand : combiner(leftOperand, rightOperand.Type != ProbeExpressionParserHelper.UndefinedValueType ? rightOperand : Expression.Constant(true));
 
         _arrayStack++;
         reader.Read();
@@ -127,34 +105,6 @@ internal class ProbeExpressionParser<T>
         return left;
     }
 
-    private Expression ParseRoot(
-        JsonTextReader reader,
-        List<ParameterExpression> parameters)
-    {
-        var readerValue = reader.Value?.ToString();
-        switch (reader.TokenType)
-        {
-            case JsonToken.PropertyName:
-                switch (readerValue)
-                {
-                    case "and":
-                        {
-                            return ConditionalOperator(reader, Expression.AndAlso, parameters);
-                        }
-
-                    case "or":
-                        {
-                            return ConditionalOperator(reader, Expression.OrElse, parameters);
-                        }
-
-                    default:
-                        return ParseTree(reader, parameters, null, false);
-                }
-        }
-
-        return null;
-    }
-
     private Expression ParseTree(
         JsonTextReader reader,
         List<ParameterExpression> parameters,
@@ -169,287 +119,198 @@ internal class ProbeExpressionParser<T>
                 switch (reader.TokenType)
                 {
                     case JsonToken.PropertyName:
-                        switch (readerValue)
                         {
-                            // operators
-                            case "and":
-                            case "&&":
-                                {
-                                    var right = ParseRoot(reader, parameters);
-                                    return right;
-                                }
-
-                            case "or":
-                            case "||":
-                                {
-                                    var right = ParseRoot(reader, parameters);
-                                    return right;
-                                }
-
-                            case "eq":
-                            case "==":
-                                {
-                                    var leftEq = ParseTree(reader, parameters, itParameter);
-                                    if (leftEq.Type == UndefinedValueType)
-                                    {
-                                        return ReturnDefaultValueExpression();
-                                    }
-
-                                    var rightEq = ParseTree(reader, parameters, itParameter);
-                                    return Expression.Equal(leftEq, rightEq);
-                                }
-
-                            case "!=":
-                            case "neq":
-                                {
-                                    var leftEq = ParseTree(reader, parameters, itParameter);
-                                    if (leftEq.Type == UndefinedValueType)
-                                    {
-                                        return ReturnDefaultValueExpression();
-                                    }
-
-                                    var rightEq = ParseTree(reader, parameters, itParameter);
-                                    return Expression.NotEqual(leftEq, rightEq);
-                                }
-
-                            case ">":
-                            case "gt":
-                                {
-                                    var leftGt = ParseTree(reader, parameters, itParameter);
-                                    if (leftGt.Type == UndefinedValueType)
-                                    {
-                                        return ReturnDefaultValueExpression();
-                                    }
-
-                                    var rightGt = ParseTree(reader, parameters, itParameter);
-                                    return Expression.GreaterThan(leftGt, rightGt);
-                                }
-
-                            case ">=":
-                            case "ge":
-                                {
-                                    var leftEq = ParseTree(reader, parameters, itParameter);
-                                    if (leftEq.Type == UndefinedValueType)
-                                    {
-                                        return ReturnDefaultValueExpression();
-                                    }
-
-                                    var rightEq = ParseTree(reader, parameters, itParameter);
-                                    return Expression.GreaterThanOrEqual(leftEq, rightEq);
-                                }
-
-                            case "<":
-                            case "lt":
-                                {
-                                    var leftEq = ParseTree(reader, parameters, itParameter);
-                                    if (leftEq.Type == UndefinedValueType)
-                                    {
-                                        return ReturnDefaultValueExpression();
-                                    }
-
-                                    var rightEq = ParseTree(reader, parameters, itParameter);
-                                    return Expression.LessThan(leftEq, rightEq);
-                                }
-
-                            case "<=":
-                            case "le":
-                                {
-                                    var leftEq = ParseTree(reader, parameters, itParameter);
-                                    if (leftEq.Type == UndefinedValueType)
-                                    {
-                                        return ReturnDefaultValueExpression();
-                                    }
-
-                                    var rightEq = ParseTree(reader, parameters, itParameter);
-                                    return Expression.LessThanOrEqual(leftEq, rightEq);
-                                }
-
-                            case "not":
-                            case "!":
-                                {
-                                    var ex = ParseTree(reader, parameters, itParameter);
-                                    return Expression.Not(ex);
-                                }
-
-                            // string operations
-                            case "isEmpty":
-                                {
-                                    var source = ParseTree(reader, parameters, itParameter);
-                                    if (source.Type == UndefinedValueType)
-                                    {
-                                        return source;
-                                    }
-
-                                    if (source.Type == typeof(string))
-                                    {
-                                        var emptyMethod = GetMethodByReflection(typeof(string), nameof(string.IsNullOrEmpty), Type.EmptyTypes);
-                                        return Expression.Call(source, emptyMethod);
-                                    }
-
-                                    // not sure about that, it seems from the RFC that isEmpty should support also collections
-                                    var collectionCount = CollectionCountExpression(source);
-                                    return Expression.Equal(collectionCount, Expression.Constant(0));
-                                }
-
-                            case "len":
-                                {
-                                    var lengthMethod = GetMethodByReflection(typeof(string), "get_Length", Type.EmptyTypes);
-                                    var source = ParseTree(reader, parameters, itParameter);
-                                    if (source.Type == UndefinedValueType)
-                                    {
-                                        return source;
-                                    }
-
-                                    return Expression.Call(source, lengthMethod);
-                                }
-
-                            case "substring":
-                                {
-                                    var substringMethod = GetMethodByReflection(typeof(string), nameof(string.Substring), new[] { typeof(int), typeof(int) });
-                                    var source = ParseTree(reader, parameters, itParameter);
-                                    if (source.Type == UndefinedValueType)
-                                    {
-                                        return source;
-                                    }
-
-                                    var startIndex = ParseTree(reader, parameters, itParameter);
-                                    var endIndex = ParseTree(reader, parameters, itParameter);
-                                    var lengthExpr = Expression.Subtract(endIndex, startIndex);
-                                    return Expression.Call(source, substringMethod, startIndex, lengthExpr);
-                                }
-
-                            case "startWith":
-                                {
-                                    var startWithMethod = GetMethodByReflection(typeof(string), nameof(string.StartsWith), new[] { typeof(string) });
-                                    return StringOperation(reader, parameters, itParameter, startWithMethod);
-                                }
-
-                            case "endWith":
-                                {
-                                    var endWithMethod = GetMethodByReflection(typeof(string), nameof(string.EndsWith), new[] { typeof(string) });
-                                    return StringOperation(reader, parameters, itParameter, endWithMethod);
-                                }
-
-                            case "contains":
-                                {
-                                    var containsMethod = GetMethodByReflection(typeof(string), nameof(string.Contains), new[] { typeof(string) });
-                                    return StringOperation(reader, parameters, itParameter, containsMethod);
-                                }
-
-                            case "matches":
-                                {
-                                    var matchesMethod = GetMethodByReflection(typeof(Regex), nameof(Regex.Matches), new[] { typeof(string), typeof(string) });
-                                    return StringOperation(reader, parameters, itParameter, matchesMethod);
-                                }
-
-                            // collection operations
-                            case "hasAny":
-                                {
-                                    return ParseHasAny(reader, parameters);
-                                }
-
-                            case "hasAll":
-                                {
-                                    return ParseHasAll(reader, parameters);
-                                }
-
-                            case "filter":
-                                {
-                                    return ParseFilter(reader, parameters);
-                                }
-
-                            case "count":
-                                {
-                                    var source = ParseTree(reader, parameters, itParameter);
-                                    if (source.Type == UndefinedValueType)
-                                    {
-                                        return source;
-                                    }
-
-                                    return CollectionCountExpression(source);
-                                }
-
-                            // generic operations
-                            case "getmember":
-                                {
-                                    var referralMember = ParseTree(reader, parameters, itParameter);
-                                    var refMember = (ConstantExpression)ParseTree(reader, parameters, itParameter);
-
-                                    return MemberPathExpression(referralMember, refMember.Value.ToString());
-                                }
-
-                            case "ref":
-                                {
-                                    return GetReference(reader, parameters, itParameter);
-                                }
-
-                            case "isUndefined":
-                                {
-                                    var value = ParseTree(reader, parameters, itParameter);
-                                    return Expression.TypeEqual(value, UndefinedValueType);
-                                }
-                        }
-
-                        if (readerValue?.StartsWith("[") == true)
-                        {
-                            var index = ParseTree(reader, parameters, itParameter);
-                            var source = ParseTree(reader, parameters, itParameter);
-                            if (source.Type == UndefinedValueType)
+                            switch (readerValue)
                             {
-                                return source;
+                                // operators
+                                case "and":
+                                case "&&":
+                                    {
+                                        var right = ParseRoot(reader, parameters);
+                                        return right;
+                                    }
+
+                                case "or":
+                                case "||":
+                                    {
+                                        var right = ParseRoot(reader, parameters);
+                                        return right;
+                                    }
+
+                                case "eq":
+                                case "==":
+                                    {
+                                        return Equal(reader, parameters, itParameter);
+                                    }
+
+                                case "!=":
+                                case "neq":
+                                    {
+                                        return NotEqual(reader, parameters, itParameter);
+                                    }
+
+                                case ">":
+                                case "gt":
+                                    {
+                                        return GreaterThan(reader, parameters, itParameter);
+                                    }
+
+                                case ">=":
+                                case "ge":
+                                    {
+                                        return GreaterThanOrEqual(reader, parameters, itParameter);
+                                    }
+
+                                case "<":
+                                case "lt":
+                                    {
+                                        return LessThan(reader, parameters, itParameter);
+                                    }
+
+                                case "<=":
+                                case "le":
+                                    {
+                                        return LessThanOrEqual(reader, parameters, itParameter);
+                                    }
+
+                                case "not":
+                                case "!":
+                                    {
+                                        return Not(reader, parameters, itParameter);
+                                    }
+
+                                // string operations
+                                case "isEmpty":
+                                    {
+                                        return IsEmpty(reader, parameters, itParameter);
+                                    }
+
+                                case "len":
+                                    {
+                                        return Length(reader, parameters, itParameter);
+                                    }
+
+                                case "substring":
+                                    {
+                                        return Substring(reader, parameters, itParameter);
+                                    }
+
+                                case "startWith":
+                                    {
+                                        return StartWith(reader, parameters, itParameter);
+                                    }
+
+                                case "endWith":
+                                    {
+                                        return EndWith(reader, parameters, itParameter);
+                                    }
+
+                                case "contains":
+                                    {
+                                        return Contains(reader, parameters, itParameter);
+                                    }
+
+                                case "matches":
+                                    {
+                                        return RegexMatches(reader, parameters, itParameter);
+                                    }
+
+                                // collection operations
+                                case "hasAny":
+                                    {
+                                        return HasAny(reader, parameters);
+                                    }
+
+                                case "hasAll":
+                                    {
+                                        return HasAll(reader, parameters);
+                                    }
+
+                                case "filter":
+                                    {
+                                        return Filter(reader, parameters);
+                                    }
+
+                                case "count":
+                                    {
+                                        return Count(reader, parameters, itParameter);
+                                    }
+
+                                case "index":
+                                    {
+                                        return GetItemAtIndex(reader, parameters, itParameter);
+                                    }
+
+                                // generic operations
+                                case "getmember":
+                                    {
+                                        return GetMember(reader, parameters, itParameter);
+                                    }
+
+                                case "ref":
+                                    {
+                                        return GetReference(reader, parameters, itParameter);
+                                    }
+
+                                case "isUndefined":
+                                    {
+                                        return IsUndefined(reader, parameters, itParameter);
+                                    }
+
+                                case "Ignore":
+                                case "ignore":
+                                    {
+                                        reader.Read();
+                                        break;
+                                    }
+
+                                default:
+                                    {
+                                        AddError(readerValue, "Operator has not defined");
+                                        return ReturnDefaultValueExpression();
+                                    }
                             }
 
-                            if (source.Type.GetInterface("IList") == null &&
-                                source.Type.GetInterface("IDictionary") == null)
-                            {
-                                return source;
-                            }
-
-                            var itemMethod = GetMethodByReflection(source.Type, "get_Item", Type.EmptyTypes);
-                            return Expression.Call(source, itemMethod, index);
-                        }
-                        else
-                        {
-                            reader.Read();
+                            break;
                         }
 
-                        break;
                     case JsonToken.String:
-
-                        if (readerValue?.StartsWith("#") == true)
                         {
-                            // skip comment
-                            return ParseTree(reader, parameters, itParameter);
-                        }
-
-                        if (readerValue == "@return")
-                        {
-                            return itParameter;
-                        }
-
-                        if (readerValue == "@duration")
-                        {
-                            return itParameter;
-                        }
-
-                        if (readerValue == "@it")
-                        {
-                            // current item in iterator
-                            if (itParameter == null)
+                            if (readerValue?.StartsWith("#") == true)
                             {
-                                AddError(readerValue, "current item in iterator is null");
-                                return Expression.Parameter(UndefinedValueType, UndefinedValue.Instance.ToString());
+                                // skip comment
+                                return ParseTree(reader, parameters, itParameter);
                             }
 
-                            return itParameter;
-                        }
+                            if (readerValue == "@return")
+                            {
+                                return itParameter;
+                            }
 
-                        if (readerValue == "@exceptions")
-                        {
-                            return itParameter;
-                        }
+                            if (readerValue == "@duration")
+                            {
+                                return itParameter;
+                            }
 
-                        return Expression.Constant(readerValue);
+                            if (readerValue == "@it")
+                            {
+                                // current item in iterator
+                                if (itParameter == null)
+                                {
+                                    AddError(readerValue, "current item in iterator is null");
+                                    return Expression.Parameter(UndefinedValueType, Expressions.UndefinedValue.Instance.ToString());
+                                }
+
+                                return itParameter;
+                            }
+
+                            if (readerValue == "@exceptions")
+                            {
+                                return itParameter;
+                            }
+
+                            return Expression.Constant(readerValue);
+                        }
 
                     case JsonToken.Integer:
                         {
@@ -467,6 +328,11 @@ internal class ProbeExpressionParser<T>
                             _arrayStack--;
                             break;
                         }
+
+                    case JsonToken.Null:
+                        {
+                            return Expression.Constant(null);
+                        }
                 }
             }
             catch (Exception e)
@@ -479,62 +345,9 @@ internal class ProbeExpressionParser<T>
         return null;
     }
 
-    private Expression GetReference(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
-    {
-        try
-        {
-            // method local variable and method argument
-            var refMember = (ConstantExpression)ParseTree(reader, parameters, itParameter);
-            var argOrLocal = parameters.FirstOrDefault(p => p.Name == refMember.Value.ToString());
-            if (argOrLocal != null)
-            {
-                return argOrLocal;
-            }
-
-            // will return an instance field\property or an UndefinedValue
-            return MemberPathExpression(parameters[0], refMember.Value.ToString());
-        }
-        catch (Exception e)
-        {
-            AddError(reader.Value?.ToString() ?? "N/A", e.Message);
-            return Expression.Constant(UndefinedValue.Instance);
-        }
-    }
-
     private void AddError(string expression, string error)
     {
         (_errors ??= new List<EvaluationError>()).Add(new EvaluationError { Expression = expression, Message = error });
-    }
-
-    private GotoExpression ReturnDefaultValueExpression()
-    {
-        if (typeof(T) == typeof(bool))
-        {
-            // condition
-            return Expression.Return(ReturnTarget, Expression.Constant(true), typeof(T));
-        }
-        else if (typeof(T) == typeof(string))
-        {
-            // template
-            return Expression.Return(ReturnTarget, Expression.Constant(string.Empty), typeof(T));
-        }
-        else
-        {
-            // metric
-            return Expression.Return(ReturnTarget, Expression.Constant(0), typeof(T));
-        }
-    }
-
-    private Expression StringOperation(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, MethodInfo method)
-    {
-        var source = ParseTree(reader, parameters, itParameter);
-        if (source.Type == UndefinedValueType)
-        {
-            return source;
-        }
-
-        var parameter = ParseTree(reader, parameters, itParameter);
-        return Expression.Call(source, method, parameter);
     }
 
     private bool ConditionalRead(JsonTextReader reader, bool shouldAdvanceReader)
@@ -542,74 +355,50 @@ internal class ProbeExpressionParser<T>
         return !shouldAdvanceReader || reader.Read();
     }
 
-    private Expression MemberPathExpression(Expression expression, string field)
+    private void SetReaderAtExpressionStart(JsonTextReader reader)
     {
-        try
+        while (reader.Read())
         {
-            return Expression.PropertyOrField(expression, field);
-        }
-        catch
-        {
-            AddError(expression.ToString(), $"Can't find '{field}' member in '{expression}'");
-            return Expression.Constant(UndefinedValue.Instance);
-        }
-    }
-
-    private MethodInfo GetMethodByReflection(Type type, string name, Type[] parametersTypes)
-    {
-        const BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.InvokeMethod |
-                                          BindingFlags.NonPublic | BindingFlags.Public;
-
-        var reflectionMethodIdentifier = new ReflectionMethodIdentifier(type, name, parametersTypes);
-        return Methods.GetOrAdd(reflectionMethodIdentifier, GetMethodByReflectionInternal);
-
-        MethodInfo GetMethodByReflectionInternal(ReflectionMethodIdentifier methodIdentifier)
-        {
-            var method = parametersTypes == null ? methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags) : methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags, null, methodIdentifier.Parameters, null);
-
-            if (method == null)
+            if (reader.TokenType != JsonToken.PropertyName)
             {
-                throw new NullReferenceException($"{methodIdentifier.Type.FullName}.{methodIdentifier.MethodName} method not found");
+                continue;
             }
 
-            return method;
+            if ((reader.Value?.ToString() == "json"))
+            {
+                reader.Read();
+                reader.Read();
+                return;
+            }
         }
+
+        throw new InvalidOperationException("Invalid json file");
     }
 
-    private MethodCallExpression CollectionCountExpression(Expression source)
+    private Expression HandleReturnType(Expression finalExpr)
     {
-        if (!IsTypeSupportCount(source))
+        if (typeof(T).IsAssignableFrom(finalExpr.Type))
         {
-            throw new InvalidOperationException("Source must be an array or implement ICollection or IReadOnlyCollection");
+            return finalExpr;
         }
 
-        var countOrLength = GetMethodByReflection(source.Type, source.Type.IsArray ? "get_Length" : "get_Count", Type.EmptyTypes);
+        if (typeof(T) != typeof(string))
+        {
+            // let the caller throw the correct assign exception
+            return finalExpr;
+        }
 
-        return Expression.Call(source, countOrLength);
-    }
+        // for string, call ToString or return the type name
+        if (SupportedTypesService.IsSafeToCallToString(finalExpr.Type))
+        {
+            finalExpr = Expression.Call(finalExpr, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));
+        }
+        else
+        {
+            finalExpr = Expression.Constant(finalExpr.Type.FullName, typeof(string));
+        }
 
-    private bool IsSafeCollection(Expression source)
-    {
-        return source.Type.GetInterface("ICollection") != null ||
-               source.Type.GetInterface("IReadOnlyCollection") != null ||
-               source.Type.IsArray;
-    }
-
-    private bool IsCollection(Expression source)
-    {
-        return IsSafeCollection(source) || source.Type.GetInterface("IEnumerable") != null;
-    }
-
-    private bool IsTypeSupportCount(Expression source)
-    {
-        return source.Type.GetInterface("ICollection") != null ||
-               source.Type.GetInterface("IReadOnlyCollection") != null ||
-               source.Type.IsArray;
-    }
-
-    private bool IsTypeSupportIndex(Expression source)
-    {
-        return source.Type.GetInterface("IList") != null || source.Type.GetInterface("IReadOnlyList") != null;
+        return finalExpr;
     }
 
     private ExpressionBodyAndParameters ParseProbeExpression(string expressionJson, ScopeMember @this, ScopeMember[] argsOrLocals)
@@ -655,9 +444,11 @@ internal class ProbeExpressionParser<T>
         var reader = new JsonTextReader(new StringReader(expressionJson));
         SetReaderAtExpressionStart(reader);
 
-        var result = Expression.Variable(typeof(T), "$result");
+        var result = Expression.Variable(typeof(T), "$dd_el_result");
         scopeMembers.Add(result);
-        expressions.Add(Expression.Assign(result, ParseRoot(reader, scopeMembers)));
+        var finalExpr = ParseRoot(reader, scopeMembers);
+        finalExpr = HandleReturnType(finalExpr);
+        expressions.Add(finalExpr is not GotoExpression ? Expression.Assign(result, finalExpr) : finalExpr);
         expressions.Add(Expression.Label(ReturnTarget, result));
         var body = (Expression)Expression.Block(scopeMembers, expressions);
         if (body.CanReduce)
@@ -666,26 +457,6 @@ internal class ProbeExpressionParser<T>
         }
 
         return new ExpressionBodyAndParameters(body, thisParameterExpression, argsOrLocalsParameterExpression);
-    }
-
-    private void SetReaderAtExpressionStart(JsonTextReader reader)
-    {
-        while (reader.Read())
-        {
-            if (reader.TokenType != JsonToken.PropertyName)
-            {
-                continue;
-            }
-
-            if ((reader.Value?.ToString() == "json"))
-            {
-                reader.Read();
-                reader.Read();
-                return;
-            }
-        }
-
-        throw new InvalidOperationException("Invalid json file");
     }
 
     internal static CompiledExpression<T> ParseExpression(string expressionJson, ScopeMember @this, ScopeMember[] argsOrLocals)
@@ -708,21 +479,5 @@ internal class ProbeExpressionParser<T>
                 expressionJson,
                 parser._errors.ToArray());
         }
-    }
-
-    internal readonly ref struct ExpressionBodyAndParameters
-    {
-        public ExpressionBodyAndParameters(Expression body, ParameterExpression thisParameterExpression, ParameterExpression argsOrLocalsParameterExpression)
-        {
-            ExpressionBody = body;
-            ThisParameterExpression = thisParameterExpression;
-            ArgsAndLocalsParameterExpression = argsOrLocalsParameterExpression;
-        }
-
-        internal Expression ExpressionBody { get; }
-
-        internal ParameterExpression ThisParameterExpression { get; }
-
-        internal ParameterExpression ArgsAndLocalsParameterExpression { get; }
     }
 }

@@ -1,0 +1,11 @@
+{
+    "dsl": "The item in index 100 is {index(ref CollectionLocal, 100)}",
+    "json": {
+        "index": [
+            {
+                "ref": "CollectionLocal"
+            },
+            100
+        ]
+    }
+}

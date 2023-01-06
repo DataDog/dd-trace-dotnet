@@ -37,10 +37,11 @@ namespace Datadog.Trace.Tests.Debugger
             Test = new TestStruct
             {
                 Collection = new List<string> { "hello", "1st Item", "2nd item", "3rd item" },
+                Dictionary = new Dictionary<string, string> { { "hello", "world" } },
                 IntNumber = 42,
                 DoubleNumber = 3.14159,
                 String = "Hello world!",
-                Nested = new TestStruct.NestedObject() { NestedString = "Hello from nested object" }
+                Nested = new TestStruct.NestedObject() { NestedString = "Hello from nested object", Nested = new TestStruct.NestedObject() { NestedString = "Hello from another nested object" } }
             };
         }
 
@@ -78,7 +79,6 @@ namespace Datadog.Trace.Tests.Debugger
 
             // Assert
             Assert.NotNull(result.Template);
-            Assert.True(result.Condition.HasValue);
             Assert.True(evaluator.CompiledTemplates.Value.Length > 0);
             var toVerify = GetStringToVerify(evaluator, result);
             await Verifier.Verify(toVerify, settings);
@@ -106,18 +106,19 @@ namespace Datadog.Trace.Tests.Debugger
         private ProbeExpressionEvaluator GetEvaluator(string expressionTestFilePath)
         {
             var jsonExpression = File.ReadAllText(expressionTestFilePath);
-            var dsl = GetDsl(jsonExpression);
+            var dsl = GetDslPart(jsonExpression);
+            var json = GetJsonPart(jsonExpression);
             var scopeMembers = CreateScopeMembers();
             DebuggerExpression? condition = null;
             DebuggerExpression[] templates;
             if (new DirectoryInfo(Path.GetDirectoryName(expressionTestFilePath)).Name == ConditionsFolder)
             {
-                condition = new DebuggerExpression(dsl, jsonExpression, null);
-                templates = new DebuggerExpression[] { new(DefaultDslTemplate, DefaultJsonTemplate, string.Empty) };
+                condition = new DebuggerExpression(dsl, json, null);
+                templates = new DebuggerExpression[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
             }
             else
             {
-                templates = new DebuggerExpression[] { new(dsl, jsonExpression, string.Empty) };
+                templates = new DebuggerExpression[] { new(null, null, "The result of the expression is: "), new(dsl, json, null) };
             }
 
             return new ProbeExpressionEvaluator(templates, condition, null, scopeMembers);
@@ -133,9 +134,9 @@ namespace Datadog.Trace.Tests.Debugger
             return settings;
         }
 
-        private string GetDsl(string expressionJson)
+        private string GetDslPart(string json)
         {
-            var reader = new JsonTextReader(new StringReader(expressionJson));
+            var reader = new JsonTextReader(new StringReader(json));
 
             while (reader.Read())
             {
@@ -154,6 +155,12 @@ namespace Datadog.Trace.Tests.Debugger
             throw new InvalidOperationException("DSL part not found in the json file");
         }
 
+        private string GetJsonPart(string json)
+        {
+            int startsFrom = json.IndexOf("\"json\":", StringComparison.Ordinal);
+            return $"{Environment.NewLine}{{{Environment.NewLine}{json.Substring(startsFrom)}";
+        }
+
         private MethodScopeMembers CreateScopeMembers()
         {
             var scope = new MethodScopeMembers(5, 5);
@@ -163,6 +170,7 @@ namespace Datadog.Trace.Tests.Debugger
             scope.AddMember(new ScopeMember("DoubleLocal", Test.DoubleNumber.GetType(), Test.DoubleNumber, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("StringLocal", Test.String.GetType(), Test.String, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("CollectionLocal", Test.Collection.GetType(), Test.Collection, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("DictionaryLocal", Test.Dictionary.GetType(), Test.Dictionary, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NestedObjectLocal", Test.Nested.GetType(), Test.Nested, ScopeMemberKind.Local));
 
             // Add arguments
@@ -199,7 +207,7 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 builder.AppendLine("Template:");
                 builder.AppendLine($"Segments: {string.Join(Environment.NewLine, evaluator.Templates.Select(t => t.Json))}");
-                builder.AppendLine($"Expressions: {evaluator.CompiledTemplates.Value.Select(t => t.ParsedExpression.ToReadableString())}");
+                builder.AppendLine($"Expressions: {string.Join(Environment.NewLine, evaluator.CompiledTemplates.Value.Select(t => t.ParsedExpression.ToReadableString()))}");
                 builder.AppendLine($"Result: {evaluationResult.Template}");
             }
 
@@ -217,6 +225,8 @@ namespace Datadog.Trace.Tests.Debugger
             public int IntNumber;
 
             public List<string> Collection;
+
+            public Dictionary<string, string> Dictionary;
 
             public double DoubleNumber;
 

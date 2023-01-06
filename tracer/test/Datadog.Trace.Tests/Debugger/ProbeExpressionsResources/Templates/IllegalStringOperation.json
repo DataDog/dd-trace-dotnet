@@ -1,0 +1,8 @@
+{
+    "dsl": "reverse(SomeLocal)",
+    "json": {
+        "reverse": [
+            "SomeLocal"
+        ]
+    }
+}

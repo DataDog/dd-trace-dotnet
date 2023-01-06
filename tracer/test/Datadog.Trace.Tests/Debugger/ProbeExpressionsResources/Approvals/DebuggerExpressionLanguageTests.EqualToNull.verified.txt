@@ -2,11 +2,11 @@
 Json:
 {
 "json": {
-    "gt": [
+    "eq": [
       {
-        "ref": "IntLocal"
+        "ref": "StringLocal"
       },
-      2
+      null
     ]
   }
 }
@@ -24,8 +24,8 @@ Expression: (scopeMember, scopeMemberArray) =>
     var StringArg = (string)scopeMemberArray[8].Value;
     var CollectionArg = (List<string>)scopeMemberArray[9].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[10].Value;
-    var $dd_el_result = IntLocal > 2;
+    var $dd_el_result = StringLocal == null;
 
     return $dd_el_result;
 }
-Result: True
+Result: False

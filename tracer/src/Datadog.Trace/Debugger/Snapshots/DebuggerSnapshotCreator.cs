@@ -112,6 +112,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void AddScopeMember<T>(string name, Type type, T value, ScopeMemberKind memberKind)
         {
+            type = type.IsGenericTypeDefinition ? value.GetType() : type;
             switch (memberKind)
             {
                 case ScopeMemberKind.This:

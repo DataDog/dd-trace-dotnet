@@ -28,4 +28,4 @@ Expression: (scopeMember, scopeMemberArray) =>
 }
 Result: True
 Errors:
-EvaluationError { Expression = 2, Message = The binary operator GreaterThan is not defined for the types 'System.String' and 'System.Int32'. }
+EvaluationError { Expression = "SomeLocal" > 2, Message = The binary operator GreaterThan is not defined for the types 'System.String' and 'System.Int32'. }
