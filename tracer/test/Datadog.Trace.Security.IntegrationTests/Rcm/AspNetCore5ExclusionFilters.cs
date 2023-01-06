@@ -24,16 +24,15 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
     public class AspNetCore5ExclusionFilters : AspNetBase, IDisposable
     {
-
 // TODO we used to have a second condition in the first filter, but that seems to break it ... ask WAF people why
 // @",
 // {
 // ""operator"": ""match_regex"",
 // ""parameters"": {
 //   ""inputs"": [
-// 	{
-// 	  ""address"": ""server.request.uri.raw""
-// 	}
+//  {
+//    ""address"": ""server.request.uri.raw""
+//  }
 //   ],
 //   ""regex"": ""^/admin""
 // }
@@ -122,6 +121,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 },
                 product.Name);
             var request1 = await agent.WaitRcmRequestAndReturnLast();
+            // TODO add log and wait for this log
             await Task.Delay(1500);
 
             var spanAfterAsmData = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, ip: "192.0.240.56");
