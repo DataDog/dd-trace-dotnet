@@ -46,7 +46,26 @@ public:
 private:
     inline static void AddGenerationLabel(std::shared_ptr<Sample>& sample, uint32_t generation)
     {
-        sample->AddNumericLabel(NumericLabel(Sample::GarbageCollectionGenerationLabel, generation));
+        // we currently don't store the generation as a numeric label because there is no way to
+        // make the difference between a 0 value and a 0 string index (i.e. empty string)
+        switch (generation)
+        {
+            case 0:
+                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen0Value));
+                break;
+
+            case 1:
+                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen1Value));
+                break;
+
+            case 2:
+                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen2Value));
+                break;
+
+            default: // this should never happen (only gen0, gen1 or gen2 collections)
+                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, std::to_string(generation)));
+                break;
+        }
     }
 
     inline static void BuildCallStack(std::shared_ptr<Sample>& sample, uint32_t generation)
