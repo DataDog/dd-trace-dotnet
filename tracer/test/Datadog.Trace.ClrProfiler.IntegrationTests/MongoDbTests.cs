@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMongoDB();
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMongoDb();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.MongoDB), MemberType = typeof(PackageVersions))]

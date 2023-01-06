@@ -42,6 +42,8 @@ namespace Datadog.Trace.TestHelpers
             return this;
         }
 
+        public Result WithIntegrationName(string name) => this;
+
         public Result Properties(Action<SpanPropertyAssertion> propertyAssertions)
         {
             var p = new SpanPropertyAssertion(this);
