@@ -61,24 +61,24 @@ internal static class DebuggerTestHelper
         return probes.Aggregate(0, (accuNumOfSnapshots, next) => accuNumOfSnapshots + next.ExpectedNumberOfSnapshots);
     }
 
-    internal static (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
+    internal static (ProbeAttributeBase ProbeTestData, LogProbe Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
         return GetAllMethodProbes(type, targetFramework, unlisted, guidGenerator)
               .Concat(GetAllLineProbes(type, targetFramework, unlisted, guidGenerator))
               .ToArray();
     }
 
-    internal static IEnumerable<(ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)> GetAllLineProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
+    internal static IEnumerable<(ProbeAttributeBase ProbeTestData, LogProbe Probe)> GetAllLineProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
         var snapshotLineProbes = type.GetCustomAttributes<LineProbeTestDataAttribute>()
                                      .Where(att => att.Skip == false && att.Unlisted == unlisted && att.SkipOnFrameworks.Contains(targetFramework) == false)
-                                     .Select(att => (att.As<ProbeAttributeBase>(), CreateSnapshotLineProbe(type, att, guidGenerator)))
+                                     .Select(att => (att.As<ProbeAttributeBase>(), CreateLogLineProbe(type, att, guidGenerator)))
                                      .ToArray();
 
         return snapshotLineProbes;
     }
 
-    internal static IEnumerable<(ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)> GetAllMethodProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
+    internal static IEnumerable<(ProbeAttributeBase ProbeTestData, LogProbe Probe)> GetAllMethodProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
         var snapshotMethodProbes = GetAllTestMethods<MethodProbeTestDataAttribute>(type, targetFramework, unlisted)
            .Select(m =>
@@ -105,24 +105,25 @@ internal static class DebuggerTestHelper
         return snapshotMethodProbes;
     }
 
-    internal static SnapshotProbe CreateSnapshotProbe(DeterministicGuidGenerator guidGenerator)
+    internal static LogProbe CreateBasicLogProbeProbe(DeterministicGuidGenerator guidGenerator)
     {
-        return new SnapshotProbe
+        return new LogProbe
         {
             Id = guidGenerator.New().ToString(),
+            CaptureSnapshot = true,
             Language = TracerConstants.Language,
             Active = true,
         };
     }
 
-    internal static SnapshotProbe CreateDefaultSnapshotProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator, MethodProbeTestDataAttribute probeTestData = null)
+    internal static LogProbe CreateDefaultLogProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator, MethodProbeTestDataAttribute probeTestData = null)
     {
-        var snapshot = CreateSnapshotProbe(guidGenerator).WithWhere(typeName, methodName, probeTestData).WithSampling().WithTemplate();
+        var snapshot = CreateBasicLogProbeProbe(guidGenerator).WithWhere(typeName, methodName, probeTestData).WithSampling().WithTemplate();
         var isFullSnapshot = probeTestData?.CaptureSnapshot ?? true;
         return isFullSnapshot ? snapshot.WithCapture() : snapshot;
     }
 
-    internal static SnapshotProbe WithWhere(this SnapshotProbe snapshot, string typeName, string methodName, MethodProbeTestDataAttribute probeTestData = null)
+    internal static LogProbe WithWhere(this LogProbe snapshot, string typeName, string methodName, MethodProbeTestDataAttribute probeTestData = null)
     {
         var @where = new Where
         {
@@ -145,7 +146,7 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    internal static SnapshotProbe WithCapture(this SnapshotProbe snapshot)
+    internal static LogProbe WithCapture(this LogProbe snapshot)
     {
         var capture = new Capture
         {
@@ -159,20 +160,20 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    internal static SnapshotProbe WithWhen(this SnapshotProbe snapshot, string dsl, string json, EvaluateAt evaluateAt)
+    internal static LogProbe WithWhen(this LogProbe snapshot, string dsl, string json, EvaluateAt evaluateAt)
     {
         snapshot.When = new DebuggerExpression(dsl, json, null);
         snapshot.EvaluateAt = evaluateAt;
         return snapshot;
     }
 
-    internal static SnapshotProbe WithSampling(this SnapshotProbe snapshot, double snapshotsPerSeconds = 1000000)
+    internal static LogProbe WithSampling(this LogProbe snapshot, double snapshotsPerSeconds = 1000000)
     {
         snapshot.Sampling = new Configurations.Models.Sampling { SnapshotsPerSecond = snapshotsPerSeconds };
         return snapshot;
     }
 
-    internal static SnapshotProbe WithTemplate(this SnapshotProbe snapshot)
+    internal static LogProbe WithTemplate(this LogProbe snapshot)
     {
         if (snapshot.Segments != null)
         {
@@ -190,14 +191,14 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    internal static SnapshotProbe WithTemplate(this SnapshotProbe snapshot, string dsl, string json, string str, EvaluateAt evaluateAt)
+    internal static LogProbe WithTemplate(this LogProbe snapshot, string dsl, string json, string str, EvaluateAt evaluateAt)
     {
         snapshot.Segments = new DebuggerExpression[] { new(dsl, json, null), new(null, null, str) };
         snapshot.EvaluateAt = evaluateAt;
         return snapshot;
     }
 
-    private static SnapshotProbe CreateSnapshotMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
+    private static LogProbe CreateSnapshotMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
     {
         var probeTestData = method.GetCustomAttribute<MethodProbeTestDataAttribute>();
         if (probeTestData == null)
@@ -212,15 +213,15 @@ internal static class DebuggerTestHelper
             throw new Xunit.Sdk.SkipException($"{nameof(CreateSnapshotMethodProbe)} failed in getting type name for method: {method.Name}");
         }
 
-        return CreateDefaultSnapshotProbe(typeName, method.Name, guidGenerator, probeTestData);
+        return CreateDefaultLogProbe(typeName, method.Name, guidGenerator, probeTestData);
     }
 
-    private static SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
+    private static LogProbe CreateLogLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
     {
-        return CreateSnapshotProbe(guidGenerator).WithLineProbeWhere(type, line).WithTemplate().WithCapture();
+        return CreateBasicLogProbeProbe(guidGenerator).WithLineProbeWhere(type, line).WithTemplate().WithCapture();
     }
 
-    private static SnapshotProbe WithLineProbeWhere(this SnapshotProbe snapshot, Type type, LineProbeTestDataAttribute line)
+    private static LogProbe WithLineProbeWhere(this LogProbe snapshot, Type type, LineProbeTestDataAttribute line)
     {
         using var reader = DatadogPdbReader.CreatePdbReader(type.Assembly);
         var symbolMethod = reader.ReadMethodSymbolInfo(type.GetMethods().First().MetadataToken);

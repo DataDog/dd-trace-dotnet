@@ -10,14 +10,13 @@ using Datadog.Trace.Debugger.Models;
 using FluentAssertions;
 using Samples.Probes.TestRuns.SmokeTests;
 using Xunit;
-using SnapshotProbe = Datadog.Trace.Debugger.Configurations.Models.SnapshotProbe;
 
 namespace Datadog.Trace.Debugger.IntegrationTests;
 
 public class LineProbeResolverTest
 {
     private readonly LineProbeResolver _lineProbeResolver;
-    private readonly SnapshotProbe _probeDefinition;
+    private readonly LogProbe _probeDefinition;
 
     public LineProbeResolverTest()
     {

@@ -10,7 +10,6 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
-using SnapshotProbe = Datadog.Trace.Debugger.Configurations.Models.SnapshotProbe;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
@@ -28,7 +27,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             var probeType = probe switch
             {
-                SnapshotProbe { Capture: { } } => ProbeType.Snapshot,
+                LogProbe { Capture: { } } => ProbeType.Snapshot,
                 MetricProbe => ProbeType.Metric,
                 _ => ProbeType.Log
             };
@@ -38,8 +37,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 probeType,
                 location,
                 probe.EvaluateAt,
-                Templates: probe.Segments,
-                Condition: (probe as SnapshotProbe)?.When,
+                Templates: (probe as LogProbe)?.Segments,
+                Condition: (probe as LogProbe)?.When,
                 Metric: (probe as MetricProbe)?.Value);
         }
 
