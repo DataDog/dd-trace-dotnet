@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "ddsource": "dd_debugger",
     "debugger": {

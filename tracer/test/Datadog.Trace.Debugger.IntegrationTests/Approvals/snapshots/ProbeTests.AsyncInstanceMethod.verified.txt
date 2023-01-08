@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -84,6 +84,12 @@
                 "input": {
                   "type": "String",
                   "value": "AsyncInstanceMethod.RunAsync"
+                },
+                "staticFields": {
+                  "ClassName": {
+                    "type": "String",
+                    "value": "AsyncInstanceMethod"
+                  }
                 }
               },
               "locals": {

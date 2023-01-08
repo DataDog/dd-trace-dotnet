@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "ddsource": "dd_debugger",
     "debugger": {
@@ -16,11 +16,11 @@
     "debugger": {
       "diagnostics": {
         "exception": null,
-        "probeId": "1828a3f0-e94b-eb91-81e3-12bcf19ac41a",
+        "probeId": "3410cda1-5b13-a34e-6f84-a54adf7a0ea0",
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe 1828a3f0-e94b-eb91-81e3-12bcf19ac41a.",
+    "message": "Installed probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
     "service": "Probes"
   },
   {
@@ -28,11 +28,11 @@
     "debugger": {
       "diagnostics": {
         "exception": null,
-        "probeId": "3410cda1-5b13-a34e-6f84-a54adf7a0ea0",
+        "probeId": "35543785-ac9a-85ea-44af-13938dff3136",
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
+    "message": "Installed probe 35543785-ac9a-85ea-44af-13938dff3136.",
     "service": "Probes"
   },
   {
