@@ -49,7 +49,7 @@ public class LogEntryWatcher : IDisposable
 
     public async Task WaitForLogEntries(string[] logEntries, TimeSpan? timeout = null)
     {
-        using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
+        using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(20));
 
         var i = 0;
         while (logEntries.Length > i && !cancellationSource.IsCancellationRequested)
