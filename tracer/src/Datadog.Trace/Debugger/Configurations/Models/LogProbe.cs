@@ -18,9 +18,9 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public string Template { get; set; }
 
-        public DebuggerExpression[] Segments { get; set; }
+        public SnapshotSegment[] Segments { get; set; }
 
-        public DebuggerExpression? When { get; set; }
+        public SnapshotSegment When { get; set; }
 
         public bool Equals(LogProbe other)
         {

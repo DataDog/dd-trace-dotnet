@@ -258,8 +258,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentMetricsValue_IncomingMetricsAnotherValue_ProbeRelatedChanged()
     {
-        var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new DebuggerExpression { Dsl = "Some" } } } };
-        var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new DebuggerExpression { Dsl = "AweSome" } } } };
+        var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new SnapshotSegment { Dsl = "Some" } } } };
+        var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new SnapshotSegment { Dsl = "AweSome" } } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
@@ -269,8 +269,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentMetricsValue_IncomingMetricsSameValue_ProbeRelatedChanged()
     {
-        var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new DebuggerExpression { Dsl = "Some" } } } };
-        var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new DebuggerExpression { Dsl = "Some" } } } };
+        var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new SnapshotSegment { Dsl = "Some" } } } };
+        var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new SnapshotSegment { Dsl = "Some" } } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();

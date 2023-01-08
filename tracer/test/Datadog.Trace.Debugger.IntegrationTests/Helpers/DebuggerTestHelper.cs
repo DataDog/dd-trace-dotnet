@@ -112,7 +112,6 @@ internal static class DebuggerTestHelper
             Id = guidGenerator.New().ToString(),
             CaptureSnapshot = true,
             Language = TracerConstants.Language,
-            Active = true,
         };
     }
 
@@ -162,7 +161,7 @@ internal static class DebuggerTestHelper
 
     internal static LogProbe WithWhen(this LogProbe snapshot, string dsl, string json, EvaluateAt evaluateAt)
     {
-        snapshot.When = new DebuggerExpression(dsl, json, null);
+        snapshot.When = new SnapshotSegment(dsl, json, null);
         snapshot.EvaluateAt = evaluateAt;
         return snapshot;
     }
@@ -186,14 +185,14 @@ internal static class DebuggerTestHelper
     ""Ignore"": ""1""
   }
 }";
-        snapshot.Segments = new DebuggerExpression[] { new(null, null, "Test"), new("1", json, null) };
+        snapshot.Segments = new SnapshotSegment[] { new(null, null, "Test"), new("1", json, null) };
         snapshot.EvaluateAt = EvaluateAt.Entry;
         return snapshot;
     }
 
     internal static LogProbe WithTemplate(this LogProbe snapshot, string dsl, string json, string str, EvaluateAt evaluateAt)
     {
-        snapshot.Segments = new DebuggerExpression[] { new(dsl, json, null), new(null, null, str) };
+        snapshot.Segments = new SnapshotSegment[] { new(dsl, json, null), new(null, null, str) };
         snapshot.EvaluateAt = evaluateAt;
         return snapshot;
     }

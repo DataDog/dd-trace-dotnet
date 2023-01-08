@@ -88,7 +88,6 @@ namespace Datadog.Trace.Debugger.Configurations
             {
                 return
                     probes
-                       .Where(probe => probe.Active)
                        .Where(probe => probe.Language == TracerConstants.Language)
                        .Where(IsEnvAndVersionMatch)
                        .Take(maxAllowedProbes)

@@ -189,23 +189,6 @@ public class ProbesTests : TestHelper
     }
 #endif
 
-    private static LogProbe CreateProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator)
-    {
-        return new LogProbe()
-        {
-            Id = guidGenerator.New().ToString(),
-            CaptureSnapshot = true,
-            Language = TracerConstants.Language,
-            Active = true,
-            Where = new Where
-            {
-                TypeName = typeName,
-                MethodName = methodName
-            },
-            Sampling = new Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 }
-        };
-    }
-
     private async Task RunMethodProbeTests(Type testType)
     {
         var probes = GetProbeConfiguration(testType, false, new DeterministicGuidGenerator());

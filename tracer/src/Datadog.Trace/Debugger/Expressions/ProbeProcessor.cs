@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.RateLimiting;
@@ -37,12 +38,17 @@ namespace Datadog.Trace.Debugger.Expressions
                 probeType,
                 location,
                 probe.EvaluateAt,
-                Templates: (probe as LogProbe)?.Segments,
-                Condition: (probe as LogProbe)?.When,
-                Metric: (probe as MetricProbe)?.Value);
+                Templates: (probe as LogProbe)?.Segments?.Select(s => Convert(s).Value).ToArray(),
+                Condition: Convert((probe as LogProbe)?.When),
+                Metric: Convert((probe as MetricProbe)?.Value));
         }
 
         internal ProbeInfo ProbeInfo { get; }
+
+        private DebuggerExpression? Convert(SnapshotSegment segment)
+        {
+            return segment == null ? null : new DebuggerExpression(segment.Dsl, segment.Json?.ToString(), segment.Str);
+        }
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator(MethodScopeMembers scopeMembers)
         {
