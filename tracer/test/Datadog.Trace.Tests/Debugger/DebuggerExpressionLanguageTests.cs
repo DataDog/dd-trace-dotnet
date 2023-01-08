@@ -129,8 +129,7 @@ namespace Datadog.Trace.Tests.Debugger
             var settings = new VerifySettings();
             settings.UseFileName($"{nameof(DebuggerExpressionLanguageTests)}.{Path.GetFileNameWithoutExtension(expressionTestFilePath)}");
             settings.DisableRequireUniquePrefix();
-            VerifierSettings.DerivePathInfo(
-                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "ProbeExpressionsResources", "Approvals")));
+            settings.UseDirectory("ProbeExpressionsResources/Approvals");
             return settings;
         }
 
