@@ -50,7 +50,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _methodMetadataIndex = methodMetadataIndex;
             HasLocalsOrReturnValue = false;
             InvocationTarget = invocationTarget;
-            SnapshotCreator = new DebuggerSnapshotCreator(probeId);
+            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(probeId);
             MethodPhase = EvaluateAt.Entry;
         }
 

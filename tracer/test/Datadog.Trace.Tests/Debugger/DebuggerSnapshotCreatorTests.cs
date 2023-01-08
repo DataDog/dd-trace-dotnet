@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -97,10 +98,7 @@ namespace Datadog.Trace.Tests.Debugger
         /// </summary>
         private static string GenerateSnapshot(object instance, object[] args, object[] locals)
         {
-            var snapshotCreator = new DebuggerSnapshotCreator(string.Empty);
-            snapshotCreator.StartDebugger();
-            snapshotCreator.StartSnapshot();
-            snapshotCreator.StartCaptures();
+            var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method);
             {
                 // method entry
                 snapshotCreator.StartEntry();

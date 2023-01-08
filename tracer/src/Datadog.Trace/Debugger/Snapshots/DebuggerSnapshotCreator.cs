@@ -33,38 +33,17 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly DateTimeOffset? _startTime;
         private MethodScopeMembers _methodScopeMembers;
 
-        public DebuggerSnapshotCreator(string probeId)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location)
         {
-            try
-            {
-                var probeInfo = ProbeExpressionsProcessor.Instance.GetProbeInfo(probeId);
-                if (probeInfo.HasValue)
-                {
-                    _isFullSnapshot = probeInfo.Value.IsFullSnapshot;
-                    _probeLocation = probeInfo.Value.ProbeLocation;
-                    _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                    _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
-                    _methodScopeMembers = null;
-                    CaptureBehaviour = CaptureBehaviour.Capture;
-                    _startTime = DateTimeOffset.UtcNow;
-                    IsInitialized = false;
-                    Initialize();
-                    return;
-                }
-            }
-            catch
-            {
-                // ignored
-            }
-
-            _jsonWriter = null;
-            _jsonUnderlyingString = null;
-            _isFullSnapshot = false;
-            _probeLocation = ProbeLocation.Method;
+            _isFullSnapshot = isFullSnapshot;
+            _probeLocation = location;
+            _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
             _methodScopeMembers = null;
-            _startTime = null;
+            CaptureBehaviour = CaptureBehaviour.Capture;
+            _startTime = DateTimeOffset.UtcNow;
             IsInitialized = false;
-            CaptureBehaviour = CaptureBehaviour.NoCapture;
+            Initialize();
         }
 
         internal bool IsInitialized { get; private set; }
@@ -72,6 +51,17 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal MethodScopeMembers MethodScopeMembers => _methodScopeMembers;
 
         internal CaptureBehaviour CaptureBehaviour { get; set; }
+
+        public static DebuggerSnapshotCreator BuildSnapshotCreator(string probeId)
+        {
+            var probeInfo = ProbeExpressionsProcessor.Instance.GetProbeInfo(probeId);
+            if (probeInfo.HasValue)
+            {
+                return new DebuggerSnapshotCreator(probeInfo.Value.IsFullSnapshot, probeInfo.Value.ProbeLocation);
+            }
+
+            throw new InvalidOperationException("Probe info not found for probe id: " + probeId);
+        }
 
         internal CaptureBehaviour DefineSnapshotBehavior<TCapture>(CaptureInfo<TCapture> info, EvaluateAt evaluateAt, bool hasCondition)
         {

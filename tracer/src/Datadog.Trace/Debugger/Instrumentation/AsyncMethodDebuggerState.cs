@@ -26,7 +26,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             ProbeId = probeId;
             HasLocalsOrReturnValue = false;
             HasArguments = false;
-            SnapshotCreator = new DebuggerSnapshotCreator(probeId);
+            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(probeId);
         }
 
         private AsyncMethodDebuggerState()
