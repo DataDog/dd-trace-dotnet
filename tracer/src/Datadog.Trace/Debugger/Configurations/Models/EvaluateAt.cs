@@ -8,7 +8,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models;
 /// <summary>
 /// Method phase
 /// </summary>
-public enum EvaluateAt
+internal enum EvaluateAt
 {
     /// <summary>
     /// Entry of the method
