@@ -3,13 +3,13 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
-  
-  <PropertyGroup Condition ="$(TargetFramework.StartsWith('net4'))">
+
+  <PropertyGroup Condition="'$(TargetFramework)'!='net462'">
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
-  <PropertyGroup Condition ="$(TargetFramework.StartsWith('net4'))">
-    <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.Net4.runsettings</RunSettingsFilePath>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net462'">
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.net4.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>
