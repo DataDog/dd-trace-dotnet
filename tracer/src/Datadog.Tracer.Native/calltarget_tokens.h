@@ -45,8 +45,8 @@ private:
 
     HRESULT ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue, ULONG* callTargetStateIndex,
                            ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
-                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken, ULONG* exceptionValueIndex, ULONG
-                           * exceptionVaueEndIndex, bool isAsyncMethod = false);
+                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken, std::vector<ULONG>& indexes, bool
+                           isAsyncMethod = false);
 
 protected:
     // CallTarget tokens
@@ -59,7 +59,6 @@ protected:
     mdTypeRef callTargetReturnVoidTypeRef = mdTypeRefNil;
     mdTypeRef callTargetReturnTypeRef = mdTypeRefNil;
     mdTypeRef exTypeRef = mdTypeRefNil;
-    mdTypeRef bubbleUpExceptionTypeRef = mdTypeRefNil;
     mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
     mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
 
@@ -80,7 +79,6 @@ protected:
 public:
     mdTypeRef GetObjectTypeRef();
     mdTypeRef GetExceptionTypeRef();
-    mdTypeRef GetBubbleUpExceptionTypeRef();
     mdTypeRef GetRuntimeTypeHandleTypeRef();
     mdTypeRef GetRuntimeMethodHandleTypeRef();
     mdAssemblyRef GetCorLibAssemblyRef();
@@ -90,7 +88,7 @@ public:
                                         ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                         ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                         mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                        mdToken* callTargetReturnToken, ILInstr** firstInstruction, ULONG* exceptionValueIndex, ULONG* exceptionValueEndIndex, bool
+                                        mdToken* callTargetReturnToken, ILInstr** firstInstruction, std::vector<ULONG>& indexes, bool
                                         isAsyncMethod = false);
 
     HRESULT WriteCallTargetReturnGetReturnValue(void* rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,

@@ -4,6 +4,9 @@
 #include "../../../shared/src/native-src/util.h"
 #include "cor.h"
 
+struct ILInstr;
+class ILRewriterWrapper;
+
 namespace trace
 {
     // forward declarations
@@ -23,6 +26,7 @@ class TracerMethodRewriter : public MethodRewriter, public shared::Singleton<Tra
 
 private:
     TracerMethodRewriter(){}
+    ILInstr* CreateFilterForException(ILRewriterWrapper* rewriter, mdTypeRef exception, mdTypeRef type_ref, ULONG exceptionValueIndex) const;
 
 public:
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;

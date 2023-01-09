@@ -45,12 +45,11 @@ namespace Benchmarks.Trace
         static AppSecBodyBenchmark()
         {
             var dir = Directory.GetCurrentDirectory();
-            while (!Directory.GetDirectories(dir).Any(s => s.Contains("shared")))
+            while (!Directory.GetDirectories(dir).Any(s=>s.Contains("shared")))
             {
                 dir = Directory.GetParent(dir).FullName;
             }
 
-            dir = Directory.GetDirectories(dir).First(s => s.Contains("shared"));
             Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
             var path = Path.Combine(dir, "bin", "monitoring-home", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty);
             Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
@@ -78,7 +77,7 @@ namespace Benchmarks.Trace
             httpContext.Features.Set<IContext>(null);
 #else
             var securityTransport = new SecurityCoordinator(security, httpContext, span);
-            using var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
+            var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
             var context = httpContext.Items["waf"] as IContext;
             context?.Dispose();
             httpContext.Items["waf"] = null;

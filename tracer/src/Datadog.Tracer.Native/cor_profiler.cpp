@@ -238,8 +238,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             (runtime_information_.major_version == 7 && runtime_information_.minor_version == 0 && runtime_information_.
              build_version <= 1))
         {
-            Logger::Info(
-                "Tiered Compilation was disabled due to https://github.com/dotnet/runtime/issues/77973. This action can be disabled by setting the environment variable DD_INTERNAL_WORKAROUND_77973_ENABLED=false");
+            Logger::Info("Tiered Compilation was disabled due to https://github.com/dotnet/runtime/issues/77973. This action can be disabled by setting the environment variable DD_INTERNAL_WORKAROUND_77973_ENABLED=false");
             disableTieredCompilation = true;
         }
     }
@@ -858,13 +857,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                     RewriteForDistributedTracing(module_metadata, module_id);
                 }
 
-                // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException available
-                mdTypeDef bubbleUpException;
-                const auto bubble_up_type_name = calltargetbubbleexception_tracer_type_name.c_str();
-                const auto found_call_target_bubble_up_exception_type = module_metadata.metadata_import->
-                    FindTypeDefByName(bubble_up_type_name, mdTokenNil, &bubbleUpException);
-                call_target_bubble_up_exception_available = SUCCEEDED(found_call_target_bubble_up_exception_type);
-                Logger::Debug("CallTargetBubbleUpException type available test, hresult is: ", found_call_target_bubble_up_exception_type);
+               EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata);
             }
         }
         else
@@ -978,8 +971,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                     // Check if the typeref matches
                     mdToken parent_token = mdTokenNil;
                     mdToken attribute_ctor_token = mdTokenNil;
-                    const void* attribute_data = nullptr;
-                    // Pointer to receive attribute data, which is not needed for our purposes
+                    const void* attribute_data = nullptr; // Pointer to receive attribute data, which is not needed for our purposes
                     DWORD data_size = 0;
 
                     hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token,
@@ -1117,8 +1109,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         }
     }
 
-    return
-        S_OK;
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
@@ -2534,6 +2525,16 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
     return orig_sstream.str();
 }
 
+HRESULT CorProfiler::EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata)
+{
+    // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException available
+    mdTypeDef bubbleUpException;
+    const auto bubble_up_type_name = calltargetbubbleexception_tracer_type_name.c_str();
+    const auto found_call_target_bubble_up_exception_type = module_metadata.metadata_import->FindTypeDefByName(bubble_up_type_name, mdTokenNil, &bubbleUpException);
+    Logger::Debug("CallTargetBubbleUpException type available test, hresult is: ", found_call_target_bubble_up_exception_type);
+    call_target_bubble_up_exception_available = SUCCEEDED(found_call_target_bubble_up_exception_type);
+    return call_target_bubble_up_exception_available;
+}
 //
 // Startup methods
 //

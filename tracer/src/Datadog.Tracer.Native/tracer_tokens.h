@@ -15,6 +15,7 @@ private:
     mdMemberRef beginMethodFastPathRefs[FASTPATH_COUNT];
     mdMemberRef endVoidMemberRef = mdMemberRefNil;
     mdMemberRef logExceptionRef = mdMemberRefNil;
+    mdTypeRef bubbleUpExceptionTypeRef = mdTypeRefNil;
 
     HRESULT WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
                                                const TypeInfo* currentType, ILInstr** instruction);
@@ -24,6 +25,9 @@ protected:
     const shared::WSTRING& GetCallTargetStateType() override;
     const shared::WSTRING& GetCallTargetReturnType() override;
     const shared::WSTRING& GetCallTargetReturnGenericType() override;
+    HRESULT EnsureBaseCalltargetTokens() override;
+    int GetAdditionalLocalsCount() override;
+    void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod) override;
 
 public:
     TracerTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation,
@@ -41,6 +45,8 @@ public:
 
     HRESULT WriteLogException(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo* currentType,
                               ILInstr** instruction);
+
+    mdTypeRef GetBubbleUpExceptionTypeRef() const;
 };
 
 } // namespace trace

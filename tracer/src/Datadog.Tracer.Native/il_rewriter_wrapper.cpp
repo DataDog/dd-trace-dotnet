@@ -368,28 +368,3 @@ ILInstr* ILRewriterWrapper::InitObj(mdTypeRef type_ref) const
     return pNewInstr;
 }
 
-ILInstr* ILRewriterWrapper::CreateFilterForException(mdTypeRef exception, mdTypeRef type_ref, ULONG exceptionValueIndex) const
-{
-    ILInstr* filter = CreateInstr(CEE_ISINST);
-    filter->m_Arg32 = exception;
-    CreateInstr(CEE_DUP);
-    ILInstr* isException = CreateInstr(CEE_BRTRUE_S);
-    CreateInstr(CEE_POP);
-    LoadInt32(0);
-    ILInstr* endNotException = CreateInstr(CEE_BR_S);
-
-    ILInstr* testBubbleUpPart = StLocal(exceptionValueIndex);
-    LoadLocal(exceptionValueIndex);
-    ILInstr* testBubbleUp = CreateInstr(CEE_ISINST);
-    testBubbleUp->m_Arg32 = type_ref;
-    isException->m_pTarget = testBubbleUpPart;
-    LoadNull();
-    CreateInstr(CEE_CGT_UN);
-    LoadInt32(0);
-    CreateInstr(CEE_CEQ);
-    LoadInt32(0);
-    CreateInstr(CEE_CGT_UN);    
-    ILInstr* endFilter = CreateInstr(CEE_ENDFILTER);
-    endNotException->m_pTarget = endFilter;
-    return filter;
-}

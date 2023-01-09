@@ -53,13 +53,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/data/model", "property=test&property2=appscan_fingerprint")]
-        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/dataapi/model", "{\"property\":\"appscan_fingerprint\", \"property2\":\"test2\"}")]
-        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/datarazorpage", "property=appscan_fingerprint&property2=value2")]
+        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/data/model", "property=test&property2=dummy_rule")]
+        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/dataapi/model", "{\"property\":\"dummy_rule\", \"property2\":\"test2\"}")]
+        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/datarazorpage", "property=dummy_rule&property2=value2")]
         [Trait("RunOnWindows", "True")]
         public async Task TestBlockedBody(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
         {
-            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: "blocking-ruleset.json");
+            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl, body);

@@ -95,6 +95,7 @@ private:
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT TryRejitModule(ModuleID module_id);
     bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
+    HRESULT EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata);
     //
     // Startup methods
     //

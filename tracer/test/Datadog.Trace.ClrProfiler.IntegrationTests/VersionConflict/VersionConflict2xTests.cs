@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         {
             // 1 manual span + 2 http spans
             const int expectedSpanCount = 3;
+
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent))
             {
@@ -65,10 +66,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                     .And.OnlyContain(s => !s.Metrics.ContainsKey(Metrics.SamplingPriority));
 #else
                 httpSpans.Should()
-                         .HaveCount(2)
-                         .And.OnlyContain(s => s.ParentId == rootSpan.SpanId && s.TraceId == rootSpan.TraceId)
-                         .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserKeep)
-                         .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserReject);
+                    .HaveCount(2)
+                    .And.OnlyContain(s => s.ParentId == rootSpan.SpanId && s.TraceId == rootSpan.TraceId)
+                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserKeep)
+                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserReject);
 #endif
 
                 // Check the headers of the outbound http requests
@@ -87,10 +88,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 var runtimeId = rootSpan.Tags[Tags.RuntimeId];
                 Guid.TryParse(runtimeId, out _).Should().BeTrue();
 
-                httpSpans.Should()
-                         .OnlyContain(
-                              s => s.Tags[Tags.RuntimeId] == runtimeId,
-                              "runtime id should be synchronized across versions of the tracer");
+                httpSpans.Should().OnlyContain(
+                    s => s.Tags[Tags.RuntimeId] == runtimeId,
+                    "runtime id should be synchronized across versions of the tracer");
             }
         }
     }

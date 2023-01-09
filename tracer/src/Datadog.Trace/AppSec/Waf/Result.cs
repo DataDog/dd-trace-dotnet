@@ -27,7 +27,7 @@ namespace Datadog.Trace.AppSec.Waf
             ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
-            Data = Marshal.PtrToStringAnsi(returnStruct.Data);
+            Data = ShouldBeReported ? Marshal.PtrToStringAnsi(returnStruct.Data) : string.Empty;
         }
 
         public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);

@@ -175,18 +175,20 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ULONG exceptionIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG callTargetReturnIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG returnValueIndex = static_cast<ULONG>(ULONG_MAX);
-    ULONG exceptionValueIndex = static_cast<ULONG>(ULONG_MAX);
-    ULONG exceptionValueEndIndex = static_cast<ULONG>(ULONG_MAX);
-
+  
+    std::vector<ULONG> indexes(2);
     mdToken callTargetStateToken = mdTokenNil;
     mdToken exceptionToken = mdTokenNil;
     mdToken callTargetReturnToken = mdTokenNil;
     ILInstr* firstInstruction = nullptr;
     auto returnType = caller->method_signature.GetReturnValue();
+
     tracerTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, &returnType, &callTargetStateIndex, &exceptionIndex,
                                               &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
-                                              &exceptionToken, &callTargetReturnToken, &firstInstruction,
-                                              &exceptionValueIndex, &exceptionValueEndIndex, false);
+                                              &exceptionToken, &callTargetReturnToken, &firstInstruction, indexes);
+
+    ULONG exceptionValueIndex = indexes[0];
+    ULONG exceptionValueEndIndex = indexes[1];
 
     // ***
     // BEGIN METHOD PART
@@ -388,13 +390,13 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ILInstr* pStateLeaveToBeginOriginalMethodInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** Filter exception
-    mdTypeRef bubbleUpExceptionTypeRef = tracerTokens->GetBubbleUpExceptionTypeRef();
     ILInstr* filter = nullptr;
     ILInstr* beginMethodCatchFirstInstr = nullptr;
     if (corProfiler->call_target_bubble_up_exception_available)
     {
-        filter = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(), bubbleUpExceptionTypeRef,
-                                                          exceptionValueIndex);
+        filter = CreateFilterForException(&reWriterWrapper, tracerTokens->GetExceptionTypeRef(),
+                                          tracerTokens->GetBubbleUpExceptionTypeRef(),
+                                          exceptionValueIndex);
         Logger::Debug("Creating filter for try / catch for CallTargetBubbleUpException. (begin method)");
         beginMethodCatchFirstInstr = reWriterWrapper.Pop();
         reWriterWrapper.LoadLocal(exceptionValueIndex);
@@ -407,7 +409,6 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     EHClause beginMethodExClause{};
     if (corProfiler->call_target_bubble_up_exception_available)
     {
-        Logger::Debug("bubbleUpExceptionTypeRef is ", bubbleUpExceptionTypeRef);
         beginMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FILTER;
         beginMethodExClause.m_pTryBegin = firstInstruction;
         beginMethodExClause.m_pTryEnd = filter;
@@ -556,11 +557,11 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     if (corProfiler->call_target_bubble_up_exception_available)
     {
         Logger::Debug("Creating filter for try / catch for CallTargetBubbleUpException (end method).");
-        filterEnd = reWriterWrapper.CreateFilterForException(tracerTokens->GetExceptionTypeRef(),
-                                                             bubbleUpExceptionTypeRef,
-                                                             exceptionValueIndex);
+        filterEnd = CreateFilterForException(&reWriterWrapper, tracerTokens->GetExceptionTypeRef(),
+                                             tracerTokens->GetBubbleUpExceptionTypeRef(),
+                                             exceptionValueEndIndex);
         endMethodCatchFirstInstr = reWriterWrapper.Pop();
-        reWriterWrapper.LoadLocal(exceptionValueIndex);
+        reWriterWrapper.LoadLocal(exceptionValueEndIndex);
     }
 
     // transfer->m_pTarget = endFilter;
@@ -700,5 +701,32 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                  "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
                  ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs, "]");
     return S_OK;
+}
+
+ILInstr* trace::TracerMethodRewriter::CreateFilterForException(ILRewriterWrapper* rewriter, mdTypeRef exception,
+                                                               mdTypeRef type_ref, ULONG exceptionValueIndex) const
+{
+    ILInstr* filter = rewriter->CreateInstr(CEE_ISINST);
+    filter->m_Arg32 = exception;
+    rewriter->CreateInstr(CEE_DUP);
+    ILInstr* isException = rewriter->CreateInstr(CEE_BRTRUE_S);
+    rewriter->CreateInstr(CEE_POP);
+    rewriter->LoadInt32(0);
+    ILInstr* endNotException = rewriter->CreateInstr(CEE_BR_S);
+
+    ILInstr* testBubbleUpPart = rewriter->StLocal(exceptionValueIndex);
+    rewriter->LoadLocal(exceptionValueIndex);
+    ILInstr* testBubbleUp = rewriter->CreateInstr(CEE_ISINST);
+    testBubbleUp->m_Arg32 = type_ref;
+    isException->m_pTarget = testBubbleUpPart;
+    rewriter->LoadNull();
+    rewriter->CreateInstr(CEE_CGT_UN);
+    rewriter->LoadInt32(0);
+    rewriter->CreateInstr(CEE_CEQ);
+    rewriter->LoadInt32(0);
+    rewriter->CreateInstr(CEE_CGT_UN);
+    ILInstr* endFilter = rewriter->CreateInstr(CEE_ENDFILTER);
+    endNotException->m_pTarget = endFilter;
+    return filter;
 }
 } // namespace trace

@@ -7,6 +7,7 @@
 
 namespace trace
 {
+
 const int signatureBufferSize = 500;
 
 /**
@@ -27,7 +28,7 @@ static const shared::WSTRING managed_profiler_calltarget_logexception_name = WSt
 
 // slowpath BeginMethod
 HRESULT TracerTokens::WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                                         const TypeInfo* currentType, ILInstr** instruction)
+                                                             const TypeInfo* currentType, ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -143,6 +144,49 @@ const shared::WSTRING& TracerTokens::GetCallTargetReturnGenericType()
     return managed_profiler_calltarget_returntype_generics;
 }
 
+HRESULT TracerTokens::EnsureBaseCalltargetTokens()
+{
+    HRESULT hr = CallTargetTokens::EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException type ref, might not be available if tracer version is < 2.22
+    if (bubbleUpExceptionTypeRef == mdTypeRefNil)
+    {
+        const ModuleMetadata* module_metadata = GetMetadata();
+        module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef,
+                                                            calltargetbubbleexception_tracer_type_name.c_str(),
+                                                            &bubbleUpExceptionTypeRef);
+    }
+    return hr;
+}
+
+int TracerTokens::GetAdditionalLocalsCount()
+{
+    // 2 for the exception variable caught by the filter CallTargetBubbleUpException for begin and end methods
+    // with a filter, the catch handler needs to load the exception in the eval. stack, it's not available by default anymore
+    return 2;
+}
+
+void TracerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod)
+{
+    // Gets the exception type buffer and size
+    unsigned exTypeRefBuffer;
+    auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
+    
+    // Exception value for calltarget exception filters
+    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&signatureBuffer[signatureOffset], &exTypeRefBuffer, exTypeRefSize);
+    signatureOffset += exTypeRefSize;
+    signatureSize += 1 + exTypeRefSize;
+
+
+    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&signatureBuffer[signatureOffset], &exTypeRefBuffer, exTypeRefSize);
+    signatureOffset += exTypeRefSize;
+    signatureSize += 1 + exTypeRefSize;
+}
 
 /**
  * PUBLIC
@@ -159,10 +203,10 @@ TracerTokens::TracerTokens(ModuleMetadata* module_metadata_ptr, const bool enabl
 }
 
 HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                       const TypeInfo* currentType,
-                                       const std::vector<TypeSignature>& methodArguments,
-                                       const bool ignoreByRefInstrumentation,
-                                       ILInstr** instruction)
+                                           const TypeInfo* currentType,
+                                           const std::vector<TypeSignature>& methodArguments,
+                                           const bool ignoreByRefInstrumentation,
+                                           ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -332,7 +376,7 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
 
 // endmethod with void return
 HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                                  const TypeInfo* currentType, ILInstr** instruction)
+                                                      const TypeInfo* currentType, ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -447,8 +491,8 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
 
 // endmethod with return type
 HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                              const TypeInfo* currentType, TypeSignature* returnArgument,
-                                              ILInstr** instruction)
+                                                  const TypeInfo* currentType, TypeSignature* returnArgument,
+                                                  ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -579,7 +623,7 @@ HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRe
 
 // write log exception
 HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                        const TypeInfo* currentType, ILInstr** instruction)
+                                            const TypeInfo* currentType, ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -668,5 +712,10 @@ HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef inte
         *instruction = call_instruction;
     }
     return S_OK;
+}
+
+mdTypeRef TracerTokens::GetBubbleUpExceptionTypeRef() const
+{
+    return bubbleUpExceptionTypeRef;
 }
 } // namespace trace
