@@ -39,7 +39,7 @@ public:
     }
 
 protected:
-    virtual void OnRollWindow() override
+    void OnRollWindow() override
     {
         std::unique_lock lock(_knownGroupsMutex);
         _knownGroups.clear();

@@ -91,13 +91,13 @@ namespace datadog::shared::nativeloader
         return E_NOINTERFACE;
     }
 
-    ULONG STDMETHODCALLTYPE CorProfiler::AddRef(void)
+    ULONG STDMETHODCALLTYPE CorProfiler::AddRef()
     {
         Log::Debug("CorProfiler::AddRef");
         return std::atomic_fetch_add(&this->m_refCount, 1) + 1;
     }
 
-    ULONG STDMETHODCALLTYPE CorProfiler::Release(void)
+    ULONG STDMETHODCALLTYPE CorProfiler::Release()
     {
         Log::Debug("CorProfiler::Release");
         int count = std::atomic_fetch_sub(&this->m_refCount, 1) - 1;

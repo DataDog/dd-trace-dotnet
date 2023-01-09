@@ -11,9 +11,10 @@ class IAllocationsListener
 public:
     virtual void OnAllocation(uint32_t allocationKind,
                               ClassID classId,
-                              const WCHAR* TypeName,
-                              uintptr_t Address,
-                              uint64_t ObjectSize) = 0;
+                              const WCHAR* typeName,
+                              uintptr_t address,
+                              uint64_t objectSize,
+                              uint64_t allocationAmount) = 0;
 
     virtual ~IAllocationsListener() = default;
 };

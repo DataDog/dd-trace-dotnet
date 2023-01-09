@@ -16,7 +16,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
     [LineProbeTestData(50)]
     [LineProbeTestData(57, expectedNumberOfSnapshots: 0)]
     [LineProbeTestData(63)]
-    internal class NotSupportedFailureTest : IRun
+    public class NotSupportedFailureTest : IRun
     {
         public void Run()
         {

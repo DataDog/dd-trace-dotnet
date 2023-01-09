@@ -14,6 +14,12 @@ class RuntimeIdStore
 public:
     RuntimeIdStore();
 
+private:
+    // only for test only
+    friend class runtimeid_store_EnsureRuntimeIsDifferentFor2DifferentAppDomains_Test;
+    RuntimeIdStore(bool isIis);
+
+public:
     const std::string& Get(AppDomainID appDomain);
 
 private:

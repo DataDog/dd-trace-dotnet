@@ -563,7 +563,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
         }
 
         hr = module_metadata->assembly_emit->DefineAssemblyRef(&assemblyReference.public_key.data, public_key_size,
-                                                               assemblyReference.name.data(), &assembly_metadata, NULL,
+                                                               assemblyReference.name.data(), &assembly_metadata, nullptr,
                                                                0, 0, &profilerAssemblyRef);
 
         if (FAILED(hr))

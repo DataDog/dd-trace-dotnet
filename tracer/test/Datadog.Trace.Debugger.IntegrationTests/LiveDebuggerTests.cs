@@ -10,6 +10,7 @@ using Datadog.Trace.Debugger.IntegrationTests.Assertions;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.TestHelpers;
+using Samples.Probes.TestRuns.SmokeTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -54,10 +55,10 @@ public class LiveDebuggerTests : TestHelper
 
     private async Task RunTest()
     {
-        var testType = DebuggerTestHelper.FirstSupportedProbeTestType(EnvironmentHelper.GetTargetFramework());
+        var testType = DebuggerTestHelper.SpecificTestDescription<AsyncVoid>();
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var sample = StartSample(agent, $"--test-name {testType.FullName}", string.Empty, aspNetCorePort: 5000);
+        using var sample = StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.ProcessName}*");
         await logEntryWatcher.WaitForLogEntry(LiveDebuggerDisabledLogEntry);
 

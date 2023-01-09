@@ -32,7 +32,8 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     IManagedThreadList* pManagedThreadList,
     IManagedThreadList* pCodeHotspotThreadList,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
-    ICollector<RawCpuSample>* pCpuTimeCollector
+    ICollector<RawCpuSample>* pCpuTimeCollector,
+    MetricsRegistry& metricsRegistry
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
@@ -56,7 +57,10 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _pCodeHotspotsThreadList{pCodeHotspotThreadList},
     _pWallTimeCollector{pWallTimeCollector},
     _pCpuTimeCollector{pCpuTimeCollector},
-    _deadlockInterventionInProgress{0}
+    _deadlockInterventionInProgress{0},
+    _suspensionTimeMetric{metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_suspension_time_ns")},
+    _collectionTimeMetric{metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_collection_time_ns")},
+    _deadlockCounterMetric{metricsRegistry.GetOrRegister<CounterMetric>("dotnet_internal_deadlocks")}
 {
     _pCorProfilerInfo->AddRef();
     _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
@@ -280,6 +284,7 @@ void StackSamplerLoopManager::WatcherLoopIteration()
     }
 #endif
 
+    _deadlockCounterMetric->Incr();
     _currentStatistics->IncrDeadlockCount();
 
     PerformDeadlockIntervention(collectionDurationNs);
@@ -508,7 +513,9 @@ void StackSamplerLoopManager::NotifyCollectionEnd()
     std::lock_guard<std::mutex> guardedLock(_watcherActivityLock);
 
     std::int64_t collectionEndTimeNs = OpSysTools::GetHighPrecisionNanoseconds();
-    _currentStatistics->AddCollectionTime(collectionEndTimeNs - _collectionStartNs);
+    auto collectionDuration = collectionEndTimeNs - _collectionStartNs;
+    _collectionTimeMetric->Add((double_t)collectionDuration);
+    _currentStatistics->AddCollectionTime(collectionDuration);
 
     _collectionStartNs = 0;
     _kernelTime = {0};
@@ -526,7 +533,9 @@ void StackSamplerLoopManager::NotifyIterationFinished()
     _isTargetThreadSuspended = false;
 
     std::int64_t threadCollectionEndTimeNs = OpSysTools::GetHighPrecisionNanoseconds();
-    _currentStatistics->AddSuspensionTime(threadCollectionEndTimeNs - _threadSuspensionStart);
+    auto suspensionDuration = threadCollectionEndTimeNs - _threadSuspensionStart;
+    _suspensionTimeMetric->Add((double_t)suspensionDuration);
+    _currentStatistics->AddSuspensionTime(suspensionDuration);
 
     if (threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())
     {

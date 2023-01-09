@@ -54,6 +54,7 @@ public:
     int32_t CpuThreadsThreshold() const override;
     int32_t CodeHotspotsThreadsThreshold() const override;
     bool IsGarbageCollectionProfilingEnabled() const override;
+    bool IsHeapProfilingEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -94,6 +95,7 @@ private:
     bool _isAllocationProfilingEnabled;
     bool _isContentionProfilingEnabled;
     bool _isGarbageCollectionProfilingEnabled;
+    bool _isHeapProfilingEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;
     fs::path _pprofDirectory;

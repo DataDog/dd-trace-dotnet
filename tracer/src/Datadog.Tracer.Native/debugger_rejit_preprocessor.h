@@ -24,17 +24,17 @@ public:
                                std::promise<std::vector<MethodIdentifier>>* promise) const;
 
 protected:
-    virtual void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
+    void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
                                       ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit,
                                       ComPtr<IMetaDataAssemblyImport> assemblyImport,
                                       ComPtr<IMetaDataAssemblyEmit> assemblyEmit,
                                       const MethodProbeDefinition& definition,
                                       const MethodReference& targetMethod) final;
-    virtual const MethodReference& GetTargetMethod(const MethodProbeDefinition& methodProbe) final;
-    virtual const bool GetIsDerived(const MethodProbeDefinition& definition) final;
-    virtual const bool GetIsInterface(const MethodProbeDefinition& definition) final;
-    virtual const bool GetIsExactSignatureMatch(const MethodProbeDefinition& definition) final;
-    virtual const std::unique_ptr<RejitHandlerModuleMethod>
+    const MethodReference& GetTargetMethod(const MethodProbeDefinition& methodProbe) final;
+    const bool GetIsDerived(const MethodProbeDefinition& definition) final;
+    const bool GetIsInterface(const MethodProbeDefinition& definition) final;
+    const bool GetIsExactSignatureMatch(const MethodProbeDefinition& definition) final;
+    const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
                  const MethodProbeDefinition& methodProbe) final;
     const std::unique_ptr<RejitHandlerModuleMethod>

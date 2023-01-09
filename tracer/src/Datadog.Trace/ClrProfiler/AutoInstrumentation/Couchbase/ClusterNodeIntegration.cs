@@ -80,7 +80,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            return CouchbaseCommon.CommonOnMethodEnd(returnValue, exception, in state);
+            // Prior to 3.4.1, returnValue is always null, because the signature uses `Task`
+            // In 3.4.1, this is actually a Task<ResponseStatus>, so returnValue is not null
+            // and for errors is non zero
+            if (returnValue is not null
+             && exception is null
+             && state.Scope?.Span is { } span)
+            {
+                // Success has value 0 - there are _many_ other values
+                if ((int)(object)returnValue != 0)
+                {
+                    span.Error = true;
+                    span.SetTag(Trace.Tags.ErrorMsg, returnValue.ToString());
+                }
+            }
+
+            state.Scope?.DisposeWithException(exception);
+            return returnValue;
         }
     }
 }

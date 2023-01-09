@@ -71,7 +71,7 @@ namespace shared
 
     WSTRING Trim(const WSTRING& str)
     {
-        return Trim(str, WStr(" \t"));
+        return Trim(str, WStr(" \f\n\r\t\v"));
     }
 
     std::string Trim(const std::string& str)
@@ -209,7 +209,7 @@ namespace shared
 #ifdef _WIN32
         return SetEnvironmentVariable(::shared::Trim(name).c_str(), value.c_str());
 #else
-        return setenv(::shared::ToString(name).c_str(), ::shared::ToString(value).c_str(), 1) == 1;
+        return setenv(::shared::ToString(name).c_str(), ::shared::ToString(value).c_str(), 1) == 0;
 #endif
     }
 
@@ -269,7 +269,7 @@ namespace shared
         return GenerateUuidV4();
 #endif
     }
-	
+
 	bool WStringStartWithCaseInsensitive(const WSTRING& longer, const WSTRING& shorter)
     {
         if (shorter.length() > longer.length()) return false;
