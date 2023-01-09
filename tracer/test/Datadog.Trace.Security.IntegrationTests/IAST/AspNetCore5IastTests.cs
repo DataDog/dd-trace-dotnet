@@ -186,6 +186,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
+        [Trait("Category", "ArmUnsupported")]
         [Trait("RunOnWindows", "True")]
         public async Task TestIastSqlInjectionRequest(bool enableIast)
         {
