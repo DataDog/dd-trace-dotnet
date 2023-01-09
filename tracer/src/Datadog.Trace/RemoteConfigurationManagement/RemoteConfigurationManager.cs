@@ -246,7 +246,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 try
                 {
                     var configurations = productGroup.ToList();
-
                     product.AssignConfigs(configurations);
                 }
                 catch (Exception e)
@@ -255,7 +254,27 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
             }
 
-            UnapplyRemovedConfigurations();
+            foreach (var product in products.Values)
+            {
+                try
+                {
+                    var removedConfigurations = GetRemovedConfigurations(product);
+                    if (removedConfigurations is null)
+                    {
+                        continue;
+                    }
+
+                    product.RemoveConfigs(removedConfigurations);
+                    foreach (var removedConfiguration in removedConfigurations)
+                    {
+                        product.AppliedConfigurations.Remove(removedConfiguration.Path.Path);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Warning($"Failed to remove remote configurations {e.Message}");
+                }
+            }
 
             IEnumerable<RemoteConfiguration> GetChangedConfigurations()
             {
@@ -284,31 +303,22 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
             }
 
-            void UnapplyRemovedConfigurations()
+            List<RemoteConfigurationCache>? GetRemovedConfigurations(Product product)
             {
-                List<string>? remove = null;
+                List<RemoteConfigurationCache>? removed = null;
 
-                foreach (var product in products.Values)
+                foreach (var appliedConfiguration in product.AppliedConfigurations)
                 {
-                    foreach (var appliedConfiguration in product.AppliedConfigurations)
+                    if (actualConfigPath.ContainsKey(appliedConfiguration.Key))
                     {
-                        if (!actualConfigPath.ContainsKey(appliedConfiguration.Key))
-                        {
-                            remove ??= new List<string>();
-                            remove.Add(appliedConfiguration.Key);
-                        }
+                        continue;
                     }
 
-                    if (remove is not null)
-                    {
-                        foreach (var key in remove)
-                        {
-                            product.AppliedConfigurations.Remove(key);
-                        }
-
-                        remove.Clear();
-                    }
+                    removed ??= new List<RemoteConfigurationCache>();
+                    removed.Add(appliedConfiguration.Value);
                 }
+
+                return removed;
             }
         }
 

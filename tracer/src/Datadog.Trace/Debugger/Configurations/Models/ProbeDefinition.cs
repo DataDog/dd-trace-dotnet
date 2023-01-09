@@ -10,23 +10,18 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 {
     internal abstract class ProbeDefinition : IEquatable<ProbeDefinition>
     {
+        internal ProbeDefinition()
+        {
+            EvaluateAt = EvaluateAt.Exit;
+        }
+
         public string Language { get; set; }
 
         public string Id { get; set; }
 
-        public long? OrgId { get; set; }
-
-        public string AppId { get; set; }
-
-        public bool Active { get; set; }
-
         public string[] Tags { get; set; }
 
         public Where Where { get; set; }
-
-        public string Template { get; set; }
-
-        public DebuggerExpression[] Segments { get; set; }
 
         public EvaluateAt EvaluateAt { get; set; }
 
@@ -46,7 +41,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
                 return true;
             }
 
-            return Language == other.Language && Id == other.Id && OrgId == other.OrgId && AppId == other.AppId && Active == other.Active && Equals(Where, other.Where) && Equals(EvaluateAt, other.EvaluateAt) && Tags.NullableSequentialEquals(other.Tags) && Version == other.Version && AdditionalIds.NullableSequentialEquals(other.AdditionalIds);
+            return Language == other.Language && Id == other.Id && Equals(Where, other.Where) && Equals(EvaluateAt, other.EvaluateAt) && Tags.NullableSequentialEquals(other.Tags) && Version == other.Version && AdditionalIds.NullableSequentialEquals(other.AdditionalIds);
         }
 
         public override bool Equals(object obj)
@@ -74,9 +69,6 @@ namespace Datadog.Trace.Debugger.Configurations.Models
             var hashCode = new HashCode();
             hashCode.Add(Language);
             hashCode.Add(Id);
-            hashCode.Add(OrgId);
-            hashCode.Add(AppId);
-            hashCode.Add(Active);
             hashCode.Add(Tags);
             hashCode.Add(Where);
             hashCode.Add(EvaluateAt);

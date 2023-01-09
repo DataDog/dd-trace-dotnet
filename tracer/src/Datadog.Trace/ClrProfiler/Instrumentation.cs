@@ -407,6 +407,8 @@ namespace Datadog.Trace.ClrProfiler
                 tags.Add($"version:{serviceVersion}");
             }
 
+            tags.Add($"service:{tracer.Settings.ServiceName ?? tracer.DefaultServiceName}");
+
             var tracerVersion = rcmSettings.TracerVersion;
             if (!string.IsNullOrEmpty(tracerVersion))
             {

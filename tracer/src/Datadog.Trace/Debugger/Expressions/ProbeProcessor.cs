@@ -5,12 +5,12 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
-using SnapshotProbe = Datadog.Trace.Debugger.Configurations.Models.SnapshotProbe;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             var probeType = probe switch
             {
-                SnapshotProbe { Capture: { } } => ProbeType.Snapshot,
+                LogProbe { Capture: { } } => ProbeType.Snapshot,
                 MetricProbe => ProbeType.Metric,
                 _ => ProbeType.Log
             };
@@ -38,12 +38,17 @@ namespace Datadog.Trace.Debugger.Expressions
                 probeType,
                 location,
                 probe.EvaluateAt,
-                Templates: probe.Segments,
-                Condition: (probe as SnapshotProbe)?.When,
-                Metric: (probe as MetricProbe)?.Value);
+                Templates: (probe as LogProbe)?.Segments?.Select(s => Convert(s).Value).ToArray(),
+                Condition: Convert((probe as LogProbe)?.When),
+                Metric: Convert((probe as MetricProbe)?.Value));
         }
 
         internal ProbeInfo ProbeInfo { get; }
+
+        private DebuggerExpression? Convert(SnapshotSegment segment)
+        {
+            return segment == null ? null : new DebuggerExpression(segment.Dsl, segment.Json?.ToString(), segment.Str);
+        }
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator(MethodScopeMembers scopeMembers)
         {
