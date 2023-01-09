@@ -1,39 +1,42 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    public class InvalidCondition : IRun
+    internal class TemplateWithLocalAtExit : IRun
     {
         private const string Dsl = @"{
-  ""dsl"": ""undefined > 2""
+  ""dsl"": ""Result is {ref i}""
 }";
 
         private const string Json = @"{
   ""json"": {
-    ""gt"": [
-       ""undefined"",
-      2
-    ]
-  }
+        ""ref"": ""i""
+    }
 }";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
-            Method(1);
+            Method(3);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [ExpressionProbeTestData(
-            conditionDsl: Dsl,
-            conditionJson: Json,
+            templateDsl: Dsl,
+            templateJson: Json,
+            templateStr: "Result is: ",
             captureSnapshot: true,
             evaluateAt: 1,
-            returnTypeName: "System.String",
+            returnTypeName: "System.Int32",
             parametersTypeName: new[] { "System.Int32" })]
-        public string Method(int intArg)
+        public int Method(int seed)
         {
-            return $"Argument: {intArg}";
+            int i = 5;
+            Console.Write(seed + i);
+            i++;
+            Console.Write(seed + i);
+            return seed + i;
         }
     }
 }

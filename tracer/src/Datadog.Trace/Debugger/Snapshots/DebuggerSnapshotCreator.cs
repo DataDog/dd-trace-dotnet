@@ -32,6 +32,9 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly ProbeLocation _probeLocation;
         private readonly DateTimeOffset? _startTime;
         private MethodScopeMembers _methodScopeMembers;
+        private CaptureBehaviour _captureBehaviour;
+        private string _message;
+        private List<EvaluationError> _errors;
 
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location)
         {
@@ -50,7 +53,19 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal MethodScopeMembers MethodScopeMembers => _methodScopeMembers;
 
-        internal CaptureBehaviour CaptureBehaviour { get; set; }
+        internal CaptureBehaviour CaptureBehaviour
+        {
+            get => _captureBehaviour;
+            set
+            {
+                if (value == CaptureBehaviour.Stop)
+                {
+                    throw new InvalidOperationException("The value is not a valid value");
+                }
+
+                _captureBehaviour = value;
+            }
+        }
 
         public static DebuggerSnapshotCreator BuildSnapshotCreator(string probeId)
         {
@@ -65,22 +80,69 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal CaptureBehaviour DefineSnapshotBehavior<TCapture>(CaptureInfo<TCapture> info, EvaluateAt evaluateAt, bool hasCondition)
         {
-            if (hasCondition &&
-                evaluateAt == EvaluateAt.Exit &&
-                info.MethodState is MethodState.BeginLine or MethodState.EntryStart)
+            if (CaptureBehaviour == CaptureBehaviour.Stop)
             {
-                // in case there is a condition in exit but we are in the entry, don't save entry scope members
-                CaptureBehaviour = CaptureBehaviour.NoCapture;
+                // Entry evaluation evaluated to false
                 return CaptureBehaviour;
             }
 
-            if (!hasCondition && _isFullSnapshot)
+            if (!hasCondition)
             {
-                CaptureBehaviour = CaptureBehaviour.Capture;
+                if (_isFullSnapshot)
+                {
+                    // Log template with capture all - capture all values
+                    CaptureBehaviour =
+                        (evaluateAt == EvaluateAt.Entry && info.MethodState.IsInEntryEnd()) ||
+                        (evaluateAt == EvaluateAt.Exit && info.MethodState.IsInExitEnd())
+                            ? CaptureBehaviour.Evaluate
+                            : CaptureBehaviour.Capture;
+                }
+                else
+                {
+                    // Log template without capture all - capture only template message
+                    if ((evaluateAt == EvaluateAt.Entry && info.MethodState.IsInEntryEnd()) ||
+                        (evaluateAt == EvaluateAt.Exit && info.MethodState.IsInExitEnd()))
+                    {
+                        CaptureBehaviour = CaptureBehaviour.Evaluate;
+                    }
+                    else if ((evaluateAt == EvaluateAt.Entry && info.MethodState.IsInEntry()) ||
+                             (evaluateAt == EvaluateAt.Exit && info.MethodState.IsInExit()))
+                    {
+                        CaptureBehaviour = CaptureBehaviour.Delay;
+                    }
+                    else
+                    {
+                        CaptureBehaviour = CaptureBehaviour.NoCapture;
+                    }
+                }
             }
             else
             {
-                CaptureBehaviour = CaptureBehaviour.Delayed;
+                if ((evaluateAt == EvaluateAt.Entry && info.MethodState.IsInEntryEnd()) ||
+                    (evaluateAt == EvaluateAt.Exit && info.MethodState.IsInExitEnd()))
+                {
+                    // Evaluate if we are in the correct state
+                    CaptureBehaviour = CaptureBehaviour.Evaluate;
+                }
+                else if (evaluateAt == EvaluateAt.Entry && info.MethodState.IsInExit())
+                {
+                    // Capture is we already evaluated to true (if we evaluated false, we exited earlier because the behaviour is "CaptureBehaviour.NoCapture")
+                    CaptureBehaviour = CaptureBehaviour.Capture;
+                }
+                else if (evaluateAt == EvaluateAt.Exit && info.MethodState.IsInEntry())
+                {
+                    // Delay if we haven't in the correct state yet
+                    CaptureBehaviour = CaptureBehaviour.NoCapture;
+                }
+                else
+                {
+                    CaptureBehaviour = CaptureBehaviour.Delay;
+                }
+            }
+
+            if (!info.MethodState.IsInStartMarkerOrBeginLine())
+            {
+                return CaptureBehaviour;
             }
 
             if (info.MethodState.IsInAsyncMethod())
@@ -95,6 +157,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             return CaptureBehaviour;
         }
 
+        internal void Stop()
+        {
+            _captureBehaviour = CaptureBehaviour.Stop;
+        }
+
         internal void CreateMethodScopeMembers(int numberOfLocals, int numberOfArguments)
         {
             Interlocked.CompareExchange(ref _methodScopeMembers, new MethodScopeMembers(numberOfLocals, numberOfArguments), null);
@@ -102,6 +169,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void AddScopeMember<T>(string name, Type type, T value, ScopeMemberKind memberKind)
         {
+            if (MethodScopeMembers == null)
+            {
+                return;
+            }
+
             type = type.IsGenericTypeDefinition ? value.GetType() : type;
             switch (memberKind)
             {
@@ -313,6 +385,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     ExitMethodStart(ref info);
                     break;
                 case MethodState.ExitStartAsync:
+                case MethodState.ExitEndAsync:
                     ExitAsyncMethodStart(ref info);
                     break;
                 default:
@@ -350,6 +423,12 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureEntryMethodStartMarker(ref info);
             bool hasArgument = CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
             CaptureEntryMethodEndMarker(info.Value, info.Type, hasArgument);
+        }
+
+        internal void SetEvaluationResult(ref ExpressionEvaluationResult evaluationResult)
+        {
+            _message = evaluationResult.Template;
+            _errors = evaluationResult.Errors;
         }
 
         private bool CaptureAsyncMethodArguments(System.Reflection.FieldInfo[] asyncHoistedArguments, object moveNextInvocationTarget)
@@ -451,9 +530,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             EndReturn(info.HasLocalOrArgument.Value);
         }
 
-        internal void ProcessQueue<TCapture>(ref CaptureInfo<TCapture> captureInfo)
+        internal void ProcessQueue<TCapture>(ref CaptureInfo<TCapture> captureInfo, bool hasCondition)
         {
-            if (CaptureBehaviour == CaptureBehaviour.Delayed)
+            if (CaptureBehaviour == CaptureBehaviour.Evaluate && (hasCondition || !_isFullSnapshot))
             {
                 switch (captureInfo.MethodState)
                 {
@@ -461,9 +540,11 @@ namespace Datadog.Trace.Debugger.Snapshots
                         CaptureEntryMethodStartMarker(ref captureInfo);
                         break;
                     case MethodState.ExitEnd:
+                    case MethodState.ExitEndAsync:
                         CaptureExitMethodStartMarker(ref captureInfo);
                         break;
                     case MethodState.EndLine:
+                    case MethodState.EndLineAsync:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(captureInfo.MethodState), captureInfo.MethodState, null);
@@ -529,7 +610,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         }
 
         // Finalize snapshot
-        internal string FinalizeLineSnapshot<T>(string probeId, string message, ref CaptureInfo<T> info, List<EvaluationError> evaluationErrors = null)
+        internal string FinalizeLineSnapshot<T>(string probeId, ref CaptureInfo<T> info)
         {
             using (this)
             {
@@ -541,8 +622,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                                        ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
                                        : info.InvocationTargetType?.FullName;
 
-                AddEvaluationErrors(evaluationErrors).
-                AddProbeInfo(
+                AddEvaluationErrors()
+                   .AddProbeInfo(
                         probeId,
                         info.LineCaptureInfo.LineNumber,
                         info.LineCaptureInfo.ProbeFilePath)
@@ -550,15 +631,14 @@ namespace Datadog.Trace.Debugger.Snapshots
                         methodName,
                         typeFullName,
                         _startTime,
-                        info.LineCaptureInfo.ProbeFilePath,
-                        message);
+                        info.LineCaptureInfo.ProbeFilePath);
 
                 var snapshot = GetSnapshotJson();
                 return snapshot;
             }
         }
 
-        internal string FinalizeMethodSnapshot<T>(string probeId, string message, ref CaptureInfo<T> info, List<EvaluationError> evaluationErrors = null)
+        internal string FinalizeMethodSnapshot<T>(string probeId, ref CaptureInfo<T> info)
         {
             using (this)
             {
@@ -569,8 +649,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 var typeFullName = info.MethodState == MethodState.ExitEndAsync
                                        ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
                                        : info.InvocationTargetType?.FullName;
-                AddEvaluationErrors(evaluationErrors).
-                AddProbeInfo(
+                AddEvaluationErrors()
+                   .AddProbeInfo(
                         probeId,
                         methodName,
                         typeFullName)
@@ -578,35 +658,34 @@ namespace Datadog.Trace.Debugger.Snapshots
                         methodName,
                         typeFullName,
                         _startTime,
-                        null,
-                        message);
+                        null);
 
                 var snapshot = GetSnapshotJson();
                 return snapshot;
             }
         }
 
-        internal void FinalizeSnapshot(string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath, string message)
+        internal void FinalizeSnapshot(string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath)
         {
             AddStackInfo()
             .EndSnapshot(startTime)
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
             .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, null, null) // internal ticket ID 929
-            .AddMessage(message)
+            .AddMessage()
             .Complete();
         }
 
-        internal DebuggerSnapshotCreator AddEvaluationErrors(List<EvaluationError> errors)
+        internal DebuggerSnapshotCreator AddEvaluationErrors()
         {
-            if (errors == null || errors.Count == 0)
+            if (_errors == null || _errors.Count == 0)
             {
                 return this;
             }
 
             _jsonWriter.WritePropertyName("errors");
             _jsonWriter.WriteStartArray();
-            foreach (var error in errors)
+            foreach (var error in _errors)
             {
                 _jsonWriter.WriteStartObject();
                 _jsonWriter.WritePropertyName("expression");
@@ -748,11 +827,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        public DebuggerSnapshotCreator AddMessage(string message)
+        public DebuggerSnapshotCreator AddMessage()
         {
-            message ??= GenerateDefaultMessage();
+            _message ??= GenerateDefaultMessage();
             _jsonWriter.WritePropertyName("message");
-            _jsonWriter.WriteValue(message);
+            _jsonWriter.WriteValue(_message);
             return this;
         }
 
@@ -783,6 +862,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 MethodScopeMembers.Reset();
                 _methodScopeMembers = null;
                 _jsonWriter?.Close();
+                Stop();
             }
             catch
             {

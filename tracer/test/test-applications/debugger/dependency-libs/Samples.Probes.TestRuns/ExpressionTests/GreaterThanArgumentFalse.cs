@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    public class GreaterThenArgumentFalse : IRun
+    public class GreaterThanArgumentFalse : IRun
     {
         private const string Dsl = @"{
   ""dsl"": ""ref intArg > 2""
@@ -33,7 +33,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
                                  parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)
         {
-            return $"Dsl: {Dsl}, Argument: {intArg}";
+            return $"Argument: {intArg}";
         }
     }
 }

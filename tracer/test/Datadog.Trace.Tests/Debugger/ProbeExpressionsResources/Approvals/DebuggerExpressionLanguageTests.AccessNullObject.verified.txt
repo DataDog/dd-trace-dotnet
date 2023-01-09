@@ -3,11 +3,11 @@ Segments:
 
 {
 "json": {
-        "index": [
+        "getmember": [
             {
-                "ref": "CollectionLocal"
+                "ref": "Null"
             },
-            0
+            "NestedString"
         ]
     }
 }
@@ -27,8 +27,10 @@ Expressions:
     var StringArg = (string)scopeMemberArray[9].Value;
     var CollectionArg = (List<string>)scopeMemberArray[10].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
-    var $dd_el_result = (string)CollectionLocal[0];
+    var $dd_el_result = this.Null.NestedString;
 
     return $dd_el_result;
 }
-Result: The result of the expression is: hello
+Result: The result of the expression is: 
+Errors:
+EvaluationError { Expression = this.Null.NestedString), Message = Object reference not set to an instance of an object. }

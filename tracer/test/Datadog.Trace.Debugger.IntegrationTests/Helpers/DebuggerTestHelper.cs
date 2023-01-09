@@ -192,7 +192,7 @@ internal static class DebuggerTestHelper
 
     internal static LogProbe WithTemplate(this LogProbe snapshot, string dsl, string json, string str, EvaluateAt evaluateAt)
     {
-        snapshot.Segments = new SnapshotSegment[] { new(dsl, json, null), new(null, null, str) };
+        snapshot.Segments = new SnapshotSegment[] { new(null, null, str), new(dsl, json, null) };
         snapshot.EvaluateAt = evaluateAt;
         return snapshot;
     }

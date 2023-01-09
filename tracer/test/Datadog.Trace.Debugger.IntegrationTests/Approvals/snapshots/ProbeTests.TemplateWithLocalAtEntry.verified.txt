@@ -9,63 +9,73 @@
         "captures": {
           "entry": {
             "arguments": {
-              "intArg": {
+              "seed": {
                 "type": "Int32",
                 "value": "3"
               },
               "this": {
-                "type": "GreaterThenArgumentTrueAtEntry",
-                "value": "GreaterThenArgumentTrueAtEntry"
+                "type": "TemplateWithLocalAtEntry",
+                "value": "TemplateWithLocalAtEntry"
               }
             },
             "staticFields": {
               "Dsl": {
                 "type": "String",
-                "value": "{\r\n  \"dsl\": \"ref intArg > 2\"\r\n}"
+                "value": "{\r\n  \"dsl\": \"Result is {ref i}\"\r\n}"
               },
               "Json": {
                 "type": "String",
-                "value": "{\r\n  \"json\": {\r\n    \"gt\": [\r\n      {\"ref\": \"intArg\"},\r\n      2\r\n    ]\r\n  }\r\n}"
+                "value": "{\r\n  \"json\": {\r\n        \"ref\": \"i\"\r\n    }\r\n}"
               }
             }
           },
           "return": {
             "arguments": {
-              "intArg": {
+              "seed": {
                 "type": "Int32",
                 "value": "3"
               },
               "this": {
-                "type": "GreaterThenArgumentTrueAtEntry",
-                "value": "GreaterThenArgumentTrueAtEntry"
+                "type": "TemplateWithLocalAtEntry",
+                "value": "TemplateWithLocalAtEntry"
               }
             },
             "locals": {
               "@return": {
-                "type": "String",
-                "value": "Dsl: {\r\n  \"dsl\": \"ref intArg > 2\"\r\n}, Argument: 3"
+                "type": "Int32",
+                "value": "9"
+              },
+              "i": {
+                "type": "Int32",
+                "value": "6"
               }
             },
             "staticFields": {
               "Dsl": {
                 "type": "String",
-                "value": "{\r\n  \"dsl\": \"ref intArg > 2\"\r\n}"
+                "value": "{\r\n  \"dsl\": \"Result is {ref i}\"\r\n}"
               },
               "Json": {
                 "type": "String",
-                "value": "{\r\n  \"json\": {\r\n    \"gt\": [\r\n      {\"ref\": \"intArg\"},\r\n      2\r\n    ]\r\n  }\r\n}"
+                "value": "{\r\n  \"json\": {\r\n        \"ref\": \"i\"\r\n    }\r\n}"
               }
             }
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "this.i",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
           "id": "ScrubbedValue",
           "location": {
             "method": "Method",
-            "type": "Samples.Probes.TestRuns.ExpressionTests.GreaterThenArgumentTrueAtEntry"
+            "type": "Samples.Probes.TestRuns.ExpressionTests.TemplateWithLocalAtEntry"
           }
         },
         "stack": "ScrubbedValue",
@@ -74,7 +84,7 @@
     },
     "logger": {
       "method": "Method",
-      "name": "Samples.Probes.TestRuns.ExpressionTests.GreaterThenArgumentTrueAtEntry",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.TemplateWithLocalAtEntry",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

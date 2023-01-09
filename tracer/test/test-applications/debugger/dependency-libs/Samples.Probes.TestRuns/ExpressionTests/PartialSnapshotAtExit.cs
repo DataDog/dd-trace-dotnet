@@ -33,7 +33,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
             parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)
         {
-            return $"Dsl: {Dsl}, Argument: {intArg}";
+            return $"Argument: {intArg}";
         }
     }
 }

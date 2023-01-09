@@ -1,18 +1,20 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    internal class PartialSnapshotAtEntry : IRun
+    public class GreaterThanField : IRun
     {
+        private int _field;
         private const string Dsl = @"{
-  ""dsl"": ""ref intArg > 2""
+  ""dsl"": ""ref _field > 6""
 }";
 
         private const string Json = @"{
   ""json"": {
     ""gt"": [
-      {""ref"": ""intArg""},
-      2
+      {""ref"": ""_field""},
+      6
     ]
   }
 }";
@@ -20,6 +22,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
+            _field = 5;
             Method(3);
         }
 
@@ -27,13 +30,16 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         [ExpressionProbeTestData(
             conditionDsl: Dsl,
             conditionJson: Json,
-            captureSnapshot: false,
-            evaluateAt: 0,
+            captureSnapshot: true,
+            evaluateAt: 1,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)
         {
-            return $"Argument: {intArg}";
+            var result = intArg + _field;
+            Console.WriteLine(result);
+            _field += result;
+            return $"Field is: {_field}";
         }
     }
 }

@@ -1,20 +1,18 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    internal class PartialSnapshotAtEntry : IRun
+    internal class PartialSnapshotWithLocalAtExit : IRun
     {
         private const string Dsl = @"{
-  ""dsl"": ""ref intArg > 2""
+  ""dsl"": ""Result is {ref i}""
 }";
 
         private const string Json = @"{
   ""json"": {
-    ""gt"": [
-      {""ref"": ""intArg""},
-      2
-    ]
-  }
+        ""ref"": ""i""
+    }
 }";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -25,15 +23,20 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [ExpressionProbeTestData(
-            conditionDsl: Dsl,
-            conditionJson: Json,
+            templateDsl: Dsl,
+            templateJson: Json,
+            templateStr: "Result is: ",
             captureSnapshot: false,
-            evaluateAt: 0,
-            returnTypeName: "System.String",
+            evaluateAt: 1,
+            returnTypeName: "System.Int32",
             parametersTypeName: new[] { "System.Int32" })]
-        public string Method(int intArg)
+        public int Method(int seed)
         {
-            return $"Argument: {intArg}";
+            int i = 5;
+            Console.Write(seed + i);
+            i++;
+            Console.Write(seed + i);
+            return seed + i;
         }
     }
 }

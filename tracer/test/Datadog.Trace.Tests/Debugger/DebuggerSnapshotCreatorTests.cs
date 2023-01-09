@@ -136,7 +136,7 @@ namespace Datadog.Trace.Tests.Debugger
                 snapshotCreator.EndReturn(hasArgumentsOrLocals: args.Length + locals.Length > 0);
             }
 
-            snapshotCreator.FinalizeSnapshot("Foo", "Bar", DateTimeOffset.MinValue, "foo", null);
+            snapshotCreator.FinalizeSnapshot("Foo", "Bar", DateTimeOffset.MinValue, "foo");
 
             var snapshot = snapshotCreator.GetSnapshotJson();
             return JsonPrettify(snapshot);

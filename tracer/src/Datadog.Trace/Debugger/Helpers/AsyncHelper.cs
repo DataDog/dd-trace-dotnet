@@ -222,15 +222,6 @@ namespace Datadog.Trace.Debugger.Helpers
             return new AsyncKickoffMethodInfo(kickoffParentObject, kickoffParentType, kickoffMethod);
         }
 
-        internal static bool IsInAsyncMethod(this MethodState state)
-        {
-            return state is MethodState.EntryAsync
-                       or MethodState.ExitStartAsync
-                       or MethodState.ExitEndAsync
-                       or MethodState.BeginLineAsync
-                       or MethodState.EndLineAsync;
-        }
-
         internal readonly ref struct AsyncKickoffMethodInfo
         {
             public AsyncKickoffMethodInfo(object kickoffParentObject, Type kickoffParentType, MethodBase kickoffMethod)

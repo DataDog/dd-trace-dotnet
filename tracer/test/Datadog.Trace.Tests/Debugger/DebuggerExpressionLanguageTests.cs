@@ -41,7 +41,8 @@ namespace Datadog.Trace.Tests.Debugger
                 IntNumber = 42,
                 DoubleNumber = 3.14159,
                 String = "Hello world!",
-                Nested = new TestStruct.NestedObject() { NestedString = "Hello from nested object", Nested = new TestStruct.NestedObject() { NestedString = "Hello from another nested object" } }
+                Null = null,
+                Nested = new TestStruct.NestedObject { NestedString = "Hello from nested object", Nested = new TestStruct.NestedObject { NestedString = "Hello from another nested object" } }
             };
         }
 
@@ -171,6 +172,7 @@ namespace Datadog.Trace.Tests.Debugger
             scope.AddMember(new ScopeMember("CollectionLocal", Test.Collection.GetType(), Test.Collection, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("DictionaryLocal", Test.Dictionary.GetType(), Test.Dictionary, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NestedObjectLocal", Test.Nested.GetType(), Test.Nested, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("NullLocal", Test.Nested.GetType(), Test.Null, ScopeMemberKind.Local));
 
             // Add arguments
             scope.AddMember(new ScopeMember("IntArg", Test.IntNumber.GetType(), Test.IntNumber, ScopeMemberKind.Argument));
@@ -232,6 +234,8 @@ namespace Datadog.Trace.Tests.Debugger
             public string String;
 
             public NestedObject Nested;
+
+            public NestedObject Null;
 
             internal class NestedObject
             {
