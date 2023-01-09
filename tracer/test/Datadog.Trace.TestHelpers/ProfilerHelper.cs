@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -44,51 +45,7 @@ namespace Datadog.Trace.TestHelpers
              && Path.GetExtension(executable) == ".exe"
              && !ExesToExcludeFromCorflags.Contains(Path.GetFileNameWithoutExtension(executable)))
             {
-                string corFlagsExe = null;
-                var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-                var dotnetWindowsSdkToolsFolder = Path.Combine(programFiles, "Microsoft SDKs", "Windows", "v10.0A", "bin");
-
-                if (Directory.Exists(dotnetWindowsSdkToolsFolder))
-                {
-                    // get sub directories, e.g.
-                    // @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8.1 Tools",
-                    // @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools",
-                    foreach (var folder in Directory.EnumerateDirectories(dotnetWindowsSdkToolsFolder))
-                    {
-                        var exe = Path.Combine(folder, "x64", "CorFlags.exe");
-                        if (File.Exists(exe))
-                        {
-                            corFlagsExe = exe;
-                            break;
-                        }
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(corFlagsExe))
-                {
-                    agent.Output?.WriteLine($"CorFlags.exe found at {corFlagsExe}");
-                    var setBit = EnvironmentTools.IsTestTarget64BitProcess()
-                                   ? "/32BITREQ-"
-                                   : "/32BITREQ+";
-
-                    agent.Output?.WriteLine($"Updating {Path.GetFileName(executable)} using {setBit}");
-                    var opts = new ProcessStartInfo(corFlagsExe, $"\"{executable}\" {setBit}")
-                    {
-                        CreateNoWindow = true,
-                        UseShellExecute = false
-                    };
-
-                    var executedSuccessfully = Process.Start(opts).WaitForExit(20_000);
-
-                    if (!executedSuccessfully)
-                    {
-                        throw new Exception($"Error setting CorFlags.exe {Path.GetFileName(executable)} {setBit}");
-                    }
-                }
-                else
-                {
-                    throw new Exception("Could not find CorFlags.exe so unable to set as 32bit");
-                }
+                SetCorFlags(executable, agent.Output, !EnvironmentTools.IsTestTarget64BitProcess());
             }
 
             var startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
@@ -112,6 +69,55 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return Process.Start(startInfo);
+        }
+
+        private static void SetCorFlags(string executable, ITestOutputHelper output, bool require32Bit)
+        {
+            string corFlagsExe = null;
+            var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            var dotnetWindowsSdkToolsFolder = Path.Combine(programFiles, "Microsoft SDKs", "Windows", "v10.0A", "bin");
+
+            if (Directory.Exists(dotnetWindowsSdkToolsFolder))
+            {
+                // get sub directories, e.g.
+                // @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8.1 Tools",
+                // @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools",
+                foreach (var folder in Directory.EnumerateDirectories(dotnetWindowsSdkToolsFolder))
+                {
+                    var exe = Path.Combine(folder, "x64", "CorFlags.exe");
+                    if (File.Exists(exe))
+                    {
+                        corFlagsExe = exe;
+                        break;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(corFlagsExe))
+            {
+                output?.WriteLine($"CorFlags.exe found at {corFlagsExe}");
+                var setBit = require32Bit
+                                 ? "/32BITREQ+"
+                                 : "/32BITREQ-";
+
+                output?.WriteLine($"Updating {Path.GetFileName(executable)} using {setBit}");
+                var opts = new ProcessStartInfo(corFlagsExe, $"\"{executable}\" {setBit}")
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+
+                var executedSuccessfully = Process.Start(opts).WaitForExit(20_000);
+
+                if (!executedSuccessfully)
+                {
+                    throw new Exception($"Error setting CorFlags.exe {Path.GetFileName(executable)} {setBit}");
+                }
+            }
+            else
+            {
+                throw new Exception("Could not find CorFlags.exe so unable to set as 32bit");
+            }
         }
     }
 }
