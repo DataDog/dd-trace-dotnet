@@ -83,6 +83,9 @@ message(STATUS "Libunwind library " ${LIBUNWIND_VERSION})
 find_package(Libdatadog REQUIRED)
 message(STATUS "Libdatadog library " ${LIBDATADOG_VERSION})
 
+find_package(GoogleTest REQUIRED)
+message(STATUS "GoogleTest library")
+
 add_subdirectory(tracer)
 
 # profiler cannot be built on MacOS (yet)

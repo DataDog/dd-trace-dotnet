@@ -10,6 +10,7 @@ using System.Linq;
 using System.Web;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast;
 
 namespace Datadog.Trace.AppSec
@@ -52,7 +53,12 @@ namespace Datadog.Trace.AppSec
                 var securityTransport = new Coordinator.SecurityCoordinator(security, context, scope.Span);
                 if (!securityTransport.IsBlocked)
                 {
-                    securityTransport.CheckAndBlock(new Dictionary<string, object> { { AddressesConstants.RequestBody, BodyExtractor.Extract(bodyDic) }, { AddressesConstants.RequestPathParams, pathParamsDic } });
+                    var inputData = new Dictionary<string, object>
+                    {
+                        { AddressesConstants.RequestBody, ObjectExtractor.Extract(bodyDic) },
+                        { AddressesConstants.RequestPathParams, ObjectExtractor.Extract(pathParamsDic) }
+                    };
+                    securityTransport.CheckAndBlock(inputData);
                 }
             }
 

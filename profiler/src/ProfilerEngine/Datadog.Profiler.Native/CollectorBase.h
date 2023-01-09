@@ -95,33 +95,6 @@ public:
         return TransformRawSamples(FetchRawSamples());
     }
 
-protected:
-    uint64_t GetCurrentTimestamp()
-    {
-        return OpSysTools::GetHighPrecisionTimestamp();
-    }
-
-private:
-    std::list<TRawSample> FetchRawSamples()
-    {
-        std::lock_guard<std::mutex> lock(_rawSamplesLock);
-
-        std::list<TRawSample> input = std::move(_collectedSamples); // _collectedSamples is empty now
-        return input;
-    }
-
-    std::list<std::shared_ptr<Sample>> TransformRawSamples(std::list<TRawSample>&& input)
-    {
-        std::list<std::shared_ptr<Sample>> samples;
-
-        for (auto const& rawSample : input)
-        {
-            samples.push_back(TransformRawSample(rawSample));
-        }
-
-        return samples;
-    }
-
     std::shared_ptr<Sample> TransformRawSample(const TRawSample& rawSample)
     {
         auto runtimeId = _pRuntimeIdStore->GetId(rawSample.AppDomainId);
@@ -154,6 +127,34 @@ private:
         return sample;
     }
 
+protected:
+    uint64_t GetCurrentTimestamp()
+    {
+        return OpSysTools::GetHighPrecisionTimestamp();
+    }
+
+private:
+    std::list<TRawSample> FetchRawSamples()
+    {
+        std::lock_guard<std::mutex> lock(_rawSamplesLock);
+
+        std::list<TRawSample> input = std::move(_collectedSamples); // _collectedSamples is empty now
+        return input;
+    }
+
+    std::list<std::shared_ptr<Sample>> TransformRawSamples(std::list<TRawSample>&& input)
+    {
+        std::list<std::shared_ptr<Sample>> samples;
+
+        for (auto const& rawSample : input)
+        {
+            samples.push_back(TransformRawSample(rawSample));
+        }
+
+        return samples;
+    }
+
+private:
     void SetAppDomainDetails(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
     {
         ProcessID pid;
@@ -171,7 +172,7 @@ private:
         if (!_pAppDomainStore->GetInfo(rawSample.AppDomainId, pid, appDomainName))
         {
             sample->SetAppDomainName("");
-            sample->SetPid("0");
+            sample->SetPid(std::to_string(OpSysTools::GetProcId()));
 
             return;
         }

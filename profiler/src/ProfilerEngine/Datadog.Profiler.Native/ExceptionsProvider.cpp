@@ -25,7 +25,8 @@ ExceptionsProvider::ExceptionsProvider(
     IConfiguration* pConfiguration,
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore)
+    IRuntimeIdStore* pRuntimeIdStore,
+    MetricsRegistry& metricsRegistry)
     :
     CollectorBase<RawExceptionSample>("ExceptionsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo(pCorProfilerInfo),
@@ -39,6 +40,8 @@ ExceptionsProvider::ExceptionsProvider(
     _loggedMscorlibError(false),
     _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval())
 {
+    _exceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_exceptions");
+    _sampledExceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_exceptions");
 }
 
 bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
@@ -100,6 +103,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         return false;
     }
 
+    _exceptionsCountMetric->Incr();
     if (!_sampler.Sample(name))
     {
         return true;
@@ -157,6 +161,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     rawSample.ExceptionMessage = std::move(message);
     rawSample.ExceptionType = std::move(name);
     Add(std::move(rawSample));
+    _sampledExceptionsCountMetric->Incr();
 
     return true;
 }

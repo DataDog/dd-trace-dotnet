@@ -38,8 +38,8 @@ namespace datadog::shared::nativeloader
         ~CorProfiler();
 
         HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
-        ULONG STDMETHODCALLTYPE AddRef(void) override;
-        ULONG STDMETHODCALLTYPE Release(void) override;
+        ULONG STDMETHODCALLTYPE AddRef() override;
+        ULONG STDMETHODCALLTYPE Release() override;
 
         HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
         HRESULT STDMETHODCALLTYPE Shutdown() override;

@@ -26,7 +26,7 @@ namespace Samples.StackExchangeRedis
 
         private static string Host()
         {
-            return Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
+            return Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6379,localhost:6380";
         }
 
         private static void RunStackExchange(string prefix)
@@ -44,6 +44,7 @@ namespace Samples.StackExchangeRedis
                 RunCommands(new TupleList<string, Func<object>>
                 {
                     { "PING", () => db.PingAsync().Result },
+                    { "PING_SLAVE", () => db.PingAsync(CommandFlags.DemandSlave).Result },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR") },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR", 1.25) },
                     { "GET", () => db.StringGet($"{prefix}INCR") },
@@ -79,7 +80,7 @@ namespace Samples.StackExchangeRedis
 
                 try
                 {
-                    redis.GetServer(Host()).FlushDatabase(1);
+                    redis.GetServer(Host().Split(',').First()).FlushDatabase(1);
                 }
                 catch
                 {

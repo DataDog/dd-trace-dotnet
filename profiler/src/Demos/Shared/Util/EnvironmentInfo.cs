@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -79,6 +80,7 @@ namespace Datadog.Demos.Util
             str.AppendLine($"    Runtime version:         {Environment.Version}");
             str.AppendLine($"    OS version:              {Environment.OSVersion}");
             str.AppendLine($"    Common App Data folder:  {Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)}");
+            str.AppendLine($"    GC Mode:                 {(GCSettings.IsServerGC ? "Server" : "Workstation")} ({GCSettings.LatencyMode})");
             str.AppendLine();
 
             str.AppendLine("    Variables:");

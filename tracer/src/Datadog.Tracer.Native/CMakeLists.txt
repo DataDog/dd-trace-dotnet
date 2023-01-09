@@ -107,8 +107,6 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 # Compiler options
 # ******************************************************
 
-add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-
 # Sets compiler options
 add_compile_options(-std=c++17 -fPIC -fms-extensions -fvisibility=hidden)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
@@ -177,6 +175,7 @@ add_library("Datadog.Tracer.Native.static" STATIC
 )
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
+target_compile_definitions("Datadog.Tracer.Native.static" PUBLIC "-D_GLIBCXX_USE_CXX11_ABI=0")
 
 # Define linker libraries
 if (ISMACOS)

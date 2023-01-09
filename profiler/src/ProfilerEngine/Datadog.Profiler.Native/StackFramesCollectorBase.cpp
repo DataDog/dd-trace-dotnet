@@ -39,7 +39,7 @@ std::pair<uintptr_t*, std::uint16_t> StackFramesCollectorBase::Data()
     return {_pStackSnapshotResult->Data(), StackSnapshotResultBuffer::MaxSnapshotStackDepth_Limit};
 }
 
-void StackFramesCollectorBase::RequestAbortCurrentCollection(void)
+void StackFramesCollectorBase::RequestAbortCurrentCollection()
 {
     std::lock_guard<std::mutex> lock(_collectionAbortNotificationLock);
 
@@ -51,7 +51,7 @@ void StackFramesCollectorBase::RequestAbortCurrentCollection(void)
 // =========== Default implementations of Protected Virtual business logic funcitons: ===========
 //
 
-void StackFramesCollectorBase::PrepareForNextCollectionImplementation(void)
+void StackFramesCollectorBase::PrepareForNextCollectionImplementation()
 {
     // The actual business logic provided by a subclass goes into the XxxImplementation(..) methods.
     // This is a fallback implementation, so that the implementing sub-class does not need to overwrite this method if it is a no-op.
@@ -131,7 +131,7 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::GetStackSnapshotResult()
 // They perform the work required for the shared base implementation (this class) and then invoke the respective XxxImplementaiton(..) method.
 // This is less error-prone than simply making these methods virtual and relying on the sub-classes to remember calling the base class method.
 
-void StackFramesCollectorBase::PrepareForNextCollection(void)
+void StackFramesCollectorBase::PrepareForNextCollection()
 {
     // We cannot allocate memory once a thread is suspended.
     // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.

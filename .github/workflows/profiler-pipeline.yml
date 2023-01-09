@@ -152,9 +152,14 @@ jobs:
       matrix:
         framework:
           - net60
+          - net70
         scenario:
           - Allocations
           - Contention
+          - LiveHeap
+        exclude:
+          - framework: net60
+            scenario: LiveHeap
     services:
       dd-agent:
         image: 'datadog/agent:latest'
@@ -201,7 +206,7 @@ jobs:
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
-      - name: Execute PiComputation benchmark
+      - name: Execute CLR events benchmark
         run: |
           cd profiler/build
           ./run.sh  ${{ matrix.scenario }} ${{ matrix.framework }}
@@ -255,7 +260,11 @@ jobs:
           tests_output_dir="$(realpath .)/test_output"
           echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
           echo "DD_PROFILING_LOG_DIR=$tests_output_dir/logs" >> $GITHUB_ENV
-          echo "DD_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_INTERNAL_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_PROFILING_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_EXCEPTION_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_ALLOCATION_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_CONTENTION_ENABLED=1" >> $GITHUB_ENV
           echo "DD_TRACE_DEBUG=1" >> $GITHUB_ENV
 
       - name: Run Computer01 for 2min
@@ -315,7 +324,11 @@ jobs:
           tests_output_dir="$(realpath .)/test_output"
           echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
           echo "DD_PROFILING_LOG_DIR=$tests_output_dir/logs" >> $GITHUB_ENV
-          echo "DD_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_INTERNAL_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_PROFILING_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_EXCEPTION_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_ALLOCATION_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_CONTENTION_ENABLED=1" >> $GITHUB_ENV
           echo "DD_TRACE_DEBUG=1" >> $GITHUB_ENV
 
       - name: Run Computer01 for 2min
@@ -576,9 +589,14 @@ jobs:
       matrix:
         framework:
           - net60
+          - net70
         scenario:
           - Allocations
           - Contention
+          - LiveHeap
+        exclude:
+          - framework: net60
+            scenario: LiveHeap
     steps:
 
       - uses: actions/setup-dotnet@v2
@@ -750,8 +768,12 @@ jobs:
           echo "DD_TESTING_OUPUT_DIR=$tests_output" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_TRACE_DEBUG=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_PROFILING_LOG_DIR=$(Join-Path -Path $tests_output -ChildPath logs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "DD_PROFILING_OUTPUT_DIR=$(Join-Path -Path $tests_output -ChildPath pprofs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_INTERNAL_PROFILING_OUTPUT_DIR=$(Join-Path -Path $tests_output -ChildPath pprofs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_TRACE_ENABLED=0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_PROFILING_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_PROFILING_EXCEPTION_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_PROFILING_ALLOCATION_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_PROFILING_CONTENTION_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_ENABLE_PROFILING=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_PROFILER_PATH=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/win-${{ matrix.platform }}/Datadog.Trace.ClrProfiler.Native.dll)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append

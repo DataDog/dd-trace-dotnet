@@ -287,6 +287,34 @@
     <ClInclude Include="GCBaseRawSample.h">
       <Filter>GarbageCollections</Filter>
     </ClInclude>
+    <ClInclude Include="IBatchedSamplesProvider.h" />
+    <ClInclude Include="ISampledAllocationsListener.h" />
+    <ClInclude Include="LiveObjectsProvider.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="LiveObjectInfo.h">
+      <Filter>Allocations</Filter>
+    <ClInclude Include="MetricsRegistry.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="MetricBase.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="MeanMaxMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="ProxyMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="CounterMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="SumMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="SumMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -420,6 +448,32 @@
     </ClCompile>
     <ClCompile Include="GarbageCollectionProvider.cpp">
       <Filter>GarbageCollections</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveObjectInfo.cpp">
+      <Filter>Allocations</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveObjectsProvider.cpp">
+      <Filter>Allocations</Filter>
+    </ClCompile>
+    <ClCompile Include="RawGarbageCollectionSample.cpp">
+      <Filter>GarbageCollections</Filter>
+    <ClCompile Include="RawGarbageCollectionSample.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="MetricsRegistry.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="MeanMaxMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="ProxyMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="CounterMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="SumMetric.cpp">
+      <Filter>Metrics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
