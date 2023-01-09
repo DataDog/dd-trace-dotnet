@@ -63,9 +63,25 @@ services:
 
   stackexchangeredis_arm64:
     image: redis:4-alpine
+    hostname: stackexchangeredis_arm64
     command: redis-server --bind 0.0.0.0
     ports:
     - "6379"
+
+  stackexchangeredis_arm64-replica:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_arm64-replica
+    command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis_arm64 6379
+    ports:
+    - "127.0.0.1:6390:6379"
+
+  stackexchangeredis_arm64-single:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_arm64-single
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "127.0.0.1:6391:6379"
+
 
 # Dependencies
   aws_sqs:
@@ -93,9 +109,24 @@ services:
 
   stackexchangeredis:
     image: redis:4-alpine
+    hostname: stackexchangeredis
     command: redis-server --bind 0.0.0.0
     ports:
     - "127.0.0.1:6389:6379"
+
+  stackexchangeredis-replica:
+    image: redis:4-alpine
+    hostname: stackexchangeredis-replica
+    command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis 6379
+    ports:
+    - "127.0.0.1:6390:6379"
+
+  stackexchangeredis-single:
+    image: redis:4-alpine
+    hostname: stackexchangeredis-single
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "127.0.0.1:6391:6379"
 
   mongo:
     image: mongo:4.0.9
@@ -384,7 +415,8 @@ services:
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379,stackexchangeredis-replica:6379
+      - STACKEXCHANGE_REDIS_SINGLE_HOST=stackexchangeredis-single:6379
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
@@ -431,6 +463,8 @@ services:
       - aerospike
       - servicestackredis
       - stackexchangeredis
+      - stackexchangeredis-replica
+      - stackexchangeredis-single
       - elasticsearch7
       - elasticsearch6
       - elasticsearch5
@@ -598,6 +632,8 @@ services:
       - aerospike
       - servicestackredis
       - stackexchangeredis
+      - stackexchangeredis-replica
+      - stackexchangeredis-single
       - elasticsearch7
       - elasticsearch6
       - elasticsearch5
@@ -613,7 +649,7 @@ services:
       - couchbase
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210
 
   IntegrationTests.ARM64:
     build:
@@ -641,7 +677,8 @@ services:
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
       - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
-      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379
+      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379,stackexchangeredis_arm64-replica:6379
+      - STACKEXCHANGE_REDIS_SINGLE_HOST=stackexchangeredis_arm64-single:6379
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
@@ -679,6 +716,8 @@ services:
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
+      - stackexchangeredis_arm64-replica
+      - stackexchangeredis_arm64-single
       - elasticsearch7_arm64
       - sqledge_arm64
       - mongo_arm64
@@ -692,6 +731,8 @@ services:
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
+      - stackexchangeredis_arm64-replica
+      - stackexchangeredis_arm64-single
       - elasticsearch7_arm64
       - sqledge_arm64
       - mongo_arm64
@@ -701,7 +742,7 @@ services:
       - aws_sqs_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324
 
   IntegrationTests.ARM64.Debugger:
     build:

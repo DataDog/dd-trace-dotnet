@@ -3,15 +3,21 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions.Execution;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
     public class Couchbase3Tests : TracingIntegrationTest
     {
@@ -35,18 +41,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetCouchbase))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitTraces(string packageVersion)
+        public async Task SubmitTraces(string packageVersion)
         {
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(9, 500)
+                var spans = agent.WaitForSpans(10, 500)
                                  .Where(s => s.Type == "db")
                                  .ToList();
 
-                Assert.True(spans.Count >= 9, $"Expecting at least 9 spans, only received {spans.Count}");
                 ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Couchbase3-couchbase");
+
+                using var scope = new AssertionScope();
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                // this is a random id
+                settings.AddRegexScrubber(new Regex(@"couchbase.operation.key: {.*},"), "couchbase.operation.key: obfuscated,");
+
+                // theres' a fair amount less in 3.0.7 - fewer spans, different terminology etc
+
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName(nameof(Couchbase3Tests) + GetVersionSuffix(packageVersion));
 
                 var expected = new List<string>
                 {
@@ -63,6 +80,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateSpans(spans, (span) => span.Resource, expected);
                 telemetry.AssertIntegrationEnabled(IntegrationId.Couchbase);
             }
+        }
+
+        private static string GetVersionSuffix(string packageVersion)
+        {
+            var version = new Version(string.IsNullOrEmpty(packageVersion) ? "3.4.1" : packageVersion); // default version in csproj
+            if (version < new Version("3.2.0"))
+            {
+                return "_3_0";
+            }
+
+            if (version < new Version("3.3.0"))
+            {
+                return "_3_2";
+            }
+
+            if (version <= new Version("3.4.0"))
+            {
+                return "_3_4";
+            }
+
+            return string.Empty;
         }
     }
 }

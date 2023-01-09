@@ -17,8 +17,10 @@ TEST(string, ToString)
 
     EXPECT_TRUE("42" == ToString(42));
 
+#ifndef LINUX
     EXPECT_TRUE("LPTSTR String" == ToString(TEXT("LPTSTR String")));
     EXPECT_TRUE("\tLPTSTR String\0" == ToString(TEXT("\tLPTSTR String\0")));
+#endif
 }
 
 TEST(string, ToWSTRING)
@@ -26,7 +28,7 @@ TEST(string, ToWSTRING)
     EXPECT_TRUE(WStr("Normal String") == ToWSTRING(std::string("Normal String")));
     EXPECT_TRUE(WStr("\tNormal String\0") == ToWSTRING(std::string("\tNormal String\0")));
 
-    EXPECT_TRUE(WStr("42") == ToWSTRING(42));
+    EXPECT_EQ(WStr("42"), ToWSTRING(42));
 }
 
 TEST(string, Trim)

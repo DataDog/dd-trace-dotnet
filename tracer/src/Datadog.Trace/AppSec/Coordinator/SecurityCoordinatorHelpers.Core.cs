@@ -74,7 +74,7 @@ internal static partial class SecurityCoordinatorHelpers
         if (!transport.IsBlocked)
         {
             var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
-            var keysAndValues = BodyExtractor.Extract(body);
+            var keysAndValues = ObjectExtractor.Extract(body);
             var args = new Dictionary<string, object> { { AddressesConstants.RequestBody, keysAndValues } };
             using var result = securityCoordinator.RunWaf(args);
             securityCoordinator.CheckAndBlock(result);

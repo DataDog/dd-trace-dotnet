@@ -25,6 +25,11 @@ const std::string Sample::TimelineEventTypeLabel = "event";
 const std::string Sample::GarbageCollectionGenerationLabel = "gc generation";
 const std::string Sample::GarbageCollectionNumberLabel = "gc number";
 
+// life object related labels
+const std::string Sample::ObjectLifetimeLabel = "object lifetime";
+const std::string Sample::ObjectIdLabel = "object id";
+const std::string Sample::ObjectGenerationLabel = "object generation";
+
 
 // TODO: update the values vector size if more than 16 slots are needed
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created
@@ -42,6 +47,7 @@ Sample::Sample(std::string_view runtimeId) :
     _values(ValuesCount),
     _timestamp{0},
     _labels{},
+    _numericLabels{},
     _callstack{},
     _runtimeId{runtimeId}
 {
@@ -98,4 +104,9 @@ std::string_view Sample::GetRuntimeId() const
 const Labels& Sample::GetLabels() const
 {
     return _labels;
+}
+
+const NumericLabels& Sample::GetNumericLabels() const
+{
+    return _numericLabels;
 }

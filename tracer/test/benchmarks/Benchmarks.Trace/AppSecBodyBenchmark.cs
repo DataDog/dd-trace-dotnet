@@ -78,7 +78,7 @@ namespace Benchmarks.Trace
             httpContext.Features.Set<IContext>(null);
 #else
             var securityTransport = new SecurityCoordinator(security, httpContext, span);
-            using var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, BodyExtractor.Extract(body) } });
+            using var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
             var context = httpContext.Items["waf"] as IContext;
             context?.Dispose();
             httpContext.Items["waf"] = null;
@@ -89,10 +89,10 @@ namespace Benchmarks.Trace
         public void AllCycleMoreComplexBody() => ExecuteCycle(complexModel);
 
         [Benchmark]
-        public void BodyExtractorSimpleBody() => BodyExtractor.Extract(new { });
+        public void ObjectExtractorSimpleBody() => ObjectExtractor.Extract(new { });
 
         [Benchmark]
-        public void BodyExtractorMoreComplexBody() => BodyExtractor.Extract(complexModel);
+        public void ObjectExtractorMoreComplexBody() => ObjectExtractor.Extract(complexModel);
     }
 
     public class ComplexModel

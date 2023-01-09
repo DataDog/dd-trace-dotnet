@@ -103,6 +103,9 @@ namespace BuggyBits
 
                 case Scenario.ParallelLock:
                     return $"{rootUrl}/Products/ParallelLock";
+
+                case Scenario.MemoryLeak:
+                    return $"{rootUrl}/News";
             }
         }
 
