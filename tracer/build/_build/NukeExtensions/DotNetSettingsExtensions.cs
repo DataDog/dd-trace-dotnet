@@ -166,7 +166,7 @@ internal static partial class DotNetSettingsExtensions
     public static T SetTestTargetPlatform<T>(this T settings, MSBuildTargetPlatform platform)
         where T : ToolSettings
     {
-        // To avoid annoying differences in the test code, covert the MSBuildTargetPlatform string values to 
+        // To avoid annoying differences in the test code, convert the MSBuildTargetPlatform string values to 
         // the same values returned by Environment.Platform(), and skip unsupported values (e.g. MSIL, arm)
         var target = platform.ToString() switch
         {
