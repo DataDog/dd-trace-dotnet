@@ -6,11 +6,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-  
-  <PropertyGroup>
     <LangVersion>latest</LangVersion>
     
     <DebugType>portable</DebugType>
