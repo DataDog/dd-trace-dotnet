@@ -56,11 +56,10 @@ internal class AsyncManualResetEvent
 
         return waitTask.IsCompleted ? InternalCompletedWaitAsync(waitTask) : InternalWaitAsync(waitTask, millisecondTimeout);
 
-        static Task<bool> InternalCompletedWaitAsync(Task task)
+        static async Task<bool> InternalCompletedWaitAsync(Task task)
         {
-            // The task has already completed, we call `RunSynchronously` to throw any possible exception from the task.
-            task.RunSynchronously();
-            return Task.FromResult(true);
+            await task.ConfigureAwait(false);
+            return true;
         }
 
         static async Task<bool> InternalWaitAsync(Task task, int timeout)
