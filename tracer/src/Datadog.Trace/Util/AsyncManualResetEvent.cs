@@ -50,13 +50,20 @@ internal class AsyncManualResetEvent
         }
     }
 
-    public Task WaitAsync(int millisecondTimeout)
+    public Task<bool> WaitAsync(int millisecondTimeout)
     {
         var waitTask = WaitAsync();
 
-        return waitTask.IsCompleted ? waitTask : InternalWaitAsync(waitTask, millisecondTimeout);
+        return waitTask.IsCompleted ? InternalCompletedWaitAsync(waitTask) : InternalWaitAsync(waitTask, millisecondTimeout);
 
-        static async Task InternalWaitAsync(Task task, int timeout)
+        static Task<bool> InternalCompletedWaitAsync(Task task)
+        {
+            // The task has already completed, we call `RunSynchronously` to throw any possible exception from the task.
+            task.RunSynchronously();
+            return Task.FromResult(true);
+        }
+
+        static async Task<bool> InternalWaitAsync(Task task, int timeout)
         {
             using var delayCancellation = new CancellationTokenSource();
             var completedTask = await Task.WhenAny(task, Task.Delay(timeout, delayCancellation.Token)).ConfigureAwait(false);
@@ -64,7 +71,10 @@ internal class AsyncManualResetEvent
             {
                 delayCancellation.Cancel();
                 await task.ConfigureAwait(false);
+                return true;
             }
+
+            return false;
         }
     }
 
@@ -86,6 +96,9 @@ internal class AsyncManualResetEvent
             return Task.FromCanceled(cancellationToken);
         }
 
+#if NET6_0_OR_GREATER
+        return waitTask.WaitAsync(cancellationToken);
+#else
         return DoWaitAsync(waitTask, cancellationToken);
 
         static async Task DoWaitAsync(Task task, CancellationToken cancellationToken)
@@ -97,7 +110,15 @@ internal class AsyncManualResetEvent
             using var reg = cancellationToken.Register(state => ((TaskCompletionSource<object?>)state!).TrySetResult(true), tcs, false);
 #endif
             await (await Task.WhenAny(task, tcs.Task).ConfigureAwait(false)).ConfigureAwait(false);
+
+            // To avoid a possible race condition we only throw the cancellation token exception if the task completed
+            // is the one of the TaskCompletionSource.
+            if (tcs.Task.IsCompleted)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
         }
+#endif
     }
 
     public void Set()

@@ -66,9 +66,16 @@ internal static class AsyncUtil
         Task TaskWithTimeoutAsync()
         {
             var runTask = task();
-            return runTask.IsCompleted ? runTask : InternalTaskWithTimeoutAsync(runTask, millisecondsTimeout);
+            return runTask.IsCompleted
+                       ? runTask
+#if NET6_0_OR_GREATER
+                       : runTask.WaitAsync(TimeSpan.FromMilliseconds(millisecondsTimeout));
+#else
+                       : InternalTaskWithTimeoutAsync(runTask, millisecondsTimeout);
+#endif
         }
 
+#if !NET6_0_OR_GREATER
         static async Task InternalTaskWithTimeoutAsync(Task runTask, int timeout)
         {
             using var cts = new CancellationTokenSource();
@@ -77,8 +84,12 @@ internal static class AsyncUtil
             {
                 cts.Cancel();
                 await runTask.ConfigureAwait(false);
+                return;
             }
+
+            throw new TimeoutException();
         }
+#endif
     }
 
     /// <summary>
@@ -128,9 +139,16 @@ internal static class AsyncUtil
         Task<TResult> TaskWithTimeoutAsync()
         {
             var runTask = task();
-            return runTask.IsCompleted ? runTask : InternalTaskWithTimeoutAsync(runTask, millisecondsTimeout);
+            return runTask.IsCompleted
+                       ? runTask
+#if NET6_0_OR_GREATER
+                       : runTask.WaitAsync(TimeSpan.FromMilliseconds(millisecondsTimeout));
+#else
+                       : InternalTaskWithTimeoutAsync(runTask, millisecondsTimeout);
+#endif
         }
 
+#if !NET6_0_OR_GREATER
         static async Task<TResult> InternalTaskWithTimeoutAsync(Task<TResult> runTask, int timeout)
         {
             using var cts = new CancellationTokenSource();
@@ -141,7 +159,8 @@ internal static class AsyncUtil
                 return await runTask.ConfigureAwait(false);
             }
 
-            return default;
+            throw new TimeoutException();
         }
+#endif
     }
 }
