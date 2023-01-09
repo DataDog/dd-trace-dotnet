@@ -56,10 +56,10 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             catch (Exception ex)
             {
-                return Content(ToFormattedString(ex));
+                return StatusCode(500, ToFormattedString(ex));
             }
 
-            return Content($"No query or username was provided");
+            return BadRequest($"No query or username was provided");
         }
 
         public static string ToFormattedString(Exception ex)
