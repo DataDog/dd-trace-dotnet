@@ -47,6 +47,7 @@ Sample::Sample(std::string_view runtimeId) :
     _values(ValuesCount),
     _timestamp{0},
     _labels{},
+    _numericLabels{},
     _callstack{},
     _runtimeId{runtimeId}
 {
@@ -103,4 +104,9 @@ std::string_view Sample::GetRuntimeId() const
 const Labels& Sample::GetLabels() const
 {
     return _labels;
+}
+
+const NumericLabels& Sample::GetNumericLabels() const
+{
+    return _numericLabels;
 }

@@ -18,7 +18,7 @@ public:
 
         sample->AddValue(GetValue(), durationIndex);
 
-        sample->AddLabel(Label(Sample::GarbageCollectionNumberLabel, std::to_string(Number)));
+        sample->AddNumericLabel(NumericLabel(Sample::GarbageCollectionNumberLabel, Number));
         AddGenerationLabel(sample, Generation);
 
         BuildCallStack(sample, Generation);
@@ -46,6 +46,8 @@ public:
 private:
     inline static void AddGenerationLabel(std::shared_ptr<Sample>& sample, uint32_t generation)
     {
+        // we currently don't store the generation as a numeric label because there is no way to
+        // make the difference between a 0 value and a 0 string index (i.e. empty string)
         switch (generation)
         {
             case 0:
