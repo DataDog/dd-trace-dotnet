@@ -4,9 +4,12 @@
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
   
-  <PropertyGroup>
+  <PropertyGroup Condition ="$(TargetFramework.StartsWith('net4'))">
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.runsettings</RunSettingsFilePath>
-    <MyItem>'&gt;'</MyItem>
+  </PropertyGroup>
+
+  <PropertyGroup Condition ="$(TargetFramework.StartsWith('net4'))">
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.Net4.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>

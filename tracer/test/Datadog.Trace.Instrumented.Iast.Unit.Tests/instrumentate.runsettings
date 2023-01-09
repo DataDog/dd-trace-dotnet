@@ -2,11 +2,6 @@
 <RunSettings>
   <RunConfiguration>
     <EnvironmentVariables>
-      <PATH>c:\%cd%</PATH>
-      <COR_ENABLE_PROFILING>1</COR_ENABLE_PROFILING>
-      <COR_PROFILER>{846F5F1C-F9AE-4B07-969E-05C26BC060D8}</COR_PROFILER>
-      <COR_PROFILER_PATH_64>shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll</COR_PROFILER_PATH_64>
-      <COR_PROFILER_PATH_32>shared\\bin\\monitoring-home\\win-x32\\Datadog.Trace.ClrProfiler.Native.dll</COR_PROFILER_PATH_32>
       <CORECLR_ENABLE_PROFILING>1</CORECLR_ENABLE_PROFILING>
       <CORECLR_PROFILER>{846F5F1C-F9AE-4B07-969E-05C26BC060D8}</CORECLR_PROFILER>
       <CORECLR_PROFILER_PATH_64>..\\..\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll</CORECLR_PROFILER_PATH_64>
