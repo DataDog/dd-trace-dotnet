@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler;
 // Based on: https://github.com/microsoft/vstest/blob/main/src/Microsoft.TestPlatform.Execution.Shared/DebuggerBreakpoint.cs#L25
 internal static class TracerDebugger
 {
+    [Conditional("DEBUG")]
     internal static void WaitForDebugger()
     {
         // We check for the managed debugger first then for the native debugger.
@@ -29,7 +30,7 @@ internal static class TracerDebugger
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    internal static bool WaitForManagedDebugger()
+    private static bool WaitForManagedDebugger()
     {
         if (SD.Debugger.IsAttached)
         {
@@ -56,7 +57,7 @@ internal static class TracerDebugger
         return false;
     }
 
-    internal static bool WaitForNativeDebugger()
+    private static bool WaitForNativeDebugger()
     {
         // Check if native debugging is enabled and OS is windows.
         var nativeDebugEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.WaitForNativeDebuggerAttach);
@@ -95,8 +96,8 @@ internal static class TracerDebugger
     // Native APIs for enabling native debugging.
     [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    internal static extern bool IsDebuggerPresent();
+    private static extern bool IsDebuggerPresent();
 
     [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
-    internal static extern void DebugBreak();
+    private static extern void DebugBreak();
 }
