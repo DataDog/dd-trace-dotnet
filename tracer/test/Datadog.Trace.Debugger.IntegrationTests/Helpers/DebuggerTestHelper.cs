@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -12,36 +13,34 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Samples.Probes;
 using Samples.Probes.TestRuns;
-using Xunit;
 
 namespace Datadog.Trace.Debugger.IntegrationTests.Helpers;
 
 internal static class DebuggerTestHelper
 {
-    public static IEnumerable<object[]> AllProbeTestTypes()
+    public static IEnumerable<object[]> AllTestDescriptions()
     {
-        return typeof(IRun)
-              .Assembly.GetTypes()
-              .Where(t => t.GetInterface(nameof(IRun)) != null ||
-                          t.GetInterface(nameof(IAsyncRun)) != null)
-              .Select(t => new object[] { t });
+        var assembly = typeof(IRun).Assembly;
+        var isOptimized = IsOptimized(assembly);
+        var testTypes = assembly.GetTypes()
+                                .Where(
+                                     t => t.GetInterface(nameof(IRun)) != null ||
+                                          t.GetInterface(nameof(IAsyncRun)) != null);
+
+        foreach (var testType in testTypes)
+        {
+            yield return new object[] { new ProbeTestDescription() { IsOptimized = isOptimized, TestType = testType } };
+        }
     }
 
-    public static Type FirstSupportedProbeTestType(string framework)
+    public static ProbeTestDescription SpecificTestDescription<T>()
     {
-        var type = typeof(IRun)
-                  .Assembly.GetTypes()
-                  .Where(t => t.GetInterface(nameof(IRun)) != null)
-                  .FirstOrDefault(t => GetAllProbes(t, framework, unlisted: false, new DeterministicGuidGenerator()).Any());
+        var type = typeof(T);
+        var assembly = type.Assembly;
+        var isOptimized = IsOptimized(assembly);
 
-        if (type == null)
-        {
-            throw new SkipException("No supported test types found.");
-        }
-
-        return type;
+        return new ProbeTestDescription() { IsOptimized = isOptimized, TestType = type };
     }
 
     internal static DebuggerSampleProcessHelper StartSample(TestHelper helper, MockTracerAgent agent, string testName)
@@ -92,6 +91,13 @@ internal static class DebuggerTestHelper
                                      .ToArray();
 
         return snapshotLineProbes.Concat(snapshotMethodProbes).ToArray();
+    }
+
+    private static bool IsOptimized(Assembly assembly)
+    {
+        var debuggableAttribute = (DebuggableAttribute)Attribute.GetCustomAttribute(assembly, typeof(DebuggableAttribute));
+        var isOptimized = !debuggableAttribute.IsJITOptimizerDisabled;
+        return isOptimized;
     }
 
     private static SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)

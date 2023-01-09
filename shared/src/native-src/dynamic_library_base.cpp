@@ -93,6 +93,12 @@ bool DynamicLibraryBase::Load()
 bool DynamicLibraryBase::Unload()
 {
     _logger->Debug("Unload");
+    if (_instance == nullptr)
+    {
+        _logger->Warn("Unload: Unable to unload dynamic library '", _filePath,
+                      ". Reason: An issue occured while loading it. See previous message.");
+        return false;
+    }
 
 #if _WIN32
     auto result = FreeLibrary((HMODULE) _instance);

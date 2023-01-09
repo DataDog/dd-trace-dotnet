@@ -12,7 +12,9 @@ public static class CustomTracerProviderBuilderExtensions
         {
             return builder.AddOtlpExporter(opt =>
             {
+#if OTEL_1_2
                 opt.Protocol = OtlpExportProtocol.HttpProtobuf;
+#endif
             });
         }
 

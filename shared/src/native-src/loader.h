@@ -61,7 +61,7 @@ namespace shared
     struct LoaderResourceMonikerIDs
     {
         public:
-            LoaderResourceMonikerIDs(void)
+            LoaderResourceMonikerIDs()
                 : Net45_Datadog_AutoInstrumentation_ManagedLoader_dll(0),
                   NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll(0),
                   Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb(0),
@@ -245,7 +245,7 @@ namespace shared
                     const std::vector<WSTRING>& iisAssemblyStringNonDefaultAppDomainVector);
 
         static Loader* GetSingletonInstance();
-        static void DeleteSingletonInstance(void);
+        static void DeleteSingletonInstance();
 
         HRESULT InjectLoaderToModuleInitializer(const ModuleID moduleId);
         HRESULT HandleJitCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction);

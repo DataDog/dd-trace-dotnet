@@ -27,7 +27,8 @@ ContentionProvider::ContentionProvider(
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration)
+    IConfiguration* pConfiguration,
+    MetricsRegistry& metricsRegistry)
     :
     CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo{pCorProfilerInfo},
@@ -36,10 +37,16 @@ ContentionProvider::ContentionProvider(
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
     _sampleLimit{pConfiguration->ContentionSampleLimit()}
 {
+    _lockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_lock_contentions");
+    _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
+    _sampledLockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_lock_contentions");
+    _sampledLockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_sampled_lock_contentions_duration");
 }
 
 void ContentionProvider::OnContention(double contentionDuration)
 {
+    _lockContentionsCountMetric->Incr();
+    _lockContentionsDurationMetric->Add(contentionDuration);
     // TODO: when upscaling will be done, implement per duration groups (100ms, 200ms, 500ms, +)
     //       to ensure a  better "statistical" distribution
     if (!_sampler.Sample())
@@ -72,6 +79,7 @@ void ContentionProvider::OnContention(double contentionDuration)
     result->CopyInstructionPointers(rawSample.Stack);
     rawSample.ThreadInfo = threadInfo;
     rawSample.ContentionDuration = contentionDuration;
-
     Add(std::move(rawSample));
+    _sampledLockContentionsCountMetric->Incr();
+    _sampledLockContentionsDurationMetric->Add(contentionDuration);
 }

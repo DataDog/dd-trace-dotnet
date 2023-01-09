@@ -7,6 +7,9 @@
 #include "IContentionListener.h"
 #include "RawContentionSample.h"
 #include "GenericSampler.h"
+#include "MetricsRegistry.h"
+#include "CounterMetric.h"
+#include "MeanMaxMetric.h"
 
 class IManagedThreadList;
 class IFrameStore;
@@ -29,7 +32,8 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration);
+        IConfiguration* pConfiguration,
+        MetricsRegistry& metricsRegistry);
 
     void OnContention(double contentionDuration) override;
 
@@ -39,4 +43,8 @@ private:
     GenericSampler _sampler;
     int32_t _contentionDurationThreshold;
     int32_t _sampleLimit;
+    std::shared_ptr<CounterMetric> _lockContentionsCountMetric;
+    std::shared_ptr<MeanMaxMetric> _lockContentionsDurationMetric;
+    std::shared_ptr<CounterMetric> _sampledLockContentionsCountMetric;
+    std::shared_ptr<MeanMaxMetric> _sampledLockContentionsDurationMetric;
 };

@@ -44,7 +44,6 @@
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
-
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
@@ -113,8 +112,14 @@ bool CorProfilerCallback::InitializeServices()
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
 
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
+    _managedThreadsMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads", [this]() {
+        return _pManagedThreadList->Count();
+    });
 
     _pCodeHotspotsThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
+    _managedThreadsWithContextMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads_with_context", [this]() {
+        return _pCodeHotspotsThreadList->Count();
+    });
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
@@ -153,14 +158,62 @@ bool CorProfilerCallback::InitializeServices()
             _pConfiguration.get(),
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
-            pRuntimeIdStore);
+            pRuntimeIdStore,
+            _metricsRegistry);
         valuesOffset += static_cast<uint32_t>(valueTypes.size());
     }
 
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
     if (_pCorProfilerInfoEvents != nullptr)
     {
-        if (_pConfiguration->IsAllocationProfilingEnabled())
+        // live objects profiling requires allocations profiling
+        if (_pConfiguration->IsHeapProfilingEnabled())
+        {
+            if (_pCorProfilerInfoLiveHeap != nullptr)
+            {
+                auto valueTypes = LiveObjectsProvider::SampleTypeDefinitions;
+                sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+                _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
+                    valuesOffset,
+                    _pCorProfilerInfoLiveHeap,
+                    _pManagedThreadList,
+                    _pFrameStore.get(),
+                    _pThreadsCpuManager,
+                    _pAppDomainStore.get(),
+                    pRuntimeIdStore,
+                    _pConfiguration.get(),
+                    _metricsRegistry);
+                valuesOffset += static_cast<uint32_t>(valueTypes.size());
+
+                valueTypes = AllocationsProvider::SampleTypeDefinitions;
+                sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+                _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                    valuesOffset,
+                    _pCorProfilerInfo,
+                    _pManagedThreadList,
+                    _pFrameStore.get(),
+                    _pThreadsCpuManager,
+                    _pAppDomainStore.get(),
+                    pRuntimeIdStore,
+                    _pConfiguration.get(),
+                    _pLiveObjectsProvider,
+                    _metricsRegistry
+                    );
+                valuesOffset += static_cast<uint32_t>(valueTypes.size());
+
+                if (!_pConfiguration->IsAllocationProfilingEnabled())
+                {
+                    Log::Warn("Allocations profiling is enabled due to activated live objects profiling.");
+                }
+            }
+            else
+            {
+                Log::Warn("Live Heap profiling requires .NET 7+ so it is disabled.");
+            }
+        }
+
+        // check for allocations profiling only (without heap profiling)
+        if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
         {
             auto valueTypes = AllocationsProvider::SampleTypeDefinitions;
             sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
@@ -172,7 +225,9 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get()
+                _pConfiguration.get(),
+                nullptr,  // no listener
+                _metricsRegistry
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
@@ -189,7 +244,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get()
+                _pConfiguration.get(),
+                _metricsRegistry
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
@@ -213,7 +269,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get()
+                _pConfiguration.get(),
+                _metricsRegistry
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
@@ -228,9 +285,18 @@ bool CorProfilerCallback::InitializeServices()
             _pCorProfilerInfoEvents,
             _pAllocationsProvider,
             _pContentionProvider,
-            _pStopTheWorldProvider,
-            _pGarbageCollectionProvider
+            _pStopTheWorldProvider
             );
+
+        if (_pGarbageCollectionProvider != nullptr)
+        {
+            _pClrEventsParser->Register(_pGarbageCollectionProvider);
+        }
+        if (_pLiveObjectsProvider != nullptr)
+        {
+            _pClrEventsParser->Register(_pLiveObjectsProvider);
+        }
+        // TODO: register any provider that needs to get notified when GCs start and end
     }
 
     // Avoid iterating twice on all providers in order to inject this value in each constructor
@@ -249,7 +315,8 @@ bool CorProfilerCallback::InitializeServices()
         _pManagedThreadList,
         _pCodeHotspotsThreadList,
         _pWallTimeProvider,
-        _pCpuTimeProvider);
+        _pCpuTimeProvider,
+        _metricsRegistry);
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
@@ -260,9 +327,14 @@ bool CorProfilerCallback::InitializeServices()
         _pConfiguration.get(),
         _pApplicationStore,
         _pRuntimeInfo.get(),
-        _pEnabledProfilers.get());
+        _pEnabledProfilers.get(),
+        _metricsRegistry);
 
-    _pSamplesCollector = RegisterService<SamplesCollector>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get());
+    _pSamplesCollector = RegisterService<SamplesCollector>(
+        _pConfiguration.get(),
+        _pThreadsCpuManager,
+        _pExporter.get(),
+        _metricsSender.get());
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
@@ -286,6 +358,13 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
             _pSamplesCollector->Register(_pAllocationsProvider);
+        }
+
+        // Live heap profiling required .NET 7+ and ICorProfilerInfo13 in _pCorProfilerInfoLiveHeap
+        // --> _pLiveObjectsProvider is null otherwise
+        if (_pConfiguration->IsHeapProfilingEnabled() && (_pLiveObjectsProvider != nullptr))
+        {
+            _pSamplesCollector->RegisterBatchedProvider(_pLiveObjectsProvider);
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -378,7 +457,7 @@ bool CorProfilerCallback::StopServices()
     return result;
 }
 
-void CorProfilerCallback::DisposeInternal(void)
+void CorProfilerCallback::DisposeInternal()
 {
     // This method is called from the destructor as well as from the Shutdown callback.
     // Most operations here are idempotent - calling them multiple time is benign.
@@ -469,13 +548,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::QueryInterface(REFIID riid, void*
     return E_NOINTERFACE;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerCallback::AddRef(void)
+ULONG STDMETHODCALLTYPE CorProfilerCallback::AddRef()
 {
     ULONG refCount = _refCount.fetch_add(1) + 1;
     return refCount;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerCallback::Release(void)
+ULONG STDMETHODCALLTYPE CorProfilerCallback::Release()
 {
     ULONG refCount = _refCount.fetch_sub(1) - 1;
 
@@ -487,7 +566,7 @@ ULONG STDMETHODCALLTYPE CorProfilerCallback::Release(void)
     return refCount;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerCallback::GetRefCount(void) const
+ULONG STDMETHODCALLTYPE CorProfilerCallback::GetRefCount() const
 {
     ULONG refCount = _refCount.load();
     return refCount;
@@ -497,11 +576,18 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
 {
     runtimeMajor = 0;
     runtimeMinor = 0;
-    IUnknown* tstVerProfilerInfo;  // ICorProfilerInfo13 will ship with .NET 7
+    IUnknown* tstVerProfilerInfo;
+    if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&tstVerProfilerInfo))
+    {
+        _isNet46OrGreater = true;
+        Log::Info("ICorProfilerInfo13 available. Profiling API compatibility: .NET Core 7.0 or later.");
+        tstVerProfilerInfo->Release();
+    }
+    else
     if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&tstVerProfilerInfo))
     {
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
+        Log::Info("ICorProfilerInfo12 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
@@ -509,7 +595,7 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
         runtimeMajor = 3;
         runtimeMinor = 1;
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.1 or later.");
+        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 3.1 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**)&tstVerProfilerInfo))
@@ -596,7 +682,7 @@ const char* CorProfilerCallback::SysInfoProcessorArchitectureToStr(WORD wProcArc
     }
 }
 
-void CorProfilerCallback::InspectProcessorInfo(void)
+void CorProfilerCallback::InspectProcessorInfo()
 {
 #ifdef _WINDOWS
     BOOL isWow64Process;
@@ -666,7 +752,7 @@ void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerI
     }
 }
 
-void CorProfilerCallback::ConfigureDebugLog(void)
+void CorProfilerCallback::ConfigureDebugLog()
 {
     // For now we want debug log to be ON by default. In future releases, this may require explicit opt-in.
     // For that, change 'IsLogDebugEnabledDefault' to be initialized to 'false' by default (@ToDo).
@@ -773,12 +859,26 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // If no such provider is enabled, no need to trigger it.
     // TODO: update the test when a new CLR events-based profiler is added (contention, GC, ...)
     bool AreEventBasedProfilersEnabled =
+        _pConfiguration->IsHeapProfilingEnabled() ||
         _pConfiguration->IsAllocationProfilingEnabled() ||
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled()
         ;
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
+        // Live heap profiling requires .NET 7+ and ICorProfilerInfo13
+        if (major >= 7)
+        {
+            HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo13), (void**)&_pCorProfilerInfoLiveHeap);
+            if (FAILED(hr))
+            {
+                Log::Error("Failed to get ICorProfilerInfo13: 0x", std::hex, hr, std::dec, ".");
+                _pCorProfilerInfoLiveHeap = nullptr;
+
+                // we continue: the live heap profiler will be disabled...
+            }
+        }
+
         HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
         if (FAILED(hr))
         {
@@ -800,7 +900,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         {
             if (AreEventBasedProfilersEnabled)
             {
-                Log::Warn("Event-based profilers (Allocation, Contention) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
+                Log::Warn("Event-based profilers (Allocation, LockContention) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
             }
         }
     }
@@ -843,7 +943,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
 
-        if (_pConfiguration->IsAllocationProfilingEnabled())
+        if (
+            _pConfiguration->IsAllocationProfilingEnabled() ||
+            _pConfiguration->IsHeapProfilingEnabled()
+            )
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
 
@@ -865,7 +968,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                     WStr("Microsoft-Windows-DotNETRuntime"),
                     activatedKeywords,
                     verbosity,
-                    NULL
+                    nullptr
                 }
             };
 
@@ -899,7 +1002,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 {
     Log::Info("CorProfilerCallback::Shutdown()");
 
@@ -941,6 +1044,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     {
         _pGarbageCollectionProvider->Stop();
     }
+
+    if (_pLiveObjectsProvider != nullptr)
+    {
+        _pLiveObjectsProvider->Stop();
+    }
+
 
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();
@@ -1192,7 +1301,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID thread
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingClientInvocationStarted(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingClientInvocationStarted()
 {
     return S_OK;
 }
@@ -1207,7 +1316,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingClientReceivingReply(GUID
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingClientInvocationFinished(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingClientInvocationFinished()
 {
     return S_OK;
 }
@@ -1217,12 +1326,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingServerReceivingMessage(GU
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingServerInvocationStarted(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingServerInvocationStarted()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingServerInvocationReturned(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RemotingServerInvocationReturned()
 {
     return S_OK;
 }
@@ -1247,22 +1356,22 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendStarted(COR_PRF_SUS
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendFinished(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendFinished()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendAborted(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendAborted()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeResumeStarted(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeResumeStarted()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeResumeFinished(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeResumeFinished()
 {
     return S_OK;
 }
@@ -1323,7 +1432,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFunctionEnter(Func
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFunctionLeave(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFunctionLeave()
 {
     return S_OK;
 }
@@ -1333,7 +1442,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFilterEnter(Functi
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFilterLeave(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFilterLeave()
 {
     return S_OK;
 }
@@ -1358,7 +1467,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionEnter(Func
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionLeave(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionLeave()
 {
     return S_OK;
 }
@@ -1368,7 +1477,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFinallyEnter(Funct
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFinallyLeave(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFinallyLeave()
 {
     return S_OK;
 }
@@ -1378,7 +1487,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherEnter(FunctionID 
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherLeave(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherLeave()
 {
     return S_OK;
 }
@@ -1393,12 +1502,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::COMClassicVTableDestroyed(ClassID
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherFound(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherFound()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherExecute(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherExecute()
 {
     return S_OK;
 }
@@ -1413,7 +1522,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::SurvivingReferences(ULONG cSurviv
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionFinished(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionFinished()
 {
     return S_OK;
 }
@@ -1443,12 +1552,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::InitializeForAttach(IUnknown* pCo
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ProfilerAttachComplete(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ProfilerAttachComplete()
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerCallback::ProfilerDetachSucceeded(void)
+HRESULT STDMETHODCALLTYPE CorProfilerCallback::ProfilerDetachSucceeded()
 {
     return S_OK;
 }

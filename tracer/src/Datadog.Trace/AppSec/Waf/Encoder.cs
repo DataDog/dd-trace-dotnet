@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
@@ -18,6 +19,8 @@ namespace Datadog.Trace.AppSec.Waf
     internal class Encoder
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
+        private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
+
         private readonly WafNative _wafNative;
 
         public Encoder(WafNative wafNative) => _wafNative = wafNative;
@@ -60,6 +63,67 @@ namespace Datadog.Trace.AppSec.Waf
         public Obj Encode(object o, List<Obj>? argCache = null, bool applySafetyLimits = true) =>
             EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits);
 
+        public object Decode(Obj o)
+        {
+            return InnerDecode(o.InnerStruct);
+        }
+
+        public object InnerDecode(DdwafObjectStruct o)
+        {
+            switch (DecodeArgsType(o.Type))
+            {
+                case ObjType.Invalid:
+                    return new object();
+                case ObjType.SignedNumber:
+                    return o.IntValue;
+                case ObjType.UnsignedNumber:
+                    return o.UintValue;
+                case ObjType.String:
+                    return Marshal.PtrToStringAnsi(o.Array) ?? string.Empty;
+                case ObjType.Array:
+                    var arr = new object[o.NbEntries];
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        var nextObj = Marshal.PtrToStructure(o.Array + (i * ObjectStructSize), typeof(DdwafObjectStruct));
+                        if (nextObj != null)
+                        {
+                            var next = (DdwafObjectStruct)nextObj;
+                            arr[i] = InnerDecode(next);
+                        }
+                    }
+
+                    return arr;
+                case ObjType.Map:
+                    int entries = (int)o.NbEntries;
+                    var map = new Dictionary<string, object>(entries);
+                    for (int i = 0; i < entries; i++)
+                    {
+                        var nextObj = Marshal.PtrToStructure(o.Array + (i * ObjectStructSize), typeof(DdwafObjectStruct));
+                        if (nextObj != null)
+                        {
+                            var next = (DdwafObjectStruct)nextObj;
+                            var key = Marshal.PtrToStringAnsi(next.ParameterName, (int)next.ParameterNameLength) ?? string.Empty;
+                            map[key] = InnerDecode(next);
+                            var nextO = InnerDecode(next);
+                            map[key] = nextO;
+                        }
+                    }
+
+                    return map;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private Obj EncodeUnknownType(object o)
+        {
+            Log.Warning("Couldn't encode object of unknown type {type}, falling back to ToString", o.GetType());
+
+            var s = o.ToString() ?? string.Empty;
+
+            return CreateNativeString(s, applyLimits: true);
+        }
+
         private Obj EncodeInternal(object o, List<Obj>? argCache, int remainingDepth, bool applyLimits)
         {
             var value =
@@ -82,7 +146,7 @@ namespace Datadog.Trace.AppSec.Waf
                     IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits),
                     IList<string> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits),
                     IList<object> objs => EncodeList(objs, argCache, remainingDepth, applyLimits),
-                    _ => throw new Exception($"Couldn't encode type: {o?.GetType()}")
+                    _ => EncodeUnknownType(o),
                 };
 
             argCache?.Add(value);

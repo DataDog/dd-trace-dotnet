@@ -39,7 +39,7 @@ public:
 private:
     inline std::string GetReasonText() const
     {
-        if (Reason >= _reasons.size())
+        if ((size_t)Reason >= _reasons.size())
         {
             return std::to_string(Reason);
         }
@@ -49,7 +49,7 @@ private:
 
     inline std::string GetTypeText() const
     {
-        if (Type >= _types.size())
+        if ((size_t)Type >= _types.size())
         {
             return std::to_string(Type);
         }

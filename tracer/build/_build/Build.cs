@@ -88,21 +88,21 @@ partial class Build : NukeBuild
     readonly bool IncludeAllTestFrameworks = true;
 
     Target Info => _ => _
-        .Description("Describes the current configuration")
-        .Before(Clean, Restore, BuildTracerHome)
-        .Executes(() =>
-        {
-            Logger.Info($"Configuration: {BuildConfiguration}");
-            Logger.Info($"Platform: {TargetPlatform}");
-            Logger.Info($"Framework: {Framework}");
-            Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
-            Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
-            Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
-            Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
-            Logger.Info($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
-            Logger.Info($"IsAlpine: {IsAlpine}");
-            Logger.Info($"Version: {Version}");
-        });
+                       .Description("Describes the current configuration")
+                       .Before(Clean, Restore, BuildTracerHome)
+                       .Executes(() =>
+                        {
+                            Logger.Info($"Configuration: {BuildConfiguration}");
+                            Logger.Info($"Platform: {TargetPlatform}");
+                            Logger.Info($"Framework: {Framework}");
+                            Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
+                            Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
+                            Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
+                            Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
+                            Logger.Info($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
+                            Logger.Info($"IsAlpine: {IsAlpine}");
+                            Logger.Info($"Version: {Version}");
+                        });
 
     Target Clean => _ => _
         .Description("Cleans all build output")
@@ -205,12 +205,6 @@ partial class Build : NukeBuild
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildRunnerTool);
 
-    Target BuildDebuggerIntegrationTests => _ => _
-        .Unlisted()
-        .Description("Builds the debugger integration tests")
-        .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileDebuggerIntegrationTests);
-
     Target BuildAspNetIntegrationTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
@@ -237,11 +231,6 @@ partial class Build : NukeBuild
         .Description("Builds and runs the Windows (non-IIS) integration tests")
         .DependsOn(BuildWindowsIntegrationTests)
         .DependsOn(RunWindowsIntegrationTests);
-
-    Target BuildAndRunDebuggerIntegrationTests => _ => _
-        .Description("Builds and runs the debugger integration tests")
-        .DependsOn(BuildDebuggerIntegrationTests)
-        .DependsOn(RunDebuggerIntegrationTests);
 
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)

@@ -15,13 +15,21 @@ GarbageCollectionProvider::GarbageCollectionProvider(
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration)
+    IConfiguration* pConfiguration,
+    MetricsRegistry& metricsRegistry)
     :
     CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
+    _gen0CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen0");
+    _gen1CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen1");
+    _gen2CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen2");
+    _suspensionDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_gc_suspensions_duration");
+    _inducedCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_induced");
+    _compactingGen2CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_compacting_gen2");
+    _memoryPressureCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_memory_pressure");
 }
 
-void GarbageCollectionProvider::OnGarbageCollection(
+void GarbageCollectionProvider::OnGarbageCollectionEnd(
     int32_t number,
     uint32_t generation,
     GCReason reason,
@@ -32,6 +40,40 @@ void GarbageCollectionProvider::OnGarbageCollection(
     uint64_t endTimestamp   // end of GC
 )
 {
+    _suspensionDurationMetric->Add((double_t)pauseDuration);
+    if (generation == 0)
+    {
+        _gen0CountMetric->Incr();
+    }
+    else
+    if (generation == 1)
+    {
+        _gen1CountMetric->Incr();
+    }
+    else
+    if (generation == 2)
+    {
+        _gen2CountMetric->Incr();
+    }
+
+    // use Reason to figure out "manual" trigger and memory pressure
+    //     manual: Induced, InducedNotForced, InducedCompacting     (GC.Collect or GC.Add/RemoveMemoryPressure)
+    // low memory: InducedLowMemory                                 (more than the high pressure threshold = not enough memory in host)
+    //
+    if (
+        (reason == GCReason::InducedCompacting) ||
+        (reason == GCReason::InducedNotForced) ||
+        (reason == GCReason::Induced)
+        )
+    {
+        _inducedCountMetric->Incr();
+    }
+    else
+    if (reason == GCReason::InducedLowMemory)
+    {
+        _memoryPressureCountMetric->Incr();
+    }
+
     RawGarbageCollectionSample rawSample;
     rawSample.Timestamp = endTimestamp;
     rawSample.LocalRootSpanId = 0;
@@ -48,6 +90,14 @@ void GarbageCollectionProvider::OnGarbageCollection(
     rawSample.Reason = reason;
     rawSample.Type = type;
     rawSample.IsCompacting = isCompacting;
-
     Add(std::move(rawSample));
+}
+
+void GarbageCollectionProvider::OnGarbageCollectionStart(
+    int32_t number,
+    uint32_t generation,
+    GCReason reason,
+    GCType type
+    )
+{
 }

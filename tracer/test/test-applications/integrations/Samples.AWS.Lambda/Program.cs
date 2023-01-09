@@ -21,6 +21,12 @@ namespace Samples.AWS.Lambda
             Console.WriteLine($"Is Tracer Attached: {SampleHelpers.IsProfilerAttached()}");
             Console.WriteLine($"Tracer location: {SampleHelpers.GetTracerAssemblyLocation()}");
 
+            // Arbitrary delay to give time for us to JIT the methods correctly to avoid flakiness
+            // Re-jit is necessarily async, so there is an edge case where we call the method before
+            // we've instrumented it, which can lead to flakiness. This _may_ be an issue in general for
+            // serverless in general (due to short-lived apps), but so far we haven't found a workaround
+            await Task.Delay(5000); 
+
             // See documentation at docs/development/Serverless.md
             // These methods are run by the sample app, from the Integration test container
             // Each invocations retrieves the location of a specific lambda instance from the env var
