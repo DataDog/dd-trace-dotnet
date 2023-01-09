@@ -198,7 +198,7 @@ namespace Datadog.Trace.Ci
                 try
                 {
                     SynchronizationContext.SetSynchronizationContext(null);
-                    _skippableTestsTask.GetAwaiter().GetResult();
+                    AsyncUtil.RunSync(() => _skippableTestsTask);
                 }
                 finally
                 {
@@ -343,7 +343,7 @@ namespace Datadog.Trace.Ci
                             SynchronizationContext.SetSynchronizationContext(null);
                         }
 
-                        var osxVersionCommand = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")).GetAwaiter().GetResult();
+                        var osxVersionCommand = AsyncUtil.RunSync(() => ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")));
                         var osxVersion = osxVersionCommand?.Output.Trim(' ', '\n');
                         if (!string.IsNullOrEmpty(osxVersion))
                         {

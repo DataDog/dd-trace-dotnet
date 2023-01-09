@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tools.Runner
                 }
                 else
                 {
-                    agentConfiguration = Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult();
+                    agentConfiguration = AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(settings.AgentUrl));
                     if (agentConfiguration is null)
                     {
                         return 1;
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     var itrClient = new Ci.IntelligentTestRunnerClient(Ci.CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
                     // we should skip the framework info because we are interested in the target projects info not the runner one.
-                    var itrSettings = itrClient.GetSettingsAsync(skipFrameworkInfo: true).GetAwaiter().GetResult();
+                    var itrSettings = AsyncUtil.RunSync(() => itrClient.GetSettingsAsync(skipFrameworkInfo: true));
                     codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
                     testSkippingEnabled = itrSettings.TestsSkipping == true;
                 }
