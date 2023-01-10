@@ -40,7 +40,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
         {
             case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
                 module.Close();
-                CIVisibility.Log.Information("### Test Module Flushing Done.");
+                CIVisibility.Log.Debug("### Test Module Flushing Done.");
                 break;
             case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is { } suite:
                 suite.Close();

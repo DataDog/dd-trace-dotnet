@@ -18,7 +18,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
@@ -479,6 +478,10 @@ internal class IntelligentTestRunnerClient
             {
                 File.Delete(packFile);
             }
+            catch (UnauthorizedAccessException)
+            {
+                Log.Warning("ITR: Access denied while deleting pack file: '{packFile}'", packFile);
+            }
             catch (Exception ex)
             {
                 Log.Warning(ex, "ITR: Error deleting pack file: '{packFile}'", packFile);
@@ -491,6 +494,10 @@ internal class IntelligentTestRunnerClient
             try
             {
                 Directory.Delete(packFilesObject.TemporaryFolder, true);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Log.Warning("ITR: Access denied while deleting temporary folder: '{temporaryFolder}'", packFilesObject.TemporaryFolder);
             }
             catch (Exception ex)
             {
@@ -858,11 +865,13 @@ internal class IntelligentTestRunnerClient
 
     public readonly struct SettingsResponse
     {
+#pragma warning disable CS0649 // Unassigned readonly field
         [JsonProperty("code_coverage")]
         public readonly bool? CodeCoverage;
 
         [JsonProperty("tests_skipping")]
         public readonly bool? TestsSkipping;
+#pragma warning restore CS0649
     }
 
     private class ObjectPackFilesResult
