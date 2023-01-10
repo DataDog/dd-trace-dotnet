@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
@@ -44,76 +45,84 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void EnumerateKeys()
         {
+            var expectedKeys = new HashSet<string>
+                               {
+                                   "__DistributedKey-TraceId",
+                                   "__DistributedKey-ParentId",
+                                   "__DistributedKey-SamplingPriority",
+                                   "__DistributedKey-Origin",
+                                   "__DistributedKey-RawTraceId",
+                                   "__DistributedKey-RawSpanId",
+                                   "__DistributedKey-PropagatedTags",
+                                   "__DistributedKey-AdditionalW3CTraceState",
+                                   "x-datadog-trace-id",
+                                   "x-datadog-parent-id",
+                                   "x-datadog-sampling-priority",
+                                   "x-datadog-origin",
+                               };
+
             var context = CreateSpanContext();
+            var actualKeys = context.Keys.ToArray();
 
-            // fail test if new keys are added
-            context.Keys.Should().HaveCount(12);
+            // check for missing and unexpected keys
+            actualKeys.Should().BeSubsetOf(expectedKeys);
+            expectedKeys.Should().BeSubsetOf(actualKeys);
 
-            // fail tests if any key is missing
-            context.Keys.Should()
-                   .Contain(
-                        new[]
-                        {
-                            "__DistributedKey-TraceId",
-                            "__DistributedKey-ParentId",
-                            "__DistributedKey-SamplingPriority",
-                            "__DistributedKey-Origin",
-                            "__DistributedKey-RawTraceId",
-                            "__DistributedKey-RawSpanId",
-                            "__DistributedKey-PropagatedTags",
-                            "__DistributedKey-AdditionalW3CTraceState",
-                            "x-datadog-trace-id",
-                            "x-datadog-parent-id",
-                            "x-datadog-sampling-priority",
-                            "x-datadog-origin",
-                        });
+            // check for duplicate keys
+            actualKeys.Should().BeEquivalentTo(actualKeys.Distinct());
         }
 
         [Fact]
         public void EnumerateValues()
         {
+            var expectedValues = new HashSet<string>
+                                 {
+                                     "1",
+                                     "2",
+                                     "-1",
+                                     "origin",
+                                     "1a",
+                                     "2b",
+                                     "_dd.p.key1=value1,_dd.p.key2=value2",
+                                     "key3=value3,key4=value4",
+                                 };
+
             var context = CreateSpanContext();
+            var actualValues = context.Values.ToArray();
 
-            context.Values.Should().HaveCount(12);
-
-            context.Values.Should()
-                   .Contain(
-                        new[]
-                        {
-                            "1",      // twice
-                            "2",      // twice
-                            "-1",     // twice
-                            "origin", // twice
-                            "1a",
-                            "2b",
-                            "_dd.p.key1=value1,_dd.p.key2=value2",
-                            "key3=value3,key4=value4",
-                        });
+            // check for missing and unexpected values
+            actualValues.Should().BeSubsetOf(expectedValues);
+            expectedValues.Should().BeSubsetOf(actualValues);
         }
 
         [Fact]
         public void EnumeratePairs()
         {
+            var expectedPairs = new HashSet<KeyValuePair<string, string>>
+                                {
+                                    new("__DistributedKey-TraceId", "1"),
+                                    new("__DistributedKey-ParentId", "2"),
+                                    new("__DistributedKey-SamplingPriority", "-1"),
+                                    new("__DistributedKey-Origin", "origin"),
+                                    new("__DistributedKey-RawTraceId", "1a"),
+                                    new("__DistributedKey-RawSpanId", "2b"),
+                                    new("__DistributedKey-PropagatedTags", "_dd.p.key1=value1,_dd.p.key2=value2"),
+                                    new("__DistributedKey-AdditionalW3CTraceState", "key3=value3,key4=value4"),
+                                    new("x-datadog-trace-id", "1"),
+                                    new("x-datadog-parent-id", "2"),
+                                    new("x-datadog-sampling-priority", "-1"),
+                                    new("x-datadog-origin", "origin")
+                                };
+
             var context = CreateSpanContext();
+            var actualPairs = context.ToArray();
 
-            // fail test if new keys are added
-            context.Should().HaveCount(12);
+            // check for missing and unexpected keys
+            actualPairs.Should().BeSubsetOf(expectedPairs);
+            expectedPairs.Should().BeSubsetOf(actualPairs);
 
-            // fail tests if any key is missing
-            context.Should()
-                   .Contain(
-                        new("__DistributedKey-TraceId", "1"),
-                        new("__DistributedKey-ParentId", "2"),
-                        new("__DistributedKey-SamplingPriority", "-1"),
-                        new("__DistributedKey-Origin", "origin"),
-                        new("__DistributedKey-RawTraceId", "1a"),
-                        new("__DistributedKey-RawSpanId", "2b"),
-                        new("__DistributedKey-PropagatedTags", "_dd.p.key1=value1,_dd.p.key2=value2"),
-                        new("__DistributedKey-AdditionalW3CTraceState", "key3=value3,key4=value4"),
-                        new("x-datadog-trace-id", "1"),
-                        new("x-datadog-parent-id", "2"),
-                        new("x-datadog-sampling-priority", "-1"),
-                        new("x-datadog-origin", "origin"));
+            // check for duplicate keys
+            actualPairs.Should().BeEquivalentTo(actualPairs.Distinct());
         }
 
         private static IReadOnlyDictionary<string, string> CreateSpanContext()
