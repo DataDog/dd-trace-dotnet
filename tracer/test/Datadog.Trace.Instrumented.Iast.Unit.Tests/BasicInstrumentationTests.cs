@@ -29,11 +29,5 @@ namespace Datadog.Trace.Instrumented.Iast.Unit.Tests
         {
             AssertNotTainted("nottainted");
         }
-
-        [Fact]
-        public void Fail()
-        {
-            AssertTainted("nottainted");
-        }
     }
 }
