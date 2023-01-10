@@ -6,6 +6,8 @@
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
+#pragma warning disable CS0649 // Field 'TestCategories' is never assigned to
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
     /// <summary>
