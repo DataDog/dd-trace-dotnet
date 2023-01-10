@@ -4,12 +4,12 @@
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'!='net462'">
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='net462'">
-    <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.net4.runsettings</RunSettingsFilePath>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.windows.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,8 +27,8 @@
     </None>
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="echo $(MyItem) &gt; $(ProjectDir)zo" />
-  </Target>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows')) ">
+    <PostBuildEvent>$(MSBuildProjectDirectory)\\generaterunsettings.bat</PostBuildEvent>
+  </PropertyGroup>
 
 </Project>

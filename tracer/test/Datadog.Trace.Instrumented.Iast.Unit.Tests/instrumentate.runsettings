@@ -4,9 +4,9 @@
     <EnvironmentVariables>
       <CORECLR_ENABLE_PROFILING>1</CORECLR_ENABLE_PROFILING>
       <CORECLR_PROFILER>{846F5F1C-F9AE-4B07-969E-05C26BC060D8}</CORECLR_PROFILER>
-      <CORECLR_PROFILER_PATH_64>..\\..\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll</CORECLR_PROFILER_PATH_64>
-      <CORECLR_PROFILER_PATH_32>..\\..\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll</CORECLR_PROFILER_PATH_32>
-      <DD_DOTNET_TRACER_HOME>..\\..\\..\\..\\..\\..\\shared\\bin\\monitoring-home</DD_DOTNET_TRACER_HOME>
+      <CORECLR_PROFILER_PATH_64>../../../../../../shared/bin/monitoring-home/win-x64/Datadog.Trace.ClrProfiler.Native.dll</CORECLR_PROFILER_PATH_64>
+      <CORECLR_PROFILER_PATH_32>../../../../../../shared/bin/monitoring-home/win-x86/Datadog.Trace.ClrProfiler.Native.dll</CORECLR_PROFILER_PATH_32>
+      <DD_DOTNET_TRACER_HOME>../../../../../../shared/bin/monitoring-home</DD_DOTNET_TRACER_HOME>
       <DD_VERSION>1.0.0</DD_VERSION>
       <DD_TRACE_DEBUG>1</DD_TRACE_DEBUG>
       <DD_IAST_ENABLED>1</DD_IAST_ENABLED>

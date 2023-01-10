@@ -21,7 +21,12 @@ public class InstrumentationTestsBase
 
     protected void AssertInstrumented()
     {
-        Tracer.Instance.ActiveScope.Should().NotBeNull("Test is not instrumented");
+        var message = "Test is not instrumented." + EnvironmentVariableMessage("CORECLR_ENABLE_PROFILING") +
+            EnvironmentVariableMessage("CORECLR_PROFILER_PATH_64") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_32") +
+            EnvironmentVariableMessage("COR_ENABLE_PROFILING") + EnvironmentVariableMessage("COR_PROFILER_PATH_32") +
+            EnvironmentVariableMessage("COR_PROFILER_PATH_64");
+
+        Tracer.Instance.ActiveScope.Should().NotBeNull(message);
     }
 
     protected void AssertSpanGenerated(string operationName, int spansGenerated = 1)
@@ -51,6 +56,12 @@ public class InstrumentationTestsBase
     protected void AssertNotVulnerable()
     {
         AssertVulnerable(0);
+    }
+
+    private static string EnvironmentVariableMessage(string variable)
+    {
+        var value = Environment.GetEnvironmentVariable(variable);
+        return variable + ": " +  (string.IsNullOrEmpty(value) ? "Empty" : value) + Environment.NewLine;
     }
 
     private int GetIastSpansCount(List<Span> spans)
