@@ -14,6 +14,7 @@ const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
 const std::string Sample::EndTimestampLabel = "end_timestamp_ns";
+const std::string Sample::StartTimestampLabel = "start_timestamp_ns";
 
 // garbage collection related labels
 const std::string Sample::TimelineEventTypeLabel = "event";

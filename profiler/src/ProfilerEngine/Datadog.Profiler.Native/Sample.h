@@ -133,6 +133,7 @@ public:
     static const std::string ExceptionMessageLabel;
     static const std::string AllocationClassLabel;
     static const std::string EndTimestampLabel;
+    static const std::string StartTimestampLabel;
     static const std::string GarbageCollectionGenerationLabel;
     static const std::string GarbageCollectionNumberLabel;
     static const std::string TimelineEventTypeLabel;

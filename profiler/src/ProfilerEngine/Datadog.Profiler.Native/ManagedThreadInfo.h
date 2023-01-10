@@ -47,8 +47,10 @@ public:
     inline const shared::WSTRING& GetThreadName() const;
     inline void SetThreadName(shared::WSTRING pThreadName);
 
-    inline std::uint64_t GetLastSampleHighPrecisionTimestampNanoseconds() const;
-    inline std::uint64_t SetLastSampleHighPrecisionTimestampNanoseconds(std::uint64_t value);
+    inline std::uint64_t GetLastWallTimestamp() const;
+    inline std::uint64_t SetLastWallTimestamp(std::uint64_t value);
+    inline std::uint64_t GetLastCpuTimestamp() const;
+    inline std::uint64_t SetLastCpuTimestamp(std::uint64_t value);
     inline std::uint64_t GetCpuConsumptionMilliseconds() const;
     inline std::uint64_t SetCpuConsumptionMilliseconds(std::uint64_t value, std::int64_t timestamp);
     inline std::int64_t GetCpuTimestamp() const;
@@ -97,9 +99,10 @@ private:
     HANDLE _osThreadHandle;
     shared::WSTRING _pThreadName;
 
-    std::uint64_t _lastSampleHighPrecisionTimestampNanoseconds;
+    std::uint64_t _lastWallTimestamp;
+    std::uint64_t _lastCpuTimestamp;
     std::uint64_t _cpuConsumptionMilliseconds;
-    std::int64_t _timestamp;
+    std::int64_t _cpuTimestamp;
     std::uint64_t _lastKnownSampleUnixTimeUtc;
     std::int64_t _highPrecisionNanosecsAtLastUnixTimeUpdate;
 
@@ -204,15 +207,27 @@ inline void ManagedThreadInfo::SetThreadName(shared::WSTRING pThreadName)
     BuildProfileThreadName();
 }
 
-inline std::uint64_t ManagedThreadInfo::GetLastSampleHighPrecisionTimestampNanoseconds() const
+inline std::uint64_t ManagedThreadInfo::GetLastWallTimestamp() const
 {
-    return _lastSampleHighPrecisionTimestampNanoseconds;
+    return _lastWallTimestamp;
 }
 
-inline std::uint64_t ManagedThreadInfo::SetLastSampleHighPrecisionTimestampNanoseconds(std::uint64_t value)
+inline std::uint64_t ManagedThreadInfo::SetLastWallTimestamp(std::uint64_t value)
 {
-    std::uint64_t prevValue = _lastSampleHighPrecisionTimestampNanoseconds;
-    _lastSampleHighPrecisionTimestampNanoseconds = value;
+    std::uint64_t prevValue = _lastWallTimestamp;
+    _lastWallTimestamp = value;
+    return prevValue;
+}
+
+inline std::uint64_t ManagedThreadInfo::GetLastCpuTimestamp() const
+{
+    return _lastCpuTimestamp;
+}
+
+inline std::uint64_t ManagedThreadInfo::SetLastCpuTimestamp(std::uint64_t value)
+{
+    std::uint64_t prevValue = _lastCpuTimestamp;
+    _lastCpuTimestamp = value;
     return prevValue;
 }
 
@@ -223,12 +238,12 @@ inline std::uint64_t ManagedThreadInfo::GetCpuConsumptionMilliseconds() const
 
 inline std::int64_t ManagedThreadInfo::GetCpuTimestamp() const
 {
-    return _timestamp;
+    return _cpuTimestamp;
 }
 
 inline std::uint64_t ManagedThreadInfo::SetCpuConsumptionMilliseconds(std::uint64_t value, std::int64_t timestamp)
 {
-    _timestamp = timestamp;
+    _cpuTimestamp = timestamp;
 
     std::uint64_t prevValue = _cpuConsumptionMilliseconds;
     _cpuConsumptionMilliseconds = value;

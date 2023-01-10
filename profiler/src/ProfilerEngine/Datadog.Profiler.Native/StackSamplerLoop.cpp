@@ -217,11 +217,11 @@ void StackSamplerLoop::WalltimeProfilingIteration()
             continue;
         }
 
-        int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
-        int64_t prevSampleTimestampNanosecs = _targetThread->SetLastSampleHighPrecisionTimestampNanoseconds(thisSampleTimestampNanosecs);
-        int64_t duration = ComputeWallTime(thisSampleTimestampNanosecs, prevSampleTimestampNanosecs);
+        int64_t thisSampleTimestamp = OpSysTools::GetHighPrecisionTimestamp();
+        int64_t prevSampleTimestamp = _targetThread->SetLastWallTimestamp(thisSampleTimestamp);
+        int64_t duration = ComputeWallTime(thisSampleTimestamp, prevSampleTimestamp);
 
-        CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, duration, PROFILING_TYPE::WallTime);
+        CollectOneThreadStackSample(_targetThread, thisSampleTimestamp, duration, PROFILING_TYPE::WallTime);
 
         _targetThread.reset();
         i++;
@@ -241,6 +241,10 @@ void StackSamplerLoop::CpuProfilingIteration()
         _targetThread = _pManagedThreadList->LoopNext(_iteratorCpuTime);
         if (_targetThread != nullptr)
         {
+            // Keep track of the last time this thread was checked (even if not sampled)
+            // This is used to "guess" when the consumed CPU happened in a smaller time range for timeline view
+            int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
+
             // sample only if the thread is currently running on a core
             uint64_t currentConsumption = 0;
             uint64_t lastConsumption = _targetThread->GetCpuConsumptionMilliseconds();
@@ -264,7 +268,6 @@ void StackSamplerLoop::CpuProfilingIteration()
                 if (cpuForSample > 0)
                 {
                     int64_t lastCpuTimestamp = _targetThread->GetCpuTimestamp();
-                    int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
 
                     // detect overlapping CPU usage
                     if ((int64_t)(lastCpuTimestamp + cpuForSample * 1000000) > thisSampleTimestampNanosecs)
@@ -282,6 +285,11 @@ void StackSamplerLoop::CpuProfilingIteration()
                     CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, cpuForSample, PROFILING_TYPE::CpuTime);
                 }
             }
+            else
+            {
+                _targetThread->SetLastCpuTimestamp(thisSampleTimestampNanosecs);
+            }
+
             _targetThread.reset();
         }
     }
@@ -326,7 +334,7 @@ void StackSamplerLoop::CodeHotspotIteration()
         }
 
         int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
-        int64_t prevSampleTimestampNanosecs = _targetThread->SetLastSampleHighPrecisionTimestampNanoseconds(thisSampleTimestampNanosecs);
+        int64_t prevSampleTimestampNanosecs = _targetThread->SetLastWallTimestamp(thisSampleTimestampNanosecs);
         int64_t duration = ComputeWallTime(thisSampleTimestampNanosecs, prevSampleTimestampNanosecs);
 
         CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, duration, PROFILING_TYPE::WallTime);
@@ -664,6 +672,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
         rawCpuSample.ThreadInfo = pThreadInfo;
         rawCpuSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
+        rawCpuSample.LastTimestamp = pThreadInfo->GetLastCpuTimestamp();
         _pCpuTimeCollector->Add(std::move(rawCpuSample));
     }
 }
