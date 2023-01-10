@@ -10,6 +10,7 @@ using System.Linq.Expressions;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
 
 namespace Datadog.Trace.Debugger.Expressions;
@@ -364,15 +365,15 @@ internal partial class ProbeExpressionParser<T>
                 continue;
             }
 
-            if ((reader.Value?.ToString() == "json"))
+            if (reader.Value?.ToString() == "json")
             {
+                // TODO: This is only used in test code, remove
                 reader.Read();
                 reader.Read();
-                return;
             }
-        }
 
-        throw new InvalidOperationException("Invalid json file");
+            return;
+        }
     }
 
     private Expression HandleReturnType(Expression finalExpr)
@@ -457,6 +458,11 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return new ExpressionBodyAndParameters(body, thisParameterExpression, argsOrLocalsParameterExpression);
+    }
+
+    internal static CompiledExpression<T> ParseExpression(JObject expressionJson, ScopeMember @this, ScopeMember[] argsOrLocals)
+    {
+        return ParseExpression(expressionJson.ToString(), @this, argsOrLocals);
     }
 
     internal static CompiledExpression<T> ParseExpression(string expressionJson, ScopeMember @this, ScopeMember[] argsOrLocals)
