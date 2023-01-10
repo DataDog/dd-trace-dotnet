@@ -200,7 +200,6 @@ partial class Build : NukeBuild
         .Description("Builds the integration tests for Windows")
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileSamplesWindows)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildRunnerTool);
@@ -211,7 +210,6 @@ partial class Build : NukeBuild
         .Description("Builds the ASP.NET integration tests for Windows")
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests);
 
@@ -220,7 +218,6 @@ partial class Build : NukeBuild
         .Requires(() => IsWin)
         .Description("Builds the regression tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileRegressionSamples)
         .DependsOn(CompileFrameworkReproductions)
@@ -242,7 +239,6 @@ partial class Build : NukeBuild
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows Azure Functions tests")
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileAzureFunctionsSamplesWindows)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileIntegrationTests)

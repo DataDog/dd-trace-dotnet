@@ -72,7 +72,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         public async Task SubmitsTraces()
-            => await RunSubmitsTraces();
+        {
+            if (EnvironmentTools.IsWindows()
+             && !EnvironmentHelper.IsCoreClr()
+             && EnvironmentTools.IsTestTarget64BitProcess())
+            {
+                throw new SkipException("ASP.NET Core running on .NET Framework requires x86, because it uses " +
+                                        "the x86 version of libuv unless you compile the dll _explicitly_ for x64, " +
+                                        "which we don't do any more");
+            }
+
+            await RunSubmitsTraces();
+        }
     }
 
     [UsesVerify]
