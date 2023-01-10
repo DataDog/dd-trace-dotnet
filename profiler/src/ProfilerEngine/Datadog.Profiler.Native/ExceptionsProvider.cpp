@@ -6,6 +6,7 @@
 #include "COMHelpers.h"
 #include "FrameStore.h"
 #include "HResultConverter.h"
+#include "IConfiguration.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "shared/src/native-src/com_ptr.h"
@@ -38,7 +39,8 @@ ExceptionsProvider::ExceptionsProvider(
     _mscorlibModuleId(0),
     _exceptionClassId(0),
     _loggedMscorlibError(false),
-    _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval())
+    _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval()),
+    _pConfiguration(pConfiguration)
 {
     _exceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_exceptions");
     _sampledExceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_exceptions");
@@ -136,7 +138,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
     uint32_t hrCollectStack = E_FAIL;
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
 
     pStackFramesCollector->PrepareForNextCollection();
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);

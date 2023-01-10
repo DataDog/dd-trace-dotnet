@@ -4,6 +4,7 @@
 
 #include "COMHelpers.h"
 #include "IAppDomainStore.h"
+#include "IConfiguration.h"
 #include "IFrameStore.h"
 #include "IManagedThreadList.h"
 #include "IRuntimeIdStore.h"
@@ -35,7 +36,8 @@ ContentionProvider::ContentionProvider(
     _pManagedThreadList{pManagedThreadList},
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval()),
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
-    _sampleLimit{pConfiguration->ContentionSampleLimit()}
+    _sampleLimit{pConfiguration->ContentionSampleLimit()},
+    _pConfiguration{pConfiguration}
 {
     _lockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_lock_contentions");
     _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
@@ -57,7 +59,7 @@ void ContentionProvider::OnContention(double contentionDuration)
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
