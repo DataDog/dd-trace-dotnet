@@ -619,18 +619,7 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
-                        PropertyInfo? targetProperty = null;
-                        try
-                        {
-                            targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
-                        }
-                        catch
-                        {
-                            // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
-                            // In this case we make sure we select the indexer we want
-                            targetProperty = targetType.GetProperty(duckAttribute.Name, proxyProperty.PropertyType, proxyProperty.GetIndexParameters().Select(i => i.ParameterType).ToArray());
-                        }
-
+                        PropertyInfo? targetProperty = GetTargetPropertyOrIndex(targetType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
                         if (targetProperty is null)
                         {
                             if (proxyProperty.CanRead && proxyProperty.GetMethod is not null)
@@ -711,7 +700,7 @@ namespace Datadog.Trace.DuckTyping
                         break;
 
                     case DuckKind.Field:
-                        FieldInfo? targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
+                        FieldInfo? targetField = GetTargetField(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetField is null)
                         {
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
@@ -790,18 +779,7 @@ namespace Datadog.Trace.DuckTyping
                     DuckTypeReverseProxyPropertyCannotBeAbstractException.Throw(implementationProperty);
                 }
 
-                PropertyInfo? overriddenProperty = null;
-                try
-                {
-                    overriddenProperty = typeToDeriveFrom.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
-                }
-                catch
-                {
-                    // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
-                    // In this case we make sure we select the indexer we want
-                    overriddenProperty = typeToDeriveFrom.GetProperty(duckAttribute.Name, implementationProperty.PropertyType, implementationProperty.GetIndexParameters().Select(i => i.ParameterType).ToArray());
-                }
-
+                PropertyInfo? overriddenProperty = GetTargetPropertyOrIndex(typeToDeriveFrom, duckAttribute.Name, duckAttribute.BindingFlags, implementationProperty);
                 if (overriddenProperty is null)
                 {
                     DuckTypePropertyOrFieldNotFoundException.Throw(implementationProperty.Name, duckAttribute.Name, typeToDeriveFrom);
@@ -862,7 +840,23 @@ namespace Datadog.Trace.DuckTyping
                     }
                 }
 
-                propertiesThatShouldBeImplemented.RemoveAll(prop => duckAttribute.Name == prop.Name);
+                propertiesThatShouldBeImplemented.RemoveAll(prop =>
+                {
+                    if (duckAttribute.Name.IndexOf(',') == -1)
+                    {
+                        return duckAttribute.Name == prop.Name;
+                    }
+
+                    foreach (var name in duckAttribute.Name.Split(','))
+                    {
+                        if (name == prop.Name)
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
             }
 
             if (propertiesThatShouldBeImplemented.Count > 0)
@@ -904,7 +898,7 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
-                        PropertyInfo? targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
+                        PropertyInfo? targetProperty = GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetProperty is null)
                         {
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
@@ -936,7 +930,7 @@ namespace Datadog.Trace.DuckTyping
                         break;
 
                     case DuckKind.Field:
-                        FieldInfo? targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
+                        FieldInfo? targetField = GetTargetField(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetField is null)
                         {
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
@@ -1059,6 +1053,85 @@ namespace Datadog.Trace.DuckTyping
 
             Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
             return createStructMethod.CreateDelegate(delegateType);
+        }
+
+        private static PropertyInfo? GetTargetPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo)
+        {
+            if (propertyName.IndexOf(',') == -1)
+            {
+                try
+                {
+                    return targetType.GetProperty(propertyName, bindingFlags);
+                }
+                catch
+                {
+                    // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
+                    // In this case we make sure we select the indexer we want
+                    return targetType.GetProperty(propertyName, proxyPropertyInfo.PropertyType, proxyPropertyInfo.GetIndexParameters().Select(i => i.ParameterType).ToArray());
+                }
+            }
+
+            PropertyInfo? targetProperty = null;
+            foreach (var name in propertyName.Split(','))
+            {
+                try
+                {
+                    targetProperty = targetType.GetProperty(name, bindingFlags);
+                }
+                catch
+                {
+                    // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
+                    // In this case we make sure we select the indexer we want
+                    targetProperty = targetType.GetProperty(name, proxyPropertyInfo.PropertyType, proxyPropertyInfo.GetIndexParameters().Select(i => i.ParameterType).ToArray());
+                }
+
+                if (targetProperty is not null)
+                {
+                    break;
+                }
+            }
+
+            return targetProperty;
+        }
+
+        private static PropertyInfo? GetTargetProperty(Type targetType, string propertyName, BindingFlags bindingFlags)
+        {
+            if (propertyName.IndexOf(',') == -1)
+            {
+                return targetType.GetProperty(propertyName, bindingFlags);
+            }
+
+            PropertyInfo? targetProperty = null;
+            foreach (var name in propertyName.Split(','))
+            {
+                targetProperty = targetType.GetProperty(name, bindingFlags);
+                if (targetProperty is not null)
+                {
+                    break;
+                }
+            }
+
+            return targetProperty;
+        }
+
+        private static FieldInfo? GetTargetField(Type targetType, string fieldName, BindingFlags bindingFlags)
+        {
+            if (fieldName.IndexOf(',') == -1)
+            {
+                return targetType.GetField(fieldName, bindingFlags);
+            }
+
+            FieldInfo? targetField = null;
+            foreach (var name in fieldName.Split(','))
+            {
+                targetField = targetType.GetField(name, bindingFlags);
+                if (targetField is not null)
+                {
+                    break;
+                }
+            }
+
+            return targetField;
         }
 
         /// <summary>

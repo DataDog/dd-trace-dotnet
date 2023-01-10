@@ -50,6 +50,49 @@ internal static class AsyncUtil
           .GetResult();
 
     /// <summary>
+    /// Executes an async Task method which has a void return value synchronously
+    /// USAGE: AsyncUtil.RunSync(() => AsyncMethod(), millisecondsTimeout);
+    /// </summary>
+    /// <param name="task">Task method to execute</param>
+    /// <param name="millisecondsTimeout">Timeout in milliseconds</param>
+    public static void RunSync(Func<Task> task, int millisecondsTimeout)
+    {
+        _taskFactory
+           .StartNew(TaskWithTimeoutAsync)
+           .Unwrap()
+           .GetAwaiter()
+           .GetResult();
+
+        Task TaskWithTimeoutAsync()
+        {
+            var runTask = task();
+            return runTask.IsCompleted
+                       ? runTask
+#if NET6_0_OR_GREATER
+                       : runTask.WaitAsync(TimeSpan.FromMilliseconds(millisecondsTimeout));
+#else
+                       : InternalTaskWithTimeoutAsync(runTask, millisecondsTimeout);
+#endif
+        }
+
+#if !NET6_0_OR_GREATER
+        static async Task InternalTaskWithTimeoutAsync(Task runTask, int timeout)
+        {
+            using var cts = new CancellationTokenSource();
+            var completedTask = await Task.WhenAny(runTask, Task.Delay(timeout, cts.Token)).ConfigureAwait(false);
+            if (completedTask == runTask)
+            {
+                cts.Cancel();
+                await runTask.ConfigureAwait(false);
+                return;
+            }
+
+            throw new TimeoutException();
+        }
+#endif
+    }
+
+    /// <summary>
     /// Executes an async Task[T] method which has a T return type synchronously
     /// USAGE: T result = AsyncUtil.RunSync(() => AsyncMethod[T]());
     /// </summary>
@@ -77,4 +120,47 @@ internal static class AsyncUtil
           .Unwrap()
           .GetAwaiter()
           .GetResult();
+
+    /// <summary>
+    /// Executes an async Task[T] method which has a T return value synchronously
+    /// USAGE: AsyncUtil.RunSync(() => AsyncMethod[T](), millisecondsTimeout);
+    /// </summary>
+    /// <typeparam name="TResult">Return Type</typeparam>
+    /// <param name="task">Task[T] method to execute</param>
+    /// <param name="millisecondsTimeout">Timeout in milliseconds</param>
+    public static TResult RunSync<TResult>(Func<Task<TResult>> task, int millisecondsTimeout)
+    {
+        return _taskFactory
+              .StartNew(TaskWithTimeoutAsync)
+              .Unwrap()
+              .GetAwaiter()
+              .GetResult();
+
+        Task<TResult> TaskWithTimeoutAsync()
+        {
+            var runTask = task();
+            return runTask.IsCompleted
+                       ? runTask
+#if NET6_0_OR_GREATER
+                       : runTask.WaitAsync(TimeSpan.FromMilliseconds(millisecondsTimeout));
+#else
+                       : InternalTaskWithTimeoutAsync(runTask, millisecondsTimeout);
+#endif
+        }
+
+#if !NET6_0_OR_GREATER
+        static async Task<TResult> InternalTaskWithTimeoutAsync(Task<TResult> runTask, int timeout)
+        {
+            using var cts = new CancellationTokenSource();
+            var completedTask = await Task.WhenAny(runTask, Task.Delay(timeout, cts.Token)).ConfigureAwait(false);
+            if (completedTask == runTask)
+            {
+                cts.Cancel();
+                return await runTask.ConfigureAwait(false);
+            }
+
+            throw new TimeoutException();
+        }
+#endif
+    }
 }

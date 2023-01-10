@@ -33,14 +33,8 @@ public static class TestAssemblyInfoRunAssemblyCleanupIntegration
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
-        where TTarget : ITestAssemblyInfo
     {
-        if (!MsTestIntegration.IsEnabled)
-        {
-            return CallTargetState.GetDefault();
-        }
-
-        if (TestAssemblyInfoRunAssemblyInitializeIntegration.TestAssemblyInfos.TryGetValue(instance.Instance, out var moduleObject) && moduleObject is TestModule module)
+        if (MsTestIntegration.IsEnabled && TestAssemblyInfoRunAssemblyInitializeIntegration.TestAssemblyInfos.TryGetValue(instance, out var moduleObject) && moduleObject is TestModule module)
         {
             return new CallTargetState(null, module);
         }
@@ -49,7 +43,7 @@ public static class TestAssemblyInfoRunAssemblyCleanupIntegration
     }
 
     /// <summary>
-    /// OnAsyncMethodEnd callback
+    /// OnMethodEnd callback
     /// </summary>
     /// <typeparam name="TTarget">Type of the target</typeparam>
     /// <typeparam name="TReturn">Type of the return value</typeparam>
