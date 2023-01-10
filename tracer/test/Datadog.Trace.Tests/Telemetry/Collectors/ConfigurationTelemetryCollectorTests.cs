@@ -220,6 +220,18 @@ namespace Datadog.Trace.Tests.Telemetry
             data[ConfigTelemetryData.CodeHotspotsEnabled].Should().Be(codeHotspotsEnabled);
         }
 
+        [Fact]
+        public void ConfigurationDataShouldMarkAsManagedOnlyWhenProfilerNotAttached()
+        {
+            var collector = new ConfigurationTelemetryCollector();
+
+            collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName);
+
+            var data = collector.GetConfigurationData().ToDictionary(x => x.Name, x => x.Value);
+
+            data[ConfigTelemetryData.IsManagedOnly].Should().Be(true);
+        }
+
 #if NETFRAMEWORK
         [Theory]
         [InlineData(false)]
