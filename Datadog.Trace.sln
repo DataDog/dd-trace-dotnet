@@ -498,8 +498,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Deduplication", "tr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.V4InProcess", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4InProcess\Samples.AzureFunctions.V4InProcess.csproj", "{0F0F7D45-0E13-42B0-A158-8F303BBE8358}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Instrumented.Iast.Unit.Tests", "tracer\test\Datadog.Trace.Instrumented.Iast.Unit.Tests\Datadog.Trace.Instrumented.Iast.Unit.Tests.csproj", "{4D3314A1-5A64-4433-8BE7-C98B01C6E689}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Debugger.IntegrationTests", "tracer\test\Datadog.Trace.Debugger.IntegrationTests\Datadog.Trace.Debugger.IntegrationTests.csproj", "{BB2D2ED3-4378-4B44-974E-8BE80F0021EF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Probes.TestRuns", "tracer\test\test-applications\debugger\dependency-libs\Samples.Probes.TestRuns\Samples.Probes.TestRuns.csproj", "{4F377216-3D76-4169-BE2B-8DA3A653DD5E}"
@@ -507,6 +505,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OpenTelemetrySdk", "tracer\test\test-applications\integrations\Samples.OpenTelemetrySdk\Samples.OpenTelemetrySdk.csproj", "{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Owin.Iis.WebApi2", "tracer\test\test-applications\aspnet\Samples.Owin.Iis.WebApi2\Samples.Owin.Iis.WebApi2.csproj", "{B417E258-A21F-4546-B78F-8A7A4879472A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Instrumented.Iast.Unit.Tests", "tracer\test\Datadog.Trace.Instrumented.Iast.Unit.Tests\Datadog.Trace.Instrumented.Iast.Unit.Tests.csproj", "{64E32F7A-8989-480E-AFE7-3BD343424F6A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1221,6 +1221,10 @@ Global
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64E32F7A-8989-480E-AFE7-3BD343424F6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64E32F7A-8989-480E-AFE7-3BD343424F6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64E32F7A-8989-480E-AFE7-3BD343424F6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64E32F7A-8989-480E-AFE7-3BD343424F6A}.Release|Any CPU.Build.0 = Release|Any CPU		
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1414,6 +1418,7 @@ Global
 		{4F377216-3D76-4169-BE2B-8DA3A653DD5E} = {0884B566-D22E-498C-BAA9-26D50ABCAE3A}
 		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B417E258-A21F-4546-B78F-8A7A4879472A} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
+		{64E32F7A-8989-480E-AFE7-3BD343424F6A} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
