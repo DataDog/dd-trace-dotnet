@@ -16,7 +16,7 @@ internal record SnapshotSegment
     public SnapshotSegment(string dsl, string json, string str)
     {
         Dsl = dsl;
-        Json = JObject.Parse(json);
+        Json = json == null ? null : JObject.Parse(json);
         Str = str;
     }
 
