@@ -8,8 +8,8 @@ using System;
 using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Sampling;
+// ReSharper disable IntroduceOptionalParameters.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Datadog.Trace.Ci;
 

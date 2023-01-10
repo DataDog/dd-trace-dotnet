@@ -23,6 +23,9 @@ using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
+// ReSharper disable MemberCanBePrivate.Local
+// ReSharper disable NotAccessedField.Local
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Datadog.Trace.Ci;
 
@@ -136,7 +139,7 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    internal static Dictionary<string, string>? GetCustomTestsConfigurations(IDictionary<string, string> globalTags)
+    internal static Dictionary<string, string>? GetCustomTestsConfigurations(IDictionary<string, string>? globalTags)
     {
         Dictionary<string, string>? customConfiguration = null;
         if (globalTags is not null)
@@ -565,7 +568,7 @@ internal class IntelligentTestRunnerClient
 
             temporaryPath = Path.Combine(temporaryFolder, Path.GetFileName(temporaryPath));
             getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-            packObjectsResultCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjectsCommand!.Output).ConfigureAwait(false);
+            packObjectsResultCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjectsCommand.Output).ConfigureAwait(false);
             if (packObjectsResultCommand is null)
             {
                 Log.Warning("ITR: 'git pack-objects...' command is null");

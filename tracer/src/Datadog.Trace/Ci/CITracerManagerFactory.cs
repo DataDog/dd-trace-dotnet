@@ -11,18 +11,19 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.StatsdClient;
+// ReSharper disable CommentTypo
+// ReSharper disable StringLiteralTypo
+// ReSharper disable InconsistentNaming
 
 namespace Datadog.Trace.Ci
 {
     internal class CITracerManagerFactory : TracerManagerFactory
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManagerFactory>();
         private readonly CIVisibilitySettings _settings;
         private readonly IDiscoveryService _discoveryService;
         private readonly bool _enabledEventPlatformProxy;

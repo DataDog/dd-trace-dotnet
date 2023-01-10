@@ -16,12 +16,13 @@ using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog;
+// ReSharper disable IntroduceOptionalParameters.Local
+// ReSharper disable IntroduceOptionalParameters.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Datadog.Trace.Ci;
 
@@ -373,7 +374,7 @@ public sealed class TestModule
             // If the code coverage path environment variable is set, we store the json file
             if (!string.IsNullOrWhiteSpace(CIVisibility.Settings.CodeCoveragePath))
             {
-                var codeCoveragePath = Path.Combine(CIVisibility.Settings.CodeCoveragePath, $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json");
+                var codeCoveragePath = Path.Combine(CIVisibility.Settings.CodeCoveragePath!, $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json");
                 try
                 {
                     using var fStream = File.OpenWrite(codeCoveragePath);

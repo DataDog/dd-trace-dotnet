@@ -11,6 +11,14 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable InconsistentNaming
+// ReSharper disable ConvertToUsingDeclaration
+// ReSharper disable RedundantCast
+// ReSharper disable SuggestVarOrType_BuiltInTypes
+// ReSharper disable SuggestVarOrType_SimpleTypes
+// ReSharper disable SuggestVarOrType_Elsewhere
 
 namespace Datadog.Trace.Ci
 {
@@ -144,7 +152,7 @@ namespace Datadog.Trace.Ci
                             string[] lines = File.ReadAllLines(infoRefPath);
                             foreach (string line in lines)
                             {
-                                string[] hashRef = line.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                                string[] hashRef = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                                 if (hashRef[1] == gitInfo.Branch)
                                 {
                                     gitInfo.Commit = hashRef[0];
@@ -162,7 +170,7 @@ namespace Datadog.Trace.Ci
                 // Process Git Config
                 string configPath = Path.Combine(gitDirectory.FullName, "config");
                 List<ConfigItem> lstConfigs = GetConfigItems(configPath);
-                if (lstConfigs != null && lstConfigs.Count > 0)
+                if (lstConfigs is { Count: > 0 })
                 {
                     var remote = "origin";
 
@@ -276,7 +284,7 @@ namespace Datadog.Trace.Ci
                 {
                     if (currentItem != null)
                     {
-                        string[] keyValue = line.Substring(1).Split(new string[] { " = " }, StringSplitOptions.RemoveEmptyEntries);
+                        string[] keyValue = line.Substring(1).Split(new[] { " = " }, StringSplitOptions.RemoveEmptyEntries);
                         switch (keyValue[0])
                         {
                             case "url":
@@ -489,8 +497,8 @@ namespace Datadog.Trace.Ci
                                 }
                             }
 
-                            // Check if the object size is in the aceptable range
-                            if (objectSize > 0 && objectSize < ushort.MaxValue)
+                            // Check if the object size is in the acceptable range
+                            if (objectSize is > 0 and < ushort.MaxValue)
                             {
                                 // Advance 2 bytes to skip the zlib magic number
                                 uint zlibMagicNumber = br.ReadUInt16();
@@ -567,7 +575,7 @@ namespace Datadog.Trace.Ci
                             numberOfObjectsInPreviousIndex = br.ReadUInt32();
                         }
 
-                        // In the fanout table, every index has its objects + the previous ones.
+                        // In the fan-out table, every index has its objects + the previous ones.
                         // We need to subtract the previous index objects to know the correct
                         // actual number of objects for this specific index.
                         uint numberOfObjectsInIndex = br.ReadUInt32() - numberOfObjectsInPreviousIndex;

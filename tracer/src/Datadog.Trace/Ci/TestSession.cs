@@ -7,14 +7,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
+// ReSharper disable IntroduceOptionalParameters.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Datadog.Trace.Ci;
 
@@ -25,7 +25,7 @@ public sealed class TestSession
 {
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
     private readonly Span _span;
-    private readonly Dictionary<string, string>? _environmentVariablesToRestore = null;
+    private readonly Dictionary<string, string>? _environmentVariablesToRestore;
     private int _finished;
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
@@ -103,6 +103,8 @@ public sealed class TestSession
     /// <summary>
     /// Gets the test framework
     /// </summary>
+    // ReSharper disable once MemberCanBePrivate.Global
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public string? Framework { get; }
 
     /// <summary>

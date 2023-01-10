@@ -6,6 +6,8 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+// ReSharper disable CollectionNeverQueried.Global
+// ReSharper disable InconsistentNaming
 
 namespace Datadog.Trace.Ci
 {

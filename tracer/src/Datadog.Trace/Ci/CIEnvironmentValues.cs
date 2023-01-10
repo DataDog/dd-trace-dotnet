@@ -12,6 +12,13 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+// ReSharper disable InconsistentNaming
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable SuggestVarOrType_BuiltInTypes
+// ReSharper disable SuggestVarOrType_SimpleTypes
+// ReSharper disable ConvertIfStatementToConditionalTernaryExpression
+// ReSharper disable UseStringInterpolation
 
 namespace Datadog.Trace.Ci
 {
@@ -20,7 +27,7 @@ namespace Datadog.Trace.Ci
         internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)(\/)?";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
 
-        private static readonly Lazy<CIEnvironmentValues> _instance = new Lazy<CIEnvironmentValues>(() => new CIEnvironmentValues());
+        private static readonly Lazy<CIEnvironmentValues> _instance = new(() => new CIEnvironmentValues());
 
         private CIEnvironmentValues()
         {
@@ -91,10 +98,9 @@ namespace Datadog.Trace.Ci
         {
             if (path == "~" || path?.StartsWith("~/") == true)
             {
-                string homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
-                                   Environment.OSVersion.Platform == PlatformID.MacOSX)
-                    ? Environment.GetEnvironmentVariable("HOME")
-                    : Environment.GetEnvironmentVariable("USERPROFILE");
+                string homePath = Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX
+                                      ? Environment.GetEnvironmentVariable("HOME")
+                                      : Environment.GetEnvironmentVariable("USERPROFILE");
                 path = homePath + path.Substring(1);
             }
 
@@ -185,7 +191,7 @@ namespace Datadog.Trace.Ci
             SetTagIfNotNullOrEmpty(span, CommonTags.BuildSourceRoot, SourceRoot);
             if (VariablesToBypass is { } variablesToBypass)
             {
-                span.SetTag(CommonTags.CiEnvVars, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass));
+                span.SetTag(CommonTags.CiEnvVars, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass));
             }
         }
 
@@ -630,7 +636,7 @@ namespace Datadog.Trace.Ci
                 // Once the branch has been removed, we try to extract
                 // the configurations from the job name.
                 // The configurations have the form like "key1=value1,key2=value2"
-                Dictionary<string, string> configurations = new Dictionary<string, string>();
+                var configurations = new Dictionary<string, string>();
                 string[] jobNameParts = jobNameNoBranch.Split('/');
                 if (jobNameParts.Length > 1 && jobNameParts[1].Contains("="))
                 {

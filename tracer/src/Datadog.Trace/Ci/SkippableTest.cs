@@ -5,6 +5,7 @@
 #nullable enable
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Datadog.Trace.Ci;
 

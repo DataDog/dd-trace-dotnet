@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Datadog.Trace.Ci;
 

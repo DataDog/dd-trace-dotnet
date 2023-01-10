@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Util;
+// ReSharper disable ForCanBeConvertedToForeach
 
 namespace Datadog.Trace.Ci
 {

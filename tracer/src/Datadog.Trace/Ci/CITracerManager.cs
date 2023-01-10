@@ -17,6 +17,8 @@ using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.StatsdClient;
+// ReSharper disable InconsistentNaming
+// ReSharper disable InvertIf
 
 namespace Datadog.Trace.Ci
 {

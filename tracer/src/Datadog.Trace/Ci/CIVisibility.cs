@@ -20,14 +20,19 @@ using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
+// ReSharper disable InconsistentNaming
+// ReSharper disable JoinDeclarationAndInitializer
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable SuggestVarOrType_SimpleTypes
+// ReSharper disable SuggestVarOrType_BuiltInTypes
 
 namespace Datadog.Trace.Ci
 {
     internal class CIVisibility
     {
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
+        private static readonly Lazy<bool> _enabledLazy = new(InternalEnabled, true);
         private static int _firstInitialization = 1;
-        private static Lazy<bool> _enabledLazy = new(() => InternalEnabled(), true);
         private static Task? _skippableTestsTask;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
 
@@ -146,7 +151,7 @@ namespace Datadog.Trace.Ci
             try
             {
                 SynchronizationContext.SetSynchronizationContext(null);
-                AsyncUtil.RunSync(() => FlushAsync(), cts.Token);
+                AsyncUtil.RunSync(FlushAsync, cts.Token);
                 if (cts.IsCancellationRequested)
                 {
                     Log.Error($"Timeout occurred when flushing spans.{Environment.NewLine}{Environment.StackTrace}");
@@ -229,9 +234,9 @@ namespace Datadog.Trace.Ci
 
             static IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name)
             {
-                if (_skippableTestsBySuiteAndName is { } skippeableTestBySuite)
+                if (_skippableTestsBySuiteAndName is { } skippableTestBySuite)
                 {
-                    if (skippeableTestBySuite.TryGetValue(suite, out var testsInSuite) &&
+                    if (skippableTestBySuite.TryGetValue(suite, out var testsInSuite) &&
                         testsInSuite.TryGetValue(name, out var tests))
                     {
                         return tests;
@@ -258,7 +263,7 @@ namespace Datadog.Trace.Ci
 
                 Regex regex = new Regex(@"[/\\]?([a-zA-Z0-9\-_.]*)$");
                 Match match = regex.Match(repository);
-                if (match.Success && match.Groups.Count > 1)
+                if (match is { Success: true, Groups.Count: > 1 })
                 {
                     const string gitSuffix = ".git";
                     string repoName = match.Groups[1].Value;
@@ -283,7 +288,7 @@ namespace Datadog.Trace.Ci
 
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings, TimeSpan timeout)
         {
-            IApiRequestFactory? factory = null;
+            IApiRequestFactory? factory;
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
@@ -295,7 +300,7 @@ namespace Datadog.Trace.Ci
 
             if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
             {
-                var proxyHttpsUriBuilder = new UriBuilder(_settings.ProxyHttps);
+                var proxyHttpsUriBuilder = new UriBuilder(_settings.ProxyHttps!);
 
                 var userName = proxyHttpsUriBuilder.UserName;
                 var password = proxyHttpsUriBuilder.Password;
@@ -380,7 +385,7 @@ namespace Datadog.Trace.Ci
 
             try
             {
-                processName = ProcessHelpers.GetCurrentProcessName() ?? string.Empty;
+                processName = ProcessHelpers.GetCurrentProcessName();
             }
             catch (Exception exception)
             {
@@ -402,7 +407,7 @@ namespace Datadog.Trace.Ci
             }
 
             // Try to autodetect based in the domain name.
-            var domainName = AppDomain.CurrentDomain.FriendlyName ?? string.Empty;
+            var domainName = AppDomain.CurrentDomain.FriendlyName;
             if (domainName.StartsWith("testhost", StringComparison.Ordinal) ||
                 domainName.StartsWith("xunit", StringComparison.Ordinal) ||
                 domainName.StartsWith("nunit", StringComparison.Ordinal) ||
@@ -484,11 +489,11 @@ namespace Datadog.Trace.Ci
                 // If the tests skipping feature is enabled we query the api for the tests we have to skip
                 if (_settings.TestsSkippingEnabled == true)
                 {
-                    var skippeableTests = await itrClient.GetSkippableTestsAsync().ConfigureAwait(false);
-                    Log.Information<int>("ITR: SkippableTests = {length}.", skippeableTests.Length);
+                    var skippableTests = await itrClient.GetSkippableTestsAsync().ConfigureAwait(false);
+                    Log.Information<int>("ITR: SkippableTests = {length}.", skippableTests.Length);
 
                     var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
-                    foreach (var item in skippeableTests)
+                    foreach (var item in skippableTests)
                     {
                         if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
                         {
@@ -506,7 +511,7 @@ namespace Datadog.Trace.Ci
                     }
 
                     _skippableTestsBySuiteAndName = skippableTestsBySuiteAndName;
-                    Log.Debug<int>("ITR: SkippableTests dictionary has been built.", skippeableTests.Length);
+                    Log.Debug<int>("ITR: SkippableTests dictionary has been built.", skippableTests.Length);
                 }
                 else
                 {
@@ -515,7 +520,7 @@ namespace Datadog.Trace.Ci
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "ITR: Error getting skippeable tests.");
+                Log.Error(ex, "ITR: Error getting skippable tests.");
             }
         }
 
