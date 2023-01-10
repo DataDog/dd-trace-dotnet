@@ -60,9 +60,7 @@ partial class Build
         .Requires(() => DebugType != null)
         .Executes(() =>
         {
-            // we need to compile DebuggerSamplesTestRuns in AnyCPU and TargetPlatform
             DotnetBuild(DebuggerSamplesTestRuns, framework: Framework, noDependencies: false);
-            DotnetBuild(DebuggerSamplesTestRuns, platform: TargetPlatform, framework: Framework, noDependencies: false);
         });
 
     Target CompileDebuggerIntegrationTestsSamples => _ => _
@@ -74,7 +72,7 @@ partial class Build
         .Requires(() => DebugType != null)
         .Executes(() =>
         {
-            DotnetBuild(DebuggerSamples, platform: TargetPlatform, framework: Framework);
+            DotnetBuild(DebuggerSamples, framework: Framework);
 
             if (!IsWin)
             {
@@ -104,12 +102,13 @@ partial class Build
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(TargetPlatform)
+                    .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(GetTestFilter())
+                    .SetTestTargetPlatform(TargetPlatform)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)

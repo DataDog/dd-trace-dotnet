@@ -24,8 +24,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
 
-            // for some reason, the elumator needs a warm up run when piloted by the x86 client
-            if (!Environment.Is64BitProcess)
+            // for some reason, the emulator needs a warm up run when piloted by the x86 client
+            if (!EnvironmentTools.IsTestTarget64BitProcess())
             {
                 using var agent = EnvironmentHelper.GetMockAgent();
                 using var processResult = RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}");

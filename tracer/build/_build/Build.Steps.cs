@@ -176,7 +176,6 @@ partial class Build
                 DotNetRestore(s => s
                     .SetProjectFile(Solution)
                     .SetVerbosity(DotNetVerbosity.Normal)
-                    // .SetTargetPlatform(Platform) // necessary to ensure we restore every project
                     .SetProperty("configuration", BuildConfiguration.ToString())
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory)));
@@ -640,45 +639,6 @@ partial class Build
             }
         });
 
-    /// <summary>
-    /// This target is a bit of a hack, but means that we actually use the All CPU builds in intgration tests etc
-    /// </summary>
-    Target CreatePlatformlessSymlinks => _ => _
-        .Description("Copies the build output from 'All CPU' platforms to platform-specific folders")
-        .Unlisted()
-        .OnlyWhenStatic(() => IsWin)
-        .After(CompileManagedSrc)
-        .After(CompileDependencyLibs)
-        .After(CompileManagedTestHelpers)
-        .After(BuildRunnerTool)
-        .Executes(() =>
-        {
-            // create junction for each directory
-            var directories = TracerDirectory.GlobDirectories(
-                $"src/**/obj/{BuildConfiguration}",
-                $"src/**/bin/{BuildConfiguration}",
-                $"src/Datadog.Trace.Tools.Runner/obj/{BuildConfiguration}",
-                $"src/Datadog.Trace.Tools.Runner/bin/{BuildConfiguration}",
-                $"test/Datadog.Trace.TestHelpers/**/obj/{BuildConfiguration}",
-                $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
-                $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
-            );
-
-            directories.ForEach(existingDir =>
-            {
-                var newDir = existingDir.Parent / $"{TargetPlatform}" / BuildConfiguration;
-                if (DirectoryExists(newDir))
-                {
-                    Logger.Info($"Skipping '{newDir}' as already exists");
-                }
-                else
-                {
-                    EnsureExistingDirectory(newDir.Parent);
-                    Cmd.Value(arguments: $"cmd /c mklink /J \"{newDir}\" \"{existingDir}\"");
-                }
-            });
-        });
-
     Target ZipSymbols => _ => _
         .Unlisted()
         .After(BuildTracerHome)
@@ -950,19 +910,16 @@ partial class Build
         .After(CompileManagedSrc)
         .Executes(() =>
         {
-            // We run linux integration tests in AnyCPU, but Windows on the specific architecture
-            var platform = !IsWin ? MSBuildTargetPlatform.MSIL : TargetPlatform;
             var projects = TracerDirectory.GlobFiles(
                 "test/test-applications/regression/dependency-libs/**/Datadog.StackExchange.Redis*.csproj"
             );
 
-            DotnetBuild(projects, platform: platform, noDependencies: false);
+            DotnetBuild(projects, noDependencies: false);
         });
 
     Target CompileRegressionSamples => _ => _
         .Unlisted()
         .After(Restore)
-        .After(CreatePlatformlessSymlinks)
         .After(CompileRegressionDependencyLibs)
         .Requires(() => Framework)
         .Executes(() =>
@@ -984,9 +941,9 @@ partial class Build
                     };
                 });
 
-            //// Allow restore here, otherwise things go wonky with runtime identifiers
-            //// in some target frameworks. No, I don't know why
-            DotnetBuild(regressionLibs, platform: TargetPlatform, framework: Framework, noRestore: false);
+            // Allow restore here, otherwise things go wonky with runtime identifiers
+            // in some target frameworks. No, I don't know why
+            DotnetBuild(regressionLibs, framework: Framework, noRestore: false);
         });
 
     Target CompileFrameworkReproductions => _ => _
@@ -994,7 +951,6 @@ partial class Build
         .Description("Builds .NET Framework projects (non SDK-based projects)")
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
-        .After(CreatePlatformlessSymlinks)
         .Requires(() => IsWin)
         .Executes(() =>
         {
@@ -1006,7 +962,7 @@ partial class Build
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(TargetPlatform)
+                .SetTargetPlatformAnyCPU()
                 .SetTargets("BuildFrameworkReproductions")
                 .SetMaxCpuCount(null));
         });
@@ -1041,7 +997,6 @@ partial class Build
     Target CompileSamplesWindows => _ => _
         .Unlisted()
         .After(CompileDependencyLibs)
-        .After(CreatePlatformlessSymlinks)
         .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
@@ -1072,7 +1027,7 @@ partial class Build
             // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(TargetPlatform)
+                .SetTargetPlatformAnyCPU()
                 .EnableNoDependencies()
                 .SetProperty("BuildInParallel", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
@@ -1102,7 +1057,7 @@ partial class Build
                 // .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(TargetPlatform)
+                .SetTargetPlatformAnyCPU()
                 .SetProperty("DeployOnBuild", true)
                 .SetProperty("PublishProfile", publishProfile)
                 .SetMaxCpuCount(null)
@@ -1132,11 +1087,12 @@ partial class Build
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(TargetPlatform)
+                    .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
+                    .SetTestTargetPlatform(TargetPlatform)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
@@ -1152,12 +1108,13 @@ partial class Build
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(TargetPlatform)
+                    .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions")
+                    .SetTestTargetPlatform(TargetPlatform)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1174,7 +1131,6 @@ partial class Build
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
         .Unlisted()
-        .After(CreatePlatformlessSymlinks)
         .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
@@ -1195,7 +1151,7 @@ partial class Build
                 });
 
 
-            DotnetBuild(projects, platform: TargetPlatform, noRestore: false);
+            DotnetBuild(projects, noRestore: false);
         });
 
     Target RunWindowsAzureFunctionsTests => _ => _
@@ -1218,12 +1174,13 @@ partial class Build
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(TargetPlatform)
+                    .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&Category=AzureFunctions")
+                    .SetTestTargetPlatform(TargetPlatform)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1256,11 +1213,12 @@ partial class Build
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(TargetPlatform)
+                    .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions")
+                    .SetTestTargetPlatform(TargetPlatform)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1305,11 +1263,12 @@ partial class Build
             DotNetTest(config => config
                                 .SetDotnetPath(TargetPlatform)
                                 .SetConfiguration(BuildConfiguration)
-                                .SetTargetPlatform(TargetPlatform)
+                                .SetTargetPlatformAnyCPU()
                                 .SetFramework(Framework)
                                 .EnableNoRestore()
                                 .EnableNoBuild()
                                 .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True&Category!=AzureFunctions")
+                                .SetTestTargetPlatform(TargetPlatform)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1341,11 +1300,12 @@ partial class Build
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(TargetPlatform)
+                    .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True&Category!=AzureFunctions")
+                    .SetTestTargetPlatform(TargetPlatform)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1466,14 +1426,12 @@ partial class Build
 
             DotnetBuild(projectsToBuild, framework: Framework, noRestore: false);
 
-            // Always AnyCPU
             DotNetPublish(x => x
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .EnableNoDependencies()
                     .SetConfiguration(BuildConfiguration)
                     .SetFramework(Framework)
-                    // .SetTargetPlatform(Platform)
                     .SetNoWarnDotNetCore3()
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
@@ -1578,10 +1536,8 @@ partial class Build
             try
             {
                 // Run these ones in parallel
-                // Always AnyCPU
                 DotNetTest(config => config
                         .SetConfiguration(BuildConfiguration)
-                        // .SetTargetPlatform(Platform)
                         .EnableNoRestore()
                         .EnableNoBuild()
                         .SetFramework(Framework)
@@ -1589,6 +1545,7 @@ partial class Build
                         .EnableCrashDumps()
                         .SetFilter(filter)
                         .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                        .SetTestTargetPlatform(TargetPlatform)
                         .SetLogsDirectory(TestLogsDirectory)
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
@@ -1603,7 +1560,6 @@ partial class Build
                 // Run this one separately so we can tail output
                 DotNetTest(config => config
                     .SetConfiguration(BuildConfiguration)
-                    // .SetTargetPlatform(Platform)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFramework(Framework)
@@ -1611,6 +1567,7 @@ partial class Build
                     .EnableCrashDumps()
                     .SetFilter(filter)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetTestTargetPlatform(TargetPlatform)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
@@ -2125,24 +2082,23 @@ partial class Build
 
     private void DotnetBuild(
         Project project,
-        MSBuildTargetPlatform platform = null,
         TargetFramework framework = null,
         bool noRestore = true,
-        bool noDependencies = true)
+        bool noDependencies = true
+        )
     {
-        DotnetBuild(new [] { project.Path }, platform, framework, noRestore, noDependencies);
+        DotnetBuild(new [] { project.Path }, framework, noRestore, noDependencies);
     }
 
     private void DotnetBuild(
         IEnumerable<AbsolutePath> projPaths,
-        MSBuildTargetPlatform platform = null,
         TargetFramework framework = null,
         bool noRestore = true,
         bool noDependencies = true)
     {
         DotNetBuild(s => s
             .SetConfiguration(BuildConfiguration)
-            .SetTargetPlatform(platform ?? MSBuildTargetPlatform.MSIL)
+            .SetTargetPlatformAnyCPU()
             .When(noRestore, settings => settings.EnableNoRestore())
             .When(noDependencies, settings => settings.EnableNoDependencies())
             .When(framework is not null, settings => settings.SetFramework(framework))
