@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETFRAMEWORK
+
 using System.IO;
 using System.Security.Cryptography;
 using Moq;
@@ -50,3 +52,4 @@ public class SHA1CryptoServiceProviderTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 }
+#endif

@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-    <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.windows.runsettings</RunSettingsFilePath>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\generated.windows.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,9 +26,8 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows')) ">
+   
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows')) AND $(TargetFramework.StartsWith('net7'))">
     <PostBuildEvent>$(MSBuildProjectDirectory)\\generaterunsettings.bat</PostBuildEvent>
   </PropertyGroup>
-
 </Project>

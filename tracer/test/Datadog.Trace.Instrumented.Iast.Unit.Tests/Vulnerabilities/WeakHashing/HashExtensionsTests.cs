@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETFRAMEWORK
+
 using Xunit;
 
 namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities.WeakHashing;
@@ -30,3 +32,4 @@ public class HashExtensionsTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 }
+#endif
