@@ -276,7 +276,7 @@ void StackSamplerLoop::CpuProfilingIteration()
 #endif
                         // ensure that we don't overlap
                         // -> only the largest possibly CPU consumption is accounted = diff between the 2 timestamps
-                        cpuForSample = thisSampleTimestampNanosecs - lastCpuTimestamp - 1000; // removing 1 microsecond to be sure
+                        cpuForSample = (thisSampleTimestampNanosecs - lastCpuTimestamp - 1000) / 1000000; // removing 1 microsecond to be sure
                     }
                     _targetThread->SetCpuConsumptionMilliseconds(currentConsumption, thisSampleTimestampNanosecs);
                     CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, cpuForSample, PROFILING_TYPE::CpuTime);
