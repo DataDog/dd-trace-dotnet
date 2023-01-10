@@ -33,6 +33,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class MockTracerAgent : IDisposable
     {
+        private static readonly MockSpanEqualityComparer _mockSpanEqualityComparer = new();
+
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
         private AgentBehaviour behaviour = AgentBehaviour.Normal;
@@ -478,7 +480,9 @@ namespace Datadog.Trace.TestHelpers
                     {
                         // we only need to lock when replacing the span collection,
                         // not when reading it because it is immutable
-                        Spans = Spans.AddRange(spans.SelectMany(trace => trace));
+                        // Note: The where clause papers over an issue where ASM tests may fail when writing the MockTracerAgent response
+                        // and a second request may add a duplicate span.
+                        Spans = Spans.AddRange(spans.SelectMany(trace => trace).Where(s => Spans.IndexOf(s, _mockSpanEqualityComparer) < 0));
 
                         var headerCollection = new NameValueCollection();
                         foreach (var header in request.Headers)
@@ -861,6 +865,34 @@ namespace Datadog.Trace.TestHelpers
 
             [JsonProperty("version")]
             public string AgentVersion { get; set; }
+        }
+
+        public class MockSpanEqualityComparer : IEqualityComparer<MockSpan>
+        {
+            public bool Equals(MockSpan span1, MockSpan span2)
+            {
+                if (span1 == null && span2 == null)
+                {
+                    return true;
+                }
+                else if (span1 == null || span2 == null)
+                {
+                    return false;
+                }
+                else if (span1.TraceId == span2.TraceId && span1.SpanId == span2.SpanId)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            public int GetHashCode(MockSpan span)
+            {
+                return (span.TraceId, span.SpanId).GetHashCode();
+            }
         }
 
         public class TcpUdpAgent : MockTracerAgent
