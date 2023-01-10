@@ -6,6 +6,7 @@
 
 using System.Runtime.CompilerServices;
 using System.Threading;
+// ReSharper disable ConvertToAutoProperty
 
 namespace Datadog.Trace.Ci.Coverage;
 

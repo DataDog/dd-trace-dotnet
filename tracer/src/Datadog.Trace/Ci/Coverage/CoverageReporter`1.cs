@@ -4,12 +4,12 @@
 // </copyright>
 #nullable enable
 
-using System;
 using System.ComponentModel;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Ci.Coverage.Util;
+// ReSharper disable StaticMemberInGenericType
 
 #pragma warning disable SA1649 // File name must match first type name
 
@@ -26,9 +26,9 @@ public static class CoverageReporter<TMeta>
 {
     private static readonly TMeta Metadata;
     private static readonly Module Module;
+    private static readonly ModuleValue GlobalModuleValue;
     private static CoverageContextContainer? _currentCoverageContextContainer;
     private static ModuleValue? _currentModuleValue;
-    private static ModuleValue _globalModuleValue;
 
     static CoverageReporter()
     {
@@ -49,7 +49,7 @@ public static class CoverageReporter<TMeta>
             globalCoverageContextContainer.Add(globalModuleValue);
         }
 
-        _globalModuleValue = globalModuleValue;
+        GlobalModuleValue = globalModuleValue;
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public static class CoverageReporter<TMeta>
             var container = _currentCoverageContextContainer;
             if (container is null)
             {
-                module = _globalModuleValue;
+                module = GlobalModuleValue;
             }
             else
             {

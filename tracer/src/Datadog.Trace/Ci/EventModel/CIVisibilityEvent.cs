@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+// ReSharper disable InconsistentNaming
+
 namespace Datadog.Trace.Ci.EventModel;
 
 internal class CIVisibilityEvent<T> : IEvent

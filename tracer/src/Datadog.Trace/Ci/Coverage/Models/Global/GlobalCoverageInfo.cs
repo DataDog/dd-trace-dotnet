@@ -72,7 +72,7 @@ internal sealed class GlobalCoverageInfo : CoverageInfo
         return res;
     }
 
-    public void Add(ComponentCoverageInfo componentCoverageInfo)
+    public void Add(ComponentCoverageInfo? componentCoverageInfo)
     {
         if (componentCoverageInfo is null)
         {

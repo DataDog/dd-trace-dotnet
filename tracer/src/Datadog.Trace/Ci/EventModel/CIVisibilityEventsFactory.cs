@@ -5,7 +5,7 @@
 #nullable enable
 
 using Datadog.Trace.Ci.Tagging;
-using Datadog.Trace.Ci.Tags;
+// ReSharper disable InconsistentNaming
 
 namespace Datadog.Trace.Ci.EventModel;
 

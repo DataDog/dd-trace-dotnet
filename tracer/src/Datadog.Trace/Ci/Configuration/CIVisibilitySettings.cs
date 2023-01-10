@@ -7,6 +7,9 @@
 using System;
 using System.Threading;
 using Datadog.Trace.Configuration;
+// ReSharper disable InconsistentNaming
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace Datadog.Trace.Ci.Configuration
 {
@@ -14,7 +17,7 @@ namespace Datadog.Trace.Ci.Configuration
     {
         private TracerSettings? _tracerSettings;
 
-        public CIVisibilitySettings(IConfigurationSource source)
+        public CIVisibilitySettings(IConfigurationSource? source)
         {
             Enabled = source?.GetBool(ConfigurationKeys.CIVisibility.Enabled) ?? false;
             Agentless = source?.GetBool(ConfigurationKeys.CIVisibility.AgentlessEnabled) ?? false;
@@ -143,7 +146,7 @@ namespace Datadog.Trace.Ci.Configuration
         /// <summary>
         /// Gets the tracer settings
         /// </summary>
-        public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
+        public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, InitializeTracerSettings)!;
 
         public static CIVisibilitySettings FromDefaultSources()
         {

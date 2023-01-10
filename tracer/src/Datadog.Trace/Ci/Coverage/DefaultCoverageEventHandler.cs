@@ -13,6 +13,7 @@ using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
+// ReSharper disable InconsistentNaming
 
 namespace Datadog.Trace.Ci.Coverage;
 

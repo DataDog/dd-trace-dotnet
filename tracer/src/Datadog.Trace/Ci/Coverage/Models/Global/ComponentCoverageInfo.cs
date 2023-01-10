@@ -32,49 +32,51 @@ internal sealed class ComponentCoverageInfo : CoverageInfo
         {
             return null;
         }
-        else if (b is null)
+
+        if (b is null)
         {
             return a;
         }
-        else if (a is null)
+
+        if (a is null)
         {
             return b;
         }
-        else if (a.Name == b.Name)
+
+        if (a.Name != b.Name)
         {
-            var componentCoverageInfo = new ComponentCoverageInfo(a.Name);
-
-            var aFiles = a.Files ?? Enumerable.Empty<FileCoverageInfo>();
-            var bFiles = b.Files ?? Enumerable.Empty<FileCoverageInfo>();
-            foreach (var filesGroup in aFiles.Concat(bFiles).GroupBy(f => f.Path))
-            {
-                var filesGroupArray = filesGroup.ToArray();
-                if (filesGroupArray.Length == 1)
-                {
-                    componentCoverageInfo.Files.Add(filesGroupArray[0]);
-                }
-                else
-                {
-                    var res = filesGroupArray[0];
-                    for (var i = 1; i < filesGroupArray.Length; i++)
-                    {
-                        res += filesGroupArray[i];
-                    }
-
-                    if (res is not null)
-                    {
-                        componentCoverageInfo.Files.Add(res);
-                    }
-                }
-            }
-
-            return componentCoverageInfo;
+            throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
         }
 
-        throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
+        var componentCoverageInfo = new ComponentCoverageInfo(a.Name);
+        var aFiles = a.Files ?? Enumerable.Empty<FileCoverageInfo>();
+        var bFiles = b.Files ?? Enumerable.Empty<FileCoverageInfo>();
+        foreach (var filesGroup in aFiles.Concat(bFiles).GroupBy(f => f.Path))
+        {
+            var filesGroupArray = filesGroup.ToArray();
+            if (filesGroupArray.Length == 1)
+            {
+                componentCoverageInfo.Files.Add(filesGroupArray[0]);
+            }
+            else
+            {
+                var res = filesGroupArray[0];
+                for (var i = 1; i < filesGroupArray.Length; i++)
+                {
+                    res += filesGroupArray[i];
+                }
+
+                if (res is not null)
+                {
+                    componentCoverageInfo.Files.Add(res);
+                }
+            }
+        }
+
+        return componentCoverageInfo;
     }
 
-    public void Add(FileCoverageInfo fileCoverageInfo)
+    public void Add(FileCoverageInfo? fileCoverageInfo)
     {
         if (fileCoverageInfo is null)
         {

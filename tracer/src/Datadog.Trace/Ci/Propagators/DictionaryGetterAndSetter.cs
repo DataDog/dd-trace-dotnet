@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
+// ReSharper disable CheckNamespace
 
 namespace Datadog.Trace.Propagators;
 
@@ -27,7 +28,7 @@ internal readonly struct DictionaryGetterAndSetter : ICarrierGetter<IDictionary>
         _keyProcessor = keyProcessor;
     }
 
-    public IEnumerable<string?> Get(IDictionary carrier, string key)
+    public IEnumerable<string?> Get(IDictionary? carrier, string key)
     {
         key = _keyProcessor?.Invoke(key) ?? key;
 

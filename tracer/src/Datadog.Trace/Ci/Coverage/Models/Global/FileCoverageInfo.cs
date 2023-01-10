@@ -32,34 +32,37 @@ internal sealed class FileCoverageInfo : CoverageInfo
         {
             return null;
         }
-        else if (b is null)
+
+        if (b is null)
         {
             return a;
         }
-        else if (a is null)
+
+        if (a is null)
         {
             return b;
         }
-        else if (a.Path == b.Path)
+
+        if (a.Path != b.Path)
         {
-            var fcInfo = new FileCoverageInfo(a.Path);
-            var aSegments = a.Segments ?? Enumerable.Empty<uint[]>();
-            var bSegments = b.Segments ?? Enumerable.Empty<uint[]>();
-
-            fcInfo.Segments.AddRange(aSegments);
-
-            foreach (var segment in bSegments)
-            {
-                fcInfo.Add(segment);
-            }
-
-            return fcInfo;
+            throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
         }
 
-        throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
+        var fcInfo = new FileCoverageInfo(a.Path);
+        var aSegments = a.Segments ?? Enumerable.Empty<uint[]>();
+        var bSegments = b.Segments ?? Enumerable.Empty<uint[]>();
+
+        fcInfo.Segments.AddRange(aSegments);
+
+        foreach (var segment in bSegments)
+        {
+            fcInfo.Add(segment);
+        }
+
+        return fcInfo;
     }
 
-    public void Add(uint[] segment)
+    public void Add(uint[]? segment)
     {
         if (segment?.Length == 5)
         {

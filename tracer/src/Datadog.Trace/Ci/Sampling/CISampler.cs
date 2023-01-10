@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Sampling;
+// ReSharper disable InconsistentNaming
 
 namespace Datadog.Trace.Ci.Sampling
 {

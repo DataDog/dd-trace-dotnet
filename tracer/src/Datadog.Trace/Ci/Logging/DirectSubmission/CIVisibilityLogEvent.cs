@@ -8,6 +8,7 @@
 using System.Text;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
+// ReSharper disable InconsistentNaming
 
 namespace Datadog.Trace.Ci.Logging.DirectSubmission
 {

@@ -14,8 +14,8 @@ namespace Datadog.Trace.Ci.Processors
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OriginTagTraceProcessor>();
 
-        private readonly bool _isPartialFlushEnabled = false;
-        private readonly bool _isCiVisibilityProtocol = false;
+        private readonly bool _isPartialFlushEnabled;
+        private readonly bool _isCiVisibilityProtocol;
 
         public OriginTagTraceProcessor(bool isPartialFlushEnabled, bool isCiVisibilityProtocol)
         {

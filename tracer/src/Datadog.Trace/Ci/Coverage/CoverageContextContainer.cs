@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+// ReSharper disable ForCanBeConvertedToForeach
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -16,7 +17,7 @@ namespace Datadog.Trace.Ci.Coverage;
 internal sealed class CoverageContextContainer
 {
     private readonly List<ModuleValue> _container = new();
-    private ModuleValue? _currentModuleValue = null;
+    private ModuleValue? _currentModuleValue;
 
     /// <summary>
     /// Gets the current module value

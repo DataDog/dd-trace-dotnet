@@ -13,7 +13,7 @@ namespace Datadog.Trace.Ci.Processors;
 internal class TestSuiteVisibilityProcessor : ITraceProcessor
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestSuiteVisibilityProcessor>();
-    private readonly bool _isCiVisibilityProtocol = false;
+    private readonly bool _isCiVisibilityProtocol;
 
     public TestSuiteVisibilityProcessor(bool isCiVisibilityProtocol)
     {

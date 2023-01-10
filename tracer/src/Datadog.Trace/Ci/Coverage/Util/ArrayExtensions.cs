@@ -7,6 +7,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+// ReSharper disable ClassNeverInstantiated.Local
 
 namespace Datadog.Trace.Ci.Coverage.Util;
 
