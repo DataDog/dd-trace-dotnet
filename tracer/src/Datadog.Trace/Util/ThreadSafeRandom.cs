@@ -6,13 +6,14 @@
 #nullable enable
 
 using System;
-using System.Threading;
 
 namespace Datadog.Trace.Util;
 
 internal static class ThreadSafeRandom
 {
 #if NET6_0_OR_GREATER
+    public static Random Shared => Random.Shared;
+
     public static int Next(int maxValue) => Random.Shared.Next(maxValue);
 
     public static int Next(int minValue, int maxValue) => Random.Shared.Next(minValue, maxValue);
@@ -24,7 +25,7 @@ internal static class ThreadSafeRandom
     [ThreadStatic]
     private static Random? _local;
 
-    private static Random Local
+    public static Random Shared
     {
         get
         {
@@ -45,17 +46,17 @@ internal static class ThreadSafeRandom
 
     public static int Next(int maxValue)
     {
-        return Local.Next(maxValue);
+        return Shared.Next(maxValue);
     }
 
     public static int Next(int minValue, int maxValue)
     {
-        return Local.Next(minValue, maxValue);
+        return Shared.Next(minValue, maxValue);
     }
 
     public static double NextDouble()
     {
-        return Local.NextDouble();
+        return Shared.NextDouble();
     }
 #endif
 }
