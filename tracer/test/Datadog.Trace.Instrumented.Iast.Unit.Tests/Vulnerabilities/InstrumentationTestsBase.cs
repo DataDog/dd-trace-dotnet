@@ -68,8 +68,8 @@ public class InstrumentationTestsBase
 
     private static string GetErrorMessage(Assembly[] assemblies)
     {
-        string assemblyListString = string.Empty;
-        assemblies.OrderBy(x => x.GetName().Name).ToList().ForEach(x => assemblyListString += (x.GetName().Name + Environment.NewLine));
+        var assemblyListString = string.Join(Environment.NewLine, assemblies.Where(x => x.GetName().Name.IndexOf("datadog", StringComparison.OrdinalIgnoreCase) >= 0).Select(x => x.GetName().Name));
+
         return "Test is not instrumented." + Environment.NewLine +
             EnvironmentVariableMessage("CORECLR_ENABLE_PROFILING") +
             EnvironmentVariableMessage("CORECLR_PROFILER_PATH_64") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_32") +
