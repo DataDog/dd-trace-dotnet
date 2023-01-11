@@ -13,13 +13,16 @@ namespace Samples.Computer01
     public class QuicklyDeadThreads
     {
         private const int SleepDurationMs = 0;
+        private readonly int _nbThreadsToCreate = 1024;
+        private readonly int _nbThreads = 1;
+
         private ManualResetEvent _stopEvent;
         private List<Task> _activeTasks;
 
-        private const int MaxCreatedThreadCount = 1024;
-
-        public QuicklyDeadThreads()
+        public QuicklyDeadThreads(int nbThreads, int nbThreadsToCreate)
         {
+            _nbThreads = nbThreads;
+            _nbThreadsToCreate = nbThreadsToCreate;
         }
 
         public void Start()
@@ -30,23 +33,7 @@ namespace Samples.Computer01
             }
 
             _stopEvent = new ManualResetEvent(false);
-            _activeTasks = new List<Task>
-            {
-                Task.Factory.StartNew(
-                    () =>
-                    {
-                        if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
-                        {
-                            Thread.CurrentThread.Name = "QuickDeadThreads";
-                        }
-
-                        while (!_stopEvent.WaitOne(SleepDurationMs))
-                        {
-                            CreateQuicklyDeadThreads();
-                        }
-                    },
-                    TaskCreationOptions.LongRunning),
-            };
+            _activeTasks = CreateTasks();
         }
 
         public void Stop()
@@ -67,27 +54,40 @@ namespace Samples.Computer01
 
         public void Run()
         {
-            _stopEvent = new ManualResetEvent(false);
-
-            CreateQuicklyDeadThreads();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
+            Start();
+            Task.WhenAll(_activeTasks).Wait();
         }
 
-        private void CreateQuicklyDeadThreads()
+        private List<Task> CreateTasks()
         {
-            Console.WriteLine($"Starting {nameof(CreateQuicklyDeadThreads)}.");
-
-            int count = 0;
-            while (!_stopEvent.WaitOne(SleepDurationMs) && (count < MaxCreatedThreadCount))
+            var tasks = new List<Task>(_nbThreads);
+            for (var i = 0; i < _nbThreads; i++)
             {
-                Thread t = new Thread(() => { count++; });
-                t.Start();
-                t.Join();
+                tasks.Add(
+                    Task.Factory.StartNew(
+                        (p) =>
+                        {
+                            Console.WriteLine($"Starting generator-{p}");
+                            int count = 0;
+                            while (!_stopEvent.WaitOne(SleepDurationMs) && (count < _nbThreadsToCreate))
+                            {
+                                Thread t = new Thread(() => { count++; });
+                                t.IsBackground = true;
+                                t.Start();
+                                t.Join();
+                            }
+
+                            Console.WriteLine($"   {count} threads by generator-{p}");
+
+                            // ensure threads are collected
+                            GC.Collect();
+                            GC.WaitForPendingFinalizers();
+                            GC.Collect();
+                        },
+                        i));
             }
 
-            Console.WriteLine($"   {count} threads were created.");
+            return tasks;
         }
     }
 }

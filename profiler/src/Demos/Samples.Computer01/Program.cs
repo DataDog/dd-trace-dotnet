@@ -27,7 +27,7 @@ namespace Samples.Computer01
         LinuxSignalHandler,
         GarbageCollection,   // parameter = generation 0, 1 or 2
         MemoryLeak,          // parameter = number of objects to allocate
-        QuicklyDeadThreads
+        QuicklyDeadThreads // parameter = number of short lived threads to create
     }
 
     public class Program
@@ -51,7 +51,7 @@ namespace Samples.Computer01
             // 11: linux signal handler
             // 12: start garbage collections of a given generation
             // 13: leak x LOH object with GC in between
-            // 14: create short lived threads in a row
+            // 14: start n threads creating short lived threads
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +

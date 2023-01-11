@@ -111,7 +111,7 @@ namespace Samples.Computer01
                     break;
 
                 case Scenario.QuicklyDeadThreads:
-                    StartQuicklyDeadThreads();
+                    StartQuicklyDeadThreads(nbThreads, parameter);
                     break;
 
                 default:
@@ -204,6 +204,8 @@ namespace Samples.Computer01
 
             for (int i = 0; i < iterations; i++)
             {
+                Console.WriteLine($"___Iteration {i + 1}___");
+
                 switch (scenario)
                 {
                     case Scenario.All:
@@ -273,12 +275,14 @@ namespace Samples.Computer01
                         break;
 
                     case Scenario.QuicklyDeadThreads:
-                        RunQuicklyDeadThreads();
+                        RunQuicklyDeadThreads(nbThreads, parameter);
                         break;
 
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
+
+                Console.WriteLine();
             }
 
             Console.WriteLine($"End of {iterations} iterations of {scenario.ToString()} in {sw.Elapsed}");
@@ -385,9 +389,15 @@ namespace Samples.Computer01
             _memoryLeak.Start();
         }
 
-        private void StartQuicklyDeadThreads()
+        private void StartQuicklyDeadThreads(int nbThreads, int nbThreadsToCreate)
         {
-            _quicklyDeadThreads = new QuicklyDeadThreads();
+            if (nbThreadsToCreate == int.MaxValue)
+            {
+                // 1024 threads by default
+                nbThreadsToCreate = 1024;
+            }
+
+            _quicklyDeadThreads = new QuicklyDeadThreads(nbThreads, nbThreadsToCreate);
             _quicklyDeadThreads.Start();
         }
 
@@ -571,9 +581,15 @@ namespace Samples.Computer01
             memoryLeak.Run();
         }
 
-        private void RunQuicklyDeadThreads()
+        private void RunQuicklyDeadThreads(int nbThreads, int nbThreadsToCreate)
         {
-            var quicklyDeadThreads = new QuicklyDeadThreads();
+            if (nbThreadsToCreate == int.MaxValue)
+            {
+                // 1024 threads by default
+                nbThreadsToCreate = 1024;
+            }
+
+            var quicklyDeadThreads = new QuicklyDeadThreads(nbThreads, nbThreadsToCreate);
             quicklyDeadThreads.Run();
         }
 
