@@ -226,6 +226,11 @@ internal class IntelligentTestRunnerClient
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
     {
         Log.Debug("ITR: Getting settings...");
+        if (!_useEvpProxy && string.IsNullOrEmpty(_settings.ApplicationKey))
+        {
+            Log.Error("ITR: Error getting settings: Application key is missing.");
+        }
+
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var branchName = await _getBranchNameTask.ConfigureAwait(false);
@@ -286,6 +291,11 @@ internal class IntelligentTestRunnerClient
     public async Task<SkippableTest[]> GetSkippableTestsAsync()
     {
         Log.Debug("ITR: Getting skippable tests...");
+        if (!_useEvpProxy && string.IsNullOrEmpty(_settings.ApplicationKey))
+        {
+            Log.Error("ITR: Error getting skippable tests: Application key is missing.");
+        }
+
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var currentShaCommand = await _getShaTask.ConfigureAwait(false);
