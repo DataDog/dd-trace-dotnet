@@ -29,8 +29,8 @@ namespace Datadog.Trace.Debugger.Expressions
 
             var probeType = probe switch
             {
-                LogProbe { Capture: { } } => ProbeType.Snapshot,
-                LogProbe { Capture: null } => ProbeType.Log,
+                LogProbe { CaptureSnapshot: true } => ProbeType.Snapshot,
+                LogProbe { CaptureSnapshot: false } => ProbeType.Log,
                 MetricProbe => ProbeType.Metric,
                 _ => throw new ArgumentException(nameof(probe))
             };
@@ -253,19 +253,15 @@ namespace Datadog.Trace.Debugger.Expressions
                             snapshotCreator.SetEvaluationResult(ref evaluationResult);
                         }
 
-                        if (!ProbeInfo.IsFullSnapshot)
+                        if (ProbeInfo.IsFullSnapshot)
                         {
-                            snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
-                            LiveDebugger.Instance.AddSnapshot(snapshot);
-                            snapshotCreator.CaptureBehaviour = CaptureBehaviour.NoCapture;
-                            break;
+                            snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
+                            snapshotCreator.CaptureExitMethodEndMarker(ref info);
                         }
-
-                        snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
-                        snapshotCreator.CaptureExitMethodEndMarker(ref info);
 
                         snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
                         LiveDebugger.Instance.AddSnapshot(snapshot);
+                        snapshotCreator.Stop();
                         break;
                     }
 
@@ -303,6 +299,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ref info);
                     LiveDebugger.Instance.AddSnapshot(snapshot);
+                    snapshotCreator.Stop();
                     break;
 
                 case MethodState.LogArg:
