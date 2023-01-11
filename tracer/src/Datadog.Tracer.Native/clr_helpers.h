@@ -633,6 +633,7 @@ HRESULT ResolveType(ICorProfilerInfo4* info, const ComPtr<IMetaDataImport2>& met
                     const mdTypeRef typeRefToken, mdTypeDef& resolvedTypeDefToken,
                     ComPtr<IMetaDataImport2>& resolvedMetadataImport);
 
+void LogManagedProfilerAssemblyDetails();
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_CLR_HELPERS_H_

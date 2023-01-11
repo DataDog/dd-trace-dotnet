@@ -1412,4 +1412,39 @@ HRESULT GenericTypeProps::TryParse()
     return S_OK;
 }
 
+void LogManagedProfilerAssemblyDetails()
+{
+    Logger::Info("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
+    Logger::Info("ppbPublicKey: ", shared::HexStr(managed_profiler_assembly_property.ppbPublicKey,
+                                                  managed_profiler_assembly_property.pcbPublicKey));
+    Logger::Info("pcbPublicKey: ");
+    const auto ppbPublicKey = (BYTE*) managed_profiler_assembly_property.ppbPublicKey;
+    for (ULONG i = 0; i < managed_profiler_assembly_property.pcbPublicKey; i++)
+    {
+        Logger::Info(" -> ", (int) ppbPublicKey[i]);
+    }
+    Logger::Info("szName: ", managed_profiler_assembly_property.szName);
+
+    Logger::Info("Metadata.cbLocale: ", managed_profiler_assembly_property.pMetaData.cbLocale);
+    Logger::Info("Metadata.szLocale: ", managed_profiler_assembly_property.pMetaData.szLocale);
+
+    if (managed_profiler_assembly_property.pMetaData.rOS != nullptr)
+    {
+        Logger::Info("Metadata.rOS.dwOSMajorVersion: ",
+                     managed_profiler_assembly_property.pMetaData.rOS->dwOSMajorVersion);
+        Logger::Info("Metadata.rOS.dwOSMinorVersion: ",
+                     managed_profiler_assembly_property.pMetaData.rOS->dwOSMinorVersion);
+        Logger::Info("Metadata.rOS.dwOSPlatformId: ",
+                     managed_profiler_assembly_property.pMetaData.rOS->dwOSPlatformId);
+    }
+
+    Logger::Info("Metadata.usBuildNumber: ", managed_profiler_assembly_property.pMetaData.usBuildNumber);
+    Logger::Info("Metadata.usMajorVersion: ", managed_profiler_assembly_property.pMetaData.usMajorVersion);
+    Logger::Info("Metadata.usMinorVersion: ", managed_profiler_assembly_property.pMetaData.usMinorVersion);
+    Logger::Info("Metadata.usRevisionNumber: ", managed_profiler_assembly_property.pMetaData.usRevisionNumber);
+
+    Logger::Info("pulHashAlgId: ", managed_profiler_assembly_property.pulHashAlgId);
+    Logger::Info("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
+    Logger::Info("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
+}
 } // namespace trace
