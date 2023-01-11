@@ -42,9 +42,10 @@ public class InstrumentationTestsBase
 
     protected void AssertInstrumented()
     {
-        var loaderAssembliesCount = AppDomain.CurrentDomain.GetAssemblies().Where(x => x.GetName().Name == "Datadog.Trace.ClrProfiler.Managed.Loader").Count();
-        loaderAssembliesCount.Should().NotBe(0, GetErrorMessage());
-        Tracer.Instance.ActiveScope.Should().NotBeNull(GetErrorMessage());
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+        var loaderAssembliesCount = assemblies.Where(x => x.GetName().Name == "Datadog.Trace.ClrProfiler.Managed.Loader").Count();
+        loaderAssembliesCount.Should().NotBe(0, GetErrorMessage(assemblies));
+        Tracer.Instance.ActiveScope.Should().NotBeNull(GetErrorMessage(assemblies));
     }
 
     protected void AssertSpanGenerated(string operationName, int spansGenerated = 1)
@@ -65,12 +66,16 @@ public class InstrumentationTestsBase
         AssertVulnerable(0);
     }
 
-    private static string GetErrorMessage()
+    private static string GetErrorMessage(Assembly[] assemblies)
     {
-        return "Test is not instrumented." + Environment.NewLine + EnvironmentVariableMessage("CORECLR_ENABLE_PROFILING") +
+        string assemblyListString = string.Empty;
+        assemblies.ToList().ForEach(x => assemblyListString += (x.FullName + Environment.NewLine));
+        return "Test is not instrumented." + Environment.NewLine +
+            EnvironmentVariableMessage("CORECLR_ENABLE_PROFILING") +
             EnvironmentVariableMessage("CORECLR_PROFILER_PATH_64") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_32") +
             EnvironmentVariableMessage("COR_ENABLE_PROFILING") + EnvironmentVariableMessage("COR_PROFILER_PATH_32") +
-            EnvironmentVariableMessage("COR_PROFILER_PATH_64");
+            EnvironmentVariableMessage("COR_PROFILER_PATH_64") + EnvironmentVariableMessage("DD_DOTNET_TRACER_HOME") + Environment.NewLine +
+            assemblyListString;
     }
 
     private static string EnvironmentVariableMessage(string variable)
