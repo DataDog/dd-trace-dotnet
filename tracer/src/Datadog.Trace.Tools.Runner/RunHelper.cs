@@ -113,11 +113,18 @@ namespace Datadog.Trace.Tools.Runner
                         && ciVisibilitySettings.IntelligentTestRunnerEnabled
                         && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
                     {
-                        var itrClient = new Ci.IntelligentTestRunnerClient(Ci.CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
-                        // we skip the framework info because we are interested in the target projects info not the runner one.
-                        var itrSettings = AsyncUtil.RunSync(() => itrClient.GetSettingsAsync(skipFrameworkInfo: true));
-                        codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
-                        testSkippingEnabled = itrSettings.TestsSkipping == true;
+                        try
+                        {
+                            var itrClient = new Ci.IntelligentTestRunnerClient(Ci.CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
+                            // we skip the framework info because we are interested in the target projects info not the runner one.
+                            var itrSettings = AsyncUtil.RunSync(() => itrClient.GetSettingsAsync(skipFrameworkInfo: true));
+                            codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
+                            testSkippingEnabled = itrSettings.TestsSkipping == true;
+                        }
+                        catch (Exception ex)
+                        {
+                            CIVisibility.Log.Warning(ex, ex.Message);
+                        }
                     }
                 }
 
