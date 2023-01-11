@@ -369,11 +369,17 @@ namespace Datadog.Trace.Tests.Propagators
 
         public ulong SpanId { get; set; }
 
+        public string RawTraceId { get; set; }
+
+        public string RawSpanId { get; set; }
+
         public string Origin { get; set; }
 
         public int? SamplingPriority { get; set; }
 
         public string PropagatedTags { get; set; }
+
+        public string AdditionalW3CTraceState { get; set; }
 
         public ISpanContext Parent { get; set; }
 
