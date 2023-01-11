@@ -5,19 +5,12 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -27,8 +20,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
     public class AspNetCore5AsmToggle : RcmBase
     {
-        public AspNetCore5AsmToggle(ITestOutputHelper outputHelper)
-            : base(outputHelper, testName: nameof(AspNetCore5AsmToggle))
+        public AspNetCore5AsmToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, testName: nameof(AspNetCore5AsmToggle))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
@@ -45,13 +38,14 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, uint expectedCapabilities)
         {
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(enableSecurity);
+            await Fixture.TryStartApp(this, enableSecurity);
+            SetHttpPort(Fixture.HttpPort);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState, expectedCapabilities);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
 
-            var spans1 = await SendRequestsAsync(agent, url);
+            var spans1 = await SendRequestsAsync(Fixture.Agent, url);
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new AsmFeature() { Enabled = false } }, "1") }, "ASM_FEATURES", "first");
+            var request1 = await Fixture.Agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new AsmFeature() { Enabled = false } }, "1") }, "ASM_FEATURES", "first");
 
             RcmBase.CheckAckState(request1, "ASM_FEATURES", expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapabilities, "First RCM call");
@@ -64,9 +58,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             RcmBase.CheckAckState(request1, "ASM_FEATURES", expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapabilities, "First RCM call");
 
-            var spans2 = await SendRequestsAsync(agent, url);
+            var spans2 = await SendRequestsAsync(Fixture.Agent, url);
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new AsmFeature() { Enabled = true } }, "2") }, "ASM_FEATURES", "second");
+            var request2 = await Fixture.Agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new AsmFeature() { Enabled = true } }, "2") }, "ASM_FEATURES", "second");
 
             RcmBase.CheckAckState(request2, "ASM_FEATURES", expectedState, null, "Second RCM call");
             CheckCapabilities(request2, expectedCapabilities, "Second RCM call");
@@ -75,9 +69,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 await logEntryWatcher.WaitForLogEntry(AppSecEnabledMessage(), LogEntryWatcherTimeout);
             }
 
-            var spans3 = await SendRequestsAsync(agent, url);
+            var spans3 = await SendRequestsAsync(Fixture.Agent, url);
 
-            var request3 = await agent.WaitRcmRequestAndReturnLast();
+            var request3 = await Fixture.Agent.WaitRcmRequestAndReturnLast();
             request3.Client.State.BackendClientState.Should().Be("second");
 
             var spans = new List<MockSpan>();
@@ -94,12 +88,13 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         {
             var enableSecurity = true;
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(enableSecurity);
+            await Fixture.TryStartApp(this, enableSecurity);
+            SetHttpPort(Fixture.HttpPort);
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var spans1 = await SendRequestsAsync(agent, url);
+            var spans1 = await SendRequestsAsync(Fixture.Agent, url);
 
-            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "ASM_FEATURES");
+            var request = await Fixture.Agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "ASM_FEATURES");
 
             RcmBase.CheckAckState(request, "ASM_FEATURES", ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 

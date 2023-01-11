@@ -51,7 +51,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public async Task TryStartApp(TestHelper helper)
+        public async Task TryStartApp(TestHelper helper, bool? enableSecurity = null, string externalRulesFile = null)
         {
             if (Process is not null)
             {
@@ -68,7 +68,7 @@ namespace Datadog.Trace.TestHelpers
                     Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort);
                     Agent.SpanFilters.Add(IsNotServerLifeCheck);
                     WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
-                    Process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
+                    Process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort, enableSecurity: enableSecurity, externalRulesFile: externalRulesFile);
                 }
             }
 
@@ -77,8 +77,11 @@ namespace Datadog.Trace.TestHelpers
 
         public void Dispose()
         {
-            var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
-            request.GetResponse().Close();
+            if (HttpPort is not 0)
+            {
+                var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
+                request.GetResponse().Close();
+            }
 
             if (Process is not null)
             {

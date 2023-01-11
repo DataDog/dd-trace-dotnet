@@ -5,15 +5,15 @@
 
 #if NETCOREAPP2_1
 
-using System;
+using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore2 : AspNetCoreBase, IDisposable
+    public class AspNetCore2 : AspNetCoreBase
     {
-        public AspNetCore2(ITestOutputHelper outputHelper)
-            : base("AspNetCore2", outputHelper, "/shutdown")
+        public AspNetCore2(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown")
         {
         }
     }

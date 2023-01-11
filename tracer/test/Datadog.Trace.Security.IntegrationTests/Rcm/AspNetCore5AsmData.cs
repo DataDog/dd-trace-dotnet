@@ -5,21 +5,14 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Collections.Specialized;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
-using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -29,8 +22,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
     public class AspNetCore5AsmData : RcmBase
     {
-        public AspNetCore5AsmData(ITestOutputHelper outputHelper)
-            : base(outputHelper, testName: nameof(AspNetCore5AsmData))
+        public AspNetCore5AsmData(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, testName: nameof(AspNetCore5AsmData))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
@@ -41,16 +34,17 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestBlockedRequestIp(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
         {
-            var agent = await RunOnSelfHosted(enableSecurity);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+            await Fixture.TryStartApp(this, enableSecurity);
+            SetHttpPort(Fixture.HttpPort);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             // we want to see the ip here
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, enableSecurity, (int)expectedStatusCode, sanitisedUrl });
-            var spanBeforeAsmData = await SendRequestsAsync(agent, url);
+            var spanBeforeAsmData = await SendRequestsAsync(Fixture.Agent, url);
 
             var product = new AsmDataProduct();
-            agent.SetupRcm(
+            Fixture.Agent.SetupRcm(
                 Output,
                 new[]
                 {
@@ -60,7 +54,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 },
                 product.Name);
 
-            var request1 = await agent.WaitRcmRequestAndReturnLast();
+            var request1 = await Fixture.Agent.WaitRcmRequestAndReturnLast();
             if (enableSecurity)
             {
                 await logEntryWatcher.WaitForLogEntry($"1 {RulesUpdatedMessage()}", LogEntryWatcherTimeout);
@@ -70,7 +64,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 await Task.Delay(1500);
             }
 
-            var spanAfterAsmData = await SendRequestsAsync(agent, url);
+            var spanAfterAsmData = await SendRequestsAsync(Fixture.Agent, url);
             var spans = new List<MockSpan>();
             spans.AddRange(spanBeforeAsmData);
             spans.AddRange(spanAfterAsmData);
@@ -82,16 +76,17 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestBlockedRequestIpWithOneClickActivation(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
         {
-            var agent = await RunOnSelfHosted(enableSecurity);
+            await Fixture.TryStartApp(this, enableSecurity);
+            SetHttpPort(Fixture.HttpPort);
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             // we want to see the ip here
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, enableSecurity, (int)expectedStatusCode, sanitisedUrl });
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
-            var spanBeforeAsmData = await SendRequestsAsync(agent, url);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
+            var spanBeforeAsmData = await SendRequestsAsync(Fixture.Agent, url);
 
             var product = new AsmDataProduct();
-            agent.SetupRcm(
+            Fixture.Agent.SetupRcm(
                 Output,
                 new[]
                 {
@@ -101,23 +96,23 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 },
                 product.Name);
 
-            var request1 = await agent.WaitRcmRequestAndReturnLast();
+            var request1 = await Fixture.Agent.WaitRcmRequestAndReturnLast();
             var rulesUpdatedMessage = RulesUpdatedMessage();
             await logEntryWatcher.WaitForLogEntry($"1 {rulesUpdatedMessage}", LogEntryWatcherTimeout);
 
-            var spanAfterAsmData = await SendRequestsAsync(agent, url);
+            var spanAfterAsmData = await SendRequestsAsync(Fixture.Agent, url);
             spanAfterAsmData.First().GetTag(Tags.AppSecEvent).Should().NotBeNull();
-            agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, "1") }, "ASM_FEATURES");
-            var requestAfterDeactivation = await agent.WaitRcmRequestAndReturnLast();
+            Fixture.Agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, "1") }, "ASM_FEATURES");
+            var requestAfterDeactivation = await Fixture.Agent.WaitRcmRequestAndReturnLast();
             await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), LogEntryWatcherTimeout);
 
-            var spanAfterAsmDeactivated = await SendRequestsAsync(agent, url);
+            var spanAfterAsmDeactivated = await SendRequestsAsync(Fixture.Agent, url);
 
-            agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "1") }, "ASM_FEATURES");
-            var requestAfterReactivation = await agent.WaitRcmRequestAndReturnLast();
+            Fixture.Agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "1") }, "ASM_FEATURES");
+            var requestAfterReactivation = await Fixture.Agent.WaitRcmRequestAndReturnLast();
             await logEntryWatcher.WaitForLogEntries(new[] { $"1 {rulesUpdatedMessage}", AppSecEnabledMessage() }, LogEntryWatcherTimeout);
 
-            var spanAfterAsmDataReactivated = await SendRequestsAsync(agent, url);
+            var spanAfterAsmDataReactivated = await SendRequestsAsync(Fixture.Agent, url);
 
             var spans = new List<MockSpan>();
             spans.AddRange(spanBeforeAsmData);

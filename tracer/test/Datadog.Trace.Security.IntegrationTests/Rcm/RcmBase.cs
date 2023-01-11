@@ -10,21 +10,26 @@ using System.Numerics;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm;
 
-public class RcmBase : AspNetBase
+public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
     protected const string LogFileNamePrefix = "dotnet-tracer-managed-";
 
-    public RcmBase(ITestOutputHelper outputHelper, string testName)
+    public RcmBase(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string testName)
         : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
     {
+        Fixture = fixture;
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
     }
+
+    protected AspNetCoreTestFixture Fixture { get; }
 
     protected TimeSpan LogEntryWatcherTimeout => TimeSpan.FromSeconds(20);
 
@@ -49,11 +54,11 @@ public class RcmBase : AspNetBase
         capabilities.Should().Be(expectedState, message);
     }
 
-    protected string AppSecDisabledMessage() => $"AppSec is now Disabled, _settings.Enabled is false, coming from remote config: true  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
+    protected string AppSecDisabledMessage() => $"AppSec is now Disabled, _settings.Enabled is false, coming from remote config: true  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
 
-    protected string AppSecEnabledMessage() => $"AppSec is now Enabled, _settings.Enabled is true, coming from remote config: true  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
+    protected string AppSecEnabledMessage() => $"AppSec is now Enabled, _settings.Enabled is true, coming from remote config: true  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
 
-    protected string RulesUpdatedMessage() => $"rules have been updated and waf status is \"DDWAF_OK\"  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
+    protected string RulesUpdatedMessage() => $"rules have been updated and waf status is \"DDWAF_OK\"  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
 
-    protected string WafUpdateRule() => $"DDAS-0015-00: AppSec loaded 1 from file RemoteConfig.  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
+    protected string WafUpdateRule() => $"DDAS-0015-00: AppSec loaded 1 from file RemoteConfig.  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
 }

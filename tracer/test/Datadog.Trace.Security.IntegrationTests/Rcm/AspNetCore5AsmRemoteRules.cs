@@ -5,15 +5,10 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Security.IntegrationTests.Rcm;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -22,8 +17,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
     public class AspNetCore5AsmRemoteRules : RcmBase
     {
-        public AspNetCore5AsmRemoteRules(ITestOutputHelper outputHelper)
-            : base(outputHelper, testName: nameof(AspNetCore5AsmRemoteRules))
+        public AspNetCore5AsmRemoteRules(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, testName: nameof(AspNetCore5AsmRemoteRules))
         {
         }
 
@@ -32,19 +27,20 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestNewRemoteRules()
         {
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(true);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+            await Fixture.TryStartApp(this, true);
+            SetHttpPort(Fixture.HttpPort);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var spans1 = await SendRequestsAsync(agent, url);
+            var spans1 = await SendRequestsAsync(Fixture.Agent, url);
 
-            await agent.SetupRcmAndWait(Output, new[] { (GetRules("2.22.222"), "1") }, "ASM_DD");
+            await Fixture.Agent.SetupRcmAndWait(Output, new[] { (GetRules("2.22.222"), "1") }, "ASM_DD");
             await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
-            var spans2 = await SendRequestsAsync(agent, url);
+            var spans2 = await SendRequestsAsync(Fixture.Agent, url);
 
-            await agent.SetupRcmAndWait(Output, new[] { (GetRules("3.33.333"), "2") }, "ASM_DD");
+            await Fixture.Agent.SetupRcmAndWait(Output, new[] { (GetRules("3.33.333"), "2") }, "ASM_DD");
             await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
-            var spans3 = await SendRequestsAsync(agent, url);
+            var spans3 = await SendRequestsAsync(Fixture.Agent, url);
 
             var spans = new List<MockSpan>();
             spans.AddRange(spans1);

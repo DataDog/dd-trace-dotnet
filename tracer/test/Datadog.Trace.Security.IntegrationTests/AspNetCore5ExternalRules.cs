@@ -19,11 +19,21 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5ExternalRules : AspNetBase, IDisposable
+    public class AspNetCore5ExternalRules : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCore5ExternalRules(ITestOutputHelper outputHelper)
+        private readonly AspNetCoreTestFixture fixture;
+
+        public AspNetCore5ExternalRules(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5ExternalRules))
         {
+            this.fixture = fixture;
+            this.fixture.SetOutput(outputHelper);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            this.fixture.SetOutput(null);
         }
 
         [SkippableFact]
@@ -32,11 +42,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var enableSecurity = true;
 
-            var agent = await RunOnSelfHosted(enableSecurity, DefaultRuleFile);
+            await fixture.TryStartApp(this, enableSecurity, DefaultRuleFile);
+            SetHttpPort(fixture.HttpPort);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            await TestAppSecRequestWithVerifyAsync(agent, DefaultAttackUrl, null, 5, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(fixture.Agent, DefaultAttackUrl, null, 5, 1, settings);
         }
     }
 }

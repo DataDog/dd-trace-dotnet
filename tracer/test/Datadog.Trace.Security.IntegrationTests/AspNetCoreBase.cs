@@ -6,18 +6,27 @@
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public abstract class AspNetCoreBase : AspNetBase
+    public abstract class AspNetCoreBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCoreBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath)
+        public AspNetCoreBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath)
             : base(sampleName, outputHelper, shutdownPath ?? "/shutdown")
         {
+            Fixture = fixture;
+            Fixture.SetOutput(outputHelper);
+        }
+
+        protected AspNetCoreTestFixture Fixture { get; }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            Fixture.SetOutput(null);
         }
 
         [SkippableTheory]
@@ -32,11 +41,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestRequest(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
         {
-            var agent = await RunOnSelfHosted(enableSecurity);
+            await Fixture.TryStartApp(this, enableSecurity);
+            SetHttpPort(Fixture.HttpPort);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl);
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 5, 1, settings);
         }
 
         [SkippableTheory]
@@ -45,11 +55,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestBlockedRequest(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
         {
-            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
+            await Fixture.TryStartApp(this, enableSecurity, externalRulesFile: DefaultRuleFile);
+            SetHttpPort(Fixture.HttpPort);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl);
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings, userAgent: "Hello/V");
+            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
 
         [SkippableTheory]
@@ -59,7 +70,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestBlockedBody(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
         {
-            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
+            await Fixture.TryStartApp(this, enableSecurity, externalRulesFile: DefaultRuleFile);
+            SetHttpPort(Fixture.HttpPort);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl, body);
@@ -69,7 +81,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 contentType = "application/json";
             }
 
-            await TestAppSecRequestWithVerifyAsync(agent, url, body, 5, 1, settings, contentType);
+            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, body, 5, 1, settings, contentType);
         }
     }
 }

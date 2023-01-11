@@ -15,10 +15,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5 : AspNetCoreBase, IDisposable
+    public class AspNetCore5 : AspNetCoreBase
     {
-        public AspNetCore5(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown")
+        public AspNetCore5(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore5", fixture, outputHelper, "/shutdown")
         {
         }
 
@@ -28,7 +28,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestPathParamsEndpointRouting(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
         {
-            var agent = await RunOnSelfHosted(enableSecurity);
+            await Fixture.TryStartApp(this, enableSecurity);
+            SetHttpPort(Fixture.HttpPort);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl);
@@ -41,7 +42,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 #if NET7_0_OR_GREATER
             settings.AddSimpleScrubber("HTTP: GET /params-endpoint/{s}", "/params-endpoint/{s} HTTP: GET");
 #endif
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1,  settings);
+            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 5, 1,  settings);
         }
     }
 }

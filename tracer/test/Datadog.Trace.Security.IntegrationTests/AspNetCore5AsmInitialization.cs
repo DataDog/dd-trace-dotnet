@@ -15,11 +15,21 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5AsmInitialization : AspNetBase, IDisposable
+    public class AspNetCore5AsmInitialization : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCore5AsmInitialization(ITestOutputHelper outputHelper)
+        private readonly AspNetCoreTestFixture fixture;
+
+        public AspNetCore5AsmInitialization(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmInitialization))
         {
+            this.fixture = fixture;
+            this.fixture.SetOutput(outputHelper);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            this.fixture.SetOutput(null);
         }
 
         [SkippableTheory]
@@ -31,9 +41,10 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestSecurityInitialization(bool enableSecurity, HttpStatusCode expectedStatusCode, string ruleset = null)
         {
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: ruleset);
+            await fixture.TryStartApp(this, enableSecurity, externalRulesFile: ruleset);
+            SetHttpPort(fixture.HttpPort);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, (int)expectedStatusCode, ruleset);
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 1, 1, settings, testInit: true);
+            await TestAppSecRequestWithVerifyAsync(fixture.Agent, url, null, 1, 1, settings, testInit: true);
         }
     }
 }

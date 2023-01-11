@@ -4,22 +4,16 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Collections.Specialized;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -46,8 +40,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly string _shutdownPath;
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
         private int _httpPort;
-        private Process _process;
-        private MockTracerAgent _agent;
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
@@ -63,65 +55,12 @@ namespace Datadog.Trace.Security.IntegrationTests
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
         }
 
-        public string SampleProcessName
-        {
-            get { return _process?.ProcessName; }
-        }
-
-        public int? SampleProcessId
-        {
-            get { return _process?.Id; }
-        }
-
         protected bool IncludeAllHttpSpans { get; set; } = false;
-
-        public Task<MockTracerAgent> RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
-        {
-            if (_agent == null)
-            {
-                var agentPort = TcpPortProvider.GetOpenPort();
-                _agent = MockTracerAgent.Create(Output, agentPort);
-            }
-
-            StartSample(
-                _agent,
-                arguments: null,
-                enableSecurity: enableSecurity,
-                externalRulesFile: externalRulesFile,
-                traceRateLimit: traceRateLimit);
-
-            return Task.FromResult(_agent);
-        }
 
         public override void Dispose()
         {
             base.Dispose();
-
-            var request = WebRequest.CreateHttp($"http://localhost:{_httpPort}{_shutdownPath}");
-            request.Timeout = 10_000;
-            request.GetResponse().Close();
-
-            if (_process is not null)
-            {
-                try
-                {
-                    if (!_process.HasExited)
-                    {
-                        if (!_process.WaitForExit(5000))
-                        {
-                            _process.Kill();
-                        }
-                    }
-                }
-                catch
-                {
-                }
-
-                _process.Dispose();
-            }
-
             _httpClient?.Dispose();
-            _agent?.Dispose();
         }
 
         public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null)
@@ -333,79 +272,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             return spans;
-        }
-
-        private void StartSample(
-            MockTracerAgent agent,
-            string arguments,
-            string packageVersion = "",
-            string framework = "",
-            bool? enableSecurity = true,
-            string externalRulesFile = null,
-            int? traceRateLimit = null)
-        {
-            var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
-            // get path to sample app that the profiler will attach to
-            const int mstimeout = 15_000;
-
-            if (!File.Exists(sampleAppPath))
-            {
-                throw new Exception($"application not found: {sampleAppPath}");
-            }
-
-            // EnvironmentHelper.DebugModeEnabled = true;
-
-            Output.WriteLine($"Starting Application: {sampleAppPath}");
-            var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
-            var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
-            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_TRACE_RATE_LIMIT", traceRateLimit?.ToString());
-
-            int? aspNetCorePort = default;
-            _process = ProfilerHelper.StartProcessWithProfiler(
-                executable,
-                EnvironmentHelper,
-                agent,
-                args,
-                aspNetCorePort: 0,
-                enableSecurity: enableSecurity,
-                externalRulesFile: externalRulesFile);
-
-            // then wait server ready
-            var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
-            _process.OutputDataReceived += (sender, args) =>
-            {
-                if (args.Data != null)
-                {
-                    if (args.Data.Contains("Now listening on:"))
-                    {
-                        var splitIndex = args.Data.LastIndexOf(':');
-                        aspNetCorePort = int.Parse(args.Data.Substring(splitIndex + 1));
-                        wh.Set();
-                    }
-
-                    Output.WriteLine($"[webserver][stdout] {args.Data}");
-                }
-            };
-            _process.BeginOutputReadLine();
-
-            _process.ErrorDataReceived += (sender, args) =>
-            {
-                if (args.Data != null)
-                {
-                    Output.WriteLine($"[webserver][stderr] {args.Data}");
-                }
-            };
-
-            _process.BeginErrorReadLine();
-
-            wh.WaitOne(mstimeout);
-            if (!aspNetCorePort.HasValue)
-            {
-                _process.Kill();
-                throw new Exception("Unable to determine port application is listening on");
-            }
-
-            _httpPort = aspNetCorePort.Value;
         }
 
         internal class AppSecJson
