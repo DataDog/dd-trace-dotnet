@@ -381,7 +381,7 @@ namespace Datadog.Trace
             // The code randomly chooses between the two PathwayContexts.
             // If there is a race, then that's okay
             // Randomly select between keeping the current context (0) or replacing (1)
-            if (ThreadSafeRandom.Next(2) == 1)
+            if (ThreadSafeRandom.Shared.Next(2) == 1)
             {
                 PathwayContext = pathwayContext;
             }

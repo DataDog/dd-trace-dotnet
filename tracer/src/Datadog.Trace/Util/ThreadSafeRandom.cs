@@ -13,12 +13,6 @@ internal static class ThreadSafeRandom
 {
 #if NET6_0_OR_GREATER
     public static Random Shared => Random.Shared;
-
-    public static int Next(int maxValue) => Random.Shared.Next(maxValue);
-
-    public static int Next(int minValue, int maxValue) => Random.Shared.Next(minValue, maxValue);
-
-    public static double NextDouble() => Random.Shared.NextDouble();
 #else
     private static readonly Random Global = new();
 
@@ -32,6 +26,7 @@ internal static class ThreadSafeRandom
             if (_local is null)
             {
                 int seed;
+
                 lock (Global)
                 {
                     seed = Global.Next();
@@ -44,19 +39,5 @@ internal static class ThreadSafeRandom
         }
     }
 
-    public static int Next(int maxValue)
-    {
-        return Shared.Next(maxValue);
-    }
-
-    public static int Next(int minValue, int maxValue)
-    {
-        return Shared.Next(minValue, maxValue);
-    }
-
-    public static double NextDouble()
-    {
-        return Shared.NextDouble();
-    }
 #endif
 }
