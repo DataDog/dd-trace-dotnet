@@ -109,7 +109,7 @@ namespace Datadog.Trace.Tools.Runner
                     // If we have api and application key, and the code coverage or the tests skippeable environment variables
                     // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
                     var useConfigurationApi = !agentless || !string.IsNullOrEmpty(applicationKey);
-                    if (useConfigurationApi 
+                    if (useConfigurationApi
                         && ciVisibilitySettings.IntelligentTestRunnerEnabled
                         && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
                     {
