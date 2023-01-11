@@ -22,6 +22,9 @@ internal class MethodScopeMembers
 #else
         Members = ArrayPool<ScopeMember>.Shared.Rent(numberOfLocals + numberOfArguments + 2);
 #endif
+        Exception = null;
+        Return = default;
+        InvocationTarget = default;
     }
 
     public ScopeMember[] Members { get; private set; }
@@ -41,9 +44,8 @@ internal class MethodScopeMembers
         _index++;
     }
 
-    internal void Reset()
+    internal void Dispose()
     {
-        _index = 0;
 #if NETFRAMEWORK
         Members = null;
 #else

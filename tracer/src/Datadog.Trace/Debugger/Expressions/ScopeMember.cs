@@ -32,20 +32,4 @@ namespace Datadog.Trace.Debugger.Expressions
             ElementType = elementType;
         }
     }
-
-    internal struct ScopeMember<T>
-    {
-        public T Value;
-        public string Name;
-        public Type Type;
-        public ScopeMemberKind ElementType;
-
-        public ScopeMember(string name, Type type, T value, ScopeMemberKind elementType)
-        {
-            Name = name;
-            Type = type;
-            Value = value;
-            ElementType = elementType;
-        }
-    }
 }

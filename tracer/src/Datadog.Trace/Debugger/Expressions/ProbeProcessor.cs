@@ -16,12 +16,13 @@ namespace Datadog.Trace.Debugger.Expressions
 {
     internal class ProbeProcessor
     {
-        protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
         private ProbeExpressionEvaluator _evaluator;
 
         public ProbeProcessor(ProbeDefinition probe)
         {
+            _evaluator = default;
             var location = probe.Where.MethodName != null
                                ? ProbeLocation.Method
                                : ProbeLocation.Line;
@@ -29,8 +30,9 @@ namespace Datadog.Trace.Debugger.Expressions
             var probeType = probe switch
             {
                 LogProbe { Capture: { } } => ProbeType.Snapshot,
+                LogProbe { Capture: null } => ProbeType.Log,
                 MetricProbe => ProbeType.Metric,
-                _ => ProbeType.Log
+                _ => throw new ArgumentException(nameof(probe))
             };
 
             ProbeInfo = new ProbeInfo(
@@ -45,7 +47,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal ProbeInfo ProbeInfo { get; }
 
-        private DebuggerExpression? Convert(SnapshotSegment segment)
+        private static DebuggerExpression? Convert(SnapshotSegment segment)
         {
             return segment == null ? null : new DebuggerExpression(segment.Dsl, segment.Json?.ToString(), segment.Str);
         }
@@ -58,6 +60,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal bool Process<TCapture>(ref CaptureInfo<TCapture> info, DebuggerSnapshotCreator snapshotCreator)
         {
+            if (ShouldCheckRateLimit(snapshotCreator) &&
+                !ProbeRateLimiter.Instance.Sample(ProbeInfo.ProbeId))
+            {
+                return false;
+            }
+
             ExpressionEvaluationResult evaluationResult = default;
             try
             {
@@ -67,7 +75,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     case MethodState.BeginLineAsync:
                     case MethodState.EntryStart:
                     case MethodState.EntryAsync:
-                        var captureBehaviour = snapshotCreator.DefineSnapshotBehavior(info, ProbeInfo.EvaluateAt, HasCondition());
+                        var captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, ProbeInfo.EvaluateAt, HasCondition());
                         if (captureBehaviour != CaptureBehaviour.Capture)
                         {
                             return true;
@@ -76,7 +84,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         break;
                     case MethodState.ExitStart:
                     case MethodState.ExitStartAsync:
-                        captureBehaviour = snapshotCreator.DefineSnapshotBehavior(info, ProbeInfo.EvaluateAt, HasCondition());
+                        captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, ProbeInfo.EvaluateAt, HasCondition());
                         switch (captureBehaviour)
                         {
                             case CaptureBehaviour.Stop:
@@ -100,7 +108,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     case MethodState.ExitEnd:
                     case MethodState.ExitEndAsync:
                         {
-                            captureBehaviour = snapshotCreator.DefineSnapshotBehavior(info, ProbeInfo.EvaluateAt, HasCondition());
+                            captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, ProbeInfo.EvaluateAt, HasCondition());
                             switch (captureBehaviour)
                             {
                                 case CaptureBehaviour.NoCapture or CaptureBehaviour.Stop:
@@ -113,7 +121,7 @@ namespace Datadog.Trace.Debugger.Expressions
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
                                         try
                                         {
-                                            evaluationResult = GetOrCreateEvaluator(snapshotCreator.MethodScopeMembers).Evaluate();
+                                            evaluationResult = GetOrCreateEvaluator(snapshotCreator.MethodScopeMembers).Evaluate(snapshotCreator.MethodScopeMembers);
                                         }
                                         catch (Exception e)
                                         {
@@ -164,11 +172,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        throw new ArgumentOutOfRangeException(
+                            "info.MethodState",
+                            $"{info.MethodState} is not valid value here");
                 }
 
-                ProcessCapture(ref info, ref snapshotCreator, ref evaluationResult);
-                return true;
+                return ProcessCapture(ref info, ref snapshotCreator, ref evaluationResult);
             }
             catch (Exception e)
             {
@@ -177,12 +186,16 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        private void ProcessCapture<TCapture>(ref CaptureInfo<TCapture> info, ref DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
+        private bool ShouldCheckRateLimit(DebuggerSnapshotCreator snapshotCreator)
         {
-            // if no condition or condition has evaluates to true, check limit
+            return (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Stop || (!HasCondition() && ProbeInfo.IsFullSnapshot));
+        }
+
+        private bool ProcessCapture<TCapture>(ref CaptureInfo<TCapture> info, ref DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
+        {
             if (!ProbeRateLimiter.Instance.Sample(ProbeInfo.ProbeId))
             {
-                return;
+                return false;
             }
 
             switch (ProbeInfo.ProbeLocation)
@@ -194,8 +207,10 @@ namespace Datadog.Trace.Debugger.Expressions
                     ProcessLine(ref info, ref snapshotCreator, ref evaluationResult);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException("ProbeInfo.ProbeLocation", $"{info.MethodState} is not valid value here");
             }
+
+            return true;
         }
 
         private void ProcessMethod<TCapture>(ref CaptureInfo<TCapture> info, ref DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
@@ -221,7 +236,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         break;
                     }
 
-                    snapshotCreator.ProcessQueue(ref info, HasCondition());
+                    snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
                     snapshotCreator.CaptureEntryMethodEndMarker(info.Value, info.Type, info.HasLocalOrArgument.Value);
 
                     break;
@@ -246,7 +261,7 @@ namespace Datadog.Trace.Debugger.Expressions
                             break;
                         }
 
-                        snapshotCreator.ProcessQueue(ref info, HasCondition());
+                        snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
                         snapshotCreator.CaptureExitMethodEndMarker(ref info);
 
                         snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
@@ -279,7 +294,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                 case MethodState.EndLine:
                 case MethodState.EndLineAsync:
-                    snapshotCreator.ProcessQueue(ref info, HasCondition());
+                    snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
                     snapshotCreator.CaptureEndLine(ref info);
                     if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                     {

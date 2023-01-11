@@ -31,7 +31,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
         private readonly DateTimeOffset? _startTime;
-        private MethodScopeMembers _methodScopeMembers;
         private CaptureBehaviour _captureBehaviour;
         private string _message;
         private List<EvaluationError> _errors;
@@ -42,16 +41,15 @@ namespace Datadog.Trace.Debugger.Snapshots
             _probeLocation = location;
             _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
             _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
-            _methodScopeMembers = null;
-            CaptureBehaviour = CaptureBehaviour.Capture;
+            MethodScopeMembers = default;
             _startTime = DateTimeOffset.UtcNow;
-            IsInitialized = false;
+            _captureBehaviour = CaptureBehaviour.Capture;
+            _errors = null;
+            _message = null;
             Initialize();
         }
 
-        internal bool IsInitialized { get; private set; }
-
-        internal MethodScopeMembers MethodScopeMembers => _methodScopeMembers;
+        internal MethodScopeMembers MethodScopeMembers { get; private set; }
 
         internal CaptureBehaviour CaptureBehaviour
         {
@@ -78,7 +76,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             throw new InvalidOperationException("Probe info not found for probe id: " + probeId);
         }
 
-        internal CaptureBehaviour DefineSnapshotBehavior<TCapture>(CaptureInfo<TCapture> info, EvaluateAt evaluateAt, bool hasCondition)
+        internal CaptureBehaviour DefineSnapshotBehavior<TCapture>(ref CaptureInfo<TCapture> info, EvaluateAt evaluateAt, bool hasCondition)
         {
             if (CaptureBehaviour == CaptureBehaviour.Stop)
             {
@@ -164,7 +162,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void CreateMethodScopeMembers(int numberOfLocals, int numberOfArguments)
         {
-            Interlocked.CompareExchange(ref _methodScopeMembers, new MethodScopeMembers(numberOfLocals, numberOfArguments), null);
+            MethodScopeMembers = new MethodScopeMembers(numberOfLocals, numberOfArguments);
         }
 
         internal void AddScopeMember<T>(string name, Type type, T value, ScopeMemberKind memberKind)
@@ -174,7 +172,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return;
             }
 
-            type = type.IsGenericTypeDefinition ? value.GetType() : type;
+            type = (type.IsGenericTypeDefinition ? value?.GetType() : type) ?? type;
             switch (memberKind)
             {
                 case ScopeMemberKind.This:
@@ -202,8 +200,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 StartCaptures();
             }
-
-            IsInitialized = true;
         }
 
         internal void StartDebugger()
@@ -530,7 +526,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             EndReturn(info.HasLocalOrArgument.Value);
         }
 
-        internal void ProcessQueue<TCapture>(ref CaptureInfo<TCapture> captureInfo, bool hasCondition)
+        internal void ProcessDelayedSnapshot<TCapture>(ref CaptureInfo<TCapture> captureInfo, bool hasCondition)
         {
             if (CaptureBehaviour == CaptureBehaviour.Evaluate && (hasCondition || !_isFullSnapshot))
             {
@@ -859,10 +855,10 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             try
             {
-                MethodScopeMembers.Reset();
-                _methodScopeMembers = null;
-                _jsonWriter?.Close();
                 Stop();
+                MethodScopeMembers.Dispose();
+                MethodScopeMembers = null;
+                _jsonWriter?.Close();
             }
             catch
             {

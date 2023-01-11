@@ -80,8 +80,8 @@ namespace Datadog.Trace.Tests.Debugger
 
             // Assert
             Assert.NotNull(result.Template);
-            Assert.True(evaluator.CompiledTemplates.Value.Length > 0);
-            var toVerify = GetStringToVerify(evaluator, result);
+            Assert.True(evaluator.Evaluator.CompiledTemplates.Value.Length > 0);
+            var toVerify = GetStringToVerify(evaluator.Evaluator, result);
             await Verifier.Verify(toVerify, settings);
         }
 
@@ -99,12 +99,12 @@ namespace Datadog.Trace.Tests.Debugger
             // Assert
             Assert.NotNull(result.Template);
             Assert.True(result.Condition.HasValue);
-            Assert.True(evaluator.CompiledTemplates.Value.Length > 0);
-            var toVerify = GetStringToVerify(evaluator, result);
+            Assert.True(evaluator.Evaluator.CompiledTemplates.Value.Length > 0);
+            var toVerify = GetStringToVerify(evaluator.Evaluator, result);
             await Verifier.Verify(toVerify, settings);
         }
 
-        private ProbeExpressionEvaluator GetEvaluator(string expressionTestFilePath)
+        private (ProbeExpressionEvaluator Evaluator, MethodScopeMembers ScopeMembers) GetEvaluator(string expressionTestFilePath)
         {
             var jsonExpression = File.ReadAllText(expressionTestFilePath);
             var dsl = GetDslPart(jsonExpression);
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Tests.Debugger
                 templates = new DebuggerExpression[] { new(null, null, "The result of the expression is: "), new(dsl, json, null) };
             }
 
-            return new ProbeExpressionEvaluator(templates, condition, null, scopeMembers);
+            return (new ProbeExpressionEvaluator(templates, condition, null, scopeMembers), scopeMembers);
         }
 
         private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
@@ -187,9 +187,9 @@ namespace Datadog.Trace.Tests.Debugger
             return scope;
         }
 
-        private (string Template, bool? Condition, List<EvaluationError> Errors) Evaluate(ProbeExpressionEvaluator evaluator)
+        private (string Template, bool? Condition, List<EvaluationError> Errors) Evaluate((ProbeExpressionEvaluator Evaluator, MethodScopeMembers ScopeMembers) evaluator)
         {
-            var result = evaluator.Evaluate();
+            var result = evaluator.Evaluator.Evaluate(evaluator.ScopeMembers);
             return (result.Template, result.Condition, result.Errors);
         }
 
