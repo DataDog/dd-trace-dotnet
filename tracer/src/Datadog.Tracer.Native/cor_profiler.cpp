@@ -865,6 +865,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
                           " because the version matches the expected one");
         }
+
+        // Rewrite methods for exposing the native tracer version to managed for telemetry purposes
+        RewriteForTelemetry(module_metadata, module_id);
     }
     else
     {
@@ -2168,6 +2171,81 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     {
         Logger::Info(GetILCodes("After -> GetDistributedTracer. ", &getterRewriter,
                                 GetFunctionInfo(module_metadata.metadata_import, getDistributedTraceMethodDef),
+                                module_metadata.metadata_import));
+    }
+
+    return hr;
+}
+
+HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id)
+{
+    HRESULT hr = S_OK;
+
+    if (IsDebugEnabled())
+    {
+        LogManagedProfilerAssemblyDetails();
+    }
+
+    //
+    // *** Get Instrumentation TypeDef
+    //
+    mdTypeDef instrumentationTypeDef;
+    hr = module_metadata.metadata_import->FindTypeDefByName(instrumentation_type_name.c_str(),
+                                                            mdTokenNil, &instrumentationTypeDef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting for Telemetry on getting Instrumentation TypeDef");
+        return hr;
+    }
+
+    //
+    // *** GetNativeTracerVersion MethodDef ***
+    //
+    constexpr COR_SIGNATURE getNativeTracerVersion[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_STRING};
+    mdMethodDef getNativeTracerVersionMethodDef;
+    hr = module_metadata.metadata_import->FindMethod(instrumentationTypeDef, WStr("GetNativeTracerVersion"),
+                                                     getNativeTracerVersion, 3, &getNativeTracerVersionMethodDef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting for Telemetry on getting GetNativeTracerVersion MethodDef");
+        return hr;
+    }
+
+    // Define NativeTracerVersion as a string
+    mdString nativeTracerVersionToken;
+    const auto nativeTracerVersion = ToWSTRING(PROFILER_VERSION);
+    hr = module_metadata.metadata_emit->DefineUserString(
+        nativeTracerVersion.c_str(), static_cast<ULONG>(nativeTracerVersion.length()), &nativeTracerVersionToken);
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting for Telemetry on DefineUserString for NativeProfilerVersion");
+        return hr;
+    }
+
+    ILRewriter methodRewriter(this->info_, nullptr, module_id, getNativeTracerVersionMethodDef);
+    methodRewriter.InitializeTiny();
+
+    // Modify first instruction from ldstr "None" to ldstr PROFILER_VERSION
+    ILRewriterWrapper wrapper(&methodRewriter);
+    wrapper.SetILPosition(methodRewriter.GetILList()->m_pNext);
+    wrapper.LoadStr(nativeTracerVersionToken);
+    wrapper.Return();
+
+    hr = methodRewriter.Export();
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting Instrumentation.GetNativeTracerVersion() => PROFILER_VERSION");
+        return hr;
+    }
+
+    Logger::Info("Rewriting Instrumentation.GetNativeTracerVersion() => PROFILER_VERSION");
+
+    if (IsDumpILRewriteEnabled())
+    {
+        Logger::Info(GetILCodes("After -> Instrumentation.GetNativeTracerVersion(). ", &methodRewriter,
+                                GetFunctionInfo(module_metadata.metadata_import, getNativeTracerVersionMethodDef),
                                 module_metadata.metadata_import));
     }
 
