@@ -235,7 +235,7 @@ void StackSamplerLoopManager::WatcherLoopIteration()
         return;
     }
 
-    if (_deadlockInterventionInProgress >= 1)
+    if (_deadlockInterventionInProgress == 1)
     {
         _deadlockInterventionInProgress++;
         Log::Info("StackSamplerLoopManager::WatcherLoopIteration - Deadlock intervention still in progress for thread ", _pTargetThread->GetOsThreadId(),
@@ -537,7 +537,7 @@ void StackSamplerLoopManager::NotifyIterationFinished()
     _suspensionTimeMetric->Add((double_t)suspensionDuration);
     _currentStatistics->AddSuspensionTime(suspensionDuration);
 
-    if (threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())
+    if (_metricsSender != nullptr && threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())
     {
         Log::Debug("Notify-ThreadStackSampleCollection-Finished invoked - Prepare statistics to be sent.");
         _statisticsReadyToSend.reset(_currentStatistics.release());
