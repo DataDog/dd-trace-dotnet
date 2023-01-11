@@ -6,6 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices.ComTypes;
 using FluentAssertions;
 
 namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities;
@@ -14,6 +16,7 @@ public class InstrumentationTestsBase
 {
     public InstrumentationTestsBase()
     {
+        Tracer.Instance.StartActiveInternal("test", null, DateTime.Now.ToString());
         AssertInstrumented();
         var traceContext = (Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext;
         traceContext.EnableIastInRequest();
@@ -39,12 +42,9 @@ public class InstrumentationTestsBase
 
     protected void AssertInstrumented()
     {
-        var message = "Test is not instrumented." + EnvironmentVariableMessage("CORECLR_ENABLE_PROFILING") +
-            EnvironmentVariableMessage("CORECLR_PROFILER_PATH_64") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_32") +
-            EnvironmentVariableMessage("COR_ENABLE_PROFILING") + EnvironmentVariableMessage("COR_PROFILER_PATH_32") +
-            EnvironmentVariableMessage("COR_PROFILER_PATH_64");
-
-        Tracer.Instance.ActiveScope.Should().NotBeNull(message);
+        var loaderAssembliesCount = AppDomain.CurrentDomain.GetAssemblies().Where(x => x.GetName().Name == "Datadog.Trace.ClrProfiler.Managed.Loader").Count();
+        loaderAssembliesCount.Should().NotBe(0, GetErrorMessage());
+        Tracer.Instance.ActiveScope.Should().NotBeNull(GetErrorMessage());
     }
 
     protected void AssertSpanGenerated(string operationName, int spansGenerated = 1)
@@ -63,6 +63,14 @@ public class InstrumentationTestsBase
     protected void AssertNotVulnerable()
     {
         AssertVulnerable(0);
+    }
+
+    private static string GetErrorMessage()
+    {
+        return "Test is not instrumented." + Environment.NewLine + EnvironmentVariableMessage("CORECLR_ENABLE_PROFILING") +
+            EnvironmentVariableMessage("CORECLR_PROFILER_PATH_64") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_32") +
+            EnvironmentVariableMessage("COR_ENABLE_PROFILING") + EnvironmentVariableMessage("COR_PROFILER_PATH_32") +
+            EnvironmentVariableMessage("COR_PROFILER_PATH_64");
     }
 
     private static string EnvironmentVariableMessage(string variable)
