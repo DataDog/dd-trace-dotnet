@@ -229,7 +229,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             var data = collector.GetConfigurationData().ToDictionary(x => x.Name, x => x.Value);
 
-            data[ConfigTelemetryData.IsManagedOnly].Should().Be(true);
+            data[ConfigTelemetryData.NativeTracerVersion].Should().Be("None");
         }
 
 #if NETFRAMEWORK

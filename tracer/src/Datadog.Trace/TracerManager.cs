@@ -310,8 +310,8 @@ namespace Datadog.Trace
                     writer.WritePropertyName("version");
                     writer.WriteValue(TracerConstants.AssemblyVersion);
 
-                    writer.WritePropertyName("managed_only");
-                    writer.WriteValue(!Instrumentation.ProfilerAttached);
+                    writer.WritePropertyName("native_tracer_version");
+                    writer.WriteValue(Instrumentation.GetNativeTracerVersion());
 
                     writer.WritePropertyName("platform");
                     writer.WriteValue(FrameworkDescription.Instance.ProcessArchitecture);
