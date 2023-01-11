@@ -109,8 +109,9 @@ namespace Datadog.Trace.Tools.Runner
                     // If we have api and application key, and the code coverage or the tests skippeable environment variables
                     // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
                     var useConfigurationApi = !agentless || !string.IsNullOrEmpty(applicationKey);
-                    useConfigurationApi = useConfigurationApi && ciVisibilitySettings.IntelligentTestRunnerEnabled;
-                    if (useConfigurationApi && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
+                    if (useConfigurationApi 
+                        && ciVisibilitySettings.IntelligentTestRunnerEnabled
+                        && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
                     {
                         var itrClient = new Ci.IntelligentTestRunnerClient(Ci.CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
                         // we skip the framework info because we are interested in the target projects info not the runner one.
