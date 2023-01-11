@@ -26,8 +26,8 @@ namespace Datadog.Trace.Ci
     internal class CIVisibility
     {
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
+        private static readonly Lazy<bool> _enabledLazy = new(InternalEnabled, true);
         private static int _firstInitialization = 1;
-        private static Lazy<bool> _enabledLazy = new(() => InternalEnabled(), true);
         private static Task? _skippableTestsTask;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
 

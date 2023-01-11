@@ -90,8 +90,12 @@ namespace Datadog.Trace.Tools.Runner
                     }
                 }
 
+                codeCoverageEnabled = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
+                testSkippingEnabled = ciVisibilitySettings.TestsSkippingEnabled == true;
+
                 if (agentless || !string.IsNullOrEmpty(agentConfiguration.EventPlatformProxyEndpoint))
                 {
+                    // We can activate all features here (Agentless or EVP proxy mode)
                     createTestSession = true;
                     if (!agentless)
                     {
@@ -101,21 +105,18 @@ namespace Datadog.Trace.Tools.Runner
                         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy] = "1";
                         EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, "1");
                     }
-                }
 
-                codeCoverageEnabled = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
-                testSkippingEnabled = ciVisibilitySettings.TestsSkippingEnabled == true;
-
-                // If we have api and application key, and the code coverage or the tests skippeable environment variables
-                // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
-                if (!string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(applicationKey) && ciVisibilitySettings.IntelligentTestRunnerEnabled &&
-                    (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
-                {
-                    var itrClient = new Ci.IntelligentTestRunnerClient(Ci.CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
-                    // we should skip the framework info because we are interested in the target projects info not the runner one.
-                    var itrSettings = AsyncUtil.RunSync(() => itrClient.GetSettingsAsync(skipFrameworkInfo: true));
-                    codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
-                    testSkippingEnabled = itrSettings.TestsSkipping == true;
+                    // If we have api and application key, and the code coverage or the tests skippeable environment variables
+                    // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
+                    if (ciVisibilitySettings.IntelligentTestRunnerEnabled &&
+                        (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
+                    {
+                        var itrClient = new Ci.IntelligentTestRunnerClient(Ci.CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
+                        // we skip the framework info because we are interested in the target projects info not the runner one.
+                        var itrSettings = AsyncUtil.RunSync(() => itrClient.GetSettingsAsync(skipFrameworkInfo: true));
+                        codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
+                        testSkippingEnabled = itrSettings.TestsSkipping == true;
+                    }
                 }
 
                 if (codeCoverageEnabled)
