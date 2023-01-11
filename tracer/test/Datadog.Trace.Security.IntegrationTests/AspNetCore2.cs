@@ -4,16 +4,46 @@
 // </copyright>
 
 #if NETCOREAPP2_1
+#pragma warning disable SA1402 // File may only contain a single class
+#pragma warning disable SA1649 // File name must match first type name
 
+using System.Net;
+using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.TestHelpers;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore2 : AspNetCoreBase
+    public class AspNetCore2TestsSecurityDisabled : AspNetCoreBase
     {
-        public AspNetCore2(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore2", fixture, outputHelper, "/shutdown")
+        public AspNetCore2TestsSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown", enableSecurity: false, testName: "AspNetCore2.SecurityDisabled")
+        {
+        }
+    }
+
+    public class AspNetCore2TestsSecurityEnabled : AspNetCoreBase
+    {
+        public AspNetCore2TestsSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown", enableSecurity: true, testName: "AspNetCore2.SecurityEnabled")
+        {
+        }
+    }
+
+    public class AspNetCore2TestsSecurityDisbledWithExternalRulesFile : AspNetCoreSecurityDisabledWithExternalRulesFile
+    {
+        public AspNetCore2TestsSecurityDisbledWithExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown", testName: "AspNetCore2.SecurityDisabled")
+        {
+        }
+    }
+
+    public class AspNetCore2TestsSecurityEnabledWithExternalRulesFile : AspNetCoreSecurityEnabledWithExternalRulesFile
+    {
+        public AspNetCore2TestsSecurityEnabledWithExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown", testName: "AspNetCore2.SecurityEnabled")
         {
         }
     }
