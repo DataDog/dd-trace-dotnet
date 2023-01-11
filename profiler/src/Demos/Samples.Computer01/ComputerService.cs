@@ -30,6 +30,7 @@ namespace Samples.Computer01
         private ContentionGenerator _contentionGenerator;
         private GarbageCollections _garbageCollections;
         private MemoryLeak _memoryLeak;
+        private QuicklyDeadThreads _quicklyDeadThreads;
 
 #if NET6_0_OR_GREATER
         private LinuxSignalHandler _linuxSignalHandler;
@@ -109,6 +110,10 @@ namespace Samples.Computer01
                     StartMemoryLeak(parameter);
                     break;
 
+                case Scenario.QuicklyDeadThreads:
+                    StartQuicklyDeadThreads();
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -183,6 +188,10 @@ namespace Samples.Computer01
 
                 case Scenario.MemoryLeak:
                     StopMemoryLeak();
+                    break;
+
+                case Scenario.QuicklyDeadThreads:
+                    StopQuicklyDeadThreads();
                     break;
             }
         }
@@ -261,6 +270,10 @@ namespace Samples.Computer01
 
                     case Scenario.MemoryLeak:
                         RunMemoryLeak(parameter);
+                        break;
+
+                    case Scenario.QuicklyDeadThreads:
+                        RunQuicklyDeadThreads();
                         break;
 
                     default:
@@ -372,6 +385,12 @@ namespace Samples.Computer01
             _memoryLeak.Start();
         }
 
+        private void StartQuicklyDeadThreads()
+        {
+            _quicklyDeadThreads = new QuicklyDeadThreads();
+            _quicklyDeadThreads.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -451,6 +470,11 @@ namespace Samples.Computer01
         private void StopMemoryLeak()
         {
             _memoryLeak.Stop();
+        }
+
+        private void StopQuicklyDeadThreads()
+        {
+            _quicklyDeadThreads.Stop();
         }
 
         private void RunComputer()
@@ -545,6 +569,12 @@ namespace Samples.Computer01
         {
             var memoryLeak = new MemoryLeak(parameter);
             memoryLeak.Run();
+        }
+
+        private void RunQuicklyDeadThreads()
+        {
+            var quicklyDeadThreads = new QuicklyDeadThreads();
+            quicklyDeadThreads.Run();
         }
 
         public class MySpecialClassA
