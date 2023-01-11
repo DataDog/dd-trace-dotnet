@@ -1,0 +1,211 @@
+// <copyright file="AspNetCoreTestFixture.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit.Abstractions;
+
+namespace Datadog.Trace.TestHelpers
+{
+    public sealed class AspNetCoreTestFixture : IDisposable
+    {
+        private const string TracingHeaderName1WithMapping = "datadog-header-name";
+        private const string TracingHeaderValue1 = "asp-net-core";
+        private const string TracingHeaderName2 = "sample.correlation.identifier";
+        private const string TracingHeaderValue2 = "0000-0000-0000";
+
+        private readonly HttpClient _httpClient;
+        private ITestOutputHelper _currentOutput;
+
+        public AspNetCoreTestFixture()
+        {
+            _httpClient = new HttpClient();
+        }
+
+        public Process Process { get; private set; }
+
+        public MockTracerAgent.TcpUdpAgent Agent { get; private set; }
+
+        public int HttpPort { get; private set; }
+
+        public void AddDefaultTracingRequestHeaders()
+        {
+            _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+            _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
+            _httpClient.DefaultRequestHeaders.Add(TracingHeaderName1WithMapping, TracingHeaderValue1);
+            _httpClient.DefaultRequestHeaders.Add(TracingHeaderName2, TracingHeaderValue2);
+        }
+
+        public void SetOutput(ITestOutputHelper output)
+        {
+            lock (this)
+            {
+                _currentOutput = output;
+            }
+        }
+
+        public async Task TryStartApp(TestHelper helper)
+        {
+            if (Process is not null)
+            {
+                return;
+            }
+
+            lock (this)
+            {
+                if (Process is null)
+                {
+                    var initialAgentPort = TcpPortProvider.GetOpenPort();
+                    HttpPort = TcpPortProvider.GetOpenPort();
+
+                    Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort);
+                    Agent.SpanFilters.Add(IsNotServerLifeCheck);
+                    WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
+                    Process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
+                }
+            }
+
+            await EnsureServerStarted();
+        }
+
+        public void Dispose()
+        {
+            var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
+            request.GetResponse().Close();
+
+            if (Process is not null)
+            {
+                try
+                {
+                    if (!Process.HasExited)
+                    {
+                        if (!Process.WaitForExit(5000))
+                        {
+                            Process.Kill();
+                        }
+                    }
+                }
+                catch
+                {
+                    // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
+                }
+
+                Process.Dispose();
+            }
+
+            Agent?.Dispose();
+        }
+
+        public async Task<IImmutableList<MockSpan>> WaitForSpans(string path, bool post = false)
+        {
+            var testStart = DateTime.UtcNow;
+
+            await SubmitRequest(path, post);
+            return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
+        }
+
+        private async Task EnsureServerStarted()
+        {
+            var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
+
+            Process.OutputDataReceived += (sender, args) =>
+            {
+                if (args.Data != null)
+                {
+                    if (args.Data.Contains("Webserver started"))
+                    {
+                        wh.Set();
+                    }
+
+                    WriteToOutput($"[webserver][stdout] {args.Data}");
+                }
+            };
+            Process.BeginOutputReadLine();
+
+            Process.ErrorDataReceived += (sender, args) =>
+            {
+                if (args.Data != null)
+                {
+                    WriteToOutput($"[webserver][stderr] {args.Data}");
+                }
+            };
+
+            Process.BeginErrorReadLine();
+
+            wh.WaitOne(5000);
+
+            var maxMillisecondsToWait = 30_000;
+            var intervalMilliseconds = 500;
+            var intervals = maxMillisecondsToWait / intervalMilliseconds;
+            var serverReady = false;
+
+            // wait for server to be ready to receive requests
+            while (intervals-- > 0)
+            {
+                try
+                {
+                    serverReady = await SubmitRequest("/alive-check") == HttpStatusCode.OK;
+                }
+                catch
+                {
+                    // ignore
+                }
+
+                if (serverReady)
+                {
+                    break;
+                }
+
+                Thread.Sleep(intervalMilliseconds);
+            }
+
+            if (!serverReady)
+            {
+                throw new Exception("Couldn't verify the application is ready to receive requests.");
+            }
+        }
+
+        private bool IsNotServerLifeCheck(MockSpan span)
+        {
+            span.Tags.TryGetValue(Tags.HttpUrl, out var url);
+            if (url == null)
+            {
+                return true;
+            }
+
+            return !url.Contains("alive-check") && !url.Contains("shutdown");
+        }
+
+        private async Task<HttpStatusCode> SubmitRequest(string path, bool post = false)
+        {
+            HttpResponseMessage response;
+            if (!post)
+            {
+                response = await _httpClient.GetAsync($"http://localhost:{HttpPort}{path}");
+            }
+            else
+            {
+                response = await _httpClient.PostAsync($"http://localhost:{HttpPort}{path}", null);
+            }
+
+            string responseText = await response.Content.ReadAsStringAsync();
+            WriteToOutput($"[http] {response.StatusCode} {responseText}");
+            return response.StatusCode;
+        }
+
+        private void WriteToOutput(string line)
+        {
+            lock (this)
+            {
+                _currentOutput?.WriteLine(line);
+            }
+        }
+    }
+}
