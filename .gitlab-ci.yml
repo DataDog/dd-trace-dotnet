@@ -14,11 +14,6 @@ variables:
     description: "Run a specific datadog-reliability-env branch downstream"
     
 build:
-  only:
-    - master
-    - main
-    - /^hotfix.*$/
-    - /^release.*$/
   except:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"
