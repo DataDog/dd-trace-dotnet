@@ -330,7 +330,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
                                          ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                          ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                          mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                         mdToken* callTargetReturnToken, std::vector<ULONG>& indexes, bool isAsyncMethod)
+                                         mdToken* callTargetReturnToken, std::vector<ULONG>& additionalLocalIndices, bool isAsyncMethod)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -500,13 +500,12 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *exceptionToken = exTypeRef;
     *callTargetReturnToken = callTargetReturn;
 
-    const auto sizeOfOtherIndexes = indexes.size();
+    const auto sizeOfOtherIndexes = additionalLocalIndices.size();
     auto indexStart = variableNumber + additionalLocalsCount;
 
     if (returnSignatureType != nullptr)
     {
-        indexStart ++;
-        *returnValueIndex = newLocalsCount - indexStart--;
+        *returnValueIndex = newLocalsCount - (indexStart + 1); // index+1 because return type adds an additional index comparing to void
     }
     else
     {
@@ -518,7 +517,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     
     for (int i = 0; i < sizeOfOtherIndexes; i++)
     {
-        indexes[i] = newLocalsCount - indexStart--;
+        additionalLocalIndices[i] = newLocalsCount - indexStart--;
     }
 
     *callTargetStateIndex = newLocalsCount - 1; // Must be the last local.
@@ -809,7 +808,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
                                                       ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                                       mdToken* callTargetStateToken, mdToken* exceptionToken,
                                                       mdToken* callTargetReturnToken, ILInstr** firstInstruction,
-                                                      std::vector<ULONG>& indexes, bool isAsyncMethod)
+                                                      std::vector<ULONG>& additionalLocalIndices, bool isAsyncMethod)
 {
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
 
@@ -817,7 +816,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
 
     auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(), methodReturnType, callTargetStateIndex,
                              exceptionIndex, callTargetReturnIndex, returnValueIndex, callTargetStateToken,
-                             exceptionToken, callTargetReturnToken, indexes, isAsyncMethod);
+                             exceptionToken, callTargetReturnToken, additionalLocalIndices, isAsyncMethod);
 
     if (FAILED(hr))
     {

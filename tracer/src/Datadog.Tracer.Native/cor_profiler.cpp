@@ -857,7 +857,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                     RewriteForDistributedTracing(module_metadata, module_id);
                 }
 
-               EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata);
+               call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata);
             }
         }
         else
@@ -935,7 +935,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
                     hr = metadata_import->GetTypeRefProps(typeRef, &parent_token, type_name, kNameMaxSize,
                                                           &type_name_len);
-                    Logger::Debug("type name is", type_name);
                     if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
                     {
                         foundType = true;
@@ -2525,15 +2524,14 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
     return orig_sstream.str();
 }
 
-HRESULT CorProfiler::EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata)
+bool CorProfiler::EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata)
 {
     // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException available
     mdTypeDef bubbleUpException;
     const auto bubble_up_type_name = calltargetbubbleexception_tracer_type_name.c_str();
     const auto found_call_target_bubble_up_exception_type = module_metadata.metadata_import->FindTypeDefByName(bubble_up_type_name, mdTokenNil, &bubbleUpException);
     Logger::Debug("CallTargetBubbleUpException type available test, hresult is: ", found_call_target_bubble_up_exception_type);
-    call_target_bubble_up_exception_available = SUCCEEDED(found_call_target_bubble_up_exception_type);
-    return call_target_bubble_up_exception_available;
+    return SUCCEEDED(found_call_target_bubble_up_exception_type);
 }
 //
 // Startup methods
