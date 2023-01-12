@@ -8,9 +8,9 @@ namespace Samples.Security.WebApi.Controllers
     public class UserController : ApiController
     {
         // GET api/user
-        public string Get()
+   public string Get(string id)
         {
-            var userId = "user3";
+            var userId = id ?? "user3";
 
             var userDetails = new UserDetails()
             {
