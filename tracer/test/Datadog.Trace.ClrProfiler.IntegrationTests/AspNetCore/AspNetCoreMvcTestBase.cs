@@ -46,7 +46,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
 
             Fixture = fixture;
-            Fixture.AddDefaultTracingRequestHeaders();
             Fixture.SetOutput(output);
         }
 

@@ -26,7 +26,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             : base(sampleName, output)
         {
             this.fixture = fixture;
-            this.fixture.AddDefaultTracingRequestHeaders();
             _testName = testName;
             EnableDebugMode();
         }

@@ -27,6 +27,10 @@ namespace Datadog.Trace.TestHelpers
         public AspNetCoreTestFixture()
         {
             _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+            _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
+            _httpClient.DefaultRequestHeaders.Add(TracingHeaderName1WithMapping, TracingHeaderValue1);
+            _httpClient.DefaultRequestHeaders.Add(TracingHeaderName2, TracingHeaderValue2);
         }
 
         public Process Process { get; private set; }
@@ -34,14 +38,6 @@ namespace Datadog.Trace.TestHelpers
         public MockTracerAgent.TcpUdpAgent Agent { get; private set; }
 
         public int HttpPort { get; private set; }
-
-        public void AddDefaultTracingRequestHeaders()
-        {
-            _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-            _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
-            _httpClient.DefaultRequestHeaders.Add(TracingHeaderName1WithMapping, TracingHeaderValue1);
-            _httpClient.DefaultRequestHeaders.Add(TracingHeaderName2, TracingHeaderValue2);
-        }
 
         public void SetOutput(ITestOutputHelper output)
         {
