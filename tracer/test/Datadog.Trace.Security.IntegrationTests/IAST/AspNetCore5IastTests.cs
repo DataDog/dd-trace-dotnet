@@ -16,85 +16,96 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Iast
 {
-    public class AspNetCore5IastTestsEnabled : AspNetCore5IastTests
+    public abstract class AspNetCore5IastTests50PctSamplingIastEnabled : AspNetCore5IastTests
     {
-        public AspNetCore5IastTestsEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableIast: true, testName: nameof(AspNetCore5IastTestsEnabled))
+        public AspNetCore5IastTests50PctSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsEnabled", isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100, samplingRate: 50)
         {
         }
 
-        [SkippableTheory]
-        [InlineData(1)]
-        [InlineData(2)]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastWeakHashingRequestVulnerabilitiesPerRequest(int vulnerabilitiesPerRequest)
+        public override async Task TryStartApp()
         {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "true");
-            SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, vulnerabilitiesPerRequest.ToString());
-            SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
-            IncludeAllHttpSpans = true;
-            var filename = vulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.AspNetCore2.IastEnabled.SingleVulnerability" : "Iast.WeakHashing.AspNetCore2.IastEnabled";
-            await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
-            await TestWeakHashing(filename, Fixture.Agent);
+            EnableIast(IastEnabled);
+            SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
+            SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
+            SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
+            await Fixture.TryStartApp(this, enableSecurity: false, sendHealthCheck: false);
         }
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task TestIastWeakHashingRequestSampling()
         {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
-            SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
-            SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "50");
+            var filename = "Iast.WeakHashing.AspNetCore5.IastEnabled";
             IncludeAllHttpSpans = true;
-            var filename = "Iast.WeakHashing.AspNetCore2.IastEnabled";
             await TryStartApp();
             SetHttpPort(Fixture.HttpPort);
             await TestWeakHashing(filename, Fixture.Agent);
 
-            filename = "Iast.WeakHashing.AspNetCore2.IastDisabled";
+            filename = "Iast.WeakHashing.AspNetCore5.IastDisabled";
             await TestWeakHashing(filename, Fixture.Agent);
 
-            filename = "Iast.WeakHashing.AspNetCore2.IastEnabled";
+            filename = "Iast.WeakHashing.AspNetCore5.IastEnabled";
             await TestWeakHashing(filename, Fixture.Agent);
         }
     }
 
-    public class AspNetCore5IastTestsDisabled : AspNetCore5IastTests
+    public class AspNetCore5IastTestsOneVulnerabilityPerRequestIastEnabled : AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled
     {
-        public AspNetCore5IastTestsDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableIast: false, testName: nameof(AspNetCore5IastTestsDisabled))
+        public AspNetCore5IastTestsOneVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+    : base(fixture, outputHelper, vulnerabilitiesPerRequest: 1)
         {
         }
     }
 
-    public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+    public class AspNetCore5IastTestsTwoVulnerabilityPerRequestIastEnabled : AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled
     {
-        private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
-        private static readonly Regex ClientIp = new(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}");
-        private static readonly Regex NetworkClientIp = new(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}");
-
-        public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
+        public AspNetCore5IastTestsTwoVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+    : base(fixture, outputHelper, vulnerabilitiesPerRequest: 2)
         {
-            Fixture = fixture;
-            IastEnabled = enableIast;
-            EnableIast(enableIast);
+        }
+    }
+
+    public abstract class AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled : AspNetCore5IastTests
+    {
+        public AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, int vulnerabilitiesPerRequest)
+            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsEnabled", isIastDeduplicationEnabled: true, samplingRate: 100, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest)
+        {
         }
 
-        protected AspNetCoreTestFixture Fixture { get; }
-
-        protected bool IastEnabled { get; }
-
-        public override void Dispose()
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastWeakHashingRequestVulnerabilitiesPerRequest()
         {
-            base.Dispose();
-            Fixture.SetOutput(null);
+            var filename = VulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.AspNetCore5.IastEnabled.SingleVulnerability" : "Iast.WeakHashing.AspNetCore5.IastEnabled";
+            IncludeAllHttpSpans = true;
+            await TryStartApp();
+            SetHttpPort(Fixture.HttpPort);
+            await TestWeakHashing(filename, Fixture.Agent);
         }
+    }
 
-        public async Task TryStartApp()
+    public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsFullSampling
+    {
+        public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsEnabled")
         {
-            await Fixture.TryStartApp(this, enableSecurity: false);
+        }
+    }
+
+    public class AspNetCore5IastTestsFullSamplingIastDisabled : AspNetCore5IastTestsFullSampling
+    {
+        public AspNetCore5IastTestsFullSamplingIastDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableIast: false, testName: "AspNetCore5IastTestsDisabled")
+        {
+        }
+    }
+
+    public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
+    {
+        public AspNetCore5IastTestsFullSampling(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? vulnerabilitiesPerRequest = null)
+            : base(fixture, outputHelper, enableIast: enableIast, testName: testName, samplingRate: 100, isIastDeduplicationEnabled: isIastDeduplicationEnabled, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest)
+        {
         }
 
         [SkippableFact]
@@ -134,6 +145,48 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
+        }
+    }
+
+    public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+    {
+        protected static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
+        protected static readonly Regex ClientIp = new(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}");
+        protected static readonly Regex NetworkClientIp = new(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}");
+
+        public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null)
+            : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
+        {
+            Fixture = fixture;
+            IastEnabled = enableIast;
+            IsIastDeduplicationEnabled = isIastDeduplicationEnabled;
+            VulnerabilitiesPerRequest = vulnerabilitiesPerRequest;
+            SamplingRate = samplingRate;
+        }
+
+        protected AspNetCoreTestFixture Fixture { get; }
+
+        protected bool IastEnabled { get; }
+
+        protected bool? IsIastDeduplicationEnabled { get; }
+
+        protected int? VulnerabilitiesPerRequest { get; }
+
+        protected int? SamplingRate { get; }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            Fixture.SetOutput(null);
+        }
+
+        public virtual async Task TryStartApp()
+        {
+            EnableIast(IastEnabled);
+            SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
+            SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
+            SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
+            await Fixture.TryStartApp(this, enableSecurity: false);
         }
 
         protected async Task TestWeakHashing(string filename, MockTracerAgent agent)

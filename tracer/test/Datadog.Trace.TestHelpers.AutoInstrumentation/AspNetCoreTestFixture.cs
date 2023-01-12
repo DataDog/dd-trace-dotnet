@@ -47,7 +47,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public async Task TryStartApp(TestHelper helper, bool? enableSecurity = null, string externalRulesFile = null)
+        public async Task TryStartApp(TestHelper helper, bool? enableSecurity = null, string externalRulesFile = null, bool? sendHealthCheck = null)
         {
             if (Process is not null)
             {
@@ -68,7 +68,7 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
 
-            await EnsureServerStarted();
+            await EnsureServerStarted(sendHealthCheck);
         }
 
         public void Dispose()
@@ -110,7 +110,7 @@ namespace Datadog.Trace.TestHelpers
             return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
         }
 
-        private async Task EnsureServerStarted()
+        private async Task EnsureServerStarted(bool? sendHealthCheck)
         {
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -145,24 +145,33 @@ namespace Datadog.Trace.TestHelpers
             var intervals = maxMillisecondsToWait / intervalMilliseconds;
             var serverReady = false;
 
-            // wait for server to be ready to receive requests
-            while (intervals-- > 0)
+            if (sendHealthCheck == true)
             {
-                try
+                // wait for server to be ready to receive requests
+                while (intervals-- > 0)
                 {
-                    serverReady = await SubmitRequest("/alive-check") == HttpStatusCode.OK;
-                }
-                catch
-                {
-                    // ignore
-                }
+                    try
+                    {
+                        serverReady = await SubmitRequest("/alive-check") == HttpStatusCode.OK;
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
 
-                if (serverReady)
-                {
-                    break;
-                }
+                    if (serverReady)
+                    {
+                        break;
+                    }
 
+                    Thread.Sleep(intervalMilliseconds);
+                }
+            }
+            else
+            {
+                // Just wait one interval just in case
                 Thread.Sleep(intervalMilliseconds);
+                serverReady = true;
             }
 
             if (!serverReady)
