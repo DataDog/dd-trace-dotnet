@@ -1,4 +1,8 @@
 @echo off
+IF EXIST results_Samples.FakeDbCommand.windows.net461.json DEL /F results_Samples.FakeDbCommand.windows.net461.json
+IF EXIST results_Samples.FakeDbCommand.windows.netcoreapp31.json DEL /F results_Samples.FakeDbCommand.windows.netcoreapp31.json
+IF EXIST results_Samples.FakeDbCommand.windows.net60.json DEL /F results_Samples.FakeDbCommand.windows.net60.json
+
 echo *********************
 echo .NET Framework 4.6.1
 echo *********************
