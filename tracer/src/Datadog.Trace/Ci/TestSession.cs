@@ -7,13 +7,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci;
