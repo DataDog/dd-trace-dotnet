@@ -27,7 +27,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             var pollInterval =
                 configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval)
-                ?? configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollIntervalInternal);
+#pragma warning disable CS0618
+                    ?? configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollIntervalInternal);
+#pragma warning restore CS0618
 
             pollInterval =
                 pollInterval is null or <= 0 or > 5000
