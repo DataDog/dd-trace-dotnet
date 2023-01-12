@@ -459,22 +459,25 @@ namespace Datadog.Trace.Ci
                 // Upload the git metadata
                 await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
 
-                // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
-                // We query the settings api for those
-                if (_settings.CodeCoverageEnabled == null || _settings.TestsSkippingEnabled == null)
+                if (!_settings.Agentless || !string.IsNullOrEmpty(_settings.ApplicationKey))
                 {
-                    var settings = await itrClient.GetSettingsAsync().ConfigureAwait(false);
-
-                    if (_settings.CodeCoverageEnabled == null && settings.CodeCoverage.HasValue)
+                    // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
+                    // We query the settings api for those
+                    if (_settings.CodeCoverageEnabled == null || _settings.TestsSkippingEnabled == null)
                     {
-                        Log.Information("ITR: Code Coverage has been changed to {value} by settings api.", settings.CodeCoverage.Value);
-                        _settings.SetCodeCoverageEnabled(settings.CodeCoverage.Value);
-                    }
+                        var settings = await itrClient.GetSettingsAsync().ConfigureAwait(false);
 
-                    if (_settings.TestsSkippingEnabled == null && settings.TestsSkipping.HasValue)
-                    {
-                        Log.Information("ITR: Tests Skipping has been changed to {value} by settings api.", settings.TestsSkipping.Value);
-                        _settings.SetTestsSkippingEnabled(settings.TestsSkipping.Value);
+                        if (_settings.CodeCoverageEnabled == null && settings.CodeCoverage.HasValue)
+                        {
+                            Log.Information("ITR: Code Coverage has been changed to {value} by settings api.", settings.CodeCoverage.Value);
+                            _settings.SetCodeCoverageEnabled(settings.CodeCoverage.Value);
+                        }
+
+                        if (_settings.TestsSkippingEnabled == null && settings.TestsSkipping.HasValue)
+                        {
+                            Log.Information("ITR: Tests Skipping has been changed to {value} by settings api.", settings.TestsSkipping.Value);
+                            _settings.SetTestsSkippingEnabled(settings.TestsSkipping.Value);
+                        }
                     }
                 }
 

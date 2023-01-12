@@ -283,6 +283,11 @@ internal class IntelligentTestRunnerClient
             CheckResponseStatusCode(response, responseContent, finalTry);
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
+            if (string.IsNullOrEmpty(responseContent))
+            {
+                return default;
+            }
+
             var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(responseContent);
             return deserializedResult.Data?.Attributes ?? default;
         }
@@ -346,6 +351,11 @@ internal class IntelligentTestRunnerClient
             CheckResponseStatusCode(response, responseContent, finalTry);
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
+            if (string.IsNullOrEmpty(responseContent))
+            {
+                return Array.Empty<SkippableTest>();
+            }
+
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent);
             if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
             {
@@ -436,6 +446,11 @@ internal class IntelligentTestRunnerClient
             CheckResponseStatusCode(response, responseContent, finalTry);
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
+            if (string.IsNullOrEmpty(responseContent))
+            {
+                return Array.Empty<string>();
+            }
+
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
             if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
             {
