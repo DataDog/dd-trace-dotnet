@@ -1,11 +1,9 @@
 {
   "dsl": "ref IntArg > 2",
-  "json": {
-    "gt": [
-      {
-        "ref": "IntArg"
-      },
-      2
-    ]
-  }
+  "gt": [
+    {
+      "ref": "IntArg"
+    },
+    2
+  ]
 }

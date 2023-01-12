@@ -1,20 +1,17 @@
 ﻿Condition:
 Json:
 {
-"json": {
-    "hasAny": [
-      {
-        "ref": "CollectionLocal"
-      },
-      {
-        "eq": [
-          "@it",
-          "hello"
-        ]
-      }
-    ]
-  },
-  "ignored": true
+  "hasAny": [
+    {
+      "ref": "CollectionLocal"
+    },
+    {
+      "eq": [
+        "@it",
+        "hello"
+      ]
+    }
+  ]
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {

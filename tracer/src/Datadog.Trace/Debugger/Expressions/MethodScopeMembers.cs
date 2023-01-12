@@ -12,9 +12,9 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal class MethodScopeMembers
 {
-    private int _index = 0;
+    private int _index;
 
-    public MethodScopeMembers(int numberOfLocals, int numberOfArguments)
+    internal MethodScopeMembers(int numberOfLocals, int numberOfArguments)
     {
         // 2 for 'return' and 'exception'
 #if NETFRAMEWORK
@@ -27,16 +27,16 @@ internal class MethodScopeMembers
         InvocationTarget = default;
     }
 
-    public ScopeMember[] Members { get; private set; }
+    // ReSharper disable once AutoPropertyCanBeMadeGetOnly.Local
+    internal ScopeMember[] Members { get; private set; }
 
-    public Exception Exception { get; internal set; }
+    internal Exception Exception { get; set; }
 
     // food for thought:
-    // we can save Return and InvocationTarget as T if we will change the native side so we will have MethodDebuggerState<T, TReturn> instead MethodDebuggerState
-    // but note that it will require change in the ref struct.
-    public ScopeMember Return { get; internal set; }
+    // we can save Return and InvocationTarget as T if we will change the native side so we will have MethodDebuggerState<T, TReturn> instead MethodDebuggerState.
+    internal ScopeMember Return { get; set; }
 
-    public ScopeMember InvocationTarget { get; internal set; }
+    internal ScopeMember InvocationTarget { get; set; }
 
     internal void AddMember(ScopeMember member)
     {

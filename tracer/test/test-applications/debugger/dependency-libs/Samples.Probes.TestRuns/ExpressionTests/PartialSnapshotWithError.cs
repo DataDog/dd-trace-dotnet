@@ -9,12 +9,10 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 }";
 
         private const string Json = @"{
-  ""json"": {
     ""gt"": [
       {""ref"": ""undefined""},
       2
     ]
-  }
 }";
 
         [MethodImpl(MethodImplOptions.NoInlining)]

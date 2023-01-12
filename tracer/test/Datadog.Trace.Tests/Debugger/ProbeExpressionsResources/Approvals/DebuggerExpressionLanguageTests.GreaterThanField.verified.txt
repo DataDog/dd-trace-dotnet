@@ -1,14 +1,12 @@
 ﻿Condition:
 Json:
 {
-"json": {
-    "gt": [
-      {
-        "ref": "IntNumber"
-      },
-      2
-    ]
-  }
+  "gt": [
+    {
+      "ref": "IntNumber"
+    },
+    2
+  ]
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {

@@ -1,13 +1,11 @@
 ﻿Condition:
 Json:
 {
-"json": {
-        "gt": [
-            "# SomeLocal should have a 'ref' prefix",
-            "SomeLocal",
-            2
-        ]
-    }
+    "gt": [
+        "# SomeLocal should have a 'ref' prefix",
+        "SomeLocal",
+        2
+    ]
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {

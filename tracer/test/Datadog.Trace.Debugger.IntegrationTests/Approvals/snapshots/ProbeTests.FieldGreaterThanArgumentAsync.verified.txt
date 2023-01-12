@@ -41,7 +41,7 @@
               },
               "Json": {
                 "type": "String",
-                "value": "{\r\n  \"json\": {\r\n    \"gt\": [\r\n      {\"ref\": \"_field\"},\r\n      {\"ref\": \"intArg\"}\r\n    ]\r\n  }\r\n}"
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"_field\"},\r\n      {\"ref\": \"intArg\"}\r\n    ]\r\n}"
               }
             }
           }

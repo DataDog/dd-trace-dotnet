@@ -112,7 +112,9 @@ internal partial class ProbeExpressionParser<T>
         ParameterExpression itParameter,
         bool shouldAdvanceReader = true)
     {
-        while (ConditionalRead(reader, shouldAdvanceReader))
+        int safeguard = 0;
+        const int maxIteration = 100000;
+        while (ConditionalRead(reader, shouldAdvanceReader) && safeguard++ <= maxIteration)
         {
             var readerValue = reader.Value?.ToString();
             try
@@ -343,6 +345,11 @@ internal partial class ProbeExpressionParser<T>
             }
         }
 
+        if (safeguard >= maxIteration)
+        {
+            throw new ArgumentException("Invalid json file", nameof(reader));
+        }
+
         return null;
     }
 
@@ -358,21 +365,21 @@ internal partial class ProbeExpressionParser<T>
 
     private void SetReaderAtExpressionStart(JsonTextReader reader)
     {
-        while (reader.Read())
+        int safeguard = 0;
+        const int maxIteration = 100;
+        while (reader.Read() && safeguard++ <= maxIteration)
         {
             if (reader.TokenType != JsonToken.PropertyName)
             {
                 continue;
             }
 
-            if (reader.Value?.ToString() == "json")
-            {
-                // TODO: This is only used in test code, remove
-                reader.Read();
-                reader.Read();
-            }
-
             return;
+        }
+
+        if (safeguard >= maxIteration)
+        {
+            throw new ArgumentException("Invalid json file", nameof(reader));
         }
     }
 
@@ -402,6 +409,33 @@ internal partial class ProbeExpressionParser<T>
         return finalExpr;
     }
 
+    private void AddLocalAndArgs(ScopeMember[] argsOrLocals, List<ParameterExpression> scopeMembers, List<Expression> expressions, ParameterExpression argsOrLocalsParameterExpression)
+    {
+        for (var index = 0; index < argsOrLocals.Length; index++)
+        {
+            if (argsOrLocals[index].Type == null)
+            {
+                // ArrayPool can allocate more items than we need, if "Type == null", this mean we can exit the loop because Type should never be null
+                break;
+            }
+
+            var argOrLocal = argsOrLocals[index];
+            var variable = Expression.Variable(argOrLocal.Type, argOrLocal.Name);
+            scopeMembers.Add(variable);
+
+            expressions.Add(
+                Expression.Assign(
+                    variable,
+                    Expression.Convert(
+                        Expression.Field(
+                            Expression.ArrayIndex(
+                                argsOrLocalsParameterExpression,
+                                Expression.Constant(index)),
+                            "Value"),
+                        argOrLocal.Type)));
+        }
+    }
+
     private ExpressionBodyAndParameters ParseProbeExpression(string expressionJson, ScopeMember @this, ScopeMember[] argsOrLocals)
     {
         @this.Type ??= @this.Value?.GetType();
@@ -416,37 +450,14 @@ internal partial class ProbeExpressionParser<T>
         var thisVariable = Expression.Variable(@this.Type, "this");
         expressions.Add(Expression.Assign(thisVariable, Expression.Convert(Expression.Field(thisParameterExpression, "Value"), @this.Type)));
         scopeMembers.Add(thisVariable);
-
         var argsOrLocalsParameterExpression = Expression.Parameter(argsOrLocals.GetType());
-
-        for (var index = 0; index < argsOrLocals.Length; index++)
-        {
-            if (argsOrLocals[index].Type == null)
-            {
-                break;
-            }
-
-            var argOrLocal = argsOrLocals[index];
-            var variable = Expression.Variable(argOrLocal.Type, argOrLocal.Name);
-            scopeMembers.Add(variable);
-
-            expressions.Add(
-                Expression.Assign(
-                    variable,
-                    Expression.Convert(
-                    Expression.Field(
-                    Expression.ArrayIndex(
-                        argsOrLocalsParameterExpression,
-                        Expression.Constant(index)),
-                    "Value"),
-                    argOrLocal.Type)));
-        }
+        AddLocalAndArgs(argsOrLocals, scopeMembers, expressions, argsOrLocalsParameterExpression);
+        var result = Expression.Variable(typeof(T), "$dd_el_result");
+        scopeMembers.Add(result);
 
         var reader = new JsonTextReader(new StringReader(expressionJson));
         SetReaderAtExpressionStart(reader);
 
-        var result = Expression.Variable(typeof(T), "$dd_el_result");
-        scopeMembers.Add(result);
         var finalExpr = ParseRoot(reader, scopeMembers);
         finalExpr = HandleReturnType(finalExpr);
         expressions.Add(finalExpr is not GotoExpression ? Expression.Assign(result, finalExpr) : finalExpr);

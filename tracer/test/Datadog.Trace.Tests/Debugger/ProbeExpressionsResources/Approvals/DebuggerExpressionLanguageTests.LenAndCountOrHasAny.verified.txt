@@ -1,64 +1,61 @@
 ﻿Condition:
 Json:
 {
-"json": {
-    "and": [
-      {
-        "gt": [
-          {
-            "len": [
-              {
-                "ref": "String"
-              }
-            ]
-          },
-          2
-        ]
-      },
-      {
-        "or": [
-          {
-            "gt": [
-              {
-                "count": [
-                  {
-                    "ref": "CollectionLocal"
-                  }
-                ]
-              },
-              2
-            ]
-          },
-          {
-            "hasAny": [
-              {
-                "filter": [
-                  {
-                    "ref": "CollectionLocal"
-                  },
-                  {
-                    "gt": [
-                      {
-                        "len": "@it"
-                      },
-                      4
-                    ]
-                  }
-                ]
-              },
-              {
-                "eq": [
-                  "@it",
-                  "hello"
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  "ignored": true
+  "and": [
+    {
+      "gt": [
+        {
+          "len": [
+            {
+              "ref": "String"
+            }
+          ]
+        },
+        2
+      ]
+    },
+    {
+      "or": [
+        {
+          "gt": [
+            {
+              "count": [
+                {
+                  "ref": "CollectionLocal"
+                }
+              ]
+            },
+            2
+          ]
+        },
+        {
+          "hasAny": [
+            {
+              "filter": [
+                {
+                  "ref": "CollectionLocal"
+                },
+                {
+                  "gt": [
+                    {
+                      "len": "@it"
+                    },
+                    4
+                  ]
+                }
+              ]
+            },
+            {
+              "eq": [
+                "@it",
+                "hello"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {

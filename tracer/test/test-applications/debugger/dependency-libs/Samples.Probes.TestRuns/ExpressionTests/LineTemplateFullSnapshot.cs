@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    [LineProbeTestData(29, templateDsl: Dsl, templateJson: Json, templateStr: "Result is: ", captureSnapshot: true)]
+    [LineProbeTestData(27, templateDsl: Dsl, templateJson: Json, templateStr: "Result is: ", captureSnapshot: true)]
     internal class LineTemplateFullSnapshot : IRun
     {
         private const string Dsl = @"{
@@ -11,9 +11,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 }";
 
         private const string Json = @"{
-  ""json"": {
         ""ref"": ""arg""
-    }
 }";
 
         [MethodImpl(MethodImplOptions.NoInlining)]

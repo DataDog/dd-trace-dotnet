@@ -1,16 +1,14 @@
 ﻿Condition:
 Json:
 {
-"json": {
-    "gt": [
-      [
-        {
-          "ref": "UndefinedField"
-        }
-      ],
-      2
-    ]
-  }
+  "gt": [
+    [
+      {
+        "ref": "UndefinedField"
+      }
+    ],
+    2
+  ]
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {

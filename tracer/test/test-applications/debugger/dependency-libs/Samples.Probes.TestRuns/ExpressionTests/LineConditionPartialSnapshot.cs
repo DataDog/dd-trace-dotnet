@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    [LineProbeTestData(32, conditionDsl: Dsl, conditionJson: Json, captureSnapshot: false)]
+    [LineProbeTestData(30, conditionDsl: Dsl, conditionJson: Json, captureSnapshot: false)]
     internal class LineConditionPartialSnapshot : IRun
     {
         private const string Dsl = @"{
@@ -11,12 +11,10 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 }";
 
         private const string Json = @"{
-  ""json"": {
     ""gt"": [
       {""ref"": ""local""},
       {""ref"": ""arg""}
     ]
-  }
 }";
 
         [MethodImpl(MethodImplOptions.NoInlining)]

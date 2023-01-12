@@ -11,7 +11,7 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal readonly ref struct CaptureInfo<TCapture>
 {
-    public CaptureInfo(
+    internal CaptureInfo(
         MethodState methodState,
         TCapture value = default,
         MethodBase method = null,
@@ -39,29 +39,29 @@ internal readonly ref struct CaptureInfo<TCapture>
         ArgumentsCount = argumentsCount;
     }
 
-    public TCapture Value { get; }
+    internal TCapture Value { get; }
 
-    public Type Type { get; }
+    internal Type Type { get; }
 
-    public string Name { get; }
+    internal string Name { get; }
 
-    public MethodBase Method { get; }
+    internal MethodBase Method { get; }
 
-    public Type InvocationTargetType { get; }
+    internal Type InvocationTargetType { get; }
 
-    public int? LocalsCount { get; }
+    internal int? LocalsCount { get; }
 
-    public int? ArgumentsCount { get; }
+    internal int? ArgumentsCount { get; }
 
-    public ScopeMemberKind MemberKind { get; }
+    internal ScopeMemberKind MemberKind { get; }
 
-    public MethodState MethodState { get; }
+    internal MethodState MethodState { get; }
 
-    public bool? HasLocalOrArgument { get; }
+    internal bool? HasLocalOrArgument { get; }
 
-    public AsyncCaptureInfo AsyncCaptureInfo { get; }
+    internal AsyncCaptureInfo AsyncCaptureInfo { get; }
 
-    public LineCaptureInfo LineCaptureInfo { get; }
+    internal LineCaptureInfo LineCaptureInfo { get; }
 
     internal bool IsAsyncCapture()
     {
@@ -71,7 +71,7 @@ internal readonly ref struct CaptureInfo<TCapture>
 
 internal readonly ref struct AsyncCaptureInfo
 {
-    public AsyncCaptureInfo(
+    internal AsyncCaptureInfo(
         object moveNextInvocationTarget,
         object kickoffInvocationTarget,
         Type kickoffInvocationTargetType,
@@ -88,30 +88,30 @@ internal readonly ref struct AsyncCaptureInfo
         HoistedLocals = hoistedLocals;
     }
 
-    public object MoveNextInvocationTarget { get; }
+    internal object MoveNextInvocationTarget { get; }
 
-    public object KickoffInvocationTarget { get; }
+    internal object KickoffInvocationTarget { get; }
 
-    public Type MoveNextInvocationTargetType { get; }
+    internal Type MoveNextInvocationTargetType { get; }
 
-    public Type KickoffInvocationTargetType { get; }
+    internal Type KickoffInvocationTargetType { get; }
 
-    public MethodBase KickoffMethod { get; }
+    internal MethodBase KickoffMethod { get; }
 
-    public FieldInfo[] HoistedArguments { get; }
+    internal FieldInfo[] HoistedArguments { get; }
 
-    public AsyncHelper.FieldInfoNameSanitized[] HoistedLocals { get; }
+    internal AsyncHelper.FieldInfoNameSanitized[] HoistedLocals { get; }
 }
 
 internal readonly ref struct LineCaptureInfo
 {
-    public LineCaptureInfo(int lineNumber, string probeFilePath)
+    internal LineCaptureInfo(int lineNumber, string probeFilePath)
     {
         LineNumber = lineNumber;
         ProbeFilePath = probeFilePath;
     }
 
-    public int LineNumber { get; }
+    internal int LineNumber { get; }
 
-    public string ProbeFilePath { get; }
+    internal string ProbeFilePath { get; }
 }

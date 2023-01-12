@@ -8,7 +8,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "32": {
+            "30": {
               "arguments": {
                 "arg": {
                   "type": "Double",
@@ -36,7 +36,7 @@
           "location": {
             "file": "LineConditionFullSnapshot.cs",
             "lines": [
-              32
+              30
             ]
           }
         },

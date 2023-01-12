@@ -39,7 +39,7 @@ internal static class ProbeExpressionParserHelper
 
     internal readonly record struct ReflectionMethodIdentifier
     {
-        public ReflectionMethodIdentifier(Type type, string methodName, Type[] parameters)
+        internal ReflectionMethodIdentifier(Type type, string methodName, Type[] parameters)
         {
             Type = type;
             MethodName = methodName;
@@ -55,7 +55,7 @@ internal static class ProbeExpressionParserHelper
 
     internal readonly ref struct ExpressionBodyAndParameters
     {
-        public ExpressionBodyAndParameters(Expression body, ParameterExpression thisParameterExpression, ParameterExpression argsOrLocalsParameterExpression)
+        internal ExpressionBodyAndParameters(Expression body, ParameterExpression thisParameterExpression, ParameterExpression argsOrLocalsParameterExpression)
         {
             ExpressionBody = body;
             ThisParameterExpression = thisParameterExpression;

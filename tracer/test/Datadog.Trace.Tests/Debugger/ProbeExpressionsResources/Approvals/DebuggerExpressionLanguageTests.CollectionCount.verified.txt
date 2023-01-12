@@ -2,13 +2,11 @@
 Segments: 
 
 {
-"json": {
-        "count": [
-            {
-                "ref": "CollectionLocal"
-            }
-        ]
-    }
+    "count": [
+        {
+            "ref": "CollectionLocal"
+        }
+    ]
 }
 Expressions: 
 (scopeMember, scopeMemberArray) =>

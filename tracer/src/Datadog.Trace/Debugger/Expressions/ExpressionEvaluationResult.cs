@@ -10,11 +10,16 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal ref struct ExpressionEvaluationResult
 {
-    public string Template { get; set; }
+    internal string Template { get; set; }
 
-    public bool? Condition { get; set; }
+    internal bool? Condition { get; set; }
 
-    public double? Metric { get; set; }
+    internal double? Metric { get; set; }
 
-    public List<EvaluationError> Errors { get; set; }
+    internal List<EvaluationError> Errors { get; set; }
+
+    internal bool IsNull()
+    {
+        return Template == null && Condition == null && Metric == null && Errors == null;
+    }
 }

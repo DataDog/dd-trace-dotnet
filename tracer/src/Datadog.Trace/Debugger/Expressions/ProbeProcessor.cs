@@ -20,7 +20,13 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private ProbeExpressionEvaluator _evaluator;
 
-        public ProbeProcessor(ProbeDefinition probe)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
+        /// </summary>
+        /// <param name="probe">A probe that can pe log probe or metric probe</param>
+        /// <exception cref="ArgumentOutOfRangeException">If probeType is from unsupported type</exception>
+        /// <remarks>Exceptions should be caught and logged by the caller</remarks>
+        internal ProbeProcessor(ProbeDefinition probe)
         {
             _evaluator = default;
             var location = probe.Where.MethodName != null
@@ -32,7 +38,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 LogProbe { CaptureSnapshot: true } => ProbeType.Snapshot,
                 LogProbe { CaptureSnapshot: false } => ProbeType.Log,
                 MetricProbe => ProbeType.Metric,
-                _ => throw new ArgumentException(nameof(probe))
+                _ => throw new ArgumentOutOfRangeException(nameof(probe), probe, "Unsupported probe type")
             };
 
             ProbeInfo = new ProbeInfo(
@@ -40,7 +46,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 probeType,
                 location,
                 probe.EvaluateAt,
-                Templates: (probe as LogProbe)?.Segments?.Select(s => Convert(s).Value).ToArray(),
+                // ReSharper disable once PossibleInvalidOperationException
+                Templates: (probe as LogProbe)?.Segments?.Where(seg => seg != null).Select(seg => Convert(seg).Value).ToArray(),
                 Condition: Convert((probe as LogProbe)?.When),
                 Metric: Convert((probe as MetricProbe)?.Value));
         }
@@ -157,7 +164,6 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     case MethodState.LogLocal:
                     case MethodState.LogArg:
-                    case MethodState.LogException:
                         if (snapshotCreator.CaptureBehaviour is CaptureBehaviour.NoCapture or CaptureBehaviour.Stop)
                         {
                             // there is a condition that should evaluate at exit phase and we are at entry phase
@@ -173,7 +179,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(
-                            "info.MethodState",
+                            $"{nameof(info.MethodState)}",
                             $"{info.MethodState} is not valid value here");
                 }
 
@@ -207,7 +213,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     ProcessLine(ref info, ref snapshotCreator, ref evaluationResult);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException("ProbeInfo.ProbeLocation", $"{info.MethodState} is not valid value here");
+                    throw new ArgumentOutOfRangeException($"{nameof(ProbeInfo.ProbeLocation)}", $"{info.MethodState} is not valid value here");
             }
 
             return true;
@@ -226,6 +232,11 @@ namespace Datadog.Trace.Debugger.Expressions
                 case MethodState.EntryEnd:
                     if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                     {
+                        if (evaluationResult.IsNull())
+                        {
+                            throw new ArgumentException($"{nameof(evaluationResult)} can't be null when we are in {nameof(CaptureBehaviour.Evaluate)}", nameof(evaluationResult));
+                        }
+
                         snapshotCreator.SetEvaluationResult(ref evaluationResult);
                     }
 
@@ -247,9 +258,13 @@ namespace Datadog.Trace.Debugger.Expressions
                 case MethodState.ExitEnd:
                 case MethodState.ExitEndAsync:
                     {
-                        string snapshot = null;
                         if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                         {
+                            if (evaluationResult.IsNull())
+                            {
+                                throw new ArgumentException($"{nameof(evaluationResult)} can't be null when we are in {nameof(CaptureBehaviour.Evaluate)}", nameof(evaluationResult));
+                            }
+
                             snapshotCreator.SetEvaluationResult(ref evaluationResult);
                         }
 
@@ -259,7 +274,7 @@ namespace Datadog.Trace.Debugger.Expressions
                             snapshotCreator.CaptureExitMethodEndMarker(ref info);
                         }
 
-                        snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
+                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
                         LiveDebugger.Instance.AddSnapshot(snapshot);
                         snapshotCreator.Stop();
                         break;
@@ -270,9 +285,6 @@ namespace Datadog.Trace.Debugger.Expressions
                     break;
                 case MethodState.LogLocal:
                     snapshotCreator.CaptureLocal(info.Value, info.Name, info.Type);
-                    break;
-                case MethodState.LogException:
-                    snapshotCreator.CaptureException(info.Value as Exception);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(info.MethodState));
@@ -292,6 +304,11 @@ namespace Datadog.Trace.Debugger.Expressions
                 case MethodState.EndLineAsync:
                     if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                     {
+                        if (evaluationResult.IsNull())
+                        {
+                            throw new ArgumentException($"{nameof(evaluationResult)} can't be null when we are in {nameof(CaptureBehaviour.Evaluate)}", nameof(evaluationResult));
+                        }
+
                         snapshotCreator.SetEvaluationResult(ref evaluationResult);
                     }
 
@@ -311,9 +328,6 @@ namespace Datadog.Trace.Debugger.Expressions
                     break;
                 case MethodState.LogLocal:
                     snapshotCreator.CaptureLocal(info.Value, info.Name, info.Type);
-                    break;
-                case MethodState.LogException:
-                    snapshotCreator.CaptureException(info.Value as Exception);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(info.MethodState));

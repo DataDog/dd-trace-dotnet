@@ -2,9 +2,7 @@
 Segments: 
 
 {
-"json": {
-        "ref": "Nested"
-    }
+    "ref": "Nested"
 }
 Expressions: 
 (scopeMember, scopeMemberArray) =>

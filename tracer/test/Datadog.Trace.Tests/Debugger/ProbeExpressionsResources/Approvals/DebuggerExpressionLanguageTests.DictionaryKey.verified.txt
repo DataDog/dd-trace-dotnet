@@ -2,14 +2,12 @@
 Segments: 
 
 {
-"json": {
-        "index": [
-            {
-                "ref": "DictionaryLocal"
-            },
-            "hello"
-        ]
-    }
+    "index": [
+        {
+            "ref": "DictionaryLocal"
+        },
+        "hello"
+    ]
 }
 Expressions: 
 (scopeMember, scopeMemberArray) =>

@@ -25,7 +25,7 @@
               },
               "Json": {
                 "type": "String",
-                "value": "{\r\n  \"json\": {\r\n    \"gt\": [\r\n      {\"ref\": \"intArg\"},\r\n      2\r\n    ]\r\n  }\r\n}"
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"intArg\"},\r\n      2\r\n    ]\r\n}"
               }
             }
           },
@@ -53,7 +53,7 @@
               },
               "Json": {
                 "type": "String",
-                "value": "{\r\n  \"json\": {\r\n    \"gt\": [\r\n      {\"ref\": \"intArg\"},\r\n      2\r\n    ]\r\n  }\r\n}"
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"intArg\"},\r\n      2\r\n    ]\r\n}"
               }
             }
           }

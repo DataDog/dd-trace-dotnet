@@ -1,14 +1,12 @@
 ﻿Condition:
 Json:
 {
-"json": {
-    "eq": [
-      {
-        "ref": "StringLocal"
-      },
-      null
-    ]
-  }
+  "eq": [
+    {
+      "ref": "StringLocal"
+    },
+    null
+  ]
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {

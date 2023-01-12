@@ -1,11 +1,9 @@
 {
   "dsl": "ref SomeString == null",
-  "json": {
-    "eq": [
-      {
-        "ref": "StringLocal"
-      },
-      null
-    ]
-  }
+  "eq": [
+    {
+      "ref": "StringLocal"
+    },
+    null
+  ]
 }

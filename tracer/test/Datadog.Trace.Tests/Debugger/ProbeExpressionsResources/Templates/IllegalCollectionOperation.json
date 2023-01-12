@@ -1,9 +1,7 @@
 {
     "dsl": "count(SomeCollection)",
-    "json": {
-        "count": [
-            "# SomeCollection should have a 'ref' prefix",
-            "SomeCollection"
-        ]
-    }
+    "count": [
+        "# SomeCollection should have a 'ref' prefix",
+        "SomeCollection"
+    ]
 }

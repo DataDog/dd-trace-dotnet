@@ -19,12 +19,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
     internal struct ScopeMember
     {
-        public object Value;
-        public string Name;
-        public Type Type;
-        public ScopeMemberKind ElementType;
+        internal object Value;
+        internal string Name;
+        internal Type Type;
+        internal ScopeMemberKind ElementType;
 
-        public ScopeMember(string name, Type type, object value, ScopeMemberKind elementType)
+        internal ScopeMember(string name, Type type, object value, ScopeMemberKind elementType)
         {
             Name = name;
             Type = type;

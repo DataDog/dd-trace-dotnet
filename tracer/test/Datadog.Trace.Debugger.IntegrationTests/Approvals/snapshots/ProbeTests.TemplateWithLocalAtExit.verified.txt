@@ -25,7 +25,7 @@
               },
               "Json": {
                 "type": "String",
-                "value": "{\r\n  \"json\": {\r\n        \"ref\": \"i\"\r\n    }\r\n}"
+                "value": "{\r\n        \"ref\": \"i\"\r\n}"
               }
             }
           },
@@ -57,7 +57,7 @@
               },
               "Json": {
                 "type": "String",
-                "value": "{\r\n  \"json\": {\r\n        \"ref\": \"i\"\r\n    }\r\n}"
+                "value": "{\r\n        \"ref\": \"i\"\r\n}"
               }
             }
           }

@@ -176,9 +176,7 @@ internal static class DebuggerTestHelper
 
         snapshot.Template = "Test {1}";
         var json = @"{
-  ""json"": {
     ""Ignore"": ""1""
-  }
 }";
         snapshot.Segments = new SnapshotSegment[] { new(null, null, "Test"), new("1", json, null) };
         snapshot.EvaluateAt = EvaluateAt.Entry;

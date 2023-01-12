@@ -10,9 +10,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 }";
 
         private const string Json = @"{
-  ""json"": {
         ""ref"": ""i""
-    }
 }";
 
         [MethodImpl(MethodImplOptions.NoInlining)]

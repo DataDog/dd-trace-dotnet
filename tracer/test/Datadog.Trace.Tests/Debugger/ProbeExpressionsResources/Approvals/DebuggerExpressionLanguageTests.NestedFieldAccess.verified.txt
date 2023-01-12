@@ -1,23 +1,21 @@
 ﻿Condition:
 Json:
 {
-"json": {
-    "gt": [
-      {
-        "len": [
-          {
-            "getmember": [
-              {
-                "ref": "Nested"
-              },
-              "NestedString"
-            ]
-          }
-        ]
-      },
-      2
-    ]
-  }
+  "gt": [
+    {
+      "len": [
+        {
+          "getmember": [
+            {
+              "ref": "Nested"
+            },
+            "NestedString"
+          ]
+        }
+      ]
+    },
+    2
+  ]
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {

@@ -1,19 +1,16 @@
 {
   "dsl": "hasAll(ref CollectionLocal, { len(@it) > 3 })",
-  "json": {
-    "hasAll": [
-      {
-        "ref": "CollectionLocal"
-      },
-      {
-        "gt": [
-          {
-            "len": "@it"
-          },
-          3
-        ]
-      }
-    ]
-  },
-  "ignored": true
+  "hasAll": [
+    {
+      "ref": "CollectionLocal"
+    },
+    {
+      "gt": [
+        {
+          "len": "@it"
+        },
+        3
+      ]
+    }
+  ]
 }

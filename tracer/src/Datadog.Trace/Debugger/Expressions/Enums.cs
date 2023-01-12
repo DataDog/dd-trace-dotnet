@@ -40,7 +40,6 @@ internal enum MethodState
     EndLineAsync,
     LogArg,
     LogLocal,
-    LogException,
 }
 
 internal enum CaptureBehaviour

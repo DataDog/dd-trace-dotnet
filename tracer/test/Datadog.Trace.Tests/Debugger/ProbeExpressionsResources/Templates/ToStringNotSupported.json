@@ -1,6 +1,4 @@
 {
     "dsl": "{Nested}",
-    "json": {
-        "ref": "Nested"
-    }
+    "ref": "Nested"
 }

@@ -2,11 +2,9 @@
 Segments: 
 
 {
-"json": {
-        "reverse": [
-            "SomeLocal"
-        ]
-    }
+    "reverse": [
+        "SomeLocal"
+    ]
 }
 Expressions: 
 (scopeMember, scopeMemberArray) =>

@@ -1,11 +1,9 @@
 {
     "dsl": "{Null.NestedString}",
-    "json": {
-        "getmember": [
-            {
-                "ref": "Null"
-            },
-            "NestedString"
-        ]
-    }
+    "getmember": [
+        {
+            "ref": "Null"
+        },
+        "NestedString"
+    ]
 }

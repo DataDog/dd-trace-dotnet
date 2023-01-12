@@ -1,29 +1,26 @@
 ﻿Condition:
 Json:
 {
-"json": {
-    "gt": [
-      {
-        "count": {
-          "filter": [
-            {
-              "ref": "CollectionLocal"
-            },
-            {
-              "gt": [
-                {
-                  "len": "@it"
-                },
-                4
-              ]
-            }
-          ]
-        }
-      },
-      2
-    ]
-  },
-  "ignored": true
+  "gt": [
+    {
+      "count": {
+        "filter": [
+          {
+            "ref": "CollectionLocal"
+          },
+          {
+            "gt": [
+              {
+                "len": "@it"
+              },
+              4
+            ]
+          }
+        ]
+      }
+    },
+    2
+  ]
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {

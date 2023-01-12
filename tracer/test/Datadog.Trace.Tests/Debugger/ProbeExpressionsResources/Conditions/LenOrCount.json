@@ -1,32 +1,29 @@
 {
   "dsl": "len(ref String) > 2 || count(ref CollectionLocal) > 2",
-  "json": {
-    "or": [
-      {
-        "gt": [
-          {
-            "len": [
-              {
-                "ref": "String"
-              }
-            ]
-          },
-          2
-        ]
-      },
-      {
-        "gt": [
-          {
-            "count": [
-              {
-                "ref": "CollectionLocal"
-              }
-            ]
-          },
-          2
-        ]
-      }
-    ]
-  },
-  "ignored": true
+  "or": [
+    {
+      "gt": [
+        {
+          "len": [
+            {
+              "ref": "String"
+            }
+          ]
+        },
+        2
+      ]
+    },
+    {
+      "gt": [
+        {
+          "count": [
+            {
+              "ref": "CollectionLocal"
+            }
+          ]
+        },
+        2
+      ]
+    }
+  ]
 }

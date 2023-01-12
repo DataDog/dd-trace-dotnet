@@ -38,13 +38,13 @@ internal class ProbeExpressionEvaluator
 
     internal DebuggerExpression? Condition { get; }
 
-    internal DebuggerExpression? Metric { get; }
+    private DebuggerExpression? Metric { get; }
 
     internal Lazy<CompiledExpression<string>[]> CompiledTemplates { get; }
 
     internal Lazy<CompiledExpression<bool>?> CompiledCondition { get; }
 
-    internal Lazy<CompiledExpression<double>?> CompiledMetric { get; }
+    private Lazy<CompiledExpression<double>?> CompiledMetric { get; }
 
     internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers)
     {
@@ -167,13 +167,9 @@ internal class ProbeExpressionEvaluator
             {
                 compiledExpressions[i] = ProbeExpressionParser<string>.ParseExpression(current.Json, _scopeMembers.InvocationTarget, _scopeMembers.Members);
             }
-            else if (current.Str != null)
-            {
-                compiledExpressions[i] = new CompiledExpression<string>(null, null, current.Str, null);
-            }
             else
             {
-                throw new Exception($"{nameof(CompileTemplates)}[{i}]: Template segment must have json or str");
+                compiledExpressions[i] = new CompiledExpression<string>(null, null, current.Str, null);
             }
         }
 

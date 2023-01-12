@@ -555,7 +555,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 if (member.Type == null)
                 {
-                    // ArrayPool can allocate more items than we need, if "Type == null", this mean we can exit the loop
+                    // ArrayPool can allocate more items than we need, if "Type == null", this mean we can exit the loop because Type should never be null
                     break;
                 }
 

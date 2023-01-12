@@ -12,12 +12,10 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 }";
 
         private const string Json = @"{
-  ""json"": {
     ""gt"": [
       {""ref"": ""_field""},
       {""ref"": ""local""}
     ]
-  }
 }";
 
         public async Task RunAsync()

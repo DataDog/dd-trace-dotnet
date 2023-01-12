@@ -1,22 +1,19 @@
 ﻿Condition:
 Json:
 {
-"json": {
-    "hasAll": [
-      {
-        "ref": "CollectionLocal"
-      },
-      {
-        "gt": [
-          {
-            "len": "@it"
-          },
-          3
-        ]
-      }
-    ]
-  },
-  "ignored": true
+  "hasAll": [
+    {
+      "ref": "CollectionLocal"
+    },
+    {
+      "gt": [
+        {
+          "len": "@it"
+        },
+        3
+      ]
+    }
+  ]
 }
 Expression: (scopeMember, scopeMemberArray) =>
 {

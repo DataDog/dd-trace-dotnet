@@ -2,14 +2,12 @@
 Segments: 
 
 {
-"json": {
-        "getmember": [
-            {
-                "ref": "Null"
-            },
-            "NestedString"
-        ]
-    }
+    "getmember": [
+        {
+            "ref": "Null"
+        },
+        "NestedString"
+    ]
 }
 Expressions: 
 (scopeMember, scopeMemberArray) =>
