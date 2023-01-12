@@ -20,6 +20,33 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
+    public class AspNetCore5AsmToggleConfigError : RcmBase
+    {
+        public AspNetCore5AsmToggleConfigError(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmToggleConfigError))
+        {
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestRemoteConfigError()
+        {
+            var url = "/Health/?[$slice]=value";
+            await TryStartApp();
+            SetHttpPort(Fixture.HttpPort);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+
+            var spans1 = await SendRequestsAsync(Fixture.Agent, url);
+
+            var request = await Fixture.Agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "ASM_FEATURES");
+
+            RcmBase.CheckAckState(request, "ASM_FEATURES", ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
+
+            await VerifySpans(spans1.ToImmutableList(), settings, true);
+        }
+    }
+
     public class AspNetCore5AsmToggleSecurityNull : AspNetCore5AsmToggle
     {
         public AspNetCore5AsmToggleSecurityNull(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
@@ -42,30 +69,12 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmToggleSecurityEnabled))
         {
         }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestRemoteConfigError()
-        {
-            var url = "/Health/?[$slice]=value";
-            await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-
-            var spans1 = await SendRequestsAsync(Fixture.Agent, url);
-
-            var request = await Fixture.Agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "ASM_FEATURES");
-
-            RcmBase.CheckAckState(request, "ASM_FEATURES", ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
-
-            await VerifySpans(spans1.ToImmutableList(), settings, true);
-        }
     }
 
     public abstract class AspNetCore5AsmToggle : RcmBase
     {
         public AspNetCore5AsmToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
-            : base(fixture, outputHelper, enableSecurity: true, testName: testName)
+            : base(fixture, outputHelper, enableSecurity: enableSecurity, testName: testName)
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
@@ -74,16 +83,19 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         // * https://github.com/DataDog/dd-trace-dotnet/pull/3120
         // * https://github.com/DataDog/dd-trace-dotnet/pull/3171
         // the verify file names will need adjusting too
-        [SkippableTheory]
-        [InlineData(ApplyStates.ACKNOWLEDGED,  RcmCapabilitiesIndices.AsmActivationUInt32 | RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32)]
-        [InlineData(ApplyStates.UNACKNOWLEDGED, RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32)]
+        [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        public async Task TestSecurityToggling(uint expectedState, uint expectedCapabilities)
+        public async Task TestSecurityToggling()
         {
+            uint expectedState = EnableSecurity == false ? ApplyStates.UNACKNOWLEDGED : ApplyStates.ACKNOWLEDGED;
+            uint expectedCapabilities = EnableSecurity == false ?
+                    (RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32)
+                    : (RcmCapabilitiesIndices.AsmActivationUInt32 | RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32);
+
             var url = "/Health/?[$slice]=value";
             await TryStartApp();
             SetHttpPort(Fixture.HttpPort);
-            var settings = VerifyHelper.GetSpanVerifierSettings(expectedState, expectedCapabilities);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
 
             var spans1 = await SendRequestsAsync(Fixture.Agent, url);
