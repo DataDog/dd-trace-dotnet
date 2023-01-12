@@ -290,11 +290,15 @@ namespace Datadog.Trace.Debugger.Expressions
 
                 case MethodState.EndLine:
                 case MethodState.EndLineAsync:
-                    snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
-                    snapshotCreator.CaptureEndLine(ref info);
                     if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                     {
                         snapshotCreator.SetEvaluationResult(ref evaluationResult);
+                    }
+
+                    if (ProbeInfo.IsFullSnapshot)
+                    {
+                        snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
+                        snapshotCreator.CaptureEndLine(ref info);
                     }
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ref info);

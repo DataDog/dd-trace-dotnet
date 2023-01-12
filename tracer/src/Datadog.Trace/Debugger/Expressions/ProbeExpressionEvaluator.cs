@@ -9,6 +9,7 @@ using System.Linq.Expressions;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
@@ -66,17 +67,22 @@ internal class ProbeExpressionEvaluator
             {
                 try
                 {
-                    if (!string.IsNullOrEmpty(Templates[i].Str))
+                    if (IsLiteral(Templates[i]))
                     {
                         resultBuilder.Append(Templates[i].Str);
                     }
-                    else
+                    else if (IsExpression(Templates[i]))
                     {
                         resultBuilder.Append(compiledExpressions[i].Delegate(scopeMembers.InvocationTarget, scopeMembers.Members));
                         if (compiledExpressions[i].Errors != null)
                         {
                             (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpressions[i].Errors);
                         }
+                    }
+                    else
+                    {
+                        // Logger.Error
+                        continue;
                     }
                 }
                 catch (Exception e)
@@ -85,8 +91,7 @@ internal class ProbeExpressionEvaluator
                 }
             }
 
-            var finalMessage = StringBuilderCache.GetStringAndRelease(resultBuilder);
-            result.Template = finalMessage;
+            result.Template = resultBuilder.ToString();
         }
         catch (Exception e)
         {
@@ -97,6 +102,16 @@ internal class ProbeExpressionEvaluator
         {
             StringBuilderCache.Release(resultBuilder);
         }
+    }
+
+    private bool IsLiteral(DebuggerExpression expression)
+    {
+        return !string.IsNullOrEmpty(expression.Str);
+    }
+
+    private bool IsExpression(DebuggerExpression expression)
+    {
+        return string.IsNullOrEmpty(expression.Str) && !string.IsNullOrEmpty(expression.Json);
     }
 
     private void EvaluateCondition(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)

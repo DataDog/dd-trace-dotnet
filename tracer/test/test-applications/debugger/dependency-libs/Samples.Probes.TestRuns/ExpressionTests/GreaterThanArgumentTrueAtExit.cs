@@ -24,7 +24,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [ExpressionProbeTestData(
+        [MethodProbeTestData(
             conditionDsl: Dsl,
             conditionJson: Json,
             captureSnapshot: true,

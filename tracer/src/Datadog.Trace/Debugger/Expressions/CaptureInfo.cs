@@ -62,6 +62,11 @@ internal readonly ref struct CaptureInfo<TCapture>
     public AsyncCaptureInfo AsyncCaptureInfo { get; }
 
     public LineCaptureInfo LineCaptureInfo { get; }
+
+    internal bool IsAsyncCapture()
+    {
+        return AsyncCaptureInfo.KickoffInvocationTargetType != null;
+    }
 }
 
 internal readonly ref struct AsyncCaptureInfo

@@ -22,7 +22,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [ExpressionProbeTestData(
+        [MethodProbeTestData(
             templateDsl: Dsl,
             templateJson: Json,
             templateStr: "Result is: ",

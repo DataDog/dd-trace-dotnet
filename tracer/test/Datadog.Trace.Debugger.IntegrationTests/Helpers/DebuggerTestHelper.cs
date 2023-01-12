@@ -84,28 +84,14 @@ internal static class DebuggerTestHelper
            .Select(m =>
             {
                 var testAttribute = m.GetCustomAttribute<MethodProbeTestDataAttribute>().As<ProbeAttributeBase>();
-                var probe = CreateSnapshotMethodProbe(m, guidGenerator);
-
-                if (testAttribute is ExpressionProbeTestDataAttribute expression)
-                {
-                    if (expression.ConditionJson != null)
-                    {
-                        probe = probe.WithWhen(expression.ConditionDsl, expression.ConditionJson, (EvaluateAt)expression.EvaluateAt);
-                    }
-
-                    if (expression.TemplateJson != null)
-                    {
-                        probe = probe.WithTemplate(expression.TemplateDsl, expression.TemplateJson, expression.TemplateStr, (EvaluateAt)expression.EvaluateAt);
-                    }
-                }
-
+                var probe = CreateLogMethodProbe(m, guidGenerator);
                 return (testAttribute, probe);
             });
 
         return snapshotMethodProbes;
     }
 
-    internal static LogProbe CreateBasicLogProbeProbe(DeterministicGuidGenerator guidGenerator)
+    internal static LogProbe CreateBasicLogProbe(DeterministicGuidGenerator guidGenerator)
     {
         return new LogProbe
         {
@@ -117,9 +103,7 @@ internal static class DebuggerTestHelper
 
     internal static LogProbe CreateDefaultLogProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator, MethodProbeTestDataAttribute probeTestData = null)
     {
-        var snapshot = CreateBasicLogProbeProbe(guidGenerator).WithWhere(typeName, methodName, probeTestData).WithSampling().WithTemplate();
-        var isFullSnapshot = probeTestData?.CaptureSnapshot ?? true;
-        return isFullSnapshot ? snapshot.WithCapture() : snapshot;
+        return CreateBasicLogProbe(guidGenerator).WithWhere(typeName, methodName, probeTestData).WithSampling().WithDefaultTemplate().WithCapture(probeTestData?.CaptureSnapshot);
     }
 
     internal static LogProbe WithWhere(this LogProbe snapshot, string typeName, string methodName, MethodProbeTestDataAttribute probeTestData = null)
@@ -145,8 +129,14 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    internal static LogProbe WithCapture(this LogProbe snapshot)
+    internal static LogProbe WithCapture(this LogProbe snapshot, bool? captureSnapshot)
     {
+        if (!captureSnapshot.HasValue || !captureSnapshot.Value)
+        {
+            snapshot.CaptureSnapshot = false;
+            return snapshot;
+        }
+
         var capture = new Capture
         {
             MaxCollectionSize = 1000,
@@ -159,10 +149,15 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    internal static LogProbe WithWhen(this LogProbe snapshot, string dsl, string json, EvaluateAt evaluateAt)
+    internal static LogProbe WithWhen(this LogProbe snapshot, ProbeAttributeBase att)
     {
-        snapshot.When = new SnapshotSegment(dsl, json, null);
-        snapshot.EvaluateAt = evaluateAt;
+        if (att == null || string.IsNullOrEmpty(att.ConditionJson))
+        {
+            return snapshot;
+        }
+
+        snapshot.When = new SnapshotSegment(att.ConditionDsl, att.ConditionJson, null);
+        snapshot.EvaluateAt = (EvaluateAt)att.EvaluateAt;
         return snapshot;
     }
 
@@ -172,7 +167,7 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    internal static LogProbe WithTemplate(this LogProbe snapshot)
+    internal static LogProbe WithDefaultTemplate(this LogProbe snapshot)
     {
         if (snapshot.Segments != null)
         {
@@ -190,14 +185,19 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    internal static LogProbe WithTemplate(this LogProbe snapshot, string dsl, string json, string str, EvaluateAt evaluateAt)
+    internal static LogProbe WithTemplate(this LogProbe snapshot, ProbeAttributeBase att)
     {
-        snapshot.Segments = new SnapshotSegment[] { new(null, null, str), new(dsl, json, null) };
-        snapshot.EvaluateAt = evaluateAt;
+        if (att == null || string.IsNullOrEmpty(att.TemplateJson))
+        {
+            return snapshot.WithDefaultTemplate();
+        }
+
+        snapshot.Segments = new SnapshotSegment[] { new(null, null, att.TemplateStr), new(att.TemplateDsl, att.TemplateJson, null) };
+        snapshot.EvaluateAt = (EvaluateAt)att.EvaluateAt;
         return snapshot;
     }
 
-    private static LogProbe CreateSnapshotMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
+    private static LogProbe CreateLogMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
     {
         var probeTestData = method.GetCustomAttribute<MethodProbeTestDataAttribute>();
         if (probeTestData == null)
@@ -209,15 +209,16 @@ internal static class DebuggerTestHelper
 
         if (typeName == null)
         {
-            throw new Xunit.Sdk.SkipException($"{nameof(CreateSnapshotMethodProbe)} failed in getting type name for method: {method.Name}");
+            throw new Xunit.Sdk.SkipException($"{nameof(CreateLogMethodProbe)} failed in getting type name for method: {method.Name}");
         }
 
-        return CreateDefaultLogProbe(typeName, method.Name, guidGenerator, probeTestData);
+        var logProbe = CreateDefaultLogProbe(typeName, method.Name, guidGenerator, probeTestData).WithWhen(probeTestData).WithTemplate(probeTestData);
+        return logProbe;
     }
 
     private static LogProbe CreateLogLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
     {
-        return CreateBasicLogProbeProbe(guidGenerator).WithLineProbeWhere(type, line).WithTemplate().WithCapture();
+        return CreateBasicLogProbe(guidGenerator).WithLineProbeWhere(type, line).WithCapture(line?.CaptureSnapshot).WithTemplate(line).WithWhen(line);
     }
 
     private static LogProbe WithLineProbeWhere(this LogProbe snapshot, Type type, LineProbeTestDataAttribute line)

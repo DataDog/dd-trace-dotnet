@@ -24,13 +24,13 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [ExpressionProbeTestData(conditionDsl: Dsl,
-                                 conditionJson: Json,
-                                 captureSnapshot: true,
-                                 evaluateAt: 1,
-                                 expectedNumberOfSnapshots: 0,
-                                 returnTypeName: "System.String",
-                                 parametersTypeName: new[] { "System.Int32" })]
+        [MethodProbeTestData(conditionDsl: Dsl,
+                             conditionJson: Json,
+                             captureSnapshot: true,
+                             evaluateAt: 1,
+                             expectedNumberOfSnapshots: 0,
+                             returnTypeName: "System.String",
+                             parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)
         {
             return $"Argument: {intArg}";

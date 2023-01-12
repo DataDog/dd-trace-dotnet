@@ -138,18 +138,9 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
             }
 
-            if (!info.MethodState.IsInStartMarkerOrBeginLine())
+            if (info.MethodState.IsInStartMarkerOrBeginLine())
             {
-                return CaptureBehaviour;
-            }
-
-            if (info.MethodState.IsInAsyncMethod())
-            {
-                CreateMethodScopeMembers(info.AsyncCaptureInfo.HoistedLocals.Length, info.AsyncCaptureInfo.HoistedArguments.Length);
-            }
-            else
-            {
-                CreateMethodScopeMembers(info.LocalsCount.Value, info.ArgumentsCount.Value);
+                CreateMethodScopeMembers(ref info);
             }
 
             return CaptureBehaviour;
@@ -160,9 +151,16 @@ namespace Datadog.Trace.Debugger.Snapshots
             _captureBehaviour = CaptureBehaviour.Stop;
         }
 
-        internal void CreateMethodScopeMembers(int numberOfLocals, int numberOfArguments)
+        internal void CreateMethodScopeMembers<T>(ref CaptureInfo<T> info)
         {
-            MethodScopeMembers = new MethodScopeMembers(numberOfLocals, numberOfArguments);
+            if (info.IsAsyncCapture())
+            {
+                MethodScopeMembers = new MethodScopeMembers(info.AsyncCaptureInfo.HoistedLocals.Length, info.AsyncCaptureInfo.HoistedArguments.Length);
+            }
+            else
+            {
+                MethodScopeMembers = new MethodScopeMembers(info.LocalsCount.Value, info.ArgumentsCount.Value);
+            }
         }
 
         internal void AddScopeMember<T>(string name, Type type, T value, ScopeMemberKind memberKind)
@@ -541,6 +539,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         break;
                     case MethodState.EndLine:
                     case MethodState.EndLineAsync:
+                        CaptureBeginLine(ref captureInfo);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(captureInfo.MethodState), captureInfo.MethodState, null);

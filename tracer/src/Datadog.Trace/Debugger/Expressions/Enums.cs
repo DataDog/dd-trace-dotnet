@@ -93,18 +93,15 @@ internal static class Enums
 
     internal static bool IsInEntryEnd(this MethodState state)
     {
-        return state is MethodState.BeginLine
-                   or MethodState.BeginLineAsync
+        return state is MethodState.EndLine
+                   or MethodState.EndLineAsync
                    or MethodState.EntryAsync
                    or MethodState.EntryEnd;
     }
 
     internal static bool IsInExitEnd(this MethodState state)
     {
-        return state is MethodState.EndLine
-                   or MethodState.EndLineAsync
-                   or MethodState.ExitEndAsync
-                   or MethodState.ExitEnd;
+        return state is MethodState.ExitEndAsync or MethodState.ExitEnd;
     }
 
     internal static bool IsInStartMarkerOrBeginLine(this MethodState state)
