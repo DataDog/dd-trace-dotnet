@@ -655,11 +655,11 @@ internal class IntelligentTestRunnerClient
             throw new RateLimitException(rateLimitDurationInSeconds);
         }
 
-        if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
+        if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404 && response.StatusCode != 502)
         {
             if (finalTry)
             {
-                Log.Error<int, string>("Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                Log.Error<int, string>("ITR: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
             }
 
             throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
@@ -694,7 +694,7 @@ internal class IntelligentTestRunnerClient
                 if (isFinalTry || sourceException is RateLimitException { DelayTimeInSeconds: null })
                 {
                     // stop retrying
-                    Log.Error<int>(sourceException, "An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
+                    Log.Error<int>(sourceException, "ITR: An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
                     exceptionDispatchInfo.Throw();
                 }
 
