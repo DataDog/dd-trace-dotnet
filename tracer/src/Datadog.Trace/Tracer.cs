@@ -419,6 +419,14 @@ namespace Datadog.Trace
                 }
             }
 
+            if (SourceLinkTagsProvider.Instance.GetGitTagsFromSourceLink() is { } sourceLinkTags)
+            {
+                foreach (var entry in sourceLinkTags)
+                {
+                    span.SetTag(entry.Key, entry.Value);
+                }
+            }
+
             if (addToTraceContext)
             {
                 spanContext.TraceContext.AddSpan(span);

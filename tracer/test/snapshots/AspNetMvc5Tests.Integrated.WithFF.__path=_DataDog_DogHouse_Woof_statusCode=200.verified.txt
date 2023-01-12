@@ -13,6 +13,8 @@
       aspnet.controller: doghouse,
       aspnet.route: Datadog/{controller}/{action}/{id},
       env: integration_tests,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
@@ -32,6 +34,8 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: Datadog/{controller}/{action}/{id},

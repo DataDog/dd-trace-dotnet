@@ -19,6 +19,8 @@
 System.Exception: Exception of type 'System.Exception' was thrown.
 ,
       error.type: System.Exception,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       language: dotnet,
       span.kind: server,
       version: 1.0.0
@@ -39,6 +41,8 @@ System.Exception: Exception of type 'System.Exception' was thrown.
       datadog-header-tag: asp-net-core,
       env: integration_tests,
       error.msg: The HTTP response has status code 500.,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
