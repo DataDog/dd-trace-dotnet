@@ -1,5 +1,6 @@
 {
   "enableDatadog": true,
+  "jsonExporterFilePath": "$(CWD)\\results_Samples.FakeDbCommand.windows.net462.json",
   "warmUpCount": 5,
   "count": 25,
   "scenarios": [
@@ -18,10 +19,10 @@
       }
     }
   ],
-  "processName": "dotnet",
-  "processArguments": ".\\Samples.FakeDbCommand.dll no-wait",
+  "processName": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net462\\Samples.FakeDbCommand.dll.exe",
+  "processArguments": "no-wait",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net461",
+  "workingDirectory": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net462",
   "environmentVariables": {
     "DD_TRACE_CALLTARGET_ENABLED": "true",
     "CORECLR_ENABLE_PROFILING": "1",
@@ -35,8 +36,8 @@
   "tags": {
     "runtime.architecture": "x64",
     "runtime.name": ".NET Framework",
-    "runtime.version": "4.6.1",
-    "benchmark.job.runtime.name": ".NET Framework 4.6.1",
-    "benchmark.job.runtime.moniker": "net461"
+    "runtime.version": "4.6.2",
+    "benchmark.job.runtime.name": ".NET Framework 4.6.2",
+    "benchmark.job.runtime.moniker": "net462"
   }
 }
