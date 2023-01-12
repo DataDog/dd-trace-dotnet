@@ -318,7 +318,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public void CaptureStaticFields<T>(ref CaptureInfo<T> info)
         {
-            if (info.MethodState.IsInAsyncMethod())
+            if (info.IsAsyncCapture())
             {
                 DebuggerSnapshotSerializer.SerializeStaticFields(info.AsyncCaptureInfo.KickoffInvocationTargetType, _jsonWriter);
             }

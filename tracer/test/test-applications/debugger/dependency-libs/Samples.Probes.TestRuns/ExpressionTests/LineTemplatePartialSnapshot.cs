@@ -6,11 +6,11 @@ namespace Samples.Probes.TestRuns.ExpressionTests
     [LineProbeTestData(29, templateDsl: Dsl, templateJson: Json, templateStr: "Result is: ", captureSnapshot: false)]
     internal class LineTemplatePartialSnapshot : IRun
     {
-        public const string Dsl = @"{
+        private const string Dsl = @"{
   ""dsl"": ""Result is: {ref arg}""
 }";
 
-        public const string Json = @"{
+        private const string Json = @"{
   ""json"": {
         ""ref"": ""arg""
     }

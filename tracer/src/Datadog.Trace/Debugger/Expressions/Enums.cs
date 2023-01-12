@@ -73,15 +73,6 @@ internal enum CaptureBehaviour
 
 internal static class Enums
 {
-    internal static bool IsInAsyncMethod(this MethodState state)
-    {
-        return state is MethodState.EntryAsync
-                   or MethodState.ExitStartAsync
-                   or MethodState.ExitEndAsync
-                   or MethodState.BeginLineAsync
-                   or MethodState.EndLineAsync;
-    }
-
     internal static bool IsInEntry(this MethodState state)
     {
         return state is MethodState.BeginLine

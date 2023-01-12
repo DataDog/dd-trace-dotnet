@@ -9,7 +9,6 @@ using System.Linq.Expressions;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
@@ -79,11 +78,6 @@ internal class ProbeExpressionEvaluator
                             (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpressions[i].Errors);
                         }
                     }
-                    else
-                    {
-                        // Logger.Error
-                        continue;
-                    }
                 }
                 catch (Exception e)
                 {
@@ -106,12 +100,12 @@ internal class ProbeExpressionEvaluator
 
     private bool IsLiteral(DebuggerExpression expression)
     {
-        return !string.IsNullOrEmpty(expression.Str);
+        return string.IsNullOrEmpty(expression.Json);
     }
 
     private bool IsExpression(DebuggerExpression expression)
     {
-        return string.IsNullOrEmpty(expression.Str) && !string.IsNullOrEmpty(expression.Json);
+        return !string.IsNullOrEmpty(expression.Json) && string.IsNullOrEmpty(expression.Str);
     }
 
     private void EvaluateCondition(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
