@@ -58,7 +58,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.6.0-beta1";
+    const string LibDdwafVersion = "1.6.0";
 
     // used in WafCompatibilityTests.ShouldNotInitialize, needs to be a version before the interface change
     const string OlderLibDdwafVersion = "1.4.0";
