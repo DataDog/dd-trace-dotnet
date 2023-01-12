@@ -17,16 +17,16 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public abstract class AspNetCoreSecurityDisabledWithExternalRulesFile : AspNetCoreWithExternalRulesFileBase
     {
-        public AspNetCoreSecurityDisabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string testName = null)
-            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: false, testName: testName)
+        public AspNetCoreSecurityDisabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string ruleFile = null, string testName = null)
+            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: false, ruleFile: ruleFile, testName: testName)
         {
         }
     }
 
     public abstract class AspNetCoreSecurityEnabledWithExternalRulesFile : AspNetCoreWithExternalRulesFileBase
     {
-        public AspNetCoreSecurityEnabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string testName = null)
-            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: true, testName: testName)
+        public AspNetCoreSecurityEnabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string ruleFile = null, string testName = null)
+            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: true, ruleFile: ruleFile, testName: testName)
         {
         }
 
@@ -54,17 +54,20 @@ namespace Datadog.Trace.Security.IntegrationTests
 
     public abstract class AspNetCoreWithExternalRulesFileBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCoreWithExternalRulesFileBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string testName = null)
+        public AspNetCoreWithExternalRulesFileBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string ruleFile = null, string testName = null)
             : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName)
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
             Fixture.SetOutput(outputHelper);
+            RuleFile = ruleFile;
         }
 
         protected AspNetCoreTestFixture Fixture { get; }
 
         protected bool EnableSecurity { get; }
+
+        protected string RuleFile { get; }
 
         public override void Dispose()
         {
@@ -74,7 +77,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         public async Task TryStartApp()
         {
-            await Fixture.TryStartApp(this, EnableSecurity, externalRulesFile: DefaultRuleFile);
+            await Fixture.TryStartApp(this, EnableSecurity, externalRulesFile: RuleFile);
         }
 
         [SkippableFact]

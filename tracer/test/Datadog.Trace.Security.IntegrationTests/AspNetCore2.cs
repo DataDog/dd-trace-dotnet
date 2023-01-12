@@ -32,18 +32,18 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
-    public class AspNetCore2TestsSecurityDisbledWithExternalRulesFile : AspNetCoreSecurityDisabledWithExternalRulesFile
+    public class AspNetCore2TestsSecurityDisabledWithDefaultExternalRulesFile : AspNetCoreSecurityDisabledWithExternalRulesFile
     {
-        public AspNetCore2TestsSecurityDisbledWithExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore2", fixture, outputHelper, "/shutdown", testName: "AspNetCore2.SecurityDisabled")
+        public AspNetCore2TestsSecurityDisabledWithDefaultExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore2.SecurityDisabled")
         {
         }
     }
 
-    public class AspNetCore2TestsSecurityEnabledWithExternalRulesFile : AspNetCoreSecurityEnabledWithExternalRulesFile
+    public class AspNetCore2TestsSecurityEnabledWithDefaultExternalRulesFile : AspNetCoreSecurityEnabledWithExternalRulesFile
     {
-        public AspNetCore2TestsSecurityEnabledWithExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore2", fixture, outputHelper, "/shutdown", testName: "AspNetCore2.SecurityEnabled")
+        public AspNetCore2TestsSecurityEnabledWithDefaultExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore2.SecurityEnabled")
         {
         }
     }

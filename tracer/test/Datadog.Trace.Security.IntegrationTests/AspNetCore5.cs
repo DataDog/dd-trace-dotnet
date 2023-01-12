@@ -61,21 +61,88 @@ namespace Datadog.Trace.Security.IntegrationTests
 #endif
             await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 5, 1, settings);
         }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestSecurityInitialization()
+        {
+            var url = "/Health/?[$slice]=value";
+            await TryStartApp();
+            SetHttpPort(Fixture.HttpPort);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 1, 1, settings, testInit: true, methodNameOverride: nameof(TestSecurityInitialization));
+        }
     }
 
-    public class AspNetCore5TestsSecurityDisabledWithExternalRulesFile : AspNetCoreSecurityDisabledWithExternalRulesFile
+    public class AspNetCore5TestsSecurityDisabledWithDefaultExternalRulesFile : AspNetCoreSecurityDisabledWithExternalRulesFile
     {
-        public AspNetCore5TestsSecurityDisabledWithExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore5", fixture, outputHelper, "/shutdown", testName: "AspNetCore5.SecurityDisabled")
+        public AspNetCore5TestsSecurityDisabledWithDefaultExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore5", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore5.SecurityDisabled")
         {
         }
     }
 
-    public class AspNetCore5TestsSecurityEnabledWithExternalRulesFile : AspNetCoreSecurityEnabledWithExternalRulesFile
+    public class AspNetCore5TestsSecurityEnabledWithDefaultExternalRulesFile : AspNetCoreSecurityEnabledWithExternalRulesFile
     {
-        public AspNetCore5TestsSecurityEnabledWithExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore5", fixture, outputHelper, "/shutdown", testName: "AspNetCore5.SecurityEnabled")
+        public AspNetCore5TestsSecurityEnabledWithDefaultExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore5", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore5.SecurityEnabled")
         {
+        }
+    }
+
+    public class AspNetCore5TestsSecurityEnabledWithFaultyExternalRulesFile : AspNetCore5WithFaultyExternalRulesFile
+    {
+        public AspNetCore5TestsSecurityEnabledWithFaultyExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: "AspNetCore5.SecurityEnabled.WithFaultyExternalRulesFile")
+        {
+        }
+    }
+
+    public class AspNetCore5TestsSecurityDisabledWithFaultyExternalRulesFile : AspNetCore5WithFaultyExternalRulesFile
+    {
+        public AspNetCore5TestsSecurityDisabledWithFaultyExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: false, testName: "AspNetCore5.SecurityDisabled.WithFaultyExternalRulesFile")
+        {
+        }
+    }
+
+    public abstract class AspNetCore5WithFaultyExternalRulesFile : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+    {
+        public AspNetCore5WithFaultyExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName = null)
+            : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
+        {
+            EnableSecurity = enableSecurity;
+            Fixture = fixture;
+            Fixture.SetOutput(outputHelper);
+            RuleFile = "wrong-tags-name-rule-set.json";
+        }
+
+        protected AspNetCoreTestFixture Fixture { get; }
+
+        protected bool EnableSecurity { get; }
+
+        protected string RuleFile { get; }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            Fixture.SetOutput(null);
+        }
+
+        public async Task TryStartApp()
+        {
+            await Fixture.TryStartApp(this, EnableSecurity, externalRulesFile: RuleFile);
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestSecurityInitialization()
+        {
+            var url = "/Health/?[$slice]=value";
+            await TryStartApp();
+            SetHttpPort(Fixture.HttpPort);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 1, 1, settings, testInit: true, methodNameOverride: nameof(TestSecurityInitialization));
         }
     }
 }

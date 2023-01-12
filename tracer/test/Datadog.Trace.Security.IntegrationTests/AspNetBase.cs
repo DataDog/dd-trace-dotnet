@@ -63,13 +63,13 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient?.Dispose();
         }
 
-        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null)
+        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null)
         {
             var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
-            await VerifySpans(spans, settings, testInit);
+            await VerifySpans(spans, settings, testInit, methodNameOverride);
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
             await Verifier.Verify(spans, settings)
-                          .UseMethodName("_")
+                          .UseMethodName(methodNameOverride ?? "_")
                           .UseTypeName(GetTestName());
         }
 
