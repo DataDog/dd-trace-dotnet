@@ -93,6 +93,7 @@ const shared::WSTRING debugger_windows_nativemethods_type = WStr("Datadog.Trace.
 const shared::WSTRING calltarget_modification_action = WStr("CallTargetModification");
 
 const shared::WSTRING distributed_tracer_type_name = WStr("Datadog.Trace.ClrProfiler.DistributedTracer");
+const shared::WSTRING calltargetbubbleexception_tracer_type_name = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException");
 const shared::WSTRING distributed_tracer_interface_name = WStr("Datadog.Trace.ClrProfiler.IDistributedTracer");
 const shared::WSTRING distributed_tracer_target_method_name = WStr("__GetInstanceForProfiler__");
 

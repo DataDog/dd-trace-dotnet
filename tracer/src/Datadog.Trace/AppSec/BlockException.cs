@@ -5,10 +5,11 @@
 
 using System;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.AppSec
 {
-    internal class BlockException : Exception
+    internal class BlockException : CallTargetBubbleUpException
     {
         internal BlockException()
         {

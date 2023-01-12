@@ -61,7 +61,7 @@ private:
     std::unique_ptr<TypeReference> trace_annotation_integration_type = nullptr;
     std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
     bool trace_annotations_enabled = false;
-
+    bool call_target_bubble_up_exception_available = false;
     //
     // Debugger Members
     //
@@ -95,6 +95,7 @@ private:
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT TryRejitModule(ModuleID module_id);
     bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
+    static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata);
     //
     // Startup methods
     //

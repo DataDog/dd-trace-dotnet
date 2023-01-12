@@ -53,11 +53,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.OK, "/data/model", "property=[$slice]&property2=value2")]
-        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.OK, "/dataapi/model", "{\"property\":\"[$slice]\", \"property2\":\"test2\"}")]
-        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.OK, "/datarazorpage", "property=[$slice]&property2=value2")]
+        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/data/model", "property=test&property2=dummy_rule")]
+        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/dataapi/model", "{\"property\":\"dummy_rule\", \"property2\":\"test2\"}")]
+        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.Forbidden, "/datarazorpage", "property=dummy_rule&property2=value2")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBody(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
+        public async Task TestBlockedBody(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
         {
             var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
 
