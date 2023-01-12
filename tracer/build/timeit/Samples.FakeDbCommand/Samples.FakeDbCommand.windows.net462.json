@@ -19,8 +19,8 @@
       }
     }
   ],
-  "processName": "dotnet",
-  "processArguments": ".\\Samples.FakeDbCommand.dll no-wait",
+  "processName": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net462\\Samples.FakeDbCommand.dll.exe",
+  "processArguments": "no-wait",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net462",
   "environmentVariables": {

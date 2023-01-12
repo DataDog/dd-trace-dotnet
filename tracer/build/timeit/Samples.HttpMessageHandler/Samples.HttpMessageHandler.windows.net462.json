@@ -19,8 +19,7 @@
       }
     }
   ],
-  "processName": "dotnet",
-  "processArguments": ".\\Samples.HttpMessageHandler.dll",
+  "processName": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.HttpMessageHandler\\bin\\Release\\net462\\Samples.HttpMessageHandler.exe",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.HttpMessageHandler\\bin\\Release\\net462",
   "environmentVariables": {
