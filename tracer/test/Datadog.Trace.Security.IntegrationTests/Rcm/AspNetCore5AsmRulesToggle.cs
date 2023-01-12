@@ -22,7 +22,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         private const string ASMProduct = "ASM";
 
         public AspNetCore5AsmRulesToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, testName: nameof(AspNetCore5AsmRulesToggle))
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmRulesToggle))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestRulesToggling()
         {
             var url = "/Health/?[$slice]=value";
-            await Fixture.TryStartApp(this, true);
+            await TryStartApp();
             SetHttpPort(Fixture.HttpPort);
             var settings = VerifyHelper.GetSpanVerifierSettings();
             var ruleId = "crs-942-290";

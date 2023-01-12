@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -21,19 +22,33 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
     protected const string LogFileNamePrefix = "dotnet-tracer-managed-";
 
-    public RcmBase(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string testName)
+    public RcmBase(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
         : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
     {
         Fixture = fixture;
+        EnableSecurity = enableSecurity;
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
     }
 
     protected AspNetCoreTestFixture Fixture { get; }
 
+    protected bool? EnableSecurity { get; }
+
     protected TimeSpan LogEntryWatcherTimeout => TimeSpan.FromSeconds(20);
 
     protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetTestName()}Logs");
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        Fixture.SetOutput(null);
+    }
+
+    public async Task TryStartApp()
+    {
+        await Fixture.TryStartApp(this, EnableSecurity);
+    }
 
     internal static void CheckAckState(GetRcmRequest request, string product, uint expectedState, string expectedError, string message)
     {

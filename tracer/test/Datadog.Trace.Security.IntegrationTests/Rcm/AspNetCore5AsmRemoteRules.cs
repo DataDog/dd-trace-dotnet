@@ -18,7 +18,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmRemoteRules : RcmBase
     {
         public AspNetCore5AsmRemoteRules(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, testName: nameof(AspNetCore5AsmRemoteRules))
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmRemoteRules))
         {
         }
 
@@ -27,7 +27,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestNewRemoteRules()
         {
             var url = "/Health/?[$slice]=value";
-            await Fixture.TryStartApp(this, true);
+            await TryStartApp();
             SetHttpPort(Fixture.HttpPort);
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
             var settings = VerifyHelper.GetSpanVerifierSettings();
