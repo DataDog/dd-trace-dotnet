@@ -76,6 +76,12 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void GeneratedIds_Contain_Nothing_Below_Expected_Min()
+        {
+            GeneratedIds.Keys.Should().NotContain(i => i <= 1, "because we should never generate keys below 1.");
+        }
+
+        [Fact]
         public void GeneratedIds_Contain_Nothing_Above_Expected_Max()
         {
             GeneratedIds.Keys.Should().NotContain(i => i > MaxId, $"because we should never generate keys above {MaxId}.");
