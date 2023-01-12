@@ -3216,7 +3216,7 @@ stages:
 
     - powershell: |
         mkdir -p $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
-        cp $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)/results_*.json $(System.DefaultWorkingDirectory)/tracer/build_data/results
+        cp $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)/results_*.json $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
       displayName: Copy the results to benchmarks dir
       condition: succeededOrFailed()
       continueOnError: true
