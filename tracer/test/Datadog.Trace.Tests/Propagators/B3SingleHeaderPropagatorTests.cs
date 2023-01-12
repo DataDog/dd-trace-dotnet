@@ -99,6 +99,8 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "00000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                        });
@@ -122,6 +124,8 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "00000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                        });

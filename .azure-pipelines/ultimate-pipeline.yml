@@ -951,7 +951,7 @@ stages:
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
-    
+
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage
@@ -1116,7 +1116,7 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
- 
+
     - script: |
         $(runtimeInstall)
         func
@@ -1306,8 +1306,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-    
-    - script: |      
+
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1405,7 +1405,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
-    - script: |      
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1577,7 +1577,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
-    - script: |      
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1669,8 +1669,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-    
-    - script: |      
+
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -2494,13 +2494,13 @@ stages:
       inputs:
         artifact: runner-standalone-win-$(targetPlatform)
         path: $(Agent.TempDirectory)/runner
-    
+
     - task: ExtractFiles@1
       inputs:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.zip'
         destinationFolder: $(runnerStandalone)
         cleanDestinationFolder: false
-        
+
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test tool
       env:
@@ -2577,7 +2577,7 @@ stages:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.tar.gz'
         destinationFolder: $(runnerStandalone)
         cleanDestinationFolder: false
-        
+
     - script: |
         ls $(runnerStandalone)
         chmod +x $(runnerStandalone)/dd-trace
@@ -2755,13 +2755,13 @@ stages:
           inputs:
             artifact: linux-profiler-symbols-alpine
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler CentOS7 symbols
           inputs:
             artifact: linux-profiler-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler Arm64 symbols
           inputs:
@@ -2773,13 +2773,13 @@ stages:
           inputs:
             artifact: linux-tracer-symbols-alpine
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer CentOS7 symbols
           inputs:
             artifact: linux-tracer-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer Arm64 symbols
           inputs:
@@ -2870,7 +2870,15 @@ stages:
               --destination-path "$(Build.SourceVersion)" \
               --source "$(Build.ArtifactStagingDirectory)"
           displayName: Upload blobs to Azure
-          condition: and(succeeded(), eq(variables.isMainBranch, true))
+          condition: >
+            and(
+              succeeded(),
+              ne(variables['push_artifacts_to_azure_storage'], 'false'),
+              or(
+                eq(variables['push_artifacts_to_azure_storage'], 'true'),
+                eq(variables.isMainBranch, true)
+              )
+            )
           env:
             AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
@@ -3082,7 +3090,7 @@ stages:
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: 
+  dependsOn:
     - integration_tests_windows
     - integration_tests_windows_iis
     - integration_tests_windows_iis_security
@@ -3265,7 +3273,7 @@ stages:
         condition: always()
         displayName: System tests logs
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-        
+
       - script: ./run.sh REMOTE_CONFIG_MOCKED_BACKEND_LIVE_DEBUGGING
         workingDirectory: system-tests
         displayName: Run RCM tests
@@ -3392,7 +3400,7 @@ stages:
           nuget-smoke-tests
       env:
         dockerTag: $(dockerTag)
-      displayName: docker-compose build nuget-smoke-tests 
+      displayName: docker-compose build nuget-smoke-tests
       retryCountOnTaskFailure: 3
 
     - template: steps/run-snapshot-test.yml
@@ -3657,7 +3665,7 @@ stages:
             dockerTag: $(dockerTag)
           displayName: docker-compose build smoke-tests
           retryCountOnTaskFailure: 3
-    
+
         - template: steps/run-snapshot-test.yml
           parameters:
             target: 'smoke-tests'
@@ -3845,7 +3853,7 @@ stages:
         mkdir -p tracer/build_data/snapshots
         mkdir -p tracer/build_data/logs
       displayName: create test data directories
-    
+
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
@@ -3911,7 +3919,7 @@ stages:
         mkdir -f -p $(smokeTestAppDir)/artifacts
         mv $(Agent.TempDirectory)/*.zip $(smokeTestAppDir)/artifacts/dd-trace-win.zip
       displayName: Create test data directories
-      
+
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
@@ -4204,5 +4212,5 @@ stages:
         curl -X POST \
         -H "Content-Type: application/json" \
         -d '{"commit": "'$sha'"}' \
-          $(slackWebhookUrl) 
+          $(slackWebhookUrl)
       displayName: "notify"
