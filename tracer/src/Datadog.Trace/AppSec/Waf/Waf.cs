@@ -40,6 +40,17 @@ namespace Datadog.Trace.AppSec.Waf
 
         public string Version => _wafLibraryInvoker.GetVersion();
 
+        [Obsolete("Use overload that takes a WafInitializationState instead")]
+        internal static Waf Create(string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string rulesFile = null, string rulesJson = null, string libVersion = null)
+        {
+            var state =
+                rulesFile == null ?
+                    WafInitializationState.Empty :
+                    WafInitializationState.Empty.WithRules(rulesFile);
+
+            return Create(obfuscationParameterKeyRegex, obfuscationParameterValueRegex, rulesFile, state, libVersion);
+        }
+
         /// <summary>
         /// Create a new waf object configured with the ruleset file
         /// </summary>
