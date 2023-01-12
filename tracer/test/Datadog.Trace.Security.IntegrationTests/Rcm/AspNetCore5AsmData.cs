@@ -86,7 +86,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spanAfterAsmDeactivated);
             spans.AddRange(spanAfterAsmDataReactivated);
 
-            await VerifySpans(spans.ToImmutableList(), settings, true);
+            await VerifySpans(spans.ToImmutableList(), settings);
         }
     }
 
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var spans = new List<MockSpan>();
             spans.AddRange(spanBeforeAsmData);
             spans.AddRange(spanAfterAsmData);
-            await VerifySpans(spans.ToImmutableList(), settings, true);
+            await VerifySpans(spans.ToImmutableList(), settings);
         }
     }
 }

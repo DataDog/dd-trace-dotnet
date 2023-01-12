@@ -54,7 +54,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans2);
             spans.AddRange(spans3);
 
-            await VerifySpans(spans.ToImmutableList(), settings, true);
+            await VerifySpans(spans.ToImmutableList(), settings);
         }
     }
 }
