@@ -823,6 +823,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         RewritingPInvokeMaps(module_metadata, debugger_nonwindows_nativemethods_type);
 #endif // _WIN32
 
+        call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata);
+        
         auto native_loader_library_path = GetNativeLoaderFilePath();
         if (fs::exists(native_loader_library_path))
         {
@@ -856,8 +858,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                 {
                     RewriteForDistributedTracing(module_metadata, module_id);
                 }
-
-               call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata);
             }
         }
         else
