@@ -2224,13 +2224,10 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
     }
 
     ILRewriter methodRewriter(this->info_, nullptr, module_id, getNativeTracerVersionMethodDef);
-    methodRewriter.InitializeTiny();
 
     // Modify first instruction from ldstr "None" to ldstr PROFILER_VERSION
-    ILRewriterWrapper wrapper(&methodRewriter);
-    wrapper.SetILPosition(methodRewriter.GetILList()->m_pNext);
-    wrapper.LoadStr(nativeTracerVersionToken);
-    wrapper.Return();
+    ILInstr* pFirstInstr = methodRewriter.GetILList()->m_pNext;
+    pFirstInstr->m_Arg32 = nativeTracerVersionToken;
 
     hr = methodRewriter.Export();
 
