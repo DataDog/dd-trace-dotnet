@@ -17,7 +17,9 @@ namespace Datadog.Trace.Configuration
             /// Maximum value is 5000 ms
             /// </summary>
             /// <seealso cref="RemoteConfigurationSettings.PollInterval"/>
-            public const string PollInterval = "DD_INTERNAL_RCM_POLL_INTERVAL";
+            public const string PollInterval = "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS";
+
+            public const string PollIntervalInternal = "DD_INTERNAL_RCM_POLL_INTERVAL";
         }
     }
 }
