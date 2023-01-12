@@ -10,6 +10,8 @@
     Tags: {
       aspnet.route: api/statuscode/{value},
       env: integration_tests,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 201,
@@ -29,6 +31,8 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/statuscode/{value},

@@ -7,8 +7,10 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -29,6 +31,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         private readonly string? _globalTags;
         private readonly string? _env;
         private readonly string? _version;
+        private readonly Lazy<string?> _enrichedGlobalTags;
 
         private string? _ciVisibilityDdTags;
 
@@ -42,11 +45,31 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             _service = string.IsNullOrEmpty(serviceName) ? null : serviceName;
             _host = string.IsNullOrEmpty(settings.Host) ? null : settings.Host;
             _globalTags = string.IsNullOrEmpty(settings.GlobalTags) ? null : settings.GlobalTags;
+            _enrichedGlobalTags = new Lazy<string?>(EnrichGlobalTagsStringWithSourceLinkData);
             _env = string.IsNullOrEmpty(env) ? null : env;
             _version = string.IsNullOrEmpty(version) ? null : version;
         }
 
         internal delegate LogPropertyRenderingDetails FormatDelegate<T>(JsonTextWriter writer, in T state);
+
+        private string? EnrichGlobalTagsStringWithSourceLinkData()
+        {
+            if (_globalTags?.Contains(CommonTags.GitCommit) == true &&
+                _globalTags?.Contains(CommonTags.GitRepository) == true)
+            {
+                // The global tags already contain git data
+                return _globalTags;
+            }
+
+            var tags = SourceLinkTagsProvider.Instance.GetGitTagsFromSourceLink();
+            if (tags == null)
+            {
+                return _globalTags;
+            }
+
+            var formattedGitTags = string.Join(",", tags.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+            return _globalTags == null ? formattedGitTags : $"{_globalTags},{formattedGitTags}";
+        }
 
         internal static bool IsSourceProperty(string? propertyName) =>
             string.Equals(propertyName, SourcePropertyName, StringComparison.OrdinalIgnoreCase);
@@ -233,10 +256,10 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 writer.WriteValue(_host);
             }
 
-            if (_globalTags is not null && !renderingDetails.HasRenderedTags)
+            if (_enrichedGlobalTags.Value is not null && !renderingDetails.HasRenderedTags)
             {
                 writer.WritePropertyName(TagsPropertyName, escape: false);
-                writer.WriteValue(_globalTags);
+                writer.WriteValue(_enrichedGlobalTags.Value);
             }
 
             writer.WriteEndObject();

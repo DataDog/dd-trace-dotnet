@@ -14,6 +14,8 @@
 System.Exception: Oops, it broke.
 at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
       error.type: System.Exception,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: badrequest,
@@ -53,6 +55,8 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
 System.Exception: Oops, it broke.
 at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
       error.type: System.Exception,
+      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
