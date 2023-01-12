@@ -30,6 +30,7 @@ namespace Samples.Computer01
         private ContentionGenerator _contentionGenerator;
         private GarbageCollections _garbageCollections;
         private MemoryLeak _memoryLeak;
+        private QuicklyDeadThreads _quicklyDeadThreads;
 
 #if NET6_0_OR_GREATER
         private LinuxSignalHandler _linuxSignalHandler;
@@ -109,6 +110,10 @@ namespace Samples.Computer01
                     StartMemoryLeak(parameter);
                     break;
 
+                case Scenario.QuicklyDeadThreads:
+                    StartQuicklyDeadThreads(nbThreads, parameter);
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -184,6 +189,10 @@ namespace Samples.Computer01
                 case Scenario.MemoryLeak:
                     StopMemoryLeak();
                     break;
+
+                case Scenario.QuicklyDeadThreads:
+                    StopQuicklyDeadThreads();
+                    break;
             }
         }
 
@@ -195,6 +204,8 @@ namespace Samples.Computer01
 
             for (int i = 0; i < iterations; i++)
             {
+                Console.WriteLine($"___Iteration {i + 1}___");
+
                 switch (scenario)
                 {
                     case Scenario.All:
@@ -263,9 +274,15 @@ namespace Samples.Computer01
                         RunMemoryLeak(parameter);
                         break;
 
+                    case Scenario.QuicklyDeadThreads:
+                        RunQuicklyDeadThreads(nbThreads, parameter);
+                        break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
+
+                Console.WriteLine();
             }
 
             Console.WriteLine($"End of {iterations} iterations of {scenario.ToString()} in {sw.Elapsed}");
@@ -372,6 +389,18 @@ namespace Samples.Computer01
             _memoryLeak.Start();
         }
 
+        private void StartQuicklyDeadThreads(int nbThreads, int nbThreadsToCreate)
+        {
+            if (nbThreadsToCreate == int.MaxValue)
+            {
+                // 1024 threads by default
+                nbThreadsToCreate = 1024;
+            }
+
+            _quicklyDeadThreads = new QuicklyDeadThreads(nbThreads, nbThreadsToCreate);
+            _quicklyDeadThreads.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -451,6 +480,11 @@ namespace Samples.Computer01
         private void StopMemoryLeak()
         {
             _memoryLeak.Stop();
+        }
+
+        private void StopQuicklyDeadThreads()
+        {
+            _quicklyDeadThreads.Stop();
         }
 
         private void RunComputer()
@@ -545,6 +579,18 @@ namespace Samples.Computer01
         {
             var memoryLeak = new MemoryLeak(parameter);
             memoryLeak.Run();
+        }
+
+        private void RunQuicklyDeadThreads(int nbThreads, int nbThreadsToCreate)
+        {
+            if (nbThreadsToCreate == int.MaxValue)
+            {
+                // 1024 threads by default
+                nbThreadsToCreate = 1024;
+            }
+
+            var quicklyDeadThreads = new QuicklyDeadThreads(nbThreads, nbThreadsToCreate);
+            quicklyDeadThreads.Run();
         }
 
         public class MySpecialClassA
