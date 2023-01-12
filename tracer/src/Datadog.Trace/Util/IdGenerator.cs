@@ -3,25 +3,34 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
+namespace Datadog.Trace.Util;
 
-namespace Datadog.Trace.Util
+/// <summary>
+/// Generates random numbers suitable for use as Datadog trace ids and span ids.
+/// </summary>
+internal class IdGenerator
 {
-    internal class IdGenerator
+    /// <summary>
+    /// Returns a random number greater than zero and less than Int64.MaxValue.
+    /// </summary>
+    public static ulong NextUInt64()
     {
-        public static ulong NextUInt64()
+        while (true)
         {
-            ulong value;
-            do
-            {
-                long high = ThreadSafeRandom.Shared.Next(int.MinValue, int.MaxValue);
-                long low = ThreadSafeRandom.Shared.Next(int.MinValue, int.MaxValue);
+#if NET6_0_OR_GREATER
+            // random integer in range [0, Int64.MaxValue)
+            var value = (ulong)System.Random.Shared.NextInt64();
+#else
+            // random integer in range [0, UInt64.MaxValue],
+            // clear highest bit to make it [0, Int64.MaxValue]
+            var value = RandomNumberGenerator.Current.NextUInt64() & 0x7FFFFFFFFFFFFFFF;
+#endif
 
-                // Concatenate both values, and truncate the 32 top bits from low
-                value = (ulong)(high << 32 | (low & 0xFFFFFFFF)) & 0x7FFFFFFFFFFFFFFF;
+            if (value is > 0 and < long.MaxValue)
+            {
+                // return value if valid, else try again
+                return value;
             }
-            while (value == 0);
-            return value;
         }
     }
 }
