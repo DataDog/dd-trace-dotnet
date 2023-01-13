@@ -70,8 +70,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GeneratedIds_Contain_Low_Numbers()
         {
-            var keysWithinRange = GeneratedIds.Keys.Where(i => i <= BucketSize).ToList();
-            keysWithinRange.Should().NotBeEmpty();
+            GeneratedIds.Keys.Should().Contain(i => i <= BucketSize);
         }
 
         [Fact]
