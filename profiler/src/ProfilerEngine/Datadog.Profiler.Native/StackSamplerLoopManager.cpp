@@ -235,13 +235,16 @@ void StackSamplerLoopManager::WatcherLoopIteration()
         return;
     }
 
-    if (_deadlockInterventionInProgress == 1)
+    if (_deadlockInterventionInProgress >= 1)
     {
-        _deadlockInterventionInProgress++;
-        Log::Info("StackSamplerLoopManager::WatcherLoopIteration - Deadlock intervention still in progress for thread ", _pTargetThread->GetOsThreadId(),
-                   std::hex, " (= 0x", _pTargetThread->GetOsThreadId(), ")");
         // TODO: Validate that calling resuming again (and again) could unlock the situation.
         // The previous call to ResumeThread failed.
+        if (_deadlockInterventionInProgress == 1)
+        {
+            _deadlockInterventionInProgress++;
+            Log::Info("StackSamplerLoopManager::WatcherLoopIteration - Deadlock intervention still in progress for thread ", _pTargetThread->GetOsThreadId(),
+                       std::hex, " (= 0x", _pTargetThread->GetOsThreadId(), ")");
+        }
         return;
     }
 
