@@ -264,7 +264,7 @@
     SpanId: Id_16,
     Name: AdditionalActivitySource.internal,
     Resource: Transform,
-    Service: AdditionalActivitySource,
+    Service: CustomServiceName,
     Type: custom,
     Tags: {
       env: integration_tests,

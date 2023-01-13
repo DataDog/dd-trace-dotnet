@@ -72,8 +72,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 spans.Count.Should().Be(expectedSpanCount);
 
                 var otelSpans = spans.Where(s => s.Service == "MyServiceName");
+                var activitySourceSpans = spans.Where(s => s.Service == customServiceName);
+
                 otelSpans.Count().Should().Be(expectedSpanCount - 1);
+                activitySourceSpans.Count().Should().Be(1);
+
                 ValidateIntegrationSpans(otelSpans, expectedServiceName: "MyServiceName");
+                ValidateIntegrationSpans(activitySourceSpans, expectedServiceName: customServiceName);
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
