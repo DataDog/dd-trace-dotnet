@@ -64,8 +64,7 @@ namespace Datadog.Trace.Tests
         public void GeneratedIds_Contain_High_Numbers()
         {
             const ulong rangeBound = MaxId - BucketSize;
-            var keysWithinRange = GeneratedIds.Keys.Where(i => i >= rangeBound).ToList();
-            keysWithinRange.Should().NotBeEmpty();
+            GeneratedIds.Keys.Should.Contain(i => i >= rangeBound);
         }
 
         [Fact]
