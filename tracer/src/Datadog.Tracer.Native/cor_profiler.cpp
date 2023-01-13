@@ -2224,28 +2224,14 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
     }
 
     ILRewriter methodRewriter(this->info_, nullptr, module_id, getNativeTracerVersionMethodDef);
-    hr = methodRewriter.Import();
+    methodRewriter.InitializeTiny();
 
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error rewriting for Telemetry: Call to ILRewriter.Import() failed for ", module_id, " ", getNativeTracerVersionMethodDef);
-        return hr;
-    }
-
-    Logger::Info(GetILCodes("Before -> Instrumentation.GetNativeTracerVersion(). ", &methodRewriter,
-                            GetFunctionInfo(module_metadata.metadata_import, getNativeTracerVersionMethodDef),
-                            module_metadata.metadata_import));
-
-    ILInstr* pFirstInstr = methodRewriter.GetILList()->m_pNext;
-
-    if (pFirstInstr->m_opcode != CEE_LDSTR)
-    {
-        Logger::Warn("Error rewriting Instrumentation.GetNativeTracerVersion() => PROFILER_VERSION - m_opcode was not CEE_LDSTR, found ", pFirstInstr->m_opcode);
-        return E_FAIL;
-    }
-    
     // Modify first instruction from ldstr "None" to ldstr PROFILER_VERSION
-    pFirstInstr->m_Arg32 = nativeTracerVersionToken;
+    ILRewriterWrapper wrapper(&methodRewriter);
+    wrapper.SetILPosition(methodRewriter.GetILList()->m_pNext);
+    wrapper.LoadStr(nativeTracerVersionToken);
+    wrapper.Return();
+
     hr = methodRewriter.Export();
 
     if (FAILED(hr))
