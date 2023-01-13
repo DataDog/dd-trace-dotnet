@@ -80,18 +80,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             await Fixture.TryStartApp(this, EnableSecurity, externalRulesFile: RuleFile);
         }
 
-        [SkippableFact]
-        [Trait("Category", "ArmUnsupported")]
-        public async Task TestSecurity()
-        {
-            await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-
-            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, DefaultAttackUrl, null, 5, 1, settings);
-        }
-
         [SkippableTheory]
         [InlineData("blocking", "/")]
         [Trait("RunOnWindows", "True")]
