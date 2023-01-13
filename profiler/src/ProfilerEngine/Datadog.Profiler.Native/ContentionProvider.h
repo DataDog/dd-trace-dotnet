@@ -11,6 +11,7 @@
 #include "CounterMetric.h"
 #include "MeanMaxMetric.h"
 
+class IConfiguration;
 class IManagedThreadList;
 class IFrameStore;
 class IThreadsCpuManager;
@@ -43,6 +44,7 @@ private:
     GenericSampler _sampler;
     int32_t _contentionDurationThreshold;
     int32_t _sampleLimit;
+    IConfiguration const* const _pConfiguration;
     std::shared_ptr<CounterMetric> _lockContentionsCountMetric;
     std::shared_ptr<MeanMaxMetric> _lockContentionsDurationMetric;
     std::shared_ptr<CounterMetric> _sampledLockContentionsCountMetric;

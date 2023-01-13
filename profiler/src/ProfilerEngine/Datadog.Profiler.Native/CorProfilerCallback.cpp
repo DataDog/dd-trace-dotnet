@@ -20,12 +20,12 @@
 #endif
 
 #include "AllocationsProvider.h"
-#include "ContentionProvider.h"
 #include "AppDomainStore.h"
 #include "ApplicationStore.h"
 #include "ClrEventsParser.h"
 #include "ClrLifetime.h"
 #include "Configuration.h"
+#include "ContentionProvider.h"
 #include "CpuTimeProvider.h"
 #include "EnabledProfilers.h"
 #include "EnvironmentVariables.h"
@@ -65,7 +65,6 @@ Error("unknown platform");
 #else
 #define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.Profiler.Native" LIBRARY_FILE_EXTENSION)
 #endif
-
 
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
@@ -227,7 +226,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                nullptr,  // no listener
+                nullptr, // no listener
                 _metricsRegistry
                 );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
@@ -584,11 +583,10 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
         Log::Info("ICorProfilerInfo13 available. Profiling API compatibility: .NET Core 7.0 or later.");
         tstVerProfilerInfo->Release();
     }
-    else
-    if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&tstVerProfilerInfo))
+    else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&tstVerProfilerInfo))
     {
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo12 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
+        Log::Info("ICorProfilerInfo12 available. Profiling API compatibility: .NET Core 5.0 or later."); // could be 6 too
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
@@ -610,7 +608,7 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**)&tstVerProfilerInfo))
     {
         runtimeMajor = 2;
-        runtimeMinor = 1;  // could also be 2.2
+        runtimeMinor = 1; // could also be 2.2
         _isNet46OrGreater = true;
         Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.1 or later.");
         tstVerProfilerInfo->Release();
@@ -795,6 +793,23 @@ void CorProfilerCallback::ConfigureDebugLog()
     }
 }
 
+#define PRINT_ENV_VAR_IF_SET(name)                            \
+    {                                                         \
+        auto envVarValue = shared::GetEnvironmentValue(name); \
+        if (!envVarValue.empty())                             \
+        {                                                     \
+            Log::Info("  ", name, ": ", envVarValue);         \
+        }                                                     \
+    }
+
+void CorProfilerCallback::PrintEnvironmentVariables()
+{
+    // TODO: add more env vars values
+
+    Log::Info("Environment variables:");
+    PRINT_ENV_VAR_IF_SET(EnvironmentVariables::UseBacktrace2);
+}
+
 // CLR event verbosity definition
 const uint32_t InformationalVerbosity = 4;
 const uint32_t VerboseVerbosity = 5;
@@ -806,6 +821,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     ConfigureDebugLog();
 
     _pConfiguration = std::make_unique<Configuration>();
+
+    PrintEnvironmentVariables();
 
     double coresThreshold = _pConfiguration->MinimumCores();
     if (!OpSysTools::IsSafeToStartProfiler(coresThreshold))
@@ -947,7 +964,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         if (
             _pConfiguration->IsAllocationProfilingEnabled() ||
             _pConfiguration->IsHeapProfilingEnabled()
-            )
+           )
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
 
@@ -1050,7 +1067,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     {
         _pLiveObjectsProvider->Stop();
     }
-
 
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();

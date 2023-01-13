@@ -63,7 +63,7 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _deadlockCounterMetric{metricsRegistry.GetOrRegister<CounterMetric>("dotnet_internal_deadlocks")}
 {
     _pCorProfilerInfo->AddRef();
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, pConfiguration);
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();

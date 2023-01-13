@@ -10,6 +10,7 @@
 #include "OsSpecificApi.h"
 #include "OpSysTools.h"
 
+#include "IConfiguration.h"
 #include "Log.h"
 #include "LinuxStackFramesCollector.h"
 #include "ProfilerSignalManager.h"
@@ -17,9 +18,9 @@
 #include "shared/src/native-src/loader.h"
 
 namespace OsSpecificApi {
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get());
+    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration);
 }
 
 // https://linux.die.net/man/5/proc
