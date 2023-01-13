@@ -35,6 +35,7 @@ namespace Samples.Computer01
 #if NET6_0_OR_GREATER
         private LinuxSignalHandler _linuxSignalHandler;
 #endif
+        private LinuxMallocDeadLock _linuxMallockDeadlock;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -112,6 +113,10 @@ namespace Samples.Computer01
 
                 case Scenario.QuicklyDeadThreads:
                     StartQuicklyDeadThreads(nbThreads, parameter);
+                    break;
+
+                case Scenario.LinuxMallocDeadlock:
+                    StartLinuxMallocDeadlock();
                     break;
 
                 default:
@@ -192,6 +197,10 @@ namespace Samples.Computer01
 
                 case Scenario.QuicklyDeadThreads:
                     StopQuicklyDeadThreads();
+                    break;
+
+                case Scenario.LinuxMallocDeadlock:
+                    StopLinuxMallocDeadlock();
                     break;
             }
         }
@@ -276,6 +285,10 @@ namespace Samples.Computer01
 
                     case Scenario.QuicklyDeadThreads:
                         RunQuicklyDeadThreads(nbThreads, parameter);
+                        break;
+
+                    case Scenario.LinuxMallocDeadlock:
+                        RunLinuxMallocDeadlock();
                         break;
 
                     default:
@@ -401,6 +414,12 @@ namespace Samples.Computer01
             _quicklyDeadThreads.Start();
         }
 
+        private void StartLinuxMallocDeadlock()
+        {
+            _linuxMallockDeadlock = new LinuxMallocDeadLock();
+            _linuxMallockDeadlock.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -485,6 +504,11 @@ namespace Samples.Computer01
         private void StopQuicklyDeadThreads()
         {
             _quicklyDeadThreads.Stop();
+        }
+
+        private void StopLinuxMallocDeadlock()
+        {
+            _linuxMallockDeadlock.Stop();
         }
 
         private void RunComputer()
@@ -591,6 +615,12 @@ namespace Samples.Computer01
 
             var quicklyDeadThreads = new QuicklyDeadThreads(nbThreads, nbThreadsToCreate);
             quicklyDeadThreads.Run();
+        }
+
+        private void RunLinuxMallocDeadlock()
+        {
+            var linuxSignalHandler = new LinuxMallocDeadLock();
+            linuxSignalHandler.Run();
         }
 
         public class MySpecialClassA

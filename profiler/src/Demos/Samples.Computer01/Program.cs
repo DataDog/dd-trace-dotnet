@@ -27,7 +27,8 @@ namespace Samples.Computer01
         LinuxSignalHandler,
         GarbageCollection,   // parameter = generation 0, 1 or 2
         MemoryLeak,          // parameter = number of objects to allocate
-        QuicklyDeadThreads // parameter = number of short lived threads to create
+        QuicklyDeadThreads, // parameter = number of short lived threads to create
+        LinuxMallocDeadlock
     }
 
     public class Program
