@@ -601,7 +601,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(rejitModuleIds, integration_definitions_,
                                                                                 &promise);
 
-            // wait and get the value from the future<int>
+            // wait and get the value from the future<ULONG>
             const auto& numReJITs = future.get();
 
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
@@ -1113,7 +1113,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_,
                                                                                 &promise);
 
-            // wait and get the value from the future<int>
+            // wait and get the value from the future<ULONG>
             const auto& numReJITs = future.get();
             Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
         }
