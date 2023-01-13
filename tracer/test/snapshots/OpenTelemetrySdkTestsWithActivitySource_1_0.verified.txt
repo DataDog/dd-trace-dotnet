@@ -264,7 +264,7 @@
     SpanId: Id_16,
     Name: AdditionalActivitySource.internal,
     Resource: Transform,
-    Service: AdditionalActivitySource,
+    Service: MyServiceName,
     Type: custom,
     Tags: {
       env: integration_tests,
@@ -274,6 +274,9 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       runtime-id: Guid_2,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal,
       _dd.p.dm: -0
     },
