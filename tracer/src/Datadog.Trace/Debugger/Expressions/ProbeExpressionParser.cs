@@ -18,14 +18,18 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal partial class ProbeExpressionParser<T>
 {
     private static readonly LabelTarget ReturnTarget = Expression.Label(typeof(T));
-    private static readonly Func<ScopeMember, ScopeMember[], T> DefaultDelegate;
+
+    /// <summary>
+    /// This, Return, Exception, LocalsAndArgs
+    /// </summary>
+    private static readonly Func<ScopeMember, ScopeMember, Exception, ScopeMember[], T> DefaultDelegate;
 
     private List<EvaluationError> _errors;
     private int _arrayStack;
 
     static ProbeExpressionParser()
     {
-        DefaultDelegate = (_, _) =>
+        DefaultDelegate = (_, _, _, _) =>
         {
             if (typeof(T) == typeof(bool))
             {
@@ -287,12 +291,17 @@ internal partial class ProbeExpressionParser<T>
 
                             if (readerValue == "@return")
                             {
-                                return itParameter;
+                                return GetParameterExpression(parameters, ScopeMemberKind.Return);
+                            }
+
+                            if (readerValue == "@exceptions")
+                            {
+                                return GetParameterExpression(parameters, ScopeMemberKind.Exception);
                             }
 
                             if (readerValue == "@duration")
                             {
-                                return itParameter;
+                                return Expression.Constant("@duration is not yet supported");
                             }
 
                             if (readerValue == "@it")
@@ -304,11 +313,6 @@ internal partial class ProbeExpressionParser<T>
                                     return Expression.Parameter(UndefinedValueType, Expressions.UndefinedValue.Instance.ToString());
                                 }
 
-                                return itParameter;
-                            }
-
-                            if (readerValue == "@exceptions")
-                            {
                                 return itParameter;
                             }
 
@@ -436,22 +440,53 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private ExpressionBodyAndParameters ParseProbeExpression(string expressionJson, ScopeMember @this, ScopeMember[] argsOrLocals)
+    private ExpressionBodyAndParameters ParseProbeExpression(string expressionJson, MethodScopeMembers methodScopeMembers)
     {
-        @this.Type ??= @this.Value?.GetType();
-        if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || @this.Type == null)
+        var argsOrLocals = methodScopeMembers.Members;
+        var @this = methodScopeMembers.InvocationTarget;
+        var thisType = @this.Type ?? @this.Value?.GetType();
+        if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
             throw new ArgumentException($"{nameof(ParseProbeExpression)} has been called with an invalid argument");
         }
 
         var scopeMembers = new List<ParameterExpression>();
         var expressions = new List<Expression>();
+
+        // Add 'this'
         var thisParameterExpression = Expression.Parameter(@this.GetType());
-        var thisVariable = Expression.Variable(@this.Type, "this");
-        expressions.Add(Expression.Assign(thisVariable, Expression.Convert(Expression.Field(thisParameterExpression, "Value"), @this.Type)));
+        var thisVariable = Expression.Variable(thisType, "this");
+        expressions.Add(Expression.Assign(thisVariable, Expression.Convert(Expression.Field(thisParameterExpression, "Value"), thisType)));
         scopeMembers.Add(thisVariable);
+
+        // add 'return'
+        var @return = methodScopeMembers.Return;
+        var returnType = @return.Type ?? @return.Value?.GetType();
+        ParameterExpression returnVariable;
+        var returnParameterExpression = Expression.Parameter(@return.GetType());
+        if (returnType == null || returnType == typeof(void))
+        {
+            returnVariable = Expression.Variable(typeof(string), "@return");
+            expressions.Add(Expression.Assign(returnVariable, Expression.Constant($"Return type is {typeof(void).FullName}")));
+        }
+        else
+        {
+            returnVariable = Expression.Variable(returnType, "@return");
+            expressions.Add(Expression.Assign(returnVariable, Expression.Convert(Expression.Field(returnParameterExpression, "Value"), returnType)));
+        }
+
+        scopeMembers.Add(returnVariable);
+
+        // add exception
+        var exceptionParameterExpression = Expression.Parameter(typeof(Exception));
+        var exceptionVariable = Expression.Variable(typeof(Exception), "@exception");
+        expressions.Add(Expression.Assign(exceptionVariable, exceptionParameterExpression));
+        scopeMembers.Add(exceptionVariable);
+
+        // add args and locals
         var argsOrLocalsParameterExpression = Expression.Parameter(argsOrLocals.GetType());
         AddLocalAndArgs(argsOrLocals, scopeMembers, expressions, argsOrLocalsParameterExpression);
+
         var result = Expression.Variable(typeof(T), "$dd_el_result");
         scopeMembers.Add(result);
 
@@ -468,22 +503,22 @@ internal partial class ProbeExpressionParser<T>
             body = body.ReduceAndCheck();
         }
 
-        return new ExpressionBodyAndParameters(body, thisParameterExpression, argsOrLocalsParameterExpression);
+        return new ExpressionBodyAndParameters(body, thisParameterExpression, returnParameterExpression, exceptionParameterExpression, argsOrLocalsParameterExpression);
     }
 
-    internal static CompiledExpression<T> ParseExpression(JObject expressionJson, ScopeMember @this, ScopeMember[] argsOrLocals)
+    internal static CompiledExpression<T> ParseExpression(JObject expressionJson, MethodScopeMembers scopeMembers)
     {
-        return ParseExpression(expressionJson.ToString(), @this, argsOrLocals);
+        return ParseExpression(expressionJson.ToString(), scopeMembers);
     }
 
-    internal static CompiledExpression<T> ParseExpression(string expressionJson, ScopeMember @this, ScopeMember[] argsOrLocals)
+    internal static CompiledExpression<T> ParseExpression(string expressionJson, MethodScopeMembers scopeMembers)
     {
         var parser = new ProbeExpressionParser<T>();
         ExpressionBodyAndParameters parsedExpression = default;
         try
         {
-            parsedExpression = parser.ParseProbeExpression(expressionJson, @this, argsOrLocals);
-            var expression = Expression.Lambda<Func<ScopeMember, ScopeMember[], T>>(parsedExpression.ExpressionBody, parsedExpression.ThisParameterExpression, parsedExpression.ArgsAndLocalsParameterExpression);
+            parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers);
+            var expression = Expression.Lambda<Func<ScopeMember, ScopeMember, Exception, ScopeMember[], T>>(parsedExpression.ExpressionBody, parsedExpression.ThisParameterExpression, parsedExpression.ReturnParameterExpression, parsedExpression.ExceptionParameterExpression, parsedExpression.ArgsAndLocalsParameterExpression);
             var compiled = expression.Compile();
             return new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
         }

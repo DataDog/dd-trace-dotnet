@@ -72,7 +72,7 @@ internal class ProbeExpressionEvaluator
                     }
                     else if (IsExpression(Templates[i]))
                     {
-                        resultBuilder.Append(compiledExpressions[i].Delegate(scopeMembers.InvocationTarget, scopeMembers.Members));
+                        resultBuilder.Append(compiledExpressions[i].Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Exception, scopeMembers.Members));
                         if (compiledExpressions[i].Errors != null)
                         {
                             (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpressions[i].Errors);
@@ -119,7 +119,7 @@ internal class ProbeExpressionEvaluator
             }
 
             compiledExpression = CompiledCondition.Value.Value;
-            var condition = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Members);
+            var condition = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Exception, scopeMembers.Members);
             result.Condition = condition;
             if (compiledExpression.Errors != null)
             {
@@ -144,7 +144,7 @@ internal class ProbeExpressionEvaluator
             }
 
             compiledExpression = CompiledMetric.Value.Value;
-            var metric = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Members);
+            var metric = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Exception, scopeMembers.Members);
             result.Metric = metric;
             if (compiledExpression.Errors != null)
             {
@@ -165,7 +165,7 @@ internal class ProbeExpressionEvaluator
             var current = Templates[i];
             if (current.Json != null)
             {
-                compiledExpressions[i] = ProbeExpressionParser<string>.ParseExpression(current.Json, _scopeMembers.InvocationTarget, _scopeMembers.Members);
+                compiledExpressions[i] = ProbeExpressionParser<string>.ParseExpression(current.Json, _scopeMembers);
             }
             else
             {
@@ -183,7 +183,7 @@ internal class ProbeExpressionEvaluator
             return null;
         }
 
-        return ProbeExpressionParser<bool>.ParseExpression(Condition.Value.Json, _scopeMembers.InvocationTarget, _scopeMembers.Members);
+        return ProbeExpressionParser<bool>.ParseExpression(Condition.Value.Json, _scopeMembers);
     }
 
     private CompiledExpression<double>? CompileMetric()
@@ -193,7 +193,7 @@ internal class ProbeExpressionEvaluator
             return null;
         }
 
-        return ProbeExpressionParser<double>.ParseExpression(Metric?.Json, _scopeMembers.InvocationTarget, _scopeMembers.Members);
+        return ProbeExpressionParser<double>.ParseExpression(Metric?.Json, _scopeMembers);
     }
 
     private void HandleException<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression, string message)

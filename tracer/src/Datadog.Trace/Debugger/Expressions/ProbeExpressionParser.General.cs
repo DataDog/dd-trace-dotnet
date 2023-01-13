@@ -32,15 +32,20 @@ internal partial class ProbeExpressionParser<T>
         try
         {
             // method local variable and method argument
-            var refMember = (ConstantExpression)ParseTree(reader, parameters, itParameter);
-            var argOrLocal = parameters.FirstOrDefault(p => p.Name == refMember.Value.ToString());
+            var refMember = ParseTree(reader, parameters, itParameter);
+            if (refMember is not ConstantExpression constant)
+            {
+                return refMember;
+            }
+
+            var argOrLocal = parameters.FirstOrDefault(p => p.Name == constant.Value.ToString());
             if (argOrLocal != null)
             {
                 return argOrLocal;
             }
 
             // will return an instance field\property or an UndefinedValue
-            return MemberPathExpression(parameters[0], refMember.Value.ToString());
+            return MemberPathExpression(GetParameterExpression(parameters, ScopeMemberKind.This), constant.Value.ToString());
         }
         catch (Exception e)
         {
@@ -87,6 +92,21 @@ internal partial class ProbeExpressionParser<T>
         else
         {
             throw new ArgumentException($"Unsupported type: {typeof(T).FullName}");
+        }
+    }
+
+    private ParameterExpression GetParameterExpression(List<ParameterExpression> parameters, ScopeMemberKind kind)
+    {
+        switch (kind)
+        {
+            case ScopeMemberKind.This:
+                return parameters[0];
+            case ScopeMemberKind.Return:
+                return parameters[1];
+            case ScopeMemberKind.Exception:
+                return parameters[2];
+            default:
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
         }
     }
 }

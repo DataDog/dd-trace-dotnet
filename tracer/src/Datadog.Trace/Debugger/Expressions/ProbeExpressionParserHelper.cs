@@ -55,16 +55,27 @@ internal static class ProbeExpressionParserHelper
 
     internal readonly ref struct ExpressionBodyAndParameters
     {
-        internal ExpressionBodyAndParameters(Expression body, ParameterExpression thisParameterExpression, ParameterExpression argsOrLocalsParameterExpression)
+        internal ExpressionBodyAndParameters(
+            Expression body,
+            ParameterExpression thisParameterExpression,
+            ParameterExpression returnParameterExpression,
+            ParameterExpression exceptionParameterExpression,
+            ParameterExpression argsOrLocalsParameterExpression)
         {
             ExpressionBody = body;
             ThisParameterExpression = thisParameterExpression;
+            ReturnParameterExpression = returnParameterExpression;
+            ExceptionParameterExpression = exceptionParameterExpression;
             ArgsAndLocalsParameterExpression = argsOrLocalsParameterExpression;
         }
 
         internal Expression ExpressionBody { get; }
 
         internal ParameterExpression ThisParameterExpression { get; }
+
+        internal ParameterExpression ReturnParameterExpression { get; }
+
+        internal ParameterExpression ExceptionParameterExpression { get; }
 
         internal ParameterExpression ArgsAndLocalsParameterExpression { get; }
     }

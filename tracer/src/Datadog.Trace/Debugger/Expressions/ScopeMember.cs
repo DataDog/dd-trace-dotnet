@@ -12,17 +12,17 @@ namespace Datadog.Trace.Debugger.Expressions
         Argument,
         Local,
         This,
-        Exception,
         Return,
+        Exception,
         None
     }
 
-    internal struct ScopeMember
+    internal readonly struct ScopeMember
     {
-        internal object Value;
-        internal string Name;
-        internal Type Type;
-        internal ScopeMemberKind ElementType;
+        internal readonly object Value;
+        internal readonly string Name;
+        internal readonly Type Type;
+        internal readonly ScopeMemberKind ElementType;
 
         internal ScopeMember(string name, Type type, object value, ScopeMemberKind elementType)
         {

@@ -189,6 +189,11 @@ namespace Datadog.Trace.Tests.Debugger
             // Add "this" member
             scope.InvocationTarget = new ScopeMember("this", Test.GetType(), Test, ScopeMemberKind.This);
 
+            // Add "return" member
+            scope.Return = new ScopeMember("Dummy Return", typeof(string), "I'm a return value", ScopeMemberKind.Return);
+
+            // Add "exception" member
+            scope.Exception = new InvalidCastException("Can not cast X to Y");
             return scope;
         }
 

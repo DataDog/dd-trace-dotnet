@@ -1,34 +1,11 @@
-﻿Condition:
-Json:
+﻿Template:
+Segments: 
+
 {
-  "or": [
-    {
-      "gt": [
-        {
-          "len": [
-            {
-              "ref": "String"
-            }
-          ]
-        },
-        2
-      ]
-    },
-    {
-      "gt": [
-        {
-          "count": [
-            {
-              "ref": "CollectionLocal"
-            }
-          ]
-        },
-        2
-      ]
-    }
-  ]
+    "ref": "@return"
 }
-Expression: (
+Expressions: 
+(
     scopeMember,
     scopeMember,
     exception,
@@ -49,8 +26,8 @@ Expression: (
     var StringArg = (string)scopeMemberArray[9].Value;
     var CollectionArg = (List<string>)scopeMemberArray[10].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
-    var $dd_el_result = (this.String.Length > 2) || (CollectionLocal.Count > 2);
+    var $dd_el_result = @return;
 
     return $dd_el_result;
 }
-Result: True
+Result: The result of the expression is: I'm a return value
