@@ -8,7 +8,15 @@ namespace Samples.Security.WebApi.Controllers
     public class UserController : ApiController
     {
         // GET api/user
-   public string Get(string id)
+        public string Get()
+        {
+            var userId = "user3";
+
+            return Get(userId);
+        }
+
+        // GET api/user/<userid>
+        public string Get(string id)
         {
             var userId = id ?? "user3";
 
