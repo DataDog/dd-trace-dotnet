@@ -134,7 +134,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             RcmBase.CheckAckState(request, "ASM_FEATURES", ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 
-            await VerifySpans(spans1.ToImmutableList(), settings, true);
+            await VerifySpans(spans1.ToImmutableList(), settings);
         }
     }
 }
