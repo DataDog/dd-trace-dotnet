@@ -20,10 +20,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
-    public class AspNetCore5AsmToggleSecurityNull : AspNetCore5AsmToggle
+    public class AspNetCore5AsmToggleSecurityDefault : AspNetCore5AsmToggle
     {
-        public AspNetCore5AsmToggleSecurityNull(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleSecurityNull))
+        public AspNetCore5AsmToggleSecurityDefault(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleSecurityDefault))
         {
         }
     }
