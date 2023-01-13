@@ -51,7 +51,4 @@ public:
     inline static const shared::WSTRING Agentless                   = WStr("DD_PROFILING_AGENTLESS");
     inline static const shared::WSTRING CoreMinimumOverride         = WStr("DD_PROFILING_MIN_CORES_THRESHOLD");
     inline static const shared::WSTRING UseBacktrace2               = WStr("DD_INTERNAL_USE_BACKTRACE2");
-
-    // feature flags
-    inline static const shared::WSTRING FF_LibddprofEnabled = WStr("DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED");
 };

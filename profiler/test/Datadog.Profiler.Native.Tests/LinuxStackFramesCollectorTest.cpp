@@ -314,6 +314,30 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     ValidateCallstack(ips);
 }
 
+TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWithOldWay)
+{
+    auto* signalManager = GetSignalManager();
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(false));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+
+    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
+
+    std::uint32_t hr;
+    StackSnapshotResultBuffer* buffer;
+
+    ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
+    EXPECT_EQ(hr, S_OK);
+
+    std::vector<uintptr_t> ips;
+    buffer->CopyInstructionPointers(ips);
+
+    ValidateCallstack(ips);
+}
+
 TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCall)
 {
     SimulateInPthreadCreate();
