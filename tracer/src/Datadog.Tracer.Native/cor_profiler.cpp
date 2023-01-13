@@ -2232,6 +2232,10 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
         return hr;
     }
 
+    Logger::Info(GetILCodes("Before -> Instrumentation.GetNativeTracerVersion(). ", &methodRewriter,
+                            GetFunctionInfo(module_metadata.metadata_import, getNativeTracerVersionMethodDef),
+                            module_metadata.metadata_import));
+
     ILInstr* pFirstInstr = methodRewriter.GetILList()->m_pNext;
 
     if (pFirstInstr->m_opcode != CEE_LDSTR)
