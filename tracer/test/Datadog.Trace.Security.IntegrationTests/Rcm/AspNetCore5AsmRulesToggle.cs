@@ -33,21 +33,21 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         {
             var url = "/Health/?[$slice]=value";
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
             var ruleId = "crs-942-290";
 
-            var spans1 = await SendRequestsAsync(Fixture.Agent, url);
+            var spans1 = await SendRequestsAsync(agent, url);
 
-            var request1 = await Fixture.Agent.SetupRcmAndWait(Output, new[] { ((object)new Payload() { RuleStatus = new[] { new RuleStatus { Id = ruleId, Enabled = false } } }, "1") }, ASMProduct);
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload() { RuleStatus = new[] { new RuleStatus { Id = ruleId, Enabled = false } } }, "1") }, ASMProduct);
             CheckAckState(request1, ASMProduct, ApplyStates.ACKNOWLEDGED, null, "First RCM call");
 
-            var spans2 = await SendRequestsAsync(Fixture.Agent, url);
+            var spans2 = await SendRequestsAsync(agent, url);
 
-            var request2 = await Fixture.Agent.SetupRcmAndWait(Output, new[] { ((object)new Payload() { RuleStatus = new[] { new RuleStatus { Id = ruleId, Enabled = true } } }, "2") }, ASMProduct);
+            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload() { RuleStatus = new[] { new RuleStatus { Id = ruleId, Enabled = true } } }, "2") }, ASMProduct);
             CheckAckState(request2, ASMProduct, ApplyStates.ACKNOWLEDGED, null, "Second RCM call");
 
-            var spans3 = await SendRequestsAsync(Fixture.Agent, url);
+            var spans3 = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();
             spans.AddRange(spans1);

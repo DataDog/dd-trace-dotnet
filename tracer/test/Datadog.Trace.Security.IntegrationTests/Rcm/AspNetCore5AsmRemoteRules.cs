@@ -28,19 +28,19 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         {
             var url = "/Health/?[$slice]=value";
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var spans1 = await SendRequestsAsync(Fixture.Agent, url);
+            var spans1 = await SendRequestsAsync(agent, url);
 
-            await Fixture.Agent.SetupRcmAndWait(Output, new[] { (GetRules("2.22.222"), "1") }, "ASM_DD");
+            await agent.SetupRcmAndWait(Output, new[] { (GetRules("2.22.222"), "1") }, "ASM_DD");
             await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
-            var spans2 = await SendRequestsAsync(Fixture.Agent, url);
+            var spans2 = await SendRequestsAsync(agent, url);
 
-            await Fixture.Agent.SetupRcmAndWait(Output, new[] { (GetRules("3.33.333"), "2") }, "ASM_DD");
+            await agent.SetupRcmAndWait(Output, new[] { (GetRules("3.33.333"), "2") }, "ASM_DD");
             await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
-            var spans3 = await SendRequestsAsync(Fixture.Agent, url);
+            var spans3 = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();
             spans.AddRange(spans1);

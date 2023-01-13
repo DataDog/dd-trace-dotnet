@@ -38,7 +38,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestBlockedBody(string test, HttpStatusCode expectedStatusCode, string url, string body)
         {
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl, body);
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 contentType = "application/json";
             }
 
-            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, body, 5, 1, settings, contentType);
+            await TestAppSecRequestWithVerifyAsync(agent, url, body, 5, 1, settings, contentType);
         }
     }
 
@@ -78,6 +78,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TryStartApp()
         {
             await Fixture.TryStartApp(this, EnableSecurity, externalRulesFile: RuleFile);
+            SetHttpPort(Fixture.HttpPort);
         }
 
         [SkippableTheory]
@@ -86,11 +87,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestBlockedRequest(string test, string url)
         {
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
-            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
     }
 }

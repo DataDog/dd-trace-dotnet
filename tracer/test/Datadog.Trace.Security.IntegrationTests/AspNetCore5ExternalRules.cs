@@ -33,17 +33,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public async Task TestSecurity()
         {
-            await TryStartApp();
+            await Fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
             SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, DefaultAttackUrl, null, 5, 1, settings);
-        }
-
-        protected async Task TryStartApp()
-        {
-            await Fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
+            await TestAppSecRequestWithVerifyAsync(agent, DefaultAttackUrl, null, 5, 1, settings);
         }
     }
 }

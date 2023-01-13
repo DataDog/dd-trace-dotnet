@@ -76,8 +76,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url = "/Health/?[$slice]=value";
             await Fixture.TryStartApp(this, enableSecurity: EnableSecurity, externalRulesFile: RuleSet, sendHealthCheck: false);
             SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 1, 1, settings, testInit: true, methodNameOverride: nameof(TestSecurityInitialization));
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 1, 1, settings, testInit: true, methodNameOverride: nameof(TestSecurityInitialization));
         }
     }
 }

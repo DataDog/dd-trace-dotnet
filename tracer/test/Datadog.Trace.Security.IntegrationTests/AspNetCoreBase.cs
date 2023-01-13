@@ -35,6 +35,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TryStartApp()
         {
             await Fixture.TryStartApp(this, EnableSecurity);
+            SetHttpPort(Fixture.HttpPort);
         }
 
         [SkippableTheory]
@@ -45,11 +46,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestRequest(string test, HttpStatusCode expectedStatusCode, string url)
         {
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
-            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 5, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
 
         [SkippableTheory]
@@ -58,11 +59,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestDiscoveryScan(string test, string url)
         {
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
-            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 5, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
     }
 }

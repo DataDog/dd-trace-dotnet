@@ -30,6 +30,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
             await Fixture.TryStartApp(this, enableSecurity: false, sendHealthCheck: false);
+            SetHttpPort(Fixture.HttpPort);
         }
 
         [SkippableFact]
@@ -39,7 +40,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var filename = "Iast.WeakHashing.AspNetCore5.IastEnabled";
             IncludeAllHttpSpans = true;
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
             await TestWeakHashing(filename, Fixture.Agent);
 
             filename = "Iast.WeakHashing.AspNetCore5.IastDisabled";
@@ -80,7 +80,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var filename = VulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.AspNetCore5.IastEnabled.SingleVulnerability" : "Iast.WeakHashing.AspNetCore5.IastEnabled";
             IncludeAllHttpSpans = true;
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
             await TestWeakHashing(filename, Fixture.Agent);
         }
     }
@@ -116,8 +115,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var url = "/Iast";
             IncludeAllHttpSpans = true;
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
-            var spans = await SendRequestsAsync(Fixture.Agent, new string[] { url });
+            var agent = Fixture.Agent;
+            var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(ClientIp, string.Empty);
@@ -135,8 +134,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var url = "/Iast/WeakHashing";
             IncludeAllHttpSpans = true;
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
-            var spans = await SendRequestsAsync(Fixture.Agent, new string[] { url });
+            var agent = Fixture.Agent;
+            var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
@@ -187,6 +186,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
             await Fixture.TryStartApp(this, enableSecurity: false);
+            SetHttpPort(Fixture.HttpPort);
         }
 
         protected async Task TestWeakHashing(string filename, MockTracerAgent agent)

@@ -48,6 +48,7 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     public async Task TryStartApp()
     {
         await Fixture.TryStartApp(this, EnableSecurity);
+        SetHttpPort(Fixture.HttpPort);
     }
 
     internal static void CheckAckState(GetRcmRequest request, string product, uint expectedState, string expectedError, string message)

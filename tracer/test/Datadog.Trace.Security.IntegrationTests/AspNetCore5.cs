@@ -46,7 +46,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestPathParamsEndpointRouting(string test, HttpStatusCode expectedStatusCode, string url)
         {
             await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 #if NET7_0_OR_GREATER
             settings.AddSimpleScrubber("HTTP: GET /params-endpoint/{s}", "/params-endpoint/{s} HTTP: GET");
 #endif
-            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 5, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
     }
 
