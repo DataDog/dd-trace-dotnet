@@ -22,17 +22,25 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
-    public class AspNetCore5AsmDataSecurityDisabled : AspNetCore5AsmData
+    public class AspNetCore5AsmDataSecurityDisabledBlockingRequestIp : AspNetCore5AsmDataBlockingRequestIp
     {
-        public AspNetCore5AsmDataSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: false, testName: nameof(AspNetCore5AsmDataSecurityDisabled))
+        public AspNetCore5AsmDataSecurityDisabledBlockingRequestIp(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: false, testName: "AspNetCore5AsmDataSecurityDisabled")
         {
         }
     }
 
-    public abstract class AspNetCore5AsmData : RcmBase
+    public class AspNetCore5AsmDataSecurityEnabledBlockingRequestIp : AspNetCore5AsmDataBlockingRequestIp
     {
-        public AspNetCore5AsmData(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
+        public AspNetCore5AsmDataSecurityEnabledBlockingRequestIp(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: "AspNetCore5AsmDataSecurityEnabled")
+        {
+        }
+    }
+
+    public abstract class AspNetCore5AsmDataBlockingRequestIp : RcmBase
+    {
+        public AspNetCore5AsmDataBlockingRequestIp(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
             : base(fixture, outputHelper, enableSecurity, testName: testName)
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
@@ -41,7 +49,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [SkippableTheory]
         [InlineData("blocking-ips", "/")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBlockedRequestIp(string test, string url)
+        public async Task RunTest(string test, string url)
         {
             await TryStartApp();
             var agent = Fixture.Agent;
@@ -81,17 +89,17 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         }
     }
 
-    public class AspNetCore5AsmDataSecurityEnabled : AspNetCore5AsmData
+    public class AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick : RcmBase
     {
-        public AspNetCore5AsmDataSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmDataSecurityEnabled))
+        public AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: "AspNetCore5AsmDataSecurityEnabled")
         {
         }
 
         [SkippableTheory]
         [InlineData("blocking-ips-oneclick", "/")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBlockedRequestIpWithOneClickActivation(string test, string url)
+        public async Task RunTest(string test, string url)
         {
             await TryStartApp();
             var agent = Fixture.Agent;
