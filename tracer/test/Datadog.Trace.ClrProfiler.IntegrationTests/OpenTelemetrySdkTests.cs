@@ -69,12 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-
-                var myServiceNameSpans = spans.Where(s => s.Service == "MyServiceName");
-                var otherLibrarySpans = spans.Where(s => s.Service != "MyServiceName");
-
-                ValidateIntegrationSpans(myServiceNameSpans, expectedServiceName: "MyServiceName");
-                ValidateIntegrationSpans(otherLibrarySpans, expectedServiceName: "OtherLibrary");
+                ValidateIntegrationSpans(spans, expectedServiceName: "MyServiceName");
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
