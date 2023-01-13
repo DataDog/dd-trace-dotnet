@@ -33,6 +33,35 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
+    public class AspNetCore5TestsSecurityEnabledInitialization : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+    {
+        public AspNetCore5TestsSecurityEnabledInitialization(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5.SecurityEnabled")
+        {
+            Fixture = fixture;
+            Fixture.SetOutput(outputHelper);
+        }
+
+        protected AspNetCoreTestFixture Fixture { get; }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            Fixture.SetOutput(null);
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestSecurityInitialization()
+        {
+            var url = "/Health/?[$slice]=value";
+            await Fixture.TryStartApp(this, enableSecurity: true, sendHealthCheck: false);
+            SetHttpPort(Fixture.HttpPort);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 1, 1, settings, testInit: true, methodNameOverride: nameof(TestSecurityInitialization));
+        }
+    }
+
     public abstract class AspNetCore5TestsWithoutExternalRulesFile : AspNetCoreBase
     {
         public AspNetCore5TestsWithoutExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
@@ -60,17 +89,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddSimpleScrubber("HTTP: GET /params-endpoint/{s}", "/params-endpoint/{s} HTTP: GET");
 #endif
             await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 5, 1, settings);
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestSecurityInitialization()
-        {
-            var url = "/Health/?[$slice]=value";
-            await TryStartApp();
-            SetHttpPort(Fixture.HttpPort);
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            await TestAppSecRequestWithVerifyAsync(Fixture.Agent, url, null, 1, 1, settings, testInit: true, methodNameOverride: nameof(TestSecurityInitialization));
         }
     }
 
