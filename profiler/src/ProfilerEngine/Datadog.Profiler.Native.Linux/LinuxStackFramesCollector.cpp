@@ -125,7 +125,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
                 if (!_signalManager->CheckSignalHandler())
                 {
                     _lastStackWalkErrorCode = E_FAIL;
-                    Log::Debug("Profiler signal handler was replaced but we failed or stopped at restoring it. We won't be able to collect callstacks.");
+                    Log::Info("Profiler signal handler was replaced but we failed or stopped at restoring it. We won't be able to collect callstacks.");
                     *pHR = E_FAIL;
                     return GetStackSnapshotResult();
                 }

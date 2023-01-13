@@ -237,11 +237,14 @@ void StackSamplerLoopManager::WatcherLoopIteration()
 
     if (_deadlockInterventionInProgress >= 1)
     {
-        _deadlockInterventionInProgress++;
-        Log::Info("StackSamplerLoopManager::WatcherLoopIteration - Deadlock intervention still in progress for thread ", _pTargetThread->GetOsThreadId(),
-                   std::hex, " (= 0x", _pTargetThread->GetOsThreadId(), ")");
         // TODO: Validate that calling resuming again (and again) could unlock the situation.
         // The previous call to ResumeThread failed.
+        if (_deadlockInterventionInProgress == 1)
+        {
+            _deadlockInterventionInProgress++;
+            Log::Info("StackSamplerLoopManager::WatcherLoopIteration - Deadlock intervention still in progress for thread ", _pTargetThread->GetOsThreadId(),
+                       std::hex, " (= 0x", _pTargetThread->GetOsThreadId(), ")");
+        }
         return;
     }
 
@@ -537,7 +540,7 @@ void StackSamplerLoopManager::NotifyIterationFinished()
     _suspensionTimeMetric->Add((double_t)suspensionDuration);
     _currentStatistics->AddSuspensionTime(suspensionDuration);
 
-    if (threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())
+    if (_metricsSender != nullptr && threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())
     {
         Log::Debug("Notify-ThreadStackSampleCollection-Finished invoked - Prepare statistics to be sent.");
         _statisticsReadyToSend.reset(_currentStatistics.release());
