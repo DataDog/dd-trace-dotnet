@@ -6,8 +6,8 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-// https://github.com/dotnet/runtime/blob/main/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/RandomNumberGenerator.cs
-// https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/Random.Xoshiro256StarStarImpl.cs
+// https://github.com/dotnet/runtime/blob/e52462326be03fb329384b7e04a33d3eb7c16736/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/RandomNumberGenerator.cs
+// https://github.com/dotnet/runtime/blob/e52462326be03fb329384b7e04a33d3eb7c16736/src/libraries/System.Private.CoreLib/src/System/Random.Xoshiro256StarStarImpl.cs
 // https://prng.di.unimi.it/xoshiro256starstar.c
 
 #nullable enable
