@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -19,13 +20,28 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers;
 
 internal static class DebuggerTestHelper
 {
-    public static IEnumerable<object[]> AllProbeTestTypes()
+    public static IEnumerable<object[]> AllTestDescriptions()
     {
-        return typeof(IRun)
-              .Assembly.GetTypes()
-              .Where(t => t.GetInterface(nameof(IRun)) != null ||
-                          t.GetInterface(nameof(IAsyncRun)) != null)
-              .Select(t => new object[] { t });
+        var assembly = typeof(IRun).Assembly;
+        var isOptimized = IsOptimized(assembly);
+        var testTypes = assembly.GetTypes()
+                                .Where(
+                                     t => t.GetInterface(nameof(IRun)) != null ||
+                                          t.GetInterface(nameof(IAsyncRun)) != null);
+
+        foreach (var testType in testTypes)
+        {
+            yield return new object[] { new ProbeTestDescription() { IsOptimized = isOptimized, TestType = testType } };
+        }
+    }
+
+    public static ProbeTestDescription SpecificTestDescription<T>()
+    {
+        var type = typeof(T);
+        var assembly = type.Assembly;
+        var isOptimized = IsOptimized(assembly);
+
+        return new ProbeTestDescription() { IsOptimized = isOptimized, TestType = type };
     }
 
     public static Type FirstSupportedProbeTestType(string framework)
@@ -193,6 +209,13 @@ internal static class DebuggerTestHelper
         snapshot.Segments = new SnapshotSegment[] { new(null, null, att.TemplateStr), new(att.TemplateDsl, att.TemplateJson, null) };
         snapshot.EvaluateAt = (EvaluateAt)att.EvaluateAt;
         return snapshot;
+    }
+
+    private static bool IsOptimized(Assembly assembly)
+    {
+        var debuggableAttribute = (DebuggableAttribute)Attribute.GetCustomAttribute(assembly, typeof(DebuggableAttribute));
+        var isOptimized = !debuggableAttribute.IsJITOptimizerDisabled;
+        return isOptimized;
     }
 
     private static LogProbe CreateLogMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)

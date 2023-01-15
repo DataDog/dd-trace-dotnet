@@ -357,12 +357,12 @@ protected:
     const WSTRING& GetCallTargetReturnType() override;
     const WSTRING& GetCallTargetReturnGenericType() override;
 
-    int GetAdditionalLocalsCount() override;
     void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod) override;
     
 public:
     DebuggerTokens(ModuleMetadata* module_metadata_ptr);
 
+    int GetAdditionalLocalsCount() override;
     HRESULT WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, const TypeInfo* currentType, ILInstr** instruction, ProbeType probeType);
     HRESULT CreateEndMethodStartMarkerRefSignature(ProbeType probeType, mdMemberRef& endMethodRef, mdTypeRef returnTypeRef, bool isVoid);
 

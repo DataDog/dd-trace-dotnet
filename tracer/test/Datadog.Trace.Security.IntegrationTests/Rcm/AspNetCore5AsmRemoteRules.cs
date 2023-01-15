@@ -5,15 +5,10 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Security.IntegrationTests.Rcm;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -22,8 +17,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
     public class AspNetCore5AsmRemoteRules : RcmBase
     {
-        public AspNetCore5AsmRemoteRules(ITestOutputHelper outputHelper)
-            : base(outputHelper, testName: nameof(AspNetCore5AsmRemoteRules))
+        public AspNetCore5AsmRemoteRules(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmRemoteRules))
         {
         }
 
@@ -32,8 +27,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestNewRemoteRules()
         {
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(true);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var spans1 = await SendRequestsAsync(agent, url);
@@ -51,7 +47,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans2);
             spans.AddRange(spans3);
 
-            await VerifySpans(spans.ToImmutableList(), settings, true);
+            await VerifySpans(spans.ToImmutableList(), settings);
         }
 
         private string GetRules(string version)

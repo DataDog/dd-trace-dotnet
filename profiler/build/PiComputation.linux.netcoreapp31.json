@@ -35,9 +35,21 @@
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_INTERNAL_USE_BACKTRACE2": "1",
+        "DD_TRACE_ENABLED" : "0"
+      }
+    },
+    {
+      "name": "Profiler_cpu_walltime_old_stackwalk",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_INTERNAL_USE_BACKTRACE2": "0",
         "DD_TRACE_ENABLED" : "0"
       }
     }
+
   ],
   "processName": "dotnet",
   "processArguments": "Samples.Computer01.dll --scenario 5 --iterations 1",

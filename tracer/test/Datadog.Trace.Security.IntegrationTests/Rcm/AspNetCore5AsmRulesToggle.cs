@@ -5,22 +5,13 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -30,8 +21,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     {
         private const string ASMProduct = "ASM";
 
-        public AspNetCore5AsmRulesToggle(ITestOutputHelper outputHelper)
-            : base(outputHelper, testName: nameof(AspNetCore5AsmRulesToggle))
+        public AspNetCore5AsmRulesToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmRulesToggle))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
@@ -41,7 +32,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestRulesToggling()
         {
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(true);
+            await TryStartApp();
+            var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
             var ruleId = "crs-942-290";
 
@@ -62,7 +54,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans2);
             spans.AddRange(spans3);
 
-            await VerifySpans(spans.ToImmutableList(), settings, true);
+            await VerifySpans(spans.ToImmutableList(), settings);
         }
     }
 }

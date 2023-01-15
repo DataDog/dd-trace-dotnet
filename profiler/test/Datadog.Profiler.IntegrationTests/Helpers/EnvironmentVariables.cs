@@ -22,5 +22,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string NamedPipeName = "DD_TRACE_PIPE_NAME";
         public const string TimestampsAsLabelEnabled = "DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED";
         public const string GarbageCollectionProfilerEnabled = "DD_PROFILING_GC_ENABLED";
+        public const string UseBacktrace2 = "DD_INTERNAL_USE_BACKTRACE2";
     }
 }

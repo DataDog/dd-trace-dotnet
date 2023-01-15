@@ -14,7 +14,10 @@ namespace GenerateSpanDocumentation
     public class SpanDocumentationGenerator
     {
         private const string HeaderConst =
-@"This file is intended for development purposes only. The markdown is generated from assertions authored [here](/tracer/test/Datadog.Trace.TestHelpers/SpanMetadataRules.cs) and the assertions are actively tested in the tracing integration tests.";
+@"This file is intended for development purposes only. The markdown is generated from assertions authored [here](/tracer/test/Datadog.Trace.TestHelpers/SpanMetadataRules.cs) and the assertions are actively tested in the tracing integration tests.
+
+The Integration Name (used for configuring individual integrations) of each span corresponds to the markdown header, with the following exceptions:
+- The `AspNetCoreMvc` span has the Integration Name `AspNetCore`";
         private readonly AbsolutePath _spanModelRulesFilePath;
         private readonly AbsolutePath _outputFilePath;
 
@@ -78,6 +81,7 @@ namespace GenerateSpanDocumentation
                     case SpanModel.ModelState.ParsingProperties:
                     case SpanModel.ModelState.ParsingTags:
                     case SpanModel.ModelState.ParsingMetrics:
+                    case SpanModel.ModelState.ParsingIntegrationName:
                         var trimmedLine = line.Trim();
 
                         // Finish the section
@@ -116,6 +120,16 @@ namespace GenerateSpanDocumentation
                                 currentModel.State = SpanModel.ModelState.ParsingMetrics;
                             }
 
+                            functionStartIndex = line.IndexOf("WithIntegrationName(");
+                            if (functionStartIndex > -1)
+                            {
+                                processRequirement = false;
+                                var nameStart = line.IndexOf("\"", functionStartIndex) + 1;
+                                var nameEnd = line.IndexOf("\"", nameStart) - 1;
+                                currentModel.IntegrationName = line.Substring(nameStart, nameEnd - nameStart + 1);
+                                currentModel.State = SpanModel.ModelState.ParsingIntegrationName;
+                            }
+
                             if (processRequirement)
                             {
                                 functionStartIndex = line.IndexOf(".");
@@ -137,6 +151,11 @@ namespace GenerateSpanDocumentation
         private static void GenerateSectionMarkdown(StringBuilder sb, SpanModel model)
         {
             sb.AppendLine($"## {model.SectionName}");
+
+            if (model.IntegrationName is not null)
+            {
+                sb.AppendLine($"> ⚠️ Note: This span is controlled by integration name `{model.IntegrationName}`");
+            }
 
             // Add span properties first
             bool spanHeaderAdded = false;
@@ -196,6 +215,7 @@ namespace GenerateSpanDocumentation
         {
             public ModelState State = SpanModel.ModelState.Missing;
             public string SectionName;
+            public string IntegrationName;
 
             public List<Requirement> Requirements = new List<Requirement>();
 
@@ -203,6 +223,7 @@ namespace GenerateSpanDocumentation
             {
                 Missing,
                 Initialized,
+                ParsingIntegrationName,
                 ParsingProperties,
                 ParsingTags,
                 ParsingMetrics,

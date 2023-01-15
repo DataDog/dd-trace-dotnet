@@ -4,6 +4,7 @@
 #include "AllocationsProvider.h"
 #include "COMHelpers.h"
 #include "HResultConverter.h"
+#include "IConfiguration.h"
 #include "IManagedThreadList.h"
 #include "IFrameStore.h"
 #include "IThreadsCpuManager.h"
@@ -43,7 +44,8 @@ AllocationsProvider::AllocationsProvider(
     _pFrameStore(pFrameStore),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
-    _pListener(pListener)
+    _pListener(pListener),
+    _pConfiguration(pConfiguration)
 {
     _allocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_allocations");
     _allocationsSizeMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_allocations_size");
@@ -74,7 +76,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;

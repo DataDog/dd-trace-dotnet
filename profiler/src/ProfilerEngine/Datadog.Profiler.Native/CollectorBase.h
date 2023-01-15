@@ -102,8 +102,12 @@ public:
         auto sample = std::make_shared<Sample>(rawSample.Timestamp, runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId), rawSample.Stack.size());
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
         {
+            // TODO: libdatadog needs to be updated in order to support numeric root span id for endpoint profiling
+            // -> keep it as a string until then
+            // sample->AddNumericLabel(NumericLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
             sample->AddLabel(Label{Sample::LocalRootSpanIdLabel, std::to_string(rawSample.LocalRootSpanId)});
-            sample->AddLabel(Label{Sample::SpanIdLabel, std::to_string(rawSample.SpanId)});
+
+            sample->AddNumericLabel(NumericLabel{Sample::SpanIdLabel, rawSample.SpanId});
         }
 
         // compute thread/appdomain details
@@ -118,7 +122,7 @@ public:
         {
             // All timestamps give the time when "something" ends and the associated duration
             // happened in the past
-            sample->AddLabel(Label{Sample::EndTimestampLabel, std::to_string(sample->GetTimeStamp())});
+            sample->AddNumericLabel(NumericLabel{Sample::EndTimestampLabel, sample->GetTimeStamp()});
         }
 
         // allow inherited classes to add values and specific labels
@@ -164,7 +168,7 @@ private:
         if (rawSample.AppDomainId == 0)
         {
             sample->SetAppDomainName("CLR");
-            sample->SetPid(std::to_string(OpSysTools::GetProcId()));
+            sample->SetPid(OpSysTools::GetProcId());
 
             return;
         }
@@ -172,13 +176,13 @@ private:
         if (!_pAppDomainStore->GetInfo(rawSample.AppDomainId, pid, appDomainName))
         {
             sample->SetAppDomainName("");
-            sample->SetPid(std::to_string(OpSysTools::GetProcId()));
+            sample->SetPid(OpSysTools::GetProcId());
 
             return;
         }
 
         sample->SetAppDomainName(std::move(appDomainName));
-        sample->SetPid(std::to_string(pid));
+        sample->SetPid(pid);
     }
 
     void SetThreadDetails(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)

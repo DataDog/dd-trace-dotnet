@@ -15,6 +15,8 @@
 #include "MetricsRegistry.h"
 #include "CounterMetric.h"
 
+class IConfiguration;
+
 class ExceptionsProvider
     : public CollectorBase<RawExceptionSample>
 {
@@ -53,6 +55,7 @@ private:
     std::unordered_map<ClassID, std::string> _exceptionTypes;
     std::mutex _exceptionTypesLock;
     GroupSampler<std::string> _sampler;
+    IConfiguration const* const _pConfiguration;
     std::shared_ptr<CounterMetric> _exceptionsCountMetric;
     std::shared_ptr<CounterMetric> _sampledExceptionsCountMetric;
 };

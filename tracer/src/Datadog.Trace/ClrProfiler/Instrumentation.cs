@@ -67,6 +67,14 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
+        /// Gets a value indicating the version of the native Datadog profiler. This method
+        /// is rewritten by the profiler.
+        /// </summary>
+        /// <returns>In a managed-only context, where the profiler is not attached, <c>None</c>,
+        /// otherwise the version of the Datadog native tracer library.</returns>
+        public static string GetNativeTracerVersion() => "None";
+
+        /// <summary>
         /// Initializes global instrumentation values.
         /// </summary>
         public static void Initialize()
@@ -76,6 +84,8 @@ namespace Datadog.Trace.ClrProfiler
                 // Initialize() was already called before
                 return;
             }
+
+            TracerDebugger.WaitForDebugger();
 
             Log.Debug("Initialization started.");
 
@@ -226,6 +236,7 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            TracerDebugger.WaitForDebugger();
             Log.Debug("Initialization of non native parts started.");
 
             try

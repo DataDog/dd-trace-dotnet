@@ -20,7 +20,7 @@ namespace Datadog.Trace.Ci
         internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)(\/)?";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
 
-        private static readonly Lazy<CIEnvironmentValues> _instance = new Lazy<CIEnvironmentValues>(() => new CIEnvironmentValues());
+        private static readonly Lazy<CIEnvironmentValues> _instance = new(() => new CIEnvironmentValues());
 
         private CIEnvironmentValues()
         {

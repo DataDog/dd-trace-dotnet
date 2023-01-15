@@ -22,7 +22,7 @@ internal static partial class SecurityCoordinatorHelpers
             if (!transport.IsBlocked)
             {
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
-                using var result = securityCoordinator.Scan();
+                var result = securityCoordinator.Scan();
                 securityCoordinator.CheckAndBlock(result);
             }
         }
@@ -37,7 +37,7 @@ internal static partial class SecurityCoordinatorHelpers
             {
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
-                using var result = securityCoordinator.RunWaf(args);
+                var result = securityCoordinator.RunWaf(args);
                 securityCoordinator.CheckAndBlock(result);
             }
         }
@@ -61,7 +61,7 @@ internal static partial class SecurityCoordinatorHelpers
                     }
 
                     var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
-                    using var result = securityCoordinator.RunWaf(args);
+                    var result = securityCoordinator.RunWaf(args);
                     securityCoordinator.CheckAndBlock(result);
                 }
             }
@@ -76,7 +76,7 @@ internal static partial class SecurityCoordinatorHelpers
             var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
             var keysAndValues = ObjectExtractor.Extract(body);
             var args = new Dictionary<string, object> { { AddressesConstants.RequestBody, keysAndValues } };
-            using var result = securityCoordinator.RunWaf(args);
+            var result = securityCoordinator.RunWaf(args);
             securityCoordinator.CheckAndBlock(result);
         }
     }

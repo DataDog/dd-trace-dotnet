@@ -14,11 +14,21 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCoreBare : AspNetBase, IDisposable
+    public class AspNetCoreBare : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCoreBare(ITestOutputHelper outputHelper)
+        private readonly AspNetCoreTestFixture fixture;
+
+        public AspNetCoreBare(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base("AspNetCoreBare", outputHelper, "/shutdown")
         {
+            this.fixture = fixture;
+            this.fixture.SetOutput(outputHelper);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            this.fixture.SetOutput(null);
         }
 
         [SkippableTheory]
@@ -28,12 +38,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurity(HttpStatusCode expectedStatusCode, string url)
         {
-            var agent = await RunOnSelfHosted(enableSecurity: true, externalRulesFile: DefaultRuleFile);
+            await fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
+            SetHttpPort(fixture.HttpPort);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings((int)expectedStatusCode, sanitisedUrl);
 
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(fixture.Agent, url, null, 5, 1, settings);
         }
     }
 }

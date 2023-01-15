@@ -32,7 +32,7 @@ namespace Datadog.Trace.Ci.Configuration
             ProxyNoProxy = proxyNoProxy.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             // Intelligent Test Runner
-            IntelligentTestRunnerEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled) ?? false;
+            IntelligentTestRunnerEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled) ?? true;
 
             // Tests skipping
             TestsSkippingEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.TestsSkippingEnabled);

@@ -18,7 +18,7 @@ public:
     ILRewriter* GetILRewriter() const;
     ILInstr* GetCurrentILInstr() const;
     void SetILPosition(ILInstr* pILInstr);
-    void Pop() const;
+    ILInstr* Pop() const;
     ILInstr* LoadNull() const;
     void LoadInt64(INT64 value) const;
     void LoadInt32(INT32 value) const;

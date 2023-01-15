@@ -95,6 +95,22 @@ uint64_t ClrEventsParser::GetCurrentTimestamp()
     return OpSysTools::GetHighPrecisionTimestamp();
 }
 
+// TL;DR Deactivate the alignment check in the Undefined Behavior Sanitizers for the ParseGcEvent function
+// because events fields are not aligned in the bitstream sent by the CLR.
+//
+// The UBSAN jobs crashes with this error message:
+//
+// runtime error: reference binding to misaligned address 0x7ffc64aa6442 for type 'uint64_t' (aka 'unsigned long'), which requires 8 byte alignment
+// 0x7ffc64aa6442: note: pointer points here
+//  00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00
+//               ^
+//     #0 0x7f17dc88a39a in ClrEventsParser::ParseGcEvent()
+//     #1 0x7f17dc889f78 in ClrEventsParser::ParseEvent()
+//     #2 0x7f17dc8bd9e4 in CorProfilerCallback::EventPipeEventDelivered()
+//
+#if defined(__clang__) || defined(DD_SANITIZERS)
+__attribute__((no_sanitize("alignment")))
+#endif
 void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
 {
     // look for AllocationTick_V4

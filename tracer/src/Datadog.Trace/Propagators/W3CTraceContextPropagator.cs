@@ -89,6 +89,10 @@ namespace Datadog.Trace.Propagators
 
         public static readonly W3CTraceContextPropagator Instance = new();
 
+        private W3CTraceContextPropagator()
+        {
+        }
+
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
@@ -717,6 +721,12 @@ namespace Datadog.Trace.Propagators
                     }
 
                     break;
+            }
+
+            // remove trailing ","
+            if (sb[sb.Length - 1] == TraceStateHeaderValuesSeparator)
+            {
+                sb.Length--;
             }
 
             return StringBuilderCache.GetStringAndRelease(sb);

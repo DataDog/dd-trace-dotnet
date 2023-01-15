@@ -53,6 +53,7 @@ namespace Datadog.Trace.TestHelpers
             Output = output;
 
             Output.WriteLine($"Platform: {EnvironmentTools.GetPlatform()}");
+            Output.WriteLine($"TargetPlatform: {EnvironmentTools.GetTestTargetPlatform()}");
             Output.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
@@ -125,7 +126,7 @@ namespace Datadog.Trace.TestHelpers
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public Process StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "")
+        public Process StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null)
         {
             // get path to sample app that the profiler will attach to
             var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
@@ -144,7 +145,9 @@ namespace Datadog.Trace.TestHelpers
                 agent,
                 args,
                 aspNetCorePort: aspNetCorePort,
-                processToProfile: executable);
+                processToProfile: executable,
+                enableSecurity: enableSecurity,
+                externalRulesFile: externalRulesFile);
         }
 
         public async Task<bool> TakeMemoryDump(Process process)

@@ -15,7 +15,6 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly WafNative wafNative;
         private readonly DDWAF_RET_CODE returnCode;
         private DdwafResultStruct returnStruct;
-        private bool disposed;
 
         public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, WafNative wafNative, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
@@ -28,11 +27,12 @@ namespace Datadog.Trace.AppSec.Waf
             ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
+            Data = ShouldBeReported ? Marshal.PtrToStringAnsi(returnStruct.Data) : string.Empty;
         }
 
         public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);
 
-        public string Data => Marshal.PtrToStringAnsi(returnStruct.Data);
+        public string Data { get; }
 
         public List<string> Actions { get; }
 
@@ -59,24 +59,6 @@ namespace Datadog.Trace.AppSec.Waf
                 var action = Marshal.PtrToStringAnsi(pointerString);
                 Actions.Add(action);
             }
-        }
-
-        public void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            disposed = true;
-
-            wafNative.ResultFree(ref returnStruct);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
     }
 }
