@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Specialized;
 using System.Web;
 
 #pragma warning disable CS1570
@@ -36,7 +37,7 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
         }
 
         // Extract the query string of the URI and check if the required parameters exist.
-        var query = HttpUtility.ParseQueryString(uri.Query);
+        var query = ParseQueryString(uri.Query);
         commitSha = query["version"];
         if (!IsValidCommitSha(commitSha))
         {
@@ -47,5 +48,24 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
         repositoryUrl = $"https://{uri.Host}/{segments[0]}/_git/{segments[4]}";
 
         return true;
+    }
+
+    private static NameValueCollection ParseQueryString(string queryString)
+    {
+        // We can't use HttpUtility.ParseQueryString because it would mean taking a dependency on System.Web.
+        // Instead, we parse the query string manually by simply splitting on the '&' character,
+        // as in our particular use case, there is no need to decode the values.
+        var query = new NameValueCollection();
+        var pairs = queryString.Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var pair in pairs)
+        {
+            var parts = pair.Split(new[] { '=' }, 2);
+            if (parts.Length == 2)
+            {
+                query.Add(parts[0], parts[1]);
+            }
+        }
+
+        return query;
     }
 }
