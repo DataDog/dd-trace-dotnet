@@ -36,7 +36,7 @@ partial class Build : NukeBuild
                 GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
                 GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
                 {
-                    "tracer/src/Datadog.Trace/Debugger/Instrumentation", 
+                    "tracer/src/Datadog.Trace/Debugger",
                     "tracer/src/Datadog.Tracer.Native", 
                     "tracer/test/Datadog.Trace.Debugger.IntegrationTests",
                     "tracer/test/test-applications/debugger",
