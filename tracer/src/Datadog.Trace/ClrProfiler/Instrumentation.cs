@@ -373,7 +373,7 @@ namespace Datadog.Trace.ClrProfiler
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
                         var tags = GetTags(tracer, rcmSettings);
 
-                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, TraceUtil.NormalizeTag(tracer.Settings.Environment), tracer.Settings.ServiceVersion, tags);
+                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, TraceUtil.NormalizeTag(tracer.Settings.Environment), TraceUtil.NormalizeTag(tracer.Settings.ServiceVersion), tags);
                         // see comment above
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
@@ -397,25 +397,25 @@ namespace Datadog.Trace.ClrProfiler
         {
             var tags = tracer.Settings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
 
-            var environment = tracer.Settings.Environment;
+            var environment = TraceUtil.NormalizeTag(tracer.Settings.Environment);
             if (!string.IsNullOrEmpty(environment))
             {
                 tags.Add($"env:{environment}");
             }
 
-            var serviceVersion = tracer.Settings.ServiceVersion;
+            var serviceVersion = TraceUtil.NormalizeTag(tracer.Settings.ServiceVersion);
             if (!string.IsNullOrEmpty(serviceVersion))
             {
                 tags.Add($"version:{serviceVersion}");
             }
 
-            var tracerVersion = rcmSettings.TracerVersion;
+            var tracerVersion = TraceUtil.NormalizeTag(rcmSettings.TracerVersion);
             if (!string.IsNullOrEmpty(tracerVersion))
             {
                 tags.Add($"tracer_version:{tracerVersion}");
             }
 
-            var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
+            var hostName = TraceUtil.NormalizeTag(PlatformHelpers.HostMetadata.Instance?.Hostname);
             if (!string.IsNullOrEmpty(hostName))
             {
                 tags.Add($"host_name:{hostName}");

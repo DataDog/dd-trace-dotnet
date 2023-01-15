@@ -42,12 +42,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
             }
 
-            Log.Debug(
+            Log.Debug<int, string, int>(
                 "Received {ConfigsAmount} Remote Configuration records for product {Name}, " +
                       "of which {FilteredAmount} matched the predicate.",
-                changedConfigs.Count.ToString(),
+                changedConfigs.Count,
                 Name,
-                (filteredConfigs?.Count ?? 0).ToString());
+                filteredConfigs?.Count ?? 0);
 
             if (filteredConfigs is not null)
             {
