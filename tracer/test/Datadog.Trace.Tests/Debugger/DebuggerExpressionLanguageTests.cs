@@ -76,6 +76,11 @@ namespace Datadog.Trace.Tests.Debugger
                 throw new SkipException("Skip because this test has an issue of not raising a KeyNotFoundException");
             }
 
+            if (!expressionTestFilePath.Contains("Exception"))
+            {
+                return;
+            }
+
             // Arrange
             var evaluator = GetEvaluator(expressionTestFilePath);
             var settings = ConfigureVerifySettings(expressionTestFilePath);

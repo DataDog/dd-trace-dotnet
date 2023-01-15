@@ -26,7 +26,9 @@ internal static class ProbeExpressionParserHelper
 
         MethodInfo GetMethodByReflectionInternal(ReflectionMethodIdentifier methodIdentifier)
         {
-            var method = parametersTypes == null ? methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags) : methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags, null, methodIdentifier.Parameters, null);
+            var method = parametersTypes == null ?
+                             methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags) :
+                             methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags, null, methodIdentifier.Parameters, null);
 
             if (method == null)
             {

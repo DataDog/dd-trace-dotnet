@@ -109,4 +109,14 @@ internal partial class ProbeExpressionParser<T>
                 throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
         }
     }
+
+    private bool IsMicrosoftException(Type type)
+    {
+        var @namespace = type.Namespace;
+        return @namespace != null &&
+               typeof(Exception).IsAssignableFrom(type) &&
+               (@namespace is "System" or "Microsoft" ||
+                @namespace.StartsWith("System.") ||
+                @namespace.StartsWith("Microsoft."));
+    }
 }

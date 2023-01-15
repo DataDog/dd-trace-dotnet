@@ -24,7 +24,7 @@ namespace Datadog.Trace.Debugger.Expressions
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
         /// </summary>
         /// <param name="probe">A probe that can pe log probe or metric probe</param>
-        /// <exception cref="ArgumentOutOfRangeException">If probeType is from unsupported type</exception>
+        /// <exception cref="ArgumentOutOfRangeException">If probe type or probe location is from unsupported type</exception>
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
         internal ProbeProcessor(ProbeDefinition probe)
         {
@@ -41,11 +41,18 @@ namespace Datadog.Trace.Debugger.Expressions
                 _ => throw new ArgumentOutOfRangeException(nameof(probe), probe, "Unsupported probe type")
             };
 
+            var evaluateAt = location switch
+            {
+                ProbeLocation.Method => probe.EvaluateAt,
+                ProbeLocation.Line => EvaluateAt.Entry,
+                _ => throw new ArgumentOutOfRangeException(nameof(location), location, "Unsupported probe location")
+            };
+
             ProbeInfo = new ProbeInfo(
                 probe.Id,
                 probeType,
                 location,
-                probe.EvaluateAt,
+                evaluateAt,
                 // ReSharper disable once PossibleInvalidOperationException
                 Templates: (probe as LogProbe)?.Segments?.Where(seg => seg != null).Select(seg => Convert(seg).Value).ToArray(),
                 Condition: Convert((probe as LogProbe)?.When),

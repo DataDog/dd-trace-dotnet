@@ -18,7 +18,7 @@ public class LineProbeTestDataAttribute : ProbeAttributeBase
                                       string templateStr = null,
                                       bool captureSnapshot = true,
                                       params string[] skipOnFramework)
-        : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, conditionDsl: conditionDsl, evaluateAt: 0, conditionJson: conditionJson, templateDsl: templateDsl, templateJson: templateJson, templateStr: templateStr, captureSnapshot: captureSnapshot)
+        : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, conditionDsl: conditionDsl, evaluateAt: 1, conditionJson: conditionJson, templateDsl: templateDsl, templateJson: templateJson, templateStr: templateStr, captureSnapshot: captureSnapshot)
     {
         LineNumber = lineNumber;
         ColumnNumber = columnNumber;

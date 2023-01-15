@@ -396,14 +396,30 @@ internal partial class ProbeExpressionParser<T>
 
         if (typeof(T) != typeof(string))
         {
-            // let the caller throw the correct assign exception
+            // let the caller throw the correct exception
             return finalExpr;
         }
 
-        // for string, call ToString or return the type name
+        // for string, call ToString when possible, build exception message or return the type name
         if (SupportedTypesService.IsSafeToCallToString(finalExpr.Type))
         {
             finalExpr = Expression.Call(finalExpr, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));
+        }
+        else if (IsMicrosoftException(finalExpr.Type))
+        {
+            var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
+            var typeNameExpression = Expression.Constant(finalExpr.Type.FullName, typeof(string));
+            var ifNull = Expression.Equal(finalExpr, Expression.Constant(null));
+            var exceptionAsString = Expression.Call(
+                stringConcat,
+                Expression.NewArrayInit(
+                    typeof(string),
+                    Expression.Constant(finalExpr.Type.FullName, typeof(string)),
+                    Expression.Constant(Environment.NewLine, typeof(string)),
+                    Expression.Property(finalExpr, nameof(Exception.Message)),
+                    Expression.Constant(Environment.NewLine, typeof(string)),
+                    Expression.Property(finalExpr, nameof(Exception.StackTrace))));
+            return Expression.Condition(ifNull, typeNameExpression, exceptionAsString);
         }
         else
         {
