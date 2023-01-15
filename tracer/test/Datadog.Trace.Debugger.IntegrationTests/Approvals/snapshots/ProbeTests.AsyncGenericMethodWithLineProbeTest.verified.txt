@@ -146,6 +146,6 @@
       "version": "2"
     },
     "message": "AsyncGenericMethodWithLineProbeTest+NestedAsyncGenericStruct`1+<Method>d__2`1.MoveNext(generic=Generic, input=.RunAsync, this=NestedAsyncGenericStruct`1)\r\noutput=NestedAsyncGenericStruct.RunAsync.",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

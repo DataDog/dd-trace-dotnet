@@ -7,6 +7,7 @@
 
 #include "OsSpecificApi.h"
 
+#include "IConfiguration.h"
 #include "StackFramesCollectorBase.h"
 #include "SystemTime.h"
 #include "Windows32BitStackFramesCollector.h"
@@ -16,7 +17,7 @@
 
 namespace OsSpecificApi {
 
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
 {
 #ifdef BIT64
     static_assert(8 * sizeof(void*) == 64);

@@ -12,6 +12,7 @@
 #include "RawAllocationSample.h"
 #include "SumMetric.h"
 
+class IConfiguration;
 class IManagedThreadList;
 class IFrameStore;
 class IThreadsCpuManager;
@@ -55,6 +56,7 @@ private:
     ISampledAllocationsListener* _pListener = nullptr;
     GenericSampler _sampler;
     int32_t _sampleLimit;
+    IConfiguration const* const _pConfiguration;
     std::shared_ptr<CounterMetric> _allocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _allocationsSizeMetric;
     std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;

@@ -89,7 +89,7 @@ internal class BlockingMiddleware
                 context.Response.StatusCode = 404;
             }
 
-            using var result = securityCoordinator.Scan();
+            var result = securityCoordinator.Scan();
             if (result?.ShouldBeReported is true)
             {
                 if (result.ShouldBlock)

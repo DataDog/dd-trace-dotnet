@@ -64,6 +64,7 @@ Configuration::Configuration()
     _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
     _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
     _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, false);
+    _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -242,6 +243,11 @@ std::string const& Configuration::GetApiKey() const
 std::string const& Configuration::GetServiceName() const
 {
     return _serviceName;
+}
+
+bool Configuration::UseBacktrace2() const
+{
+    return _useBacktrace2;
 }
 
 fs::path Configuration::GetApmBaseDirectory()

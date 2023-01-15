@@ -29,6 +29,10 @@ namespace Datadog.Trace.Propagators
 
         public static readonly B3MultipleHeaderContextPropagator Instance = new();
 
+        private B3MultipleHeaderContextPropagator()
+        {
+        }
+
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {

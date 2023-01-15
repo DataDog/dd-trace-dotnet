@@ -57,6 +57,7 @@ public:
     MOCK_METHOD(int32_t, CodeHotspotsThreadsThreshold, (), (const override));
     MOCK_METHOD(bool, IsGarbageCollectionProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsHeapProfilingEnabled, (), (const override));
+    MOCK_METHOD(bool, UseBacktrace2, (), (const override));
 };
 
 class MockExporter : public IExporter

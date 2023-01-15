@@ -3,15 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-// The conditions looks weird, but it seems like _OR_GREATER is not supported yet in all environments
-// We can trim all the additional conditions when this is fixed
 #if NETCOREAPP3_0_OR_GREATER
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -19,20 +12,30 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5ExternalRules : AspNetBase, IDisposable
+    public class AspNetCore5ExternalRules : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCore5ExternalRules(ITestOutputHelper outputHelper)
+        public AspNetCore5ExternalRules(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5ExternalRules))
         {
+            Fixture = fixture;
+            Fixture.SetOutput(outputHelper);
+        }
+
+        protected AspNetCoreTestFixture Fixture { get; }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            Fixture.SetOutput(null);
         }
 
         [SkippableFact]
         [Trait("Category", "ArmUnsupported")]
         public async Task TestSecurity()
         {
-            var enableSecurity = true;
-
-            var agent = await RunOnSelfHosted(enableSecurity, DefaultRuleFile);
+            await Fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
+            SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 

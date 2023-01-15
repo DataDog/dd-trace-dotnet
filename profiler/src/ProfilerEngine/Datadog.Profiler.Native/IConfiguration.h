@@ -52,4 +52,5 @@ public:
     virtual int32_t CodeHotspotsThreadsThreshold() const = 0;
     virtual bool IsGarbageCollectionProfilingEnabled() const = 0;
     virtual bool IsHeapProfilingEnabled() const = 0;
+    virtual bool UseBacktrace2() const = 0;
 };

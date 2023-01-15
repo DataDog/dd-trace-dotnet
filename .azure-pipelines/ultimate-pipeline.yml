@@ -1969,7 +1969,12 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: integration_tests_arm64_debugger
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
+    )
   dependsOn: [package_arm64, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -3213,6 +3218,19 @@ stages:
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
+
+    - powershell: |
+        mkdir -p $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        cp $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)/results_*.json $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+      displayName: Copy the results to benchmarks dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks"
+      displayName: Publish results
+      artifact: execution_time_benchmarks_windows_x64_$(sampleName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
     - task: PowerShell@2
       displayName: Wait 20 seconds to agent flush before finishing pipeline

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -308,6 +309,9 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("version");
                     writer.WriteValue(TracerConstants.AssemblyVersion);
+
+                    writer.WritePropertyName("native_tracer_version");
+                    writer.WriteValue(Instrumentation.GetNativeTracerVersion());
 
                     writer.WritePropertyName("platform");
                     writer.WriteValue(FrameworkDescription.Instance.ProcessArchitecture);

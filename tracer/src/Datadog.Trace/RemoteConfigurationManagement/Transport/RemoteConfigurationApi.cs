@@ -55,6 +55,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var apiRequest = _apiRequestFactory.Create(uri);
 
             var requestContent = JsonConvert.SerializeObject(request);
+            Log.Debug("Sending Remote Configuration Request: {Content}", requestContent);
             var bytes = Encoding.UTF8.GetBytes(requestContent);
             var payload = new ArraySegment<byte>(bytes);
 

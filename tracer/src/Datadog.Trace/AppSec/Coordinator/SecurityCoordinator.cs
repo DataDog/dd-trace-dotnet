@@ -50,7 +50,7 @@ internal readonly partial struct SecurityCoordinator
 
     public IResult? RunWaf(Dictionary<string, object> args)
     {
-        SecurityCoordinator.LogAddressIfDebugEnabled(args);
+        LogAddressIfDebugEnabled(args);
         IResult? result = null;
         try
         {

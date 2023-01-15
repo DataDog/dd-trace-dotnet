@@ -144,6 +144,49 @@ const shared::WSTRING& TracerTokens::GetCallTargetReturnGenericType()
     return managed_profiler_calltarget_returntype_generics;
 }
 
+HRESULT TracerTokens::EnsureBaseCalltargetTokens()
+{
+    HRESULT hr = CallTargetTokens::EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException type ref, might not be available if tracer version is < 2.22
+    if (bubbleUpExceptionTypeRef == mdTypeRefNil)
+    {
+        const ModuleMetadata* module_metadata = GetMetadata();
+        module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef,
+                                                            calltargetbubbleexception_tracer_type_name.c_str(),
+                                                            &bubbleUpExceptionTypeRef);
+    }
+    return hr;
+}
+
+int TracerTokens::GetAdditionalLocalsCount()
+{
+    // 2 for the exception variable caught by the filter CallTargetBubbleUpException for begin and end methods
+    // with a filter, the catch handler needs to load the exception in the eval. stack, it's not available by default anymore
+    return 2;
+}
+
+void TracerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod)
+{
+    // Gets the exception type buffer and size
+    unsigned exTypeRefBuffer;
+    auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
+    
+    // Exception value for calltarget exception filters
+    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&signatureBuffer[signatureOffset], &exTypeRefBuffer, exTypeRefSize);
+    signatureOffset += exTypeRefSize;
+    signatureSize += 1 + exTypeRefSize;
+
+
+    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&signatureBuffer[signatureOffset], &exTypeRefBuffer, exTypeRefSize);
+    signatureOffset += exTypeRefSize;
+    signatureSize += 1 + exTypeRefSize;
+}
 
 /**
  * PUBLIC
@@ -662,9 +705,17 @@ HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef inte
         Logger::Warn("Error creating log exception method spec.");
         return hr;
     }
-
-    *instruction = rewriterWrapper->CallMember(logExceptionMethodSpec, false);
+    ILInstr* call_instruction = rewriterWrapper->CallMember(logExceptionMethodSpec, false);
+    // if we have an exception filter, this instruction can't be the first as the filter needs to pop and load first (with a filter, catch clauses dont automatically get the exception in the eval. stack)
+    if (*instruction == nullptr)
+    {
+        *instruction = call_instruction;
+    }
     return S_OK;
 }
 
+mdTypeRef TracerTokens::GetBubbleUpExceptionTypeRef() const
+{
+    return bubbleUpExceptionTypeRef;
+}
 } // namespace trace

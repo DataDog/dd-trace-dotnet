@@ -15,9 +15,11 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 using CommonTags = Datadog.Trace.Ci.Tags.CommonTags;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
@@ -94,25 +96,25 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             var tags = tracerSettings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
 
-            var environment = tracerSettings.Environment;
+            var environment = TraceUtil.NormalizeTag(tracerSettings.Environment);
             if (!string.IsNullOrEmpty(environment))
             {
                 tags.Add($"env:{environment}");
             }
 
-            var serviceVersion = tracerSettings.ServiceVersion;
+            var serviceVersion = TraceUtil.NormalizeTag(tracerSettings.ServiceVersion);
             if (!string.IsNullOrEmpty(serviceVersion))
             {
                 tags.Add($"version:{serviceVersion}");
             }
 
-            var tracerVersion = rcmSettings.TracerVersion;
+            var tracerVersion = TraceUtil.NormalizeTag(rcmSettings.TracerVersion);
             if (!string.IsNullOrEmpty(tracerVersion))
             {
                 tags.Add($"tracer_version:{tracerVersion}");
             }
 
-            var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
+            var hostName = TraceUtil.NormalizeTag(PlatformHelpers.HostMetadata.Instance?.Hostname);
             if (!string.IsNullOrEmpty(hostName))
             {
                 tags.Add($"host_name:{hostName}");
@@ -269,6 +271,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private void ProcessResponse(GetRcmResponse response, IDictionary<string, Product> products)
         {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                string description = response.TargetFiles.Count > 0 ?
+                                        "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path)) :
+                                        "that is empty.";
+                Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
+            }
+
             var actualConfigPath =
                 response
                    .ClientConfigs
