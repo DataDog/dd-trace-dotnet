@@ -59,6 +59,7 @@ public class ProbesTests : TestHelper
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
+        EnableDebugMode();
     }
 
     public static IEnumerable<object[]> ProbeTests()
@@ -534,6 +535,7 @@ public class ProbesTests : TestHelper
         var configurations = snapshotProbes
             .Select(snapshotProbe => (snapshotProbe, $"{DefinitionPaths.LogProbe}{snapshotProbe.Id}"))
             .Select(dummy => ((object Config, string Id))dummy);
+
 
         agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);
     }
