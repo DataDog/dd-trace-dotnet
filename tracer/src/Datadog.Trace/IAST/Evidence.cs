@@ -31,7 +31,7 @@ internal readonly struct Evidence
             return null;
         }
 
-        var valueParts = new List<ValuePart>();
+        var valueParts = new List<ValuePart>(_ranges.Length);
 
         foreach (var range in _ranges)
         {
