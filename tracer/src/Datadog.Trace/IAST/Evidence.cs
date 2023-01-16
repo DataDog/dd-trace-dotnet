@@ -35,7 +35,10 @@ internal readonly struct Evidence
 
         foreach (var range in _ranges)
         {
-            valueParts.Add(new ValuePart(Value.Substring(range.Start, range.Length), range.Source.GetInternalId()));
+            if (range.Source != null)
+            {
+                valueParts.Add(new ValuePart(Value.Substring(range.Start, range.Length), range.Source.GetInternalId()));
+            }
         }
 
         return valueParts;
