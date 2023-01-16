@@ -25,7 +25,6 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly IntPtr wafHandle;
         private readonly WafNative wafNative;
         private readonly Encoder encoder;
-        private bool disposed = false;
 
         internal Waf(IntPtr wafHandle, WafNative wafNative, Encoder encoder)
         {
@@ -38,6 +37,8 @@ namespace Datadog.Trace.AppSec.Waf
         {
             Dispose(false);
         }
+
+        internal bool Disposed { get; private set; }
 
         public string Version => wafNative.GetVersion();
 
@@ -59,17 +60,22 @@ namespace Datadog.Trace.AppSec.Waf
             var libraryHandle = LibraryLoader.LoadAndGetHandle(libVersion);
             if (libraryHandle == IntPtr.Zero)
             {
-                InitializationResult.FromLibraryLoadedWrong();
+                return InitializationResult.FromLibraryLoadedWrong();
             }
 
             return InitializationResult.From(libraryHandle, rulesJson, rulesFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
-        public IContext? CreateContext(Security security)
+        /// <summary>
+        /// Requires a non disposed waf handle
+        /// </summary>
+        /// <returns>Context object to perform matching using the provided WAF instance</returns>
+        /// <exception cref="Exception">Exception</exception>
+        public IContext? CreateContext()
         {
-            if (disposed)
+            if (Disposed)
             {
-                Log.Warning("Waf instance has been disposed");
+                Log.Warning("Context can't be create as waf instance has been disposed.");
                 return null;
             }
 
@@ -81,7 +87,7 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new Exception(InitContextError);
             }
 
-            return new Context(contextHandle, security);
+            return new Context(contextHandle, this);
         }
 
         public void Dispose()
@@ -90,9 +96,10 @@ namespace Datadog.Trace.AppSec.Waf
             GC.SuppressFinalize(this);
         }
 
+        // Requires a non disposed waf handle
         public bool UpdateRulesData(IEnumerable<RuleData> res)
         {
-            if (disposed)
+            if (Disposed)
             {
                 Log.Warning("Waf instance has been disposed when trying to update rules data");
                 return false;
@@ -110,9 +117,14 @@ namespace Datadog.Trace.AppSec.Waf
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
 
+        /// <summary>
+        /// Requires a non disposed waf handle
+        /// </summary>
+        /// <param name="ruleStatus">whether rules have been toggled</param>
+        /// <returns>whether or not rules were toggled</returns>
         public bool ToggleRules(IDictionary<string, bool> ruleStatus)
         {
-            if (disposed)
+            if (Disposed)
             {
                 Log.Warning("Waf instance has been disposed when trying to toggle rules");
                 return false;
@@ -129,6 +141,7 @@ namespace Datadog.Trace.AppSec.Waf
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
 
+        // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
         public DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => wafNative.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
 
         public void ResultFree(ref DdwafResultStruct retNative) => wafNative.ResultFree(ref retNative);
@@ -173,12 +186,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         private void Dispose(bool disposing)
         {
-            if (disposed)
+            if (Disposed)
             {
                 return;
             }
 
-            disposed = true;
+            Disposed = true;
             wafNative.Destroy(wafHandle);
         }
     }

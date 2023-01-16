@@ -107,7 +107,8 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            using var waf = Waf.Create(string.Empty, string.Empty);
+            var initResult = Waf.Create(string.Empty, string.Empty);
+            using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
             var result = context.Run(args, TimeoutMicroSeconds);

@@ -16,9 +16,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec
 {
@@ -34,6 +31,7 @@ namespace Datadog.Trace.AppSec
         private static object _globalInstanceLock = new();
 
         private readonly SecuritySettings _settings;
+        // todo: make it IWaf? when enable nullable. Having security on doesn't mean waf has init properly
         private IWaf _waf;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
@@ -302,7 +300,7 @@ namespace Datadog.Trace.AppSec
 
         private void UpdateRuleStatus(IDictionary<string, bool> ruleStatus)
         {
-            if (ruleStatus != null && ruleStatus.Count > 0 && !_waf.ToggleRules(ruleStatus))
+            if (ruleStatus is { Count: > 0 } && !(_waf?.ToggleRules(ruleStatus) ?? false))
             {
                 Log.Debug($"_waf.ToggleRules returned false ({ruleStatus.Count} rule status entries)");
             }
@@ -319,13 +317,14 @@ namespace Datadog.Trace.AppSec
                     {
                         var oldWaf = _waf;
                         _waf = _wafInitializationResult.Waf;
-                        oldWaf.Dispose();
+                        Log.Information("disposing old waf");
+                        oldWaf?.Dispose();
                         UpdateRulesData();
                         EnableWaf(fromRemoteConfig);
                     }
                     else
                     {
-                        _waf.Dispose();
+                        _waf?.Dispose();
                         _settings.Enabled = false;
                     }
                 }
@@ -381,7 +380,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal IContext CreateAdditiveContext() => _waf.CreateContext(this);
+        internal IContext CreateAdditiveContext() => _waf?.CreateContext();
 
         private void RunShutdown()
         {

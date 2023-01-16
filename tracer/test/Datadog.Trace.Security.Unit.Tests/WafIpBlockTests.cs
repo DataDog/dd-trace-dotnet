@@ -30,16 +30,16 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestOk()
         {
             var js = JsonSerializer.Create();
-            using var waf = Waf.Create(string.Empty, string.Empty);
+            var initResult = Waf.Create(string.Empty, string.Empty);
+            var waf = initResult.Waf;
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
             var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
-            var res = waf.UpdateRulesData(rulesData!);
+            waf!.Should().NotBeNull();
+            var res = waf!.UpdateRulesData(rulesData!);
             res.Should().BeTrue();
             using var context = waf.CreateContext();
-            var result = context.Run(
-                new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } },
-                WafTests.TimeoutMicroSeconds);
+            var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
             result.ReturnCode.Should().Be(ReturnCode.Match);
             result.Actions.Should().NotBeEmpty();
             result.Actions.Should().Contain("block");
@@ -158,17 +158,18 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestMergeWithWaf()
         {
             var js = JsonSerializer.Create();
-            using var waf = Waf.Create(string.Empty, string.Empty);
+            var initResult = Waf.Create(string.Empty, string.Empty);
+            using var waf = initResult.Waf;
             using var sr = new StreamReader("rule-data1.json");
             using var sr2 = new StreamReader("rule-data2.json");
             using var jsonTextReader = new JsonTextReader(sr);
             using var jsonTextReader2 = new JsonTextReader(sr2);
             var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
             var rulesData2 = js.Deserialize<RuleData[]>(jsonTextReader2);
-            var res = waf.UpdateRulesData(rulesData!.Concat(rulesData2!));
+            var res = waf!.UpdateRulesData(rulesData!.Concat(rulesData2!));
             res.Should().BeTrue();
             using var context = waf.CreateContext();
-            var result = context.Run(
+            var result = context!.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);
             result.ReturnCode.Should().Be(ReturnCode.Match);

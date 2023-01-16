@@ -16,18 +16,18 @@ namespace Datadog.Trace.AppSec.Waf
     internal class Context : IContext
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
-        private readonly IntPtr contextHandle;
-        private readonly Security _security;
+        private readonly IntPtr _contextHandle;
+        private readonly Waf _waf;
         private readonly List<Obj> argCache = new();
         private readonly Stopwatch _stopwatch;
         private object lockObj = new();
         private bool disposed;
         private ulong _totalRuntimeOverRuns;
 
-        public Context(IntPtr contextHandle, Security security)
+        public Context(IntPtr contextHandle, Waf waf)
         {
-            this.contextHandle = contextHandle;
-            _security = security;
+            _contextHandle = contextHandle;
+            _waf = waf;
             _stopwatch = new Stopwatch();
         }
 
@@ -40,11 +40,16 @@ namespace Datadog.Trace.AppSec.Waf
                 ThrowHelper.ThrowException("Can't run WAF when context is disposed");
             }
 
+            if (_waf.Disposed)
+            {
+                Log.Information("Context can't run when waf handle has been disposed. This can happen if remote configuration sends new data requiring a new waf. Very last contexts created are then discarded.");
+                return null;
+            }
+
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
-            var waf = _security.CurrentWaf;
 
-            using var pwArgs = waf.Encoder.Encode(addresses, argCache, applySafetyLimits: true);
+            using var pwArgs = _waf.Encoder.Encode(addresses, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -57,13 +62,13 @@ namespace Datadog.Trace.AppSec.Waf
             DDWAF_RET_CODE code;
             lock (lockObj)
             {
-                code = waf.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+                code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
             }
 
             _stopwatch.Stop();
             _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
             var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
-            waf.ResultFree(ref retNative);
+            _waf.ResultFree(ref retNative);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -90,10 +95,9 @@ namespace Datadog.Trace.AppSec.Waf
                 arg.Dispose();
             }
 
-            var waf = _security.CurrentWaf;
             lock (lockObj)
             {
-                waf.ContextDestroy(contextHandle);
+                _waf.ContextDestroy(_contextHandle);
             }
         }
 

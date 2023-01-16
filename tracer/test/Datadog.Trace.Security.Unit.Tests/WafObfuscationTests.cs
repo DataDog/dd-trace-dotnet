@@ -29,21 +29,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData(true, "pwd", "select pg_sleep", "select pg_sleep")]
         public void AttacksWithSecrets(bool obfuscate, string key, string fullAttack, string highlight)
         {
-            var value = new Dictionary<string, string[]>
-                {
-                    {
-                        key, new[]
-                        {
-                            fullAttack
-                        }
-                    }
-                };
-            var args = new Dictionary<string, object>
-            {
-                {
-                    AddressesConstants.RequestQuery, value
-                }
-            };
+            var value = new Dictionary<string, string[]> { { key, new[] { fullAttack } } };
+            var args = new Dictionary<string, object> { { AddressesConstants.RequestQuery, value } };
             if (!args.ContainsKey(AddressesConstants.RequestUriRaw))
             {
                 args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
@@ -54,11 +41,12 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            using var waf =
-                    obfuscate
-                        ? Waf.Create(SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
-                        : Waf.Create(string.Empty, string.Empty);
-
+            var initResult =
+                obfuscate
+                    ? Waf.Create(SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
+                    : Waf.Create(string.Empty, string.Empty);
+            initResult.Success.Should().BeTrue();
+            using var waf = initResult.Waf;
             var expectedHighlight = obfuscate ? "<Redacted>" : highlight;
             var expectedValue = obfuscate ? "<Redacted>" : fullAttack;
 

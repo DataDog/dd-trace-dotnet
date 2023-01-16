@@ -32,9 +32,10 @@ namespace Datadog.Trace.Security.Unit.Tests
             var attackParts2 = attack2.Split('|');
             attackParts2.Length.Should().Be(3);
 
-            using var waf = Waf.Create(string.Empty, string.Empty);
+            var initresult = Waf.Create(string.Empty, string.Empty);
+            using var waf = initresult.Waf;
             waf.Should().NotBeNull();
-            Dictionary<string, bool> ruleStatus = new Dictionary<string, bool>();
+            var ruleStatus = new Dictionary<string, bool>();
 
             Execute(waf, attackParts1, true);
             Execute(waf, attackParts2, true);

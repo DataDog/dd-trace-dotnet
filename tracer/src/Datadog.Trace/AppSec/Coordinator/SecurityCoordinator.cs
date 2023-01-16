@@ -59,11 +59,17 @@ internal readonly partial struct SecurityCoordinator
             if (additiveContext == null)
             {
                 additiveContext = _security.CreateAdditiveContext();
-                _httpTransport.SetAdditiveContext(additiveContext);
+                if (additiveContext != null)
+                {
+                    _httpTransport.SetAdditiveContext(additiveContext);
+                }
             }
 
-            // run the WAF and execute the results
-            result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+            if (additiveContext != null)
+            {
+                // run the WAF and execute the results
+                result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+            }
         }
         catch (Exception ex) when (ex is not BlockException)
         {

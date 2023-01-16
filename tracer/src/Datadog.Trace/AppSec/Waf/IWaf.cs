@@ -16,7 +16,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public Encoder Encoder { get; }
 
-        public IContext CreateContext(Security security);
+        public IContext CreateContext();
 
         public bool UpdateRulesData(IEnumerable<RuleData> res);
 
