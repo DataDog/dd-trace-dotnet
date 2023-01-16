@@ -27,7 +27,7 @@ internal readonly struct Evidence
 
     private List<ValuePart>? GetValuePartsFromRanges()
     {
-        if (_ranges is null || _ranges.Count() == 0)
+        if (_ranges is null || _ranges.Length == 0)
         {
             return null;
         }
