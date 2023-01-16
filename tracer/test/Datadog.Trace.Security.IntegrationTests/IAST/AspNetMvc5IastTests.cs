@@ -85,7 +85,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         [Trait("LoadFromGAC", "True")]
         [SkippableTheory]
         [InlineData(AddressesConstants.RequestQuery, "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27", null)]
-        public async Task TestSecurity(string test, string url, string body)
+        public async Task TestIastSqlInjectionRequest(string test, string url, string body)
         {
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
