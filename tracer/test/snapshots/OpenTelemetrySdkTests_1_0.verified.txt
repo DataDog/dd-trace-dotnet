@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -23,6 +23,9 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal,
       _dd.p.dm: -0
     },
@@ -50,6 +53,9 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -67,6 +73,9 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -84,6 +93,9 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -101,6 +113,9 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -118,6 +133,9 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_OK,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -138,6 +156,9 @@
       otel.status_code: STATUS_CODE_ERROR,
       otel.status_description: Something went wrong,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -155,6 +176,9 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -163,7 +187,7 @@
     SpanId: Id_10,
     Name: OtherLibrary.internal,
     Resource: Response,
-    Service: OtherLibrary,
+    Service: MyServiceName,
     Type: custom,
     ParentId: Id_2,
     Tags: {
@@ -173,11 +197,10 @@
       otel.library.version: 4.0.0,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
-      runtime-id: Guid_2,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -192,8 +215,11 @@
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
       runtime-id: Guid_2,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal,
       _dd.p.dm: -0
     },
@@ -217,8 +243,11 @@
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_4,
+      otel.trace_id: Guid_5,
       runtime-id: Guid_2,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal,
       _dd.p.dm: -0
     },

@@ -22,7 +22,7 @@ namespace Datadog.Trace.Activity.Handlers
     internal class DefaultActivityHandler : IActivityHandler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultActivityHandler));
-        private static readonly ConcurrentDictionary<string, ActivityMapping> ActivityMappingById = new();
+        internal static readonly ConcurrentDictionary<string, ActivityMapping> ActivityMappingById = new();
         private static readonly IntegrationId IntegrationId = IntegrationId.OpenTelemetry;
 
         public bool ShouldListenTo(string sourceName, string? version)

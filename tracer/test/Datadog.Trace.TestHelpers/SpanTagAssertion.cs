@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,7 +16,7 @@ namespace Datadog.Trace.TestHelpers
         internal SpanTagAssertion(Result result, IDictionary<string, string> tags)
         {
             _result = result;
-            _tags = new Dictionary<string, string>(tags);
+            _tags = tags;
         }
 
         public static void DefaultTagAssertions(SpanTagAssertion s) => s
