@@ -57,7 +57,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             if (rulesObj == null)
             {
                 Log.Error("Waf couldn't initialize properly because of an unusable rule file. If you set the environment variable {appsecrule_env}, check the path and content of the file are correct.", ConfigurationKeys.AppSec.Rules);
-                return InitializationResult.FromLibraryLoadedWrong();
+                return InitializationResult.FromUnusableRuleFile();
             }
 
             DdwafRuleSetInfoStruct ruleSetInfo = default;

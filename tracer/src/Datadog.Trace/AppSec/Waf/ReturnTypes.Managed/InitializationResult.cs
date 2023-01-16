@@ -64,7 +64,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
 
         internal bool Reported { get; set; }
 
-        internal static InitializationResult FromLibraryLoadedWrong() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), unusableRuleFile: true);
+        internal static InitializationResult FromUnusableRuleFile() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), unusableRuleFile: true);
 
         internal static InitializationResult FromExportErrors() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), exportErrors: true);
 

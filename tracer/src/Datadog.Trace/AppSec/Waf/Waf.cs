@@ -60,7 +60,7 @@ namespace Datadog.Trace.AppSec.Waf
             var libraryHandle = LibraryLoader.LoadAndGetHandle(libVersion);
             if (libraryHandle == IntPtr.Zero)
             {
-                return InitializationResult.FromLibraryLoadedWrong();
+                return InitializationResult.FromUnusableRuleFile();
             }
 
             return InitializationResult.From(libraryHandle, rulesJson, rulesFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
@@ -88,12 +88,6 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             return new Context(contextHandle, this);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
 
         // Requires a non disposed waf handle
@@ -146,6 +140,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public void ResultFree(ref DdwafResultStruct retNative) => wafNative.ResultFree(ref retNative);
 
+        // doesnt require a non disposed waf handle, as a result, they can still be disposed on a disposed managed waf instance.
         public void ContextDestroy(IntPtr contextHandle) => wafNative.ContextDestroy(contextHandle);
 
         internal static List<object> MergeRuleData(IEnumerable<RuleData> res)
@@ -182,6 +177,12 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             return finalRuleDatas;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         private void Dispose(bool disposing)
