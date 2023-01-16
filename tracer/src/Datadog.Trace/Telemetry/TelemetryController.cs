@@ -22,6 +22,7 @@ namespace Datadog.Trace.Telemetry
         private readonly ConfigurationTelemetryCollector _configuration;
         private readonly DependencyTelemetryCollector _dependencies;
         private readonly IntegrationTelemetryCollector _integrations;
+        private readonly IMetricsTelemetryCollector _metrics;
         private readonly TelemetryDataBuilder _dataBuilder = new();
         private readonly TelemetryTransportManager _transportManager;
         private readonly TimeSpan _flushInterval;
@@ -36,6 +37,7 @@ namespace Datadog.Trace.Telemetry
             ConfigurationTelemetryCollector configuration,
             DependencyTelemetryCollector dependencies,
             IntegrationTelemetryCollector integrations,
+            IMetricsTelemetryCollector metrics,
             TelemetryTransportManager transportManager,
             TimeSpan flushInterval,
             TimeSpan heartBeatInterval)
@@ -43,6 +45,7 @@ namespace Datadog.Trace.Telemetry
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
             _integrations = integrations ?? throw new ArgumentNullException(nameof(integrations));
+            _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
             _flushInterval = flushInterval;
             _heartBeatInterval = heartBeatInterval;
             _transportManager = transportManager ?? throw new ArgumentNullException(nameof(transportManager));
@@ -299,7 +302,10 @@ namespace Datadog.Trace.Telemetry
             var aggregatedDependencies = newDependencies ?? _transportManager.PreviousDependencies;
             var integrations = _integrations.GetData() ?? _transportManager.PreviousIntegrations;
 
-            var data = _dataBuilder.BuildTelemetryData(application, host, configuration, aggregatedDependencies, integrations, metricData: null, distributionMetricData: null);
+            // TODO: Combine with (add to) previous metrics, stored in _transportManager
+            var metrics = _metrics.GetMetrics();
+
+            var data = _dataBuilder.BuildTelemetryData(application, host, configuration, aggregatedDependencies, integrations, metrics.Metrics, metrics.Distributions);
             if (data.Length == 0)
             {
                 return true;

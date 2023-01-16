@@ -7,6 +7,7 @@ using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Telemetry.Transports;
 
 namespace Datadog.Trace.Telemetry
@@ -39,6 +40,7 @@ namespace Datadog.Trace.Telemetry
                         Configuration,
                         Dependencies,
                         Integrations,
+                        TelemetryMetrics.Instance,
                         transportManager,
                         TelemetryConstants.DefaultFlushInterval,
                         settings.HeartbeatInterval);
