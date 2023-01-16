@@ -27,6 +27,8 @@
 #include <mach-o/getsect.h>
 #endif
 
+using namespace std::chrono_literals;
+
 namespace trace
 {
 
@@ -602,9 +604,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
                                                                                 &promise);
 
             // wait and get the value from the future<ULONG>
-            const auto& numReJITs = future.get();
+            const auto status = future.wait_for(100ms);
 
-            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            if (status == std::future_status::ready)
+            {
+                const auto& numReJITs = future.get();
+                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);    
+            }
+            else
+            {
+                Logger::Warn("Timeout while waiting for the rejit requets to be processed");
+            }            
         }
     }
 
