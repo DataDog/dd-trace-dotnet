@@ -40,6 +40,7 @@ namespace Datadog.Trace.AppSec
         private IDictionary<string, RcmModels.AsmData.Payload> _asmDataConfigs = new Dictionary<string, RcmModels.AsmData.Payload>();
         private IDictionary<string, bool> _ruleStatus = null;
         private string _remoteRulesJson = null;
+        private InitializationResult _wafInitializationResult;
 
         static Security()
         {
@@ -98,11 +99,11 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal bool WafExportsErrorHappened => _waf?.InitializationResult?.ExportErrors ?? false;
+        internal bool WafExportsErrorHappened => _wafInitializationResult?.ExportErrors ?? false;
 
-        internal string WafRuleFileVersion => _waf?.InitializationResult?.RuleFileVersion;
+        internal string WafRuleFileVersion => _wafInitializationResult?.RuleFileVersion;
 
-        internal InitializationResult WafInitResult => _waf?.InitializationResult;
+        internal InitializationResult WafInitResult => _wafInitializationResult;
 
         /// <summary>
         /// Gets <see cref="SecuritySettings"/> instance
@@ -112,6 +113,8 @@ namespace Datadog.Trace.AppSec
         internal SecuritySettings Settings => _settings;
 
         internal string DdlibWafVersion => _waf?.Version;
+
+        internal IWaf CurrentWaf => _waf;
 
         private static void AddAppsecSpecificInstrumentations()
         {
@@ -281,7 +284,7 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            _ruleStatus = new System.Collections.Generic.Dictionary<string, bool>(ruleStatus);
+            _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
             UpdateRuleStatus(_ruleStatus);
         }
 
@@ -290,7 +293,7 @@ namespace Datadog.Trace.AppSec
             bool res = false;
             lock (_asmDataConfigs)
             {
-                res = _waf?.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData)) ?? false;
+                res = _waf?.UpdateRulesData(_asmDataConfigs?.SelectMany(p => p.Value.RulesData)) ?? false;
             }
 
             UpdateRuleStatus(_ruleStatus);
@@ -311,16 +314,18 @@ namespace Datadog.Trace.AppSec
             {
                 if (_settings.Enabled)
                 {
-                    _waf?.Dispose();
-
-                    _waf = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
-                    if (_waf?.InitializedSuccessfully ?? false)
+                    _wafInitializationResult = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
+                    if (_wafInitializationResult.Success)
                     {
+                        var oldWaf = _waf;
+                        _waf = _wafInitializationResult.Waf;
+                        oldWaf.Dispose();
                         UpdateRulesData();
                         EnableWaf(fromRemoteConfig);
                     }
                     else
                     {
+                        _waf.Dispose();
                         _settings.Enabled = false;
                     }
                 }
@@ -376,7 +381,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal IContext CreateAdditiveContext() => _waf.CreateContext();
+        internal IContext CreateAdditiveContext() => _waf.CreateContext(this);
 
         private void RunShutdown()
         {

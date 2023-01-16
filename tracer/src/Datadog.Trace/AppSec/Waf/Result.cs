@@ -12,15 +12,11 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
-        private readonly WafNative wafNative;
         private readonly DDWAF_RET_CODE returnCode;
-        private DdwafResultStruct returnStruct;
 
-        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, WafNative wafNative, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
+        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
-            this.returnStruct = returnStruct;
             this.returnCode = returnCode;
-            this.wafNative = wafNative;
             Actions = new((int)returnStruct.ActionsSize);
             ReadActions(returnStruct);
             ShouldBlock = Actions.Contains("block");

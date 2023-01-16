@@ -23,20 +23,31 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafConfigurator));
 
-        internal static InitializationResult Configure(string rulesFile, WafNative wafNative, Encoder encoder, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal static InitializationResult Configure(string rulesFile, IntPtr libraryHandle, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
+            var wafNative = new WafNative(libraryHandle);
             if (wafNative.ExportErrorHappened)
             {
                 Log.Error("Waf couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
                 return InitializationResult.FromExportErrors();
             }
 
+            var encoder = new Encoder(wafNative);
             var argCache = new List<Obj>();
-            return Configure(GetConfigObj(rulesFile, argCache, encoder), rulesFile, argCache, wafNative, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            var rulesObj = GetConfigObj(rulesFile, argCache, encoder);
+            return Configure(rulesObj, rulesFile, argCache, wafNative, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
-        internal static InitializationResult ConfigureFromRemoteConfig(string rulesJson, WafNative wafNative, Encoder encoder, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal static InitializationResult ConfigureFromRemoteConfig(string rulesJson, IntPtr libraryHandle, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
+            var wafNative = new WafNative(libraryHandle);
+            if (wafNative.ExportErrorHappened)
+            {
+                Log.Error("Waf couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
+                return InitializationResult.FromExportErrors();
+            }
+
+            var encoder = new Encoder(wafNative);
             var argCache = new List<Obj>();
             return Configure(GetConfigObjFromRemoteJson(rulesJson, argCache, encoder), "RemoteConfig", argCache, wafNative, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
@@ -46,7 +57,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             if (rulesObj == null)
             {
                 Log.Error("Waf couldn't initialize properly because of an unusable rule file. If you set the environment variable {appsecrule_env}, check the path and content of the file are correct.", ConfigurationKeys.AppSec.Rules);
-                return InitializationResult.FromUnusableRuleFile();
+                return InitializationResult.FromLibraryLoadedWrong();
             }
 
             DdwafRuleSetInfoStruct ruleSetInfo = default;
@@ -62,13 +73,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 args.ValueRegex = valueRegex;
                 args.FreeWafFunction = wafNative.ObjectFreeFuncPtr;
 
-                var ruleHandle = wafNative.Init(rulesObj.RawPtr, ref args, ref ruleSetInfo);
-                if (ruleHandle == IntPtr.Zero)
+                var wafHandle = wafNative.Init(rulesObj.RawPtr, ref args, ref ruleSetInfo);
+                if (wafHandle == IntPtr.Zero)
                 {
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
                 }
 
-                var initResult = InitializationResult.From(ruleSetInfo, ruleHandle);
+                var initResult = InitializationResult.From(ruleSetInfo, wafHandle, wafNative, encoder);
                 if (initResult.LoadedRules == 0)
                 {
                     Log.Error("DDAS-0003-03: AppSec could not read the rule file {rulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);

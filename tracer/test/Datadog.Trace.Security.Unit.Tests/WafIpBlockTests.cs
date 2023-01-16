@@ -34,7 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
             var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
-            var res = waf.UpdateRules(rulesData!);
+            var res = waf.UpdateRulesData(rulesData!);
             res.Should().BeTrue();
             using var context = waf.CreateContext();
             var result = context.Run(
@@ -165,7 +165,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var jsonTextReader2 = new JsonTextReader(sr2);
             var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
             var rulesData2 = js.Deserialize<RuleData[]>(jsonTextReader2);
-            var res = waf.UpdateRules(rulesData!.Concat(rulesData2!));
+            var res = waf.UpdateRulesData(rulesData!.Concat(rulesData2!));
             res.Should().BeTrue();
             using var context = waf.CreateContext();
             var result = context.Run(

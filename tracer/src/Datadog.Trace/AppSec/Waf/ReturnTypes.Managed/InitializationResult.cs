@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -16,20 +17,31 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitializationResult));
 
-        public InitializationResult(IntPtr? ruleHandle, ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, bool unusableRuleFile = false, bool exportErrors = false)
+        public InitializationResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, bool unusableRuleFile = false, bool exportErrors = false, IntPtr? wafHandle = null, WafNative? wafNative = null, Encoder? encoder = null)
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
-            ErrorMessage = HasErrors ? JsonConvert.SerializeObject(errors) : string.Empty;
             FailedToLoadRules = failedToLoadRules;
             LoadedRules = loadedRules;
             RuleFileVersion = ruleFileVersion;
-            RuleHandle = ruleHandle;
             UnusableRuleFile = unusableRuleFile;
             ExportErrors = exportErrors;
+            ErrorMessage = string.Empty;
+            if (HasErrors)
+            {
+                ErrorMessage = JsonConvert.SerializeObject(errors);
+            }
+
+            if (!unusableRuleFile && !exportErrors)
+            {
+                Waf = new Waf(wafHandle!.Value, wafNative!, encoder!);
+                Success = true;
+            }
         }
 
-        internal IntPtr? RuleHandle { get; }
+        internal bool Success { get; }
+
+        internal Waf? Waf { get; }
 
         internal ushort FailedToLoadRules { get; }
 
@@ -52,16 +64,16 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
 
         internal bool Reported { get; set; }
 
-        internal static InitializationResult FromUnusableRuleFile() => new(null, 0, 0, string.Empty, new Dictionary<string, string[]>(), true);
+        internal static InitializationResult FromLibraryLoadedWrong() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), unusableRuleFile: true);
 
-        internal static InitializationResult FromExportErrors() => new(null, 0, 0, string.Empty, new Dictionary<string, string[]>(), exportErrors: true);
+        internal static InitializationResult FromExportErrors() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), exportErrors: true);
 
-        internal static InitializationResult From(DdwafRuleSetInfoStruct ddwaRuleSetInfoStruct, IntPtr? ruleHandle)
+        internal static InitializationResult From(DdwafRuleSetInfoStruct ddwaRuleSetInfoStruct, IntPtr? wafHandle, WafNative wafNative, Encoder encoder)
         {
             var ddwafObjectStruct = ddwaRuleSetInfoStruct.Errors;
             var errors = Decode(ddwafObjectStruct);
             var ruleFileVersion = Marshal.PtrToStringAnsi(ddwaRuleSetInfoStruct.Version);
-            return new(ruleHandle, ddwaRuleSetInfoStruct.Failed, ddwaRuleSetInfoStruct.Loaded, ruleFileVersion, errors);
+            return new(ddwaRuleSetInfoStruct.Failed, ddwaRuleSetInfoStruct.Loaded, ruleFileVersion!, errors, wafHandle: wafHandle, wafNative: wafNative, encoder: encoder);
         }
 
         private static IReadOnlyDictionary<string, string[]> Decode(DdwafObjectStruct ddwafObjectStruct)
@@ -80,24 +92,42 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
                     for (var i = 0; i < nbEntriesStart; i++)
                     {
                         var arrayPtr = new IntPtr(ddwafObjectStruct.Array.ToInt64() + (structSize * i));
-                        var array = (DdwafObjectStruct)Marshal.PtrToStructure(arrayPtr, typeof(DdwafObjectStruct));
-                        var key = Marshal.PtrToStringAnsi(array.ParameterName, (int)array.ParameterNameLength);
-                        var nbEntries = (int)array.NbEntries;
-                        var ruleIds = new string[nbEntries];
-                        for (var j = 0; j < nbEntries; j++)
+                        var array = (DdwafObjectStruct?)Marshal.PtrToStructure(arrayPtr, typeof(DdwafObjectStruct));
+                        if (array is { } arrayValue)
                         {
-                            var errorPtr = new IntPtr(array.Array.ToInt64() + (structSize * j));
-                            var error = (DdwafObjectStruct)Marshal.PtrToStructure(errorPtr, typeof(DdwafObjectStruct));
-                            var ruleId = Marshal.PtrToStringAnsi(error.Array);
-                            ruleIds[j] = ruleId;
-                        }
+                            var key = Marshal.PtrToStringAnsi(arrayValue.ParameterName, (int)arrayValue.ParameterNameLength);
+                            var nbEntries = (int)arrayValue.NbEntries;
+                            var ruleIds = new string[nbEntries];
+                            for (var j = 0; j < nbEntries; j++)
+                            {
+                                var errorPtr = new IntPtr(arrayValue.Array.ToInt64() + (structSize * j));
+                                var error = (DdwafObjectStruct?)Marshal.PtrToStructure(errorPtr, typeof(DdwafObjectStruct));
+                                var ruleId = Marshal.PtrToStringAnsi(error!.Value.Array);
+                                ruleIds[j] = ruleId!;
+                            }
 
-                        errorsDic.Add(key, ruleIds);
+                            errorsDic.Add(key, ruleIds);
+                        }
                     }
                 }
             }
 
             return errorsDic;
+        }
+
+        public static InitializationResult From(IntPtr libraryHandle, string? rulesJson, string? rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        {
+            InitializationResult initializationResult;
+            if (!string.IsNullOrEmpty(rulesJson))
+            {
+                initializationResult = Initialization.WafConfigurator.ConfigureFromRemoteConfig(rulesJson, libraryHandle, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            }
+            else
+            {
+                initializationResult = Initialization.WafConfigurator.Configure(rulesFile, libraryHandle, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            }
+
+            return initializationResult;
         }
     }
 }
