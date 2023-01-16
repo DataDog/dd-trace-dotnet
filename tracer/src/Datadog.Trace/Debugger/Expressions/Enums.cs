@@ -85,7 +85,6 @@ internal static class Enums
     {
         return state is MethodState.EndLine
                    or MethodState.EndLineAsync
-                   or MethodState.EntryAsync
                    or MethodState.EntryEnd;
     }
 
