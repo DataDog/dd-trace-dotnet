@@ -75,7 +75,7 @@ namespace Datadog.Trace.AppSec.Waf
         {
             if (Disposed)
             {
-                Log.Warning("Context can't be create as waf instance has been disposed.");
+                Log.Warning("Context can't be created as waf instance has been disposed.");
                 return null;
             }
 
