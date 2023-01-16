@@ -24,7 +24,7 @@ internal class IastModule
 
     public static Scope? OnSqlQuery(string query, IntegrationId integrationId, Iast iast)
     {
-        return GetScope(Tracer.Instance, query, integrationId, VulnerabilityType.SqlInjection, OperationNameSqlInjection, iast, true);
+        return GetScope(query, integrationId, VulnerabilityType.SqlInjection, OperationNameSqlInjection, iast, true);
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
@@ -36,7 +36,7 @@ internal class IastModule
             return null;
         }
 
-        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher, iast);
+        return GetScope(algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher, iast);
     }
 
     public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
@@ -46,11 +46,12 @@ internal class IastModule
             return null;
         }
 
-        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash, iast);
+        return GetScope(algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash, iast);
     }
 
-    private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast, bool taintedFromEvidenceRequired = false)
+    private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast, bool taintedFromEvidenceRequired = false)
     {
+        var tracer = Tracer.Instance;
         if (!iast.Settings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
