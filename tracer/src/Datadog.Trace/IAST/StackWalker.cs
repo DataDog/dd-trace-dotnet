@@ -16,15 +16,20 @@ internal static class StackWalker
     public static readonly string[] AssemblyNamesToSkip =
     {
         "Datadog.Trace",
+        "Microsoft.Data.SqlClient",
+        "Microsoft.Data.Sqlite",
+        "MySql.Data",
+        "MySqlConnector",
+        "Npgsql",
+        "Oracle.DataAccess",
+        "Oracle.ManagedDataAccess",
+        "System.Data",
         "System.Security.Cryptography",
-        "System.Security.Cryptography.Primitives",
         "System.Security.Cryptography.Algorithms",
         "System.Security.Cryptography.Csp",
+        "System.Security.Cryptography.Primitives",
+        "System.Data.SqlClient",
         "System.Data.SQLite",
-        "MySql.Data",
-        "Npgsql",
-        "Oracle.ManagedDataAccess",
-        "System.Data"
     };
 
     private const int DefaultSkipFrames = 2;
