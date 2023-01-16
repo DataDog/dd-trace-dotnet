@@ -613,7 +613,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             }
             else
             {
-                Logger::Warn("Timeout while waiting for the rejit requets to be processed");
+                Logger::Warn("Timeout while waiting for the rejit requests to be processed");
             }            
         }
     }
