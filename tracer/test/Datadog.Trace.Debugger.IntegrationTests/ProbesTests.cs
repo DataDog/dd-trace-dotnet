@@ -536,7 +536,6 @@ public class ProbesTests : TestHelper
             .Select(snapshotProbe => (snapshotProbe, $"{DefinitionPaths.LogProbe}{snapshotProbe.Id}"))
             .Select(dummy => ((object Config, string Id))dummy);
 
-
         agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);
     }
 }
