@@ -492,6 +492,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void CaptureBeginLine<T>(ref CaptureInfo<T> info)
         {
             StartLines(info.LineCaptureInfo.LineNumber);
+            CaptureStaticFields(ref info);
         }
 
         internal void CaptureEndLine<TTarget>(ref CaptureInfo<TTarget> info)
@@ -520,7 +521,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureAsyncMethodLocals(info.AsyncCaptureInfo.HoistedLocals, info.AsyncCaptureInfo.MoveNextInvocationTarget);
             CaptureInstance(info.AsyncCaptureInfo.KickoffInvocationTarget, info.AsyncCaptureInfo.KickoffInvocationTargetType);
             CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
-            CaptureStaticFields(ref info);
             EndReturn(info.HasLocalOrArgument.Value);
         }
 
