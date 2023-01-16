@@ -24,7 +24,7 @@ internal class IastModule
 
     public static Scope? OnSqlQuery(string query, IntegrationId integrationId, Iast iast)
     {
-        return GetScope(Tracer.Instance, query, integrationId, VulnerabilityType.SqlInjection, OperationNameSqlInjection, iast, true);
+        return GetScope(query, integrationId, VulnerabilityType.SqlInjection, OperationNameSqlInjection, iast, true);
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
