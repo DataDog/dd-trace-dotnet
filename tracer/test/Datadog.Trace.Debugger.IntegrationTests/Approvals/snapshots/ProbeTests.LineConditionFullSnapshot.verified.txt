@@ -24,6 +24,16 @@
                   "type": "Double",
                   "value": "3"
                 }
+              },
+              "staticFields": {
+                "Dsl": {
+                  "type": "String",
+                  "value": "{\r\n  \"dsl\": \"local > arg\"\r\n}"
+                },
+                "Json": {
+                  "type": "String",
+                  "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
+                }
               }
             }
           }

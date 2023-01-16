@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "ddsource": "dd_debugger",
     "debugger": {
@@ -9,22 +9,6 @@
           "type": "NO_TYPE"
         },
         "probeId": "22df6346-f993-1027-bd1a-f25f3a06ca56",
-        "status": "ERROR"
-      }
-    },
-    "message": "Error installing probe 1828a3f0-e94b-eb91-81e3-12bcf19ac41a.",
-    "service": "probes"
-  },
-  {
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "diagnostics": {
-        "exception": {
-          "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
-          "stacktrace": null,
-          "type": "NO_TYPE"
-        },
-        "probeId": "31d232fd-e292-63a1-cfc5-f0e71d98afd1",
         "status": "ERROR"
       }
     },
@@ -40,11 +24,27 @@
           "stacktrace": null,
           "type": "NO_TYPE"
         },
+        "probeId": "31d232fd-e292-63a1-cfc5-f0e71d98afd1",
+        "status": "ERROR"
+      }
+    },
+    "message": "Error installing probe 31d232fd-e292-63a1-cfc5-f0e71d98afd1.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": {
+          "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
+          "stacktrace": null,
+          "type": "NO_TYPE"
+        },
         "probeId": "35543785-ac9a-85ea-44af-13938dff3136",
         "status": "ERROR"
       }
     },
-    "message": "Error installing probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
+    "message": "Error installing probe 35543785-ac9a-85ea-44af-13938dff3136.",
     "service": "probes"
   },
   {
@@ -60,7 +60,7 @@
         "status": "ERROR"
       }
     },
-    "message": "Error installing probe 35543785-ac9a-85ea-44af-13938dff3136.",
+    "message": "Error installing probe 3c5a4d30-f652-b355-51d6-9589d1d290b4.",
     "service": "probes"
   },
   {
@@ -76,7 +76,7 @@
         "status": "ERROR"
       }
     },
-    "message": "Error installing probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
+    "message": "Error installing probe b1fd073e-cd92-947d-4b6b-d9bd0380b1f2.",
     "service": "probes"
   },
   {
@@ -116,7 +116,7 @@
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe 23827d5e-fc78-6898-4039-dec54409f8c4.",
+    "message": "Installed probe 1828a3f0-e94b-eb91-81e3-12bcf19ac41a.",
     "service": "probes"
   },
   {
@@ -128,7 +128,7 @@
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe 31d232fd-e292-63a1-cfc5-f0e71d98afd1.",
+    "message": "Installed probe 23827d5e-fc78-6898-4039-dec54409f8c4.",
     "service": "probes"
   },
   {
@@ -140,7 +140,7 @@
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe 3c5a4d30-f652-b355-51d6-9589d1d290b4.",
+    "message": "Installed probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
     "service": "probes"
   },
   {
@@ -152,7 +152,7 @@
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe 86a95ec1-5bda-bd57-3f8e-e610398f9334.",
+    "message": "Installed probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
     "service": "probes"
   },
   {
@@ -164,7 +164,7 @@
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe a48bde4f-873f-cac7-08f6-3404c6ceec6d.",
+    "message": "Installed probe 86a95ec1-5bda-bd57-3f8e-e610398f9334.",
     "service": "probes"
   },
   {
@@ -176,7 +176,7 @@
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe b16773f7-ded8-a522-43ce-b51d18f9205e.",
+    "message": "Installed probe a48bde4f-873f-cac7-08f6-3404c6ceec6d.",
     "service": "probes"
   },
   {
@@ -188,7 +188,7 @@
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe b1fd073e-cd92-947d-4b6b-d9bd0380b1f2.",
+    "message": "Installed probe b16773f7-ded8-a522-43ce-b51d18f9205e.",
     "service": "probes"
   },
   {
