@@ -233,7 +233,13 @@ namespace Datadog.Trace.Tests.Debugger
                 builder.AppendLine($"{string.Join(Environment.NewLine, evaluationResult.Errors)}");
             }
 
-            return builder.ToString();
+            return Sanitize(builder).ToString();
+        }
+
+        private StringBuilder Sanitize(StringBuilder builder)
+        {
+            return builder.Replace("\r\nParameter name: propertyOrFieldName ", " ").
+                           Replace(" (Parameter 'propertyOrFieldName') ", " ");
         }
 
         internal struct TestStruct
