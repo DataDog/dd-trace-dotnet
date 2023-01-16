@@ -7,6 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -147,6 +148,28 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
         }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastSqlInjectionRequest()
+        {
+            var filename = IastEnabled ? "Iast.SqlInjection.AspNetCore5.IastEnabled" : "Iast.SqlInjection.AspNetCore5.IastDisabled";
+            var url = "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27";
+            IncludeAllHttpSpans = true;
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+            settings.AddRegexScrubber(ClientIp, string.Empty);
+            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
+            settings.AddRegexScrubber(HashRegex, string.Empty);
+            await VerifyHelper.VerifySpans(spansFiltered, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
     }
 
     public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
@@ -190,31 +213,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
             await Fixture.TryStartApp(this, enableSecurity: false);
             SetHttpPort(Fixture.HttpPort);
-        }
-
-        [SkippableTheory]
-        [InlineData(true)]
-        [InlineData(false)]
-        [Trait("Category", "ArmUnsupported")]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastSqlInjectionRequest(bool enableIast)
-        {
-            var filename = enableIast ? "Iast.SqlInjection.AspNetCore5.IastEnabled" : "Iast.SqlInjection.AspNetCore5.IastDisabled";
-            var url = "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27";
-            EnableIast(enableIast);
-            IncludeAllHttpSpans = true;
-            var agent = await RunOnSelfHosted(enableSecurity: false);
-            var spans = await SendRequestsAsync(agent, new string[] { url });
-            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-            settings.AddRegexScrubber(ClientIp, string.Empty);
-            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
-            await VerifyHelper.VerifySpans(spansFiltered, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
         }
 
         protected async Task TestWeakHashing(string filename, MockTracerAgent agent)
