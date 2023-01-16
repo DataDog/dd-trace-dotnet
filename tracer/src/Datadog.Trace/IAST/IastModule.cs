@@ -67,9 +67,13 @@ internal class IastModule
         }
 
         TaintedObject? tainted = null;
-        if (taintedFromEvidenceRequired && ((tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue)) == null))
+        if (taintedFromEvidenceRequired)
         {
-            return null;
+            tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue);
+            if (tainted is null)
+            {
+                return null;
+            }
         }
 
         if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
