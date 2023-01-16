@@ -29,21 +29,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.IsOpenTelemetry(excludeTags: new HashSet<string>
-            {
-                "attribute-string",
-                "attribute-int",
-                "attribute-bool",
-                "attribute-double",
-                "attribute-stringArray",
-                "attribute-stringArrayEmpty",
-                "attribute-intArray",
-                "attribute-intArrayEmpty",
-                "attribute-boolArray",
-                "attribute-boolArrayEmpty",
-                "attribute-doubleArray",
-                "attribute-doubleArrayEmpty",
-            });
+            span.IsOpenTelemetry(
+                resources: new HashSet<string>
+                {
+                    "service.instance.id",
+                    "service.name",
+                    "service.version"
+                },
+                excludeTags: new HashSet<string>
+                {
+                    "attribute-string",
+                    "attribute-int",
+                    "attribute-bool",
+                    "attribute-double",
+                    "attribute-stringArray",
+                    "attribute-stringArrayEmpty",
+                    "attribute-intArray",
+                    "attribute-intArrayEmpty",
+                    "attribute-boolArray",
+                    "attribute-boolArrayEmpty",
+                    "attribute-doubleArray",
+                    "attribute-doubleArrayEmpty",
+                });
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -62,12 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-
-                var myServiceNameSpans = spans.Where(s => s.Service == "MyServiceName");
-                var otherLibrarySpans = spans.Where(s => s.Service != "MyServiceName");
-
-                ValidateIntegrationSpans(myServiceNameSpans, expectedServiceName: "MyServiceName");
-                ValidateIntegrationSpans(otherLibrarySpans, expectedServiceName: "OtherLibrary");
+                ValidateIntegrationSpans(spans, expectedServiceName: "MyServiceName");
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
