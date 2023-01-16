@@ -9,6 +9,7 @@ using System.Diagnostics;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.dnlib.Threading;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -21,6 +22,7 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly Encoder encoder;
         private readonly List<Obj> argCache = new();
         private readonly Stopwatch _stopwatch;
+        private object lockObj = new object();
         private bool disposed;
         private ulong _totalRuntimeOverRuns;
 
@@ -53,7 +55,12 @@ namespace Datadog.Trace.AppSec.Waf
 
             var rawArgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
-            var code = wafNative.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+            DDWAF_RET_CODE code;
+            lock (lockObj)
+            {
+                code = wafNative.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+            }
+
             _stopwatch.Stop();
             _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
             var result = new Result(retNative, code, wafNative, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
@@ -84,7 +91,10 @@ namespace Datadog.Trace.AppSec.Waf
                 arg.Dispose();
             }
 
-            wafNative.ContextDestroy(contextHandle);
+            lock (lockObj)
+            {
+                wafNative.ContextDestroy(contextHandle);
+            }
         }
 
         public void Dispose()

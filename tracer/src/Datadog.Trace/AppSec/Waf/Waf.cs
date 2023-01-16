@@ -122,6 +122,7 @@ namespace Datadog.Trace.AppSec.Waf
                 return false;
             }
 
+            ruleStatus.Add("test-dummy-rule", true);
             using var encoded = encoder.Encode(ruleStatus);
             var ret = wafNative.ToggleRules(ruleHandle.Value, encoded.RawPtr);
             Log.Information("{number} rule status have been updated and waf status is {status}", ruleStatus.Count, ret);

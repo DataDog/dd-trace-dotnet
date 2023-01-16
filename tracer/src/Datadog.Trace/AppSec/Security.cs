@@ -281,7 +281,7 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
+            _ruleStatus = new System.Collections.Generic.Dictionary<string, bool>(ruleStatus);
             UpdateRuleStatus(_ruleStatus);
         }
 
