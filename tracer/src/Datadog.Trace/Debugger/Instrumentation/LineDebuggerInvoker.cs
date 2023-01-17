@@ -147,6 +147,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
+                if (!ProbeRateLimiter.Instance.Sample(probeId))
+                {
+                    return CreateInvalidatedLineDebuggerState();
+                }
+
                 if (!MethodMetadataProvider.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
                 {
                     Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaId = {methodMetadataIndex}");

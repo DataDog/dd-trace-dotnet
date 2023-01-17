@@ -111,6 +111,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return AsyncContext.Value;
             }
 
+            if (!ProbeRateLimiter.Instance.Sample(probeId))
+            {
+                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+            }
+
             isReEntryToMoveNext = true; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
 
             var stateMachineType = instance.GetType();

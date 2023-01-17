@@ -124,6 +124,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
 
+                if (!ProbeRateLimiter.Instance.Sample(probeId))
+                {
+                    return CreateInvalidatedAsyncLineDebuggerState();
+                }
+
                 // Assess if we have metadata associated with the given index
                 if (!MethodMetadataProvider.IsIndexExists(methodMetadataIndex))
                 {

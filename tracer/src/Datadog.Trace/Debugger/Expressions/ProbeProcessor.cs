@@ -90,12 +90,6 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal bool Process<TCapture>(ref CaptureInfo<TCapture> info, DebuggerSnapshotCreator snapshotCreator)
         {
-            if (ShouldCheckRateLimit(snapshotCreator) &&
-                !ProbeRateLimiter.Instance.Sample(ProbeInfo.ProbeId))
-            {
-                return false;
-            }
-
             ExpressionEvaluationResult evaluationResult = default;
             try
             {
@@ -280,18 +274,8 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        private bool ShouldCheckRateLimit(DebuggerSnapshotCreator snapshotCreator)
-        {
-            return (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Stop || (!HasCondition() && ProbeInfo.IsFullSnapshot));
-        }
-
         private bool ProcessCapture<TCapture>(ref CaptureInfo<TCapture> info, ref DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
         {
-            if (!ProbeRateLimiter.Instance.Sample(ProbeInfo.ProbeId))
-            {
-                return false;
-            }
-
             switch (ProbeInfo.ProbeLocation)
             {
                 case ProbeLocation.Method:
