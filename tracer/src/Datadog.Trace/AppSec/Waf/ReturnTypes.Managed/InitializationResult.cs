@@ -17,7 +17,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitializationResult));
 
-        public InitializationResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, bool unusableRuleFile = false, bool exportErrors = false, IntPtr? wafHandle = null)
+        public InitializationResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, bool unusableRuleFile = false, IntPtr? wafHandle = null)
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
@@ -25,14 +25,13 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
             LoadedRules = loadedRules;
             RuleFileVersion = ruleFileVersion;
             UnusableRuleFile = unusableRuleFile;
-            ExportErrors = exportErrors;
             ErrorMessage = string.Empty;
             if (HasErrors)
             {
                 ErrorMessage = JsonConvert.SerializeObject(errors);
             }
 
-            if (!unusableRuleFile && !exportErrors)
+            if (!unusableRuleFile && wafHandle.HasValue && wafHandle.Value != IntPtr.Zero)
             {
                 Waf = new Waf(wafHandle!.Value);
                 Success = true;
@@ -58,15 +57,11 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
 
         internal bool UnusableRuleFile { get; }
 
-        internal bool ExportErrors { get; }
-
         internal string RuleFileVersion { get; }
 
         internal bool Reported { get; set; }
 
         internal static InitializationResult FromUnusableRuleFile() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), unusableRuleFile: true);
-
-        internal static InitializationResult FromExportErrors() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), exportErrors: true);
 
         internal static InitializationResult From(DdwafRuleSetInfoStruct ddwaRuleSetInfoStruct, IntPtr? wafHandle)
         {
@@ -113,21 +108,6 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
             }
 
             return errorsDic;
-        }
-
-        public static InitializationResult From(IntPtr libraryHandle, string? rulesJson, string? rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
-        {
-            InitializationResult initializationResult;
-            if (!string.IsNullOrEmpty(rulesJson))
-            {
-                initializationResult = Initialization.WafConfigurator.ConfigureFromRemoteConfig(rulesJson, libraryHandle, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
-            }
-            else
-            {
-                initializationResult = Initialization.WafConfigurator.Configure(rulesFile, libraryHandle, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
-            }
-
-            return initializationResult;
         }
     }
 }

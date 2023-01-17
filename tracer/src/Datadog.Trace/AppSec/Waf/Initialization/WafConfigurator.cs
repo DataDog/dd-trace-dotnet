@@ -23,29 +23,15 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafConfigurator));
 
-        internal static InitializationResult Configure(string rulesFile, IntPtr libraryHandle, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal static InitializationResult Configure(string rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
-            WafLibraryInvoker.InitializeExports(libraryHandle);
-            if (WafLibraryInvoker.ExportErrorHappened)
-            {
-                Log.Error("Waf couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
-                return InitializationResult.FromExportErrors();
-            }
-
             var argCache = new List<Obj>();
             var rulesObj = GetConfigObj(rulesFile, argCache);
             return Configure(rulesObj, rulesFile, argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
-        internal static InitializationResult ConfigureFromRemoteConfig(string rulesJson, IntPtr libraryHandle, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal static InitializationResult ConfigureFromRemoteConfig(string rulesJson, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
-            WafLibraryInvoker.InitializeExports(libraryHandle);
-            if (WafLibraryInvoker.ExportErrorHappened)
-            {
-                Log.Error("Waf couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
-                return InitializationResult.FromExportErrors();
-            }
-
             var argCache = new List<Obj>();
             return Configure(GetConfigObjFromRemoteJson(rulesJson, argCache), "RemoteConfig", argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }

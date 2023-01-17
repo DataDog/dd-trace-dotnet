@@ -24,9 +24,7 @@ public class EncoderUnitTests
     [InlineData(WafConstants.MaxStringLength + 1, WafConstants.MaxStringLength)]
     public void TestStringLength(int length, int expectedLength)
     {
-        var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        WafLibraryInvoker.InitializeExports(libraryHandle);
-
+        WafLibraryInvoker.Initialize();
         var l = new List<Obj>();
 
         var target = new string('c', length);
@@ -46,8 +44,7 @@ public class EncoderUnitTests
     [InlineData(WafConstants.MaxContainerSize + 1, WafConstants.MaxContainerSize)]
     public void TestArrayLength(int length, int expectedLength)
     {
-        var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        WafLibraryInvoker.InitializeExports(libraryHandle);
+        WafLibraryInvoker.Initialize();
 
         var l = new List<Obj>();
 
@@ -68,9 +65,7 @@ public class EncoderUnitTests
     [InlineData(WafConstants.MaxContainerSize + 1, WafConstants.MaxContainerSize)]
     public void TestMapLength(int length, int expectedLength)
     {
-        var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        WafLibraryInvoker.InitializeExports(libraryHandle);
-
+        WafLibraryInvoker.Initialize();
         var l = new List<Obj>();
 
         var target = Enumerable.Range(0, length).ToDictionary(x => x.ToString(), _ => (object)"test");
@@ -90,8 +85,8 @@ public class EncoderUnitTests
     [InlineData(WafConstants.MaxContainerDepth + 1, WafConstants.MaxContainerDepth)]
     public void TestNestedListDepth(int length, int expectedLength)
     {
-        var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        WafLibraryInvoker.InitializeExports(libraryHandle);
+        WafLibraryInvoker.Initialize();
+
         var l = new List<Obj>();
 
         var target = MakeNestedList(length);
@@ -111,8 +106,7 @@ public class EncoderUnitTests
     [InlineData(WafConstants.MaxContainerDepth + 1, WafConstants.MaxContainerDepth)]
     public void TestMapListDepth(int length, int expectedLength)
     {
-        var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        WafLibraryInvoker.InitializeExports(libraryHandle);
+        WafLibraryInvoker.Initialize();
 
         var l = new List<Obj>();
 

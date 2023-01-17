@@ -11,6 +11,8 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.Initialization;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
@@ -31,6 +33,8 @@ namespace Datadog.Trace.AppSec
         private static object _globalInstanceLock = new();
 
         private readonly SecuritySettings _settings;
+        private readonly LibraryInitializationResult _libraryInitializationResult;
+
         // todo: make it IWaf? when enable nullable. Having security on doesn't mean waf has init properly
         private IWaf _waf;
         private AppSecRateLimiter _rateLimiter;
@@ -59,19 +63,27 @@ namespace Datadog.Trace.AppSec
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
                 _waf = waf;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-
-                if (_settings.CanBeEnabled)
+                _libraryInitializationResult = WafLibraryInvoker.Initialize();
+                if (!_libraryInitializationResult.Success)
                 {
-                    UpdateStatus();
-                    AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
-                    AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged += AsmDDProductConfigChanged;
+                    _settings.Enabled = false;
+                    // logs happened during the process of initializing
                 }
                 else
                 {
-                    Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
-                }
+                    if (_settings.CanBeEnabled)
+                    {
+                        UpdateStatus();
+                        AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
+                        AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged += AsmDDProductConfigChanged;
+                    }
+                    else
+                    {
+                        Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
+                    }
 
-                SetRemoteConfigCapabilites();
+                    SetRemoteConfigCapabilites();
+                }
             }
             catch (Exception ex)
             {
@@ -97,7 +109,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal bool WafExportsErrorHappened => _wafInitializationResult?.ExportErrors ?? false;
+        internal bool WafExportsErrorHappened => _libraryInitializationResult?.ExportErrorHappened ?? false;
 
         internal string WafRuleFileVersion => _wafInitializationResult?.RuleFileVersion;
 

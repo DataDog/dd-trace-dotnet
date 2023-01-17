@@ -5,8 +5,11 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.AppSec.Waf.Initialization;
+using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -109,11 +112,33 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <summary>
         /// Initializes static members of the <see cref="WafLibraryInvoker"/> class.
         /// </summary>
-        /// <param name="libraryHandle">Can't be a null pointer. Waf library must be loaded by now</param>
-        internal static void InitializeExports(IntPtr libraryHandle)
+        /// <param name="libVersion">can be null, means use a specific version in the name of the loaded file </param>
+        internal static LibraryInitializationResult Initialize(string libVersion = null)
         {
-            // in case we go twice in it ( we shouldnt) / for unit tests
+            // normally this call should happen only once per app domain but.. for the sake of unit tests, being able to replay
             ExportErrorHappened = false;
+            var fd = FrameworkDescription.Instance;
+
+            var libName = LibraryLocationHelper.GetLibName(fd, libVersion);
+            var runtimeIds = LibraryLocationHelper.GetRuntimeIds(fd);
+
+            // libName or runtimeIds being null means platform is not supported
+            // no point attempting to load the library
+            IntPtr libraryHandle;
+            if (libName != null && runtimeIds != null)
+            {
+                var paths = LibraryLocationHelper.GetDatadogNativeFolders(fd, runtimeIds);
+                if (LibraryLocationHelper.TryLoadLibraryFromPaths(libName, paths, out libraryHandle))
+                {
+                    return LibraryInitializationResult.FromLibraryLoadError();
+                }
+            }
+            else
+            {
+                Log.Error("Lib name or runtime ids is null, current platform {fd} is likely not supported", fd.ToString());
+                return LibraryInitializationResult.FromPlatformNotSupported();
+            }
+
             _initField = GetDelegateForNativeFunction<InitDelegate>(libraryHandle, "ddwaf_init");
             _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(libraryHandle, "ddwaf_context_init");
             _runField = GetDelegateForNativeFunction<RunDelegate>(libraryHandle, "ddwaf_run");
@@ -143,6 +168,14 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             // set the log level and setup the logger
             var level = GlobalSettings.Instance.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
             setupLogging(_setupLogCallbackField, level);
+
+            if (ExportErrorHappened)
+            {
+                Log.Error("Waf library couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
+                return LibraryInitializationResult.FromExportErrorHappened();
+            }
+
+            return LibraryInitializationResult.FromSuccess();
         }
 
         internal static string GetVersion()
@@ -269,6 +302,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         }
 
         private static T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
-            where T : Delegate => GetDelegateForNativeFunction<T>(handle, functionName, out var _);
+            where T : Delegate => GetDelegateForNativeFunction<T>(handle, functionName, out _);
     }
 }

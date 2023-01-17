@@ -33,8 +33,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void LetsFuzz()
         {
             // if we don't throw any exceptions and generate a valid object the the test is successful
-            var libraryHandle = LibraryLoader.LoadAndGetHandle();
-            WafLibraryInvoker.InitializeExports(libraryHandle);
+            WafLibraryInvoker.Initialize();
             var jsonGenerator = new JsonGenerator();
 
             var errorOccured = false;

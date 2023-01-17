@@ -39,7 +39,7 @@ namespace Datadog.Trace.AppSec.Waf
         public string Version => WafLibraryInvoker.GetVersion();
 
         /// <summary>
-        /// Loads library and configure it with the ruleset file
+        /// Create a new waf object configured with the ruleset file
         /// </summary>
         /// <param name="obfuscationParameterKeyRegex">the regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious,
         /// empty string means use default embedded in the WAF</param>
@@ -47,17 +47,20 @@ namespace Datadog.Trace.AppSec.Waf
         /// empty string means use default embedded in the WAF</param>
         /// <param name="rulesFile">can be null, means use rules embedded in the manifest </param>
         /// <param name="rulesJson">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
-        /// <param name="libVersion">can be null, means use a specific version in the name of the loaded file </param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static InitializationResult Create(string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? rulesFile = null, string? rulesJson = null, string? libVersion = null)
+        internal static InitializationResult Create(string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? rulesFile = null, string? rulesJson = null)
         {
-            var libraryHandle = LibraryLoader.LoadAndGetHandle(libVersion);
-            if (libraryHandle == IntPtr.Zero)
+            InitializationResult initializationResult;
+            if (!string.IsNullOrEmpty(rulesJson))
             {
-                return InitializationResult.FromUnusableRuleFile();
+                initializationResult = WafConfigurator.ConfigureFromRemoteConfig(rulesJson, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            }
+            else
+            {
+                initializationResult = WafConfigurator.Configure(rulesFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
 
-            return InitializationResult.From(libraryHandle, rulesJson, rulesFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            return initializationResult;
         }
 
         /// <summary>
