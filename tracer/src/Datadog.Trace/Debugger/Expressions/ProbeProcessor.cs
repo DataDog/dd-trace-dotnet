@@ -237,6 +237,16 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
+            if (evaluationResult.Condition is true &&
+                (evaluationResult.Errors == null || evaluationResult.Errors.Count == 0) &&
+                ProbeInfo.IsFullSnapshot &&
+                !ProbeRateLimiter.Instance.Sample(ProbeInfo.ProbeId))
+            {
+                snapshotCreator.Stop();
+                hasError = true;
+                return evaluationResult;
+            }
+
             if (evaluationResult.Metric.HasValue)
             {
                 LiveDebugger.Instance.SendMetrics();
