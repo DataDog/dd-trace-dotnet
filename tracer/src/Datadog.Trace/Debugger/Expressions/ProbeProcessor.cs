@@ -70,7 +70,7 @@ namespace Datadog.Trace.Debugger.Expressions
         internal ProbeProcessor UpdateProbeProcessor(ProbeDefinition probe)
         {
             SetExpressions(probe);
-            GetOrCreateEvaluator(new ProbeExpressionEvaluator(_templates, _condition, _metric));
+            _evaluator = new ProbeExpressionEvaluator(_templates, _condition, _metric);
             return this;
         }
 
@@ -82,9 +82,9 @@ namespace Datadog.Trace.Debugger.Expressions
             _metric = Convert((probe as MetricProbe)?.Value);
         }
 
-        private ProbeExpressionEvaluator GetOrCreateEvaluator(ProbeExpressionEvaluator comparand)
+        private ProbeExpressionEvaluator GetOrCreateEvaluator()
         {
-            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric), comparand);
+            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric), null);
             return _evaluator;
         }
 
@@ -223,7 +223,7 @@ namespace Datadog.Trace.Debugger.Expressions
             hasError = false;
             try
             {
-                evaluationResult = GetOrCreateEvaluator(null).Evaluate(snapshotCreator.MethodScopeMembers);
+                evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers);
             }
             catch (Exception e)
             {
