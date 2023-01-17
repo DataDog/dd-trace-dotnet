@@ -4,6 +4,9 @@
 #include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
@@ -119,6 +122,40 @@ int dladdr(const void* addr_arg, Dl_info* info)
     ((char*)&functions_entered_counter)[ENTERED_DL_ADDR]--;
 
     return result;
+}
+
+/* Function pointers to hold the value of the glibc functions */
+static int (*__real_execve)(const char* pathname, char* const argv[], char* const envp[]) = NULL;
+
+static char* ddTracePath = NULL;
+
+int execve(const char *pathname, char *const argv[], char *const envp[])
+{
+    if (__real_execve == NULL)
+    {
+        __real_execve = dlsym(RTLD_NEXT, "execve");
+        ddTracePath = getenv("DD_TRACE_CRASH_HANDLER");
+
+        if (ddTracePath != NULL && ddTracePath[0] == '\0')
+        {
+            ddTracePath = NULL;
+        }
+    }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+    if (ddTracePath != NULL && pathname != NULL)
+    {
+        size_t length = strlen(pathname);
+
+        if (length >= 11 && strcmp(pathname + length - 11, "/createdump") == 0)
+        {
+            return __real_execve(ddTracePath, argv, envp);
+        }        
+    }
+#pragma clang diagnostic pop
+
+    return __real_execve(pathname, argv, envp);
 }
 
 #ifdef DD_ALPINE
