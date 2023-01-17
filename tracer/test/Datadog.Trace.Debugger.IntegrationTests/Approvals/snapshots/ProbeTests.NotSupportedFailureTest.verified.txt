@@ -145,6 +145,14 @@
                 "ret": {
                   "isNull": "true",
                   "type": "String"
+                },
+                "ret3": {
+                  "isNull": "true",
+                  "type": "String"
+                },
+                "ret5": {
+                  "type": "NormalStruct",
+                  "value": "NormalStruct"
                 }
               }
             }
@@ -196,6 +204,14 @@
                 "ret": {
                   "type": "String",
                   "value": "IAmNotSupported"
+                },
+                "ret3": {
+                  "isNull": "true",
+                  "type": "String"
+                },
+                "ret5": {
+                  "type": "NormalStruct",
+                  "value": "NormalStruct"
                 }
               }
             }
@@ -247,6 +263,14 @@
                 "ret": {
                   "type": "String",
                   "value": "IAmNotSupported"
+                },
+                "ret3": {
+                  "isNull": "true",
+                  "type": "String"
+                },
+                "ret5": {
+                  "type": "NormalStruct",
+                  "value": "NormalStruct"
                 }
               }
             }
@@ -298,6 +322,14 @@
                 "ret": {
                   "type": "String",
                   "value": "IAmNotSupported"
+                },
+                "ret3": {
+                  "isNull": "true",
+                  "type": "String"
+                },
+                "ret5": {
+                  "type": "NormalStruct",
+                  "value": "NormalStruct"
                 }
               }
             }
@@ -349,6 +381,14 @@
                 "ret": {
                   "type": "String",
                   "value": "IAmNotSupported"
+                },
+                "ret3": {
+                  "isNull": "true",
+                  "type": "String"
+                },
+                "ret5": {
+                  "type": "NormalStruct",
+                  "value": "NormalStruct"
                 }
               }
             }

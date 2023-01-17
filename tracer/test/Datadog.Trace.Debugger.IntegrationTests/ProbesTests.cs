@@ -109,8 +109,7 @@ public class ProbesTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    [InlineData(typeof(OverloadAndSimpleNameTest))]
-    public async Task InstallAndUninstallMethodProbeWithOverloadsTest(Type testType)
+    public async Task InstallAndUninstallMethodProbeWithOverloadsTest()
     {
         var testDescription = DebuggerTestHelper.SpecificTestDescription<OverloadAndSimpleNameTest>();
         const int expectedNumberOfSnapshots = 9;

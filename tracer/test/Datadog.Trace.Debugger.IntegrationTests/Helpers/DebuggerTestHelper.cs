@@ -114,6 +114,7 @@ internal static class DebuggerTestHelper
             Id = guidGenerator.New().ToString(),
             CaptureSnapshot = true,
             Language = TracerConstants.Language,
+            Sampling = new Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 }
         };
     }
 
