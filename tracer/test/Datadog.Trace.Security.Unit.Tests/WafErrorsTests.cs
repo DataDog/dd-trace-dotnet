@@ -50,7 +50,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var initResult = Waf.Create(string.Empty, string.Empty, "unexisting-rule-set.json");
             using var waf = initResult.Waf;
-            waf.Should().NotBeNull();
+            waf.Should().BeNull();
             initResult.Success.Should().BeFalse();
             initResult.FailedToLoadRules.Should().Be(0);
             initResult.LoadedRules.Should().Be(0);
