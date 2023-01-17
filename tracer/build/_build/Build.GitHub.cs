@@ -1085,6 +1085,95 @@ partial class Build
              }
          });
 
+    Target CompareExecutionTimeBenchmarkResults => _ => _
+         .Unlisted()
+         .DependsOn(CreateRequiredDirectories)
+         .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubRepositoryName)
+         .Requires(() => GitHubToken)
+         .Executes(async () =>
+         {
+             var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
+
+             var testedCommit = Environment.GetEnvironmentVariable("OriginalCommitId"); 
+             if (string.IsNullOrEmpty(testedCommit))
+             {
+                 testedCommit = GitTasks.Git($"rev-parse HEAD").FirstOrDefault().Text;
+                 if(string.IsNullOrEmpty(testedCommit))
+                 {
+                    Logger.Warn("No OriginalCommitId variable found and unable to infer commit. Skipping throughput comparison");
+                    return;
+                 }
+                 else
+                 {
+                    Logger.Info($"No OriginalCommitId variable found. Using inferred commit {testedCommit}");
+                 }
+             }
+
+             var executionDir = BuildDataDirectory / "execution_benchmarks";
+             var masterDir = executionDir / "master";
+             var commitDir = executionDir / "current";
+
+             FileSystemTasks.EnsureCleanDirectory(masterDir);
+
+             // Connect to Azure DevOps Services
+             var connection = new VssConnection(
+                 new Uri(AzureDevopsOrganisation),
+                 new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+             // Grab the comparison artifacts
+             var masterBuild = await GetExecutionBenchmarkArtifacts(buildHttpClient, "refs/heads/master", masterDir);
+             
+             var commitName = isPr ? $"This PR ({prNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
+             var sources = new List<ExecutionTimeResultSource>
+             {
+                 new(commitName, testedCommit, ExecutionTimeSourceType.CurrentCommit, commitDir),
+                 new("master", masterBuild.SourceVersion, ExecutionTimeSourceType.Master, masterDir),
+             };
+
+             var markdown = CompareExecutionTime.GetMarkdown(sources);
+
+             Logger.Info("Markdown build complete, writing report");
+
+             // save the report so we can upload it as an atefact for prosperity
+             await File.WriteAllTextAsync(executionDir / "execution_time_report.md", markdown);
+
+             if(isPr)
+             {
+                 Logger.Info("Updating PR comment on GitHub");
+                 await HideCommentsInPullRequest(prNumber, "## Execution-Time Benchmarks Report");
+                 await PostCommentToPullRequest(prNumber, markdown);
+             }
+
+             async Task<Microsoft.TeamFoundation.Build.WebApi.Build> GetExecutionBenchmarkArtifacts(BuildHttpClient httpClient, string branch, AbsolutePath directory)
+             {
+                 // find the first build with the linux crank results
+                 var (build, _) = await FindAndDownloadAzureArtifact(httpClient, branch, build => "execution_time_benchmarks_windows_x64_HttpMessageHandler_1", directory, buildReason: null);
+
+                 // get all the other artifacts from the same build for consistency
+                 var artifacts = new[] { "execution_time_benchmarks_windows_x64_FakeDbCommand_1" };
+                 foreach (var artifactName in artifacts)
+                 {
+                     try
+                     {
+                         var artifact = await httpClient.GetArtifactAsync(
+                                        project: AzureDevopsProjectId,
+                                        buildId: build.Id,
+                                        artifactName: artifactName);
+                         await DownloadAzureArtifact(directory, artifact, AzureDevopsToken);
+                     }
+                     catch (ArtifactNotFoundException)
+                     {
+                         Console.WriteLine($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
+                     }
+                 }
+
+                 return build;
+             }
+         });
+
     async Task PostCommentToPullRequest(int prNumber, string markdown)
     {
         Console.WriteLine("Posting comment to GitHub");
