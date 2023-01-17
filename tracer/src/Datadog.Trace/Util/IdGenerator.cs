@@ -73,7 +73,7 @@ internal sealed class IdGenerator
     /// Produces a value in the range [0, ulong.MaxValue].
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ulong NextUInt64_Internal()
+    private ulong NextUInt64()
     {
         var s0 = _s0;
         var s1 = _s1;
@@ -102,13 +102,13 @@ internal sealed class IdGenerator
     /// <summary>
     /// Returns a random number that is greater than zero and less than or equal to Int64.MaxValue.
     /// </summary>
-    public ulong NextUInt64()
+    public ulong NextSpanId()
     {
         while (true)
         {
             // Get top 63 bits to get a value in the range [0, Int64.MaxValue], but try again
             // if the value is 0 to get a value in the range (0, Int64.MaxValue].
-            var result = NextUInt64_Internal() >> 1;
+            var result = NextUInt64() >> 1;
 
             if (result > 0)
             {

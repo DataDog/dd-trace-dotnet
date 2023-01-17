@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tests
             // populate the dictionary for all tests
             for (ulong i = 0; i < NumberOfIdsToGenerate; i++)
             {
-                var id = IdGenerator.Current.NextUInt64();
+                var id = IdGenerator.Current.NextSpanId();
 
                 GeneratedIds.TryGetValue(id, out var hitCount);
 
