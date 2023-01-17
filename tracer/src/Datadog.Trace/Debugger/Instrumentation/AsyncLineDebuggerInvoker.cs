@@ -153,7 +153,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var state = new AsyncLineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, lineNumber, probeFilePath, instance, kickoffParentObject);
 
                 var asyncInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments);
-                var captureInfo = new CaptureInfo<Type>(value: null, type: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLineAsync, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath), asyncCaptureInfo: asyncInfo);
+                var captureInfo = new CaptureInfo<Type>(value: null, type: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLineAsync, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath), asyncCaptureInfo: asyncInfo);
                 if (!ProbeExpressionsProcessor.Instance.Process(probeId, ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;

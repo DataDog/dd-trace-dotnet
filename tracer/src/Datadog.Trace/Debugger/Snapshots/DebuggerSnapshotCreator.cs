@@ -155,7 +155,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             if (info.IsAsyncCapture())
             {
-                MethodScopeMembers = new MethodScopeMembers(info.AsyncCaptureInfo.HoistedLocals.Length, info.AsyncCaptureInfo.HoistedArguments.Length);
+                MethodScopeMembers = new MethodScopeMembers(info.AsyncCaptureInfo.HoistedLocals.Length + (info.LocalsCount ?? 0), info.AsyncCaptureInfo.HoistedArguments.Length + (info.ArgumentsCount ?? 0));
             }
             else
             {
