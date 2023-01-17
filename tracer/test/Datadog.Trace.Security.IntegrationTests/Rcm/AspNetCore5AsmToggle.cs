@@ -136,8 +136,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             await VerifySpans(spans1.ToImmutableList(), settings);
         }
-
-        protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmToggle);
     }
 }
 #endif
