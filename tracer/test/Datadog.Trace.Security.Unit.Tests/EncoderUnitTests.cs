@@ -15,6 +15,7 @@ using Encoder = Datadog.Trace.AppSec.Waf.Encoder;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
+[Collection("WafTests")]
 public class EncoderUnitTests
 {
     [SkippableTheory]
@@ -46,6 +47,7 @@ public class EncoderUnitTests
     public void TestArrayLength(int length, int expectedLength)
     {
         var libraryHandle = LibraryLoader.LoadAndGetHandle();
+        WafLibraryInvoker.InitializeExports(libraryHandle);
 
         var l = new List<Obj>();
 
@@ -67,6 +69,8 @@ public class EncoderUnitTests
     public void TestMapLength(int length, int expectedLength)
     {
         var libraryHandle = LibraryLoader.LoadAndGetHandle();
+        WafLibraryInvoker.InitializeExports(libraryHandle);
+
         var l = new List<Obj>();
 
         var target = Enumerable.Range(0, length).ToDictionary(x => x.ToString(), _ => (object)"test");
@@ -87,7 +91,7 @@ public class EncoderUnitTests
     public void TestNestedListDepth(int length, int expectedLength)
     {
         var libraryHandle = LibraryLoader.LoadAndGetHandle();
-
+        WafLibraryInvoker.InitializeExports(libraryHandle);
         var l = new List<Obj>();
 
         var target = MakeNestedList(length);
@@ -108,6 +112,7 @@ public class EncoderUnitTests
     public void TestMapListDepth(int length, int expectedLength)
     {
         var libraryHandle = LibraryLoader.LoadAndGetHandle();
+        WafLibraryInvoker.InitializeExports(libraryHandle);
 
         var l = new List<Obj>();
 

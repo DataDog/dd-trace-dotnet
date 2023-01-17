@@ -112,6 +112,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <param name="libraryHandle">Can't be a null pointer. Waf library must be loaded by now</param>
         internal static void InitializeExports(IntPtr libraryHandle)
         {
+            // in case we go twice in it ( we shouldnt) / for unit tests
+            ExportErrorHappened = false;
             _initField = GetDelegateForNativeFunction<InitDelegate>(libraryHandle, "ddwaf_init");
             _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(libraryHandle, "ddwaf_context_init");
             _runField = GetDelegateForNativeFunction<RunDelegate>(libraryHandle, "ddwaf_run");
