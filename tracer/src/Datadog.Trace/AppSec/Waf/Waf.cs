@@ -23,14 +23,10 @@ namespace Datadog.Trace.AppSec.Waf
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
         private readonly IntPtr wafHandle;
-        private readonly WafNative wafNative;
-        private readonly Encoder encoder;
 
-        internal Waf(IntPtr wafHandle, WafNative wafNative, Encoder encoder)
+        internal Waf(IntPtr wafHandle)
         {
             this.wafHandle = wafHandle;
-            this.wafNative = wafNative;
-            this.encoder = encoder;
         }
 
         ~Waf()
@@ -40,9 +36,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         internal bool Disposed { get; private set; }
 
-        public string Version => wafNative.GetVersion();
-
-        public Encoder Encoder => encoder;
+        public string Version => WafLibraryInvoker.GetVersion();
 
         /// <summary>
         /// Loads library and configure it with the ruleset file
@@ -79,7 +73,7 @@ namespace Datadog.Trace.AppSec.Waf
                 return null;
             }
 
-            var contextHandle = wafNative.InitContext(wafHandle);
+            var contextHandle = WafLibraryInvoker.InitContext(wafHandle);
 
             if (contextHandle == IntPtr.Zero)
             {
@@ -105,8 +99,8 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             var finalRuleDatas = MergeRuleData(res);
-            using var encoded = encoder.Encode(finalRuleDatas, new List<Obj>(), false);
-            var ret = wafNative.UpdateRuleData(wafHandle, encoded.RawPtr);
+            using var encoded = Encoder.Encode(finalRuleDatas, new List<Obj>(), false);
+            var ret = WafLibraryInvoker.UpdateRuleData(wafHandle, encoded.RawPtr);
             Log.Information("{number} rules have been updated and waf status is {status}", finalRuleDatas.Count, ret);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
@@ -129,19 +123,14 @@ namespace Datadog.Trace.AppSec.Waf
                 return false;
             }
 
-            using var encoded = encoder.Encode(ruleStatus);
-            var ret = wafNative.ToggleRules(wafHandle, encoded.RawPtr);
+            using var encoded = Encoder.Encode(ruleStatus);
+            var ret = WafLibraryInvoker.ToggleRules(wafHandle, encoded.RawPtr);
             Log.Information("{number} rule status have been updated and waf status is {status}", ruleStatus.Count, ret);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
-        public DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => wafNative.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
-
-        public void ResultFree(ref DdwafResultStruct retNative) => wafNative.ResultFree(ref retNative);
-
-        // doesnt require a non disposed waf handle, as a result, they can still be disposed on a disposed managed waf instance.
-        public void ContextDestroy(IntPtr contextHandle) => wafNative.ContextDestroy(contextHandle);
+        public DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => WafLibraryInvoker.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
 
         internal static List<object> MergeRuleData(IEnumerable<RuleData> res)
         {
@@ -193,7 +182,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             Disposed = true;
-            wafNative.Destroy(wafHandle);
+            WafLibraryInvoker.Destroy(wafHandle);
         }
     }
 }

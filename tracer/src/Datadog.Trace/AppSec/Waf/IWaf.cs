@@ -14,8 +14,6 @@ namespace Datadog.Trace.AppSec.Waf
     {
         public string Version { get; }
 
-        public Encoder Encoder { get; }
-
         public IContext CreateContext();
 
         public bool UpdateRulesData(IEnumerable<RuleData> res);
@@ -23,9 +21,5 @@ namespace Datadog.Trace.AppSec.Waf
         public bool ToggleRules(IDictionary<string, bool> ruleStatus);
 
         internal DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
-
-        internal void ResultFree(ref DdwafResultStruct retNative);
-
-        internal void ContextDestroy(IntPtr contextHandle);
     }
 }

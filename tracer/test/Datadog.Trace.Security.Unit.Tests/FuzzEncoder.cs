@@ -33,7 +33,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             // if we don't throw any exceptions and generate a valid object the the test is successful
             var libraryHandle = LibraryLoader.LoadAndGetHandle();
-            var wafNative = new WafNative(libraryHandle);
+            var wafNative = new WafLibraryInvoker(libraryHandle);
             var encoder = new AppSec.Waf.Encoder(wafNative);
 
             var jsonGenerator = new JsonGenerator();

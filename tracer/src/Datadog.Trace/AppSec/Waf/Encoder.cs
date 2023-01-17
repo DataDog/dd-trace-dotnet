@@ -16,14 +16,10 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal class Encoder
+    internal static class Encoder
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
         private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
-
-        private readonly WafNative _wafNative;
-
-        public Encoder(WafNative wafNative) => _wafNative = wafNative;
 
         public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
         {
@@ -57,18 +53,13 @@ namespace Datadog.Trace.AppSec.Waf
             _ => throw new Exception($"Unknown return code: {rc}")
         };
 
-        private static string TruncateLongString(string s) =>
-            s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
+        private static string TruncateLongString(string s) => s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
-        public Obj Encode(object o, List<Obj>? argCache = null, bool applySafetyLimits = true) =>
-            EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits);
+        public static Obj Encode(object o, List<Obj>? argCache = null, bool applySafetyLimits = true) => EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits);
 
-        public object Decode(Obj o)
-        {
-            return InnerDecode(o.InnerStruct);
-        }
+        public static object Decode(Obj o) => InnerDecode(o.InnerStruct);
 
-        public object InnerDecode(DdwafObjectStruct o)
+        public static object InnerDecode(DdwafObjectStruct o)
         {
             switch (DecodeArgsType(o.Type))
             {
@@ -115,7 +106,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        private Obj EncodeUnknownType(object o)
+        private static Obj EncodeUnknownType(object o)
         {
             Log.Warning("Couldn't encode object of unknown type {type}, falling back to ToString", o.GetType());
 
@@ -124,7 +115,7 @@ namespace Datadog.Trace.AppSec.Waf
             return CreateNativeString(s, applyLimits: true);
         }
 
-        private Obj EncodeInternal(object o, List<Obj>? argCache, int remainingDepth, bool applyLimits)
+        private static Obj EncodeInternal(object o, List<Obj>? argCache, int remainingDepth, bool applyLimits)
         {
             var value =
                 o switch
@@ -154,9 +145,9 @@ namespace Datadog.Trace.AppSec.Waf
             return value;
         }
 
-        private Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits)
+        private static Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits)
         {
-            var arrNat = _wafNative.ObjectArray();
+            var arrNat = WafLibraryInvoker.ObjectArray();
 
             if (applyLimits && remainingDepth-- <= 0)
             {
@@ -174,15 +165,15 @@ namespace Datadog.Trace.AppSec.Waf
             foreach (var o in objEnumerator)
             {
                 var value = EncodeInternal(o, argCache, remainingDepth, applyLimits);
-                _wafNative.ObjectArrayAdd(arrNat, value.RawPtr);
+                WafLibraryInvoker.ObjectArrayAdd(arrNat, value.RawPtr);
             }
 
             return new Obj(arrNat);
         }
 
-        private Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits)
+        private static Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits)
         {
-            var mapNat = _wafNative.ObjectMap();
+            var mapNat = WafLibraryInvoker.ObjectMap();
 
             if (applyLimits && remainingDepth-- <= 0)
             {
@@ -204,7 +195,7 @@ namespace Datadog.Trace.AppSec.Waf
                 if (name != null)
                 {
                     var value = EncodeInternal(o.Value, argCache, remainingDepth, applyLimits);
-                    _wafNative.ObjectMapAdd(mapNat, name, Convert.ToUInt64(name.Length), value.RawPtr);
+                    WafLibraryInvoker.ObjectMapAdd(mapNat, name, Convert.ToUInt64(name.Length), value.RawPtr);
                 }
                 else
                 {
@@ -215,18 +206,18 @@ namespace Datadog.Trace.AppSec.Waf
             return new Obj(mapNat);
         }
 
-        private Obj CreateNativeString(string s, bool applyLimits)
+        private static Obj CreateNativeString(string s, bool applyLimits)
         {
             var encodeString =
-                    applyLimits
-                        ? TruncateLongString(s)
-                        : s;
-            return new Obj(_wafNative.ObjectStringLength(encodeString, Convert.ToUInt64(encodeString.Length)));
+                applyLimits
+                    ? TruncateLongString(s)
+                    : s;
+            return new Obj(WafLibraryInvoker.ObjectStringLength(encodeString, Convert.ToUInt64(encodeString.Length)));
         }
 
-        private Obj CreateNativeBool(bool b)
+        private static Obj CreateNativeBool(bool b)
         {
-            return new Obj(_wafNative.ObjectBool(b));
+            return new Obj(WafLibraryInvoker.ObjectBool(b));
         }
 
         public static string FormatArgs(object o)

@@ -25,34 +25,32 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
         internal static InitializationResult Configure(string rulesFile, IntPtr libraryHandle, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
-            var wafNative = new WafNative(libraryHandle);
-            if (wafNative.ExportErrorHappened)
+            WafLibraryInvoker.InitializeExports(libraryHandle);
+            if (WafLibraryInvoker.ExportErrorHappened)
             {
                 Log.Error("Waf couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
                 return InitializationResult.FromExportErrors();
             }
 
-            var encoder = new Encoder(wafNative);
             var argCache = new List<Obj>();
-            var rulesObj = GetConfigObj(rulesFile, argCache, encoder);
-            return Configure(rulesObj, rulesFile, argCache, wafNative, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            var rulesObj = GetConfigObj(rulesFile, argCache);
+            return Configure(rulesObj, rulesFile, argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
         internal static InitializationResult ConfigureFromRemoteConfig(string rulesJson, IntPtr libraryHandle, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
-            var wafNative = new WafNative(libraryHandle);
-            if (wafNative.ExportErrorHappened)
+            WafLibraryInvoker.InitializeExports(libraryHandle);
+            if (WafLibraryInvoker.ExportErrorHappened)
             {
                 Log.Error("Waf couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
                 return InitializationResult.FromExportErrors();
             }
 
-            var encoder = new Encoder(wafNative);
             var argCache = new List<Obj>();
-            return Configure(GetConfigObjFromRemoteJson(rulesJson, argCache, encoder), "RemoteConfig", argCache, wafNative, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            return Configure(GetConfigObjFromRemoteJson(rulesJson, argCache), "RemoteConfig", argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
-        internal static InitializationResult Configure(Obj rulesObj, string rulesFile, List<Obj> argCache, WafNative wafNative, Encoder encoder, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        private static InitializationResult Configure(Obj rulesObj, string rulesFile, List<Obj> argCache, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             if (rulesObj == null)
             {
@@ -71,15 +69,15 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
                 args.KeyRegex = keyRegex;
                 args.ValueRegex = valueRegex;
-                args.FreeWafFunction = wafNative.ObjectFreeFuncPtr;
+                args.FreeWafFunction = WafLibraryInvoker.ObjectFreeFuncPtr;
 
-                var wafHandle = wafNative.Init(rulesObj.RawPtr, ref args, ref ruleSetInfo);
+                var wafHandle = WafLibraryInvoker.Init(rulesObj.RawPtr, ref args, ref ruleSetInfo);
                 if (wafHandle == IntPtr.Zero)
                 {
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
                 }
 
-                var initResult = InitializationResult.From(ruleSetInfo, wafHandle, wafNative, encoder);
+                var initResult = InitializationResult.From(ruleSetInfo, wafHandle);
                 if (initResult.LoadedRules == 0)
                 {
                     Log.Error("DDAS-0003-03: AppSec could not read the rule file {rulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
@@ -116,8 +114,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                wafNative.RuleSetInfoFree(ref ruleSetInfo);
-                wafNative.ObjectFreePtr(rulesObj.RawPtr);
+                WafLibraryInvoker.RuleSetInfoFree(ref ruleSetInfo);
+                WafLibraryInvoker.ObjectFreePtr(rulesObj.RawPtr);
                 rulesObj.Dispose();
                 foreach (var arg in argCache)
                 {
@@ -126,7 +124,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
         }
 
-        private static Obj GetConfigObj(string rulesFile, List<Obj> argCache, Encoder encoder)
+        private static Obj GetConfigObj(string rulesFile, List<Obj> argCache)
         {
             Obj configObj;
             try
@@ -139,7 +137,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 }
 
                 using var reader = new StreamReader(stream);
-                configObj = GetConfigObj(reader, argCache, encoder);
+                configObj = GetConfigObj(reader, argCache);
             }
             catch (Exception ex)
             {
@@ -158,13 +156,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return configObj;
         }
 
-        private static Obj GetConfigObjFromRemoteJson(string rulesJson, List<Obj> argCache, Encoder encoder)
+        private static Obj GetConfigObjFromRemoteJson(string rulesJson, List<Obj> argCache)
         {
             Obj configObj;
             try
             {
                 using var reader = new StringReader(rulesJson);
-                configObj = GetConfigObj(reader, argCache, encoder);
+                configObj = GetConfigObj(reader, argCache);
             }
             catch (Exception ex)
             {
@@ -176,14 +174,14 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return configObj;
         }
 
-        private static Obj GetConfigObj(TextReader reader, List<Obj> argCache, Encoder encoder)
+        private static Obj GetConfigObj(TextReader reader, List<Obj> argCache)
         {
             using var jsonReader = new JsonTextReader(reader);
             var root = JToken.ReadFrom(jsonReader);
 
             LogRuleDetailsIfDebugEnabled(root);
             // applying safety limits during rule parsing could result in trucated rules
-            var configObj = encoder.Encode(root, argCache, applySafetyLimits: false);
+            var configObj = Encoder.Encode(root, argCache, applySafetyLimits: false);
             return configObj;
         }
 

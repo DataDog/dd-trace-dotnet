@@ -23,7 +23,7 @@ public class EncoderUnitTests
     public void TestStringLength(int length, int expectedLength)
     {
         var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        var wafNative = new WafNative(libraryHandle);
+        var wafNative = new WafLibraryInvoker(libraryHandle);
         var encoder = new AppSec.Waf.Encoder(wafNative);
 
         var l = new List<Obj>();
@@ -46,7 +46,7 @@ public class EncoderUnitTests
     public void TestArrayLength(int length, int expectedLength)
     {
         var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        var wafNative = new WafNative(libraryHandle);
+        var wafNative = new WafLibraryInvoker(libraryHandle);
         var encoder = new AppSec.Waf.Encoder(wafNative);
 
         var l = new List<Obj>();
@@ -69,7 +69,7 @@ public class EncoderUnitTests
     public void TestMapLength(int length, int expectedLength)
     {
         var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        var wafNative = new WafNative(libraryHandle);
+        var wafNative = new WafLibraryInvoker(libraryHandle);
         var encoder = new AppSec.Waf.Encoder(wafNative);
 
         var l = new List<Obj>();
@@ -92,7 +92,7 @@ public class EncoderUnitTests
     public void TestNestedListDepth(int length, int expectedLength)
     {
         var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        var wafNative = new WafNative(libraryHandle);
+        var wafNative = new WafLibraryInvoker(libraryHandle);
         var encoder = new AppSec.Waf.Encoder(wafNative);
 
         var l = new List<Obj>();
@@ -115,7 +115,7 @@ public class EncoderUnitTests
     public void TestMapListDepth(int length, int expectedLength)
     {
         var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        var wafNative = new WafNative(libraryHandle);
+        var wafNative = new WafLibraryInvoker(libraryHandle);
         var encoder = new AppSec.Waf.Encoder(wafNative);
 
         var l = new List<Obj>();

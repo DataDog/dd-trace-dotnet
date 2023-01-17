@@ -317,7 +317,7 @@ namespace Datadog.Trace.AppSec
                     {
                         var oldWaf = _waf;
                         _waf = _wafInitializationResult.Waf;
-                        Log.Information("disposing old waf");
+                        Log.Debug("Disposed old waf and affected new waf");
                         oldWaf?.Dispose();
                         UpdateRulesData();
                         EnableWaf(fromRemoteConfig);
