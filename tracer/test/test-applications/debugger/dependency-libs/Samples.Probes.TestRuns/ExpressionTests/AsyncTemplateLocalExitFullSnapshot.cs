@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    internal class FieldGreaterThanArgumentOnEntryWithoutSnapshotAsync : IAsyncRun
+    internal class AsyncTemplateLocalExitFullSnapshot : IAsyncRun
     {
         private int _field;
         private const string Dsl = @"{
@@ -12,10 +12,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 }";
 
         private const string Json = @"{
-    ""gt"": [
-      {""ref"": ""_field""},
-      {""ref"": ""local""}
-    ]
+      ""ref"": ""local""
 }";
 
         public async Task RunAsync()
@@ -26,10 +23,10 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(
-            conditionDsl: Dsl,
-            conditionJson: Json,
-            captureSnapshot: false,
-            evaluateAt: 0 /* Entry */)]
+            templateDsl: Dsl,
+            templateJson: Json,
+            captureSnapshot: true,
+            evaluateAt: 1)]
         public async Task<string> Method(int intArg)
         {
             await Task.Delay(20);

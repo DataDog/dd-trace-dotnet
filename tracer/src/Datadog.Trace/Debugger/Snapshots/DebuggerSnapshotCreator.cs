@@ -178,10 +178,10 @@ namespace Datadog.Trace.Debugger.Snapshots
                     return;
                 case ScopeMemberKind.Exception:
                     MethodScopeMembers.Exception = value as Exception;
-                    break;
+                    return;
                 case ScopeMemberKind.Return:
                     MethodScopeMembers.Return = new ScopeMember("return", type, value, ScopeMemberKind.Return);
-                    break;
+                    return;
                 case ScopeMemberKind.None:
                     return;
             }
@@ -391,13 +391,34 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             CaptureStaticFields(ref info);
 
-            if (info.MemberKind == ScopeMemberKind.Exception && info.Value != null)
+            switch (info.MethodState)
             {
-                CaptureException(info.Value as Exception);
-            }
-            else if (info.MemberKind == ScopeMemberKind.Return)
-            {
-                CaptureLocal(info.Value, "@return");
+                case MethodState.ExitStartAsync:
+                case MethodState.ExitStart:
+                    if (info.MemberKind == ScopeMemberKind.Exception && info.Value != null)
+                    {
+                        CaptureException(info.Value as Exception);
+                    }
+                    else if (info.MemberKind == ScopeMemberKind.Return)
+                    {
+                        CaptureLocal(info.Value, "@return");
+                    }
+
+                    break;
+                case MethodState.ExitEndAsync:
+                case MethodState.ExitEnd:
+                    if (MethodScopeMembers.Exception != null)
+                    {
+                        CaptureException(MethodScopeMembers.Exception);
+                    }
+                    else if (MethodScopeMembers.Return.Type != null)
+                    {
+                        CaptureLocal(MethodScopeMembers.Return.Value, "@return", MethodScopeMembers.Return.Type);
+                    }
+
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -445,31 +466,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             return hasArgument;
         }
 
-        private void CaptureAsyncMethodLocals(AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, object moveNextInvocationTarget)
-        {
-            // In the async scenario MethodMetadataInfo stores locals from MoveNext's localVarSig,
-            // which isn't enough because we need to extract more locals that may be hoisted in the builder object
-            // and we need to remove some locals that exist in the localVarSig but are just part of the async machinery and do not represent actual variables in the user's code.
-            for (var index = 0; index < asyncMethodHoistedLocals.Length; index++)
-            {
-                ref var local = ref asyncMethodHoistedLocals[index];
-                if (local == default)
-                {
-                    continue;
-                }
-
-                var localValue = local.Field.GetValue(moveNextInvocationTarget);
-                CaptureLocal(localValue, local.SanitizedName, local.Field.FieldType);
-            }
-        }
-
         private void ExitAsyncMethodStart<T>(ref CaptureInfo<T> info)
         {
             ExitMethodStart(ref info);
-            ExitAsyncMethodLogLocals(info.AsyncCaptureInfo.HoistedLocals, info.AsyncCaptureInfo.MoveNextInvocationTarget);
+            CaptureAsyncMethodLocals(info.AsyncCaptureInfo.HoistedLocals, info.AsyncCaptureInfo.MoveNextInvocationTarget);
         }
 
-        private void ExitAsyncMethodLogLocals(AsyncHelper.FieldInfoNameSanitized[] hoistedLocals, object moveNextInvocationTarget)
+        private void CaptureAsyncMethodLocals(AsyncHelper.FieldInfoNameSanitized[] hoistedLocals, object moveNextInvocationTarget)
         {
             // MethodMetadataInfo saves locals from MoveNext localVarSig,
             // this isn't enough in async scenario because we need to extract more locals the may hoisted in the builder object
@@ -524,7 +527,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             EndReturn(info.HasLocalOrArgument.Value);
         }
 
-        internal void ProcessDelayedSnapshot<TCapture>(ref CaptureInfo<TCapture> captureInfo, bool hasCondition)
+        internal bool ProcessDelayedSnapshot<TCapture>(ref CaptureInfo<TCapture> captureInfo, bool hasCondition)
         {
             if (CaptureBehaviour == CaptureBehaviour.Evaluate && (hasCondition || !_isFullSnapshot))
             {
@@ -533,10 +536,16 @@ namespace Datadog.Trace.Debugger.Snapshots
                     case MethodState.EntryEnd:
                         CaptureEntryMethodStartMarker(ref captureInfo);
                         break;
+                    case MethodState.EntryAsync:
+                        CaptureEntryAsyncMethod(ref captureInfo);
+                        return true;
                     case MethodState.ExitEnd:
-                    case MethodState.ExitEndAsync:
                         CaptureExitMethodStartMarker(ref captureInfo);
                         break;
+                    case MethodState.ExitEndAsync:
+                        CaptureExitMethodStartMarker(ref captureInfo);
+                        CaptureScopeMembers(MethodScopeMembers.Members.Where(member => member.ElementType == ScopeMemberKind.Local).ToArray());
+                        return true;
                     case MethodState.EndLine:
                     case MethodState.EndLineAsync:
                         CaptureBeginLine(ref captureInfo);
@@ -546,7 +555,10 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
 
                 CaptureScopeMembers(MethodScopeMembers.Members);
+                return true;
             }
+
+            return false;
         }
 
         internal void CaptureScopeMembers(ScopeMember[] members)

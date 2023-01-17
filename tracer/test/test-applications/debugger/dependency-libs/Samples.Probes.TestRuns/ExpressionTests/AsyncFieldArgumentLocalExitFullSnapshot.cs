@@ -4,18 +4,28 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    internal class FieldGreaterThanArgumentAsync : IAsyncRun
+    internal class AsyncFieldArgumentLocalExitFullSnapshot : IAsyncRun
     {
-        private int _field;
+       private int _field;
         private const string Dsl = @"{
-  ""dsl"": ""ref _field > ref intArg""
+  ""dsl"": ""ref _field > ref intArg and ref _field > ref local""
 }";
 
         private const string Json = @"{
+""or"": [
+{
     ""gt"": [
       {""ref"": ""_field""},
       {""ref"": ""intArg""}
     ]
+},
+{
+ ""gt"": [
+      {""ref"": ""_field""},
+      {""ref"": ""local""}
+    ]
+}
+]
 }";
 
         public async Task RunAsync()
@@ -34,9 +44,9 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         {
             await Task.Delay(20);
 
-            var result = intArg + _field;
-            Console.WriteLine(result);
-            return $"Result is: {result}";
+            var local = _field - intArg;
+            Console.WriteLine(local);
+            return $"Local is: {local}, Arg is:{intArg}, Field is: {_field}";
         }
     }
 }

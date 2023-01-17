@@ -90,6 +90,19 @@ namespace Datadog.Trace.Debugger.Expressions
                     case MethodState.EntryStart:
                     case MethodState.EntryAsync:
                         var captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, ProbeInfo.EvaluateAt, HasCondition());
+                        if (captureBehaviour == CaptureBehaviour.Evaluate && info.IsAsyncCapture())
+                        {
+                            AddAsyncMethodArguments(snapshotCreator, ref info);
+                            snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
+                            evaluationResult = Evaluate<TCapture>(snapshotCreator, out var hasError);
+                            if (hasError)
+                            {
+                                return true;
+                            }
+
+                            break;
+                        }
+
                         if (captureBehaviour != CaptureBehaviour.Capture)
                         {
                             return true;
@@ -104,7 +117,14 @@ namespace Datadog.Trace.Debugger.Expressions
                             case CaptureBehaviour.Stop:
                                 return true;
                             case CaptureBehaviour.Delay:
+                                if (info.IsAsyncCapture())
+                                {
+                                    AddAsyncMethodArguments(snapshotCreator, ref info);
+                                    AddAsyncMethodLocals(snapshotCreator, ref info);
+                                }
+
                                 snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
+
                                 return true;
                             case CaptureBehaviour.Capture:
                                 snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
@@ -133,28 +153,10 @@ namespace Datadog.Trace.Debugger.Expressions
                                 case CaptureBehaviour.Evaluate:
                                     {
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                                        try
+                                        evaluationResult = Evaluate<TCapture>(snapshotCreator, out var hasError);
+                                        if (hasError)
                                         {
-                                            evaluationResult = GetOrCreateEvaluator(snapshotCreator.MethodScopeMembers).Evaluate(snapshotCreator.MethodScopeMembers);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            // if the evaluation failed stop capturing
-                                            Log.Error(e, "Failed to evaluate expression for probe: " + ProbeInfo.ProbeId);
-                                            snapshotCreator.CaptureBehaviour = CaptureBehaviour.NoCapture;
                                             return true;
-                                        }
-
-                                        if (evaluationResult.Condition is false && (evaluationResult.Errors == null || evaluationResult.Errors.Count == 0))
-                                        {
-                                            // if the expression evaluated to false
-                                            snapshotCreator.Stop();
-                                            return true;
-                                        }
-
-                                        if (evaluationResult.Metric.HasValue)
-                                        {
-                                            LiveDebugger.Instance.SendMetrics();
                                         }
 
                                         break;
@@ -199,6 +201,69 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
+        private ExpressionEvaluationResult Evaluate<TCapture>(DebuggerSnapshotCreator snapshotCreator, out bool hasError)
+        {
+            ExpressionEvaluationResult evaluationResult = default;
+            hasError = false;
+            try
+            {
+                evaluationResult = GetOrCreateEvaluator(snapshotCreator.MethodScopeMembers).Evaluate(snapshotCreator.MethodScopeMembers);
+            }
+            catch (Exception e)
+            {
+                // if the evaluation failed stop capturing
+                Log.Error(e, "Failed to evaluate expression for probe: " + ProbeInfo.ProbeId);
+                snapshotCreator.CaptureBehaviour = CaptureBehaviour.NoCapture;
+                hasError = true;
+                return evaluationResult;
+            }
+
+            if (evaluationResult.Condition is false && (evaluationResult.Errors == null || evaluationResult.Errors.Count == 0))
+            {
+                // if the expression evaluated to false
+                snapshotCreator.Stop();
+                hasError = true;
+                return evaluationResult;
+            }
+
+            if (evaluationResult.Metric.HasValue)
+            {
+                LiveDebugger.Instance.SendMetrics();
+            }
+
+            return evaluationResult;
+        }
+
+        private void AddAsyncMethodArguments<T>(DebuggerSnapshotCreator snapshotCreator, ref CaptureInfo<T> captureInfo)
+        {
+            var asyncCaptureInfo = captureInfo.AsyncCaptureInfo;
+            for (int i = 0; i < asyncCaptureInfo.HoistedArguments.Length; i++)
+            {
+                var arg = asyncCaptureInfo.HoistedArguments[i];
+                if (arg == default)
+                {
+                    continue;
+                }
+
+                snapshotCreator.AddScopeMember(arg.Name, arg.FieldType, arg.GetValue(asyncCaptureInfo.MoveNextInvocationTarget), ScopeMemberKind.Argument);
+            }
+        }
+
+        private void AddAsyncMethodLocals<T>(DebuggerSnapshotCreator snapshotCreator, ref CaptureInfo<T> captureInfo)
+        {
+            var asyncCaptureInfo = captureInfo.AsyncCaptureInfo;
+            for (int i = 0; i < asyncCaptureInfo.HoistedLocals.Length; i++)
+            {
+                var local = asyncCaptureInfo.HoistedLocals[i];
+                if (local == default)
+                {
+                    continue;
+                }
+
+                snapshotCreator.AddScopeMember(local.SanitizedName, local.Field.FieldType, local.Field.GetValue(asyncCaptureInfo.MoveNextInvocationTarget), ScopeMemberKind.Local);
+            }
+        }
+
         private bool ShouldCheckRateLimit(DebuggerSnapshotCreator snapshotCreator)
         {
             return (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Stop || (!HasCondition() && ProbeInfo.IsFullSnapshot));
@@ -234,7 +299,28 @@ namespace Datadog.Trace.Debugger.Expressions
                     snapshotCreator.CaptureEntryMethodStartMarker(ref info);
                     break;
                 case MethodState.EntryAsync:
-                    snapshotCreator.CaptureEntryAsyncMethod(ref info);
+                    if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
+                    {
+                        if (evaluationResult.IsNull())
+                        {
+                            throw new ArgumentException($"{nameof(evaluationResult)} can't be null when we are in {nameof(CaptureBehaviour.Evaluate)}", nameof(evaluationResult));
+                        }
+
+                        snapshotCreator.SetEvaluationResult(ref evaluationResult);
+                    }
+
+                    if (!ProbeInfo.IsFullSnapshot)
+                    {
+                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
+                        LiveDebugger.Instance.AddSnapshot(snapshot);
+                        break;
+                    }
+
+                    if (!snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition()))
+                    {
+                        snapshotCreator.CaptureEntryAsyncMethod(ref info);
+                    }
+
                     break;
                 case MethodState.EntryEnd:
                     if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)

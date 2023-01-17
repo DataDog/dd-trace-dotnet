@@ -7,19 +7,13 @@
     "debugger": {
       "snapshot": {
         "duration": "ScrubbedValue",
-        "errors": [
-          {
-            "expression": "this.blabla",
-            "message": "ScrubbedValue"
-          }
-        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
           "id": "ScrubbedValue",
           "location": {
             "method": "Method",
-            "type": "Samples.Probes.TestRuns.ExpressionTests.GreaterThanArgumentAsyncTrue"
+            "type": "Samples.Probes.TestRuns.ExpressionTests.AsyncFieldArgumentLocalExitPartialSnapshot"
           }
         },
         "timestamp": "ScrubbedValue"
@@ -27,7 +21,7 @@
     },
     "logger": {
       "method": "Method",
-      "name": "Samples.Probes.TestRuns.ExpressionTests.GreaterThanArgumentAsyncTrue",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.AsyncFieldArgumentLocalExitPartialSnapshot",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
