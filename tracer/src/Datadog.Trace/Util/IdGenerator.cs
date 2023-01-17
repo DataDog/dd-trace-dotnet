@@ -99,15 +99,10 @@ internal sealed class IdGenerator
         return result;
     }
 
-    public static ulong NextUInt64()
-    {
-        return Current.NextUInt64_Instance();
-    }
-
     /// <summary>
     /// Returns a random number that is greater than zero and less than or equal to Int64.MaxValue.
     /// </summary>
-    private ulong NextUInt64_Instance()
+    public ulong NextUInt64()
     {
         while (true)
         {

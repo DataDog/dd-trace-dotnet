@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var testModules = new List<MockCIVisibilityTestModule>();
             var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 13 : 15;
 
-            var sessionId = IdGenerator.NextUInt64();
+            var sessionId = IdGenerator.Current.NextUInt64();
             var sessionCommand = "test command";
             var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
             SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));

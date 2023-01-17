@@ -65,7 +65,7 @@ internal class IntelligentTestRunnerClient
 
     public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
     {
-        _id = IdGenerator.NextUInt64().ToString(CultureInfo.InvariantCulture);
+        _id = IdGenerator.Current.NextUInt64().ToString(CultureInfo.InvariantCulture);
         _settings = settings ?? CIVisibility.Settings;
 
         _workingDirectory = workingDirectory;

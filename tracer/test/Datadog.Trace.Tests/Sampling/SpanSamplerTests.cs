@@ -238,7 +238,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             for (var i = 0; i < iterations; i++)
             {
-                var traceId = IdGenerator.NextUInt64();
+                var traceId = IdGenerator.Current.NextUInt64();
                 var span = GetSpan(traceId);
                 var sampled = sampler.MakeSamplingDecision(span);
 
@@ -265,7 +265,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private Span GetSpan(ulong traceId)
         {
-            var span = new Span(new SpanContext(traceId, IdGenerator.NextUInt64(), null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+            var span = new Span(new SpanContext(traceId, IdGenerator.Current.NextUInt64(), null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
             return span;
         }
     }
