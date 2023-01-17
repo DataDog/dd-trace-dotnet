@@ -39,6 +39,22 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Assert.True(HaveSamplesValueCount(directory, valuesCount));
         }
 
+        // Assumes that only CPU samples are in the profiles (value offset = 0)
+        public static long GetTotalCPUDuration(string directory)
+        {
+            long totalDuration = 0;
+            foreach (var profile in GetProfiles(directory))
+            {
+                foreach (var sample in profile.Sample)
+                {
+                    var duration = sample.Value[0];
+                    totalDuration += duration;
+                }
+            }
+
+            return totalDuration;
+        }
+
         private static bool HaveSamplesValueCount(string directory, int valuesCount)
         {
             foreach (var profile in GetProfiles(directory))
