@@ -67,6 +67,7 @@ internal sealed class RandomIdGenerator
 
     public static RandomIdGenerator Shared => _shared ??= new RandomIdGenerator();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong RotateLeft(ulong x, int k) => (x << k) | (x >> (64 - k));
 
     /// <summary>
