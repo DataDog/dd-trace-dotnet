@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Samples.Probes.TestRuns;
+using Samples.Probes.TestRuns.ExpressionTests;
 using Samples.Probes.TestRuns.SmokeTests;
 using VerifyTests;
 using VerifyXunit;
@@ -45,10 +46,12 @@ public class ProbesTests : TestHelper
             typeof(AsyncRecursiveCall),
             typeof(AsyncStaticMethod),
             typeof(AsyncThrowException),
+            typeof(AsyncTemplateLocalExitFullSnapshot),
             typeof(AsyncVoid),
             typeof(AsyncWithGenericArgumentAndLocal),
             typeof(HasLocalsAndReturnValue),
             typeof(MultipleLineProbes),
+            typeof(MultiScopesWithSameLocalNameTest),
             typeof(NotSupportedFailureTest)
     };
 

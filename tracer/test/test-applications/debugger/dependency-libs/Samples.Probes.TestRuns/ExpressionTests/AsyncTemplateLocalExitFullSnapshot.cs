@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    internal class AsyncTemplateLocalExitFullSnapshot : IAsyncRun
+    public class AsyncTemplateLocalExitFullSnapshot : IAsyncRun
     {
         private int _field;
         private const string Dsl = @"{
