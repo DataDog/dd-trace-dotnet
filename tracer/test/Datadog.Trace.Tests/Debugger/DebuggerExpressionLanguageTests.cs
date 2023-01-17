@@ -167,7 +167,7 @@ namespace Datadog.Trace.Tests.Debugger
 
         private string GetJsonPart(string json)
         {
-            int startsFrom = json.IndexOf(",\r\n", StringComparison.Ordinal);
+            int startsFrom = json.IndexOf($",{Environment.NewLine}", StringComparison.Ordinal);
             return $"{Environment.NewLine}{{{json.Substring(startsFrom + 1)}";
         }
 
