@@ -1,4 +1,4 @@
-// <copyright file="IdGenerator.cs" company="Datadog">
+// <copyright file="RandomIdGenerator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,17 +29,17 @@ namespace Datadog.Trace.Util;
 /// <summary>
 /// Generates random numbers suitable for use as Datadog trace ids and span ids.
 /// </summary>
-internal sealed class IdGenerator
+internal sealed class RandomIdGenerator
 {
     [ThreadStatic]
-    private static IdGenerator? _random;
+    private static RandomIdGenerator? _random;
 
     private ulong _s0;
     private ulong _s1;
     private ulong _s2;
     private ulong _s3;
 
-    public unsafe IdGenerator()
+    public unsafe RandomIdGenerator()
     {
         do
         {
@@ -65,7 +65,7 @@ internal sealed class IdGenerator
         while ((_s0 | _s1 | _s2 | _s3) == 0);
     }
 
-    public static IdGenerator Current => _random ??= new IdGenerator();
+    public static RandomIdGenerator Current => _random ??= new RandomIdGenerator();
 
     private static ulong RotateLeft(ulong x, int k) => (x << k) | (x >> (64 - k));
 
