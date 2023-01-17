@@ -26,6 +26,8 @@ public:
     }
 
     virtual HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) = 0;
+
+    virtual ~MethodRewriter() = default;
 };
 
 
