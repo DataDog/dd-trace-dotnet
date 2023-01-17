@@ -32,7 +32,7 @@ namespace Datadog.Trace.Util;
 internal sealed class RandomIdGenerator
 {
     [ThreadStatic]
-    private static RandomIdGenerator? _random;
+    private static RandomIdGenerator? _shared;
 
     private ulong _s0;
     private ulong _s1;
@@ -65,7 +65,7 @@ internal sealed class RandomIdGenerator
         while ((_s0 | _s1 | _s2 | _s3) == 0);
     }
 
-    public static RandomIdGenerator Current => _random ??= new RandomIdGenerator();
+    public static RandomIdGenerator Shared => _shared ??= new RandomIdGenerator();
 
     private static ulong RotateLeft(ulong x, int k) => (x << k) | (x >> (64 - k));
 
