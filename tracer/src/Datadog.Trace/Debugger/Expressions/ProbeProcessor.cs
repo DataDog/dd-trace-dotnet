@@ -68,7 +68,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator(MethodScopeMembers scopeMembers)
         {
-            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(ProbeInfo.Templates, ProbeInfo.Condition, ProbeInfo.Metric, scopeMembers), null);
+            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(ProbeInfo.Templates, ProbeInfo.Condition, ProbeInfo.Metric), null);
             return _evaluator;
         }
 

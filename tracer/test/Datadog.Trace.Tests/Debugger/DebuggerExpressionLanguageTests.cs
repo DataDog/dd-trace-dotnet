@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             // Assert
             Assert.NotNull(result.Template);
-            Assert.True(evaluator.Evaluator.CompiledTemplates.Value.Length > 0);
+            Assert.True(evaluator.Evaluator.CompiledTemplates.Length > 0);
             var toVerify = GetStringToVerify(evaluator.Evaluator, result);
             await Verifier.Verify(toVerify, settings);
         }
@@ -109,7 +109,7 @@ namespace Datadog.Trace.Tests.Debugger
             // Assert
             Assert.NotNull(result.Template);
             Assert.True(result.Condition.HasValue);
-            Assert.True(evaluator.Evaluator.CompiledTemplates.Value.Length > 0);
+            Assert.True(evaluator.Evaluator.CompiledTemplates.Length > 0);
             var toVerify = GetStringToVerify(evaluator.Evaluator, result);
             await Verifier.Verify(toVerify, settings);
         }
@@ -132,7 +132,7 @@ namespace Datadog.Trace.Tests.Debugger
                 templates = new DebuggerExpression[] { new(null, null, "The result of the expression is: "), new(dsl, json, null) };
             }
 
-            return (new ProbeExpressionEvaluator(templates, condition, null, scopeMembers), scopeMembers);
+            return (new ProbeExpressionEvaluator(templates, condition, null), scopeMembers);
         }
 
         private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
@@ -215,7 +215,7 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 builder.AppendLine("Condition:");
                 builder.AppendLine($"Json:{evaluator.Condition.Value.Json}");
-                builder.AppendLine($"Expression: {evaluator.CompiledCondition.Value.Value.ParsedExpression.ToReadableString()}");
+                builder.AppendLine($"Expression: {evaluator.CompiledCondition.Value.ParsedExpression.ToReadableString()}");
                 builder.AppendLine($"Result: {evaluationResult.Condition}");
             }
 
@@ -223,7 +223,7 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 builder.AppendLine("Template:");
                 builder.AppendLine($"Segments: {string.Join(Environment.NewLine, evaluator.Templates.Select(t => t.Json))}");
-                builder.AppendLine($"Expressions: {string.Join(Environment.NewLine, evaluator.CompiledTemplates.Value.Select(t => t.ParsedExpression.ToReadableString()))}");
+                builder.AppendLine($"Expressions: {string.Join(Environment.NewLine, evaluator.CompiledTemplates.Select(t => t.ParsedExpression.ToReadableString()))}");
                 builder.AppendLine($"Result: {evaluationResult.Template}");
             }
 

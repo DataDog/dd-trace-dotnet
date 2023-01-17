@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
@@ -14,24 +15,44 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal class ProbeExpressionEvaluator
 {
-    private readonly MethodScopeMembers _scopeMembers;
+    private Lazy<CompiledExpression<string>[]> _compiledTemplates;
+
+    private Lazy<CompiledExpression<bool>?> _compiledCondition;
+
+    private Lazy<CompiledExpression<double>?> _compiledMetric;
+
+    private int _expressionsCompiled;
 
     internal ProbeExpressionEvaluator(
         DebuggerExpression[] templates,
         DebuggerExpression? condition,
-        DebuggerExpression? metric,
-        MethodScopeMembers scopeMembers)
+        DebuggerExpression? metric)
     {
         Templates = templates;
         Condition = condition;
         Metric = metric;
-        _scopeMembers = scopeMembers;
-        CompiledCondition = null;
-        CompiledMetric = null;
-        CompiledTemplates = null;
-        CompiledTemplates = new Lazy<CompiledExpression<string>[]>(CompileTemplates, true);
-        CompiledCondition = new Lazy<CompiledExpression<bool>?>(CompileCondition, true);
-        CompiledMetric = new Lazy<CompiledExpression<double>?>(CompileMetric, true);
+    }
+
+    /// <summary>
+    /// Gets CompiledTemplates, for use in "DebuggerExpressionLanguageTests"
+    /// </summary>
+    internal CompiledExpression<string>[] CompiledTemplates
+    {
+        get
+        {
+            return _compiledTemplates.Value;
+        }
+    }
+
+    /// <summary>
+    /// Gets CompiledCondition, for use in "DebuggerExpressionLanguageTests"
+    /// </summary>
+    internal CompiledExpression<bool>? CompiledCondition
+    {
+        get
+        {
+            return _compiledCondition.Value;
+        }
     }
 
     internal DebuggerExpression[] Templates { get; }
@@ -40,14 +61,15 @@ internal class ProbeExpressionEvaluator
 
     private DebuggerExpression? Metric { get; }
 
-    internal Lazy<CompiledExpression<string>[]> CompiledTemplates { get; }
-
-    internal Lazy<CompiledExpression<bool>?> CompiledCondition { get; }
-
-    private Lazy<CompiledExpression<double>?> CompiledMetric { get; }
-
     internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers)
     {
+        if (Interlocked.CompareExchange(ref _expressionsCompiled, 1, 0) == 0)
+        {
+            Interlocked.CompareExchange(ref _compiledTemplates, new Lazy<CompiledExpression<string>[]>(() => CompileTemplates(scopeMembers)), null);
+            Interlocked.CompareExchange(ref _compiledCondition, new Lazy<CompiledExpression<bool>?>(() => CompileCondition(scopeMembers)), null);
+            Interlocked.CompareExchange(ref _compiledMetric, new Lazy<CompiledExpression<double>?>(() => CompileMetric(scopeMembers)), null);
+        }
+
         ExpressionEvaluationResult result = default;
         EvaluateTemplates(ref result, scopeMembers);
         EvaluateCondition(ref result, scopeMembers);
@@ -60,7 +82,9 @@ internal class ProbeExpressionEvaluator
         var resultBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
         try
         {
-            var compiledExpressions = CompiledTemplates.Value;
+            EnsureNotNull(_compiledTemplates);
+
+            var compiledExpressions = _compiledTemplates.Value;
 
             for (int i = 0; i < compiledExpressions.Length; i++)
             {
@@ -98,27 +122,19 @@ internal class ProbeExpressionEvaluator
         }
     }
 
-    private bool IsLiteral(DebuggerExpression expression)
-    {
-        return string.IsNullOrEmpty(expression.Json);
-    }
-
-    private bool IsExpression(DebuggerExpression expression)
-    {
-        return !string.IsNullOrEmpty(expression.Json) && string.IsNullOrEmpty(expression.Str);
-    }
-
     private void EvaluateCondition(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
     {
         CompiledExpression<bool> compiledExpression = default;
         try
         {
-            if (!CompiledCondition.Value.HasValue)
+            EnsureNotNull(_compiledCondition);
+
+            if (!_compiledCondition.Value.HasValue)
             {
                 return;
             }
 
-            compiledExpression = CompiledCondition.Value.Value;
+            compiledExpression = _compiledCondition.Value.Value;
             var condition = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Exception, scopeMembers.Members);
             result.Condition = condition;
             if (compiledExpression.Errors != null)
@@ -138,12 +154,14 @@ internal class ProbeExpressionEvaluator
         CompiledExpression<double> compiledExpression = default;
         try
         {
-            if (!CompiledMetric.Value.HasValue)
+            EnsureNotNull(_compiledMetric);
+
+            if (!_compiledMetric.Value.HasValue)
             {
                 return;
             }
 
-            compiledExpression = CompiledMetric.Value.Value;
+            compiledExpression = _compiledMetric.Value.Value;
             var metric = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Exception, scopeMembers.Members);
             result.Metric = metric;
             if (compiledExpression.Errors != null)
@@ -157,7 +175,7 @@ internal class ProbeExpressionEvaluator
         }
     }
 
-    private CompiledExpression<string>[] CompileTemplates()
+    private CompiledExpression<string>[] CompileTemplates(MethodScopeMembers scopeMembers)
     {
         var compiledExpressions = new CompiledExpression<string>[Templates.Length];
         for (int i = 0; i < Templates.Length; i++)
@@ -165,7 +183,7 @@ internal class ProbeExpressionEvaluator
             var current = Templates[i];
             if (current.Json != null)
             {
-                compiledExpressions[i] = ProbeExpressionParser<string>.ParseExpression(current.Json, _scopeMembers);
+                compiledExpressions[i] = ProbeExpressionParser<string>.ParseExpression(current.Json, scopeMembers);
             }
             else
             {
@@ -176,24 +194,47 @@ internal class ProbeExpressionEvaluator
         return compiledExpressions;
     }
 
-    private CompiledExpression<bool>? CompileCondition()
+    private CompiledExpression<bool>? CompileCondition(MethodScopeMembers scopeMembers)
     {
         if (!Condition.HasValue)
         {
             return null;
         }
 
-        return ProbeExpressionParser<bool>.ParseExpression(Condition.Value.Json, _scopeMembers);
+        return ProbeExpressionParser<bool>.ParseExpression(Condition.Value.Json, scopeMembers);
     }
 
-    private CompiledExpression<double>? CompileMetric()
+    private CompiledExpression<double>? CompileMetric(MethodScopeMembers scopeMembers)
     {
         if (!Metric.HasValue)
         {
             return null;
         }
 
-        return ProbeExpressionParser<double>.ParseExpression(Metric?.Json, _scopeMembers);
+        return ProbeExpressionParser<double>.ParseExpression(Metric?.Json, scopeMembers);
+    }
+
+    private void EnsureNotNull<T>(T value)
+        where T : class
+    {
+        if (value == null)
+        {
+            var sw = new SpinWait();
+            while (Volatile.Read(ref value) == null)
+            {
+                sw.SpinOnce();
+            }
+        }
+    }
+
+    private bool IsLiteral(DebuggerExpression expression)
+    {
+        return string.IsNullOrEmpty(expression.Json);
+    }
+
+    private bool IsExpression(DebuggerExpression expression)
+    {
+        return !string.IsNullOrEmpty(expression.Json) && string.IsNullOrEmpty(expression.Str);
     }
 
     private void HandleException<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression, string message)
