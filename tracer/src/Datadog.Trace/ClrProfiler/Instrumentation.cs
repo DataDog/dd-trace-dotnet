@@ -23,6 +23,7 @@ using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.ServiceFabric;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -369,7 +370,7 @@ namespace Datadog.Trace.ClrProfiler
         private static void InitRemoteConfigurationManagement(Tracer tracer)
         {
             // Service Name must be lowercase, otherwise the agent will not be able to find the service
-            var serviceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
+            var serviceName = TagsHelper.Sanitize(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(
@@ -384,7 +385,7 @@ namespace Datadog.Trace.ClrProfiler
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
                         var tags = GetTags(tracer, rcmSettings);
 
-                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, TraceUtil.NormalizeTag(tracer.Settings.Environment), TraceUtil.NormalizeTag(tracer.Settings.ServiceVersion), tags);
+                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, TagsHelper.Sanitize(tracer.Settings.Environment), TagsHelper.Sanitize(tracer.Settings.ServiceVersion), tags);
                         // see comment above
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
@@ -408,25 +409,25 @@ namespace Datadog.Trace.ClrProfiler
         {
             var tags = tracer.Settings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
 
-            var environment = TraceUtil.NormalizeTag(tracer.Settings.Environment);
+            var environment = TagsHelper.Sanitize(tracer.Settings.Environment);
             if (!string.IsNullOrEmpty(environment))
             {
                 tags.Add($"env:{environment}");
             }
 
-            var serviceVersion = TraceUtil.NormalizeTag(tracer.Settings.ServiceVersion);
+            var serviceVersion = TagsHelper.Sanitize(tracer.Settings.ServiceVersion);
             if (!string.IsNullOrEmpty(serviceVersion))
             {
                 tags.Add($"version:{serviceVersion}");
             }
 
-            var tracerVersion = TraceUtil.NormalizeTag(rcmSettings.TracerVersion);
+            var tracerVersion = TagsHelper.Sanitize(rcmSettings.TracerVersion);
             if (!string.IsNullOrEmpty(tracerVersion))
             {
                 tags.Add($"tracer_version:{tracerVersion}");
             }
 
-            var hostName = TraceUtil.NormalizeTag(PlatformHelpers.HostMetadata.Instance?.Hostname);
+            var hostName = TagsHelper.Sanitize(PlatformHelpers.HostMetadata.Instance?.Hostname);
             if (!string.IsNullOrEmpty(hostName))
             {
                 tags.Add($"host_name:{hostName}");
