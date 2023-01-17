@@ -15,6 +15,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
+using Encoder = Datadog.Trace.AppSec.Waf.Encoder;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
@@ -33,9 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             // if we don't throw any exceptions and generate a valid object the the test is successful
             var libraryHandle = LibraryLoader.LoadAndGetHandle();
-            var wafNative = new WafLibraryInvoker(libraryHandle);
-            var encoder = new AppSec.Waf.Encoder(wafNative);
-
+            WafLibraryInvoker.InitializeExports(libraryHandle);
             var jsonGenerator = new JsonGenerator();
 
             var errorOccured = false;
@@ -51,7 +50,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                     var root = JToken.ReadFrom(jsonReader);
 
                     var l = new List<Obj>();
-                    using var result = encoder.Encode(root, l, applySafetyLimits: true);
+                    using var result = Encoder.Encode(root, l, applySafetyLimits: true);
 
                     // check the object is valid
                     Assert.NotEqual(ObjType.Invalid, result.ArgsType);
