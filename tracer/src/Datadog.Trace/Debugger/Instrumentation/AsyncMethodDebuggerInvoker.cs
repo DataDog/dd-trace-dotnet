@@ -96,11 +96,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AsyncMethodDebuggerState BeginMethod<TTarget>(string probeId, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, ref bool isReEntryToMoveNext)
         {
-            if (!ProbeRateLimiter.Instance.Sample(probeId) && !isReEntryToMoveNext)
-            {
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
-            }
-
             // State machine is null in case is a nested struct inside a generic parent.
             // This can happen if we operate in optimized code and the original async method was inside a generic class
             // or in case the original async method was generic, in which case the state machine is a generic value type

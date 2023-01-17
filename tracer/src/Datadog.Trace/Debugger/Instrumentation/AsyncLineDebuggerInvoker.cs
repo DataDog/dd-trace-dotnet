@@ -116,11 +116,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                if (!ProbeRateLimiter.Instance.Sample(probeId))
-                {
-                    return CreateInvalidatedAsyncLineDebuggerState();
-                }
-
                 if (instance == null)
                 {
                     // Should not happen, but placing it here for a safeguard.
