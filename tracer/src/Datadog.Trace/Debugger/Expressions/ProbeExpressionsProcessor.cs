@@ -56,7 +56,10 @@ namespace Datadog.Trace.Debugger.Expressions
         {
             try
             {
-                _processors.TryAdd(probe.Id, new ProbeProcessor(probe));
+                _processors.AddOrUpdate(
+                    probe.Id,
+                    new ProbeProcessor(probe),
+                    (s, processor) => processor.UpdateProbeProcessor(probe));
             }
             catch (Exception e)
             {

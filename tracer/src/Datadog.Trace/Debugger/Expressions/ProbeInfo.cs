@@ -11,10 +11,7 @@ namespace Datadog.Trace.Debugger.Expressions
         string ProbeId,
         ProbeType ProbeType,
         ProbeLocation ProbeLocation,
-        EvaluateAt EvaluateAt,
-        DebuggerExpression[] Templates,
-        DebuggerExpression? Condition,
-        DebuggerExpression? Metric)
+        EvaluateAt EvaluateAt)
     {
         internal string ProbeId { get; } = ProbeId;
 
@@ -25,11 +22,5 @@ namespace Datadog.Trace.Debugger.Expressions
         internal EvaluateAt EvaluateAt { get; } = EvaluateAt;
 
         internal bool IsFullSnapshot { get; } = ProbeType == ProbeType.Snapshot;
-
-        internal DebuggerExpression[] Templates { get; } = Templates;
-
-        internal DebuggerExpression? Condition { get; } = Condition;
-
-        internal DebuggerExpression? Metric { get; } = Metric;
     }
 }

@@ -19,6 +19,9 @@ namespace Datadog.Trace.Debugger.Expressions
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
         private ProbeExpressionEvaluator _evaluator;
+        private DebuggerExpression[] _templates;
+        private DebuggerExpression? _condition;
+        private DebuggerExpression? _metric;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
@@ -52,11 +55,9 @@ namespace Datadog.Trace.Debugger.Expressions
                 probe.Id,
                 probeType,
                 location,
-                evaluateAt,
-                // ReSharper disable once PossibleInvalidOperationException
-                Templates: (probe as LogProbe)?.Segments?.Where(seg => seg != null).Select(seg => Convert(seg).Value).ToArray(),
-                Condition: Convert((probe as LogProbe)?.When),
-                Metric: Convert((probe as MetricProbe)?.Value));
+                evaluateAt);
+
+            SetExpressions(probe);
         }
 
         internal ProbeInfo ProbeInfo { get; }
@@ -66,9 +67,24 @@ namespace Datadog.Trace.Debugger.Expressions
             return segment == null ? null : new DebuggerExpression(segment.Dsl, segment.Json?.ToString(), segment.Str);
         }
 
-        private ProbeExpressionEvaluator GetOrCreateEvaluator(MethodScopeMembers scopeMembers)
+        internal ProbeProcessor UpdateProbeProcessor(ProbeDefinition probe)
         {
-            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(ProbeInfo.Templates, ProbeInfo.Condition, ProbeInfo.Metric), null);
+            SetExpressions(probe);
+            GetOrCreateEvaluator(new ProbeExpressionEvaluator(_templates, _condition, _metric));
+            return this;
+        }
+
+        private void SetExpressions(ProbeDefinition probe)
+        {
+            // ReSharper disable once PossibleInvalidOperationException
+            _templates = (probe as LogProbe)?.Segments?.Where(seg => seg != null).Select(seg => Convert(seg).Value).ToArray();
+            _condition = Convert((probe as LogProbe)?.When);
+            _metric = Convert((probe as MetricProbe)?.Value);
+        }
+
+        private ProbeExpressionEvaluator GetOrCreateEvaluator(ProbeExpressionEvaluator comparand)
+        {
+            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric), comparand);
             return _evaluator;
         }
 
@@ -94,7 +110,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         {
                             AddAsyncMethodArguments(snapshotCreator, ref info);
                             snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                            evaluationResult = Evaluate<TCapture>(snapshotCreator, out var hasError);
+                            evaluationResult = Evaluate(snapshotCreator, out var hasError);
                             if (hasError)
                             {
                                 return true;
@@ -153,7 +169,7 @@ namespace Datadog.Trace.Debugger.Expressions
                                 case CaptureBehaviour.Evaluate:
                                     {
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                                        evaluationResult = Evaluate<TCapture>(snapshotCreator, out var hasError);
+                                        evaluationResult = Evaluate(snapshotCreator, out var hasError);
                                         if (hasError)
                                         {
                                             return true;
@@ -201,13 +217,13 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        private ExpressionEvaluationResult Evaluate<TCapture>(DebuggerSnapshotCreator snapshotCreator, out bool hasError)
+        private ExpressionEvaluationResult Evaluate(DebuggerSnapshotCreator snapshotCreator, out bool hasError)
         {
             ExpressionEvaluationResult evaluationResult = default;
             hasError = false;
             try
             {
-                evaluationResult = GetOrCreateEvaluator(snapshotCreator.MethodScopeMembers).Evaluate(snapshotCreator.MethodScopeMembers);
+                evaluationResult = GetOrCreateEvaluator(null).Evaluate(snapshotCreator.MethodScopeMembers);
             }
             catch (Exception e)
             {
@@ -430,7 +446,7 @@ namespace Datadog.Trace.Debugger.Expressions
         [DebuggerStepThrough]
         private bool HasCondition()
         {
-            return ProbeInfo.Condition.HasValue;
+            return _condition.HasValue;
         }
     }
 }

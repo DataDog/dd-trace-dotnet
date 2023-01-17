@@ -217,13 +217,15 @@ internal class ProbeExpressionEvaluator
     private void EnsureNotNull<T>(T value)
         where T : class
     {
-        if (value == null)
+        if (value != null)
         {
-            var sw = new SpinWait();
-            while (Volatile.Read(ref value) == null)
-            {
-                sw.SpinOnce();
-            }
+            return;
+        }
+
+        var sw = new SpinWait();
+        while (Volatile.Read(ref value) == null)
+        {
+            sw.SpinOnce();
         }
     }
 
