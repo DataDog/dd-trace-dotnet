@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.Debugger
         /// </summary>
         private static string GenerateSnapshot(object instance, object[] args, object[] locals)
         {
-            var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method);
+            var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false);
             {
                 // method entry
                 snapshotCreator.StartEntry();

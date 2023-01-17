@@ -124,11 +124,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
 
-                if (!ProbeRateLimiter.Instance.Sample(probeId))
-                {
-                    return CreateInvalidatedAsyncLineDebuggerState();
-                }
-
                 // Assess if we have metadata associated with the given index
                 if (!MethodMetadataProvider.IsIndexExists(methodMetadataIndex))
                 {
@@ -151,6 +146,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 var kickoffParentObject = AsyncHelper.GetAsyncKickoffThisObject(instance);
                 var state = new AsyncLineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, lineNumber, probeFilePath, instance, kickoffParentObject);
+
+                if (!state.SnapshotCreator.ProbeHasCondition &&
+                    ProbeRateLimiter.Instance.Sample(probeId))
+                {
+                    return CreateInvalidatedAsyncLineDebuggerState();
+                }
 
                 var asyncInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments);
                 var captureInfo = new CaptureInfo<Type>(value: null, type: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLineAsync, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath), asyncCaptureInfo: asyncInfo);

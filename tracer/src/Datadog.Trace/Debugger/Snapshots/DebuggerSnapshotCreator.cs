@@ -35,7 +35,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string _message;
         private List<EvaluationError> _errors;
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition)
         {
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
@@ -46,10 +46,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             _captureBehaviour = CaptureBehaviour.Capture;
             _errors = null;
             _message = null;
+            ProbeHasCondition = hasCondition;
             Initialize();
         }
 
         internal MethodScopeMembers MethodScopeMembers { get; private set; }
+
+        internal bool ProbeHasCondition { get; }
 
         internal CaptureBehaviour CaptureBehaviour
         {
@@ -70,7 +73,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             var probeInfo = ProbeExpressionsProcessor.Instance.GetProbeInfo(probeId);
             if (probeInfo.HasValue)
             {
-                return new DebuggerSnapshotCreator(probeInfo.Value.IsFullSnapshot, probeInfo.Value.ProbeLocation);
+                return new DebuggerSnapshotCreator(probeInfo.Value.IsFullSnapshot, probeInfo.Value.ProbeLocation, probeInfo.Value.HasCondition);
             }
 
             throw new InvalidOperationException("Probe info not found for probe id: " + probeId);

@@ -51,13 +51,14 @@ namespace Datadog.Trace.Debugger.Expressions
                 _ => throw new ArgumentOutOfRangeException(nameof(location), location, "Unsupported probe location")
             };
 
+            SetExpressions(probe);
+
             ProbeInfo = new ProbeInfo(
                 probe.Id,
                 probeType,
                 location,
-                evaluateAt);
-
-            SetExpressions(probe);
+                evaluateAt,
+                HasCondition());
         }
 
         internal ProbeInfo ProbeInfo { get; }
