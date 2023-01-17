@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -270,7 +270,6 @@
       env: integration_tests,
       language: dotnet,
       otel.library.name: AdditionalActivitySource,
-      otel.library.version: ,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       runtime-id: Guid_2,
