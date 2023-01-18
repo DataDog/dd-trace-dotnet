@@ -35,6 +35,11 @@ public class LogEntryWatcher : IDisposable
         if (lastFile != null && lastFile.LastWriteTime.Date == DateTime.Today)
         {
             SetStream(lastFile.FullName);
+
+            if (pid == null)
+            {
+                _reader.ReadToEnd();
+            }
         }
 
         _fileWatcher.Created += NewLogFileCreated;
