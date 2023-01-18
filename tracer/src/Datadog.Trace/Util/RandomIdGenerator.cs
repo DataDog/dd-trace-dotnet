@@ -23,6 +23,8 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security;
 
 namespace Datadog.Trace.Util;
 
@@ -39,20 +41,17 @@ internal sealed class RandomIdGenerator
     private ulong _s2;
     private ulong _s3;
 
-    public unsafe RandomIdGenerator()
+    public RandomIdGenerator()
     {
         do
         {
-            var g1 = Guid.NewGuid();
-            var g2 = Guid.NewGuid();
+            var guidBytes1 = Guid.NewGuid().ToByteArray();
+            var guidBytes2 = Guid.NewGuid().ToByteArray();
 
-            var gp1 = (ulong*)&g1;
-            var gp2 = (ulong*)&g2;
-
-            _s0 = *gp1;
-            _s1 = *(gp1 + 1);
-            _s2 = *gp2;
-            _s3 = *(gp2 + 1);
+            _s0 = BitConverter.ToUInt64(guidBytes1, startIndex: 0);
+            _s1 = BitConverter.ToUInt64(guidBytes1, startIndex: 8);
+            _s2 = BitConverter.ToUInt64(guidBytes2, startIndex: 0);
+            _s3 = BitConverter.ToUInt64(guidBytes2, startIndex: 8);
 
             // Guid uses the 4 most significant bits of the first long as the version which would be fixed and not randomized.
             // and uses 2 other bits in the second long for variants which would be fixed and not randomized too.
