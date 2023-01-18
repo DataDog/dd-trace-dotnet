@@ -78,7 +78,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             }
 
             waf.Should().NotBeNull();
-            using var context = waf.CreateContext();
+            using var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
+            using var context = waf.CreateContext(readwriteLocker);
             var result = context.Run(args, TimeoutMicroSeconds);
             var spectedResult = isAttack ? ReturnCode.Match : ReturnCode.Ok;
             result.ReturnCode.Should().Be(spectedResult);
