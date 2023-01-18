@@ -19,12 +19,14 @@
 //
 //   See <http://creativecommons.org/publicdomain/zero/1.0/>.
 
+// for the .NET 6+ implementation, see RandomIdGenerator.Net6.cs
+
+#if !NET6_0_OR_GREATER
+
 #nullable enable
 
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security;
 
 namespace Datadog.Trace.Util;
 
@@ -36,6 +38,9 @@ internal sealed class RandomIdGenerator
     [ThreadStatic]
     private static RandomIdGenerator? _shared;
 
+    // in .NET < 6, we implement Xoshiro256** instead of using System.Random,
+    // so we need to keep some state. it is not safe to access from multiple threads,
+    // hence the threadstatic field.
     private ulong _s0;
     private ulong _s1;
     private ulong _s2;
@@ -43,15 +48,41 @@ internal sealed class RandomIdGenerator
 
     public RandomIdGenerator()
     {
+#if !NETFRAMEWORK
+        // CA2014: Do not use stackalloc in loops
+        Span<Guid> guidSpan = stackalloc Guid[2];
+#endif
+
         do
         {
-            var guidBytes1 = Guid.NewGuid().ToByteArray();
-            var guidBytes2 = Guid.NewGuid().ToByteArray();
+            // generate two guids and reinterpret the 32 bytes (16 bytes x 2) as Int64s (8 bytes x 4 = 32)
+            // as a source of random bytes for the initial PRNG state
+            var guid1 = Guid.NewGuid();
+            var guid2 = Guid.NewGuid();
+
+#if NETFRAMEWORK
+            // we can't use `unsafe` and pointers in code called
+            // from manual instrumentation because it could be running in partial trust.
+            // if we prove someday that nobody is using partial trust,
+            // we can rewrite this to use `unsafe` instead of allocating these arrays.
+            var guidBytes1 = guid1.ToByteArray();
+            var guidBytes2 = guid2.ToByteArray();
 
             _s0 = BitConverter.ToUInt64(guidBytes1, startIndex: 0);
             _s1 = BitConverter.ToUInt64(guidBytes1, startIndex: 8);
             _s2 = BitConverter.ToUInt64(guidBytes2, startIndex: 0);
             _s3 = BitConverter.ToUInt64(guidBytes2, startIndex: 8);
+#else
+            guidSpan[0] = guid1;
+            guidSpan[1] = guid2;
+
+            var int64Span = System.Runtime.InteropServices.MemoryMarshal.Cast<Guid, ulong>(guidSpan);
+
+            _s0 = int64Span[0];
+            _s1 = int64Span[1];
+            _s2 = int64Span[2];
+            _s3 = int64Span[3];
+#endif
 
             // Guid uses the 4 most significant bits of the first long as the version which would be fixed and not randomized.
             // and uses 2 other bits in the second long for variants which would be fixed and not randomized too.
@@ -117,3 +148,5 @@ internal sealed class RandomIdGenerator
         }
     }
 }
+
+#endif // !NET6_0_OR_GREATER
