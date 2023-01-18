@@ -6,6 +6,7 @@
 #if NET6_0_OR_GREATER
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Util;
 
@@ -21,9 +22,10 @@ internal sealed class RandomIdGenerator
     /// <summary>
     /// Returns a random number that is greater than zero and less than or equal to Int64.MaxValue.
     /// </summary>
+    [SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Match the API in other target frameworks.")]
     public ulong NextSpanId()
     {
-        // System.Random.Shared uses Xoshiro[128|256]** on .NET 6+.
+        // On .NET 6+, System.Random.Shared uses xoshiro128** or xoshiro256**.
         // Random.NextInt64() returns a number in the range [0, Int64.MaxValue).
         // Add 1 to shift the range to (0, Int64.MaxValue].
         return (ulong)Random.Shared.NextInt64() + 1;

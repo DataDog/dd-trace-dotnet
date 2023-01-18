@@ -49,32 +49,18 @@ internal sealed class RandomIdGenerator
     public RandomIdGenerator()
     {
 #if NETCOREAPP
-        // CA2014: Do not use stackalloc in loops
+        // don't allocate this inside the loop (CA2014)
         Span<Guid> guidSpan = stackalloc Guid[2];
 #endif
 
         do
         {
-            // generate two guids and reinterpret the 32 bytes (16 bytes x 2) as Int64s (8 bytes x 4 = 32)
-            // as a source of random bytes for the initial PRNG state
-            var guid1 = Guid.NewGuid();
-            var guid2 = Guid.NewGuid();
+            // generate two guids as a source of random bytes for the initial PRNG state.
+            // reinterpret the 32 bytes (16 bytes x 2) as Int64s (8 bytes x 4).
 
 #if NETCOREAPP
-            // we can't use `unsafe` and pointers in code called
-            // from manual instrumentation because it could be running in partial trust.
-            // if we prove someday that nobody is using partial trust,
-            // we can rewrite this to use `unsafe` instead of allocating these arrays.
-            var guidBytes1 = guid1.ToByteArray();
-            var guidBytes2 = guid2.ToByteArray();
-
-            _s0 = BitConverter.ToUInt64(guidBytes1, startIndex: 0);
-            _s1 = BitConverter.ToUInt64(guidBytes1, startIndex: 8);
-            _s2 = BitConverter.ToUInt64(guidBytes2, startIndex: 0);
-            _s3 = BitConverter.ToUInt64(guidBytes2, startIndex: 8);
-#else
-            guidSpan[0] = guid1;
-            guidSpan[1] = guid2;
+            guidSpan[0] = Guid.NewGuid();
+            guidSpan[1] = Guid.NewGuid();
 
             var int64Span = System.Runtime.InteropServices.MemoryMarshal.Cast<Guid, ulong>(guidSpan);
 
@@ -82,6 +68,18 @@ internal sealed class RandomIdGenerator
             _s1 = int64Span[1];
             _s2 = int64Span[2];
             _s3 = int64Span[3];
+#else
+            // we can't use `unsafe` and pointers in code called
+            // from manual instrumentation because it could be running in partial trust.
+            // if we prove someday that nobody is using partial trust,
+            // we can rewrite this to use `unsafe` instead of allocating these arrays.
+            var guidBytes1 = Guid.NewGuid().ToByteArray();
+            var guidBytes2 = Guid.NewGuid().ToByteArray();
+
+            _s0 = BitConverter.ToUInt64(guidBytes1, startIndex: 0);
+            _s1 = BitConverter.ToUInt64(guidBytes1, startIndex: 8);
+            _s2 = BitConverter.ToUInt64(guidBytes2, startIndex: 0);
+            _s3 = BitConverter.ToUInt64(guidBytes2, startIndex: 8);
 #endif
 
             // Guid uses the 4 most significant bits of the first long as the version which would be fixed and not randomized.
