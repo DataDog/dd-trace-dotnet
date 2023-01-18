@@ -359,4 +359,4 @@ profiler/_build/
 
 .ionide/
 /devenv.bat
-/tracer/test/Datadog.Trace.Instrumented.Iast.Unit.Tests/generated.windows.runsettings
+/tracer/test/Datadog.Trace.Instrumented.Iast.Unit.Tests/generated.*

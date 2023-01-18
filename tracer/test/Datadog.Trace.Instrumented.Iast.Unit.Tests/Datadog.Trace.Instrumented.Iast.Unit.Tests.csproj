@@ -5,7 +5,7 @@
   </ItemGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-    <RunSettingsFilePath>$(MSBuildProjectDirectory)\instrumentate.runsettings</RunSettingsFilePath>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\generated.linux.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
@@ -28,6 +28,12 @@
   </ItemGroup>
    
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows')) AND $(TargetFramework.StartsWith('net7'))">
+    <PostBuildEvent>echo Generating Windows runsettings file</PostBuildEvent>
     <PostBuildEvent>$(MSBuildProjectDirectory)\\generaterunsettings.bat</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux')) AND $(TargetFramework.StartsWith('net7'))">
+    <PostBuildEvent>echo Generating Linux runsettings file</PostBuildEvent>
+    <PostBuildEvent>chmod 777 $(MSBuildProjectDirectory)\\generaterunsettings.sh</PostBuildEvent>
+    <PostBuildEvent>$(MSBuildProjectDirectory)\\generaterunsettings.sh</PostBuildEvent>
   </PropertyGroup>
 </Project>
