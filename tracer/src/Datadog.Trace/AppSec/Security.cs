@@ -325,13 +325,13 @@ namespace Datadog.Trace.AppSec
                 }
 
                 _wafInitializationResult = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
-                if (_wafInitializationResult.Success)
+                if (_wafInitializationResult.Success && _wafLocker.EnterWriteLock())
                 {
-                    _wafLocker.EnterWriteLock();
                     var oldWaf = _waf;
                     _waf = _wafInitializationResult.Waf;
                     oldWaf?.Dispose();
                     _wafLocker.ExitWriteLock();
+
                     Log.Debug("Disposed old waf and affected new waf");
 
                     UpdateRulesData();
@@ -394,7 +394,11 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal IContext CreateAdditiveContext() => _waf?.CreateContext(_wafLocker);
+        internal IContext CreateAdditiveContext(out bool locked)
+        {
+            locked = false;
+            return _waf?.CreateContext(_wafLocker, out locked);
+        }
 
         private void RunShutdown()
         {

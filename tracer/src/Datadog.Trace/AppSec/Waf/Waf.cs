@@ -68,8 +68,9 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         /// <returns>Context object to perform matching using the provided WAF instance</returns>
         /// <exception cref="Exception">Exception</exception>
-        public IContext? CreateContext(Concurrency.ReaderWriterLock wafLocker)
+        public IContext? CreateContext(Concurrency.ReaderWriterLock wafLocker, out bool locked)
         {
+            locked = false;
             if (Disposed)
             {
                 Log.Warning("Context can't be created as waf instance has been disposed.");
@@ -84,7 +85,7 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new Exception(InitContextError);
             }
 
-            return new Context(contextHandle, this, wafLocker);
+            return Context.GetContext(contextHandle, this, wafLocker, out locked);
         }
 
         // Requires a non disposed waf handle

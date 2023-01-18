@@ -33,7 +33,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             var res = waf!.UpdateRulesData(rulesData!);
             res.Should().BeTrue();
             var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
-            using var context = waf.CreateContext(readwriteLocker);
+            using var context = waf.CreateContext(readwriteLocker, out var locked);
+            locked.Should().BeTrue();
             var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
             result.ReturnCode.Should().Be(ReturnCode.Match);
             result.Actions.Should().NotBeEmpty();
@@ -165,7 +166,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             var res = waf!.UpdateRulesData(rulesData!.Concat(rulesData2!));
             res.Should().BeTrue();
             using var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
-            using var context = waf.CreateContext(readwriteLocker);
+            using var context = waf.CreateContext(readwriteLocker, out var locked);
+            locked.Should().BeTrue();
             var result = context!.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);

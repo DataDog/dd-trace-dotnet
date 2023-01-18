@@ -28,16 +28,22 @@ namespace Datadog.Trace.AppSec.Waf
         private bool _disposed;
         private ulong _totalRuntimeOverRuns;
 
-        public Context(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker)
+        private Context(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, out bool locked)
         {
             _wafLocker = wafLocker;
-            _wafLocker.EnterReadLock();
+            locked = _wafLocker.EnterReadLock();
             _contextHandle = contextHandle;
             _waf = waf;
             _stopwatch = new Stopwatch();
         }
 
         ~Context() => Dispose(false);
+
+        public static IContext? GetContext(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, out bool locked)
+        {
+            var context = new Context(contextHandle, waf, wafLocker, out locked);
+            return locked ? context : null;
+        }
 
         public IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
         {
@@ -97,6 +103,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             WafLibraryInvoker.ContextDestroy(_contextHandle);
+
             _wafLocker.ExitReadLock();
         }
 

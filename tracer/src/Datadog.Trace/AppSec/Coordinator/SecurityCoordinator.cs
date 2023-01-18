@@ -58,8 +58,8 @@ internal readonly partial struct SecurityCoordinator
 
             if (additiveContext == null)
             {
-                additiveContext = _security.CreateAdditiveContext();
-                if (additiveContext != null)
+                additiveContext = _security.CreateAdditiveContext(out var locked);
+                if (additiveContext != null && locked)
                 {
                     _httpTransport.SetAdditiveContext(additiveContext);
                 }

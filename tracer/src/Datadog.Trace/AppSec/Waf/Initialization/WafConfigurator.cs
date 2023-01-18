@@ -76,7 +76,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 }
                 else
                 {
-                    Log.Information("DDAS-0015-00: AppSec loaded {loadedRules} from file {rulesFile}.", initResult.LoadedRules, rulesFile);
+                    Log.Information("DDAS-0015-00: AppSec loaded {loadedRules} rules from file {rulesFile}.", initResult.LoadedRules, rulesFile);
                 }
 
                 if (initResult.HasErrors)

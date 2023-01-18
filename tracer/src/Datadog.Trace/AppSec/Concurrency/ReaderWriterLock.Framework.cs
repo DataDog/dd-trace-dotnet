@@ -5,26 +5,71 @@
 
 using System;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog;
 
-#if NETFRAMEWORK
 namespace Datadog.Trace.AppSec.Concurrency;
 
 internal partial class ReaderWriterLock : IDisposable
 {
-    private const int Timeout = 3000;
-
+    private const int Timeout = 4000;
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ReaderWriterLock>();
+#if NETFRAMEWORK
     private readonly System.Threading.ReaderWriterLock _readerWriterLock = new();
 
-    internal void EnterReadLock() => _readerWriterLock.AcquireReaderLock(Timeout);
+    internal bool EnterReadLock()
+    {
+        try
+        {
+            _readerWriterLock.AcquireReaderLock(Timeout);
+            return true;
+        }
+        catch (ApplicationException)
+        {
+            Log.Error("Couldn't acquire reader lock in {timeout} ms", Timeout.ToString());
+            return false;
+        }
+    }
 
-    internal void EnterWriteLock() => _readerWriterLock.AcquireWriterLock(Timeout);
+    internal bool EnterWriteLock()
+    {
+        try
+        {
+            _readerWriterLock.AcquireWriterLock(Timeout);
+            return true;
+        }
+        catch (ApplicationException)
+        {
+            Log.Error("Couldn't acquire writer lock in {timeout} ms", Timeout.ToString());
+            return false;
+        }
+    }
 
-    internal void ExitReadLock() => _readerWriterLock.ReleaseReaderLock();
+    internal void ExitReadLock()
+    {
+        if (_readerWriterLock.IsReaderLockHeld)
+        {
+            _readerWriterLock.ReleaseReaderLock();
+        }
+        else
+        {
+            Log.Warning("Read lock wasn't held", Timeout.ToString());
+        }
+    }
 
-    internal void ExitWriteLock() => _readerWriterLock.ReleaseWriterLock();
+    internal void ExitWriteLock()
+    {
+        if (_readerWriterLock.IsWriterLockHeld)
+        {
+            _readerWriterLock.ReleaseWriterLock();
+        }
+        else
+        {
+            Log.Warning("Writer lock wasn't held", Timeout.ToString());
+        }
+    }
 
     public void Dispose()
     {
     }
-}
 #endif
+}
