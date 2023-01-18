@@ -58,7 +58,7 @@ public class AspNetWebApiAsmDataClassicWithoutSecurity : AspNetWebApiAsmData
     }
 }
 
-public abstract class AspNetWebApiAsmData : RcmBase, IClassFixture<IisFixture>
+public abstract class AspNetWebApiAsmData : RcmBaseFramework, IClassFixture<IisFixture>
 {
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
@@ -84,7 +84,7 @@ public abstract class AspNetWebApiAsmData : RcmBase, IClassFixture<IisFixture>
     public async Task TestBlockedRequestIp(string test, string url)
     {
         HttpStatusCode expectedStatusCode = SecurityEnabled ? HttpStatusCode.OK : HttpStatusCode.Forbidden;
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{_iisFixture.IisExpress.Process.ProcessName}*", LogDirectory);
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         // we want to see the ip here
         var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
@@ -105,7 +105,7 @@ public abstract class AspNetWebApiAsmData : RcmBase, IClassFixture<IisFixture>
         var request1 = await _iisFixture.Agent.WaitRcmRequestAndReturnLast();
         if (SecurityEnabled)
         {
-            await logEntryWatcher.WaitForLogEntry(RulesUpdatedMessage(), LogEntryWatcherTimeout);
+            await logEntryWatcher.WaitForLogEntry(RulesUpdatedMessage(_iisFixture.IisExpress.Process.Id), LogEntryWatcherTimeout);
         }
         else
         {
@@ -129,7 +129,7 @@ public abstract class AspNetWebApiAsmData : RcmBase, IClassFixture<IisFixture>
         SetClientIp("90.91.8.235");
         try
         {
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{_iisFixture.IisExpress.Process.ProcessName}*", LogDirectory);
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(parameters: new object[] { test, sanitisedUrl });
 
@@ -147,7 +147,7 @@ public abstract class AspNetWebApiAsmData : RcmBase, IClassFixture<IisFixture>
             var request1 = await _iisFixture.Agent.WaitRcmRequestAndReturnLast();
             if (SecurityEnabled)
             {
-                await logEntryWatcher.WaitForLogEntry(RulesUpdatedMessage(), LogEntryWatcherTimeout);
+                await logEntryWatcher.WaitForLogEntry(RulesUpdatedMessage(_iisFixture.IisExpress.Process.Id), LogEntryWatcherTimeout);
             }
             else
             {
