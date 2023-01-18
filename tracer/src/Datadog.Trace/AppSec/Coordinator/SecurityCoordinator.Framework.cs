@@ -122,7 +122,7 @@ internal readonly partial struct SecurityCoordinator
         }
         else
         {
-            body = _security.Settings.BlockedHtmlTemplate;
+            body = _security.Settings.BlockedJsonTemplate;
             contentType = "application/json";
         }
 

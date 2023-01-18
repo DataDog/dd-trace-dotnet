@@ -27,10 +27,8 @@ namespace Datadog.Trace
         {
             var security = Security.Instance;
 
-            if (security.Settings.Enabled)
+            if (security.Settings.Enabled && CoreHttpContextStore.Instance.Get() is HttpContext httpContext)
             {
-                var httpContext = CoreHttpContextStore.Instance.Get();
-
                 security.CheckUser(httpContext, span, userId);
             }
         }
