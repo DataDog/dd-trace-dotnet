@@ -350,6 +350,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     Logger::Info("Profiler attached.");
     this->info_->AddRef();
     is_attached_.store(true);
+    profiler = this;
     return S_OK;
 }
 
