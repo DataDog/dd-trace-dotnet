@@ -6,6 +6,7 @@
 using System.Collections.Specialized;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
@@ -20,6 +21,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("{\"missing key 'tags'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\",\"crs-921-110\",\"crs-921-140\",\"crs-941-300\"]}", "wrong-tags-rule-set.json", 6)]
         public void HasErrors(string errorMessage, string filename, ushort failedtoLoadRules)
         {
+            WafLibraryInvoker.Initialize();
             var initResult = Waf.Create(string.Empty, string.Empty, filename);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
@@ -34,6 +36,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void HasNoError()
         {
+            WafLibraryInvoker.Initialize();
             var initResult = Waf.Create(string.Empty, string.Empty, string.Empty);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
@@ -48,6 +51,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void FileNotFound()
         {
+            WafLibraryInvoker.Initialize();
             var initResult = Waf.Create(string.Empty, string.Empty, "unexisting-rule-set.json");
             using var waf = initResult.Waf;
             waf.Should().BeNull();

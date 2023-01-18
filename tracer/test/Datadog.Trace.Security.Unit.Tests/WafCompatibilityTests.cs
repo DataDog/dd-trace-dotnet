@@ -19,7 +19,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void ShouldNotInitialize()
         {
-            var initializationResult = WafLibraryInvoker.Initialize();
+            var initializationResult = WafLibraryInvoker.Initialize("1.4.0");
             initializationResult.Success.Should().BeFalse();
             initializationResult.ExportErrorHappened.Should().BeTrue();
         }

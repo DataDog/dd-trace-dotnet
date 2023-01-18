@@ -23,6 +23,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestOk()
         {
             var js = JsonSerializer.Create();
+            AppSec.Waf.NativeBindings.WafLibraryInvoker.Initialize();
             var initResult = Waf.Create(string.Empty, string.Empty);
             var waf = initResult.Waf;
             using var sr = new StreamReader("rule-data1.json");
@@ -151,6 +152,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestMergeWithWaf()
         {
             var js = JsonSerializer.Create();
+            Datadog.Trace.AppSec.Waf.NativeBindings.WafLibraryInvoker.Initialize();
             var initResult = Waf.Create(string.Empty, string.Empty);
             using var waf = initResult.Waf;
             using var sr = new StreamReader("rule-data1.json");

@@ -41,6 +41,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
+            AppSec.Waf.NativeBindings.WafLibraryInvoker.Initialize();
             var initResult =
                 obfuscate
                     ? Waf.Create(SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)

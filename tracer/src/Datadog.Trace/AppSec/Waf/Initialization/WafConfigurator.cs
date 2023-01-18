@@ -38,6 +38,12 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
         private static InitializationResult Configure(Obj rulesObj, string rulesFile, List<Obj> argCache, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
+            if (!WafLibraryInvoker.Initialized)
+            {
+                // this shouldn't happen, only for unit tests explanation
+                Log.Error("Please initialize waf library first");
+            }
+
             if (rulesObj == null)
             {
                 Log.Error("Waf couldn't initialize properly because of an unusable rule file. If you set the environment variable {appsecrule_env}, check the path and content of the file are correct.", ConfigurationKeys.AppSec.Rules);

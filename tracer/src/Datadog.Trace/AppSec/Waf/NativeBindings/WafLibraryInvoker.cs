@@ -107,6 +107,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal static bool ExportErrorHappened { get; private set; }
 
+        internal static bool Initialized { get; private set; }
+
         internal static IntPtr ObjectFreeFuncPtr => _freeObjectFuncField;
 
         /// <summary>
@@ -128,7 +130,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             if (libName != null && runtimeIds != null)
             {
                 var paths = LibraryLocationHelper.GetDatadogNativeFolders(fd, runtimeIds);
-                if (LibraryLocationHelper.TryLoadLibraryFromPaths(libName, paths, out libraryHandle))
+                if (!LibraryLocationHelper.TryLoadLibraryFromPaths(libName, paths, out libraryHandle))
                 {
                     return LibraryInitializationResult.FromLibraryLoadError();
                 }
@@ -175,6 +177,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 return LibraryInitializationResult.FromExportErrorHappened();
             }
 
+            Initialized = true;
             return LibraryInitializationResult.FromSuccess();
         }
 

@@ -31,7 +31,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             attackParts1.Length.Should().Be(3);
             var attackParts2 = attack2.Split('|');
             attackParts2.Length.Should().Be(3);
-
+            AppSec.Waf.NativeBindings.WafLibraryInvoker.Initialize();
             var initresult = Waf.Create(string.Empty, string.Empty);
             using var waf = initresult.Waf;
             waf.Should().NotBeNull();
