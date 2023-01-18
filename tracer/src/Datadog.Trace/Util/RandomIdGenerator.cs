@@ -48,7 +48,7 @@ internal sealed class RandomIdGenerator
 
     public RandomIdGenerator()
     {
-#if !NETFRAMEWORK
+#if NETCOREAPP
         // CA2014: Do not use stackalloc in loops
         Span<Guid> guidSpan = stackalloc Guid[2];
 #endif
@@ -60,7 +60,7 @@ internal sealed class RandomIdGenerator
             var guid1 = Guid.NewGuid();
             var guid2 = Guid.NewGuid();
 
-#if NETFRAMEWORK
+#if NETCOREAPP
             // we can't use `unsafe` and pointers in code called
             // from manual instrumentation because it could be running in partial trust.
             // if we prove someday that nobody is using partial trust,
