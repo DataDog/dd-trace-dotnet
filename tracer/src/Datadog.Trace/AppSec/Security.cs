@@ -33,7 +33,7 @@ namespace Datadog.Trace.AppSec
         private static object _globalInstanceLock = new();
 
         private readonly SecuritySettings _settings;
-        private readonly LibraryInitializationResult _libraryInitializationResult;
+        private LibraryInitializationResult _libraryInitializationResult;
 
         // todo: make it IWaf? when enable nullable. Having security on doesn't mean waf has init properly
         private IWaf _waf;
@@ -63,27 +63,19 @@ namespace Datadog.Trace.AppSec
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
                 _waf = waf;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                _libraryInitializationResult = WafLibraryInvoker.Initialize();
-                if (!_libraryInitializationResult.Success)
+
+                if (_settings.CanBeEnabled)
                 {
-                    _settings.Enabled = false;
-                    // logs happened during the process of initializing
+                    UpdateStatus();
+                    AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
+                    AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged += AsmDDProductConfigChanged;
                 }
                 else
                 {
-                    if (_settings.CanBeEnabled)
-                    {
-                        UpdateStatus();
-                        AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
-                        AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged += AsmDDProductConfigChanged;
-                    }
-                    else
-                    {
-                        Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
-                    }
-
-                    SetRemoteConfigCapabilites();
+                    Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
                 }
+
+                SetRemoteConfigCapabilites();
             }
             catch (Exception ex)
             {
@@ -324,6 +316,17 @@ namespace Datadog.Trace.AppSec
             {
                 if (_settings.Enabled)
                 {
+                    if (_libraryInitializationResult == null)
+                    {
+                        _libraryInitializationResult = WafLibraryInvoker.Initialize();
+                        if (!_libraryInitializationResult.Success)
+                        {
+                            _settings.Enabled = false;
+                            // logs happened during the process of initializing
+                            return;
+                        }
+                    }
+
                     _wafInitializationResult = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
                     if (_wafInitializationResult.Success)
                     {
