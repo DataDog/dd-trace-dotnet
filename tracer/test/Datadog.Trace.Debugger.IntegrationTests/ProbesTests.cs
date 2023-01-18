@@ -15,6 +15,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using ICSharpCode.Decompiler.CSharp.Syntax;
 using Samples.Probes.TestRuns;
 using Samples.Probes.TestRuns.ExpressionTests;
 using Samples.Probes.TestRuns.SmokeTests;
@@ -212,10 +213,10 @@ public class ProbesTests : TestHelper
 
 #endif
 
-    private static LogEntryWatcher CreateLogEntryWatcher()
+    private LogEntryWatcher CreateLogEntryWatcher()
     {
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
-        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*");
+        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*", testOutput: Output);
     }
 
     private async Task RunMethodProbeTests(ProbeTestDescription testDescription)

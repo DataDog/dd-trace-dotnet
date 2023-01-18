@@ -11,21 +11,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers;
 
 public class LogEntryWatcher : IDisposable
 {
+    private readonly ITestOutputHelper _testOutput;
     private readonly FileSystemWatcher _fileWatcher;
     private StreamReader _reader;
+    private DirectoryInfo _dir;
 
-    public LogEntryWatcher(string logFilePattern, string logDirectory = null)
+    public LogEntryWatcher(string logFilePattern, string logDirectory = null, ITestOutputHelper testOutput = null)
     {
+        _testOutput = testOutput;
         var logPath = logDirectory ?? DatadogLoggingFactory.GetLogDirectory();
         _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
 
-        var dir = new DirectoryInfo(logPath);
-        var lastFile = dir
+        _dir = new DirectoryInfo(logPath);
+        var lastFile = _dir
                       .GetFiles(logFilePattern)
                       .OrderBy(info => info.LastWriteTime)
                       .LastOrDefault();
@@ -34,8 +38,10 @@ public class LogEntryWatcher : IDisposable
         {
             SetStream(lastFile.FullName);
             _reader.ReadToEnd();
+            _testOutput?.WriteLine("LogEntryWatcher: Read file to end.");
         }
 
+        _testOutput?.WriteLine("LogEntryWatcher: Could not find file. " + GetDiagnosticMessage());
         _fileWatcher.Created += NewLogFileCreated;
     }
 
@@ -45,18 +51,21 @@ public class LogEntryWatcher : IDisposable
         _reader?.Dispose();
     }
 
-    public Task WaitForLogEntry(string logEntry, TimeSpan? timeout = null) => WaitForLogEntries(new[] { logEntry }, timeout);
+    public Task WaitForLogEntry(string logEntry, TimeSpan? timeout = null)
+    {
+        return WaitForLogEntries(new[] { logEntry }, timeout);
+    }
 
     public async Task WaitForLogEntries(string[] logEntries, TimeSpan? timeout = null)
     {
-        using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(20));
+        using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(value: 20));
 
         var i = 0;
         while (logEntries.Length > i && !cancellationSource.IsCancellationRequested)
         {
             if (_reader == null)
             {
-                await Task.Delay(100);
+                await Task.Delay(millisecondsDelay: 100);
                 continue;
             }
 
@@ -70,14 +79,21 @@ public class LogEntryWatcher : IDisposable
             }
             else
             {
-                await Task.Delay(100);
+                await Task.Delay(millisecondsDelay: 100);
             }
         }
 
         if (i != logEntries.Length)
         {
-            throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}" : $"Log entry was not found {logEntries[i]} in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
+            throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}. {GetDiagnosticMessage()}" : $"Log entry was not found {logEntries[i]} in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
         }
+    }
+
+    private string GetDiagnosticMessage()
+    {
+        var listOfFilesInFolder = string.Join(", ", _dir.GetFiles().Select(f => f.Name));
+        var message = $"LogEntryWatcher: Searched directory: {_dir.FullName} which currently contains the following files files: {listOfFilesInFolder}";
+        return message;
     }
 
     private void SetStream(string filePath)
@@ -102,6 +118,7 @@ public class LogEntryWatcher : IDisposable
 
     private void NewLogFileCreated(object sender, FileSystemEventArgs e)
     {
+        _testOutput?.WriteLine("LogEntryWatcher: Found file {0}", e.FullPath);
         SetStream(e.FullPath);
     }
 }
