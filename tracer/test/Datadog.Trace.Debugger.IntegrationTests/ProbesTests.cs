@@ -30,7 +30,6 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 [UsesVerify]
 public class ProbesTests : TestHelper
 {
-    private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string AddedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument added probes definitions completed.";
     private const string RemovedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to de-instrument probes definitions completed.";
 
@@ -139,11 +138,10 @@ public class ProbesTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
         using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
-
             SetProbeConfiguration(agent, probes.Select(p => p.Probe).ToArray());
             await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
 
@@ -171,12 +169,12 @@ public class ProbesTests : TestHelper
         }
     }
 
-    [Fact]
+    [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task MethodProbeTest()
+    [MemberData(nameof(ProbeTests))]
+    public async Task MethodProbeTest(ProbeTestDescription testDescription)
     {
-        ProbeTestDescription testDescription = DebuggerTestHelper.SpecificTestDescription<MultidimensionalArrayTest>();
         SkipOverTestIfNeeded(testDescription);
         await RunMethodProbeTests(testDescription);
     }
@@ -211,7 +209,14 @@ public class ProbesTests : TestHelper
 
         await RunMethodProbeTests(testType);
     }
+
 #endif
+
+    private static LogEntryWatcher CreateLogEntryWatcher()
+    {
+        string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
+        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*");
+    }
 
     private async Task RunMethodProbeTests(ProbeTestDescription testDescription)
     {
@@ -219,8 +224,7 @@ public class ProbesTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment(agent);
-        string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : EnvironmentHelper.SampleName;
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
+        using var logEntryWatcher = CreateLogEntryWatcher();
         using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
@@ -329,11 +333,10 @@ public class ProbesTests : TestHelper
 
         SetDebuggerEnvironment(agent);
 
+        using var logEntryWatcher = CreateLogEntryWatcher();
         using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
-
             SetProbeConfiguration(agent, probes);
 
             await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
