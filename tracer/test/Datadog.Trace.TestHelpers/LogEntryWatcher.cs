@@ -43,6 +43,12 @@ public class LogEntryWatcher : IDisposable
 
         _testOutput?.WriteLine("LogEntryWatcher: Could not find file. " + GetDiagnosticMessage());
         _fileWatcher.Created += NewLogFileCreated;
+        _fileWatcher.Error += FileWatcherError;
+    }
+
+    private void FileWatcherError(object sender, ErrorEventArgs e)
+    {
+        _testOutput.WriteLine("LogEntryWatcher: There was an error! THAT EXPLAINS IT. " + e.GetException());
     }
 
     public void Dispose()
