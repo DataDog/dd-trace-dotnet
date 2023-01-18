@@ -1127,8 +1127,17 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                                                                                 &promise);
 
             // wait and get the value from the future<ULONG>
-            const auto& numReJITs = future.get();
+            const auto status = future.wait_for(100ms);
+
+            if (status == std::future_status::ready)
+            {
+                const auto& numReJITs = future.get();
             Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+            }
+            else
+            {
+                Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
+            }            
         }
     }
 
