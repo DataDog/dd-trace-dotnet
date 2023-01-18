@@ -68,7 +68,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         /// <returns>Context object to perform matching using the provided WAF instance</returns>
         /// <exception cref="Exception">Exception</exception>
-        public IContext? CreateContext()
+        public IContext? CreateContext(Concurrency.ReaderWriterLock wafLocker)
         {
             if (Disposed)
             {
@@ -84,7 +84,7 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new Exception(InitContextError);
             }
 
-            return new Context(contextHandle, this);
+            return new Context(contextHandle, this, wafLocker);
         }
 
         // Requires a non disposed waf handle

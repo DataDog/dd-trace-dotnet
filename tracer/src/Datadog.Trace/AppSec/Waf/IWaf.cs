@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.AppSec.Concurrency;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
@@ -14,7 +15,7 @@ namespace Datadog.Trace.AppSec.Waf
     {
         public string Version { get; }
 
-        public IContext CreateContext();
+        public IContext CreateContext(ReaderWriterLock wafLocker);
 
         public bool UpdateRulesData(IEnumerable<RuleData> res);
 

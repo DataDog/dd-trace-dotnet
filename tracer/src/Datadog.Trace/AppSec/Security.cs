@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
@@ -31,7 +30,7 @@ namespace Datadog.Trace.AppSec
         private static Security _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
-
+        private readonly Concurrency.ReaderWriterLock _wafLocker = new();
         private readonly SecuritySettings _settings;
         private LibraryInitializationResult _libraryInitializationResult;
 
@@ -39,7 +38,7 @@ namespace Datadog.Trace.AppSec
         private IWaf _waf;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
-        private IDictionary<string, RcmModels.AsmData.Payload> _asmDataConfigs = new Dictionary<string, RcmModels.AsmData.Payload>();
+        private IDictionary<string, Payload> _asmDataConfigs = new Dictionary<string, RcmModels.AsmData.Payload>();
         private IDictionary<string, bool> _ruleStatus = null;
         private string _remoteRulesJson = null;
         private InitializationResult _wafInitializationResult;
@@ -312,46 +311,47 @@ namespace Datadog.Trace.AppSec
 
         private void UpdateStatus(bool fromRemoteConfig = false)
         {
-            lock (_settings)
+            if (_settings.Enabled)
             {
-                if (_settings.Enabled)
+                if (_libraryInitializationResult == null)
                 {
-                    if (_libraryInitializationResult == null)
+                    _libraryInitializationResult = WafLibraryInvoker.Initialize();
+                    if (!_libraryInitializationResult.Success)
                     {
-                        _libraryInitializationResult = WafLibraryInvoker.Initialize();
-                        if (!_libraryInitializationResult.Success)
-                        {
-                            _settings.Enabled = false;
-                            // logs happened during the process of initializing
-                            return;
-                        }
-                    }
-
-                    _wafInitializationResult = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
-                    if (_wafInitializationResult.Success)
-                    {
-                        var oldWaf = _waf;
-                        _waf = _wafInitializationResult.Waf;
-                        Log.Debug("Disposed old waf and affected new waf");
-                        oldWaf?.Dispose();
-                        UpdateRulesData();
-                        EnableWaf(fromRemoteConfig);
-                    }
-                    else
-                    {
-                        _waf?.Dispose();
                         _settings.Enabled = false;
+                        // logs happened during the process of initializing
+                        return;
                     }
                 }
 
-                if (!_settings.Enabled)
+                _wafInitializationResult = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
+                if (_wafInitializationResult.Success)
                 {
-                    DisableWaf(fromRemoteConfig);
+                    var oldWaf = _waf;
+                    if (_wafLocker.TryEnterWriteLock())
+                    {
+                        _waf = _wafInitializationResult.Waf;
+                        oldWaf?.Dispose();
+                        Log.Debug("Disposed old waf and affected new waf");
+                    }
+
+                    UpdateRulesData();
+                    AddInstrumentationsAndProducts(fromRemoteConfig);
                 }
+                else
+                {
+                    _waf?.Dispose();
+                    _settings.Enabled = false;
+                }
+            }
+
+            if (!_settings.Enabled)
+            {
+                RemoveInstrumentationsAndProducts(fromRemoteConfig);
             }
         }
 
-        private void EnableWaf(bool fromRemoteConfig)
+        private void AddInstrumentationsAndProducts(bool fromRemoteConfig)
         {
             if (!_enabled)
             {
@@ -367,7 +367,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void DisableWaf(bool fromRemoteConfig)
+        private void RemoveInstrumentationsAndProducts(bool fromRemoteConfig)
         {
             if (_enabled)
             {
@@ -395,7 +395,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal IContext CreateAdditiveContext() => _waf?.CreateContext();
+        internal IContext CreateAdditiveContext() => _waf?.CreateContext(_wafLocker);
 
         private void RunShutdown()
         {
@@ -403,6 +403,7 @@ namespace Datadog.Trace.AppSec
             AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged -= AsmDDProductConfigChanged;
+            _wafLocker.Dispose();
             Dispose();
         }
     }

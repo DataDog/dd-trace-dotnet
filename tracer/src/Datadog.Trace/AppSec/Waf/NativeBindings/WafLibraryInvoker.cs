@@ -202,7 +202,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal static DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref result, timeLeftInUs);
 
-        internal static void Destroy(IntPtr handle) => _destroyField(handle);
+        internal static void Destroy(IntPtr wafHandle) => _destroyField(wafHandle);
 
         internal static void ContextDestroy(IntPtr handle) => _contextDestroyField(handle);
 
