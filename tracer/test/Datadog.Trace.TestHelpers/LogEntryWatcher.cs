@@ -17,12 +17,14 @@ namespace Datadog.Trace.TestHelpers;
 public class LogEntryWatcher : IDisposable
 {
     private readonly FileSystemWatcher _fileWatcher;
+    private readonly int? _pid;
     private StreamReader _reader;
 
-    public LogEntryWatcher(string logFilePattern, string logDirectory = null)
+    public LogEntryWatcher(string logFilePattern, string logDirectory = null, int? pid = null)
     {
         var logPath = logDirectory ?? DatadogLoggingFactory.GetLogDirectory();
         _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
+        _pid = pid;
 
         var dir = new DirectoryInfo(logPath);
         var lastFile = dir
@@ -33,7 +35,6 @@ public class LogEntryWatcher : IDisposable
         if (lastFile != null && lastFile.LastWriteTime.Date == DateTime.Today)
         {
             SetStream(lastFile.FullName);
-            _reader.ReadToEnd();
         }
 
         _fileWatcher.Created += NewLogFileCreated;
@@ -63,6 +64,11 @@ public class LogEntryWatcher : IDisposable
             var line = await _reader.ReadLineAsync();
             if (line != null)
             {
+                if (_pid != null && !line.Contains($"Process: \"[{_pid} "))
+                {
+                    continue;
+                }
+
                 if (line.Contains(logEntries[i]))
                 {
                     i++;
