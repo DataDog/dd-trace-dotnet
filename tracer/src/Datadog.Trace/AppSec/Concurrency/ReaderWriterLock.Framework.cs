@@ -11,36 +11,17 @@ namespace Datadog.Trace.AppSec.Concurrency;
 
 internal partial class ReaderWriterLock : IDisposable
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ReaderWriterLock>();
+    private const int Timeout = 3000;
+
     private readonly System.Threading.ReaderWriterLock _readerWriterLock = new();
 
-    internal bool TryEnterReadLock()
-    {
-        try
-        {
-            _readerWriterLock.AcquireReaderLock(Timeout);
-            return true;
-        }
-        catch (ApplicationException)
-        {
-            Log.Error("ReaderWriterLock couldn't acquire lock in {timeout} ms", Timeout.ToString());
-            return false;
-        }
-    }
+    internal void EnterReadLock() => _readerWriterLock.AcquireReaderLock(Timeout);
 
-    internal bool TryEnterWriteLock()
-    {
-        try
-        {
-            _readerWriterLock.AcquireWriterLock(Timeout);
-            return true;
-        }
-        catch (ApplicationException)
-        {
-            Log.Error("ReaderWriterLock couldn't acquire lock in {timeout} ms", Timeout.ToString());
-            return false;
-        }
-    }
+    internal void EnterWriteLock() => _readerWriterLock.AcquireWriterLock(Timeout);
+
+    internal void ExitReadLock() => _readerWriterLock.ReleaseReaderLock();
+
+    internal void ExitWriteLock() => _readerWriterLock.ReleaseWriterLock();
 
     public void Dispose()
     {

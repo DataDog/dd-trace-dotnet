@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -29,15 +30,16 @@ namespace Datadog.Trace.AppSec.Waf
 
         public Context(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker)
         {
+            _wafLocker = wafLocker;
+            _wafLocker.EnterReadLock();
             _contextHandle = contextHandle;
             _waf = waf;
-            _wafLocker = wafLocker;
             _stopwatch = new Stopwatch();
         }
 
         ~Context() => Dispose(false);
 
-        public IResult Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
+        public IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
         {
             if (_disposed)
             {
@@ -45,29 +47,24 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             DdwafResultStruct retNative = default;
-            var code = DDWAF_RET_CODE.DDWAF_OK;
-            if (_wafLocker.TryEnterReadLock())
+
+            if (_waf.Disposed)
             {
-                // this test is still needed as the waf could have been disposed before the lock as context gets created and reused several times throughout the request, we can't lock this all together
-                // the lock avoids simply that when we're in this block, the _waf is not going to be written / disposed
-                if (_waf.Disposed)
-                {
-                    Log.Information("Context can't run when waf handle has been disposed. This can happen if remote configuration sends new data requiring a new waf. Very last contexts created are then discarded.");
-                    return null;
-                }
-
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    var parameters = Encoder.FormatArgs(addresses);
-                    Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
-                }
-
-                // not restart cause it's the total runtime over runs, and we run several * during request
-                _stopwatch.Start();
-                using var pwArgs = Encoder.Encode(addresses, _argCache, applySafetyLimits: true);
-                var rawArgs = pwArgs.RawPtr;
-                code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+                Log.Warning("Context can't run when waf handle has been disposed. This shouldn't have happened with the locks, check concurrency.");
+                return null;
             }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                var parameters = Encoder.FormatArgs(addresses);
+                Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
+            }
+
+            // not restart cause it's the total runtime over runs, and we run several * during request
+            _stopwatch.Start();
+            using var pwArgs = Encoder.Encode(addresses, _argCache, applySafetyLimits: true);
+            var rawArgs = pwArgs.RawPtr;
+            var code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
 
             _stopwatch.Stop();
             _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
@@ -100,6 +97,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             WafLibraryInvoker.ContextDestroy(_contextHandle);
+            _wafLocker.ExitReadLock();
         }
 
         public void Dispose()

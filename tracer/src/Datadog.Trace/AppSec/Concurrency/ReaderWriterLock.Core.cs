@@ -3,21 +3,23 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETFRAMEWORK
 using System;
 
 namespace Datadog.Trace.AppSec.Concurrency;
 
 internal partial class ReaderWriterLock : IDisposable
 {
-    private const int Timeout = 3000;
-
-#if !NETFRAMEWORK
     private readonly System.Threading.ReaderWriterLockSlim _readerWriterLock = new();
 
-    internal bool TryEnterReadLock() => _readerWriterLock.TryEnterReadLock(Timeout);
+    internal void EnterReadLock() => _readerWriterLock.EnterReadLock();
 
-    internal bool TryEnterWriteLock() => _readerWriterLock.TryEnterWriteLock(Timeout);
+    internal void EnterWriteLock() => _readerWriterLock.EnterWriteLock();
+
+    internal void ExitReadLock() => _readerWriterLock.ExitReadLock();
+
+    internal void ExitWriteLock() => _readerWriterLock.ExitWriteLock();
 
     public void Dispose() => _readerWriterLock.Dispose();
-#endif
 }
+#endif
