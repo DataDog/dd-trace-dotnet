@@ -58,7 +58,7 @@ public class InstrumentationTestsBase
     protected void AssertVulnerable(int vulnerabilities = 1)
     {
         var spans = GetGeneratedSpans((Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext);
-        vulnerabilities.Should().Be(GetIastSpansCount(spans));
+        GetIastSpansCount(spans).Should().Be(vulnerabilities);
     }
 
     protected void AssertNotVulnerable()
