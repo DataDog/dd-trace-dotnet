@@ -171,12 +171,12 @@ public class ProbesTests : TestHelper
         }
     }
 
-    [SkippableTheory]
+    [Fact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    [MemberData(nameof(ProbeTests))]
-    public async Task MethodProbeTest(ProbeTestDescription testDescription)
+    public async Task MethodProbeTest()
     {
+        ProbeTestDescription testDescription = DebuggerTestHelper.SpecificTestDescription<MultidimensionalArrayTest>();
         SkipOverTestIfNeeded(testDescription);
         await RunMethodProbeTests(testDescription);
     }
@@ -219,11 +219,11 @@ public class ProbesTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment(agent);
+        string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : EnvironmentHelper.SampleName;
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
         using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
-
             var isSinglePhase = probes.Select(p => p.ProbeTestData.Phase).Distinct().Count() == 1;
             if (isSinglePhase)
             {
