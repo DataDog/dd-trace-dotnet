@@ -45,13 +45,13 @@ namespace Benchmarks.Trace
         static AppSecBodyBenchmark()
         {
             var dir = Directory.GetCurrentDirectory();
-            while (!Directory.GetDirectories(dir).Any(s=>s.Contains("shared")))
+            while (!Directory.GetDirectories(dir).Any(s => s.Contains("shared")))
             {
                 dir = Directory.GetParent(dir).FullName;
             }
 
             Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
-            var path = Path.Combine(dir, "bin", "monitoring-home", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty);
+            var path = Path.Combine(dir, "shared", "bin", "monitoring-home", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty);
             Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
             security = Security.Instance;
 #if NETFRAMEWORK
