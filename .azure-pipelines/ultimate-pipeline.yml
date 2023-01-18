@@ -3261,7 +3261,7 @@ stages:
       displayName: Download FakeDbCommand
       inputs:
         artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
 
     - script: tracer\build.cmd CompareExecutionTimeBenchmarkResults
       displayName: Compare execution-time results
