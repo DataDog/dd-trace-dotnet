@@ -20,4 +20,15 @@ public static class CustomTracerProviderBuilderExtensions
 
         return builder;
     }
+
+    public static TracerProviderBuilder AddActivitySourceIfEnvironmentVariablePresent(this TracerProviderBuilder builder)
+    {
+        if (Environment.GetEnvironmentVariable("ADD_ADDITIONAL_ACTIVITY_SOURCE") is string value
+&& value == "true")
+        {
+            return builder.AddSource(Program._additionalActivitySourceName);
+        }
+        
+        return builder;
+    }
 }

@@ -103,7 +103,11 @@ namespace Datadog.Trace.Activity
             if (activity5 is not null)
             {
                 span.SetTag("otel.library.name", activity5.Source.Name);
-                span.SetTag("otel.library.version", activity5.Source.Version);
+
+                if (!string.IsNullOrEmpty(activity5.Source.Version))
+                {
+                    span.SetTag("otel.library.version", activity5.Source.Version);
+                }
             }
 
             // Set OTEL status code and OTEL status description

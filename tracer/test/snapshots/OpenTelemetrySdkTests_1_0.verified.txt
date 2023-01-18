@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -248,6 +248,31 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
+      span.kind: internal,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_16,
+    Name: AdditionalActivitySource.internal,
+    Resource: Transform,
+    Service: CustomServiceName,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: AdditionalActivitySource,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      runtime-id: Guid_2,
       span.kind: internal,
       _dd.p.dm: -0
     },
