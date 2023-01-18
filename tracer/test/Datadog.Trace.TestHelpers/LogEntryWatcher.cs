@@ -46,11 +46,6 @@ public class LogEntryWatcher : IDisposable
         _fileWatcher.Error += FileWatcherError;
     }
 
-    private void FileWatcherError(object sender, ErrorEventArgs e)
-    {
-        _testOutput.WriteLine("LogEntryWatcher: There was an error! THAT EXPLAINS IT. " + e.GetException());
-    }
-
     public void Dispose()
     {
         _fileWatcher?.Dispose();
@@ -126,5 +121,10 @@ public class LogEntryWatcher : IDisposable
     {
         _testOutput?.WriteLine("LogEntryWatcher: Found file {0}", e.FullPath);
         SetStream(e.FullPath);
+    }
+
+    private void FileWatcherError(object sender, ErrorEventArgs e)
+    {
+        _testOutput.WriteLine("LogEntryWatcher: There was an error! THAT EXPLAINS IT. " + e.GetException());
     }
 }
