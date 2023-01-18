@@ -111,11 +111,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return AsyncContext.Value;
             }
 
-            if (!ProbeRateLimiter.Instance.Sample(probeId))
-            {
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
-            }
-
             isReEntryToMoveNext = true; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
 
             var stateMachineType = instance.GetType();
@@ -133,6 +128,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             // we are not in a continuation, create new state and capture everything
             var asyncState = SetContext(kickoffInfo, probeId, methodMetadataIndex, instance);
+
+            if (!asyncState.SnapshotCreator.ProbeHasCondition &&
+                !ProbeRateLimiter.Instance.Sample(probeId))
+            {
+                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+            }
 
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
                                        asyncState.HasArguments ||

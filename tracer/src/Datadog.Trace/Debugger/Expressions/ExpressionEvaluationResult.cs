@@ -18,6 +18,8 @@ internal ref struct ExpressionEvaluationResult
 
     internal List<EvaluationError> Errors { get; set; }
 
+    internal bool HasError => Errors is { Count: > 0 };
+
     internal bool IsNull()
     {
         return Template == null && Condition == null && Metric == null && Errors == null;

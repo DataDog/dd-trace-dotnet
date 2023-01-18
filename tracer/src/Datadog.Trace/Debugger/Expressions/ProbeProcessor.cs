@@ -51,13 +51,14 @@ namespace Datadog.Trace.Debugger.Expressions
                 _ => throw new ArgumentOutOfRangeException(nameof(location), location, "Unsupported probe location")
             };
 
+            SetExpressions(probe);
+
             ProbeInfo = new ProbeInfo(
                 probe.Id,
                 probeType,
                 location,
-                evaluateAt);
-
-            SetExpressions(probe);
+                evaluateAt,
+                HasCondition());
         }
 
         internal ProbeInfo ProbeInfo { get; }
@@ -104,10 +105,10 @@ namespace Datadog.Trace.Debugger.Expressions
                         {
                             AddAsyncMethodArguments(snapshotCreator, ref info);
                             snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                            evaluationResult = Evaluate(snapshotCreator, out var hasError);
-                            if (hasError)
+                            evaluationResult = Evaluate(snapshotCreator, out var shouldStopCapture);
+                            if (shouldStopCapture)
                             {
-                                return true;
+                                return false;
                             }
 
                             break;
@@ -163,10 +164,10 @@ namespace Datadog.Trace.Debugger.Expressions
                                 case CaptureBehaviour.Evaluate:
                                     {
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                                        evaluationResult = Evaluate(snapshotCreator, out var hasError);
-                                        if (hasError)
+                                        evaluationResult = Evaluate(snapshotCreator, out var shouldStopCapture);
+                                        if (shouldStopCapture)
                                         {
-                                            return true;
+                                            return false;
                                         }
 
                                         break;
@@ -211,10 +212,10 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        private ExpressionEvaluationResult Evaluate(DebuggerSnapshotCreator snapshotCreator, out bool hasError)
+        private ExpressionEvaluationResult Evaluate(DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture)
         {
             ExpressionEvaluationResult evaluationResult = default;
-            hasError = false;
+            shouldStopCapture = false;
             try
             {
                 evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers);
@@ -223,16 +224,25 @@ namespace Datadog.Trace.Debugger.Expressions
             {
                 // if the evaluation failed stop capturing
                 Log.Error(e, "Failed to evaluate expression for probe: " + ProbeInfo.ProbeId);
-                snapshotCreator.CaptureBehaviour = CaptureBehaviour.NoCapture;
-                hasError = true;
+                snapshotCreator.Stop();
+                shouldStopCapture = true;
                 return evaluationResult;
             }
 
-            if (evaluationResult.Condition is false && (evaluationResult.Errors == null || evaluationResult.Errors.Count == 0))
+            if (evaluationResult.Condition is false && !evaluationResult.HasError)
             {
                 // if the expression evaluated to false
                 snapshotCreator.Stop();
-                hasError = true;
+                shouldStopCapture = true;
+                return evaluationResult;
+            }
+
+            if (evaluationResult.Condition is true &&
+                !evaluationResult.HasError &&
+                !ProbeRateLimiter.Instance.Sample(ProbeInfo.ProbeId))
+            {
+                snapshotCreator.Stop();
+                shouldStopCapture = true;
                 return evaluationResult;
             }
 

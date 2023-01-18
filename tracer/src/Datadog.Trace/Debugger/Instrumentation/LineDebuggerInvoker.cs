@@ -147,11 +147,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                if (!ProbeRateLimiter.Instance.Sample(probeId))
-                {
-                    return CreateInvalidatedLineDebuggerState();
-                }
-
                 if (!MethodMetadataProvider.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
                 {
                     Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaId = {methodMetadataIndex}");
@@ -159,6 +154,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 var state = new LineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, lineNumber, probeFilePath, instance);
+
+                if (!state.SnapshotCreator.ProbeHasCondition &&
+                    !ProbeRateLimiter.Instance.Sample(probeId))
+                {
+                    return CreateInvalidatedLineDebuggerState();
+                }
+
                 var captureInfo = new CaptureInfo<Type>(invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLine, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath));
                 if (!ProbeExpressionsProcessor.Instance.Process(probeId, ref captureInfo, state.SnapshotCreator))
                 {

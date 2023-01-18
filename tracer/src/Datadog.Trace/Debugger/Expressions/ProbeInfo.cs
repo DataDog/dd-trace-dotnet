@@ -11,7 +11,8 @@ namespace Datadog.Trace.Debugger.Expressions
         string ProbeId,
         ProbeType ProbeType,
         ProbeLocation ProbeLocation,
-        EvaluateAt EvaluateAt)
+        EvaluateAt EvaluateAt,
+        bool HasCondition)
     {
         internal string ProbeId { get; } = ProbeId;
 
@@ -22,5 +23,7 @@ namespace Datadog.Trace.Debugger.Expressions
         internal EvaluateAt EvaluateAt { get; } = EvaluateAt;
 
         internal bool IsFullSnapshot { get; } = ProbeType == ProbeType.Snapshot;
+
+        internal bool HasCondition { get; } = HasCondition;
     }
 }
