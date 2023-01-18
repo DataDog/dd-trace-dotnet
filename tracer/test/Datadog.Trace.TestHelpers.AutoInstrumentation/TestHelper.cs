@@ -87,13 +87,17 @@ namespace Datadog.Trace.TestHelpers
             string appPath = testCli.StartsWith("dotnet") ? $"vstest {sampleAppPath}" : sampleAppPath;
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine("ApplicationPath: " + appPath);
-            return ProfilerHelper.StartProcessWithProfiler(
+            var process = ProfilerHelper.StartProcessWithProfiler(
                 exec,
                 EnvironmentHelper,
                 agent,
                 $"{appPath} {arguments ?? string.Empty}",
                 aspNetCorePort: aspNetCorePort,
                 processToProfile: exec + ";testhost.exe");
+
+            Output.WriteLine($"ProcessId: {process.Id}");
+
+            return process;
         }
 
         public ProcessResult RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "")
@@ -106,7 +110,6 @@ namespace Datadog.Trace.TestHelpers
             helper.Drain();
             var exitCode = process.ExitCode;
 
-            Output.WriteLine($"ProcessId: " + process.Id);
             Output.WriteLine($"Exit Code: " + exitCode);
 
             var standardOutput = helper.StandardOutput;
@@ -139,7 +142,7 @@ namespace Datadog.Trace.TestHelpers
             var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
-            return ProfilerHelper.StartProcessWithProfiler(
+            var process = ProfilerHelper.StartProcessWithProfiler(
                 executable,
                 EnvironmentHelper,
                 agent,
@@ -148,6 +151,10 @@ namespace Datadog.Trace.TestHelpers
                 processToProfile: executable,
                 enableSecurity: enableSecurity,
                 externalRulesFile: externalRulesFile);
+
+            Output.WriteLine($"ProcessId: {process.Id}");
+
+            return process;
         }
 
         public async Task<bool> TakeMemoryDump(Process process)
