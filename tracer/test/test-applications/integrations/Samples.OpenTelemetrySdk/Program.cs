@@ -5,13 +5,17 @@ using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace Samples.OpenTelemetrySdk;
 
 public static class Program
 {
+    internal static readonly string _additionalActivitySourceName = "AdditionalActivitySource";
+
     private static SpanContext _previousSpanContext;
     private static Tracer _tracer;
+    private static readonly ActivitySource _additionalActivitySource = new(_additionalActivitySourceName);
 
     public static async Task Main(string[] args)
     {
@@ -24,6 +28,7 @@ public static class Program
         using var tracerProvider = Sdk.CreateTracerProviderBuilder()
             .AddSource(serviceName)
             .AddSource(otherLibraryName)
+            .AddActivitySourceIfEnvironmentVariablePresent()
             .SetResourceBuilder(
                 ResourceBuilder.CreateDefault()
                     .AddService(serviceName: serviceName, serviceVersion: serviceVersion))
@@ -59,11 +64,21 @@ public static class Program
 
         // There is no active span, so the default behavior will result in a new trace
         // Note: StartSpan does not update the active span, so when the call returns there will still be no active span
-        using var span2 = _tracer.StartSpan("SayHello2", SpanKind.Internal, parentContext: default, links: new Link[] { new(span.Context, new SpanAttributes()) });
+        using (var span2 = _tracer.StartSpan("SayHello2", SpanKind.Internal, parentContext: default, links: new Link[] { new(span.Context, new SpanAttributes()) }))
+        {
+            // There is no active span, so the default behavior will result in a new trace
+            // Note: StartSpan does not update the active span, so when the call returns there will still be no active span
+            using var span3 = _tracer.StartSpan("SayHello3", SpanKind.Internal, parentSpan: default, links: new Link[] { new(span.Context, new SpanAttributes()), new(span2.Context, new SpanAttributes()) });
+        }
 
-        // There is no active span, so the default behavior will result in a new trace
-        // Note: StartSpan does not update the active span, so when the call returns there will still be no active span
-        using var span3 = _tracer.StartSpan("SayHello3", SpanKind.Internal, parentSpan: default, links: new Link[] { new(span.Context, new SpanAttributes()), new(span2.Context, new SpanAttributes()) });
+        // Use the built-in System.Diagnostics.ActivitySource to generate an Activity (and a respective Datadog span)
+        //
+        // Note: If the ActivitySource is added to the TracerProviderBuilder, the service name will be set to the OTEL service.name resource.
+        // Otherwise, the service name will be set to the Datadog Tracer's service name (can be configured with DD_SERVICE)
+        using (var localActivity = _additionalActivitySource.StartActivity(name: "Transform"))
+        {
+            Thread.Sleep(100);
+        }
     }
 
     private static async Task RunStartSpanOverloadsAsync(TelemetrySpan span)

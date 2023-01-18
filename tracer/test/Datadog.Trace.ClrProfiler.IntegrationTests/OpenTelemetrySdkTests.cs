@@ -20,11 +20,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class OpenTelemetrySdkTests : TracingIntegrationTest
     {
+        private readonly string customServiceName = "CustomServiceName";
+
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
         {
-            // Intentionally unset service name and version, which may be derived from OTEL SDK
-            SetServiceName(string.Empty);
+            SetServiceName(customServiceName);
             SetServiceVersion(string.Empty);
         }
 
@@ -64,7 +65,48 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 11;
+                const int expectedSpanCount = 12;
+                var spans = agent.WaitForSpans(expectedSpanCount);
+
+                using var s = new AssertionScope();
+                spans.Count.Should().Be(expectedSpanCount);
+
+                var otelSpans = spans.Where(s => s.Service == "MyServiceName");
+                var activitySourceSpans = spans.Where(s => s.Service == customServiceName);
+
+                otelSpans.Count().Should().Be(expectedSpanCount - 1);
+                activitySourceSpans.Count().Should().Be(1);
+
+                ValidateIntegrationSpans(otelSpans, expectedServiceName: "MyServiceName");
+                ValidateIntegrationSpans(activitySourceSpans, expectedServiceName: customServiceName);
+
+                // there's a bug in < 1.2.0 where they get the span parenting wrong
+                // so use a separate snapshot
+                var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion);
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName(filename)
+                                  .DisableRequireUniquePrefix();
+
+                telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
+            }
+        }
+
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
+        public async Task SubmitsTracesWithActivitySource(string packageVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("ADD_ADDITIONAL_ACTIVITY_SOURCE", "true");
+
+            using (var telemetry = this.ConfigureTelemetry())
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                const int expectedSpanCount = 12;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -73,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
-                var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion);
+                var filename = nameof(OpenTelemetrySdkTests) + "WithActivitySource" + GetSuffix(packageVersion);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)
