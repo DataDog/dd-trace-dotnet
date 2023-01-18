@@ -47,54 +47,37 @@ public class ProcessStartTests : InstrumentationTestsBase
         AssertSpanGenerated(ProcessStartCommon.OperationName);
     }
 
-    #if NET5_0_OR_GREATER
-
+#if NET5_0_OR_GREATER
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenAProcess_WhenStart_SpanIsGenerated3()
     {
         try
         {
-#if NET5_0_OR_GREATER
-#pragma warning disable SA1405 // Debug.Assert should provide message text
-            Debug.Assert(OperatingSystem.IsWindows()); // this overload is only supported on Windows
-#pragma warning restore SA1405 // Debug.Assert should provide message text
-#endif
-            if (OperatingSystem.IsWindows())
-            {
-                Process.Start("nonexisting3.exe", "arg1", "user", new SecureString(), "domain");
-            }
+#pragma warning disable CA1416 // this overload is only supported on Windows
+            Process.Start("nonexisting3.exe", "arg1", "user", new SecureString(), "domain");
+#pragma warning restore CA1416 // this overload is only supported on Windows
         }
         catch (Win32Exception) { }
-        catch (PlatformNotSupportedException) { }
+        catch (PlatformNotSupportedException) { return; }
 
-        if (OperatingSystem.IsWindows())
-        {
-            AssertSpanGenerated(ProcessStartCommon.OperationName);
-        }
+        AssertSpanGenerated(ProcessStartCommon.OperationName);
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenAProcess_WhenStart_SpanIsGenerated4()
     {
         try
         {
-#if NET5_0_OR_GREATER
-#pragma warning disable SA1405 // Debug.Assert should provide message text
-            Debug.Assert(OperatingSystem.IsWindows()); // this overload is only supported on Windows
-#pragma warning restore SA1405 // Debug.Assert should provide message text
-#endif
-            if (OperatingSystem.IsWindows())
-            {
-                Process.Start("nonexisting4.exe", "user", new SecureString(), "domain");
-            }
+#pragma warning disable CA1416 // this overload is only supported on Windows
+            Process.Start("nonexisting4.exe", "user", new SecureString(), "domain");
+#pragma warning restore CA1416 // this overload is only supported on Windows
         }
         catch (Win32Exception) { }
-        catch (PlatformNotSupportedException) { }
+        catch (PlatformNotSupportedException) { return;  }
 
-        if (OperatingSystem.IsWindows())
-        {
-            AssertSpanGenerated(ProcessStartCommon.OperationName);
-        }
+        AssertSpanGenerated(ProcessStartCommon.OperationName);
     }
 
 #endif
