@@ -238,7 +238,7 @@ namespace Datadog.Trace.Tests.Debugger
 
         private StringBuilder Sanitize(StringBuilder builder)
         {
-            return builder.Replace("\r\nParameter name: propertyOrFieldName ", " ").
+            return builder.Replace($"{Environment.NewLine}Parameter name: propertyOrFieldName ", " ").
                            Replace(" (Parameter 'propertyOrFieldName') ", " ");
         }
 
