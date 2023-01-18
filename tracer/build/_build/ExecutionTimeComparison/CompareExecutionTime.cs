@@ -97,12 +97,12 @@ public class CompareExecutionTime
             var format = result.Source.SourceType == ExecutionTimeSourceType.CurrentCommit
                       && scenario != "Baseline"
                       && pairedResults[scenario] == EquivalenceTestConclusion.Slower
-                             ? "crit"
-                             : "done";
+                             ? "crit, "
+                             : string.Empty;
 
             sb.AppendLine($"""
-            {offset}{result.Source.BranchName} - mean ({formattedMean}ms)  : {format}, {q05:F0}, {q95:F0}
-            {offset} .   : {format}, milestone, {mean:F0},
+            {offset}{result.Source.BranchName} - mean ({formattedMean}ms)  : {format}{q05:F0}, {q95:F0}
+            {offset} .   : {format}milestone, {mean:F0},
             """);
         }
 
@@ -169,8 +169,6 @@ public class CompareExecutionTime
                 {
                     var scenario = job["name"].ToString();
                     var durations = job["durations"].AsArray().Select(x => (double)x).ToList();
-                    // remove the last duration, because it's actually the mean!
-                    durations.RemoveAt(durations.Count - 1);
                     var result = new Result((long)job["min"], (long)job["max"], (decimal)job["mean"], (decimal)job["stdev"], durations.ToArray());
                     results.Add(new (source, sample, framework, scenario, result));
                 }
