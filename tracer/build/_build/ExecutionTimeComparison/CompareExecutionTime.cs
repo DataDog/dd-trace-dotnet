@@ -124,7 +124,7 @@ public class CompareExecutionTime
 
             Note that these results are based on a _single_ point-in-time result for each branch. For full results, see the [dashboard](https://ddstaging.datadoghq.com/dashboard/4qn-6fi-54p/apm-net-execution-time-benchmarks).
 
-            Graphs show the p99 interval based on the mean and StdDev of the test run, as well as the mean valur.
+            Graphs show the p99 interval based on the mean and StdDev of the test run, as well as the mean value of the run (shown as a diamond below the graph).
             {string.Join('\n', charts)}
             """;
 
