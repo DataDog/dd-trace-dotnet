@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests.Debugger
             return sourceFilePath ?? throw new InvalidOperationException("Can't obtain source file path");
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(TemplatesResources))]
         public async Task TestTemplates(string expressionTestFilePath)
         {
