@@ -18,6 +18,7 @@ public class DeduplicationTests : TestHelper
 {
     private const string ExpectedOperationName = "weak_hashing";
     private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
+    private static readonly Regex HashRegex = new(@"(\S)*""hash"": (-){0,1}([0-9]){1,12},(\r|\n){1,2}      ");
 
     public DeduplicationTests(ITestOutputHelper output)
         : base("Deduplication", output)
@@ -48,6 +49,7 @@ public class DeduplicationTests : TestHelper
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+        settings.AddRegexScrubber(HashRegex, string.Empty);
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();

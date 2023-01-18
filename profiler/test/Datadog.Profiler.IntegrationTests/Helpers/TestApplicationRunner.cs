@@ -53,6 +53,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public int TestDurationInSeconds { get; set; } = 10;
 
+        public double TotalTestDurationInMilliseconds { get; set; } = 0;
+
         public static string GetApplicationOutputFolderPath(string appName)
         {
             var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";
@@ -141,12 +143,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardInput = false;
+            var startTime = DateTime.Now;
             process.Start();
 
             using var processHelper = new ProcessHelper(process);
 
             var ranToCompletion = process.WaitForExit((int)_maxTestRunDuration.TotalMilliseconds) && processHelper.Drain((int)_maxTestRunDuration.TotalMilliseconds / 2);
 
+            var endTime = process.ExitTime;
+            TotalTestDurationInMilliseconds = (endTime - startTime).TotalMilliseconds;
             var standardOutput = processHelper.StandardOutput;
             var errorOutput = processHelper.ErrorOutput;
 

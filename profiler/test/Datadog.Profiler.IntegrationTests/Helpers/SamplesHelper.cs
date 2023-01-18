@@ -39,6 +39,46 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Assert.True(HaveSamplesValueCount(directory, valuesCount));
         }
 
+        public static long GetValueSum(string directory, int valueIndex)
+        {
+            long sum = 0;
+            foreach (var profile in GetProfiles(directory))
+            {
+                foreach (var sample in profile.Sample)
+                {
+                    var val = sample.Value[valueIndex];
+                    sum += val;
+                }
+            }
+
+            return sum;
+        }
+
+        public static int GetThreadCount(string directory)
+        {
+            List<string> threadNames = new List<string>(16);
+            foreach (var profile in GetProfiles(directory))
+            {
+                foreach (var sample in profile.Sample)
+                {
+                    foreach (var label in sample.Labels(profile))
+                    {
+                        if (label.Name == "thread id")
+                        {
+                            if (!threadNames.Contains(label.Value))
+                            {
+                                threadNames.Add(label.Value);
+                            }
+
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            return threadNames.Count;
+        }
+
         private static bool HaveSamplesValueCount(string directory, int valuesCount)
         {
             foreach (var profile in GetProfiles(directory))

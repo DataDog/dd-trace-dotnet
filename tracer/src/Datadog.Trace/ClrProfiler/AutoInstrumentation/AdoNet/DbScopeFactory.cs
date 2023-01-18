@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -40,6 +41,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     // don't instrument nested methods that belong to the same stacktrace
                     // e.g. ExecuteReader() -> ExecuteReader(commandBehavior)
                     return null;
+                }
+
+                if (Iast.Iast.Instance.Settings.Enabled)
+                {
+                    IastModule.OnSqlQuery(command.CommandText, integrationId, Iast.Iast.Instance);
                 }
 
                 var tags = new SqlTags
