@@ -2,7 +2,7 @@ PROJECT_FOLDER="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 SOLUTIONFOLDER="$( cd -- "$(dirname "$0")/../../../" >/dev/null 2>&1 ; pwd -P )"
 MONITORING_HOME_FOLDER="${SOLUTIONFOLDER}/shared/bin/monitoring-home"
 FILE="${PROJECT_FOLDER}/generated.linux.runsettings"
-DISTRIBUTION="$(lsb_release -d)"
+DISTRIBUTION="$(cat /etc/*-release)"
 echo $DISTRIBUTION
 echo $PROJECT_FOLDER
 echo $FILE
