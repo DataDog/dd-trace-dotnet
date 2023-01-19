@@ -50,9 +50,7 @@ const shared::WSTRING skip_assembly_prefixes[]{
     WStr("System.Text"),
     WStr("System.Threading"),
     WStr("System.Xml"),
-    WStr("testhost"),
-    WStr("Microsoft.TestPlatform"),
-    WStr("Microsoft.VisualStudio.TestPlatform")
+    WStr("testhost")
 };
 
 const shared::WSTRING include_assemblies[]{
