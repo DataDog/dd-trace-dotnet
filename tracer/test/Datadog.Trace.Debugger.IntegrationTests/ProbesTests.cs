@@ -48,6 +48,7 @@ public class ProbesTests : TestHelper
             typeof(AsyncTemplateLocalExitFullSnapshot),
             typeof(AsyncVoid),
             typeof(AsyncWithGenericArgumentAndLocal),
+            typeof(AsyncTemplateArgExitFullSnapshot),
             typeof(HasLocalsAndReturnValue),
             typeof(MultipleLineProbes),
             typeof(MultiScopesWithSameLocalNameTest),
