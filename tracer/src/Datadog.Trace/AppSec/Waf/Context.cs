@@ -28,10 +28,11 @@ namespace Datadog.Trace.AppSec.Waf
         private bool _disposed;
         private ulong _totalRuntimeOverRuns;
 
+        // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held 
         private Context(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, out bool locked)
         {
             _wafLocker = wafLocker;
-            locked = _wafLocker.EnterReadLock();
+            locked = _wafLocker.IsReadLockHeld || _wafLocker.EnterReadLock();
             _contextHandle = contextHandle;
             _waf = waf;
             _stopwatch = new Stopwatch();

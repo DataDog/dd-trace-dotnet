@@ -339,7 +339,9 @@ namespace Datadog.Trace.AppSec
                 }
                 else
                 {
+                    _wafLocker.EnterWriteLock();
                     _waf?.Dispose();
+                    _wafLocker.ExitWriteLock();
                     _settings.Enabled = false;
                 }
             }

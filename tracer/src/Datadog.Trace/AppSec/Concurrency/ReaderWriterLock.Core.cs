@@ -12,6 +12,8 @@ internal partial class ReaderWriterLock : IDisposable
 {
     private readonly System.Threading.ReaderWriterLockSlim _readerWriterLock = new();
 
+    internal bool IsReadLockHeld => _readerWriterLock.IsReadLockHeld;
+
     internal bool EnterReadLock()
     {
         if (!_readerWriterLock.TryEnterReadLock(Timeout))
@@ -42,7 +44,8 @@ internal partial class ReaderWriterLock : IDisposable
         }
         else
         {
-            Log.Warning("Reader lock wasn't held", Timeout.ToString());
+            // this can happen, as Context can be created on a thread, disposed on another
+            Log.Debug("Reader lock wasn't held", Timeout.ToString());
         }
     }
 
@@ -54,7 +57,7 @@ internal partial class ReaderWriterLock : IDisposable
         }
         else
         {
-            Log.Warning("Writer lock wasn't held", Timeout.ToString());
+            Log.Information("Writer lock wasn't held", Timeout.ToString());
         }
     }
 
