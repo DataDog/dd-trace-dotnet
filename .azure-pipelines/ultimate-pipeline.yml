@@ -2182,7 +2182,7 @@ stages:
       vmImage: ubuntu-20.04
 
     steps:
-     - task: UseDotNet@2
+    - task: UseDotNet@2
       inputs:
         version: 7.0.101
 
