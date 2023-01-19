@@ -9,11 +9,14 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Web;
+using System.Web.UI.WebControls;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AspNet;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -24,9 +27,7 @@ internal readonly partial struct SecurityCoordinator
     private const string WebApiControllerHandlerTypeFullname = "System.Web.Http.WebHost.HttpControllerHandler";
 
     private static readonly bool? UsingIntegratedPipeline;
-    private static readonly object _sync = new object();
-    private static bool? _throwHttpResponseExceptionInitSuccess = null;
-    private static Action<string, string> _throwHttpResponseException;
+    private static readonly Lazy<Action<string, string>> _throwHttpResponseException = new Lazy<Action<string, string>>(CreateThrowHttpResponseExceptionDynMeth);
 
     private readonly HttpContext _context = null;
 
@@ -55,6 +56,69 @@ internal readonly partial struct SecurityCoordinator
     }
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
+
+    private static Action<string, string> CreateThrowHttpResponseExceptionDynMeth()
+    {
+        try
+        {
+            var exceptionType = Type.GetType("System.Web.Http.HttpResponseException, System.Web.Http");
+            if (exceptionType == null)
+            {
+                return null;
+            }
+
+            var exceptionCtor = exceptionType.GetConstructor(new Type[] { typeof(HttpStatusCode) });
+            var exceptionResponseProperty = exceptionType.GetProperty("Response");
+
+            var messageType = Type.GetType("System.Net.Http.HttpResponseMessage, System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            if (messageType == null)
+            {
+                return null;
+            }
+
+            var messageContentProperty = messageType.GetProperty("Content");
+
+            var contentType = Type.GetType("System.Net.Http.StringContent, System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            if (contentType == null)
+            {
+                return null;
+            }
+
+            var contentCtor = contentType.GetConstructor(new Type[] { typeof(string), typeof(Encoding), typeof(string) });
+
+            var encodingType = typeof(Encoding);
+            var encodingUtf8Prop = encodingType.GetProperty("UTF8");
+
+            var dynMethod = new DynamicMethod(
+                "ThrowHttpResponseExceptionDynMeth",
+                typeof(void),
+                new[] { typeof(string), typeof(string) },
+                typeof(SecurityCoordinator).Module,
+                true);
+
+            var il = dynMethod.GetILGenerator();
+
+            il.DeclareLocal(exceptionType);
+            il.Emit(OpCodes.Ldc_I4, 403);
+            il.Emit(OpCodes.Newobj, exceptionCtor);
+            il.Emit(OpCodes.Stloc_0);
+            il.Emit(OpCodes.Ldloc_0);
+            il.EmitCall(OpCodes.Callvirt, exceptionResponseProperty.GetMethod, null);
+            il.Emit(OpCodes.Ldarg_0);
+            il.EmitCall(OpCodes.Call, encodingUtf8Prop.GetMethod, null);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Newobj, contentCtor);
+            il.EmitCall(OpCodes.Callvirt, messageContentProperty.SetMethod, null);
+            il.Emit(OpCodes.Ldloc_0);
+            il.Emit(OpCodes.Throw);
+
+            return (Action<string, string>)dynMethod.CreateDelegate(typeof(Action<string, string>));
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 
     /// <summary>
     /// ! This method should be called from within a try-catch block !
@@ -111,49 +175,22 @@ internal readonly partial struct SecurityCoordinator
         };
     }
 
-    private ResponseDetails GetResponseDetails()
+    private ResponseDetails GetResponseDetails() => _context.Request.Headers["Accept"] switch
     {
-        string contentType;
-        string body;
-        if (_context.Request.Headers["Accept"] == "text/html")
-        {
-            body = _security.Settings.BlockedHtmlTemplate;
-            contentType = "text/html";
-        }
-        else
-        {
-            body = _security.Settings.BlockedJsonTemplate;
-            contentType = "application/json";
-        }
-
-        return new ResponseDetails() { Body = body, ContentType = contentType };
-    }
+        MimeTypes.TextHtml => new ResponseDetails() { Body = _security.Settings.BlockedHtmlTemplate, ContentType = MimeTypes.TextHtml },
+        _ => new ResponseDetails() { Body = _security.Settings.BlockedJsonTemplate, ContentType = MimeTypes.Json },
+    };
 
     private bool ChooseBlockingMethodAndBlock(Action<bool> reporting)
     {
         var isWebApiRequest = _context.CurrentHandler?.GetType()?.FullName == WebApiControllerHandlerTypeFullname;
-        if (isWebApiRequest)
+        if (isWebApiRequest && _throwHttpResponseException.Value is Action<string, string> throwException)
         {
-            var canThrow = false;
-            lock (_sync)
-            {
-                if (_throwHttpResponseExceptionInitSuccess == null)
-                {
-                    _throwHttpResponseExceptionInitSuccess =
-                        TryCreateThrowHttpResponseExceptionDynMeth(out _throwHttpResponseException);
-                }
-
-                canThrow = _throwHttpResponseExceptionInitSuccess.Value;
-            }
-
-            if (canThrow)
-            {
                 var responseDetails = GetResponseDetails();
                 // in the normal case reporting will be by the caller function after we block
                 // in the webapi case we blocking with an exception, so can't report afterwards
                 reporting(true);
-                _throwHttpResponseException(responseDetails.Body, responseDetails.ContentType);
-            }
+                throwException(responseDetails.Body, responseDetails.ContentType);
         }
 
         // we will only hit this next line if we didn't throw
@@ -182,7 +219,7 @@ internal readonly partial struct SecurityCoordinator
         }
         else
         {
-            httpResponse.ContentType = "application/json";
+            httpResponse.ContentType = MimeTypes.Json;
         }
 
         httpResponse.StatusCode = 403;
@@ -193,73 +230,6 @@ internal readonly partial struct SecurityCoordinator
         _context.ApplicationInstance.CompleteRequest();
 
         return true;
-    }
-
-    private bool TryCreateThrowHttpResponseExceptionDynMeth(out Action<string, string> throwHttpResponseException)
-    {
-        throwHttpResponseException = null;
-
-        try
-        {
-            var exceptionType = Type.GetType("System.Web.Http.HttpResponseException, System.Web.Http");
-            if (exceptionType == null)
-            {
-                return false;
-            }
-
-            var exceptionCtor = exceptionType.GetConstructor(new Type[] { typeof(HttpStatusCode) });
-            var exceptionResponseProperty = exceptionType.GetProperty("Response");
-
-            var messageType = Type.GetType("System.Net.Http.HttpResponseMessage, System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
-            if (messageType == null)
-            {
-                return false;
-            }
-
-            var messageContentProperty = messageType.GetProperty("Content");
-
-            var contentType = Type.GetType("System.Net.Http.StringContent, System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
-            if (contentType == null)
-            {
-                return false;
-            }
-
-            var contentCtor = contentType.GetConstructor(new Type[] { typeof(string), typeof(Encoding), typeof(string) });
-
-            var encodingType = typeof(Encoding);
-            var encodingUtf8Prop = encodingType.GetProperty("UTF8");
-
-            var dynMethod = new DynamicMethod(
-                "ThrowHttpResponseExceptionDynMeth",
-                typeof(void),
-                new[] { typeof(string), typeof(string) },
-                GetType().Module,
-                true);
-
-            var il = dynMethod.GetILGenerator();
-
-            il.DeclareLocal(exceptionType);
-            il.Emit(OpCodes.Ldc_I4, 403);
-            il.Emit(OpCodes.Newobj, exceptionCtor);
-            il.Emit(OpCodes.Stloc_0);
-            il.Emit(OpCodes.Ldloc_0);
-            il.EmitCall(OpCodes.Callvirt, exceptionResponseProperty.GetMethod, null);
-            il.Emit(OpCodes.Ldarg_0);
-            il.EmitCall(OpCodes.Call, encodingUtf8Prop.GetMethod, null);
-            il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Newobj, contentCtor);
-            il.EmitCall(OpCodes.Callvirt, messageContentProperty.SetMethod, null);
-            il.Emit(OpCodes.Ldloc_0);
-            il.Emit(OpCodes.Throw);
-
-            throwHttpResponseException = (Action<string, string>)dynMethod.CreateDelegate(typeof(Action<string, string>));
-
-            return true;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
     }
 
     public Dictionary<string, object> GetBasicRequestArgsForWaf()

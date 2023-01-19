@@ -9,6 +9,7 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.AspNet;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 
@@ -49,7 +50,7 @@ internal class BlockingMiddleware
             {
                 if (string.Equals(header.Key, "Accept", StringComparison.OrdinalIgnoreCase))
                 {
-                    var textHtmlContentType = "text/html";
+                    var textHtmlContentType = MimeTypes.TextHtml;
                     foreach (var value in header.Value)
                     {
                         if (value.Contains(textHtmlContentType))

@@ -55,11 +55,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             where TTarget : IApplicationBuilder
         {
             instance.Components.Insert(0, rd => new BlockingMiddleware(rd).Invoke);
-            if (instance.Components.Count > 1)
-            {
-                instance.Components.Insert(instance.Components.Count - 1, rd => new BlockingMiddleware(rd).Invoke);
-            }
-
             instance.Components.Add(rd => new BlockingMiddleware(rd, endPipeline: true).Invoke);
 
             return default;
