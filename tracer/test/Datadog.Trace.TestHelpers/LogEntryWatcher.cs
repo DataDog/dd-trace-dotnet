@@ -18,39 +18,27 @@ namespace Datadog.Trace.TestHelpers;
 public class LogEntryWatcher : IDisposable
 {
     private readonly ITestOutputHelper _testOutput;
-    private readonly FileSystemWatcher _fileWatcher;
+    private readonly string _logDirectory;
+    private readonly string _logFilePattern;
     private StreamReader _reader;
-    private DirectoryInfo _dir;
 
     public LogEntryWatcher(string logFilePattern, string logDirectory = null, ITestOutputHelper testOutput = null)
     {
+        _logFilePattern = logFilePattern;
         _testOutput = testOutput;
-        var logPath = logDirectory ?? DatadogLoggingFactory.GetLogDirectory();
-        _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
+        _logDirectory = logDirectory ?? DatadogLoggingFactory.GetLogDirectory();
 
-        _dir = new DirectoryInfo(logPath);
-        var lastFile = _dir
-                      .GetFiles(logFilePattern)
-                      .OrderBy(info => info.LastWriteTime)
-                      .LastOrDefault();
+        _reader = OpenReaderOnLatestFile(DateTime.Today);
 
-        if (lastFile != null && lastFile.LastWriteTime.Date == DateTime.Today)
+        if (_reader != null)
         {
-            SetStream(lastFile.FullName);
             _reader.ReadToEnd();
-            _testOutput?.WriteLine("LogEntryWatcher: Read file to end.");
         }
 
-        _testOutput?.WriteLine("LogEntryWatcher: Could not find file. " + GetDiagnosticMessage());
-        _fileWatcher.Created += NewLogFileCreated;
-        _fileWatcher.Error += FileWatcherError;
+        _testOutput?.WriteLine("LogEntryWatcher: Could not find file. Will wait for new file.");
     }
 
-    public void Dispose()
-    {
-        _fileWatcher?.Dispose();
-        _reader?.Dispose();
-    }
+    private string CurrentLogFileFullPath => ((FileStream)_reader.BaseStream).Name;
 
     public Task WaitForLogEntry(string logEntry, TimeSpan? timeout = null)
     {
@@ -67,6 +55,7 @@ public class LogEntryWatcher : IDisposable
             if (_reader == null)
             {
                 await Task.Delay(millisecondsDelay: 100);
+                _reader = OpenReaderOnLatestFile(DateTime.Today);
                 continue;
             }
 
@@ -81,50 +70,57 @@ public class LogEntryWatcher : IDisposable
             else
             {
                 await Task.Delay(millisecondsDelay: 100);
+                CheckRollOverToNewFile();
             }
         }
 
         if (i != logEntries.Length)
         {
-            throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}. {GetDiagnosticMessage()}" : $"Log entry was not found {logEntries[i]} in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
+            throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_logDirectory} with file pattern {_logFilePattern}." : $"Log entry was not found {logEntries[i]} in {CurrentLogFileFullPath} with filter {_logFilePattern}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
         }
     }
 
-    private string GetDiagnosticMessage()
+    public void Dispose()
     {
-        var listOfFilesInFolder = string.Join(", ", _dir.GetFiles().Select(f => f.Name));
-        var message = $"LogEntryWatcher: Searched directory: {_dir.FullName} which currently contains the following files files: {listOfFilesInFolder}";
-        return message;
+        _reader?.Dispose();
     }
 
-    private void SetStream(string filePath)
+    private StreamReader OpenReaderOnLatestFile(DateTime minimumLastWriteTime)
     {
-        var reader = _reader;
+        var latestFile = new DirectoryInfo(_logDirectory)
+                        .GetFiles(_logFilePattern)
+                        .Where(info => info.LastWriteTime > minimumLastWriteTime)
+                        .OrderBy(info => info.LastWriteTime)
+                        .LastOrDefault();
 
-        try
+        if (latestFile == null)
         {
-            var fileStream = new FileStream(
-                filePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.ReadWrite | FileShare.Delete);
-
-            _reader = new StreamReader(fileStream, Encoding.UTF8);
+            return null;
         }
-        finally
+
+        _testOutput?.WriteLine("LogEntryWatcher: Starting to read from log file " + latestFile.FullName);
+
+        var fileStream = new FileStream(
+            latestFile.FullName,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete);
+
+        return new StreamReader(fileStream, Encoding.UTF8);
+    }
+
+    private void CheckRollOverToNewFile()
+    {
+        // We're purposely avoiding using the FileSystemWatcher here because we found it to be unreliable -
+        // it would fail randomly on Windows / .NET 7 (it's `Error` event would fire with a `Win32Exception `).
+        var currentFileLastWriteTime = new FileInfo(CurrentLogFileFullPath).LastWriteTime;
+        var newerFile = OpenReaderOnLatestFile(currentFileLastWriteTime);
+        if (newerFile != null)
         {
-            reader?.Dispose();
+            // We've rolled over to a new file, so close the old one and start reading from the new one
+            _reader.Dispose();
+            _reader = newerFile;
+            _testOutput.WriteLine("LogEntryWatcher: Rolled over to new log file " + CurrentLogFileFullPath);
         }
-    }
-
-    private void NewLogFileCreated(object sender, FileSystemEventArgs e)
-    {
-        _testOutput?.WriteLine("LogEntryWatcher: Found file {0}", e.FullPath);
-        SetStream(e.FullPath);
-    }
-
-    private void FileWatcherError(object sender, ErrorEventArgs e)
-    {
-        _testOutput.WriteLine("LogEntryWatcher: There was an error! THAT EXPLAINS IT. " + e.GetException());
     }
 }
