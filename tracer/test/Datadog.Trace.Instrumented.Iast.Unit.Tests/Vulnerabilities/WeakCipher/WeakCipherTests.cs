@@ -11,6 +11,8 @@ using Xunit;
 
 namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities.WeakHashing;
 
+#if !NETFRAMEWORK
+
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
 #pragma warning disable SYSLIB0022 // Type or member is obsolete
 #pragma warning disable SYSLIB0045 // Type or member is obsolete
@@ -86,3 +88,4 @@ public class WeakCipherTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 }
+#endif
