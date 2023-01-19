@@ -166,11 +166,13 @@ namespace Datadog.Trace.Coverage.Collector
                             {
                                 var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
                                 asmProcessor.Process();
-
-                                lock (processedDirectories)
+                                Interlocked.Increment(ref numAssemblies);
+                                if (asmProcessor.HasTracerAssemblyCopied)
                                 {
-                                    numAssemblies++;
-                                    processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                    lock (processedDirectories)
+                                    {
+                                        processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                    }
                                 }
                             }
                             catch (PdbNotFoundException)

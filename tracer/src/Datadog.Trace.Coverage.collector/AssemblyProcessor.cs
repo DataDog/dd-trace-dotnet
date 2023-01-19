@@ -71,10 +71,13 @@ namespace Datadog.Trace.Coverage.Collector
 
         public string FilePath => _assemblyFilePath;
 
+        public bool HasTracerAssemblyCopied { get; private set; }
+
         public void Process()
         {
             try
             {
+                HasTracerAssemblyCopied = false;
                 _logger.Debug($"Processing: {_assemblyFilePath}");
 
                 // Check if the assembly is in the ignored assemblies list.
@@ -602,6 +605,7 @@ namespace Datadog.Trace.Coverage.Collector
                         }
                     }
 
+                    HasTracerAssemblyCopied = true;
                     return outputAssemblyDllLocation;
                 }
             }
