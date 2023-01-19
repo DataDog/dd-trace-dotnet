@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -20,8 +21,11 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal static class RunHelper
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RunHelper));
+
         public static int Execute(ApplicationContext applicationContext, CommandContext context, RunSettings settings)
         {
+            Log.Debug("RunHelper: Preparing command.");
             var args = settings.Command ?? context.Remaining.Raw;
 
             var profilerEnvironmentVariables = Utils.GetProfilerEnvironmentVariables(
@@ -72,17 +76,21 @@ namespace Datadog.Trace.Tools.Runner
                 AgentConfiguration agentConfiguration = null;
                 if (agentless)
                 {
+                    Log.Debug("RunHelper: Agentless has been enabled. Checking API key");
                     if (string.IsNullOrWhiteSpace(apiKey))
                     {
                         Utils.WriteError("An API key is required in Agentless mode.");
+                        Log.Error("RunHelper: An API key is required in Agentless mode.");
                         return 1;
                     }
                 }
                 else
                 {
+                    Log.Debug("RunHelper: Agent-based mode has been enabled. Checking agent connection.");
                     agentConfiguration = AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(settings.AgentUrl));
                     if (agentConfiguration is null)
                     {
+                        Log.Error("RunHelper: Agent configuration cannot be retrieved.");
                         return 1;
                     }
                 }
@@ -101,17 +109,28 @@ namespace Datadog.Trace.Tools.Runner
                         // to ask for EVP proxy support.
                         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy] = "1";
                         EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, "1");
+                        Log.Debug("RunHelper: EVP proxy was detected.");
                     }
 
                     // If we have api and application key, and the code coverage or the tests skippeable environment variables
                     // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
                     var useConfigurationApi = !agentless || !string.IsNullOrEmpty(applicationKey);
+                    if (!useConfigurationApi)
+                    {
+                        Log.Debug("RunHelper: Application key is empty, call to configuration api skipped.");
+                    }
+                    else if (!ciVisibilitySettings.IntelligentTestRunnerEnabled)
+                    {
+                        Log.Debug("RunHelper: Intelligent test runner is disabled, call to configuration api skipped.");
+                    }
+
                     if (useConfigurationApi
-                        && ciVisibilitySettings.IntelligentTestRunnerEnabled
-                        && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
+                     && ciVisibilitySettings.IntelligentTestRunnerEnabled
+                     && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
                     {
                         try
                         {
+                            CIVisibility.Log.Debug("RunHelper: Calling configuration api...");
                             var itrClient = new Ci.IntelligentTestRunnerClient(Ci.CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
                             // we skip the framework info because we are interested in the target projects info not the runner one.
                             var itrSettings = AsyncUtil.RunSync(() => itrClient.GetSettingsAsync(skipFrameworkInfo: true));
@@ -124,6 +143,9 @@ namespace Datadog.Trace.Tools.Runner
                         }
                     }
                 }
+
+                Log.Debug("RunHelper: CodeCoverageEnabled = {value}", codeCoverageEnabled);
+                Log.Debug("RunHelper: TestSkippingEnabled = {value}", testSkippingEnabled);
 
                 if (codeCoverageEnabled)
                 {
@@ -213,6 +235,7 @@ namespace Datadog.Trace.Tools.Runner
                     return 0;
                 }
 
+                Log.Debug("RunHelper: Launching: {value}", command);
                 var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
 
                 if (args.Count > 1)
@@ -222,6 +245,7 @@ namespace Datadog.Trace.Tools.Runner
 
                 exitCode = Utils.RunProcess(processInfo, applicationContext.TokenSource.Token);
                 session?.SetTag(TestTags.CommandExitCode, exitCode);
+                Log.Debug<int>("RunHelper: Finished with exit code: {value}", exitCode);
                 return exitCode;
             }
             catch (Exception ex)
