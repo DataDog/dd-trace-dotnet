@@ -29,7 +29,7 @@ public class LogEntryWatcher : IDisposable
         _testOutput = testOutput;
         _logDirectory = logDirectory ?? DatadogLoggingFactory.GetLogDirectory();
 
-        _reader = OpenReaderOnLatestFile(DateTime.Today);
+        _reader = OpenReaderOnLatestFile();
 
         if (_reader != null)
         {
@@ -39,7 +39,7 @@ public class LogEntryWatcher : IDisposable
         _testOutput?.WriteLine("LogEntryWatcher: Could not find file. Will wait for new file.");
     }
 
-    private string CurrentLogFileFullPath => ((FileStream)_reader!.BaseStream).Name;
+    private string? CurrentLogFileFullPath => _reader == null ? null : ((FileStream)_reader.BaseStream).Name;
 
     public Task WaitForLogEntry(string logEntry, TimeSpan? timeout = null)
     {
@@ -56,7 +56,7 @@ public class LogEntryWatcher : IDisposable
             if (_reader == null)
             {
                 await Task.Delay(millisecondsDelay: 100);
-                _reader = OpenReaderOnLatestFile(DateTime.Today);
+                _reader = OpenReaderOnLatestFile();
                 continue;
             }
 
@@ -86,11 +86,12 @@ public class LogEntryWatcher : IDisposable
         _reader?.Dispose();
     }
 
-    private StreamReader? OpenReaderOnLatestFile(DateTime minimumLastWriteTime)
+    private StreamReader? OpenReaderOnLatestFile()
     {
         var latestFile = new DirectoryInfo(_logDirectory)
                         .GetFiles(_logFilePattern)
-                        .Where(info => info.LastWriteTime > minimumLastWriteTime)
+                        .Where(info => info.LastWriteTime > DateTime.Today &&
+                                       info.FullName != CurrentLogFileFullPath)
                         .OrderBy(info => info.LastWriteTime)
                         .LastOrDefault();
 
@@ -113,9 +114,9 @@ public class LogEntryWatcher : IDisposable
     private void RollOverToNewFileIfAvailable()
     {
         // We're purposely avoiding using the FileSystemWatcher here because we found it to be unreliable -
-        // it would fail randomly on Windows / .NET 7 (it's `Error` event would fire with a `Win32Exception `).
-        var currentFileLastWriteTime = new FileInfo(CurrentLogFileFullPath).LastWriteTime;
-        var newerFile = OpenReaderOnLatestFile(currentFileLastWriteTime);
+        // it would fail randomly on Windows / .NET 7 (its `Error` event would fire with a `Win32Exception`).
+        var currentFileLastWriteTime = new FileInfo(CurrentLogFileFullPath!).LastWriteTime;
+        var newerFile = OpenReaderOnLatestFile();
         if (newerFile != null)
         {
             // We've rolled over to a new file, so close the old one and start reading from the new one
