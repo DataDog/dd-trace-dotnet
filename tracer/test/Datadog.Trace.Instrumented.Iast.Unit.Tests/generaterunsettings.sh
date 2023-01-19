@@ -16,7 +16,7 @@ case $DISTRIBUTION in
 	*) echo Linux; BIN_FOLDER="linux-x64";;
 esac 
 
-if [[ "$ARCH" == *"arm64"* ]]; then
+if [[ "$ARCH" == *"aarch64"* ]]; then
   BIN_FOLDER="linux-arm64"
 fi
 echo BIN_FOLDER $BIN_FOLDER
