@@ -966,20 +966,7 @@ partial class Build
          {
              var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
 
-             var testedCommit = Environment.GetEnvironmentVariable("OriginalCommitId"); 
-             if (string.IsNullOrEmpty(testedCommit))
-             {
-                 testedCommit = GitTasks.Git($"rev-parse HEAD").FirstOrDefault().Text;
-                 if(string.IsNullOrEmpty(testedCommit))
-                 {
-                    Logger.Warn("No OriginalCommitId variable found and unable to infer commit. Skipping throughput comparison");
-                    return;
-                 }
-                 else
-                 {
-                    Logger.Info($"No OriginalCommitId variable found. Using inferred commit {testedCommit}");
-                 }
-             }
+             var testedCommit = GetCommitDetails();
 
              var throughputDir = BuildDataDirectory / "throughput";
              var masterDir = throughputDir / "master";
@@ -1094,21 +1081,7 @@ partial class Build
          .Executes(async () =>
          {
              var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
-
-             var testedCommit = Environment.GetEnvironmentVariable("OriginalCommitId"); 
-             if (string.IsNullOrEmpty(testedCommit))
-             {
-                 testedCommit = GitTasks.Git($"rev-parse HEAD").FirstOrDefault().Text;
-                 if(string.IsNullOrEmpty(testedCommit))
-                 {
-                    Logger.Warn("No OriginalCommitId variable found and unable to infer commit. Skipping throughput comparison");
-                    return;
-                 }
-                 else
-                 {
-                    Logger.Info($"No OriginalCommitId variable found. Using inferred commit {testedCommit}");
-                 }
-             }
+             var testedCommit = GetCommitDetails();
 
              var executionDir = BuildDataDirectory / "execution_benchmarks";
              var masterDir = executionDir / "master";
@@ -1434,6 +1407,26 @@ partial class Build
                                     new MilestoneRequest { State = ItemStateFilter.Open });
 
         return allOpenMilestones.FirstOrDefault(x => x.Title == milestoneName);
+    }
+
+    static string GetCommitDetails()
+    {
+        var testedCommit = Environment.GetEnvironmentVariable("OriginalCommitId"); 
+        if (string.IsNullOrEmpty(testedCommit))
+        {
+            testedCommit = GitTasks.Git($"rev-parse HEAD").FirstOrDefault().Text;
+            if(string.IsNullOrEmpty(testedCommit))
+            {
+                Logger.Warn("No OriginalCommitId variable found and unable to infer commit. Skipping throughput comparison");
+                return null;
+            }
+            else
+            {
+                Logger.Info($"No OriginalCommitId variable found. Using inferred commit {testedCommit}");
+            }
+        }
+
+        return testedCommit;
     }
 
     class LabbelerConfiguration
