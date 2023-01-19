@@ -78,7 +78,7 @@ public abstract class AspNetWebFormsAsmData : RcmBaseFramework, IClassFixture<Ii
     }
 
     [SkippableTheory]
-    [InlineData("blocking-ips", "/")]
+    [InlineData("blocking-ips", "/default.aspx")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
