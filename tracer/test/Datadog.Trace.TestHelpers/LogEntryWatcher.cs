@@ -3,13 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Xunit.Abstractions;
 
@@ -17,12 +18,12 @@ namespace Datadog.Trace.TestHelpers;
 
 public class LogEntryWatcher : IDisposable
 {
-    private readonly ITestOutputHelper _testOutput;
+    private readonly ITestOutputHelper? _testOutput;
     private readonly string _logDirectory;
     private readonly string _logFilePattern;
-    private StreamReader _reader;
+    private StreamReader? _reader;
 
-    public LogEntryWatcher(string logFilePattern, string logDirectory = null, ITestOutputHelper testOutput = null)
+    public LogEntryWatcher(string logFilePattern, string? logDirectory = null, ITestOutputHelper? testOutput = null)
     {
         _logFilePattern = logFilePattern;
         _testOutput = testOutput;
@@ -38,7 +39,7 @@ public class LogEntryWatcher : IDisposable
         _testOutput?.WriteLine("LogEntryWatcher: Could not find file. Will wait for new file.");
     }
 
-    private string CurrentLogFileFullPath => ((FileStream)_reader.BaseStream).Name;
+    private string CurrentLogFileFullPath => ((FileStream)_reader!.BaseStream).Name;
 
     public Task WaitForLogEntry(string logEntry, TimeSpan? timeout = null)
     {
@@ -70,13 +71,13 @@ public class LogEntryWatcher : IDisposable
             else
             {
                 await Task.Delay(millisecondsDelay: 100);
-                CheckRollOverToNewFile();
+                RollOverToNewFileIfAvailable();
             }
         }
 
         if (i != logEntries.Length)
         {
-            throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_logDirectory} with file pattern {_logFilePattern}." : $"Log entry was not found {logEntries[i]} in {CurrentLogFileFullPath} with filter {_logFilePattern}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
+            throw new TimeoutException(_reader == null ? $"Log file was not found for path: {_logDirectory} with file pattern {_logFilePattern}." : $"Log entry was not found {logEntries[i]} in {CurrentLogFileFullPath} with filter {_logFilePattern}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
         }
     }
 
@@ -85,7 +86,7 @@ public class LogEntryWatcher : IDisposable
         _reader?.Dispose();
     }
 
-    private StreamReader OpenReaderOnLatestFile(DateTime minimumLastWriteTime)
+    private StreamReader? OpenReaderOnLatestFile(DateTime minimumLastWriteTime)
     {
         var latestFile = new DirectoryInfo(_logDirectory)
                         .GetFiles(_logFilePattern)
@@ -109,7 +110,7 @@ public class LogEntryWatcher : IDisposable
         return new StreamReader(fileStream, Encoding.UTF8);
     }
 
-    private void CheckRollOverToNewFile()
+    private void RollOverToNewFileIfAvailable()
     {
         // We're purposely avoiding using the FileSystemWatcher here because we found it to be unreliable -
         // it would fail randomly on Windows / .NET 7 (it's `Error` event would fire with a `Win32Exception `).
@@ -118,9 +119,9 @@ public class LogEntryWatcher : IDisposable
         if (newerFile != null)
         {
             // We've rolled over to a new file, so close the old one and start reading from the new one
-            _reader.Dispose();
+            _reader!.Dispose();
             _reader = newerFile;
-            _testOutput.WriteLine("LogEntryWatcher: Rolled over to new log file " + CurrentLogFileFullPath);
+            _testOutput?.WriteLine("LogEntryWatcher: Rolled over to new log file " + CurrentLogFileFullPath);
         }
     }
 }
