@@ -76,5 +76,5 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 
     protected string RulesUpdatedMessage() => $"rules have been updated and waf status is \"DDWAF_OK\"  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
 
-    protected string WafUpdateRule() => $"DDAS-0015-00: AppSec loaded 1 from file RemoteConfig.  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
+    protected string WafUpdateRule() => $"DDAS-0015-00: AppSec loaded 1 rules from file RemoteConfig.  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
 }

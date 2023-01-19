@@ -126,7 +126,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 if (args.Data != null)
                 {
-                    if (args.Data.Contains("Webserver started"))
+                    if (args.Data.Contains("Webserver started") || args.Data.Contains("Application started"))
                     {
                         wh.Set();
                     }
