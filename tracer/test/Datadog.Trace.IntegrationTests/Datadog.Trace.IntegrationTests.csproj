@@ -47,4 +47,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.0" />
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="dir&#xD;&#xA;cat r" />
+  </Target>
 </Project>

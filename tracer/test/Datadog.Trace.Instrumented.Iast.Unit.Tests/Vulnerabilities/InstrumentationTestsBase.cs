@@ -14,29 +14,28 @@ namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities;
 
 public class InstrumentationTestsBase
 {
+    private TraceContext traceContext;
+
     public InstrumentationTestsBase()
     {
         Tracer.Instance.StartActiveInternal("test", null, DateTime.Now.ToString());
+        traceContext = (Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext;
         AssertInstrumented();
-        var traceContext = (Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext;
         traceContext.EnableIastInRequest();
     }
 
     protected void AddTainted(string tainted)
     {
-        var traceContext = (Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext;
         traceContext.IastRequestContext.AddTaintedForTest(null, tainted);
     }
 
     protected void AssertTainted(string tainted)
     {
-        var traceContext = (Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext;
         traceContext.IastRequestContext.GetTainted(tainted).Should().NotBeNull();
     }
 
     protected void AssertNotTainted(string value)
     {
-        var traceContext = (Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext;
         traceContext.IastRequestContext.GetTainted(value).Should().BeNull();
     }
 
@@ -45,19 +44,19 @@ public class InstrumentationTestsBase
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
         var loaderAssembliesCount = assemblies.Where(x => x.GetName().Name == "Datadog.Trace.ClrProfiler.Managed.Loader").Count();
         loaderAssembliesCount.Should().NotBe(0, GetErrorMessage(assemblies));
-        Tracer.Instance.ActiveScope.Should().NotBeNull(GetErrorMessage(assemblies));
+        traceContext.Should().NotBeNull(GetErrorMessage(assemblies));
     }
 
     protected void AssertSpanGenerated(string operationName, int spansGenerated = 1)
     {
-        var spans = GetGeneratedSpans((Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext);
+        var spans = GetGeneratedSpans(traceContext);
         spans = spans.Where(x => x.OperationName == operationName).ToList();
         spansGenerated.Should().Be(spans.Count);
     }
 
     protected void AssertVulnerable(int vulnerabilities = 1)
     {
-        var spans = GetGeneratedSpans((Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext);
+        var spans = GetGeneratedSpans(traceContext);
         GetIastSpansCount(spans).Should().Be(vulnerabilities);
     }
 
