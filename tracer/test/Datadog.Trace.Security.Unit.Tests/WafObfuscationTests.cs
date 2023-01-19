@@ -53,8 +53,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             waf.Should().NotBeNull();
             using var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
-            using var context = waf.CreateContext(readwriteLocker, out var locked);
-            locked.Should().BeTrue();
+            using var context = waf.CreateContext(readwriteLocker);
             var result = context.Run(args, 1_000_000);
             result.ReturnCode.Should().Be(ReturnCode.Match);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
