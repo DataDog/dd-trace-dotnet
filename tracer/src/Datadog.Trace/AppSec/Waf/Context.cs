@@ -32,7 +32,7 @@ namespace Datadog.Trace.AppSec.Waf
         private Context(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, out bool valid)
         {
             _wafLocker = wafLocker;
-            // in high concurrency, the waf passed as argument here could have been disposed just above in betwen creation / waf update so last test here 
+            // in high concurrency, the waf passed as argument here could have been disposed just above in betwen creation / waf update so last test here
             valid = (_wafLocker.IsReadLockHeld || _wafLocker.EnterReadLock()) && !waf.Disposed;
             _contextHandle = contextHandle;
             _waf = waf;
