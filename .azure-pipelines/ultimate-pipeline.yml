@@ -1195,7 +1195,9 @@ stages:
           platform: x64
     
     steps:
-    - template: steps/install-dotnet-sdks.yml
+    - task: UseDotNet@2
+      inputs:
+        version: 7.0.101
 
     - task: DownloadPipelineArtifact@2
       displayName: Download windows tracer home
@@ -1287,7 +1289,9 @@ stages:
           platform: x64
     
     steps:
-    - template: steps/install-latest-dotnet-sdk.yml
+    - task: UseDotNet@2
+      inputs:
+        version: 7.0.101
 
     - task: DownloadPipelineArtifact@2
       displayName: Download windows profiler home
@@ -2011,7 +2015,9 @@ stages:
       vmImage: ubuntu-20.04
 
     steps:
-    - template: steps/install-dotnet-sdks.yml
+    - task: UseDotNet@2
+      inputs:
+        version: 7.0.101
 
     - template: steps/clone-repo.yml
       parameters:
@@ -2096,7 +2102,9 @@ stages:
       vmImage: ubuntu-20.04
 
     steps:
-    - template: steps/install-dotnet-sdks.yml
+    - task: UseDotNet@2
+      inputs:
+        version: 7.0.101
 
     - template: steps/clone-repo.yml
       parameters:
@@ -2174,7 +2182,9 @@ stages:
       vmImage: ubuntu-20.04
 
     steps:
-    - template: steps/install-latest-dotnet-sdk.yml
+     - task: UseDotNet@2
+      inputs:
+        version: 7.0.101
 
     - template: steps/clone-repo.yml
       parameters:
