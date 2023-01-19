@@ -58,8 +58,9 @@ internal readonly partial struct SecurityCoordinator
 
             if (additiveContext == null)
             {
-                additiveContext = _security.CreateAdditiveContext(out var locked);
-                if (additiveContext != null && locked)
+                additiveContext = _security.CreateAdditiveContext();
+                // prevent very cases where waf has been disposed between here and has been passed as argument until the 2nd line of constructor..
+                if (additiveContext != null)
                 {
                     _httpTransport.SetAdditiveContext(additiveContext);
                 }

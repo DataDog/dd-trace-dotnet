@@ -28,11 +28,12 @@ namespace Datadog.Trace.AppSec.Waf
         private bool _disposed;
         private ulong _totalRuntimeOverRuns;
 
-        // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held 
-        private Context(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, out bool locked)
+        // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held
+        private Context(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, out bool valid)
         {
             _wafLocker = wafLocker;
-            locked = _wafLocker.IsReadLockHeld || _wafLocker.EnterReadLock();
+            // in high concurrency, the waf passed as argument here could have been disposed just above in betwen creation / waf update so last test here 
+            valid = (_wafLocker.IsReadLockHeld || _wafLocker.EnterReadLock()) && !waf.Disposed;
             _contextHandle = contextHandle;
             _waf = waf;
             _stopwatch = new Stopwatch();
@@ -40,10 +41,10 @@ namespace Datadog.Trace.AppSec.Waf
 
         ~Context() => Dispose(false);
 
-        public static IContext? GetContext(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, out bool locked)
+        public static IContext? GetContext(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker)
         {
-            var context = new Context(contextHandle, waf, wafLocker, out locked);
-            return locked ? context : null;
+            var context = new Context(contextHandle, waf, wafLocker, out var valid);
+            return valid ? context : null;
         }
 
         public IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)

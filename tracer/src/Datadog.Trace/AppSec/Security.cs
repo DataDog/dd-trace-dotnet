@@ -396,11 +396,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal IContext CreateAdditiveContext(out bool locked)
-        {
-            locked = false;
-            return _waf?.CreateContext(_wafLocker, out locked);
-        }
+        internal IContext CreateAdditiveContext() => _waf?.CreateContext(_wafLocker);
 
         private void RunShutdown()
         {
