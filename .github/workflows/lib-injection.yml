@@ -1,0 +1,93 @@
+name: "Lib Injection Test"
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'dd-trace-dotnet commit SHA'
+        required: true
+      version:
+        description: 'dd-trace-dotnet version number'
+        required: true
+
+jobs:
+  build-and-publish-init-image:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Download files
+      shell: bash
+      run: |
+        VERSION=${{ github.event.inputs.version }}
+        SHA=${{ github.event.inputs.sha }}
+
+        LIBC_ARCHIVE="datadog-dotnet-apm-$VERSION.tar.gz"
+        LIBC_URL=https://apmdotnetci.blob.core.windows.net/apm-dotnet-ci-artifacts-master/$SHA/$LIBC_ARCHIVE
+        curl -L --silent $LIBC_URL --output $LIBC_ARCHIVE
+
+        ARM64_LIBC_ARCHIVE="datadog-dotnet-apm-$VERSION.arm64.tar.gz"
+        ARM64_LIBC_URL=https://apmdotnetci.blob.core.windows.net/apm-dotnet-ci-artifacts-master/$SHA/$ARM64_LIBC_ARCHIVE
+        curl -L --silent $ARM64_LIBC_URL --output $ARM64_LIBC_ARCHIVE
+
+        MUSL_ARCHIVE="datadog-dotnet-apm-$VERSION-musl.tar.gz"
+        MUSL_URL=https://apmdotnetci.blob.core.windows.net/apm-dotnet-ci-artifacts-master/$SHA/$MUSL_ARCHIVE
+        curl -L --silent $MUSL_URL --output $MUSL_ARCHIVE
+
+        mkdir -p lib-injection/glibc/linux_amd64
+        mkdir -p lib-injection/glibc/linux_arm64
+        mkdir -p lib-injection/musl/linux_amd64
+
+        tar -C ./lib-injection/glibc/linux_amd64 -xzf $LIBC_ARCHIVE
+        tar -C ./lib-injection/glibc/linux_arm64 -xzf $ARM64_LIBC_ARCHIVE
+        tar -C ./lib-injection/musl/linux_amd64 -xzf $MUSL_ARCHIVE
+
+        find ./lib-injection
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: lib-injection-tags
+      id: lib-injection-tags
+      uses: DataDog/system-tests/lib-injection/docker-tags@main
+      with:
+        init-image-name: 'dd-lib-dotnet-init'
+        main-branch-name: 'master'
+
+    - name: Generate musl tags
+      id: generate-musl-tags
+      shell: bash
+      run: |
+        # Update first IFS character to ',' to use as our delimiter
+        IFS=','
+
+        # Read the csv tag-names into an array variable and append '-musl' to each tag
+        read -r -a array <<< "${{ steps.lib-injection-tags.outputs.tag-names }}"
+        array=( "${array[@]/%/-musl}" )
+        MUSL_TAG_NAMES=${array[@]}
+
+        echo "Generated musl tag names '$MUSL_TAG_NAMES'"
+        echo "musl-tag-names=$MUSL_TAG_NAMES" >> $GITHUB_OUTPUT
+
+    - name: Login to Docker
+      run: docker login -u publisher -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
+
+    - name: Docker Build
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: ${{ steps.lib-injection-tags.outputs.tag-names }}
+        platforms: 'linux/amd64,linux/arm64/v8' # for windows, we can run windows/amd64,windows/386,windows/arm64
+        context: ./lib-injection
+
+    - name: Docker Build musl images
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: ${{ steps.generate-musl-tags.outputs.musl-tag-names }}
+        platforms: 'linux/amd64,linux/arm64/v8'
+        context: ./lib-injection
+        file: ./lib-injection/Dockerfile.musl
