@@ -567,7 +567,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Enables a fix around header tags normalization.
             /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
-            /// This flag defaults to true and is here in case customers need retrocompatibility only
+            /// This flag defaults to true and is here only in case customers need backwards compatibility.
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
@@ -575,6 +575,17 @@ namespace Datadog.Trace.Configuration
             /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
             /// </summary>
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
+
+            /// <summary>
+            /// Enables generating 128-bit trace ids instead of 64-bit trace ids.
+            /// </summary>
+            public const string TraceId128BitGenerationEnabled = "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED";
+
+            /// <summary>
+            /// Enables injecting 128-bit trace ids into logs, if available, instead of 64-bit trace ids.
+            /// Note that a 128-bit trace id may be received from an upstream service even if we are not generating them.
+            /// </summary>
+            public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
         }
 
         internal static class Telemetry
