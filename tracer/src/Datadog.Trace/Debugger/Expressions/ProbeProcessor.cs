@@ -163,6 +163,11 @@ namespace Datadog.Trace.Debugger.Expressions
                                     break;
                                 case CaptureBehaviour.Evaluate:
                                     {
+                                        if (info.IsAsyncCapture())
+                                        {
+                                            AddAsyncMethodArguments(snapshotCreator, ref info);
+                                        }
+
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
                                         evaluationResult = Evaluate(snapshotCreator, out var shouldStopCapture);
                                         if (shouldStopCapture)
