@@ -43,6 +43,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return null;
                 }
 
+                if (Iast.Iast.Instance.Settings.Enabled)
+                {
+                    IastModule.OnSqlQuery(command.CommandText, integrationId);
+                }
+
                 var tags = new SqlTags
                            {
                                DbType = dbType,
