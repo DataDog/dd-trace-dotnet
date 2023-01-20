@@ -9,7 +9,7 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Range
 {
-    public Range(int start, int length, Source source)
+    public Range(int start, int length, Source? source)
     {
         this.Start = start;
         this.Length = length;
@@ -20,7 +20,7 @@ internal readonly struct Range
 
     public int Length { get; }
 
-    public Source Source { get; }
+    public Source? Source { get; }
 
     public override int GetHashCode()
     {
