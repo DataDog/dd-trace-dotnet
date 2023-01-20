@@ -16,11 +16,6 @@ internal static class SourceType
 
     // Defined in https://github.com/DataDog/experimental/blob/main/teams/asm/vulnerability_schema/vulnerability_schema.json
 
-    internal static string GetString(byte value)
-    {
-        return GetString((SourceTypeName)value);
-    }
-
     internal static string GetString(SourceTypeName value)
         => value switch
         {

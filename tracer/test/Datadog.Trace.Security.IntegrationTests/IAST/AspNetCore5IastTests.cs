@@ -7,7 +7,6 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -122,7 +121,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(ClientIp, string.Empty);
             settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
@@ -143,31 +141,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
             settings.AddRegexScrubber(ClientIp, string.Empty);
             settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
-        }
-
-        [SkippableFact]
-        [Trait("Category", "ArmUnsupported")]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastSqlInjectionRequest()
-        {
-            var filename = IastEnabled ? "Iast.SqlInjection.AspNetCore5.IastEnabled" : "Iast.SqlInjection.AspNetCore5.IastDisabled";
-            var url = "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27";
-            IncludeAllHttpSpans = true;
-            await TryStartApp();
-            var agent = Fixture.Agent;
-            var spans = await SendRequestsAsync(agent, new string[] { url });
-            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-            settings.AddRegexScrubber(ClientIp, string.Empty);
-            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
-            await VerifyHelper.VerifySpans(spansFiltered, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
         }
@@ -178,7 +152,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         protected static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
         protected static readonly Regex ClientIp = new(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}");
         protected static readonly Regex NetworkClientIp = new(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}");
-        protected static readonly Regex HashRegex = new(@"(\S)*""hash"": (-){0,1}([0-9]){1,12},(\r|\n){1,2}      ");
 
         public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
@@ -225,7 +198,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
             settings.AddRegexScrubber(ClientIp, string.Empty);
             settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();

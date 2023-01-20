@@ -7,38 +7,23 @@
 
 namespace Datadog.Trace.Iast;
 
-internal class Source
+internal readonly struct Source
 {
-    private readonly byte _origin;
-    private int _internalId;
-
     public Source(byte origin, string? name, string? value)
     {
-        this._origin = origin;
+        this.Origin = origin;
         this.Name = name;
         this.Value = value;
     }
 
-    public string Origin => SourceType.GetString(_origin);
+    public byte Origin { get; }
 
     public string? Name { get; }
 
     public string? Value { get; }
 
-    public void SetInternalId(int id)
-    {
-        _internalId = id;
-    }
-
-    public int GetInternalId()
-    {
-        return _internalId;
-    }
-
     public override int GetHashCode()
     {
-        return IastUtils.GetHashCode(_origin, Name, Value);
+        return IastUtils.GetHashCode(Origin, Name, Value);
     }
-
-    public override bool Equals(object? obj) => GetHashCode() == obj?.GetHashCode();
 }
