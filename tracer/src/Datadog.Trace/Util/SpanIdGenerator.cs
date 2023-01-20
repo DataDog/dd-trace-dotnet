@@ -14,8 +14,8 @@ namespace Datadog.Trace.Util
             ulong value;
             do
             {
-                long high = ThreadSafeRandom.Next(int.MinValue, int.MaxValue);
-                long low = ThreadSafeRandom.Next(int.MinValue, int.MaxValue);
+                long high = ThreadSafeRandom.Shared.Next(int.MinValue, int.MaxValue);
+                long low = ThreadSafeRandom.Shared.Next(int.MinValue, int.MaxValue);
 
                 // Concatenate both values, and truncate the 32 top bits from low
                 value = (ulong)(high << 32 | (low & 0xFFFFFFFF)) & 0x7FFFFFFFFFFFFFFF;

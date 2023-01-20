@@ -234,8 +234,4 @@ private:
 
     IClrLifetime const* _pClrLifetime;
     bool _isStopped = false;
-
-    std::shared_ptr<MeanMaxMetric> _suspensionTimeMetric;
-    std::shared_ptr<MeanMaxMetric> _collectionTimeMetric;
-    std::shared_ptr<CounterMetric> _deadlockCounterMetric;
 };

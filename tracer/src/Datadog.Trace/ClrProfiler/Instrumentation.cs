@@ -384,7 +384,7 @@ namespace Datadog.Trace.ClrProfiler
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
                         var tags = GetTags(tracer, rcmSettings);
 
-                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, TraceUtil.NormalizeTag(tracer.Settings.Environment), TraceUtil.NormalizeTag(tracer.Settings.ServiceVersion), tags);
+                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, TraceUtil.NormalizeTag(tracer.Settings.Environment), tracer.Settings.ServiceVersion, tags);
                         // see comment above
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
@@ -414,21 +414,19 @@ namespace Datadog.Trace.ClrProfiler
                 tags.Add($"env:{environment}");
             }
 
-            var serviceVersion = TraceUtil.NormalizeTag(tracer.Settings.ServiceVersion);
+            var serviceVersion = tracer.Settings.ServiceVersion;
             if (!string.IsNullOrEmpty(serviceVersion))
             {
                 tags.Add($"version:{serviceVersion}");
             }
 
-            tags.Add($"service:{tracer.Settings.ServiceName ?? tracer.DefaultServiceName}");
-
-            var tracerVersion = TraceUtil.NormalizeTag(rcmSettings.TracerVersion);
+            var tracerVersion = rcmSettings.TracerVersion;
             if (!string.IsNullOrEmpty(tracerVersion))
             {
                 tags.Add($"tracer_version:{tracerVersion}");
             }
 
-            var hostName = TraceUtil.NormalizeTag(PlatformHelpers.HostMetadata.Instance?.Hostname);
+            var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
             if (!string.IsNullOrEmpty(hostName))
             {
                 tags.Add($"host_name:{hostName}");

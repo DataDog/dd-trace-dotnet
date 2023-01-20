@@ -304,7 +304,7 @@ void RejitPreprocessor<RejitRequestDefinition>::RequestRevert(std::vector<Method
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
-    std::promise<void>* promise)
+    std::shared_ptr<std::promise<void>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -340,7 +340,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests,
-                                                                    std::promise<void>* promise)
+                                                                    std::shared_ptr<std::promise<void>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -377,7 +377,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevert(std::vector
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModules(
     const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
-    std::promise<ULONG>* promise)
+    std::shared_ptr<std::promise<ULONG>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -415,7 +415,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevertForLoadedModules(
     const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
-    std::promise<ULONG>* promise)
+    std::shared_ptr<std::promise<ULONG>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -748,7 +748,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
-    std::promise<std::vector<MethodIdentifier>>* promise)
+    std::shared_ptr<std::promise<std::vector<MethodIdentifier>>> promise)
 {
     std::vector<MethodIdentifier> rejitRequests;
 

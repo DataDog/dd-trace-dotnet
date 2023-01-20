@@ -82,8 +82,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                                     targetValue = GetParametersValueData(testMethodArguments[i]);
                                 }
 
-                                if (!parameters.Arguments.TryGetValue(methodParameters[i].Name ?? string.Empty, out var argValue) ||
-                                    (string)argValue != targetValue)
+                                if (!parameters.Arguments.TryGetValue(methodParameters[i].Name ?? string.Empty, out var argValue))
+                                {
+                                    matchSignature = false;
+                                    break;
+                                }
+
+                                if (argValue is not string strArgValue)
+                                {
+                                    strArgValue = argValue?.ToString() ?? "(null)";
+                                }
+
+                                if (strArgValue != targetValue)
                                 {
                                     matchSignature = false;
                                     break;
