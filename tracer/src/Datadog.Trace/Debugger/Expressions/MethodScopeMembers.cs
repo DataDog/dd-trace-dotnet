@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-#if !NET461
+#if NET6_0_OR_GREATER
 using System.Buffers;
 #endif
 
@@ -17,10 +17,10 @@ internal class MethodScopeMembers
     internal MethodScopeMembers(int numberOfLocals, int numberOfArguments)
     {
         // 2 for 'return' and 'exception'
-#if NETFRAMEWORK
-        Members = new ScopeMember[numberOfLocals + numberOfArguments + 2];
-#else
+#if NET6_0_OR_GREATER
         Members = ArrayPool<ScopeMember>.Shared.Rent(numberOfLocals + numberOfArguments + 2);
+#else
+        Members = new ScopeMember[numberOfLocals + numberOfArguments + 2];
 #endif
         Exception = null;
         Return = default;
@@ -46,10 +46,11 @@ internal class MethodScopeMembers
 
     internal void Dispose()
     {
-#if NETFRAMEWORK
-        Members = null;
-#else
+#if NET6_0_OR_GREATER
         ArrayPool<ScopeMember>.Shared.Return(Members);
+
+#else
+        Members = null;
 #endif
     }
 }
