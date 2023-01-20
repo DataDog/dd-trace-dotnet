@@ -598,15 +598,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
         if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
         {
-            std::promise<ULONG> promise;
-            std::future<ULONG> future = promise.get_future();
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(rejitModuleIds, integration_definitions_,
-                                                                                &promise);
+                                                                                promise);
 
-            // wait and get the value from the future<ULONG>
-            const auto& numReJITs = future.get();
-            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
-/*            const auto status = future.wait_for(100ms);
+            // wait and get the value from the future<ULONG>            
+            const auto status = future.wait_for(100ms);
 
             if (status == std::future_status::ready)
             {
@@ -616,7 +614,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             else
             {
                 Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
-            }     */       
+            }
         }
     }
 
@@ -1123,15 +1121,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
         if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
         {
-            std::promise<ULONG> promise;
-            std::future<ULONG> future = promise.get_future();
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_,
-                                                                                &promise);
+                                                                                promise);
 
             // wait and get the value from the future<ULONG>
-            const auto& numReJITs = future.get();
-            Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
-            /*const auto status = future.wait_for(100ms);
+            const auto status = future.wait_for(100ms);
 
             if (status == std::future_status::ready)
             {
@@ -1141,7 +1137,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             else
             {
                 Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
-            }            */
+            }
         }
     }
 
@@ -1647,10 +1643,10 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             Logger::Info("Total number of modules to analyze: ", module_ids_.size());
             if (rejit_handler != nullptr)
             {
-                std::promise<ULONG> promise;
-                std::future<ULONG> future = promise.get_future();
+                auto promise = std::make_shared<std::promise<ULONG>>();
+                std::future<ULONG> future = promise->get_future();
                 tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_,
-                    integrationDefinitions, &promise);
+                    integrationDefinitions, promise);
 
                 // wait and get the value from the future<int>
                 const auto& numReJITs = future.get();
@@ -1674,10 +1670,10 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             Logger::Info("Total number of modules to analyze: ", module_ids_.size());
             if (rejit_handler != nullptr)
             {
-                std::promise<ULONG> promise;
-                std::future<ULONG> future = promise.get_future();
+                auto promise = std::make_shared<std::promise<ULONG>>();
+                std::future<ULONG> future = promise->get_future();
                 tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(module_ids_,
-                    integrationDefinitions, &promise);
+                    integrationDefinitions, promise);
 
                 // wait and get the value from the future<int>
                 const auto& numReJITs = future.get();
@@ -1773,11 +1769,11 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
             Logger::Debug("InitializeTraceMethods: Total number of modules to analyze: ", module_ids_.size());
             if (rejit_handler != nullptr)
             {
-                std::promise<ULONG> promise;
-                std::future<ULONG> future = promise.get_future();
+                auto promise = std::make_shared<std::promise<ULONG>>();
+                std::future<ULONG> future = promise->get_future();
                 tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
                     module_ids_, integrationDefinitions,
-                    &promise);
+                    promise);
 
                 // wait and get the value from the future<int>
                 const auto& numReJITs = future.get();

@@ -310,9 +310,9 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
 
         std::scoped_lock<std::mutex> moduleLock(trace::profiler->module_ids_lock_);
 
-        std::promise<std::vector<MethodIdentifier>> promise;
-        std::future<std::vector<MethodIdentifier>> future = promise.get_future();
-        m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(corProfiler->module_ids_, methodProbeDefinitions, &promise);
+        auto promise = std::make_shared<std::promise<std::vector<MethodIdentifier>>>();
+        std::future<std::vector<MethodIdentifier>> future = promise->get_future();
+        m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(corProfiler->module_ids_, methodProbeDefinitions, promise);
 
         const auto& methodProbeRequests = future.get();
 
@@ -487,9 +487,9 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(debugger::Debugger
         // RequestRevert
         std::vector<MethodIdentifier> requests(revertRequests.size());
         std::copy(revertRequests.begin(), revertRequests.end(), requests.begin());
-        std::promise<void> promise;
-        std::future<void> future = promise.get_future();
-        m_debugger_rejit_preprocessor->EnqueueRequestRevert(requests, &promise);
+        auto promise = std::make_shared<std::promise<void>>();
+        std::future<void> future = promise->get_future();
+        m_debugger_rejit_preprocessor->EnqueueRequestRevert(requests, promise);
         // wait and get the value from the future<void>
         future.get();   
     }
@@ -499,11 +499,11 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(debugger::Debugger
         Logger::Info("About to RequestRejit for ", rejitRequests.size(), " methods.");
 
         // RequestRejit
-        std::promise<void> promise;
-        std::future<void> future = promise.get_future();
+        auto promise = std::make_shared<std::promise<void>>();
+        std::future<void> future = promise->get_future();
         std::vector<MethodIdentifier> requests(rejitRequests.size());
         std::copy(rejitRequests.begin(), rejitRequests.end(), requests.begin());
-        m_debugger_rejit_preprocessor->EnqueueRequestRejit(requests, &promise);
+        m_debugger_rejit_preprocessor->EnqueueRequestRejit(requests, promise);
         // wait and get the value from the future<void>
         future.get();   
     }
