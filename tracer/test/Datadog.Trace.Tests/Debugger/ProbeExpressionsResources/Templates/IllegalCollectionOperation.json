@@ -1,0 +1,7 @@
+{
+    "dsl": "count(SomeCollection)",
+    "count": [
+        "# SomeCollection should have a 'ref' prefix",
+        "SomeCollection"
+    ]
+}

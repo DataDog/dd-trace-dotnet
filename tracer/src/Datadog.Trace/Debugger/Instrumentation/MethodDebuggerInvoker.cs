@@ -5,9 +5,9 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
@@ -33,34 +33,29 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="methodMetadataIndex">The index used to lookup for the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
         /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static MethodDebuggerState BeginMethod_StartMarker<TTarget>(string probeId, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex)
+        public static MethodDebuggerState BeginMethod_StartMarker<TTarget>(string probeId /* string[] probeIds*/, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex)
         {
-            if (!ProbeRateLimiter.Instance.Sample(probeId))
-            {
-                return CreateInvalidatedDebuggerState();
-            }
-
             if (!MethodMetadataProvider.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
             {
                 Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaId = {methodMetadataIndex}");
                 return CreateInvalidatedDebuggerState();
             }
 
-            var state = new MethodDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, instance);
-            state.SnapshotCreator.StartDebugger();
+            var state = new MethodDebuggerState(probeId/* probeIds[i] */, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, instance);
 
-            state.SnapshotCreator.StartSnapshot();
-            state.SnapshotCreator.StartCaptures();
-            state.SnapshotCreator.StartEntry();
-            state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
+            if (!state.SnapshotCreator.ProbeHasCondition &&
+                !ProbeRateLimiter.Instance.Sample(probeId))
+            {
+                return CreateInvalidatedDebuggerState();
+            }
+
+            var captureInfo = new CaptureInfo<Type>(value: null, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.EntryStart, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
+            if (!ProbeExpressionsProcessor.Instance.Process(probeId, ref captureInfo, state.SnapshotCreator))
+            {
+                state.IsActive = false;
+            }
+
             return state;
-        }
-
-        private static MethodDebuggerState CreateInvalidatedDebuggerState()
-        {
-            var defaultState = MethodDebuggerState.GetDefault();
-            defaultState.IsActive = false;
-            return defaultState;
         }
 
         /// <summary>
@@ -75,13 +70,17 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            state.SnapshotCreator.CaptureInstance(state.InvocationTarget, state.MethodMetadataInfo.DeclaringType);
-
             var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
                                        state.MethodMetadataInfo.ParameterNames.Length > 0 ||
                                        !state.MethodMetadataInfo.Method.IsStatic;
+
+            var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.EntryEnd, hasLocalOrArgument: hasArgumentsOrLocals, memberKind: ScopeMemberKind.This);
+            if (!ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator))
+            {
+                state.IsActive = false;
+            }
+
             state.HasLocalsOrReturnValue = false;
-            state.SnapshotCreator.EndEntry(hasArgumentsOrLocals);
         }
 
         /// <summary>
@@ -100,7 +99,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var paramName = state.MethodMetadataInfo.ParameterNames[index];
-            state.SnapshotCreator.CaptureArgument(arg, paramName);
+            var captureInfo = new CaptureInfo<TArg>(value: arg, type: typeof(TArg), methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
+            if (!ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator))
+            {
+                state.IsActive = false;
+            }
+
             state.HasLocalsOrReturnValue = false;
         }
 
@@ -125,8 +129,110 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            state.SnapshotCreator.CaptureLocal(local, localName);
+            var captureInfo = new CaptureInfo<TLocal>(value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+            if (!ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator))
+            {
+                state.IsActive = false;
+            }
+
             state.HasLocalsOrReturnValue = true;
+        }
+
+        /// <summary>
+        /// End Method with Void return value invoker
+        /// </summary>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="exception">Exception value</param>
+        /// <param name="state">Debugger state</param>
+        /// <returns>CallTarget return structure</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref MethodDebuggerState state)
+        {
+            if (!state.IsActive)
+            {
+                return DebuggerReturn.GetDefault();
+            }
+
+            state.MethodPhase = EvaluateAt.Exit;
+
+            var captureInfo = new CaptureInfo<Exception>(value: exception, type: exception?.GetType(), invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
+            if (!ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator))
+            {
+                state.IsActive = false;
+            }
+
+            return DebuggerReturn.GetDefault();
+        }
+
+        /// <summary>
+        /// End Method with Return value invoker
+        /// </summary>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TReturn">Return type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="returnValue">Return value</param>
+        /// <param name="exception">Exception value</param>
+        /// <param name="state">Debugger state</param>
+        /// <returns>LiveDebugger return structure</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref MethodDebuggerState state)
+        {
+            if (!state.IsActive)
+            {
+                return new DebuggerReturn<TReturn>(returnValue);
+            }
+
+            state.MethodPhase = EvaluateAt.Exit;
+
+            if (exception != null)
+            {
+                var captureInfo = new CaptureInfo<Exception>(value: exception, type: exception.GetType(), invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
+                if (!ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator))
+                {
+                    state.IsActive = false;
+                }
+            }
+            else
+            {
+                var captureInfo = new CaptureInfo<TReturn>(value: returnValue, name: "@return", type: typeof(TReturn), invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Return, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
+                if (!ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator))
+                {
+                    state.IsActive = false;
+                }
+
+                state.HasLocalsOrReturnValue = true;
+            }
+
+            return new DebuggerReturn<TReturn>(returnValue);
+        }
+
+        /// <summary>
+        /// End Method with Void return value invoker
+        /// </summary>
+        /// <param name="state">Debugger state</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void EndMethod_EndMarker(ref MethodDebuggerState state)
+        {
+            if (!state.IsActive)
+            {
+                return;
+            }
+
+            var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
+                                       state.MethodMetadataInfo.ParameterNames.Length > 0 ||
+                                       !state.MethodMetadataInfo.Method.IsStatic;
+
+            var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.ExitEnd, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method);
+            ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator);
+            state.HasLocalsOrReturnValue = false;
+        }
+
+        private static MethodDebuggerState CreateInvalidatedDebuggerState()
+        {
+            var defaultState = MethodDebuggerState.GetDefault();
+            defaultState.IsActive = false;
+            return defaultState;
         }
 
         internal static bool TryGetLocalName(int index, string[] localNamesFromPdb, out string localName)
@@ -154,86 +260,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         }
 
         /// <summary>
-        /// End Method with Void return value invoker
-        /// </summary>
-        /// <typeparam name="TTarget">Target type</typeparam>
-        /// <param name="instance">Instance value</param>
-        /// <param name="exception">Exception value</param>
-        /// <param name="state">Debugger state</param>
-        /// <returns>CallTarget return structure</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref MethodDebuggerState state)
-        {
-            if (!state.IsActive)
-            {
-                return DebuggerReturn.GetDefault();
-            }
-
-            state.SnapshotCreator.StartReturn();
-            state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
-            if (exception != null)
-            {
-                state.SnapshotCreator.CaptureException(exception);
-            }
-
-            return DebuggerReturn.GetDefault();
-        }
-
-        /// <summary>
-        /// End Method with Return value invoker
-        /// </summary>
-        /// <typeparam name="TTarget">Target type</typeparam>
-        /// <typeparam name="TReturn">Return type</typeparam>
-        /// <param name="instance">Instance value</param>
-        /// <param name="returnValue">Return value</param>
-        /// <param name="exception">Exception value</param>
-        /// <param name="state">Debugger state</param>
-        /// <returns>LiveDebugger return structure</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref MethodDebuggerState state)
-        {
-            if (!state.IsActive)
-            {
-                return new DebuggerReturn<TReturn>(returnValue);
-            }
-
-            state.SnapshotCreator.StartReturn();
-            state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
-            if (exception != null)
-            {
-                state.SnapshotCreator.CaptureException(exception);
-            }
-            else
-            {
-                state.SnapshotCreator.CaptureLocal(returnValue, "@return");
-                state.HasLocalsOrReturnValue = true;
-            }
-
-            return new DebuggerReturn<TReturn>(returnValue);
-        }
-
-        /// <summary>
-        /// End Method with Void return value invoker
-        /// </summary>
-        /// <param name="state">Debugger state</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void EndMethod_EndMarker(ref MethodDebuggerState state)
-        {
-            if (!state.IsActive)
-            {
-                return;
-            }
-
-            state.SnapshotCreator.CaptureInstance(state.InvocationTarget, state.MethodMetadataInfo.DeclaringType);
-
-            var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
-                                       state.MethodMetadataInfo.ParameterNames.Length > 0 ||
-                                       !state.MethodMetadataInfo.Method.IsStatic;
-            state.SnapshotCreator.MethodProbeEndReturn(hasArgumentsOrLocals);
-            FinalizeSnapshot(ref state);
-        }
-
-        /// <summary>
         /// Log exception
         /// </summary>
         /// <param name="exception">Exception instance</param>
@@ -258,30 +284,5 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <returns>Default value of T</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetDefaultValue<T>() => default;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void FinalizeSnapshot(ref MethodDebuggerState state)
-        {
-            using (state.SnapshotCreator)
-            {
-                var stackFrames = new StackTrace(skipFrames: 2, true).GetFrames();
-                var methodName = state.MethodMetadataInfo.Method?.Name;
-                var typeFullName = state.MethodMetadataInfo.DeclaringType?.FullName;
-
-                state.SnapshotCreator.AddMethodProbeInfo(
-                          state.ProbeId,
-                          methodName,
-                          typeFullName)
-                     .FinalizeSnapshot(
-                          stackFrames,
-                          methodName,
-                          typeFullName,
-                          state.StartTime,
-                          null);
-
-                var snapshot = state.SnapshotCreator.GetSnapshotJson();
-                LiveDebugger.Instance.AddSnapshot(snapshot);
-            }
-        }
     }
 }

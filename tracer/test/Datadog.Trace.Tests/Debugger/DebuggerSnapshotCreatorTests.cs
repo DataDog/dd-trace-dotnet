@@ -5,11 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -98,10 +98,7 @@ namespace Datadog.Trace.Tests.Debugger
         /// </summary>
         private static string GenerateSnapshot(object instance, object[] args, object[] locals)
         {
-            var snapshotCreator = new DebuggerSnapshotCreator();
-            snapshotCreator.StartDebugger();
-            snapshotCreator.StartSnapshot();
-            snapshotCreator.StartCaptures();
+            var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false);
             {
                 // method entry
                 snapshotCreator.StartEntry();
@@ -136,10 +133,10 @@ namespace Datadog.Trace.Tests.Debugger
                     snapshotCreator.CaptureInstance(instance, instance.GetType());
                 }
 
-                snapshotCreator.MethodProbeEndReturn(hasArgumentsOrLocals: args.Length + locals.Length > 0);
+                snapshotCreator.EndReturn(hasArgumentsOrLocals: args.Length + locals.Length > 0);
             }
 
-            snapshotCreator.FinalizeSnapshot(Array.Empty<StackFrame>(), "Foo", "Bar", DateTimeOffset.MinValue, "foo");
+            snapshotCreator.FinalizeSnapshot("Foo", "Bar", DateTimeOffset.MinValue, "foo");
 
             var snapshot = snapshotCreator.GetSnapshotJson();
             return JsonPrettify(snapshot);

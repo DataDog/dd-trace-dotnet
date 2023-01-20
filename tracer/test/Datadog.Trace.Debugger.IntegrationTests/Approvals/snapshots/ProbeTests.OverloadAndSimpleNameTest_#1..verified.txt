@@ -51,6 +51,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -118,6 +124,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -463,6 +475,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -526,6 +544,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -673,6 +697,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -736,6 +766,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -799,6 +835,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -872,6 +914,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {

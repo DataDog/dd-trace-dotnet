@@ -1,0 +1,23 @@
+{
+  "dsl": "filter(ref CollectionLocal, { len(@it) > 4 })",
+  "gt": [
+    {
+      "count": {
+        "filter": [
+          {
+            "ref": "CollectionLocal"
+          },
+          {
+            "gt": [
+              {
+                "len": "@it"
+              },
+              4
+            ]
+          }
+        ]
+      }
+    },
+    2
+  ]
+}

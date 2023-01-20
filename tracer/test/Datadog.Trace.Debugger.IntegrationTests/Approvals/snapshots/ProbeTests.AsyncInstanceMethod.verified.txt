@@ -91,6 +91,12 @@
                   "isNull": "true",
                   "type": "String"
                 }
+              },
+              "staticFields": {
+                "ClassName": {
+                  "type": "String",
+                  "value": "AsyncInstanceMethod"
+                }
               }
             }
           }
