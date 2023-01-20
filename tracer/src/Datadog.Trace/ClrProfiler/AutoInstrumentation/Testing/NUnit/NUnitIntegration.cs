@@ -33,12 +33,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static Test? CreateTest(ITest currentTest)
         {
-            var testMethod = currentTest.Method.MethodInfo;
-            var testMethodArguments = currentTest.Arguments;
-            var testMethodProperties = currentTest.Properties;
+            var testMethod = currentTest?.Method?.MethodInfo;
+            var testMethodArguments = currentTest?.Arguments;
+            var testMethodProperties = currentTest?.Properties;
 
             if (testMethod == null)
             {
+                Log.Warning("Test method cannot be found.");
                 return null;
             }
 
@@ -57,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 var testParameters = new TestParameters();
                 testParameters.Metadata = new Dictionary<string, object>();
                 testParameters.Arguments = new Dictionary<string, object>();
-                testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name;
+                testParameters.Metadata[TestTags.MetadataTestName] = currentTest?.Name ?? string.Empty;
 
                 for (int i = 0; i < methodParameters.Length; i++)
                 {

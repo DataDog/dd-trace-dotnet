@@ -100,30 +100,15 @@ namespace Datadog.Trace
             {
                 if (RootSpan == null)
                 {
-                    // first span added is the root span
+                    // first span added is the local root span
                     RootSpan = span;
 
+                    // if we don't have a sampling priority yet, make a sampling decision now
                     if (_samplingPriority == null)
                     {
-                        if (span.Context.Parent is SpanContext { SamplingPriority: { } samplingPriority })
-                        {
-                            // this is a local root span created from a propagated context that contains a sampling priority.
-                            // any distributed tags were already parsed from SpanContext.PropagatedTags and added to the TraceContext.
-                            SetSamplingPriority(samplingPriority);
-                        }
-                        else
-                        {
-                            // this is a local root span with no upstream service.
-                            // make a sampling decision early so it's ready if we need it for propagation.
-                            var samplingDecision = Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
-                            SetSamplingPriority(samplingDecision);
-                        }
+                        var samplingDecision = Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
+                        SetSamplingPriority(samplingDecision);
                     }
-
-                    // if these trace attributes are not set yet, copy them from the span context if present
-                    // (probably propagated from an upstream service)
-                    Origin ??= span.Context.Origin;
-                    AdditionalW3CTraceState ??= span.Context.AdditionalW3CTraceState;
                 }
 
                 _openSpans++;

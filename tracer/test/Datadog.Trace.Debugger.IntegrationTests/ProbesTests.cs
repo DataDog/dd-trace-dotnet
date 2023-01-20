@@ -32,6 +32,25 @@ public class ProbesTests : TestHelper
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
 
+    private static readonly Type[] _unoptimizedNotSupportedTypes = new[]
+    {
+        typeof(AsyncCallChain),
+        typeof(AsyncGenericClass),
+        typeof(AsyncGenericMethodWithLineProbeTest),
+        typeof(AsyncGenericStruct),
+        typeof(AsyncInstanceMethod),
+        typeof(AsyncLineProbeWithFieldsArgsAndLocalsTest),
+        typeof(AsyncMethodInsideTaskRun),
+        typeof(AsyncRecursiveCall),
+        typeof(AsyncStaticMethod),
+        typeof(AsyncThrowException),
+        typeof(AsyncVoid),
+        typeof(AsyncWithGenericArgumentAndLocal),
+        typeof(HasLocalsAndReturnValue),
+        typeof(MultipleLineProbes),
+        typeof(NotSupportedFailureTest)
+    };
+
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
     private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack" };
 
@@ -39,11 +58,12 @@ public class ProbesTests : TestHelper
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
+        EnableDebugMode();
     }
 
     public static IEnumerable<object[]> ProbeTests()
     {
-        return DebuggerTestHelper.AllProbeTestTypes();
+        return DebuggerTestHelper.AllTestDescriptions();
     }
 
     [SkippableFact]
@@ -53,7 +73,7 @@ public class ProbesTests : TestHelper
     {
         Skip.If(true, "Not supported yet. Internal Jira Ticket: #DEBUG-1092.");
 
-        var testType = typeof(AsyncMethodInGenericClassTest);
+        var testDescription = DebuggerTestHelper.SpecificTestDescription<AsyncMethodInGenericClassTest>();
         const int expectedNumberOfSnapshots = 1;
 
         var guidGenerator = new DeterministicGuidGenerator();
@@ -63,7 +83,7 @@ public class ProbesTests : TestHelper
             CreateProbe("GenericClass`1", "Run", guidGenerator)
         };
 
-        await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
+        await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes);
     }
 
     [SkippableFact(Skip = "Too flakey")]
@@ -71,7 +91,7 @@ public class ProbesTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task TransparentCodeCtorInstrumentationTest()
     {
-        var testType = typeof(CtorTransparentCodeTest);
+        var testDescription = DebuggerTestHelper.SpecificTestDescription<CtorTransparentCodeTest>();
         const int expectedNumberOfSnapshots = 1;
 
         var guidGenerator = new DeterministicGuidGenerator();
@@ -82,25 +102,25 @@ public class ProbesTests : TestHelper
             CreateProbe("CtorTransparentCodeTest", "Run", guidGenerator)
         };
 
-        await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
+        await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes);
     }
 
-    [SkippableTheory]
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    [InlineData(typeof(OverloadAndSimpleNameTest))]
-    public async Task InstallAndUninstallMethodProbeWithOverloadsTest(Type testType)
+    public async Task InstallAndUninstallMethodProbeWithOverloadsTest()
     {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription<OverloadAndSimpleNameTest>();
         const int expectedNumberOfSnapshots = 9;
 
-        var probes = GetProbeConfiguration(testType, true, new DeterministicGuidGenerator());
+        var probes = GetProbeConfiguration(testDescription.TestType, true, new DeterministicGuidGenerator());
 
         if (probes.Length != 1)
         {
             throw new InvalidOperationException($"{nameof(InstallAndUninstallMethodProbeWithOverloadsTest)} expected one probe request to exist, but found {probes.Length} probes.");
         }
 
-        await RunSingleTestWithApprovals(testType, isMultiPhase: true, expectedNumberOfSnapshots, probes.Select(p => p.Probe).ToArray());
+        await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes.Select(p => p.Probe).ToArray());
     }
 
     [Fact]
@@ -108,14 +128,14 @@ public class ProbesTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task LineProbeEmit100SnapshotsTest()
     {
-        var testType = typeof(Emit100LineProbeSnapshotsTest);
+        var testDescription = DebuggerTestHelper.SpecificTestDescription<Emit100LineProbeSnapshotsTest>();
         const int expectedNumberOfSnapshots = 100;
 
-        var probes = GetProbeConfiguration(testType, true, new DeterministicGuidGenerator());
+        var probes = GetProbeConfiguration(testDescription.TestType, true, new DeterministicGuidGenerator());
 
         using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment(agent);
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
@@ -151,10 +171,10 @@ public class ProbesTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [MemberData(nameof(ProbeTests))]
-    public async Task MethodProbeTest(Type testType)
+    public async Task MethodProbeTest(ProbeTestDescription testDescription)
     {
-        SkipOverTestIfNeeded(testType);
-        await RunMethodProbeTests(testType);
+        SkipOverTestIfNeeded(testDescription);
+        await RunMethodProbeTests(testDescription);
     }
 
     [SkippableFact]
@@ -169,10 +189,10 @@ public class ProbesTests : TestHelper
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
         }
 
-        var testType = DebuggerTestHelper.FirstSupportedProbeTestType(EnvironmentHelper.GetTargetFramework());
+        var testDescription = DebuggerTestHelper.SpecificTestDescription<AsyncGenericMethod>();
         EnvironmentHelper.EnableWindowsNamedPipes();
 
-        await RunMethodProbeTests(testType);
+        await RunMethodProbeTests(testDescription);
     }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -181,7 +201,7 @@ public class ProbesTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task MethodProbeTest_UDS()
     {
-        var testType = DebuggerTestHelper.FirstSupportedProbeTestType(EnvironmentHelper.GetTargetFramework());
+        var testType = DebuggerTestHelper.SpecificTestDescription<AsyncGenericMethod>();
         EnvironmentHelper.EnableUnixDomainSockets();
 
         await RunMethodProbeTests(testType);
@@ -204,13 +224,13 @@ public class ProbesTests : TestHelper
         };
     }
 
-    private async Task RunMethodProbeTests(Type testType)
+    private async Task RunMethodProbeTests(ProbeTestDescription testDescription)
     {
-        var probes = GetProbeConfiguration(testType, false, new DeterministicGuidGenerator());
+        var probes = GetProbeConfiguration(testDescription.TestType, false, new DeterministicGuidGenerator());
 
         using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment(agent);
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
@@ -268,7 +288,7 @@ public class ProbesTests : TestHelper
                 {
                     snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
                     Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
-                    await ApproveSnapshots(snapshots, testType, isMultiPhase, phaseNumber);
+                    await ApproveSnapshots(snapshots, testDescription, isMultiPhase, phaseNumber);
                     agent.ClearSnapshots();
                 }
 
@@ -280,7 +300,7 @@ public class ProbesTests : TestHelper
                 var statuses = await agent.WaitForProbesStatuses(probeData.Length);
 
                 Assert.Equal(probeData.Length, statuses?.Length);
-                await ApproveStatuses(statuses, testType, isMultiPhase, phaseNumber);
+                await ApproveStatuses(statuses, testDescription, isMultiPhase, phaseNumber);
                 agent.ClearProbeStatuses();
             }
         }
@@ -290,23 +310,25 @@ public class ProbesTests : TestHelper
         }
     }
 
-    /// <summary>
-    /// Internal Jira Ticket: DEBUG-1092.
-    /// </summary>
-    private void SkipOverTestIfNeeded(Type testType)
+    private void SkipOverTestIfNeeded(ProbeTestDescription testDescription)
     {
-        if (testType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
+        if (testDescription.TestType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
         {
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
         }
+
+        if (!testDescription.IsOptimized && _unoptimizedNotSupportedTypes.Contains(testDescription.TestType))
+        {
+            throw new SkipException("Current test is not supported with unoptimized code.");
+        }
     }
 
-    private async Task RunSingleTestWithApprovals(Type testType, bool isMultiPhase, int expectedNumberOfSnapshots, params SnapshotProbe[] probes)
+    private async Task RunSingleTestWithApprovals(ProbeTestDescription testDescription, int expectedNumberOfSnapshots, params SnapshotProbe[] probes)
     {
         using var agent = EnvironmentHelper.GetMockAgent();
 
         SetDebuggerEnvironment(agent);
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
@@ -318,12 +340,12 @@ public class ProbesTests : TestHelper
 
             var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
             Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
-            await ApproveSnapshots(snapshots, testType, isMultiPhase: true, phaseNumber: 1);
+            await ApproveSnapshots(snapshots, testDescription, isMultiPhase: true, phaseNumber: 1);
             agent.ClearSnapshots();
 
             var statuses = await agent.WaitForProbesStatuses(probes.Length);
             Assert.Equal(probes.Length, statuses?.Length);
-            await ApproveStatuses(statuses, testType, isMultiPhase: true, phaseNumber: 1);
+            await ApproveStatuses(statuses, testDescription, isMultiPhase: true, phaseNumber: 1);
             agent.ClearProbeStatuses();
 
             SetProbeConfiguration(agent, Array.Empty<SnapshotProbe>());
@@ -336,17 +358,17 @@ public class ProbesTests : TestHelper
         }
     }
 
-    private async Task ApproveSnapshots(string[] snapshots, Type testType, bool isMultiPhase, int phaseNumber)
+    private async Task ApproveSnapshots(string[] snapshots, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber)
     {
-        await ApproveOnDisk(snapshots, testType, isMultiPhase, phaseNumber, "snapshots");
+        await ApproveOnDisk(snapshots, testDescription, isMultiPhase, phaseNumber, "snapshots");
     }
 
-    private async Task ApproveStatuses(string[] statuses, Type testType, bool isMultiPhase, int phaseNumber)
+    private async Task ApproveStatuses(string[] statuses, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber)
     {
-        await ApproveOnDisk(statuses, testType, isMultiPhase, phaseNumber, "statuses");
+        await ApproveOnDisk(statuses, testDescription, isMultiPhase, phaseNumber, "statuses");
     }
 
-    private async Task ApproveOnDisk(string[] dataToApprove, Type testType, bool isMultiPhase, int phaseNumber, string path)
+    private async Task ApproveOnDisk(string[] dataToApprove, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber, string path)
     {
         if (dataToApprove.Length > 1)
         {
@@ -356,7 +378,7 @@ public class ProbesTests : TestHelper
 
         var settings = new VerifySettings();
 
-        var testName = isMultiPhase ? $"{testType.Name}_#{phaseNumber}." : testType.Name;
+        var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
         settings.DisableRequireUniquePrefix();
         settings.ScrubEmptyLines();
@@ -512,7 +534,7 @@ public class ProbesTests : TestHelper
         var probeConfiguration = new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = snapshotProbes };
         var configurations = new List<(object Config, string Id)>
         {
-            new(probeConfiguration, EnvironmentHelper.SampleName.ToUUID())
+            new(probeConfiguration, EnvironmentHelper.SampleName.ToLowerInvariant().ToUUID())
         };
 
         agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);

@@ -70,6 +70,6 @@
       "version": "2"
     },
     "message": "CtorTransparentCodeTest.Run()\r\ninstance=SecurityTransparentTest",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

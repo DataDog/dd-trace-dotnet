@@ -45,6 +45,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
                     new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |fn:StartCallback"));
             }
+            else if (framework == "net7.0")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"));
+            }
             else
             {
                 expectedStack = new StackTrace(
@@ -73,7 +78,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total += sample.Count;
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
-                sample.Stacktrace.Should().Be(expectedStack);
+                Assert.True(sample.Stacktrace.EndWith(expectedStack));
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))

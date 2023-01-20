@@ -4,6 +4,7 @@
 
 #include "COMHelpers.h"
 #include "IAppDomainStore.h"
+#include "IConfiguration.h"
 #include "IFrameStore.h"
 #include "IManagedThreadList.h"
 #include "IRuntimeIdStore.h"
@@ -27,19 +28,27 @@ ContentionProvider::ContentionProvider(
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration)
+    IConfiguration* pConfiguration,
+    MetricsRegistry& metricsRegistry)
     :
     CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval()),
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
-    _sampleLimit{pConfiguration->ContentionSampleLimit()}
+    _sampleLimit{pConfiguration->ContentionSampleLimit()},
+    _pConfiguration{pConfiguration}
 {
+    _lockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_lock_contentions");
+    _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
+    _sampledLockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_lock_contentions");
+    _sampledLockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_sampled_lock_contentions_duration");
 }
 
 void ContentionProvider::OnContention(double contentionDuration)
 {
+    _lockContentionsCountMetric->Incr();
+    _lockContentionsDurationMetric->Add(contentionDuration);
     // TODO: when upscaling will be done, implement per duration groups (100ms, 200ms, 500ms, +)
     //       to ensure a  better "statistical" distribution
     if (!_sampler.Sample())
@@ -50,7 +59,7 @@ void ContentionProvider::OnContention(double contentionDuration)
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
@@ -72,6 +81,7 @@ void ContentionProvider::OnContention(double contentionDuration)
     result->CopyInstructionPointers(rawSample.Stack);
     rawSample.ThreadInfo = threadInfo;
     rawSample.ContentionDuration = contentionDuration;
-
     Add(std::move(rawSample));
+    _sampledLockContentionsCountMetric->Incr();
+    _sampledLockContentionsDurationMetric->Add(contentionDuration);
 }

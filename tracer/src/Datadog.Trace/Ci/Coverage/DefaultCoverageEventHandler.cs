@@ -104,16 +104,16 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
             return null;
         }
 
-        var payload = new CoveragePayload
+        var testCoverage = new TestCoverage
         {
             Files = fileDictionary.Values.ToList(),
         };
 
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
-            Log.Debug("Coverage payload: {payload}", JsonConvert.SerializeObject(payload));
+            Log.Debug("Test Coverage: {json}", JsonConvert.SerializeObject(testCoverage));
         }
 
-        return payload;
+        return testCoverage;
     }
 }

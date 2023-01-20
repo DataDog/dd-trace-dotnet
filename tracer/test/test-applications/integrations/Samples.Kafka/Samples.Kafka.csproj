@@ -7,7 +7,6 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-    <Platforms>x64;x86;AnyCPU</Platforms>
 
   </PropertyGroup>
 

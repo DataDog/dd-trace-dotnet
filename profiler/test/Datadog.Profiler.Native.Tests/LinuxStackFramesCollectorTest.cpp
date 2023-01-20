@@ -9,6 +9,8 @@
 #include "OpSysTools.h"
 #include "StackSnapshotResultBuffer.h"
 
+#include "ProfilerMockedInterface.h"
+
 #include "gtest/gtest-death-test.h"
 #include "gtest/gtest.h"
 
@@ -24,6 +26,7 @@
 #include <libunwind.h>
 
 using namespace std::literals;
+using ::testing::Return;
 
 // This global variable and function are use defined/declared for the test only
 // In production, those symbols will be defined in the Wrapper library
@@ -290,7 +293,35 @@ private:
 TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
 {
     auto* signalManager = GetSignalManager();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
+
+    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
+
+    std::uint32_t hr;
+    StackSnapshotResultBuffer* buffer;
+
+    ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
+    EXPECT_EQ(hr, S_OK);
+
+    std::vector<uintptr_t> ips;
+    buffer->CopyInstructionPointers(ips);
+
+    ValidateCallstack(ips);
+}
+
+TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWithOldWay)
+{
+    auto* signalManager = GetSignalManager();
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(false));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
@@ -310,9 +341,13 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
 TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCall)
 {
     SimulateInPthreadCreate();
-  
+
     auto* signalManager = ProfilerSignalManager::Get();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
@@ -328,7 +363,11 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCa
 TEST_F(LinuxStackFramesCollectorFixture, MustNotCollectIfUnknownThreadId)
 {
     auto* signalManager = ProfilerSignalManager::Get();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo(0, (HANDLE)0);
@@ -345,7 +384,11 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
 {
     // 1st setup the signal handler
     auto* signalManager = GetSignalManager();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     // Validate the profiler is working correctly
     auto threadId = (DWORD)GetWorkerThreadId();
@@ -402,7 +445,11 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
 
     // 2nd install profiler handler
     auto* signalManager = GetSignalManager();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -441,7 +488,11 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
 
     // 2nd install profiler handler
     auto* signalManager = GetSignalManager();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -480,7 +531,11 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
 
     // 2nd install profiler handler
     auto* signalManager = GetSignalManager();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -517,14 +572,20 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfPreviousHandlerWasMarkedA
 
     // create collector to setup profiler signal handler
     auto* signalManager = GetSignalManager();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
     EXPECT_NE(currentAction.sa_handler, SIG_DFL);
     EXPECT_NE(currentAction.sa_handler, SIG_IGN);
 
     SendSignal();
-    EXPECT_EXIT(exit(WasCallbackCalled() ? 1 : 0), testing::ExitedWithCode(0), "");
+    // safe to release the pointer on the configuration
+    // This prevents the GTest leak detector to fail the test
+    EXPECT_EXIT(configuration.reset(); exit(WasCallbackCalled() ? 1 : 0), testing::ExitedWithCode(0), "");
 }
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandlerStopCallingEachOther)
@@ -534,7 +595,11 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
 
     // 2nd setup the signal handler (which will points to the custom handler)
     auto* signalManager = GetSignalManager();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     // 3rd now point to the profiler handler
     InstallHandler(SA_SIGINFO, true);
@@ -568,20 +633,30 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfNoPreviousHandlerInstalle
 
     // create collector to setup profiler signal handler
     auto* signalManager = GetSignalManager();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
     EXPECT_NE(currentAction.sa_handler, SIG_DFL);
     EXPECT_NE(currentAction.sa_handler, SIG_IGN);
 
     SendSignal();
-    EXPECT_EXIT(exit(WasCallbackCalled() ? 1 : 0), testing::ExitedWithCode(0), "");
+    // safe to release the pointer on the configuration
+    // This prevents the GTest leak detector to fail the test
+    EXPECT_EXIT(configuration.reset(); exit(WasCallbackCalled() ? 1 : 0), testing::ExitedWithCode(0), "");
 }
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHandlerKeepsChanging)
 {
     auto* signalManager = GetSignalManager();
-    auto collector = LinuxStackFramesCollector(signalManager);
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+
+    auto collector = LinuxStackFramesCollector(signalManager, configuration.get());
 
     const auto threadId = GetWorkerThreadId();
     auto threadInfo = ManagedThreadInfo((ThreadID)0);

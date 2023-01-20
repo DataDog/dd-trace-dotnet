@@ -104,9 +104,12 @@ namespace Datadog.Trace.Tests.CallTarget
             var synchronizationContext = new CustomSynchronizationContext();
             SynchronizationContext.SetSynchronizationContext(synchronizationContext);
 
+            var tcs = new TaskCompletionSource<bool>();
             var state = CallTargetState.GetDefault();
-            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, in state);
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(tcs.Task), null, in state);
 
+            // After setting the continuation, we resolve the task completion source.
+            tcs.TrySetResult(true);
             Task.WaitAny(cTask, synchronizationContext.Task);
 
             // If preserving context, the continuation should be posted to the synchronization context and cTask should never complete
@@ -115,9 +118,9 @@ namespace Datadog.Trace.Tests.CallTarget
 
             Assert.False(notCompletedTask.IsCompleted);
 
-            async Task GetPreviousTask()
+            async Task GetPreviousTask(Task task)
             {
-                await Task.Delay(1000).ConfigureAwait(false);
+                await task.ConfigureAwait(false);
             }
         }
 
@@ -207,9 +210,12 @@ namespace Datadog.Trace.Tests.CallTarget
             var synchronizationContext = new CustomSynchronizationContext();
             SynchronizationContext.SetSynchronizationContext(synchronizationContext);
 
+            var tcs = new TaskCompletionSource<bool>();
             var state = CallTargetState.GetDefault();
-            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, in state);
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(tcs.Task), null, in state);
 
+            // After setting the continuation, we resolve the task completion source.
+            tcs.TrySetResult(true);
             Task.WaitAny(cTask, synchronizationContext.Task);
 
             // If preserving context, the continuation should be posted to the synchronization context and cTask should never complete
@@ -218,9 +224,9 @@ namespace Datadog.Trace.Tests.CallTarget
 
             Assert.False(notCompletedTask.IsCompleted);
 
-            async Task<bool> GetPreviousTask()
+            async Task<bool> GetPreviousTask(Task task)
             {
-                await Task.Delay(1000).ConfigureAwait(false);
+                await task.ConfigureAwait(false);
                 return true;
             }
         }

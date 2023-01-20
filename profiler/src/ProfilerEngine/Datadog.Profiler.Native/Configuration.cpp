@@ -40,6 +40,7 @@ Configuration::Configuration()
     _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false);
     _isContentionProfilingEnabled = GetContention();
     _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, false);
+    _isHeapProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HeapProfilingEnabled, false);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
     _version = GetEnvironmentValue(EnvironmentVariables::Version, DefaultVersion);
@@ -63,6 +64,7 @@ Configuration::Configuration()
     _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
     _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
     _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, false);
+    _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -141,6 +143,11 @@ bool Configuration::IsContentionProfilingEnabled() const
 bool Configuration::IsGarbageCollectionProfilingEnabled() const
 {
     return _isGarbageCollectionProfilingEnabled;
+}
+
+bool Configuration::IsHeapProfilingEnabled() const
+{
+    return _isHeapProfilingEnabled;
 }
 
 int32_t Configuration::ContentionSampleLimit() const
@@ -236,6 +243,11 @@ std::string const& Configuration::GetApiKey() const
 std::string const& Configuration::GetServiceName() const
 {
     return _serviceName;
+}
+
+bool Configuration::UseBacktrace2() const
+{
+    return _useBacktrace2;
 }
 
 fs::path Configuration::GetApmBaseDirectory()

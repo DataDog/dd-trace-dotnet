@@ -22,7 +22,7 @@ namespace Datadog.Trace.Activity.Handlers
     internal class DefaultActivityHandler : IActivityHandler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultActivityHandler));
-        private static readonly ConcurrentDictionary<string, ActivityMapping> ActivityMappingById = new();
+        internal static readonly ConcurrentDictionary<string, ActivityMapping> ActivityMappingById = new();
         private static readonly IntegrationId IntegrationId = IntegrationId.OpenTelemetry;
 
         public bool ShouldListenTo(string sourceName, string? version)
@@ -107,13 +107,7 @@ namespace Datadog.Trace.Activity.Handlers
 
             static Scope CreateScopeFromActivity(T activity, SpanContext? parent, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId)
             {
-                string? serviceName = activity switch
-                {
-                    IActivity5 activity5 => activity5.Source.Name,
-                    _ => null
-                };
-
-                var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, serviceName: serviceName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+                var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
                 Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
                 return Tracer.Instance.ActivateSpan(span, false);

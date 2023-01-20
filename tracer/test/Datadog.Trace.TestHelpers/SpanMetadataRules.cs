@@ -112,6 +112,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetCoreMvc(this MockSpan span) => Result.FromSpan(span)
+            .WithIntegrationName("AspNetCore")
             .Properties(s => s
                 .Matches(Name, "aspnet_core_mvc.request")
                 .Matches(Type, "web"))
@@ -239,7 +240,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "kafka")
                 .IsPresent("span.kind"));
 
-        public static Result IsMongoDB(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsMongoDb(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "mongodb.query")
                 .Matches(Type, "mongodb"))
@@ -287,8 +288,10 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "Npgsql")
                 .Matches("span.kind", "client"));
 
-        public static Result IsOpenTelemetry(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+        public static Result IsOpenTelemetry(this MockSpan span, ISet<string> resources, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => { })
+            .AdditionalTags(s => s
+                .PassesThroughSource("OTEL Resource Attributes", resources))
             .Tags(s => s
                 // .IsOptional("events") // aka span events, added by the trace agent when the OTLP span is populated with events
                 .IsPresent("otel.library.name")
@@ -297,9 +300,6 @@ namespace Datadog.Trace.TestHelpers
                 .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
                 .IsOptional("otel.status_description")
                 .MatchesOneOf("span.kind", "internal", "server", "client", "producer", "consumer"));
-                // .IsPresent("service.instance.id") // a "resource" attribute that may be set in code
-                // .IsPresent("service.name") // a "resource" attribute that may be set in code
-                // .IsPresent("service.version")); // a "resource" attribute that may be set in code
 
         public static Result IsOracle(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -333,27 +333,16 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "RabbitMQ")
                 .IsPresent("span.kind"));
 
-        public static Result IsServiceFabric(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .MatchesOneOf(Name, "service_remoting.client", "service_remoting.server"))
-            .Tags(s => s
-                .IsPresent("service-fabric.application-id")
-                .IsPresent("service-fabric.application-name")
-                .IsPresent("service-fabric.partition-id")
-                .IsPresent("service-fabric.node-id")
-                .IsPresent("service-fabric.node-name")
-                .IsPresent("service-fabric.service-name")
-                .IsPresent("service-fabric.service-remoting.uri")
-                .IsPresent("service-fabric.service-remoting.method-name")
-                .IsOptional("service-fabric.service-remoting.method-id")
-                .IsOptional("service-fabric.service-remoting.interface-id")
-                .IsOptional("service-fabric.service-remoting.invocation-id")
-                .MatchesOneOf("span.kind", "client", "server"));
-
         public static Result IsServiceRemoting(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .MatchesOneOf(Name, "service_remoting.client", "service_remoting.server"))
             .Tags(s => s
+                .IsOptional("service-fabric.application-id")
+                .IsOptional("service-fabric.application-name")
+                .IsOptional("service-fabric.partition-id")
+                .IsOptional("service-fabric.node-id")
+                .IsOptional("service-fabric.node-name")
+                .IsOptional("service-fabric.service-name")
                 .IsPresent("service-fabric.service-remoting.uri")
                 .IsPresent("service-fabric.service-remoting.method-name")
                 .IsOptional("service-fabric.service-remoting.method-id")

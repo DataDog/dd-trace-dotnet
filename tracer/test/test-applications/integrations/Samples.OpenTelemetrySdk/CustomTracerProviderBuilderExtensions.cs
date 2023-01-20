@@ -12,10 +12,23 @@ public static class CustomTracerProviderBuilderExtensions
         {
             return builder.AddOtlpExporter(opt =>
             {
+#if OTEL_1_2
                 opt.Protocol = OtlpExportProtocol.HttpProtobuf;
+#endif
             });
         }
 
+        return builder;
+    }
+
+    public static TracerProviderBuilder AddActivitySourceIfEnvironmentVariablePresent(this TracerProviderBuilder builder)
+    {
+        if (Environment.GetEnvironmentVariable("ADD_ADDITIONAL_ACTIVITY_SOURCE") is string value
+&& value == "true")
+        {
+            return builder.AddSource(Program._additionalActivitySourceName);
+        }
+        
         return builder;
     }
 }

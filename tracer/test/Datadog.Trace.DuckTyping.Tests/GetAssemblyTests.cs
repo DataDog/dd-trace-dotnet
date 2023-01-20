@@ -48,11 +48,11 @@ namespace Datadog.Trace.DuckTyping.Tests
              * a another test to the ducktype assembly.
              */
 #if NETFRAMEWORK
-            Assert.Equal(1124, asmDuckTypes);
+            Assert.Equal(1131, asmDuckTypes);
 #elif NETCOREAPP2_1
-            Assert.Equal(1127, asmDuckTypes);
+            Assert.Equal(1134, asmDuckTypes);
 #else
-            Assert.Equal(1128, asmDuckTypes);
+            Assert.Equal(1135, asmDuckTypes);
 #endif
         }
     }

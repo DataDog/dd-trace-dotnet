@@ -24,6 +24,11 @@ void SamplesCollector::Register(ISamplesProvider* samplesProvider)
     _samplesProviders.push_front(std::make_pair(samplesProvider, 0));
 }
 
+void SamplesCollector::RegisterBatchedProvider(IBatchedSamplesProvider* batchedSamplesProvider)
+{
+    _batchedSamplesProviders.push_front(std::make_pair(batchedSamplesProvider, 0));
+}
+
 bool SamplesCollector::Start()
 {
     Log::Info("Starting the samples collector");
@@ -51,7 +56,7 @@ bool SamplesCollector::Stop()
     _exporterThread.join();
 
     // Export the leftover samples
-    CollectSamples();
+    CollectSamples(_samplesProviders);
     Export();
 
     return true;
@@ -70,7 +75,7 @@ void SamplesCollector::SamplesWork()
 
     while (future.wait_for(CollectingPeriod) == std::future_status::timeout)
     {
-        CollectSamples();
+        CollectSamples(_samplesProviders);
     }
 }
 
@@ -94,12 +99,21 @@ void SamplesCollector::Export()
     {
         std::lock_guard lock(_exportLock);
 
+        // batched samples are collected once just before export
+        CollectSamples(_batchedSamplesProviders);
+
         Log::Debug("Collected samples per provider:");
         for (auto& samplesProvider : _samplesProviders)
         {
             auto name = samplesProvider.first->GetName();
             Log::Debug(name, " : ", samplesProvider.second);
             samplesProvider.second = 0;
+        }
+        for (auto& batchedSamplesProvider : _batchedSamplesProviders)
+        {
+            auto name = batchedSamplesProvider.first->GetName();
+            Log::Debug(name, " : ", batchedSamplesProvider.second);
+            batchedSamplesProvider.second = 0;
         }
 
         success = _exporter->Export();
@@ -114,9 +128,9 @@ void SamplesCollector::Export()
     _pThreadsCpuManager->LogCpuTimes();
 }
 
-void SamplesCollector::CollectSamples()
+void SamplesCollector::CollectSamples(std::forward_list<std::pair<ISamplesProvider*, uint64_t>>& samplesProviders)
 {
-    for (auto& samplesProvider : _samplesProviders)
+    for (auto& samplesProvider : samplesProviders)
     {
         try
         {

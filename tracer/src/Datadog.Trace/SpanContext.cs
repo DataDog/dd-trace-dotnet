@@ -26,6 +26,7 @@ namespace Datadog.Trace
             Keys.RawTraceId,
             Keys.RawSpanId,
             Keys.PropagatedTags,
+            Keys.AdditionalW3CTraceState,
 
             // For mismatch version support we need to keep supporting old keys.
             HttpHeaderNames.TraceId,
@@ -337,6 +338,11 @@ namespace Datadog.Trace
                     value = TraceContext?.Tags.ToPropagationHeader() ?? PropagatedTags;
                     return true;
 
+                case Keys.AdditionalW3CTraceState:
+                    // return the value from TraceContext if available
+                    value = TraceContext?.AdditionalW3CTraceState ?? AdditionalW3CTraceState;
+                    return true;
+
                 default:
                     value = null;
                     return false;
@@ -375,7 +381,7 @@ namespace Datadog.Trace
             // The code randomly chooses between the two PathwayContexts.
             // If there is a race, then that's okay
             // Randomly select between keeping the current context (0) or replacing (1)
-            if (ThreadSafeRandom.Next(2) == 1)
+            if (ThreadSafeRandom.Shared.Next(2) == 1)
             {
                 PathwayContext = pathwayContext;
             }
@@ -392,6 +398,7 @@ namespace Datadog.Trace
             public const string RawTraceId = $"{Prefix}RawTraceId";
             public const string RawSpanId = $"{Prefix}RawSpanId";
             public const string PropagatedTags = $"{Prefix}PropagatedTags";
+            public const string AdditionalW3CTraceState = $"{Prefix}AdditionalW3CTraceState";
         }
     }
 }

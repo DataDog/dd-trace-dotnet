@@ -42,6 +42,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
             }
 
+            Log.Debug<int, string, int>(
+                "Received {ConfigsAmount} Remote Configuration records for product {Name}, " +
+                      "of which {FilteredAmount} matched the predicate.",
+                changedConfigs.Count,
+                Name,
+                filteredConfigs?.Count ?? 0);
+
             if (filteredConfigs is not null)
             {
                 var e = new ProductConfigChangedEventArgs(filteredConfigs);
@@ -53,6 +60,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 {
                     foreach (var item in filteredConfigs)
                     {
+                        Log.Debug(ex, "Failed to apply Remote Configuration record {RecordName} for product {ProductName}", item.Name, Name);
                         e.Error(item.Name, ex.Message);
                     }
                 }

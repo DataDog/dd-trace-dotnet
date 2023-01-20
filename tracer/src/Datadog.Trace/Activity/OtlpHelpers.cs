@@ -90,8 +90,7 @@ namespace Datadog.Trace.Activity
 
             // Fixup "env" tag
             if (span.Context.TraceContext?.Environment is null
-                && span.GetTag("deployment.environment") is string otelServiceEnv
-                && !string.IsNullOrEmpty(otelServiceEnv))
+                && span.GetTag("deployment.environment") is { Length: > 0 } otelServiceEnv)
             {
                 span.SetTag(Tags.Env, otelServiceEnv);
             }
@@ -104,7 +103,11 @@ namespace Datadog.Trace.Activity
             if (activity5 is not null)
             {
                 span.SetTag("otel.library.name", activity5.Source.Name);
-                span.SetTag("otel.library.version", activity5.Source.Version);
+
+                if (!string.IsNullOrEmpty(activity5.Source.Version))
+                {
+                    span.SetTag("otel.library.version", activity5.Source.Version);
+                }
             }
 
             // Set OTEL status code and OTEL status description

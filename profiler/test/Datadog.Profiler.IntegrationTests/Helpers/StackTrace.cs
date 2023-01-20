@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
@@ -21,6 +22,24 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public StackTrace(IEnumerable<StackFrame> items)
         {
             _stackFrames = items.ToList();
+        }
+
+        public bool EndWith(StackTrace other)
+        {
+            if (_stackFrames.Count < other._stackFrames.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < other._stackFrames.Count; i++)
+            {
+                if (!_stackFrames[i].Equals(other._stackFrames[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public int CompareTo(StackTrace other)

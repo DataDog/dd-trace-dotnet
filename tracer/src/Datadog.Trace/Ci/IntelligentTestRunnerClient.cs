@@ -18,7 +18,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
@@ -70,7 +69,7 @@ internal class IntelligentTestRunnerClient
         _settings = settings ?? CIVisibility.Settings;
 
         _workingDirectory = workingDirectory;
-        _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty) ?? string.Empty;
+        _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? "none") ?? "none";
         _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
         _customConfigurations = null;
 
@@ -227,6 +226,11 @@ internal class IntelligentTestRunnerClient
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
     {
         Log.Debug("ITR: Getting settings...");
+        if (!_useEvpProxy && string.IsNullOrEmpty(_settings.ApplicationKey))
+        {
+            Log.Error("ITR: Error getting settings: Application key is missing.");
+        }
+
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var branchName = await _getBranchNameTask.ConfigureAwait(false);
@@ -279,6 +283,11 @@ internal class IntelligentTestRunnerClient
             CheckResponseStatusCode(response, responseContent, finalTry);
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
+            if (string.IsNullOrEmpty(responseContent))
+            {
+                return default;
+            }
+
             var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(responseContent);
             return deserializedResult.Data?.Attributes ?? default;
         }
@@ -287,6 +296,11 @@ internal class IntelligentTestRunnerClient
     public async Task<SkippableTest[]> GetSkippableTestsAsync()
     {
         Log.Debug("ITR: Getting skippable tests...");
+        if (!_useEvpProxy && string.IsNullOrEmpty(_settings.ApplicationKey))
+        {
+            Log.Error("ITR: Error getting skippable tests: Application key is missing.");
+        }
+
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var currentShaCommand = await _getShaTask.ConfigureAwait(false);
@@ -337,6 +351,11 @@ internal class IntelligentTestRunnerClient
             CheckResponseStatusCode(response, responseContent, finalTry);
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
+            if (string.IsNullOrEmpty(responseContent))
+            {
+                return Array.Empty<SkippableTest>();
+            }
+
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent);
             if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
             {
@@ -427,6 +446,11 @@ internal class IntelligentTestRunnerClient
             CheckResponseStatusCode(response, responseContent, finalTry);
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
+            if (string.IsNullOrEmpty(responseContent))
+            {
+                return Array.Empty<string>();
+            }
+
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
             if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
             {
@@ -631,11 +655,11 @@ internal class IntelligentTestRunnerClient
             throw new RateLimitException(rateLimitDurationInSeconds);
         }
 
-        if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
+        if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404 && response.StatusCode != 502)
         {
             if (finalTry)
             {
-                Log.Error<int, string>("Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                Log.Error<int, string>("ITR: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
             }
 
             throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
@@ -670,7 +694,7 @@ internal class IntelligentTestRunnerClient
                 if (isFinalTry || sourceException is RateLimitException { DelayTimeInSeconds: null })
                 {
                     // stop retrying
-                    Log.Error<int>(sourceException, "An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
+                    Log.Error<int>(sourceException, "ITR: An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
                     exceptionDispatchInfo.Throw();
                 }
 

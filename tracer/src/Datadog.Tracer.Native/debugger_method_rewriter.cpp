@@ -1372,10 +1372,10 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         methodReturnType = caller->method_signature.GetReturnValue();
     }
-
+    auto indexes = std::vector<ULONG>(0);
     hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, &methodReturnType, &callTargetStateIndex, &exceptionIndex,
                                                      &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
-                                                     &exceptionToken, &callTargetReturnToken, &firstInstruction, isAsyncMethod);
+                                                     &exceptionToken, &callTargetReturnToken, &firstInstruction, indexes, isAsyncMethod);
 
     if (FAILED(hr))
     {

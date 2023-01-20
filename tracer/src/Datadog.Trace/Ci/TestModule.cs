@@ -16,9 +16,7 @@ using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog;
@@ -33,6 +31,7 @@ public sealed class TestModule
     private static readonly AsyncLocal<TestModule?> CurrentModule = new();
     private readonly Span _span;
     private readonly Dictionary<string, TestSuite> _suites;
+    private readonly TestSession? _fakeSession;
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
@@ -133,6 +132,17 @@ public sealed class TestModule
                 if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, out var testSessionWorkingDirectory))
                 {
                     tags.WorkingDirectory = testSessionWorkingDirectory;
+                }
+            }
+            else
+            {
+                Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
+                _fakeSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, null, startDate, false);
+                if (_fakeSession.Tags is { } fakeSessionTags)
+                {
+                    tags.SessionId = fakeSessionTags.SessionId;
+                    tags.Command = fakeSessionTags.Command;
+                    tags.WorkingDirectory = fakeSessionTags.WorkingDirectory;
                 }
             }
         }
@@ -379,6 +389,26 @@ public sealed class TestModule
 
         Current = null;
         CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
+
+        if (_fakeSession is { } fakeSession)
+        {
+            switch (Tags.Status)
+            {
+                case TestTags.StatusPass:
+                    fakeSession.InternalClose(TestStatus.Pass, duration.Value);
+                    break;
+                case TestTags.StatusFail:
+                    fakeSession.InternalClose(TestStatus.Fail, duration.Value);
+                    break;
+                case TestTags.StatusSkip:
+                    fakeSession.InternalClose(TestStatus.Skip, duration.Value);
+                    break;
+                default:
+                    fakeSession.InternalClose(TestStatus.Pass, duration.Value);
+                    break;
+            }
+        }
+
         return true;
     }
 

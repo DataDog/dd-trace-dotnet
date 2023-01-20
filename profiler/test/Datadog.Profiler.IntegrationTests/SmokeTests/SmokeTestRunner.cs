@@ -45,7 +45,7 @@ namespace Datadog.Profiler.SmokeTests
             _testApplicationRunner = new TestApplicationRunner(appName, framework, appAssembly, output, commandLine);
         }
 
-        private EnvironmentHelper EnvironmentHelper
+        internal EnvironmentHelper EnvironmentHelper
         {
             get => _testApplicationRunner.Environment;
         }

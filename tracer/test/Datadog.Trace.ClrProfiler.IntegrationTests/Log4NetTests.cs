@@ -184,6 +184,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                    .Where(x => !x.Message.Contains(ExcludeMessagePrefix))
                    .Should()
                    .NotBeEmpty()
+                   // .HaveCount(1) // Currently fails
                    .And.OnlyContain(x => !string.IsNullOrEmpty(x.TraceId))
                    .And.OnlyContain(x => !string.IsNullOrEmpty(x.SpanId));
             }

@@ -19,6 +19,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.ServiceFabric;
@@ -67,6 +68,14 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
+        /// Gets a value indicating the version of the native Datadog profiler. This method
+        /// is rewritten by the profiler.
+        /// </summary>
+        /// <returns>In a managed-only context, where the profiler is not attached, <c>None</c>,
+        /// otherwise the version of the Datadog native tracer library.</returns>
+        public static string GetNativeTracerVersion() => "None";
+
+        /// <summary>
         /// Initializes global instrumentation values.
         /// </summary>
         public static void Initialize()
@@ -76,6 +85,8 @@ namespace Datadog.Trace.ClrProfiler
                 // Initialize() was already called before
                 return;
             }
+
+            TracerDebugger.WaitForDebugger();
 
             Log.Debug("Initialization started.");
 
@@ -176,7 +187,7 @@ namespace Datadog.Trace.ClrProfiler
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, e.Message);
+                    Log.Error(e, "Failed to initialize Remote Configuration Management.");
                 }
 
                 try
@@ -226,6 +237,7 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            TracerDebugger.WaitForDebugger();
             Log.Debug("Initialization of non native parts started.");
 
             try
@@ -356,7 +368,8 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void InitRemoteConfigurationManagement(Tracer tracer)
         {
-            var serviceName = tracer.Settings.ServiceName ?? tracer.DefaultServiceName;
+            // Service Name must be lowercase, otherwise the agent will not be able to find the service
+            var serviceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(
@@ -371,7 +384,7 @@ namespace Datadog.Trace.ClrProfiler
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
                         var tags = GetTags(tracer, rcmSettings);
 
-                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion, tags);
+                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, TraceUtil.NormalizeTag(tracer.Settings.Environment), tracer.Settings.ServiceVersion, tags);
                         // see comment above
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
@@ -395,7 +408,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             var tags = tracer.Settings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
 
-            var environment = tracer.Settings.Environment;
+            var environment = TraceUtil.NormalizeTag(tracer.Settings.Environment);
             if (!string.IsNullOrEmpty(environment))
             {
                 tags.Add($"env:{environment}");

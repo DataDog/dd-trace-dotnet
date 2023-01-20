@@ -218,16 +218,14 @@ public sealed class Test
         duration ??= _scope.Span.Context.TraceContext.ElapsedSince(scope.Span.StartTime);
 
         // Set coverage
-        if (CIVisibility.Settings.CodeCoverageEnabled == true && Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.Tests.CoveragePayload coveragePayload)
+        if (CIVisibility.Settings.CodeCoverageEnabled == true && Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.Tests.TestCoverage testCoverage)
         {
-            if (scope.Span is { } span)
-            {
-                coveragePayload.TraceId = span.TraceId;
-                coveragePayload.SpanId = span.SpanId;
-            }
+            testCoverage.SessionId = tags.SessionId;
+            testCoverage.SuiteId = tags.SuiteId;
+            testCoverage.SpanId = _scope.Span.SpanId;
 
-            CIVisibility.Log.Debug("Coverage data for TraceId={traceId} and SpanId={spanId} processed.", coveragePayload.TraceId, coveragePayload.SpanId);
-            CIVisibility.Manager?.WriteEvent(coveragePayload);
+            CIVisibility.Log.Debug("Coverage data for SessionId={sessionId}, SuiteId={suiteId} and SpanId={spanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
+            CIVisibility.Manager?.WriteEvent(testCoverage);
         }
 
         // Set status

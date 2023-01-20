@@ -83,7 +83,7 @@
     "VersionConditions": [{
       "MinVersion": "5.0.0",
       "MaxVersionExclusive": "5.1.1",
-      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0"]
+      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
     },{
       "MaxVersionExclusive": "6.0.0",
       "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
@@ -100,10 +100,10 @@
       "12.*.*"
     ],
     "VersionConditions": [{
-        "MaxVersionExclusive": "13.0.0",
-        "ExcludeTargetFrameworks": [ "net461", "netcoreapp2.1", "netcoreapp3.0" ]
+      "MaxVersionExclusive": "13.0.0",
+      "ExcludeTargetFrameworks": [ "net461", "netcoreapp2.1", "netcoreapp3.0" ]
     }]
-  },  
+  },
   {
     "IntegrationName": "Npgsql",
     "SampleProjectName": "Samples.Npgsql",
@@ -235,7 +235,12 @@
       "5.*.*",
       "6.*.*",
       "7.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "3.1.32",
+      "MaxVersionExclusive": "4.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "XUnit",
@@ -265,10 +270,11 @@
     "SampleProjectName": "Samples.MSTestTests",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "3.1.0",
     "SpecificVersions": [
       "2.0.*",
-      "2.*.*"
+      "2.*.*",
+      "3.0.*"
     ]
   },
   {
@@ -425,5 +431,16 @@
       "MaxVersionExclusive": "2.37.0",
       "SkipArm64": true
     }]
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "SampleProjectName": "Samples.OpenTelemetrySdk",
+    "NugetPackageSearchName": "OpenTelemetry.Api",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.0.1",
+      "1.*.*"
+    ]
   }
 ]

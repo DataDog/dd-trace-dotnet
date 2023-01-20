@@ -30,6 +30,7 @@ namespace Datadog.Profiler.IntegrationTests
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.LiveHeapProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "1");
             // TODO: add any new profiler to ensure that all are setting timestamps as label
 

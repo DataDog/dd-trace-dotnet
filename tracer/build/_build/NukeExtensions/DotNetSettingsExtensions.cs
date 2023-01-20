@@ -163,6 +163,21 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProcessToolPath(dotnetPath);
     }
 
+    public static T SetTestTargetPlatform<T>(this T settings, MSBuildTargetPlatform platform)
+        where T : ToolSettings
+    {
+        // To avoid annoying differences in the test code, convert the MSBuildTargetPlatform string values to 
+        // the same values returned by Environment.Platform(), and skip unsupported values (e.g. MSIL, arm)
+        var target = platform.ToString() switch
+        {
+            "x86" => "X86",
+            "x64" => "X64",
+            _ => throw new InvalidOperationException("Should only use x64 and x86 for Test target platform"),
+        };
+
+        return settings.SetProcessEnvironmentVariable("TargetPlatform", target);
+    }
+
     /// <summary>
     /// Set filters for tests to ignore
     /// </summary>

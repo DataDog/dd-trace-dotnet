@@ -16,21 +16,21 @@ class StackFramesCollectorBase
 protected:
     StackFramesCollectorBase();
 
-    bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot(void);
+    bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
     bool AddFrame(std::uintptr_t ip);
     void AddFakeFrame();
     void SetFrameCount(std::uint16_t count);
 
     std::pair<uintptr_t*, std::uint16_t> Data();
 
-    StackSnapshotResultBuffer* GetStackSnapshotResult(void);
+    StackSnapshotResultBuffer* GetStackSnapshotResult();
     bool IsCurrentCollectionAbortRequested();
 
     // The XxxImplementation(..) methods below are the key routines to be implemented by the specific stack sample collectors.
     // We make them virtual but NOT astract, so that if a particular collector does not need to implement some
     // of these methods (because they are no-op for that specific collector), then they do not have to.
     // For this, we provide a reasonable default implementation.
-    virtual void PrepareForNextCollectionImplementation(void);
+    virtual void PrepareForNextCollectionImplementation();
     virtual bool SuspendTargetThreadImplementation(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     virtual void ResumeTargetThreadIfRequiredImplementation(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
     virtual StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, bool selfCollect);
@@ -42,8 +42,8 @@ public:
 
     virtual void OnDeadlock();
 
-    void RequestAbortCurrentCollection(void);
-    void PrepareForNextCollection(void);
+    void RequestAbortCurrentCollection();
+    void PrepareForNextCollection();
     bool SuspendTargetThread(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     void ResumeTargetThreadIfRequired(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
     StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR);

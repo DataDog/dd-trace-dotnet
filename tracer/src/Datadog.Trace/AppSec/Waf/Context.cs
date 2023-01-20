@@ -43,7 +43,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
-            var pwArgs = encoder.Encode(addresses, argCache, applySafetyLimits: true);
+            using var pwArgs = encoder.Encode(addresses, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -57,6 +57,8 @@ namespace Datadog.Trace.AppSec.Waf
             _stopwatch.Stop();
             _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
             var result = new Result(retNative, code, wafNative, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
+            wafNative.ResultFree(ref retNative);
+
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug(

@@ -21,6 +21,8 @@ struct SampleValueType
 typedef std::vector<int64_t> Values;
 typedef std::pair<std::string_view, std::string> Label;
 typedef std::list<Label> Labels;
+typedef std::pair<std::string_view, int64_t> NumericLabel;
+typedef std::list<NumericLabel> NumericLabels;
 typedef std::vector<std::pair<std::string_view, std::string_view>> CallStack;
 
 class Sample
@@ -42,6 +44,7 @@ public:
     const Values& GetValues() const;
     const CallStack& GetCallstack() const;
     const Labels& GetLabels() const;
+    const NumericLabels& GetNumericLabels() const;
     std::string_view GetRuntimeId() const;
 
     // Since this class is not finished, this method is only for test purposes
@@ -59,11 +62,45 @@ public:
         _labels.push_back(std::forward<T>(label));
     }
 
+    template<typename T>
+    void AddNumericLabel(T&& label)
+    {
+        _numericLabels.push_back(std::forward<T>(label));
+    }
+
+    template<typename T>
+    void ReplaceLabel(T&& label)
+    {
+        for (auto it = _labels.rbegin(); it != _labels.rend(); it++)
+        {
+            if (it->first == label.first)
+            {
+                it->second = label.second;
+
+                return;
+            }
+        }
+    }
+
+    template<typename T>
+    void ReplaceNumericLabel(T&& label)
+    {
+        for (auto it = _numericLabels.rbegin(); it != _numericLabels.rend(); it++)
+        {
+            if (it->first == label.first)
+            {
+                it->second = label.second;
+
+                return;
+            }
+        }
+    }
+
     // helpers for well known mandatory labels
     template <typename T>
     void SetPid(T&& pid)
     {
-        AddLabel(Label{ProcessIdLabel, std::forward<T>(pid)});
+        AddNumericLabel(NumericLabel{ProcessIdLabel, std::forward<T>(pid)});
     }
 
     template <typename T>
@@ -104,11 +141,15 @@ public:
     static const std::string GarbageCollectionReasonLabel;
     static const std::string GarbageCollectionTypeLabel;
     static const std::string GarbageCollectionCompactingLabel;
+    static const std::string ObjectLifetimeLabel;
+    static const std::string ObjectIdLabel;
+    static const std::string ObjectGenerationLabel;
 
 private:
     uint64_t _timestamp;
     CallStack _callstack;
     Values _values;
     Labels _labels;
+    NumericLabels _numericLabels;
     std::string_view _runtimeId;
 };

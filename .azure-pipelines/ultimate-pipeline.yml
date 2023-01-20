@@ -95,7 +95,7 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 7.0.100
+  dotnetCoreSdkLatestVersion: 7.0.101
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -951,10 +951,10 @@ stages:
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
-    
+
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1116,7 +1116,7 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
- 
+
     - script: |
         $(runtimeInstall)
         func
@@ -1306,8 +1306,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-    
-    - script: |      
+
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1405,7 +1405,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
-    - script: |      
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1577,7 +1577,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
-    - script: |      
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1648,7 +1648,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64"
+        command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
         apikey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
@@ -1669,8 +1669,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-    
-    - script: |      
+
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1969,13 +1969,15 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: integration_tests_arm64_debugger
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
+    )
   dependsOn: [package_arm64, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    TestAllPackageVersions: true
-    IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
-    baseImage: debian
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1985,13 +1987,8 @@ stages:
     - job: Test
       timeoutInMinutes: 60 #default value
       strategy:
-        matrix:
-          net5_0:
-            publishTargetFramework: net5.0
-          net6_0:
-            publishTargetFramework: net6.0
-          net7_0:
-            publishTargetFramework: net7.0
+        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_arm64_debugger_matrix']]
+
       workspace:
         clean: all
       pool:
@@ -2010,7 +2007,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64"
+            command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
@@ -2327,7 +2324,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, build_linux_tracer, build_arm64_tracer, build_macos, master_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_macos, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -2502,13 +2499,13 @@ stages:
       inputs:
         artifact: runner-standalone-win-$(targetPlatform)
         path: $(Agent.TempDirectory)/runner
-    
+
     - task: ExtractFiles@1
       inputs:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.zip'
         destinationFolder: $(runnerStandalone)
         cleanDestinationFolder: false
-        
+
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test tool
       env:
@@ -2585,7 +2582,7 @@ stages:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.tar.gz'
         destinationFolder: $(runnerStandalone)
         cleanDestinationFolder: false
-        
+
     - script: |
         ls $(runnerStandalone)
         chmod +x $(runnerStandalone)/dd-trace
@@ -2763,13 +2760,13 @@ stages:
           inputs:
             artifact: linux-profiler-symbols-alpine
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler CentOS7 symbols
           inputs:
             artifact: linux-profiler-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler Arm64 symbols
           inputs:
@@ -2781,13 +2778,13 @@ stages:
           inputs:
             artifact: linux-tracer-symbols-alpine
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer CentOS7 symbols
           inputs:
             artifact: linux-tracer-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer Arm64 symbols
           inputs:
@@ -2878,7 +2875,15 @@ stages:
               --destination-path "$(Build.SourceVersion)" \
               --source "$(Build.ArtifactStagingDirectory)"
           displayName: Upload blobs to Azure
-          condition: and(succeeded(), eq(variables.isMainBranch, true))
+          condition: >
+            and(
+              succeeded(),
+              ne(variables['push_artifacts_to_azure_storage'], 'false'),
+              or(
+                eq(variables['push_artifacts_to_azure_storage'], 'true'),
+                eq(variables.isMainBranch, true)
+              )
+            )
           env:
             AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
@@ -3090,7 +3095,7 @@ stages:
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: 
+  dependsOn:
     - integration_tests_windows
     - integration_tests_windows_iis
     - integration_tests_windows_iis_security
@@ -3214,6 +3219,19 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
+    - powershell: |
+        mkdir -p $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        cp $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)/results_*.json $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+      displayName: Copy the results to benchmarks dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks"
+      displayName: Publish results
+      artifact: execution_time_benchmarks_windows_x64_$(sampleName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - task: PowerShell@2
       displayName: Wait 20 seconds to agent flush before finishing pipeline
       inputs:
@@ -3273,7 +3291,7 @@ stages:
         condition: always()
         displayName: System tests logs
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-        
+
       - script: ./run.sh REMOTE_CONFIG_MOCKED_BACKEND_LIVE_DEBUGGING
         workingDirectory: system-tests
         displayName: Run RCM tests
@@ -3284,6 +3302,17 @@ stages:
         condition: always()
         displayName: RCM tests logs
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_rcm_$(System.JobAttempt)
+
+      - script: |
+          cd parametric
+          pip install wheel
+          pip install -r requirements.txt
+          ./run.sh
+        workingDirectory: system-tests
+        displayName: Run parametric tests
+        env:
+          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+          CLIENTS_ENABLED: dotnet
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -3400,7 +3429,7 @@ stages:
           nuget-smoke-tests
       env:
         dockerTag: $(dockerTag)
-      displayName: docker-compose build nuget-smoke-tests 
+      displayName: docker-compose build nuget-smoke-tests
       retryCountOnTaskFailure: 3
 
     - template: steps/run-snapshot-test.yml
@@ -3665,7 +3694,7 @@ stages:
             dockerTag: $(dockerTag)
           displayName: docker-compose build smoke-tests
           retryCountOnTaskFailure: 3
-    
+
         - template: steps/run-snapshot-test.yml
           parameters:
             target: 'smoke-tests'
@@ -3853,7 +3882,7 @@ stages:
         mkdir -p tracer/build_data/snapshots
         mkdir -p tracer/build_data/logs
       displayName: create test data directories
-    
+
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
@@ -3919,7 +3948,7 @@ stages:
         mkdir -f -p $(smokeTestAppDir)/artifacts
         mv $(Agent.TempDirectory)/*.zip $(smokeTestAppDir)/artifacts/dd-trace-win.zip
       displayName: Create test data directories
-      
+
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
@@ -4076,6 +4105,59 @@ stages:
     - script: tracer\build.cmd CheckSmokeTestsForErrors
       displayName: CheckSmokeTestsForErrors
 
+- stage: compare_throughput
+  condition: and(succeeded(), eq(variables.isMainRepository, true))
+  dependsOn: [throughput, throughput_appsec, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - job: compare
+    timeoutInMinutes: 60 #default value
+    pool:
+      vmImage: windows-2022
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download crank_linux_arm64_1
+      inputs:
+        artifact: crank_linux_arm64_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_arm64_1
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download crank_linux_x64_1
+      inputs:
+        artifact: crank_linux_x64_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_1
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download crank_linux_x64_asm_1
+      inputs:
+        artifact: crank_linux_x64_asm_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_asm_1
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download crank_windows_x64_1
+      inputs:
+        artifact: crank_windows_x64_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_windows_x64_1
+
+    - script: tracer\build.cmd CompareThroughputResults
+      displayName: Compare Crank results
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    - publish: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/throughput_report.md
+      displayName: Upload report
+      artifact: crank_throughput_report
+
 - stage: trace_pipeline
   condition: eq(variables['isBenchmarksOnlyBuild'], 'False')
   dependsOn:
@@ -4118,6 +4200,7 @@ stages:
     - msi_installer_smoke_tests
     - tracer_home_smoke_tests
     - coverage
+    - compare_throughput
     - system_tests
   jobs:
   - job: build_and_run
@@ -4130,6 +4213,7 @@ stages:
       dd_agent: dd_agent
 
     steps:
+    - template: steps/install-latest-dotnet-sdk.yml
     - bash: dotnet run $(Build.BuildId)
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
@@ -4157,5 +4241,5 @@ stages:
         curl -X POST \
         -H "Content-Type: application/json" \
         -d '{"commit": "'$sha'"}' \
-          $(slackWebhookUrl) 
+          $(slackWebhookUrl)
       displayName: "notify"
