@@ -577,7 +577,21 @@ namespace Datadog.Trace
 
         internal static class Propagated
         {
+            /// <summary>
+            /// Tag used to propagate the sampling mechanism used to make a sampling decision.
+            /// See <see cref="Datadog.Trace.Sampling.SamplingMechanism"/>.
+            /// </summary>
+            /// <remarks>
+            /// This tag was originally meant to carry the name of the service that made the sampling decision,
+            /// hence its name: "decision maker".
+            /// </remarks>
             internal const string DecisionMaker = "_dd.p.dm";
+
+            /// <summary>
+            /// Tag used to propagate the higher-order 64 bits of a 128-bit trace id encoded as a
+            /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
+            /// </summary>
+            internal const string TraceIdHigh = "_dd.p.tid";
         }
     }
 }
