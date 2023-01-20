@@ -19,32 +19,41 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
         private readonly IntPtr _contextHandle;
+
         private readonly Waf _waf;
+
+        // this lock is to avoid accessing the waf object from the Context while it's being disposed. Other events involving the waf arent concurrent (rcm is not) and thread safe (other methods on native waf)
         private readonly ReaderWriterLock _wafLocker;
         private readonly List<Obj> _argCache = new();
         private readonly Stopwatch _stopwatch;
+        private readonly WafLibraryInvoker _wafLibraryInvoker;
 
-        // this lock is for locking the context handle and argCache objects, which aren't thread safe
         private bool _disposed;
         private ulong _totalRuntimeOverRuns;
 
         // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held
-        private Context(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, out bool valid)
+        private Context(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, WafLibraryInvoker wafLibraryInvoker)
         {
             _wafLocker = wafLocker;
-            // in high concurrency, the waf passed as argument here could have been disposed just above in betwen creation / waf update so last test here
-            valid = (_wafLocker.IsReadLockHeld || _wafLocker.EnterReadLock()) && !waf.Disposed;
+            // in high concurrency, the waf passed as argument here could have been disposed just above in between creation / waf update so last test here
             _contextHandle = contextHandle;
             _waf = waf;
+            _wafLibraryInvoker = wafLibraryInvoker;
             _stopwatch = new Stopwatch();
         }
 
         ~Context() => Dispose(false);
 
-        public static IContext? GetContext(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker)
+        public static IContext? GetContext(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, WafLibraryInvoker wafLibraryInvoker)
         {
-            var context = new Context(contextHandle, waf, wafLocker, out var valid);
-            return valid ? context : null;
+            if (waf.Disposed)
+            {
+                wafLibraryInvoker.ContextDestroy(contextHandle);
+                return null;
+            }
+
+            var hasLock = wafLocker.IsReadLockHeld || wafLocker.EnterReadLock();
+            return hasLock ? new Context(contextHandle, waf, wafLocker, wafLibraryInvoker) : null;
         }
 
         public IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
@@ -70,14 +79,14 @@ namespace Datadog.Trace.AppSec.Waf
 
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
-            using var pwArgs = Encoder.Encode(addresses, _argCache, applySafetyLimits: true);
+            using var pwArgs = Encoder.Encode(addresses, _wafLibraryInvoker, _argCache, applySafetyLimits: true);
             var rawArgs = pwArgs.RawPtr;
             var code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
 
             _stopwatch.Stop();
             _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
             var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
-            WafLibraryInvoker.ResultFree(ref retNative);
+            _wafLibraryInvoker.ResultFree(ref retNative);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -104,7 +113,7 @@ namespace Datadog.Trace.AppSec.Waf
                 arg.Dispose();
             }
 
-            WafLibraryInvoker.ContextDestroy(_contextHandle);
+            _wafLibraryInvoker.ContextDestroy(_contextHandle);
 
             _wafLocker.ExitReadLock();
         }

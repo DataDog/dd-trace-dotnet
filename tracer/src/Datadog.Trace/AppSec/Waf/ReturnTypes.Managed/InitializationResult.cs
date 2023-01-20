@@ -17,7 +17,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitializationResult));
 
-        public InitializationResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, bool unusableRuleFile = false, IntPtr? wafHandle = null)
+        public InitializationResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null)
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
@@ -33,7 +33,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
 
             if (!unusableRuleFile && wafHandle.HasValue && wafHandle.Value != IntPtr.Zero)
             {
-                Waf = new Waf(wafHandle!.Value);
+                Waf = new Waf(wafHandle.Value, wafLibraryInvoker!);
                 Success = true;
             }
         }
@@ -63,12 +63,12 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
 
         internal static InitializationResult FromUnusableRuleFile() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), unusableRuleFile: true);
 
-        internal static InitializationResult From(DdwafRuleSetInfoStruct ddwaRuleSetInfoStruct, IntPtr? wafHandle)
+        internal static InitializationResult From(DdwafRuleSetInfoStruct ddwaRuleSetInfoStruct, IntPtr? wafHandle, WafLibraryInvoker wafLibraryInvoker)
         {
             var ddwafObjectStruct = ddwaRuleSetInfoStruct.Errors;
             var errors = Decode(ddwafObjectStruct);
             var ruleFileVersion = Marshal.PtrToStringAnsi(ddwaRuleSetInfoStruct.Version);
-            return new(ddwaRuleSetInfoStruct.Failed, ddwaRuleSetInfoStruct.Loaded, ruleFileVersion!, errors, wafHandle: wafHandle);
+            return new(ddwaRuleSetInfoStruct.Failed, ddwaRuleSetInfoStruct.Loaded, ruleFileVersion!, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
         }
 
         private static IReadOnlyDictionary<string, string[]> Decode(DdwafObjectStruct ddwafObjectStruct)

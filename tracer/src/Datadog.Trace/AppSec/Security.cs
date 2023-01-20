@@ -33,9 +33,8 @@ namespace Datadog.Trace.AppSec
         private readonly Concurrency.ReaderWriterLock _wafLocker = new();
         private readonly SecuritySettings _settings;
         private LibraryInitializationResult _libraryInitializationResult;
-
-        // todo: make it IWaf? when enable nullable. Having security on doesn't mean waf has init properly
         private IWaf _waf;
+        private WafLibraryInvoker _wafLibraryInvoker;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
         private IDictionary<string, Payload> _asmDataConfigs = new Dictionary<string, RcmModels.AsmData.Payload>();
@@ -319,12 +318,13 @@ namespace Datadog.Trace.AppSec
                     if (!_libraryInitializationResult.Success)
                     {
                         _settings.Enabled = false;
+                        _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
                         // logs happened during the process of initializing
                         return;
                     }
                 }
 
-                _wafInitializationResult = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
+                _wafInitializationResult = Waf.Waf.Create(_wafLibraryInvoker, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
                 if (_wafInitializationResult.Success && _wafLocker.EnterWriteLock())
                 {
                     var oldWaf = _waf;

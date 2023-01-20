@@ -5,12 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -31,8 +30,13 @@ namespace Datadog.Trace.Security.Unit.Tests
             attackParts1.Length.Should().Be(3);
             var attackParts2 = attack2.Split('|');
             attackParts2.Length.Should().Be(3);
-            AppSec.Waf.NativeBindings.WafLibraryInvoker.Initialize();
-            var initresult = Waf.Create(string.Empty, string.Empty);
+            var libInitResult = WafLibraryInvoker.Initialize();
+            if (!libInitResult.Success)
+            {
+                throw new ArgumentException("Waf couldnt load");
+            }
+
+            var initresult = Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
             using var waf = initresult.Waf;
             waf.Should().NotBeNull();
             var ruleStatus = new Dictionary<string, bool>();

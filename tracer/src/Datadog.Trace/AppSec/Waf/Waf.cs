@@ -22,11 +22,13 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
-        private readonly IntPtr wafHandle;
+        private readonly IntPtr _wafHandle;
+        private readonly WafLibraryInvoker _wafLibraryInvoker;
 
-        internal Waf(IntPtr wafHandle)
+        internal Waf(IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker)
         {
-            this.wafHandle = wafHandle;
+            _wafLibraryInvoker = wafLibraryInvoker;
+            _wafHandle = wafHandle;
         }
 
         ~Waf()
@@ -36,11 +38,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         internal bool Disposed { get; private set; }
 
-        public string Version => WafLibraryInvoker.GetVersion();
+        public string Version => _wafLibraryInvoker.GetVersion();
 
         /// <summary>
         /// Create a new waf object configured with the ruleset file
         /// </summary>
+        /// <param name="wafLibraryInvoker">to invoke native methods on the waf's native library</param>
         /// <param name="obfuscationParameterKeyRegex">the regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious,
         /// empty string means use default embedded in the WAF</param>
         /// <param name="obfuscationParameterValueRegex">the regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious,
@@ -48,16 +51,17 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="rulesFile">can be null, means use rules embedded in the manifest </param>
         /// <param name="rulesJson">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static InitializationResult Create(string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? rulesFile = null, string? rulesJson = null)
+        internal static InitializationResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? rulesFile = null, string? rulesJson = null)
         {
+            var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
             InitializationResult initializationResult;
             if (!string.IsNullOrEmpty(rulesJson))
             {
-                initializationResult = WafConfigurator.ConfigureFromRemoteConfig(rulesJson, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                initializationResult = wafConfigurator.ConfigureFromRemoteConfig(rulesJson, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
             else
             {
-                initializationResult = WafConfigurator.Configure(rulesFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                initializationResult = wafConfigurator.Configure(rulesFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
 
             return initializationResult;
@@ -76,7 +80,7 @@ namespace Datadog.Trace.AppSec.Waf
                 return null;
             }
 
-            var contextHandle = WafLibraryInvoker.InitContext(wafHandle);
+            var contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
 
             if (contextHandle == IntPtr.Zero)
             {
@@ -84,7 +88,7 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new Exception(InitContextError);
             }
 
-            return Context.GetContext(contextHandle, this, wafLocker);
+            return Context.GetContext(contextHandle, this, wafLocker, _wafLibraryInvoker);
         }
 
         // Requires a non disposed waf handle
@@ -102,8 +106,8 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             var finalRuleDatas = MergeRuleData(res);
-            using var encoded = Encoder.Encode(finalRuleDatas, new List<Obj>(), false);
-            var ret = WafLibraryInvoker.UpdateRuleData(wafHandle, encoded.RawPtr);
+            using var encoded = Encoder.Encode(finalRuleDatas, _wafLibraryInvoker, new List<Obj>(), false);
+            var ret = _wafLibraryInvoker.UpdateRuleData(_wafHandle, encoded.RawPtr);
             Log.Information("{number} rules have been updated and waf status is {status}", finalRuleDatas.Count, ret);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
@@ -126,14 +130,14 @@ namespace Datadog.Trace.AppSec.Waf
                 return false;
             }
 
-            using var encoded = Encoder.Encode(ruleStatus);
-            var ret = WafLibraryInvoker.ToggleRules(wafHandle, encoded.RawPtr);
+            using var encoded = Encoder.Encode(ruleStatus, _wafLibraryInvoker);
+            var ret = _wafLibraryInvoker.ToggleRules(_wafHandle, encoded.RawPtr);
             Log.Information("{number} rule status have been updated and waf status is {status}", ruleStatus.Count, ret);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
-        public DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => WafLibraryInvoker.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+        public DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => _wafLibraryInvoker.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
 
         internal static List<object> MergeRuleData(IEnumerable<RuleData> res)
         {
@@ -185,7 +189,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             Disposed = true;
-            WafLibraryInvoker.Destroy(wafHandle);
+            _wafLibraryInvoker.Destroy(_wafHandle);
         }
     }
 }

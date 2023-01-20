@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -41,11 +42,16 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            AppSec.Waf.NativeBindings.WafLibraryInvoker.Initialize();
+            var libInitResult = WafLibraryInvoker.Initialize();
+            if (!libInitResult.Success)
+            {
+                throw new ArgumentException("Waf couldnt load");
+            }
+
             var initResult =
                 obfuscate
-                    ? Waf.Create(SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
-                    : Waf.Create(string.Empty, string.Empty);
+                    ? Waf.Create(libInitResult.WafLibraryInvoker!, SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
+                    : Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
             initResult.Success.Should().BeTrue();
             using var waf = initResult.Waf;
             var expectedHighlight = obfuscate ? "<Redacted>" : highlight;

@@ -3,16 +3,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+using Datadog.Trace.AppSec.Waf.NativeBindings;
+
 namespace Datadog.Trace.AppSec.Waf.Initialization;
 
 internal class LibraryInitializationResult
 {
-    private LibraryInitializationResult(bool exportErrorHappened, bool libraryLoadError, bool platformNotSupported)
+    private LibraryInitializationResult(bool exportErrorHappened, bool libraryLoadError, bool platformNotSupported, WafLibraryInvoker? wafLibraryInvoker = null)
     {
         ExportErrorHappened = exportErrorHappened;
         LibraryLoadError = libraryLoadError;
         PlatformNotSupported = platformNotSupported;
+        WafLibraryInvoker = wafLibraryInvoker;
     }
+
+    internal WafLibraryInvoker? WafLibraryInvoker { get; }
 
     internal bool ExportErrorHappened { get; }
 
@@ -28,5 +34,5 @@ internal class LibraryInitializationResult
 
     internal static LibraryInitializationResult FromPlatformNotSupported() => new(false, false, true);
 
-    public static LibraryInitializationResult FromSuccess() => new(false, false, false);
+    public static LibraryInitializationResult FromSuccess(WafLibraryInvoker wafLibraryInvoker) => new(false, false, false, wafLibraryInvoker);
 }

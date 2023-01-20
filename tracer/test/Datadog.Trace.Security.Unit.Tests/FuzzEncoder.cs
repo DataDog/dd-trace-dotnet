@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -33,7 +34,13 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void LetsFuzz()
         {
             // if we don't throw any exceptions and generate a valid object the the test is successful
-            WafLibraryInvoker.Initialize();
+            var libInitResult = WafLibraryInvoker.Initialize();
+            if (!libInitResult.Success)
+            {
+                throw new ArgumentException("Waf couldnt load");
+            }
+
+            var wafLibraryInvoker = libInitResult.WafLibraryInvoker;
             var jsonGenerator = new JsonGenerator();
 
             var errorOccured = false;
@@ -43,13 +50,13 @@ namespace Datadog.Trace.Security.Unit.Tests
                 var buffer = jsonGenerator.GenerateJsonBuffer();
                 try
                 {
-                    using var memoryStream = new MemoryStream(buffer.Array, buffer.Offset, buffer.Count, false);
+                    using var memoryStream = new MemoryStream(buffer.Array!, buffer.Offset, buffer.Count, false);
                     using var streamReader = new StreamReader(memoryStream);
                     using var jsonReader = new JsonTextReader(streamReader);
                     var root = JToken.ReadFrom(jsonReader);
 
                     var l = new List<Obj>();
-                    using var result = Encoder.Encode(root, l, applySafetyLimits: true);
+                    using var result = Encoder.Encode(root, wafLibraryInvoker!, l, applySafetyLimits: true);
 
                     // check the object is valid
                     Assert.NotEqual(ObjType.Invalid, result.ArgsType);
@@ -71,7 +78,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         private void ViewJson(ArraySegment<byte> buffer)
         {
-            var jsonText = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count);
+            var jsonText = Encoding.UTF8.GetString(buffer.Array!, buffer.Offset, buffer.Count);
             _outputHelper.WriteLine(jsonText);
         }
     }
