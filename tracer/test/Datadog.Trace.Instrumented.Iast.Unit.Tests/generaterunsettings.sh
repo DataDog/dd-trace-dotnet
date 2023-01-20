@@ -10,15 +10,16 @@ echo PROJECT_FOLDER $PROJECT_FOLDER
 echo FILE $FILE
 echo SOLUTIONFOLDER $SOLUTIONFOLDER
 
-case $DISTRIBUTION in 
-	*"Ubuntu"*) echo Ubuntu; BIN_FOLDER="linux-x64";;
-	*"Alpine"*) echo Alpine; BIN_FOLDER="linux-musl-x64";;
-	*) echo Linux; BIN_FOLDER="linux-x64";;
-esac 
-
 if [[ "$ARCH" == *"aarch64"* ]]; then
   BIN_FOLDER="linux-arm64"
+  else
+	  case $DISTRIBUTION in 
+		*"Ubuntu"*) echo Ubuntu; BIN_FOLDER="linux-x64";;
+		*"Alpine"*) echo Alpine; BIN_FOLDER="linux-musl-x64";;
+		*) echo Linux; BIN_FOLDER="linux-x64";;
+	  esac 
 fi
+
 echo BIN_FOLDER $BIN_FOLDER
 
 echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>" > $FILE
