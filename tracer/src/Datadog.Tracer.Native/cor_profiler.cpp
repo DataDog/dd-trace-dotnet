@@ -606,7 +606,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             // wait and get the value from the future<ULONG>            
             const auto status = future.wait_for(100ms);
 
-            if (status == std::future_status::ready)
+            if (status != std::future_status::timeout)
             {
                 const auto& numReJITs = future.get();
                 Logger::Debug("Total number of ReJIT Requested: ", numReJITs);    
@@ -1129,7 +1129,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             // wait and get the value from the future<ULONG>
             const auto status = future.wait_for(100ms);
 
-            if (status == std::future_status::ready)
+            if (status != std::future_status::timeout)
             {
                 const auto& numReJITs = future.get();
             Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
