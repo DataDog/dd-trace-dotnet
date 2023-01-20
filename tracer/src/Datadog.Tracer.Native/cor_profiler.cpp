@@ -604,7 +604,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
                                                                                 &promise);
 
             // wait and get the value from the future<ULONG>
-            const auto status = future.wait_for(100ms);
+            const auto& numReJITs = future.get();
+            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+/*            const auto status = future.wait_for(100ms);
 
             if (status == std::future_status::ready)
             {
@@ -614,7 +616,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             else
             {
                 Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
-            }            
+            }     */       
         }
     }
 
@@ -1127,7 +1129,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                                                                                 &promise);
 
             // wait and get the value from the future<ULONG>
-            const auto status = future.wait_for(100ms);
+            const auto& numReJITs = future.get();
+            Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+            /*const auto status = future.wait_for(100ms);
 
             if (status == std::future_status::ready)
             {
@@ -1137,7 +1141,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             else
             {
                 Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
-            }            
+            }            */
         }
     }
 
