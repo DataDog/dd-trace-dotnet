@@ -57,10 +57,7 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _pCodeHotspotsThreadList{pCodeHotspotThreadList},
     _pWallTimeCollector{pWallTimeCollector},
     _pCpuTimeCollector{pCpuTimeCollector},
-    _deadlockInterventionInProgress{0},
-    _suspensionTimeMetric{metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_suspension_time_ns")},
-    _collectionTimeMetric{metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_collection_time_ns")},
-    _deadlockCounterMetric{metricsRegistry.GetOrRegister<CounterMetric>("dotnet_internal_deadlocks")}
+    _deadlockInterventionInProgress{0}
 {
     _pCorProfilerInfo->AddRef();
     _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, pConfiguration);
@@ -287,7 +284,7 @@ void StackSamplerLoopManager::WatcherLoopIteration()
     }
 #endif
 
-    _deadlockCounterMetric->Incr();
+    // TODO: update deadlock count metrics when available
     _currentStatistics->IncrDeadlockCount();
 
     PerformDeadlockIntervention(collectionDurationNs);
@@ -517,7 +514,9 @@ void StackSamplerLoopManager::NotifyCollectionEnd()
 
     std::int64_t collectionEndTimeNs = OpSysTools::GetHighPrecisionNanoseconds();
     auto collectionDuration = collectionEndTimeNs - _collectionStartNs;
-    _collectionTimeMetric->Add((double_t)collectionDuration);
+
+    // TODO: update colletion time metric when available
+
     _currentStatistics->AddCollectionTime(collectionDuration);
 
     _collectionStartNs = 0;
@@ -537,7 +536,9 @@ void StackSamplerLoopManager::NotifyIterationFinished()
 
     std::int64_t threadCollectionEndTimeNs = OpSysTools::GetHighPrecisionNanoseconds();
     auto suspensionDuration = threadCollectionEndTimeNs - _threadSuspensionStart;
-    _suspensionTimeMetric->Add((double_t)suspensionDuration);
+
+    // TODO: update suspension time metric when available
+
     _currentStatistics->AddSuspensionTime(suspensionDuration);
 
     if (_metricsSender != nullptr && threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())
