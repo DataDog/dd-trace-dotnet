@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Configuration;
 
@@ -16,15 +15,9 @@ internal class IastModule
 {
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
-    private const string OperationNameSqlInjection = "sql_injection";
 
     public IastModule()
     {
-    }
-
-    public static Scope? OnSqlQuery(string query, IntegrationId integrationId, Iast iast)
-    {
-        return GetScope(query, integrationId, VulnerabilityType.SqlInjection, OperationNameSqlInjection, iast, true);
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
@@ -36,7 +29,7 @@ internal class IastModule
             return null;
         }
 
-        return GetScope(algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher, iast);
+        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher, iast);
     }
 
     public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
@@ -46,12 +39,11 @@ internal class IastModule
             return null;
         }
 
-        return GetScope(algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash, iast);
+        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash, iast);
     }
 
-    private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast, bool taintedFromEvidenceRequired = false)
+    private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast)
     {
-        var tracer = Tracer.Instance;
         if (!iast.Settings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
@@ -60,22 +52,6 @@ internal class IastModule
 
         var traceContext = (tracer.ActiveScope as Scope)?.Span?.Context?.TraceContext;
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
-
-        // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
-        if (!isRequest && vulnerabilityType == VulnerabilityType.SqlInjection)
-        {
-            return null;
-        }
-
-        TaintedObject? tainted = null;
-        if (taintedFromEvidenceRequired)
-        {
-            tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue);
-            if (tainted is null)
-            {
-                return null;
-            }
-        }
 
         if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
         {
@@ -93,7 +69,7 @@ internal class IastModule
 
         // Sometimes we do not have the file/line but we have the method/class.
         var filename = frameInfo.StackFrame?.GetFileName();
-        var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue, tainted?.Ranges));
+        var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
 
         if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
