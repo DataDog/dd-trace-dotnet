@@ -35,7 +35,6 @@ namespace Datadog.Trace.AppSec.Waf
         private Context(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, WafLibraryInvoker wafLibraryInvoker)
         {
             _wafLocker = wafLocker;
-            // in high concurrency, the waf passed as argument here could have been disposed just above in between creation / waf update so last test here
             _contextHandle = contextHandle;
             _waf = waf;
             _wafLibraryInvoker = wafLibraryInvoker;
@@ -46,6 +45,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public static IContext? GetContext(IntPtr contextHandle, Waf waf, ReaderWriterLock wafLocker, WafLibraryInvoker wafLibraryInvoker)
         {
+            // in high concurrency, the waf passed as argument here could have been disposed just above in between creation / waf update so last test here
             if (waf.Disposed)
             {
                 wafLibraryInvoker.ContextDestroy(contextHandle);
