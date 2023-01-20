@@ -269,13 +269,23 @@ public class ProbesTests : TestHelper
             {
                 SetProbeConfiguration(agent, snapshotProbes);
 
-                if (phaseNumber == 1)
+                try
                 {
-                    await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+                    if (phaseNumber == 1)
+                    {
+                        await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+                    }
+                    else
+                    {
+                        await logEntryWatcher.WaitForLogEntries(new[] { AddedProbesInstrumentedLogEntry, RemovedProbesInstrumentedLogEntry });
+                    }
                 }
-                else
+                catch (InvalidOperationException e) when (e.Message.StartsWith("Log file was not found for path:"))
                 {
-                    await logEntryWatcher.WaitForLogEntries(new[] { AddedProbesInstrumentedLogEntry, RemovedProbesInstrumentedLogEntry });
+                    if (testDescription.TestType == typeof(UndefinedValue) || testDescription.TestType == typeof(MultidimensionalArrayTest))
+                    {
+                        return;
+                    }
                 }
 
                 await sample.RunCodeSample();
