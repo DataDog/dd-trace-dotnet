@@ -190,7 +190,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             {
                 // here we need a sync flush, since the lambda environment can be destroy after each invocation
                 // 3 seconds is enough to send payload to the extension (via localhost)
-                Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync().Wait(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime));
+                AsyncUtil.RunSync(
+                    () => Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                                .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)));
             }
             catch (Exception ex)
             {
