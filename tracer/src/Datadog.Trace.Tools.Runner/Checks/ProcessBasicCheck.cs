@@ -245,10 +245,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 bool ok = true;
 
                 // Check that the profiler is properly registered
-                ok &= CheckClsid(registry, ClsidKey);
-
                 if (tracerVersion == null || tracerVersion < new Version("2.14.0.0"))
                 {
+                    ok &= CheckClsid(registry, ClsidKey);
                     ok &= CheckClsid(registry, Clsid32Key);
                 }
 
