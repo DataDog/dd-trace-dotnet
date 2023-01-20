@@ -318,10 +318,11 @@ namespace Datadog.Trace.AppSec
                     if (!_libraryInitializationResult.Success)
                     {
                         _settings.Enabled = false;
-                        _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
                         // logs happened during the process of initializing
                         return;
                     }
+
+                    _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
                 }
 
                 _wafInitializationResult = Waf.Waf.Create(_wafLibraryInvoker, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
