@@ -2017,6 +2017,10 @@ stages:
     steps:
     - task: UseDotNet@2
       inputs:
+        version: 6.0
+
+    - task: UseDotNet@2
+      inputs:
         version: 7.0.101
 
     - template: steps/clone-repo.yml
@@ -2102,6 +2106,10 @@ stages:
       vmImage: ubuntu-20.04
 
     steps:
+    - task: UseDotNet@2
+      inputs:
+        version: 6.0
+        
     - task: UseDotNet@2
       inputs:
         version: 7.0.101
