@@ -290,15 +290,22 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException(Exception exception, ref AsyncMethodDebuggerState asyncState)
         {
-            if (!asyncState.IsActive)
+            try
             {
-                // Already encountered `LogException`
-                return;
-            }
+                if (!asyncState.IsActive)
+                {
+                    // Already encountered `LogException`
+                    return;
+                }
 
-            Log.Warning(exception, "Error caused by our instrumentation");
-            asyncState.IsActive = false;
-            RestoreContext();
+                Log.Warning(exception, "Error caused by our instrumentation");
+                asyncState.IsActive = false;
+                RestoreContext();
+            }
+            catch
+            {
+                // ignored
+            }
         }
     }
 }
