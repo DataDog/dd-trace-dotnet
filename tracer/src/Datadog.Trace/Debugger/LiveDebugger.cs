@@ -208,9 +208,16 @@ namespace Datadog.Trace.Debugger
                 foreach (var probe in addedProbes)
                 {
                     ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
-                    if (probe is LogProbe { Sampling: { } } logProbe)
+                    if (probe is LogProbe logProbe)
                     {
-                        ProbeRateLimiter.Instance.SetRate(probe.Id, (int)logProbe.Sampling.Value.SnapshotsPerSecond);
+                        if (logProbe.Sampling is { } sampling)
+                        {
+                            ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
+                        }
+                        else
+                        {
+                            ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot ? 1 : 5000);
+                        }
                     }
                 }
 
