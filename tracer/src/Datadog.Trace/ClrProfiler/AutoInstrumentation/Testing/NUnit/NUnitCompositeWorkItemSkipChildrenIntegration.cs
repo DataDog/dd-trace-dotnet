@@ -135,7 +135,7 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
             test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
         }
 
-        if (item.TestType == "TestFixture" &&
+        if (item.TestType == NUnitIntegration.TestSuiteConst &&
             NUnitIntegration.GetTestSuiteFrom(item) is null &&
             NUnitIntegration.GetTestModuleFrom(item) is { } module)
         {
@@ -159,7 +159,7 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
             test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
         }
 
-        if (item.TestType == "TestFixture" &&
+        if (item.TestType == NUnitIntegration.TestSuiteConst &&
             NUnitIntegration.GetTestSuiteFrom(item) is null &&
             NUnitIntegration.GetTestModuleFrom(item) is { } module)
         {

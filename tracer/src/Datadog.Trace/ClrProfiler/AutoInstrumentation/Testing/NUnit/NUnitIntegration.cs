@@ -19,8 +19,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
-        private const string TestModuleConst = "Assembly";
-        private const string TestSuiteConst = "TestFixture";
+        internal const string TestModuleConst = "Assembly";
+        internal const string TestSuiteConst = "TestFixture";
 
         private static readonly ConditionalWeakTable<object, object> ModulesItems = new();
         private static readonly ConditionalWeakTable<object, object> SuiteItems = new();
@@ -183,7 +183,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             if (test is not null &&
-                ModulesItems.TryGetValue(test.Instance, out var moduleObject) && moduleObject is TestModule module)
+                ModulesItems.TryGetValue(test.Instance, out var moduleObject) &&
+                moduleObject is TestModule module)
             {
                 return module;
             }
@@ -216,7 +217,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             if (test is not null &&
-                SuiteItems.TryGetValue(test.Instance, out var suiteObject) && suiteObject is TestSuite suite)
+                SuiteItems.TryGetValue(test.Instance, out var suiteObject) &&
+                suiteObject is TestSuite suite)
             {
                 return suite;
             }
