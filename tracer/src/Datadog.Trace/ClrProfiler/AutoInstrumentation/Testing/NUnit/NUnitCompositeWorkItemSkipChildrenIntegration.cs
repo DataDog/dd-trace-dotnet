@@ -5,8 +5,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -28,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class NUnitCompositeWorkItemSkipChildrenIntegration
 {
-    private static readonly ConditionalWeakTable<object, object> _errorSpansFromCompositeWorkItems = new();
-
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
@@ -45,14 +41,13 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
     {
         if (testSuite is not null)
         {
-            string typeName = testSuite.GetType().Name;
-
+            var typeName = testSuite.GetType().Name;
             if (typeName == "CompositeWorkItem")
             {
                 // In case we have a CompositeWorkItem we check if there is a OneTimeSetUp failure
                 var compositeWorkItem = testSuite.DuckCast<ICompositeWorkItem>();
-
-                if (compositeWorkItem.Result?.ResultState?.Status == TestStatus.Failed && compositeWorkItem.Result.ResultState.Site == FailureSite.SetUp)
+                var compositeTestResult = compositeWorkItem.Result;
+                if (compositeTestResult?.ResultState?.Status == TestStatus.Failed && compositeTestResult.ResultState.Site == FailureSite.SetUp)
                 {
                     foreach (var item in compositeWorkItem.Children)
                     {
@@ -62,27 +57,13 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
                             foreach (var item2 in compositeWorkItem2.Children)
                             {
                                 var testResult = item2.DuckCast<IWorkItem>().Result;
-                                if (NUnitIntegration.CreateTest(testResult.Test) is { } test)
-                                {
-                                    test.SetErrorInfo("SetUpException", compositeWorkItem.Result.Message, compositeWorkItem.Result.StackTrace);
-                                    test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
-                                }
-
-                                // we need to track all items that we tagged as error due this method uses recursion on child spans.
-                                _errorSpansFromCompositeWorkItems.GetOrCreateValue(item2);
+                                WriteSetUpError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeTestResult, testResult.Test);
                             }
                         }
                         else
                         {
                             var testResult = item.DuckCast<IWorkItem>().Result;
-                            if (NUnitIntegration.CreateTest(testResult.Test) is { } test)
-                            {
-                                test.SetErrorInfo("SetUpException", compositeWorkItem.Result.Message, compositeWorkItem.Result.StackTrace);
-                                test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
-                            }
-
-                            // we need to track all items that we tagged as error due this method uses recursion on child spans.
-                            _errorSpansFromCompositeWorkItems.GetOrCreateValue(item);
+                            WriteSetUpError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeTestResult, testResult.Test);
                         }
                     }
 
@@ -116,10 +97,8 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
                 skipMessage = skipMessage.Substring(startString.Length).Trim();
             }
 
-            if (testSuiteOrWorkItem is not null)
+            if (testSuiteOrWorkItem?.GetType() is { Name: { } typeName })
             {
-                var typeName = testSuiteOrWorkItem.GetType().Name;
-
                 if (typeName == "ParameterizedMethodSuite")
                 {
                     // In case the TestSuite is a ParameterizedMethodSuite instance
@@ -136,25 +115,64 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
                 {
                     // In case we have a CompositeWorkItem
                     var compositeWorkItem = testSuiteOrWorkItem.DuckCast<ICompositeWorkItem>();
-
                     foreach (var item in compositeWorkItem.Children)
                     {
-                        // If we already created an error span for this item, we skip this other span creation.
-                        if (_errorSpansFromCompositeWorkItems.TryGetValue(item, out _))
-                        {
-                            continue;
-                        }
-
                         var testResult = item.DuckCast<IWorkItem>().Result;
-                        if (NUnitIntegration.CreateTest(testResult.Test) is { } test)
-                        {
-                            test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
-                        }
+                        WriteSkip(testResult.Test, skipMessage);
                     }
                 }
             }
         }
 
         return default;
+    }
+
+    private static void WriteSetUpError(ITestResult testResult, ITest item)
+    {
+        if (item.Method?.MethodInfo is not null && NUnitIntegration.CreateTest(item) is { } test)
+        {
+            test.SetErrorInfo("SetUpException", testResult.Message, testResult.StackTrace);
+            test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
+        }
+
+        if (item.TestType == "TestFixture" &&
+            NUnitIntegration.GetTestSuiteFrom(item) is null &&
+            NUnitIntegration.GetTestModuleFrom(item) is { } module)
+        {
+            NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
+        }
+
+        if (item.Tests is { Count: > 0 } tests)
+        {
+            foreach (var childTest in tests)
+            {
+                var childTestDuckTyped = childTest.DuckCast<ITest>();
+                WriteSetUpError(testResult, childTestDuckTyped);
+            }
+        }
+    }
+
+    private static void WriteSkip(ITest item, string skipMessage)
+    {
+        if (item.Method?.MethodInfo is not null && NUnitIntegration.CreateTest(item) is { } test)
+        {
+            test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
+        }
+
+        if (item.TestType == "TestFixture" &&
+            NUnitIntegration.GetTestSuiteFrom(item) is null &&
+            NUnitIntegration.GetTestModuleFrom(item) is { } module)
+        {
+            NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
+        }
+
+        if (item.Tests is { Count: > 0 } tests)
+        {
+            foreach (var childTest in tests)
+            {
+                var childTestDuckTyped = childTest.DuckCast<ITest>();
+                WriteSkip(childTestDuckTyped, skipMessage);
+            }
+        }
     }
 }

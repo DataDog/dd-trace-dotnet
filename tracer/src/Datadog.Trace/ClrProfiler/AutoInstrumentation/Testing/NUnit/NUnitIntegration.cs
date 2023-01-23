@@ -22,7 +22,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         private const string TestModuleConst = "Assembly";
         private const string TestSuiteConst = "TestFixture";
 
-        private static readonly ConditionalWeakTable<object, object> TestItems = new();
+        private static readonly ConditionalWeakTable<object, object> ModulesItems = new();
+        private static readonly ConditionalWeakTable<object, object> SuiteItems = new();
+        private static readonly ConditionalWeakTable<object, object> ExistingTestCreation = new();
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.NUnit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.NUnit;
@@ -33,9 +35,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static Test? CreateTest(ITest currentTest)
         {
-            var testMethod = currentTest?.Method?.MethodInfo;
-            var testMethodArguments = currentTest?.Arguments;
-            var testMethodProperties = currentTest?.Properties;
+            if (ExistingTestCreation.TryGetValue(currentTest.Instance, out _))
+            {
+                return null;
+            }
+
+            var testMethod = currentTest.Method?.MethodInfo;
+            var testMethodArguments = currentTest.Arguments;
+            var testMethodProperties = currentTest.Properties;
 
             if (testMethod == null)
             {
@@ -49,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             var test = suite.CreateTest(testMethod.Name);
+            ExistingTestCreation.GetOrCreateValue(currentTest.Instance);
             string? skipReason = null;
 
             // Get test parameters
@@ -58,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 var testParameters = new TestParameters();
                 testParameters.Metadata = new Dictionary<string, object>();
                 testParameters.Arguments = new Dictionary<string, object>();
-                testParameters.Metadata[TestTags.MetadataTestName] = currentTest?.Name ?? string.Empty;
+                testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name ?? string.Empty;
 
                 for (int i = 0; i < methodParameters.Length; i++)
                 {
@@ -175,7 +183,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             if (test is not null &&
-                TestItems.TryGetValue(test.Instance, out var moduleObject) && moduleObject is TestModule module)
+                ModulesItems.TryGetValue(test.Instance, out var moduleObject) && moduleObject is TestModule module)
             {
                 return module;
             }
@@ -187,11 +195,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             if (test.TestType == TestModuleConst)
             {
-                TestItems.Add(test.Instance, module);
+                ModulesItems.Add(test.Instance, module);
             }
             else if (GetParentWithTestType(test, TestModuleConst) is { } assemblyITest)
             {
-                TestItems.Add(assemblyITest.Instance, module);
+                ModulesItems.Add(assemblyITest.Instance, module);
             }
         }
 
@@ -208,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             if (test is not null &&
-                TestItems.TryGetValue(test.Instance, out var suiteObject) && suiteObject is TestSuite suite)
+                SuiteItems.TryGetValue(test.Instance, out var suiteObject) && suiteObject is TestSuite suite)
             {
                 return suite;
             }
@@ -220,11 +228,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             if (test.TestType == TestSuiteConst)
             {
-                TestItems.Add(test.Instance, suite);
+                SuiteItems.Add(test.Instance, suite);
             }
             else if (GetParentWithTestType(test, TestSuiteConst) is { } suiteITest)
             {
-                TestItems.Add(suiteITest.Instance, suite);
+                SuiteItems.Add(suiteITest.Instance, suite);
             }
         }
 
