@@ -5,12 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -107,9 +106,17 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            using var waf = Waf.Create(string.Empty, string.Empty);
+            var libInitResult = WafLibraryInvoker.Initialize();
+            if (!libInitResult.Success)
+            {
+                throw new ArgumentException("Waf couldnt load");
+            }
+
+            var initResult = Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
+            using var waf = initResult.Waf;
             waf.Should().NotBeNull();
-            using var context = waf.CreateContext();
+            using var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
+            using var context = waf.CreateContext(readwriteLocker);
             var result = context.Run(args, TimeoutMicroSeconds);
             result.ReturnCode.Should().Be(ReturnCode.Match);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();

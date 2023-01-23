@@ -1,17 +1,18 @@
-// <copyright file="WafNative.cs" company="Datadog">
+// <copyright file="WafLibraryInvoker.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
-    internal class WafNative
+    internal class WafLibraryInvoker
     {
 #if NETFRAMEWORK
         private const string DllName = "ddwaf.dll";
@@ -19,8 +20,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private const string DllName = "ddwaf";
 #endif
 
-        private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(WafNative));
-
+        private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(WafLibraryInvoker));
         private readonly GetVersionDelegate _getVersionField;
         private readonly InitDelegate _initField;
         private readonly UpdateRuleDelegate _updateRuleField;
@@ -43,38 +43,35 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly IntPtr _freeObjectFuncField;
         private readonly FreeRulesetInfoDelegate _rulesetInfoFreeField;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
-        private string version = null;
+        private string _version = null;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="WafNative"/> class.
-        /// </summary>
-        /// <param name="handle">Can't be a null pointer. Waf library must be loaded by now</param>
-        internal WafNative(IntPtr handle)
+        private WafLibraryInvoker(IntPtr libraryHandle)
         {
-            _initField = GetDelegateForNativeFunction<InitDelegate>(handle, "ddwaf_init");
-            _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(handle, "ddwaf_context_init");
-            _runField = GetDelegateForNativeFunction<RunDelegate>(handle, "ddwaf_run");
-            _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(handle, "ddwaf_destroy");
-            _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(handle, "ddwaf_context_destroy");
-            _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(handle, "ddwaf_object_invalid");
-            _objectStringLengthField = GetDelegateForNativeFunction<ObjectStringLengthDelegate>(handle, "ddwaf_object_stringl");
-            _objectBoolField = GetDelegateForNativeFunction<ObjectBoolDelegate>(handle, "ddwaf_object_bool");
-            _objectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(handle, "ddwaf_object_array");
-            _objectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(handle, "ddwaf_object_map");
-            _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
-            _objectArrayGetIndex = GetDelegateForNativeFunction<ObjectArrayGetAtIndexDelegate>(handle, "ddwaf_object_get_index");
+            ExportErrorHappened = false;
+            _initField = GetDelegateForNativeFunction<InitDelegate>(libraryHandle, "ddwaf_init");
+            _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(libraryHandle, "ddwaf_context_init");
+            _runField = GetDelegateForNativeFunction<RunDelegate>(libraryHandle, "ddwaf_run");
+            _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(libraryHandle, "ddwaf_destroy");
+            _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(libraryHandle, "ddwaf_context_destroy");
+            _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(libraryHandle, "ddwaf_object_invalid");
+            _objectStringLengthField = GetDelegateForNativeFunction<ObjectStringLengthDelegate>(libraryHandle, "ddwaf_object_stringl");
+            _objectBoolField = GetDelegateForNativeFunction<ObjectBoolDelegate>(libraryHandle, "ddwaf_object_bool");
+            _objectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(libraryHandle, "ddwaf_object_array");
+            _objectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(libraryHandle, "ddwaf_object_map");
+            _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(libraryHandle, "ddwaf_object_array_add");
+            _objectArrayGetIndex = GetDelegateForNativeFunction<ObjectArrayGetAtIndexDelegate>(libraryHandle, "ddwaf_object_get_index");
             _objectMapAddFieldX64 =
-                Environment.Is64BitProcess ? GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(handle, "ddwaf_object_map_addl") : null;
+                Environment.Is64BitProcess ? GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(libraryHandle, "ddwaf_object_map_addl") : null;
             _objectMapAddFieldX86 =
-                Environment.Is64BitProcess ? null : GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(handle, "ddwaf_object_map_addl");
-            _freeObjectield = GetDelegateForNativeFunction<FreeObjectDelegate>(handle, "ddwaf_object_free", out _freeObjectFuncField);
-            _freeResultField = GetDelegateForNativeFunction<FreeResultDelegate>(handle, "ddwaf_result_free");
-            _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(handle, "ddwaf_ruleset_info_free");
-            _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
-            _updateRuleField = GetDelegateForNativeFunction<UpdateRuleDelegate>(handle, "ddwaf_update_rule_data");
-            _toggleRulesField = GetDelegateForNativeFunction<UpdateRuleDelegate>(handle, "ddwaf_toggle_rules");
+                Environment.Is64BitProcess ? null : GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(libraryHandle, "ddwaf_object_map_addl");
+            _freeObjectield = GetDelegateForNativeFunction<FreeObjectDelegate>(libraryHandle, "ddwaf_object_free", out _freeObjectFuncField);
+            _freeResultField = GetDelegateForNativeFunction<FreeResultDelegate>(libraryHandle, "ddwaf_result_free");
+            _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(libraryHandle, "ddwaf_ruleset_info_free");
+            _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(libraryHandle, "ddwaf_get_version");
+            _updateRuleField = GetDelegateForNativeFunction<UpdateRuleDelegate>(libraryHandle, "ddwaf_update_rule_data");
+            _toggleRulesField = GetDelegateForNativeFunction<UpdateRuleDelegate>(libraryHandle, "ddwaf_toggle_rules");
             // setup logging
-            var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
+            var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
             // set the log level and setup the logger
@@ -145,15 +142,53 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr ObjectFreeFuncPtr => _freeObjectFuncField;
 
-        internal string GetVersion()
+        /// <summary>
+        /// Initializes static members of the <see cref="WafLibraryInvoker"/> class.
+        /// </summary>
+        /// <param name="libVersion">can be null, means use a specific version in the name of the loaded file </param>
+        internal static LibraryInitializationResult Initialize(string libVersion = null)
         {
-            if (version == null)
+            var fd = FrameworkDescription.Instance;
+
+            var libName = LibraryLocationHelper.GetLibName(fd, libVersion);
+            var runtimeIds = LibraryLocationHelper.GetRuntimeIds(fd);
+
+            // libName or runtimeIds being null means platform is not supported
+            // no point attempting to load the library
+            IntPtr libraryHandle;
+            if (libName != null && runtimeIds != null)
             {
-                var ptr = _getVersionField();
-                version = Marshal.PtrToStringAnsi(ptr);
+                var paths = LibraryLocationHelper.GetDatadogNativeFolders(fd, runtimeIds);
+                if (!LibraryLocationHelper.TryLoadLibraryFromPaths(libName, paths, out libraryHandle))
+                {
+                    return LibraryInitializationResult.FromLibraryLoadError();
+                }
+            }
+            else
+            {
+                Log.Error("Lib name or runtime ids is null, current platform {fd} is likely not supported", fd.ToString());
+                return LibraryInitializationResult.FromPlatformNotSupported();
             }
 
-            return version;
+            var wafLibraryInvoker = new WafLibraryInvoker(libraryHandle);
+            if (wafLibraryInvoker.ExportErrorHappened)
+            {
+                Log.Error("Waf library couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
+                return LibraryInitializationResult.FromExportErrorHappened();
+            }
+
+            return LibraryInitializationResult.FromSuccess(wafLibraryInvoker);
+        }
+
+        internal string GetVersion()
+        {
+            if (_version == null)
+            {
+                var ptr = _getVersionField();
+                _version = Marshal.PtrToStringAnsi(ptr);
+            }
+
+            return _version;
         }
 
         internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo) => _initField(wafRule, ref config, ref ruleSetInfo);
@@ -166,7 +201,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref result, timeLeftInUs);
 
-        internal void Destroy(IntPtr handle) => _destroyField(handle);
+        internal void Destroy(IntPtr wafHandle) => _destroyField(wafHandle);
 
         internal void ContextDestroy(IntPtr handle) => _contextDestroyField(handle);
 
@@ -210,7 +245,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         internal bool ObjectArrayAdd(IntPtr array, IntPtr entry) => _objectArrayAddField(array, entry);
 
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry) => Environment.Is64BitProcess ? _objectMapAddFieldX64(map, entryName, entryNameLength, entry) : _objectMapAddFieldX86(map, entryName, (uint)entryNameLength, entry);
+        internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry) => Environment.Is64BitProcess ? _objectMapAddFieldX64!(map, entryName, entryNameLength, entry) : _objectMapAddFieldX86!(map, entryName, (uint)entryNameLength, entry);
 
         internal void ObjectFreePtr(IntPtr input) => _freeObjectield(input);
 
@@ -219,7 +254,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <summary>
         /// Only this function needs to be called on DdwafRuleSetInfoStruct, no need to dispose the Errors object inside because waf takes care of it
         /// </summary>
-        /// <param name="output">the rulsetinfo structure</param>
+        /// <param name="output">the ruleset info structure</param>
         internal void RuleSetInfoFree(ref DdwafRuleSetInfoStruct output) => _rulesetInfoFreeField(ref output);
 
         private void LoggingCallback(
@@ -269,6 +304,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         }
 
         private T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
-            where T : Delegate => GetDelegateForNativeFunction<T>(handle, functionName, out var _);
+            where T : Delegate => GetDelegateForNativeFunction<T>(handle, functionName, out _);
     }
 }

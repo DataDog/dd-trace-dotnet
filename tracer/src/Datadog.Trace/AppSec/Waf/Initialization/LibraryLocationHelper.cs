@@ -1,4 +1,4 @@
-// <copyright file="LibraryLoader.cs" company="Datadog">
+// <copyright file="LibraryLocationHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,32 +13,11 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec.Waf.Initialization
 {
-    internal static class LibraryLoader
+    internal static class LibraryLocationHelper
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LibraryLoader));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LibraryLocationHelper));
 
-        internal static IntPtr LoadAndGetHandle(string libVersion = null)
-        {
-            var fd = FrameworkDescription.Instance;
-
-            var libName = GetLibName(fd, libVersion);
-            var runtimeIds = GetRuntimeIds(fd);
-
-            // libName or runtimeIds being null means platform is not supported
-            // no point attempting to load the library
-            if (libName != null && runtimeIds != null)
-            {
-                var paths = GetDatadogNativeFolders(fd, runtimeIds);
-                if (TryLoadLibraryFromPaths(libName, paths, out var handle))
-                {
-                    return handle;
-                }
-            }
-
-            return IntPtr.Zero;
-        }
-
-        private static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string[] runtimeIds)
+        internal static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string[] runtimeIds)
         {
             // first get anything "home folder" like
             // if running under Windows:
@@ -70,11 +49,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         {
             // The native loader sets this env var to say where it's loaded from, so the waf should be next to it
             // Use this preferentially over other options
-             var value = EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH");
-             if (!string.IsNullOrWhiteSpace(value))
-             {
-                 paths.Add(Path.GetDirectoryName(value));
-             }
+            var value = EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH");
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                paths.Add(Path.GetDirectoryName(value));
+            }
         }
 
         private static void AddProfilerFolders(List<string> paths, FrameworkDescription frameworkDescription, string runtimeId)
@@ -146,7 +125,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
         }
 
-        private static bool TryLoadLibraryFromPaths(string libName, List<string> paths, out IntPtr handle)
+        internal static bool TryLoadLibraryFromPaths(string libName, List<string> paths, out IntPtr handle)
         {
             var success = false;
             handle = IntPtr.Zero;
@@ -181,7 +160,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return success;
         }
 
-        private static string GetLibName(FrameworkDescription fwk, string libVersion = null)
+        internal static string GetLibName(FrameworkDescription fwk, string libVersion = null)
         {
             string versionSuffix = null;
             if (!string.IsNullOrEmpty(libVersion))
@@ -198,7 +177,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             };
         }
 
-        private static string[] GetRuntimeIds(FrameworkDescription fwk)
+        internal static string[] GetRuntimeIds(FrameworkDescription fwk)
             => fwk.OSPlatform switch
             {
                 OSPlatformName.MacOS => new[] { $"osx-x64" },

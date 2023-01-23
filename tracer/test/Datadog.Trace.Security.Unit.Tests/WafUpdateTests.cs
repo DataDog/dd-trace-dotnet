@@ -5,12 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -31,10 +30,16 @@ namespace Datadog.Trace.Security.Unit.Tests
             attackParts1.Length.Should().Be(3);
             var attackParts2 = attack2.Split('|');
             attackParts2.Length.Should().Be(3);
+            var libInitResult = WafLibraryInvoker.Initialize();
+            if (!libInitResult.Success)
+            {
+                throw new ArgumentException("Waf couldnt load");
+            }
 
-            using var waf = Waf.Create(string.Empty, string.Empty);
+            var initresult = Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
+            using var waf = initresult.Waf;
             waf.Should().NotBeNull();
-            Dictionary<string, bool> ruleStatus = new Dictionary<string, bool>();
+            var ruleStatus = new Dictionary<string, bool>();
 
             Execute(waf, attackParts1, true);
             Execute(waf, attackParts2, true);
@@ -77,7 +82,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             }
 
             waf.Should().NotBeNull();
-            using var context = waf.CreateContext();
+            using var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
+            using var context = waf.CreateContext(readwriteLocker);
             var result = context.Run(args, TimeoutMicroSeconds);
             var spectedResult = isAttack ? ReturnCode.Match : ReturnCode.Ok;
             result.ReturnCode.Should().Be(spectedResult);
