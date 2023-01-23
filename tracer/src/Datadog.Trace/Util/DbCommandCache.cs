@@ -46,11 +46,11 @@ namespace Datadog.Trace.Util
             }
             catch (NotSupportedException nsException)
             {
-                Log.Warning(nsException, "Connection cannot be retrieved from the command.");
+                Log.Debug(nsException, "Connection cannot be retrieved from the command.");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error trying to retrieve the connection from the command.");
+                Log.Debug(ex, "Error trying to retrieve the connection from the command.");
             }
 
             var connectionString = dbConnection?.ConnectionString;
