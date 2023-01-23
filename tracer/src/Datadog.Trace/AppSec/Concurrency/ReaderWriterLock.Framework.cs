@@ -11,7 +11,7 @@ namespace Datadog.Trace.AppSec.Concurrency;
 
 internal partial class ReaderWriterLock : IDisposable
 {
-    private const int Timeout = 4000;
+    internal const int TimeoutInMs = 4000;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ReaderWriterLock>();
 #if NETFRAMEWORK
     private readonly System.Threading.ReaderWriterLock _readerWriterLock = new();
@@ -22,12 +22,12 @@ internal partial class ReaderWriterLock : IDisposable
     {
         try
         {
-            _readerWriterLock.AcquireReaderLock(Timeout);
+            _readerWriterLock.AcquireReaderLock(TimeoutInMs);
             return true;
         }
         catch (ApplicationException)
         {
-            Log.Error("Couldn't acquire reader lock in {timeout} ms", Timeout.ToString());
+            Log.Error("Couldn't acquire reader lock in {timeout} ms", TimeoutInMs.ToString());
             return false;
         }
     }
@@ -36,12 +36,12 @@ internal partial class ReaderWriterLock : IDisposable
     {
         try
         {
-            _readerWriterLock.AcquireWriterLock(Timeout);
+            _readerWriterLock.AcquireWriterLock(TimeoutInMs);
             return true;
         }
         catch (ApplicationException)
         {
-            Log.Error("Couldn't acquire writer lock in {timeout} ms", Timeout.ToString());
+            Log.Error("Couldn't acquire writer lock in {timeout} ms", TimeoutInMs.ToString());
             return false;
         }
     }
@@ -55,7 +55,7 @@ internal partial class ReaderWriterLock : IDisposable
         else
         {
             // this can happen, as Context can be created on a thread, disposed on another
-            Log.Debug("Read lock wasn't held", Timeout.ToString());
+            Log.Debug("Read lock wasn't held", TimeoutInMs.ToString());
         }
     }
 
@@ -67,7 +67,7 @@ internal partial class ReaderWriterLock : IDisposable
         }
         else
         {
-            Log.Information("Writer lock wasn't held", Timeout.ToString());
+            Log.Information("Writer lock wasn't held");
         }
     }
 
