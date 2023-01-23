@@ -340,6 +340,7 @@ namespace Datadog.Trace.AppSec
                     }
                     else
                     {
+                        _wafInitializationResult.Waf?.Dispose();
                         Log.Warning("Could not replace waf because the writer lock couldn't be acquired within the specified timeout {timeout}", Concurrency.ReaderWriterLock.TimeoutInMs.ToString());
                     }
                 }
