@@ -694,25 +694,27 @@ namespace Datadog.Trace.Coverage.Collector
                 _defaultResolver = new DefaultAssemblyResolver();
             }
 
-            public override AssemblyDefinition Resolve(AssemblyNameReference name)
+            public override AssemblyDefinition? Resolve(AssemblyNameReference name)
             {
-                AssemblyDefinition assembly;
+                AssemblyDefinition? assembly = null;
                 try
                 {
                     assembly = _defaultResolver.Resolve(name);
                 }
-                catch (AssemblyResolutionException ex)
+                catch (AssemblyResolutionException arEx)
                 {
                     var tracerAssemblyName = TracerAssembly.GetName();
                     if (name.Name == tracerAssemblyName.Name && name.Version == tracerAssemblyName.Version)
                     {
-                        if (!string.IsNullOrEmpty(_tracerAssemblyLocation))
+                        var cAssemblyLocation = !string.IsNullOrEmpty(_tracerAssemblyLocation) ? _tracerAssemblyLocation : TracerAssembly.Location;
+                        try
                         {
-                            assembly = AssemblyDefinition.ReadAssembly(_tracerAssemblyLocation);
+                            assembly = AssemblyDefinition.ReadAssembly(cAssemblyLocation);
                         }
-                        else
+                        catch (Exception innerAssemblyException)
                         {
-                            assembly = AssemblyDefinition.ReadAssembly(TracerAssembly.Location);
+                            _logger.Error(innerAssemblyException, $"Error reading the tracer assembly: {cAssemblyLocation}");
+                            throw;
                         }
                     }
                     else
@@ -722,12 +724,24 @@ namespace Datadog.Trace.Coverage.Collector
                         _logger.Debug($"Looking for: {pathTest}");
                         if (File.Exists(pathTest))
                         {
-                            return AssemblyDefinition.ReadAssembly(pathTest);
+                            try
+                            {
+                                return AssemblyDefinition.ReadAssembly(pathTest);
+                            }
+                            catch (Exception innerAssemblyException)
+                            {
+                                _logger.Error(innerAssemblyException, $"Error reading the assembly: {pathTest}");
+                                throw;
+                            }
                         }
 
-                        _logger.Error(ex, $"Error in the Custom Resolver processing '{_assemblyFilePath}' for: {name.FullName}");
+                        _logger.Error(arEx, $"Error in the Custom Resolver processing '{_assemblyFilePath}' for: {name.FullName}");
                         throw;
                     }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, $"Error in the custom resolver when trying to resolve assembly: {name.FullName}");
                 }
 
                 return assembly;
