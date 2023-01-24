@@ -8,10 +8,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
-
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
@@ -60,10 +61,21 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
+        internal static async Task<TReturn> EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
             var json = SerializeObject(returnValue);
-            Flush();
+
+            try
+            {
+                await Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                            .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime))
+                            .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Serverless.Error("Could not flush to the extension", ex);
+            }
+
             NotifyExtensionEnd(requestBuilder, scope, exception != null, json);
             scope?.Dispose();
             return returnValue;
@@ -178,7 +190,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             {
                 // here we need a sync flush, since the lambda environment can be destroy after each invocation
                 // 3 seconds is enough to send payload to the extension (via localhost)
-                Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync().Wait(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime));
+                AsyncUtil.RunSync(
+                    () => Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                                .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)));
             }
             catch (Exception ex)
             {
