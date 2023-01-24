@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Datadog.Trace" Version="2.21.0" />
+      <PackageReference Include="Datadog.Trace" Version="2.22.0" />
     </ItemGroup>
 
 </Project>
