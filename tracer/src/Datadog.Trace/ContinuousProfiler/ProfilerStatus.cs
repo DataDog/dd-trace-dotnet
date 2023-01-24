@@ -34,8 +34,6 @@ namespace Datadog.Trace.ContinuousProfiler
             _isInitialized = false;
         }
 
-        public bool IsProfilerEnabled => _isProfilingEnabled;
-
         public bool IsProfilerReady
         {
             get
