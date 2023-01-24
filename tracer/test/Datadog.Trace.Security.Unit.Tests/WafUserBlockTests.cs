@@ -14,6 +14,7 @@ using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -29,14 +30,22 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestOk()
         {
+            var libInitResult = WafLibraryInvoker.Initialize();
+            if (!libInitResult.Success)
+            {
+                throw new ArgumentException("Waf couldn't load");
+            }
+
             var js = JsonSerializer.Create();
-            using var waf = Waf.Create(string.Empty, string.Empty);
+            var initResult = Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
+            using var waf = initResult.Waf!;
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
             var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
-            var res = waf.UpdateRules(rulesData!);
+            var res = waf.UpdateRulesData(rulesData!);
             res.Should().BeTrue();
-            using var context = waf.CreateContext();
+            var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
+            using var context = waf.CreateContext(readwriteLocker)!;
             var result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.UserId, "user3" } },
                 WafTests.TimeoutMicroSeconds);
