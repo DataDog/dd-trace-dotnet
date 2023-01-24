@@ -64,6 +64,12 @@ namespace Datadog.Trace.Configuration
 
             ServiceVersion = source?.GetString(ConfigurationKeys.ServiceVersion);
 
+            GitCommitSha = source?.GetString(ConfigurationKeys.GitCommitSha);
+
+            GitRepositoryUrl = source?.GetString(ConfigurationKeys.GitRepositoryUrl);
+
+            GitMetadataEnabled = source?.GetBool(ConfigurationKeys.GitMetadataEnabled) ?? true;
+
             TraceEnabled = source?.GetBool(ConfigurationKeys.TraceEnabled) ??
                            // default value
                            true;
@@ -289,6 +295,25 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
         public string ServiceVersion { get; set; }
+
+        /// <summary>
+        /// Gets or sets the application's git repository url.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
+        public string GitRepositoryUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the application's git commit hash.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
+        public string GitCommitSha { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether we should tag every telemetry event with git metadata.
+        /// Default value is <c>true</c> (enabled).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>
+        public bool GitMetadataEnabled { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether tracing is enabled.

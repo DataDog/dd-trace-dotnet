@@ -28,10 +28,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         private readonly string? _source;
         private readonly string? _service;
         private readonly string? _host;
-        private readonly string? _globalTags;
         private readonly string? _env;
         private readonly string? _version;
-        private readonly Lazy<string?> _enrichedGlobalTags;
+        private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
+        private string? _tags;
+        private bool _gitMetadataAdded;
 
         private string? _ciVisibilityDdTags;
 
@@ -39,36 +40,40 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             ImmutableDirectLogSubmissionSettings settings,
             string serviceName,
             string env,
-            string version)
+            string version,
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
+            _gitMetadataTagsProvider = gitMetadataTagsProvider;
             _source = string.IsNullOrEmpty(settings.Source) ? null : settings.Source;
             _service = string.IsNullOrEmpty(serviceName) ? null : serviceName;
             _host = string.IsNullOrEmpty(settings.Host) ? null : settings.Host;
-            _globalTags = string.IsNullOrEmpty(settings.GlobalTags) ? null : settings.GlobalTags;
-            _enrichedGlobalTags = new Lazy<string?>(EnrichGlobalTagsStringWithSourceLinkData);
+            _tags = string.IsNullOrEmpty(settings.GlobalTags) ? null : settings.GlobalTags;
             _env = string.IsNullOrEmpty(env) ? null : env;
             _version = string.IsNullOrEmpty(version) ? null : version;
         }
 
         internal delegate LogPropertyRenderingDetails FormatDelegate<T>(JsonTextWriter writer, in T state);
 
-        private string? EnrichGlobalTagsStringWithSourceLinkData()
+        private void EnrichTagsStringWithGitMetadata()
         {
-            if (_globalTags?.Contains(CommonTags.GitCommit) == true &&
-                _globalTags?.Contains(CommonTags.GitRepository) == true)
+            if (_gitMetadataAdded)
             {
-                // The global tags already contain git data
-                return _globalTags;
+                return;
             }
 
-            var tags = SourceLinkTagsProvider.Instance.GetGitTagsFromSourceLink();
-            if (tags == null)
+            if (!_gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata))
             {
-                return _globalTags;
+                // no git tags found, we can try again later
+                return;
             }
 
-            var formattedGitTags = string.Join(",", tags.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
-            return _globalTags == null ? formattedGitTags : $"{_globalTags},{formattedGitTags}";
+            if (gitMetadata != GitMetadata.Empty)
+            {
+                var gitMetadataTags = $"{CommonTags.GitCommit}:{gitMetadata.CommitSha},{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl}";
+                _tags = string.IsNullOrEmpty(_tags) ? gitMetadataTags : $"{_tags},{gitMetadataTags}";
+            }
+
+            _gitMetadataAdded = true;
         }
 
         internal static bool IsSourceProperty(string? propertyName) =>
@@ -256,10 +261,12 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 writer.WriteValue(_host);
             }
 
-            if (_enrichedGlobalTags.Value is not null && !renderingDetails.HasRenderedTags)
+            EnrichTagsStringWithGitMetadata();
+
+            if (_tags is not null && !renderingDetails.HasRenderedTags)
             {
                 writer.WritePropertyName(TagsPropertyName, escape: false);
-                writer.WriteValue(_enrichedGlobalTags.Value);
+                writer.WriteValue(_tags);
             }
 
             writer.WriteEndObject();
@@ -355,7 +362,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             environment = environment.Replace(":", string.Empty);
 
             var ddtags = $"env:{environment},datadog.product:citest";
-            if (_globalTags is { Length: > 0 } globalTags)
+            if (_tags is { Length: > 0 } globalTags)
             {
                 ddtags += "," + globalTags;
             }

@@ -37,6 +37,9 @@ internal readonly struct TraceChunkModel
     public readonly string? Environment = null;
 
     public readonly string? ServiceVersion = null;
+    public readonly string? GitRepositoryUrl = null;
+
+    public readonly string? GitCommitSha = null;
 
     public readonly string? Origin = null;
 
@@ -78,6 +81,8 @@ internal readonly struct TraceChunkModel
             SamplingPriority ??= traceContext.SamplingPriority;
             Environment = traceContext.Environment;
             ServiceVersion = traceContext.ServiceVersion;
+            GitCommitSha = traceContext.GitCommitSha;
+            GitRepositoryUrl = traceContext.GitRepositoryUrl;
             Origin = traceContext.Origin;
             Tags = traceContext.Tags;
             IsRunningInAzureAppService = traceContext.Tracer?.Settings?.IsRunningInAzureAppService ?? false;

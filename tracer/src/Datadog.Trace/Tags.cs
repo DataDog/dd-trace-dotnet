@@ -25,6 +25,20 @@ namespace Datadog.Trace
         public const string Version = "version";
 
         /// <summary>
+        /// The git commit hash of the instrumented service. It's value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.GitCommitSha"/>.
+        /// </summary>
+        public const string GitCommitSha = "_dd.git.commit.sha";
+
+        /// <summary>
+        /// The git repository URL of the instrumented service. It's value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.GitRepositoryUrl"/>.
+        /// </summary>
+        public const string GitRepositoryUrl = "_dd.git.repository_url";
+
+        /// <summary>
         /// The name of the integration that generated the span.
         /// Use OpenTracing tag "component"
         /// </summary>
