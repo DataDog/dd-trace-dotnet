@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -89,6 +90,130 @@ namespace Datadog.Trace
             if (spanClass != null)
             {
                 RunBlockingCheck(spanClass, userDetails.Id);
+            }
+        }
+
+        /// <summary>
+        /// Sets the details of a successful logon on the local root span
+        /// </summary>
+        /// <param name="span">The span to be tagged</param>
+        /// <param name="userId">The userId associated with the login success</param>
+        /// <param name="metadata">Metadata associated with the login success</param>
+        public static void TrackUserLoginSuccessEvent(this ISpan span, string userId, IDictionary<string, string> metadata = null)
+        {
+            if (span is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(span));
+            }
+
+            if (userId is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(span));
+            }
+
+            TraceContext traceContext = null;
+            if (span is Span spanClass)
+            {
+                traceContext = spanClass.Context.TraceContext;
+            }
+
+            Action<string, string> setTag =
+                traceContext != null
+                    ? (name, value) => traceContext.Tags.SetTag(name, value)
+                    : (name, value) => span.SetTag(name, value);
+
+            setTag(Tags.AppSec.EventsUsersLogin.SuccessTrack, bool.TrueString);
+            setTag(Tags.User.Id, userId);
+
+            if (metadata != null)
+            {
+                foreach (var kvp in metadata)
+                {
+                    setTag(Tags.AppSec.EventsUsersLogin.Success + kvp.Key, kvp.Value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the details of a logon failure on the local root span
+        /// </summary>
+        /// <param name="span">The span to be tagged</param>
+        /// <param name="userId">The userId associated with the login failure</param>
+        /// <param name="exists">If the userId associated with the login failure exists</param>
+        /// <param name="metadata">Metadata associated with the login failure</param>
+        public static void TrackUserLoginFailureEvent(this ISpan span, string userId, bool exists, IDictionary<string, string> metadata = null)
+        {
+            if (span is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(span));
+            }
+
+            if (userId is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(span));
+            }
+
+            TraceContext traceContext = null;
+            if (span is Span spanClass)
+            {
+                traceContext = spanClass.Context.TraceContext;
+            }
+
+            Action<string, string> setTag =
+                traceContext != null
+                    ? (name, value) => traceContext.Tags.SetTag(name, value)
+                    : (name, value) => span.SetTag(name, value);
+
+            setTag(Tags.AppSec.EventsUsersLogin.FailureTrack, bool.TrueString);
+            setTag(Tags.AppSec.EventsUsersLogin.FailureUserId, userId);
+            setTag(Tags.AppSec.EventsUsersLogin.FailureUserExists, exists.ToString());
+
+            if (metadata != null)
+            {
+                foreach (var kvp in metadata)
+                {
+                    setTag(Tags.AppSec.EventsUsersLogin.Failure + kvp.Key, kvp.Value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the details of a custom event the local root span
+        /// </summary>
+        /// <param name="span">The span to be tagged</param>
+        /// <param name="eventName">the name of the event to be tracked</param>
+        /// <param name="metadata">Metadata associated with the custom event</param>
+        public static void TrackCustomEvent(this ISpan span, string eventName, IDictionary<string, string> metadata = null)
+        {
+            if (span is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(span));
+            }
+
+            if (eventName is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(span));
+            }
+
+            TraceContext traceContext = null;
+            if (span is Span spanClass)
+            {
+                traceContext = spanClass.Context.TraceContext;
+            }
+
+            Action<string, string> setTag =
+                traceContext != null
+                    ? (name, value) => traceContext.Tags.SetTag(name, value)
+                    : (name, value) => span.SetTag(name, value);
+
+            setTag(Tags.AppSec.Track(eventName), bool.TrueString);
+
+            if (metadata != null)
+            {
+                foreach (var kvp in metadata)
+                {
+                    setTag($"{Tags.AppSec.Events}{eventName}.{kvp.Key}", kvp.Value);
+                }
             }
         }
     }

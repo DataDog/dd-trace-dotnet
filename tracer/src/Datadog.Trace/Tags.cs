@@ -529,6 +529,23 @@ namespace Datadog.Trace
 
         internal const string TagPropagationError = "_dd.propagation_error";
 
+        internal static class AppSec
+        {
+            internal const string Events = "appsec.events.";
+
+            internal static string Track(string eventName) => $"{Events}{eventName}.track";
+
+            internal static class EventsUsersLogin
+            {
+                internal const string Success = AppSec.Events + "users.login.success";
+                internal const string Failure = AppSec.Events + "users.login.failure";
+                internal const string SuccessTrack = Success + ".track";
+                internal const string FailureTrack = Failure + ".track";
+                internal const string FailureUserId = Failure + ".usr.id";
+                internal const string FailureUserExists = Failure + ".usr.exists";
+            }
+        }
+
         internal static class User
         {
             internal const string Email = "usr.email";
