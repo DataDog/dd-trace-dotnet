@@ -38,18 +38,7 @@ namespace Datadog.Trace
                 ThrowHelper.ThrowArgumentException(nameof(userDetails) + ".Id must be set to a value other than null or the empty string", nameof(userDetails));
             }
 
-            TraceContext traceContext = null;
-            Span spanClass = null;
-            if (span is Span spanClassTemp)
-            {
-                spanClass = spanClassTemp;
-                traceContext = spanClass.Context.TraceContext;
-            }
-
-            Action<string, string> setTag =
-                traceContext != null
-                    ? (name, value) => traceContext.Tags.SetTag(name, value)
-                    : (name, value) => span.SetTag(name, value);
+            var setTag = GetSpanSetter(span, out var spanClass);
 
             if (userDetails.PropagateId)
             {
@@ -106,21 +95,12 @@ namespace Datadog.Trace
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
             }
 
-            if (userId is null)
+            if (string.IsNullOrEmpty(userId))
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
             }
 
-            TraceContext traceContext = null;
-            if (span is Span spanClass)
-            {
-                traceContext = spanClass.Context.TraceContext;
-            }
-
-            Action<string, string> setTag =
-                traceContext != null
-                    ? (name, value) => traceContext.Tags.SetTag(name, value)
-                    : (name, value) => span.SetTag(name, value);
+            var setTag = GetSpanSetter(span);
 
             setTag(Tags.AppSec.EventsUsersLogin.SuccessTrack, bool.TrueString);
             setTag(Tags.User.Id, userId);
@@ -148,21 +128,12 @@ namespace Datadog.Trace
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
             }
 
-            if (userId is null)
+            if (string.IsNullOrEmpty(userId))
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
             }
 
-            TraceContext traceContext = null;
-            if (span is Span spanClass)
-            {
-                traceContext = spanClass.Context.TraceContext;
-            }
-
-            Action<string, string> setTag =
-                traceContext != null
-                    ? (name, value) => traceContext.Tags.SetTag(name, value)
-                    : (name, value) => span.SetTag(name, value);
+            var setTag = GetSpanSetter(span);
 
             setTag(Tags.AppSec.EventsUsersLogin.FailureTrack, bool.TrueString);
             setTag(Tags.AppSec.EventsUsersLogin.FailureUserId, userId);
@@ -190,21 +161,12 @@ namespace Datadog.Trace
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
             }
 
-            if (eventName is null)
+            if (string.IsNullOrEmpty(eventName))
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
             }
 
-            TraceContext traceContext = null;
-            if (span is Span spanClass)
-            {
-                traceContext = spanClass.Context.TraceContext;
-            }
-
-            Action<string, string> setTag =
-                traceContext != null
-                    ? (name, value) => traceContext.Tags.SetTag(name, value)
-                    : (name, value) => span.SetTag(name, value);
+            var setTag = GetSpanSetter(span);
 
             setTag(Tags.AppSec.Track(eventName), bool.TrueString);
 
@@ -215,6 +177,31 @@ namespace Datadog.Trace
                     setTag($"{Tags.AppSec.Events}{eventName}.{kvp.Key}", kvp.Value);
                 }
             }
+        }
+
+        private static Action<string, string> GetSpanSetter(ISpan span)
+        {
+            return GetSpanSetter(span, out var _);
+        }
+
+        private static Action<string, string> GetSpanSetter(ISpan span, out Span spanClass)
+        {
+            TraceContext traceContext = null;
+            if (span is Span spanClassTemp)
+            {
+                spanClass = spanClassTemp;
+                traceContext = spanClass.Context.TraceContext;
+            }
+            else
+            {
+                spanClass = null;
+            }
+
+            Action<string, string> setTag =
+                traceContext != null
+                    ? (name, value) => traceContext.Tags.SetTag(name, value)
+                    : (name, value) => span.SetTag(name, value);
+            return setTag;
         }
     }
 }
