@@ -1,4 +1,4 @@
-// <copyright file="NUnitTestMethodCommandExecuteIntegration.cs" company="Datadog">
+// <copyright file="NUnitTestCommandExecuteIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,20 +11,21 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 /// <summary>
-/// NUnit.Framework.Internal.Commands.TestMethodCommand.Execute() calltarget instrumentation
+/// NUnit.Framework.Internal.Commands.TestCommand.Execute() calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "nunit.framework",
-    TypeName = "NUnit.Framework.Internal.Commands.TestMethodCommand",
+    TypeName = "NUnit.Framework.Internal.Commands.TestCommand",
     MethodName = "Execute",
     ReturnTypeName = "NUnit.Framework.Internal.TestResult",
     ParameterTypeNames = new[] { "NUnit.Framework.Internal.TestExecutionContext" },
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
+    CallTargetIntegrationType = IntegrationType.Derived,
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class NUnitTestMethodCommandExecuteIntegration
+public static class NUnitTestCommandExecuteIntegration
 {
     /// <summary>
     /// OnMethodBegin callback
@@ -42,7 +43,20 @@ public static class NUnitTestMethodCommandExecuteIntegration
             return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, NUnitIntegration.CreateTest(executionContext.CurrentTest));
+        switch (typeof(TTarget).FullName)
+        {
+            case "NUnit.Framework.Internal.Commands.EmptyTestCommand":
+                return CallTargetState.GetDefault();
+            case "NUnit.Framework.Internal.Commands.SkipCommand":
+                if (NUnitIntegration.CreateTest(executionContext.CurrentTest) is { } test)
+                {
+                    test.Close(Ci.TestStatus.Skip, TimeSpan.Zero);
+                }
+
+                return CallTargetState.GetDefault();
+            default:
+                return new CallTargetState(null, NUnitIntegration.CreateTest(executionContext.CurrentTest));
+        }
     }
 
     /// <summary>
