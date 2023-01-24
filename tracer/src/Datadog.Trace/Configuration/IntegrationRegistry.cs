@@ -17,17 +17,14 @@ namespace Datadog.Trace.Configuration
 
         static IntegrationRegistry()
         {
-            var values = Enum.GetValues(typeof(IntegrationId));
-            var ids = new Dictionary<string, int>(values.Length, StringComparer.OrdinalIgnoreCase);
+            var ids = new Dictionary<string, int>(IntegrationIdExtensions.Length, StringComparer.OrdinalIgnoreCase);
 
-            Names = new string[values.Cast<int>().Max() + 1];
+            Names = IntegrationIdExtensions.GetNames();
 
-            foreach (IntegrationId value in values)
+            for (var i = IntegrationIdExtensions.Length - 1; i >= 0; i--)
             {
-                var name = value.ToString();
-
-                Names[(int)value] = name;
-                ids.Add(name, (int)value);
+                var name = Names[i];
+                ids.Add(name, (int)i);
             }
 
             Ids = ids;
