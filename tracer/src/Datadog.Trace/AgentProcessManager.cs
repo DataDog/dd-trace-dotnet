@@ -69,8 +69,9 @@ namespace Datadog.Trace
                 var azureAppServiceSettings = new ImmutableAzureAppServiceSettings(GlobalConfigurationSource.Instance);
 
                 var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
+                var automaticProfilingEnabled = ContinuousProfiler.Profiler.Instance.Status.IsProfilerEnabled;
 
-                if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled)
+                if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled || automaticProfilingEnabled)
                 {
                     if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                     {
