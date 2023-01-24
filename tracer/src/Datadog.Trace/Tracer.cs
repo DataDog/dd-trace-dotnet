@@ -75,7 +75,7 @@ namespace Datadog.Trace
         /// Note that this API does NOT replace the global Tracer instance.
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
+        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null, GitMetadataTagsProvider gitMetadataTagsProvider = null)
             : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null))
         {
         }
@@ -197,6 +197,11 @@ namespace Datadog.Trace
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
         public string DefaultServiceName => TracerManager.DefaultServiceName;
+
+        /// <summary>
+        /// Gets the git metadata provider.
+        /// </summary>
+        GitMetadataTagsProvider IDatadogTracer.GitMetadataTagsProvider => TracerManager.GitMetadataTagsProvider;
 
         /// <summary>
         /// Gets this tracer's settings.
@@ -410,18 +415,10 @@ namespace Datadog.Trace
             // Apply any global tags
             if (Settings.GlobalTags.Count > 0)
             {
-                // if DD_TAGS contained "env" and "version", they were used to set
-                // ImmutableTracerSettings.Environment and ImmutableTracerSettings.ServiceVersion
+                // if DD_TAGS contained "env", "version", "git.commit.sha", or "git.repository.url",  they were used to set
+                // ImmutableTracerSettings.Environment, ImmutableTracerSettings.ServiceVersion, ImmutableTracerSettings.GitCommitSha, and ImmutableTracerSettings.GitRepositoryUrl
                 // and removed from Settings.GlobalTags
                 foreach (var entry in Settings.GlobalTags)
-                {
-                    span.SetTag(entry.Key, entry.Value);
-                }
-            }
-
-            if (SourceLinkTagsProvider.Instance.GetGitTagsFromSourceLink() is { } sourceLinkTags)
-            {
-                foreach (var entry in sourceLinkTags)
                 {
                     span.SetTag(entry.Key, entry.Value);
                 }

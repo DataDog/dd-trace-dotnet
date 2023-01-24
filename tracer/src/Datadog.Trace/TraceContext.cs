@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -33,11 +34,20 @@ namespace Datadog.Trace
         {
             var settings = tracer?.Settings;
 
+            // TODO: Environment, ServiceVersion, GitCommitSha, and GitRepositoryUrl are stored on the TraceContext
+            // even though they likely won't change for the lifetime of the process. We should consider moving them
+            // elsewhere to reduce the memory usage.
             if (settings is not null)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
                 Environment = settings.Environment;
                 ServiceVersion = settings.ServiceVersion;
+            }
+
+            if (tracer != null && tracer.GitMetadataTagsProvider.TryExtractGitMetadata(out var metadata) && metadata != GitMetadata.Empty)
+            {
+                GitCommitSha = metadata.CommitSha;
+                GitRepositoryUrl = metadata.RepositoryUrl;
             }
 
             Tracer = tracer;
@@ -66,6 +76,10 @@ namespace Datadog.Trace
         public string Environment { get; set; }
 
         public string ServiceVersion { get; set; }
+
+        internal string GitRepositoryUrl { get; }
+
+        internal string GitCommitSha { get; }
 
         public string Origin { get; set; }
 

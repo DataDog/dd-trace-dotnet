@@ -31,8 +31,8 @@ namespace Datadog.Trace.TestHelpers
             .IsOptional("error.msg")
             .IsOptional("error.type")
             .IsOptional("error.stack")
-            .IsOptional(CommonTags.GitRepository)
-            .IsOptional(CommonTags.GitCommit);
+            .IsOptional(Tags.GitRepositoryUrl)
+            .IsOptional(Tags.GitCommitSha);
 
         public static void AssertNoRemainingTags(SpanTagAssertion s)
         {

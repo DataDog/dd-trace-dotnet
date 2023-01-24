@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
@@ -18,7 +19,8 @@ namespace Datadog.Trace.TestHelpers
             GetValidSettings(),
             serviceName: "MyTestService",
             env: "integration_tests",
-            version: "1.0.0");
+            version: "1.0.0",
+            new StubGitMetadataProvider());
 
         public static ImmutableDirectLogSubmissionSettings GetValidSettings()
         {
@@ -31,6 +33,15 @@ namespace Datadog.Trace.TestHelpers
                 globalTags: new Dictionary<string, string>(),
                 enabledLogShippingIntegrations: ImmutableDirectLogSubmissionSettings.SupportedIntegrations.Select(x => x.ToString()).ToList(),
                 batchingOptions: new BatchingSinkOptions(1000, 100_000, TimeSpan.FromSeconds(2)));
+        }
+
+        internal class StubGitMetadataProvider : IGitMetadataTagsProvider
+        {
+            public bool TryExtractGitMetadata(out GitMetadata gitMetadata)
+            {
+                gitMetadata = null;
+                return false;
+            }
         }
     }
 }

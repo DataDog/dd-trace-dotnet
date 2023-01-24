@@ -34,6 +34,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly RcmClientTracer _rcmTracer;
         private readonly IDiscoveryService _discoveryService;
         private readonly IRemoteConfigurationApi _remoteConfigurationApi;
+        private readonly GitMetadataTagsProvider _gitMetadataTagsProvider;
         private readonly TimeSpan _pollInterval;
 
         private readonly CancellationTokenSource _cancellationSource;
@@ -47,18 +48,21 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private bool _isPollingStarted;
         private bool _isRcmEnabled;
         private string? _backendClientState;
+        private bool _gitMetadataAddedToRequestTags;
 
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
             IRemoteConfigurationApi remoteConfigurationApi,
             string id,
             RcmClientTracer rcmTracer,
-            TimeSpan pollInterval)
+            TimeSpan pollInterval,
+            GitMetadataTagsProvider gitMetadataTagsProvider)
         {
             _discoveryService = discoveryService;
             _remoteConfigurationApi = remoteConfigurationApi;
             _rcmTracer = rcmTracer;
             _pollInterval = pollInterval;
+            _gitMetadataTagsProvider = gitMetadataTagsProvider;
             _id = id;
 
             _rootVersion = 1;
@@ -71,7 +75,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static RemoteConfigurationManager? Instance { get; private set; }
 
-        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings)
+        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings, GitMetadataTagsProvider gitMetadataTagsProvider)
         {
             var tags = GetTags(settings, tracerSettings);
             lock (LockObject)
@@ -81,7 +85,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     remoteConfigurationApi,
                     id: settings.Id,
                     rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, tracerSettings.Environment, tracerSettings.ServiceVersion, tags),
-                    pollInterval: settings.PollInterval);
+                    pollInterval: settings.PollInterval,
+                    gitMetadataTagsProvider);
             }
 
             while (_initializationQueue.TryDequeue(out var action))
@@ -249,24 +254,32 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError, _backendClientState);
             var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, capabilitiesArray);
-            EnrichWithSourceLinkTags(rcmClient.ClientTracer.Tags);
+            EnrichTagsWithGitMetadata(rcmClient.ClientTracer.Tags);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
             return rcmRequest;
         }
 
-        private void EnrichWithSourceLinkTags(List<string> tags)
+        private void EnrichTagsWithGitMetadata(List<string> tags)
         {
-            if (tags.Any(t => t.StartsWith(CommonTags.GitTag)) && tags.Any(t => t.StartsWith(CommonTags.GitRepository)))
+            if (_gitMetadataAddedToRequestTags)
             {
-                // We already have both tags, no need to add more
                 return;
             }
 
-            if (SourceLinkTagsProvider.Instance.GetGitTagsFromSourceLink() is { } gitTags)
+            if (!_gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata))
             {
-                tags.AddRange(gitTags.Select(t => $"{t.Key}:{t.Value}"));
+                // no git metadata found, we can try again later.
+                return;
             }
+
+            if (gitMetadata != GitMetadata.Empty)
+            {
+                tags.Add($"{CommonTags.GitCommit}:{gitMetadata.CommitSha}");
+                tags.Add($"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl}");
+            }
+
+            _gitMetadataAddedToRequestTags = true;
         }
 
         private void ProcessResponse(GetRcmResponse response, IDictionary<string, Product> products)

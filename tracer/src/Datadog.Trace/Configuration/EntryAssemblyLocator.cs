@@ -7,6 +7,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security;
 
 namespace Datadog.Trace.Configuration;
@@ -71,8 +72,9 @@ internal static class EntryAssemblyLocator
     /// <summary>
     /// ! This method should be called from within a try-catch block !
     /// If the application is running in partial trust, then trying to call this method will result in
-    /// a SecurityException to be thrown at the method CALLSITE, not inside the <c>GetEntryAssemblyFromHttpContext(..)</c> method itself.
+    /// a SecurityException being thrown at the method CALLSITE, not inside the <c>GetEntryAssemblyFromHttpContext(..)</c> method itself.
     /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static Assembly? GetEntryAssemblyFromHttpContext()
     {
         var type = System.Web.HttpContext.Current?.ApplicationInstance?.GetType();
