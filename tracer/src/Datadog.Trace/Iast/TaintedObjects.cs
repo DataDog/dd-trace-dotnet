@@ -16,7 +16,7 @@ namespace Datadog.Trace.Iast
             _map = new DefaultTaintedMap();
         }
 
-        public void TaintInputString(string stringToTaint, Source? source)
+        public void TaintInputString(string stringToTaint, Source source)
         {
             if (!string.IsNullOrEmpty(stringToTaint))
             {
