@@ -151,16 +151,16 @@ namespace Datadog.Trace.Configuration
         public string ServiceVersion { get; }
 
         /// <summary>
-        /// Gets or sets the application's git repository url.
+        /// Gets the application's git repository url.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
-        public string GitRepositoryUrl { get; set; }
+        public string GitRepositoryUrl { get; }
 
         /// <summary>
-        /// Gets or sets the application's git commit hash.
+        /// Gets the application's git commit hash.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
-        public string GitCommitSha { get; set; }
+        public string GitCommitSha { get; }
 
         /// <summary>
         /// Gets a value indicating whether we should tag every telemetry event with git metadata.
