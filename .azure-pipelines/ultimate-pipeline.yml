@@ -1324,7 +1324,8 @@ stages:
         solution: profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj
         configuration: Release
         platfom: $(platform)
-        msbuildArguments: /target:RunClangTidy /fl /flp:logfile="$(CI_ANALYSIS_RESULTS_FOLDER)\clang-tidy-results.txt;verbosity=minimal" /noconlog
+        msbuildArguments: /target:RunClangTidy /fl /flp:logfile="$(CI_ANALYSIS_RESULTS_FOLDER)\clang-tidy-results.txt;verbosity=minimal"
+        createLogFile: true
       displayName: Run clang-tidy
 
     - powershell: |
