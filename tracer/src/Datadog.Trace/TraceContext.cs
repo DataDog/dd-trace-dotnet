@@ -44,7 +44,7 @@ namespace Datadog.Trace
                 ServiceVersion = settings.ServiceVersion;
             }
 
-            if (tracer != null && tracer.GitMetadataTagsProvider.TryExtractGitMetadata(out var metadata) && metadata != GitMetadata.Empty)
+            if (tracer?.GitMetadataTagsProvider != null && tracer.GitMetadataTagsProvider.TryExtractGitMetadata(out var metadata) && metadata != GitMetadata.Empty)
             {
                 GitCommitSha = metadata.CommitSha;
                 GitRepositoryUrl = metadata.RepositoryUrl;
