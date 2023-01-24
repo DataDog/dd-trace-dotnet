@@ -537,12 +537,12 @@ namespace Datadog.Trace
 
             internal static class EventsUsersLogin
             {
-                internal const string Success = AppSec.Events + "users.login.success";
-                internal const string Failure = AppSec.Events + "users.login.failure";
-                internal const string SuccessTrack = Success + ".track";
-                internal const string FailureTrack = Failure + ".track";
-                internal const string FailureUserId = Failure + ".usr.id";
-                internal const string FailureUserExists = Failure + ".usr.exists";
+                internal const string Success = AppSec.Events + "users.login.success.";
+                internal const string Failure = AppSec.Events + "users.login.failure.";
+                internal const string SuccessTrack = Success + "track";
+                internal const string FailureTrack = Failure + "track";
+                internal const string FailureUserId = Failure + "usr.id";
+                internal const string FailureUserExists = Failure + "usr.exists";
             }
         }
 
