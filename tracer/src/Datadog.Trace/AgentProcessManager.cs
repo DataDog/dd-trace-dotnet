@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -69,8 +68,9 @@ namespace Datadog.Trace
                 var azureAppServiceSettings = new ImmutableAzureAppServiceSettings(GlobalConfigurationSource.Instance);
 
                 var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
+                var automaticProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false;
 
-                if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled)
+                if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled || automaticProfilingEnabled)
                 {
                     if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                     {
