@@ -351,7 +351,7 @@ namespace Datadog.Trace
                     // propagation headers. create a new TraceContext (this will start a new trace) and initialize
                     // it with the propagated values (sampling priority, origin, tags, W3C trace state, etc).
                     var traceTags = TagPropagation.ParseHeader(parentSpanContext.PropagatedTags, Settings.OutgoingTagPropagationHeaderMaxLength);
-                    traceContext = new TraceContext(this, traceTags);
+                    traceContext = new TraceContext(this, parentSpanContext.TraceId, parentSpanContext.RawTraceId, traceTags);
 
                     var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
                     traceContext.SetSamplingPriority(samplingPriority);
@@ -364,7 +364,7 @@ namespace Datadog.Trace
                 // if parent is not a SpanContext, it must be either a ReadOnlySpanContext or
                 // a user-defined ISpanContext implementation. we don't have a TraceContext,
                 // so create a new one (this will start a new trace).
-                traceContext = new TraceContext(this, tags: null);
+                traceContext = new TraceContext(this, traceId: null, rawTraceId: null, tags: null);
 
                 // in a version-mismatch scenario, try to get the sampling priority from the "other" tracer
                 var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();

@@ -6,7 +6,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using Datadog.Trace.Ci;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Util;
 
@@ -42,62 +41,71 @@ namespace Datadog.Trace
         /// </summary>
         public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: 0, spanId: 0, serviceName: null);
 
-        private string _origin;
+        private readonly ulong _traceId;
+        private readonly string _origin;
+        private readonly int? _samplingPriority;
+        private readonly string _rawTraceId;
+        private readonly string _additionalW3CTraceState;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class
-        /// from a propagated context. <see cref="Parent"/> will be null
-        /// since this is a root context locally.
+        /// Initializes a new instance of the <see cref="SpanContext"/> class from a propagated context.
+        /// This SpanContext should only be used as the parent of local root Span in
+        /// <see cref="Tracer.StartActive(string)"/> or  <see cref="Tracer.StartActive(string,SpanCreationSettings)"/>.
         /// </summary>
         /// <param name="traceId">The propagated trace id.</param>
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority = null, string serviceName = null)
-            : this(traceId, serviceName)
+            : this(
+                traceId ?? RandomIdGenerator.Shared.NextSpanId(),
+                spanId,
+                (int?)samplingPriority,
+                origin: null,
+                rawTraceId: null,
+                rawSpanId: null,
+                propagatedTags: null,
+                additionalW3CTraceState: null)
         {
-            SpanId = spanId;
-            SamplingPriority = (int?)samplingPriority;
+            // NOTE: this is a public ctor so we must keep accepting deprecated values
+            // - SamplingPriority samplingPriority -> convert to Nullable<int>
+            // - [COMING SOON] string serviceName (we should move this to Span)
+            // - [COMING SOON] ulong? traceId -> convert to TraceId for 128-bit support
+            ServiceName = serviceName;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class
-        /// from a propagated context. <see cref="Parent"/> will be null
-        /// since this is a root context locally.
+        /// Initializes a new instance of the <see cref="SpanContext"/> class from a propagated context.
+        /// This SpanContext should only be used as the parent of local root Span in
+        /// methods like <see cref="Tracer.StartActiveInternal"/>.
         /// </summary>
         /// <param name="traceId">The propagated trace id.</param>
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="samplingPriority">The propagated sampling priority.</param>
-        /// <param name="serviceName">The service name to propagate to child spans.</param>
-        /// <param name="origin">The propagated origin of the trace.</param>
-        internal SpanContext(ulong? traceId, ulong spanId, int? samplingPriority, string serviceName, string origin)
-            : this(traceId, serviceName)
-        {
-            SpanId = spanId;
-            SamplingPriority = samplingPriority;
-            Origin = origin;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class
-        /// from a propagated context. <see cref="Parent"/> will be null
-        /// since this is a root context locally.
-        /// </summary>
-        /// <param name="traceId">The propagated trace id.</param>
-        /// <param name="spanId">The propagated span id.</param>
-        /// <param name="samplingPriority">The propagated sampling priority.</param>
-        /// <param name="serviceName">The service name to propagate to child spans.</param>
         /// <param name="origin">The propagated origin of the trace.</param>
         /// <param name="rawTraceId">The raw propagated trace id</param>
         /// <param name="rawSpanId">The raw propagated span id</param>
-        internal SpanContext(ulong? traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId)
-            : this(traceId, serviceName)
+        /// <param name="propagatedTags">The value of the propagated tags header "x-datadog-tags".</param>
+        /// <param name="additionalW3CTraceState">Additional values found in the W3C "tracestate" header.</param>
+        internal SpanContext(
+            ulong traceId,
+            ulong spanId,
+            int? samplingPriority,
+            string origin = null,
+            string rawTraceId = null,
+            string rawSpanId = null,
+            string propagatedTags = null,
+            string additionalW3CTraceState = null)
         {
+            // properties than can delegate to TraceContext need a private field, the rest can be auto-properties
+            _traceId = traceId;
             SpanId = spanId;
-            SamplingPriority = samplingPriority;
-            Origin = origin;
-            RawTraceId = rawTraceId;
+            _samplingPriority = samplingPriority;
+            _origin = origin;
+            _rawTraceId = rawTraceId;
             RawSpanId = rawSpanId;
+            PropagatedTags = propagatedTags;
+            _additionalW3CTraceState = additionalW3CTraceState;
         }
 
         /// <summary>
@@ -107,46 +115,33 @@ namespace Datadog.Trace
         /// <param name="parent">The parent context.</param>
         /// <param name="traceContext">The trace context.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
-        /// <param name="traceId">Override the trace id if there's no parent.</param>
         /// <param name="spanId">The propagated span id.</param>
-        /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
-        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
-            : this(parent?.TraceId > 0 ? parent.TraceId : traceId, serviceName)
+        internal SpanContext(
+            ISpanContext parent,
+            TraceContext traceContext,
+            string serviceName = null,
+            ulong? spanId = null,
+            string rawSpanId = null)
         {
-            SpanId = spanId ?? RandomIdGenerator.Shared.NextSpanId();
             Parent = parent;
             TraceContext = traceContext;
+            ServiceName = serviceName;
+
+            // use the specified spanId or generate a random value
+            SpanId = spanId ?? RandomIdGenerator.Shared.NextSpanId();
 
             if (parent is SpanContext spanContext)
             {
-                RawTraceId = spanContext.RawTraceId ?? rawTraceId;
+                _rawTraceId = spanContext.RawTraceId ?? rawTraceId;
                 PathwayContext = spanContext.PathwayContext;
             }
             else
             {
-                RawTraceId = rawTraceId;
+                _rawTraceId = rawTraceId;
             }
 
             RawSpanId = rawSpanId;
-        }
-
-        private SpanContext(ulong? traceId, string serviceName)
-        {
-            TraceId = traceId > 0
-                          ? traceId.Value
-                          : RandomIdGenerator.Shared.NextSpanId();
-
-            ServiceName = serviceName;
-
-            // Because we have a ctor as part of the public api without accepting the origin tag,
-            // we need to ensure new SpanContext created by this .ctor has the CI Visibility origin
-            // tag if the CI Visibility mode is running to ensure the correct propagation
-            // to children spans and distributed trace.
-            if (CIVisibility.IsRunning)
-            {
-                Origin = Ci.Tags.TestTags.CIAppTestOriginName;
-            }
         }
 
         /// <summary>
@@ -155,17 +150,21 @@ namespace Datadog.Trace
         public ISpanContext Parent { get; }
 
         /// <summary>
-        /// Gets the trace id
+        /// Gets the lower-order 64 bits of the 128-bit trace id.
         /// </summary>
-        public ulong TraceId { get; }
+        /// <remarks>
+        /// For local contexts, this property delegates to TraceContext.
+        /// For remote contexts, it returns the value extracted from upstream headers.
+        /// </remarks>
+        public ulong TraceId => TraceContext?.TraceId ?? _traceId;
 
         /// <summary>
-        /// Gets the span id of the parent span
+        /// Gets the span id of the parent span.
         /// </summary>
         public ulong? ParentId => Parent?.SpanId;
 
         /// <summary>
-        /// Gets the span id
+        /// Gets the span id.
         /// </summary>
         public ulong SpanId { get; }
 
@@ -175,30 +174,21 @@ namespace Datadog.Trace
         public string ServiceName { get; set; }
 
         /// <summary>
-        /// Gets or sets the origin of the trace.
-        /// For local contexts, this property delegates to TraceContext.Origin.
-        /// This is a temporary work around because we use SpanContext
-        /// for all local spans and also for propagation.
+        /// Gets the origin of the trace.
         /// </summary>
-        internal string Origin
-        {
-            get => TraceContext?.Origin ?? _origin;
-            set
-            {
-                _origin = value;
-
-                if (TraceContext is not null)
-                {
-                    TraceContext.Origin = value;
-                }
-            }
-        }
+        /// <remarks>
+        /// For local contexts, this property delegates to TraceContext.
+        /// For remote contexts, it contains the value extracted from upstream headers.
+        /// This is a temporary work around because we use SpanContext
+        /// for both local spans and for propagation.
+        /// </remarks>
+        internal string Origin => TraceContext?.Origin ?? _origin;
 
         /// <summary>
-        /// Gets or sets the header value that contains the propagated trace tags,
+        /// Gets the header value that contains the propagated trace tags,
         /// formatted as "key1=value1,key2=value2".
         /// </summary>
-        internal string PropagatedTags { get; set; }
+        internal string PropagatedTags { get; }
 
         /// <summary>
         /// Gets the trace context.
@@ -207,27 +197,44 @@ namespace Datadog.Trace
         internal TraceContext TraceContext { get; }
 
         /// <summary>
-        /// Gets the sampling priority for contexts created from incoming propagated context.
-        /// Returns null for local contexts.
+        /// Gets the sampling priority of the trace.
         /// </summary>
-        internal int? SamplingPriority { get; }
+        /// <remarks>
+        /// For local contexts, this property delegates to TraceContext.
+        /// For remote contexts, it contains the value extracted from upstream headers.
+        /// This is a temporary work around because we use SpanContext
+        /// for both local spans and for propagation.
+        /// </remarks>
+        internal int? SamplingPriority => TraceContext?.SamplingPriority ?? _samplingPriority;
 
         /// <summary>
-        /// Gets the raw traceId (to support > 64bits)
+        /// Gets the raw trace id string (usually hexadecimal) extracted from an upstream distributed context.
         /// </summary>
-        internal string RawTraceId { get; }
+        /// <remarks>
+        /// For local contexts, this property delegates to TraceContext.
+        /// For remote contexts, it contains the value extracted from upstream headers.
+        /// This is a temporary work around because we use SpanContext
+        /// for both local spans and for propagation.
+        /// </remarks>
+        internal string RawTraceId => TraceContext?.RawTraceId ?? _rawTraceId;
 
         /// <summary>
-        /// Gets the raw spanId
+        /// Gets the raw span id string (usually hexadecimal) extracted from an upstream distributed context.
         /// </summary>
         internal string RawSpanId { get; }
 
         /// <summary>
-        /// Gets or sets additional key/value pairs from an upstream "tracestate" W3C header that we will propagate downstream.
+        /// Gets additional key/value pairs from an upstream "tracestate" W3C header that we will propagate downstream.
         /// This value will _not_ include the "dd" key, which is parsed out into other individual values
         /// (e.g. sampling priority, origin, propagates tags, etc).
         /// </summary>
-        internal string AdditionalW3CTraceState { get; set; }
+        /// <remarks>
+        /// For local contexts, this property delegates to TraceContext.
+        /// For remote contexts, it contains the value extracted from upstream headers.
+        /// This is a temporary work around because we use SpanContext
+        /// for both local spans and for propagation.
+        /// </remarks>
+        internal string AdditionalW3CTraceState => TraceContext?.AdditionalW3CTraceState ?? _additionalW3CTraceState;
 
         internal PathwayContext? PathwayContext { get; private set; }
 

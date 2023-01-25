@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
@@ -29,7 +30,7 @@ namespace Datadog.Trace
         private int _openSpans;
         private int? _samplingPriority;
 
-        public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
+        public TraceContext(IDatadogTracer tracer, ulong? traceId, string rawTraceId = null, TraceTagCollection tags = null)
         {
             var settings = tracer?.Settings;
 
@@ -41,8 +42,19 @@ namespace Datadog.Trace
             }
 
             Tracer = tracer;
+            TraceId = traceId ?? RandomIdGenerator.Shared.NextSpanId();
+            RawTraceId = rawTraceId;
             Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+
+            if (CIVisibility.IsRunning)
+            {
+                Origin = Ci.Tags.TestTags.CIAppTestOriginName;
+            }
         }
+
+        public ulong TraceId { get; }
+
+        public string RawTraceId { get; }
 
         public Span RootSpan { get; private set; }
 
