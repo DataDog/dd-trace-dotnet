@@ -9,8 +9,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -18,68 +18,61 @@ using Xunit;
 using Xunit.Abstractions;
 using Encoder = Datadog.Trace.AppSec.Waf.Encoder;
 
-namespace Datadog.Trace.Security.Unit.Tests
+namespace Datadog.Trace.Security.Unit.Tests;
+
+public class FuzzEncoder : WafLibraryRequiredTest
 {
-    [Collection("WafTests")]
-    public class FuzzEncoder
+    private readonly ITestOutputHelper _outputHelper;
+
+    public FuzzEncoder(ITestOutputHelper outputHelper, WafLibraryInvokerFixture wafLibraryInvokerFixture)
+        : base(wafLibraryInvokerFixture)
     {
-        private readonly ITestOutputHelper _outputHelper;
+        _outputHelper = outputHelper;
+    }
 
-        public FuzzEncoder(ITestOutputHelper outputHelper)
-        {
-            _outputHelper = outputHelper;
-        }
+    [Fact]
+    public void LetsFuzz()
+    {
+        // if we don't throw any exceptions and generate a valid object the the test is successful
 
-        [Fact]
-        public void LetsFuzz()
+        var jsonGenerator = new JsonGenerator();
+
+        var errorOccured = false;
+
+        for (int i = 0; i < 100; i++)
         {
-            // if we don't throw any exceptions and generate a valid object the the test is successful
-            var libInitResult = WafLibraryInvoker.Initialize();
-            if (!libInitResult.Success)
+            var buffer = jsonGenerator.GenerateJsonBuffer();
+            try
             {
-                throw new ArgumentException("Waf couldnt load");
+                using var memoryStream = new MemoryStream(buffer.Array!, buffer.Offset, buffer.Count, false);
+                using var streamReader = new StreamReader(memoryStream);
+                using var jsonReader = new JsonTextReader(streamReader);
+                var root = JToken.ReadFrom(jsonReader);
+
+                var l = new List<Obj>();
+                using var result = Encoder.Encode(root, WafLibraryInvoker!, l, applySafetyLimits: true);
+
+                // check the object is valid
+                Assert.NotEqual(ObjType.Invalid, result.ArgsType);
+
+                l.ForEach(x => x.Dispose());
             }
-
-            var wafLibraryInvoker = libInitResult.WafLibraryInvoker;
-            var jsonGenerator = new JsonGenerator();
-
-            var errorOccured = false;
-
-            for (int i = 0; i < 100; i++)
+            catch (Exception ex)
             {
-                var buffer = jsonGenerator.GenerateJsonBuffer();
-                try
-                {
-                    using var memoryStream = new MemoryStream(buffer.Array!, buffer.Offset, buffer.Count, false);
-                    using var streamReader = new StreamReader(memoryStream);
-                    using var jsonReader = new JsonTextReader(streamReader);
-                    var root = JToken.ReadFrom(jsonReader);
+                errorOccured = true;
 
-                    var l = new List<Obj>();
-                    using var result = Encoder.Encode(root, wafLibraryInvoker!, l, applySafetyLimits: true);
-
-                    // check the object is valid
-                    Assert.NotEqual(ObjType.Invalid, result.ArgsType);
-
-                    l.ForEach(x => x.Dispose());
-                }
-                catch (Exception ex)
-                {
-                    errorOccured = true;
-
-                    _outputHelper.WriteLine($"Error occured on run '{i}' parsing json: {ex}");
-                    _outputHelper.WriteLine("Json causing the error was:");
-                    ViewJson(buffer);
-                }
+                _outputHelper.WriteLine($"Error occured on run '{i}' parsing json: {ex}");
+                _outputHelper.WriteLine("Json causing the error was:");
+                ViewJson(buffer);
             }
-
-            Assert.False(errorOccured);
         }
 
-        private void ViewJson(ArraySegment<byte> buffer)
-        {
-            var jsonText = Encoding.UTF8.GetString(buffer.Array!, buffer.Offset, buffer.Count);
-            _outputHelper.WriteLine(jsonText);
-        }
+        Assert.False(errorOccured);
+    }
+
+    private void ViewJson(ArraySegment<byte> buffer)
+    {
+        var jsonText = Encoding.UTF8.GetString(buffer.Array!, buffer.Offset, buffer.Count);
+        _outputHelper.WriteLine(jsonText);
     }
 }

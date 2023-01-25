@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -19,8 +20,13 @@ using Xunit;
 namespace Datadog.Trace.Security.Unit.Tests
 {
     [Collection("WafTests")]
-    public class WafObfuscationTests
+    public class WafObfuscationTests : WafLibraryRequiredTest
     {
+        public WafObfuscationTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
+            : base(wafLibraryInvokerFixture)
+        {
+        }
+
         [Theory]
         [InlineData(false, "bearer", "this is a very secret value having the select pg_sleep attack", "select pg_sleep")]
         [InlineData(false, "password", "select pg_sleep", "select pg_sleep")]
@@ -42,16 +48,9 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            var libInitResult = WafLibraryInvoker.Initialize();
-            if (!libInitResult.Success)
-            {
-                throw new ArgumentException("Waf couldnt load");
-            }
-
-            var initResult =
-                obfuscate
-                    ? Waf.Create(libInitResult.WafLibraryInvoker!, SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
-                    : Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = obfuscate
+                                 ? Waf.Create(WafLibraryInvoker, SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
+                                 : Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
             initResult.Success.Should().BeTrue();
             using var waf = initResult.Waf;
             var expectedHighlight = obfuscate ? "<Redacted>" : highlight;

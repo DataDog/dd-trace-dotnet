@@ -10,6 +10,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -17,9 +18,14 @@ using Xunit;
 namespace Datadog.Trace.Security.Unit.Tests
 {
     [Collection("WafTests")]
-    public class WafTests
+    public class WafTests : WafLibraryRequiredTest
     {
         public const int TimeoutMicroSeconds = 1_000_000;
+
+        public WafTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
+            : base(wafLibraryInvokerFixture)
+        {
+        }
 
         [Theory]
         [InlineData("[$ne]", "arg", "nosql_injection", "crs-942-290")]
@@ -93,7 +99,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("/.adsensepostnottherenonobook", "security_scanner", "crs-913-120")]
         public void BodyAttack(string body, string flow, string rule) => Execute(AddressesConstants.RequestBody, body, flow, rule);
 
-        private static void Execute(string address, object value, string flow, string rule)
+        private void Execute(string address, object value, string flow, string rule)
         {
             var args = new Dictionary<string, object> { { address, value } };
             if (!args.ContainsKey(AddressesConstants.RequestUriRaw))
@@ -106,13 +112,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            var libInitResult = WafLibraryInvoker.Initialize();
-            if (!libInitResult.Success)
-            {
-                throw new ArgumentException("Waf couldnt load");
-            }
-
-            var initResult = Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             using var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
