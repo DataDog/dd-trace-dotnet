@@ -29,6 +29,7 @@ public class WeakCipherTests : TestHelper
         SetServiceVersion("1.0.0");
     }
 
+#if !NET7_0
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
@@ -51,6 +52,7 @@ public class WeakCipherTests : TestHelper
 
         VerifyInstrumentation(process.Process);
     }
+#endif
 
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
