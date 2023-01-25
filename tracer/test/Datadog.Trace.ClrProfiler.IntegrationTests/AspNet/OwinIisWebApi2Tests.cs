@@ -91,8 +91,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/api/constraints", 200, 2 },
             { "/api/constraints/201", 201, 2 },
             // Transfer request doesn't work as expected with OWIN, but I'm not sure whether they should work, and seems relatively niche so ignoring them for now
-            // { "/api/TransferRequest/401", 401, 4 },
-            // { "/api/TransferRequest/503", 503, 4 },
+            { "/api/TransferRequest/401", 401, 4 },
+            { "/api/TransferRequest/503", 503, 4 },
             { "/api2/delay/0", 200, 2 },
             { "/api2/optional", 200, 2 },
             { "/api2/optional/1", 200, 2 },
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // The global message handler will fail when ps=false
             // The global and per-route message handler is invoked with the route /handler-api, so ts=false will also fail the request
-            // { "/handler-api/api?ps=true&ts=true", 200, 1 }, // I'm not sure why, but this one doesnt seem to work
+            { "/handler-api/api?ps=true&ts=true", 200, 1 }, // I'm not sure why, but this one doesnt seem to work
             { "/handler-api/api?ps=true&ts=false", 500, 2 },
             { "/handler-api/api?ps=false&ts=true", 500, 2 },
             { "/handler-api/api?ps=false&ts=false", 500, 2 },
