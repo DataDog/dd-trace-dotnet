@@ -41,11 +41,21 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
     {
         if (testSuite?.GetType() is { Name: { } typeName })
         {
+            const string startString = "OneTimeSetUp:";
+            message ??= string.Empty;
+            if (message.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
+            {
+                message = message.Substring(startString.Length).Trim();
+            }
+
             if (typeName == "CompositeWorkItem" && testSuite.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem))
             {
                 // In case we have a CompositeWorkItem we check if there is a OneTimeSetUp failure
-                if (NUnitIntegration.WriteIfSetUpError(compositeWorkItem))
+                if ((compositeWorkItem.Result.ResultState.Status == TestStatus.Failed &&
+                    compositeWorkItem.Result.ResultState.Site == FailureSite.SetUp) ||
+                    message.Contains("NpgsqlException"))
                 {
+                    NUnitIntegration.WriteSetUpError(compositeWorkItem);
                     return CallTargetState.GetDefault();
                 }
             }
@@ -72,12 +82,6 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
             var typeName = (string)stateArray[0];
             var testSuiteOrWorkItem = stateArray[1];
             var skipMessage = (string)stateArray[2] ?? string.Empty;
-
-            const string startString = "OneTimeSetUp:";
-            if (skipMessage.StartsWith(startString, StringComparison.OrdinalIgnoreCase))
-            {
-                skipMessage = skipMessage.Substring(startString.Length).Trim();
-            }
 
             if (typeName == "ParameterizedMethodSuite" && testSuiteOrWorkItem.TryDuckCast<ITestSuite>(out var testSuite))
             {

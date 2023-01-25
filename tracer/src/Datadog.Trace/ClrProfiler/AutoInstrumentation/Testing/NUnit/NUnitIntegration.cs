@@ -248,30 +248,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             return Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
         }
 
-        internal static bool WriteIfSetUpError(ICompositeWorkItem compositeWorkItem)
+        internal static void WriteSetUpError(ICompositeWorkItem compositeWorkItem)
         {
-            var compositeTestResult = compositeWorkItem.Result;
-            if (compositeTestResult?.ResultState?.Status != TestStatus.Failed || compositeTestResult.ResultState.Site != FailureSite.SetUp)
-            {
-                return false;
-            }
-
+            WriteSetUpError(compositeWorkItem.Result, compositeWorkItem.Test);
             foreach (var item in compositeWorkItem.Children)
             {
                 if (item?.GetType().Name is { Length: > 0 } itemName)
                 {
                     if (itemName == "CompositeWorkItem" && item.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem2))
                     {
-                        WriteIfSetUpError(compositeWorkItem2);
+                        WriteSetUpError(compositeWorkItem2);
                     }
                     else if (item.TryDuckCast<IWorkItem>(out var itemWorkItem) && itemWorkItem is { Result: { } testResult })
                     {
-                        WriteSetUpError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeTestResult, testResult.Test);
+                        WriteSetUpError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeWorkItem.Result, testResult.Test);
                     }
                 }
             }
-
-            return true;
         }
 
         internal static void WriteSkip(ITest item, string skipMessage)
