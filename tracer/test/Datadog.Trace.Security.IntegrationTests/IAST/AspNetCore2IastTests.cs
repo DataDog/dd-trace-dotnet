@@ -154,6 +154,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         protected override async Task TryStartApp()
         {
             EnableIast(IastEnabled);
+            DisableObfuscationQueryString();
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
@@ -193,6 +194,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         protected virtual async Task TryStartApp()
         {
             EnableIast(IastEnabled);
+            DisableObfuscationQueryString();
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
