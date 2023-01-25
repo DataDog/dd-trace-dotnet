@@ -11,10 +11,6 @@
     <CppProject Include="$(EnlistmentRoot)\profiler\src\ProfilerEngine\*\*.vcxproj"  Exclude="$(EnlistmentRoot)\profiler\src\ProfilerEngine\*\Datadog.Profiler.Native.Linux.vcxproj"/>
     <CppTestProject Include="$(EnlistmentRoot)\profiler\test\**\*.vcxproj" />
   </ItemGroup>
-  
-  <Target Name="Restore">
-    <Exec Command="nuget.exe restore %(CppTestProject.Identity) -PackagesDirectory $(PackagesDir)"/>
-  </Target>
 
   <Target Name="Clean">
     <MSBuild Targets="Clean" Projects="@(CppProject);@(CppTestProject)"/>
@@ -55,7 +51,7 @@
     <Exec Command="cppcheck.exe --enable=all --project-configuration=&quot;$(Configuration)|$(Platform)&quot; --project=%(CppProject.FullPath) --output-file=$(CI_ANALYSIS_RESULTS_FOLDER)\cppcheck-results-%(CppProject.Filename).txt" />
   </Target>
 
-  <Target Name="RunClangTidy" DependsOnTargets="Restore">
+  <Target Name="RunClangTidy">
     <MSBuild Targets="Build" Projects="@(CppProject)" Properties="RunCodeAnalysis=true;EnableClangTidyCodeAnalysis=true">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>

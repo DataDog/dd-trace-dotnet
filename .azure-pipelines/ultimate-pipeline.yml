@@ -1262,105 +1262,76 @@ stages:
       condition: succeededOrFailed()
       continueOnError: false
 
-- stage: static_analysis_tests_windows_profiler
-  condition: > 
+- stage: static_analysis_tests_profiler
+  condition: >
     and(
       succeeded(), 
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
-  dependsOn: [master_commit_id, generate_variables, build_windows_tracer, build_windows_profiler]
+  dependsOn: [master_commit_id, generate_variables]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Win]
+      jobs: [Win, Linux]
 
   - job: Win
     pool:
-      vmImage: windows-2022
+      name: azure-windows-scale-set-3
     timeoutInMinutes: 60 #default value
-    strategy:
-      matrix:
-        x86:
-          platform: x86
-        x64:
-          platform: x64
     
     steps:
-    - task: UseDotNet@2
-      inputs:
-        version: 7.0.101
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows profiler home
-      inputs:
-        artifact: windows-profiler-binaries
-        path: $(System.DefaultWorkingDirectory)/profiler/_build
-        
     - powershell: |
         choco install cppcheck -y
         Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};C:\Program Files\Cppcheck";
         refreshenv
       displayName: Install CppCheck
 
-    - powershell: |
-        New-Item -Type Directory analyzers_results
-        $cppcheck_results=$(Join-Path -Path $(Resolve-Path .) -ChildPath analyzers_results)
-        Write-Output "##vso[task.setvariable variable=CI_ANALYSIS_RESULTS_FOLDER]$cppcheck_results"
-      displayName: set analysis result folder
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
 
-    - task: MSBuild@1
-      inputs:
-        solution: profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj
-        configuration: Release
-        platfom: $(platform)
-        msbuildArguments: /target:RunCppCheck
-      displayName: Run CppCheck
+    - template: steps/install-latest-dotnet-sdk.yml
 
-    - task: MSBuild@1
-      inputs:
-        solution: profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj
-        configuration: Release
-        platfom: $(platform)
-        msbuildArguments: /target:RunClangTidy /fl /flp:logfile="$(CI_ANALYSIS_RESULTS_FOLDER)\clang-tidy-results.txt;verbosity=minimal"
-        createLogFile: true
-      displayName: Run clang-tidy
+    - script: tracer\build.cmd RunCppCheckProfiler RunClangTidyProfiler
+      displayName: Run CppCheck and Clang-Tidy on Profiler
 
-    - powershell: |
-        $resultsPath = "$(CI_ANALYSIS_RESULTS_FOLDER)"
+    - script: tracer\build.cmd CheckProfilerStaticAnalysisResults
+      displayName: Check static analyzers results for errors
 
-        if ((Get-ChildItem -Path $resultsPath -Recurse -File "*.txt" | Measure-Object).Count -eq 0)
-        {
-          throw "No cppcheck result file(s) was/were found in " + $resultsPath
-        }
+    - publish: profiler/build_data
+      displayName: Publish Static Analysis Results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
-        if ((Get-ChildItem -Path $resultsPath -Recurse -File "clang-tidy-results.txt" | Measure-Object).Count -eq 0)
-        {
-          throw "No clang-tidy result file(s) was/were found in " + $resultsPath
-        }
+  - job: Linux
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-linux-scale-set
 
-        # /!\ "cppcheck-results-" prefix is the same as the one defined in the
-        # src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj file.
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/install-latest-dotnet-sdk.yml
 
-        $Errors=Get-ChildItem -Path $resultsPath -Recurse -File "cppcheck-results-*.txt" | Select-String -Pattern ' error: '
-        if (![string]::IsNullOrEmpty($Errors))
-        {
-          Write-Output $Errors
-          throw "CppCheck found error(s) in the source files (see above)"
-        }
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        command: "Clean RunCppCheckProfiler RunClangTidyProfiler"
 
-        $Errors=Get-ChildItem -Path $resultsPath -Recurse -File "clang-tidy-results.txt" | Select-String -Pattern ' error:'
-        if (![string]::IsNullOrEmpty($Errors))
-        {
-            Write-Output $Errors
-            throw "clang-tidy found error(s) in the source files (see above)"
-        }
-      displayName: Checking for errors in the result files
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        command: "CheckProfilerStaticAnalysisResults"
 
-    - publish: $(System.DefaultWorkingDirectory)/analyzers_results
-      displayName: Publish Analyzers Results
+    - publish: profiler/build_data
+      displayName: Publish Static Analysis Results
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -2158,116 +2129,6 @@ stages:
         DD_API_KEY: $(ddApiKey)
 
     - publish: $(System.DefaultWorkingDirectory)/test_output
-      displayName: Uploading test results
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: false
-
-- stage: static_analysis_tests_linux_profiler
-  condition: > 
-    and(
-      succeeded(), 
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
-    )
-  dependsOn: [master_commit_id, generate_variables, build_linux_tracer, build_linux_profiler]
-  variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [Test]
-
-  - job: Test
-    timeoutInMinutes: 60 #default value
-    strategy:
-      matrix:
-        centos7:
-          baseImage: centos7
-        alpine:
-          baseImage: alpine
-    
-    pool:
-      vmImage: ubuntu-20.04
-
-    steps:
-    - task: UseDotNet@2
-      inputs:
-        version: 7.0.101
-
-    - template: steps/clone-repo.yml
-      parameters:
-        masterCommitId: $(masterCommitId)
-
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: linux-profiler-binaries-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/profiler/_build
-      displayName: Download linux profiler binaries
-
-    - script: |
-        wget https://github.com/danmar/cppcheck/archive/refs/tags/2.5.tar.gz \
-        && CPPCHECK_SHA256="dc27154d799935c96903dcc46653c526c6f4148a6912b77d3a50cb35dabd82e1" \
-        && (printf "${CPPCHECK_SHA256}  2.5.tar.gz" | sha256sum --check --strict --status) \
-        && tar xvfz 2.5.tar.gz \
-        && cd cppcheck-2.5 \
-        && mkdir build \
-        && cd build \
-        && cmake ../ \
-        && cmake --build .  \
-        && sudo make install
-      displayName: install cppcheck
-
-    - script: |
-        mkdir analyzers_results
-        export CI_ANALYSIS_RESULTS_FOLDER="$(realpath .)/analyzers_results"
-        echo "##vso[task.setvariable variable=CI_ANALYSIS_RESULTS_FOLDER;]$CI_ANALYSIS_RESULTS_FOLDER"
-      displayName: set analyzers target    
-
-    - script: |
-        sudo apt-get update
-        sudo apt-get -y install clang-tidy
-      displayName: install clang-tidy   
-
-    - script: |
-        export CC="clang"
-        export CXX="clang++"
-
-        cmake -DRUN_ANALYSIS=1 -S . -B __build
-        cmake --build __build --config Release --target all-profiler
-        cd ..
-      displayName: Build profiler
-
-    - script: |
-        cppcheck --enable=all --project=__build/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list=profiler/cppcheck-suppressions.txt --output-file=$(CI_ANALYSIS_RESULTS_FOLDER)/cppcheck-results.txt
-      displayName: Run CppCheck
-
-    - script: |
-        run-clang-tidy -p __build &> $(CI_ANALYSIS_RESULTS_FOLDER)/clang-tidy-results.txt
-      displayName: Run clang-tidy
-
-    - script: |
-        [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "cppcheck-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains CppCheck result file(s)" && exit 1)
-        [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "clang-tidy-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains clang-tidy result file(s)" && exit 1)
-
-        errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.txt || true)
-        if [ ! -z "$errors" ]
-        then
-            echo $errors
-            echo "CppCheck result file contain errors (see above)"
-            exit 1
-        fi
-
-        errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/clang-tidy-results.txt || true)
-        if [ ! -z "$errors" ]
-        then
-            echo $errors
-            echo "clang-tidy result file contain errors (see above)"
-              exit 1
-        fi
-      displayName: Checking for errors in the result files
-
-    - publish: $(CI_ANALYSIS_RESULTS_FOLDER)
       displayName: Uploading test results
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()

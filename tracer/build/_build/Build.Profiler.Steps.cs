@@ -3,7 +3,6 @@ using Nuke.Common;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
 using System.Linq;
-using System.Collections.Generic;
 using System.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.MSBuild;
@@ -12,9 +11,13 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Nuke.Common.Tools.NuGet;
+using System.Xml.Linq;
+using System.Text.RegularExpressions;
 
 partial class Build
 {
+    const string ClangTidyChecks = "-clang-analyzer-osx*,-clang-analyzer-optin.osx*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-type-vararg,-readability-braces-around-statements";
+
     Target CompileProfilerNativeSrc => _ => _
         .Unlisted()
         .Description("Compiles the native profiler assets")
@@ -304,5 +307,181 @@ partial class Build
             {
                 CopyDumpsToBuildData();
             }
+        });
+
+    Target RunClangTidyProfiler => _ => _
+        .Unlisted()
+        .Description("Runs Clang-tidy on native profiler")
+        .DependsOn(RunClangTidyProfilerLinux)
+        .DependsOn(RunClangTidyProfilerWindows);
+
+    Target RunClangTidyProfilerWindows => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
+
+            NuGetTasks.NuGetRestore(s => s
+                   .SetTargetPath(ProfilerMsBuildProject)
+                   .SetVerbosity(NuGetVerbosity.Detailed)
+                   .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                       o.SetPackagesDirectory(NugetPackageDirectory)));
+
+            var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
+
+            MSBuild(s => s
+                .SetTargetPath(ProfilerMsBuildProject)
+                .SetConfiguration(Configuration.Release) // This job is done only for Release
+                .SetMSBuildPath()
+                .SetMaxCpuCount(null)
+                .DisableRestore()
+                .SetTargets("BuildCpp")
+                .AddProperty("RunCodeAnalysis", "true")
+                .AddProperty("EnableClangTidyCodeAnalysis", "true")
+                .AddProperty("ClangTidyChecks", $"\"{ClangTidyChecks}\"")
+                .CombineWith(platforms, (m, platform) => m
+                    .SetTargetPlatform(platform)
+                    .SetLoggers($"FileLogger,Microsoft.Build;logfile={ProfilerBuildDataDirectory / $"windows-profiler-clang-tidy-{platform}.txt"}")));
+        });
+
+    Target RunCppCheckProfiler => _ => _
+        .Unlisted()
+        .Description("Runs CppCheck on native profiler")
+        .DependsOn(RunCppCheckProfilerWindows)
+        .DependsOn(RunCppCheckProfilerLinux);
+
+    Target RunCppCheckProfilerWindows => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
+
+            void RunCppCheck(string projectName, MSBuildTargetPlatform platform)
+            {
+                var project = ProfilerSolution.GetProject(projectName);
+                var cppCheckResultFile = ProfilerBuildDataDirectory / $"{project.Name}-cppcheck-{platform}";
+                CppCheck.Value($"--enable=all  --project={project.Path} --xml --output-file={cppCheckResultFile}.xml");
+            }
+
+            foreach (var platform in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
+            {
+                Logger.Info($"======= Run CppCheck for platform {platform}");
+                RunCppCheck("Datadog.Profiler.Native", platform);
+                RunCppCheck("Datadog.Profiler.Native.Windows", platform);
+            }
+        });
+
+    Target CheckProfilerStaticAnalysisResults => _ => _
+        .Unlisted()
+        .Description("Check if static analyzers found error(s)")
+        .DependsOn(CheckCppCheckResults)
+        .DependsOn(CheckClangTidyResults);
+
+    Target CheckCppCheckResults => _ => _
+        .Unlisted()
+        .After(RunCppCheckProfilerWindows)
+        .After(RunCppCheckProfilerLinux)
+        .Executes(() =>
+        {
+            var cppcheckResults = ProfilerBuildDataDirectory.GlobFiles(
+                "*cppcheck*.xml"
+            );
+
+            if (cppcheckResults.Count == 0)
+            {
+                Logger.Error("::error::No CppCheck result file(s) was/were found. Did you run RunCppCheckProfiler target ?");
+                throw new Exception("No CppCheck result file(s) was/were found");
+            }
+
+            foreach (var result in cppcheckResults)
+            {
+                Logger.Info($"Check result file {result}");
+                var doc = XDocument.Load(result);
+                var messages = doc.Descendants("errors").First();
+
+                var foundError = messages.Descendants("error").Where(message =>
+                {
+                    return string.Equals(message.Attribute("severity").Value, "error", StringComparison.OrdinalIgnoreCase);
+                }).Any();
+
+                if (foundError)
+                {
+                    Logger.Error($"::error::Error(s) was/were detected by CppCheck in {Path.GetFileName(result)}");
+                    throw new Exception($"Error(s) was/were detected by CppCheck in {Path.GetFileName(result)}");
+                }
+            }
+        });
+
+    Target CheckClangTidyResults => _ => _
+        .Unlisted()
+        .After(RunClangTidyProfilerWindows)
+        .After(RunClangTidyProfilerLinux)
+        .Executes(async () =>
+        {
+            var clangTidyResults = ProfilerBuildDataDirectory.GlobFiles(
+                "*clang-tidy*.txt"
+            );
+
+            if (clangTidyResults.Count == 0)
+            {
+                Logger.Error("::error::No Clang-Tidy result file(s) was/were found. Did you run RunClangTidyProfiler target ?");
+                throw new Exception("No Clang-Tidy result file(s) was/were found");
+            }
+
+            foreach (var result in clangTidyResults)
+            {
+                Logger.Info($"Check result file {result}");
+                using var sr = new StreamReader(result); ;
+
+                string line;
+                var errorRegex = new Regex(" error:", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                while ((line = await sr.ReadLineAsync()) != null)
+                {
+                    var matched = errorRegex.Match(line);
+                    if (matched.Success)
+                    {
+                        Logger.Error($"::error::Error(s) was/were detected by Clang-Tidy in {Path.GetFileName(result)}");
+                        throw new Exception($"Error(s) was/were detected by Clang-Tidy in {Path.GetFileName(result)}");
+                    }
+                }
+            }
+        });
+
+    Target RunClangTidyProfilerLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
+
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var outputFile = ProfilerBuildDataDirectory / $"linux-profiler-clang-tidy-{arch}.txt";
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ANALYSIS=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+
+            // to run clang tidy, we first need to build the profiler
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
+
+            RunClangTidy.Value($"-j {Environment.ProcessorCount} -checks=\"{ClangTidyChecks}\" -p {NativeBuildDirectory}", logFile:outputFile, logOutput: false);
+        });
+
+    Target RunCppCheckProfilerLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
+
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var outputFile = ProfilerBuildDataDirectory / $"linux-profiler-cppcheck-{arch}.xml";
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ANALYSIS=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+
+            CppCheck.Value($"-j {Environment.ProcessorCount} --enable=all --project={NativeBuildDirectory}/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list={ProfilerDirectory}/cppcheck-suppressions.txt --xml --output-file={outputFile}");
         });
 }

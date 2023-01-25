@@ -31,6 +31,7 @@ name: profiler pipeline
 
 env:
   DD_TRACE_DEBUG: 1
+  NugetPackageDirectory: ./packages
 
 jobs:
 
@@ -817,67 +818,24 @@ jobs:
     name: Analyze Linux Profiler code
     runs-on: ubuntu-latest
     steps:
-      - name: Install CppCheck
-        run: |
-          wget https://github.com/danmar/cppcheck/archive/refs/tags/2.9.tar.gz \
-          && CPPCHECK_SHA256="56aee8b5bdf936ab7adc9ab43903ba2052f088695c80f047682024a1ed0ef3f3" \
-          && (printf "${CPPCHECK_SHA256}  2.9.tar.gz" | sha256sum --check --strict --status) \
-          && tar xvfz 2.9.tar.gz \
-          && cd cppcheck-2.9 \
-          && mkdir build \
-          && cd build \
-          && cmake ../ \
-          && cmake --build . --parallel $(nproc)  \
-          && sudo make install
-
-      - name: Install clang-tidy
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install clang-tidy
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.100
+            7.0.101
 
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
-      - name: Prepare environment to run the application
-        run: |
-          mkdir analyzers_results
-          echo "CI_ANALYSIS_RESULTS_FOLDER=$(realpath .)/analyzers_results" >> $GITHUB_ENV
 
-      - name: Build profiler
-        run: |
-          cmake -DRUN_ANALYSIS=1 -S . -B __build
-          cmake --build __build --config Release --target all-profiler
-          cd ..
-        env:
-          CC: clang
-          CXX: clang++
+      - uses: ./.github/actions/run-in-docker
+        name: Run CppCheck and Clang-Tidy on Profiler
+        with:
+          command: "Clean RunCppCheckProfiler RunClangTidyProfiler"
 
-      - name: Run CppCheck
-        run: |
-          cppcheck --enable=all --project=__build/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list=profiler/cppcheck-suppressions.txt --xml --output-file=$CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.xml
-
-      - name: Run clang-tidy
-        run: run-clang-tidy -p __build &> $CI_ANALYSIS_RESULTS_FOLDER/clang-tidy-results.txt
-
-      - name: Checking for errors in the result files
-        run: |
-          [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "cppcheck-results.xml" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains CppCheck result file(s)" && exit 1)
-          [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "clang-tidy-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains clang-tidy result file(s)" && exit 1)
-
-          errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.xml || true)
-          if [ ! -z "$errors" ]
-          then
-              echo $errors
-              echo "CppCheck result file contain errors (see above)"
-              exit 1
-          fi
-
-          errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/clang-tidy-results.txt || true)
-          if [ ! -z "$errors" ]
-          then
-              echo $errors
-              echo "clang-tidy result file contain errors (see above)"
-                exit 1
-          fi
+      - uses: ./.github/actions/run-in-docker
+        name: Check static analyzers results for errors
+        with:
+          command: "CheckProfilerStaticAnalysisResults"
 
       - name: Publish Analyzers Results
         uses: actions/upload-artifact@v3
@@ -885,8 +843,7 @@ jobs:
         with:
           if-no-files-found: error
           name: Analyzers-Results-Linux
-          path: |
-            ${{ env.CI_ANALYSIS_RESULTS_FOLDER }}
+          path: profiler/build_data
           retention-days: 7
 
   run_static_analysis_windows:
@@ -894,10 +851,6 @@ jobs:
     runs-on: windows-2022
     strategy:
       fail-fast: false
-      matrix:
-        platform:
-          - x64
-          - x86
     steps:
       - name: Install CppCheck
         shell: pwsh
@@ -915,57 +868,25 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.1
 
-      - name: Prepare Output dir
-        shell: pwsh
-        run: |
-          mkdir analyzers_results
-          $cppcheck_results=$(Join-Path -Path $(Resolve-Path .) -ChildPath analyzers_results)
-          echo "CI_ANALYSIS_RESULTS_FOLDER=$cppcheck_results" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.100
+            7.0.101
 
-      - name: Run CppCheck
-        run: msbuild -target:RunCppCheck -p:Configuration=Release -p:Platform=${{ matrix.platform }} profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj
+      - name: Run CppCheck and Clang-Tidy on Profiler
+        run: tracer\build.cmd RunCppCheckProfiler RunClangTidyProfiler
 
-      - name: Run clang-tidy
-        run: msbuild -target:RunClangTidy -p:Configuration=Release -p:Platform=${{ matrix.platform }} profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj -fl -flp:logfile="$env:CI_ANALYSIS_RESULTS_FOLDER\clang-tidy-results.txt;verbosity=minimal"
-
-      - name: Checking for errors in the result files
-        shell: pwsh
-        run: |
-          if ((Get-ChildItem -Path $env:CI_ANALYSIS_RESULTS_FOLDER -Recurse -File "*.txt" | Measure-Object).Count -eq 0)
-          {
-            throw "No cppcheck result file(s) was/were found in " + $env:CI_ANALYSIS_RESULTS_FOLDER
-          }
-
-          if ((Get-ChildItem -Path $env:CI_ANALYSIS_RESULTS_FOLDER -Recurse -File "clang-tidy-results.txt" | Measure-Object).Count -eq 0)
-          {
-            throw "No clang-tidy result file(s) was/were found in " + $env:CI_ANALYSIS_RESULTS_FOLDER
-          }
-
-          # /!\ "cppcheck-results-" prefix is the same as the one defined in the
-          # src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj file.
-
-          $Errors=Get-ChildItem -Path $env:CI_ANALYSIS_RESULTS_FOLDER -Recurse -File "cppcheck-results-*.txt" | Select-String -Pattern ' error: '
-          if (![string]::IsNullOrEmpty($Errors))
-          {
-            Write-Output $Errors
-            throw "CppCheck found error(s) in the source files (see above)"
-          }
-
-          $Errors=Get-ChildItem -Path $env:CI_ANALYSIS_RESULTS_FOLDER -Recurse -File "clang-tidy-results.txt" | Select-String -Pattern ' error:'
-          if (![string]::IsNullOrEmpty($Errors))
-          {
-              Write-Output $Errors
-              throw "clang-tidy found error(s) in the source files (see above)"
-          }
+      - name: Check static analyzers results for errors
+        run: tracer\build.cmd CheckProfilerStaticAnalysisResults
 
       - name: Publish Analyzers Results
         uses: actions/upload-artifact@v3
         if: '${{ always() }}'
         with:
           if-no-files-found: error
-          name: 'Analyzers-Results-Windows-${{ matrix.platform }}'
-          path: |
-            ${{ env.CI_ANALYSIS_RESULTS_FOLDER }}
+          name: 'Analyzers-Results-Windows'
+          path: profiler/build_data
           retention-days: 7
 
   throughput_linux:
