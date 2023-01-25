@@ -31,7 +31,7 @@ internal readonly partial struct SecurityCoordinator
 
     private static void LogMatchesIfDebugEnabled(string result, bool blocked)
     {
-        if (Log.IsEnabled(LogEventLevel.Debug))
+        if (Log.IsEnabled(LogEventLevel.Debug) && result != null)
         {
             var results = JsonConvert.DeserializeObject<WafMatch[]>(result);
             for (var i = 0; i < results?.Length; i++)

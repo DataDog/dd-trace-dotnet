@@ -5,6 +5,8 @@
 
 using System;
 using System.Text;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -14,7 +16,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> interface
     /// </summary>
-    public static class SpanExtensions
+    public static partial class SpanExtensions
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
 
@@ -36,8 +38,10 @@ namespace Datadog.Trace
             }
 
             TraceContext traceContext = null;
-            if (span is Span spanClass)
+            Span spanClass = null;
+            if (span is Span spanClassTemp)
             {
+                spanClass = spanClassTemp;
                 traceContext = spanClass.Context.TraceContext;
             }
 
@@ -80,6 +84,11 @@ namespace Datadog.Trace
             if (userDetails.Scope is not null)
             {
                 setTag(Tags.User.Scope, userDetails.Scope);
+            }
+
+            if (spanClass != null)
+            {
+                RunBlockingCheck(spanClass, userDetails.Id);
             }
         }
     }

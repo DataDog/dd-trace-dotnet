@@ -1,10 +1,11 @@
-﻿// <copyright file="SecurityCoordinatorHelpers.Core.cs" company="Datadog">
+// <copyright file="SecurityCoordinatorHelpers.Core.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 #if !NETFRAMEWORK
+using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -37,6 +38,21 @@ internal static partial class SecurityCoordinatorHelpers
             {
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
+                var result = securityCoordinator.RunWaf(args);
+                securityCoordinator.CheckAndBlock(result);
+            }
+        }
+    }
+
+    internal static void CheckUser(this Security security, HttpContext context, Span span, string userId)
+    {
+        if (security.Settings.Enabled)
+        {
+            var transport = new SecurityCoordinator.HttpTransport(context);
+            if (!transport.IsBlocked)
+            {
+                var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
+                var args = new Dictionary<string, object> { { AddressesConstants.UserId, userId } };
                 var result = securityCoordinator.RunWaf(args);
                 securityCoordinator.CheckAndBlock(result);
             }

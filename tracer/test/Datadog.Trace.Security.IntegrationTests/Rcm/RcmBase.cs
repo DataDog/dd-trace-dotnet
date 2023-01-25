@@ -28,6 +28,9 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         Fixture = fixture;
         EnableSecurity = enableSecurity;
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
+
+        // the directory would be created anyway, but in certain case a delay can lead to an exception from the LogEntryWatcher
+        Directory.CreateDirectory(LogDirectory);
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
     }
 
@@ -37,7 +40,7 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 
     protected TimeSpan LogEntryWatcherTimeout => TimeSpan.FromSeconds(20);
 
-    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetTestName()}Logs");
+    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetType().Name}Logs");
 
     public override void Dispose()
     {
