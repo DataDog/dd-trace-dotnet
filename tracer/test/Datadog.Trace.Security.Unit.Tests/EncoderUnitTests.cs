@@ -3,14 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Xunit;
-using Xunit.Abstractions;
+using Encoder = Datadog.Trace.AppSec.Waf.Encoder;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
@@ -22,16 +21,17 @@ public class EncoderUnitTests
     [InlineData(WafConstants.MaxStringLength + 1, WafConstants.MaxStringLength)]
     public void TestStringLength(int length, int expectedLength)
     {
-        var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        var wafNative = new WafNative(libraryHandle);
-        var encoder = new AppSec.Waf.Encoder(wafNative);
+        var libInitResult = WafLibraryInvoker.Initialize();
+        if (!libInitResult.Success)
+        {
+            throw new ArgumentException("Waf couldnt load");
+        }
 
         var l = new List<Obj>();
-
         var target = new string('c', length);
 
-        using var intermediate = encoder.Encode(target, l, applySafetyLimits: true);
-        var result = encoder.Decode(intermediate) as string;
+        using var intermediate = Encoder.Encode(target, libInitResult.WafLibraryInvoker!, l, applySafetyLimits: true);
+        var result = Encoder.Decode(intermediate) as string;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Length);
@@ -45,16 +45,18 @@ public class EncoderUnitTests
     [InlineData(WafConstants.MaxContainerSize + 1, WafConstants.MaxContainerSize)]
     public void TestArrayLength(int length, int expectedLength)
     {
-        var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        var wafNative = new WafNative(libraryHandle);
-        var encoder = new AppSec.Waf.Encoder(wafNative);
+        var libInitResult = WafLibraryInvoker.Initialize();
+        if (!libInitResult.Success)
+        {
+            throw new ArgumentException("Waf couldnt load");
+        }
 
         var l = new List<Obj>();
 
         var target = Enumerable.Repeat((object)"test", length).ToList();
 
-        using var intermediate = encoder.Encode(target, l, applySafetyLimits: true);
-        var result = encoder.Decode(intermediate) as object[];
+        using var intermediate = Encoder.Encode(target, libInitResult.WafLibraryInvoker!, l, applySafetyLimits: true);
+        var result = Encoder.Decode(intermediate) as object[];
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Length);
@@ -68,16 +70,18 @@ public class EncoderUnitTests
     [InlineData(WafConstants.MaxContainerSize + 1, WafConstants.MaxContainerSize)]
     public void TestMapLength(int length, int expectedLength)
     {
-        var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        var wafNative = new WafNative(libraryHandle);
-        var encoder = new AppSec.Waf.Encoder(wafNative);
+        var libInitResult = WafLibraryInvoker.Initialize();
+        if (!libInitResult.Success)
+        {
+            throw new ArgumentException("Waf couldnt load");
+        }
 
         var l = new List<Obj>();
 
         var target = Enumerable.Range(0, length).ToDictionary(x => x.ToString(), _ => (object)"test");
 
-        using var intermediate = encoder.Encode(target, l, applySafetyLimits: true);
-        var result = encoder.Decode(intermediate) as Dictionary<string, object>;
+        using var intermediate = Encoder.Encode(target, libInitResult.WafLibraryInvoker!, l, applySafetyLimits: true);
+        var result = Encoder.Decode(intermediate) as Dictionary<string, object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Count);
@@ -91,16 +95,18 @@ public class EncoderUnitTests
     [InlineData(WafConstants.MaxContainerDepth + 1, WafConstants.MaxContainerDepth)]
     public void TestNestedListDepth(int length, int expectedLength)
     {
-        var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        var wafNative = new WafNative(libraryHandle);
-        var encoder = new AppSec.Waf.Encoder(wafNative);
+        var libInitResult = WafLibraryInvoker.Initialize();
+        if (!libInitResult.Success)
+        {
+            throw new ArgumentException("Waf couldnt load");
+        }
 
         var l = new List<Obj>();
 
         var target = MakeNestedList(length);
 
-        using var intermediate = encoder.Encode(target, l, applySafetyLimits: true);
-        var result = encoder.Decode(intermediate) as object[];
+        using var intermediate = Encoder.Encode(target, libInitResult.WafLibraryInvoker!, l, applySafetyLimits: true);
+        var result = Encoder.Decode(intermediate) as object[];
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, CountNestedListDepth(result));
@@ -114,16 +120,18 @@ public class EncoderUnitTests
     [InlineData(WafConstants.MaxContainerDepth + 1, WafConstants.MaxContainerDepth)]
     public void TestMapListDepth(int length, int expectedLength)
     {
-        var libraryHandle = LibraryLoader.LoadAndGetHandle();
-        var wafNative = new WafNative(libraryHandle);
-        var encoder = new AppSec.Waf.Encoder(wafNative);
+        var libInitResult = WafLibraryInvoker.Initialize();
+        if (!libInitResult.Success)
+        {
+            throw new ArgumentException("Waf couldnt load");
+        }
 
         var l = new List<Obj>();
 
         var target = MakeNestedMap(length);
 
-        using var intermediate = encoder.Encode(target, l, applySafetyLimits: true);
-        var result = encoder.Decode(intermediate) as Dictionary<string, object>;
+        using var intermediate = Encoder.Encode(target, libInitResult.WafLibraryInvoker!, l, applySafetyLimits: true);
+        var result = Encoder.Decode(intermediate) as Dictionary<string, object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, CountNestedMapDepth(result));

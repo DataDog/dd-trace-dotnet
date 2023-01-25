@@ -5,7 +5,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Snapshots;
 
@@ -22,11 +21,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncMethodDebuggerState"/> class.
         /// </summary>
-        internal AsyncMethodDebuggerState()
+        internal AsyncMethodDebuggerState(string probeId)
         {
+            ProbeId = probeId;
             HasLocalsOrReturnValue = false;
             HasArguments = false;
-            SnapshotCreator = new DebuggerSnapshotCreator();
+            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(probeId);
+        }
+
+        private AsyncMethodDebuggerState()
+        {
         }
 
         /// <summary>

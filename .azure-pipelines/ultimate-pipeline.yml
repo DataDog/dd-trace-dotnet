@@ -3159,7 +3159,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Windows]
+      jobs: [Windows, compare]
 
   - job: Windows
     strategy:
@@ -3237,6 +3237,42 @@ stages:
       inputs:
         targetType: 'inline'
         script: 'Start-Sleep -s 20'
+
+  - job: compare
+    timeoutInMinutes: 60 #default value
+    dependsOn: [Windows]
+    pool:
+      vmImage: windows-2022
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download HttpMessageHandler
+      inputs:
+        artifact: execution_time_benchmarks_windows_x64_HttpMessageHandler_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download FakeDbCommand
+      inputs:
+        artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
+
+    - script: tracer\build.cmd CompareExecutionTimeBenchmarkResults
+      displayName: Compare execution-time results
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    - publish: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/execution_time_report.md
+      displayName: Upload report
+      artifact: execution_time_report
 
 - stage: system_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))

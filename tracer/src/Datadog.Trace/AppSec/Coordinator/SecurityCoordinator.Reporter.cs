@@ -1,4 +1,4 @@
-﻿// <copyright file="SecurityCoordinator.Reporter.cs" company="Datadog">
+// <copyright file="SecurityCoordinator.Reporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -60,7 +60,7 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    public void Report(IResult result, bool blocked)
+    public void Report(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool blocked)
     {
         _localRootSpan.SetTag(Tags.AppSecEvent, "true");
         if (blocked)
@@ -68,12 +68,11 @@ internal readonly partial struct SecurityCoordinator
             _localRootSpan.SetTag(Tags.AppSecBlocked, "true");
         }
 
-        var resultData = result.Data;
         _security.SetTraceSamplingPriority(_localRootSpan);
 
-        LogMatchesIfDebugEnabled(resultData, blocked);
+        LogMatchesIfDebugEnabled(triggerData, blocked);
 
-        _localRootSpan.SetTag(Tags.AppSecJson, "{\"triggers\":" + resultData + "}");
+        _localRootSpan.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggerData + "}");
         var clientIp = _localRootSpan.GetTag(Tags.HttpClientIp);
         if (!string.IsNullOrEmpty(clientIp))
         {
@@ -87,8 +86,8 @@ internal readonly partial struct SecurityCoordinator
         }
 
         _localRootSpan.SetTag(Tags.AppSecRuleFileVersion, _security.WafRuleFileVersion);
-        _localRootSpan.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
-        _localRootSpan.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
+        _localRootSpan.SetMetric(Metrics.AppSecWafDuration, aggregatedTotalRuntime);
+        _localRootSpan.SetMetric(Metrics.AppSecWafAndBindingsDuration, aggregatedTotalRuntimeWithBindings);
         var headers = _httpTransport.GetRequestHeaders();
         AddHeaderTags(_localRootSpan, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
     }

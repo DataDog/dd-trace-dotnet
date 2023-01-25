@@ -6,7 +6,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -167,7 +166,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 jsonWriter.WritePropertyName("value");
                 var stringValue = source.ToString();
-                var stringValueTruncated = stringValue.Length < _maximumStringLength ? stringValue : stringValue.Substring(0, _maximumStringLength);
+                var stringValueTruncated = stringValue?.Length < _maximumStringLength ? stringValue : stringValue?.Substring(0, _maximumStringLength);
                 jsonWriter.WriteValue(stringValueTruncated);
             }
             else

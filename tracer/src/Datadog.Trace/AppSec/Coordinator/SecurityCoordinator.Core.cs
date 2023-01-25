@@ -33,12 +33,12 @@ internal readonly partial struct SecurityCoordinator
     {
         if (result?.ShouldBeReported is true)
         {
-            // todo, report from the filter exception / exception middleware, after exception has been thrown, as theoretically at this point, request hasn't been blocked yet
-            Report(result, result.ShouldBlock);
             if (result.ShouldBlock)
             {
-                throw new BlockException(result);
+                throw new BlockException(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
             }
+
+            Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, result.ShouldBlock);
         }
     }
 
@@ -109,7 +109,8 @@ internal readonly partial struct SecurityCoordinator
             { AddressesConstants.RequestQuery, queryStringDic },
             { AddressesConstants.RequestHeaderNoCookies, headersDic },
             { AddressesConstants.RequestCookies, cookiesDic },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) },
+            { AddressesConstants.UserId, _localRootSpan.Context?.TraceContext?.Tags?.GetTag(Tags.User.Id) ?? string.Empty },
         };
 
         return dict;

@@ -1,0 +1,16 @@
+{
+  "dsl": "hasAll(ref CollectionLocal, { len(@it) > 3 })",
+  "hasAll": [
+    {
+      "ref": "CollectionLocal"
+    },
+    {
+      "gt": [
+        {
+          "len": "@it"
+        },
+        3
+      ]
+    }
+  ]
+}

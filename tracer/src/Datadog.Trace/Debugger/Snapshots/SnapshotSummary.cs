@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Snapshots

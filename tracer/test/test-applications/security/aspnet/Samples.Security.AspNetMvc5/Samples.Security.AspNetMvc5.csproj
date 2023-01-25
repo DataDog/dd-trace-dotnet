@@ -16,7 +16,7 @@
     <AssemblyName>Samples.Security.AspNetMvc5</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <MvcBuildViews>false</MvcBuildViews>
-    <UseIISExpress>false</UseIISExpress>
+    <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress>true</Use64BitIISExpress>
     <IISExpressSSLPort>44385</IISExpressSSLPort>
     <IISExpressAnonymousAuthentication>
@@ -152,6 +152,7 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\HealthController.cs" />
+    <Compile Include="Controllers\UserController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\IastController.cs" />
     <Compile Include="Controllers\PostsController.cs" />
@@ -188,6 +189,13 @@
   <ItemGroup>
     <None Include="packages.config" />
     <Content Include="Views\Home\Upload.cshtml" />
+    <Content Include="Views\User\Index.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
+      <Project>{5dfdf781-f24c-45b1-82ef-9125875a80a4}</Project>
+      <Name>Datadog.Trace</Name>
+    </ProjectReference>
   </ItemGroup>
   <Target Name="CopyFiles" AfterTargets="Build">
     <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(TargetDir)\%(RecursiveDir)" SkipUnchangedFiles="true" />
@@ -210,7 +218,9 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>62387</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost/Samples.Security.AspNetMvc5</IISUrl>
+          <IISUrl>http://localhost:29057</IISUrl>
+          <OverrideIISAppRootUrl>True</OverrideIISAppRootUrl>
+          <IISAppRootUrl>http://localhost:29057</IISAppRootUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

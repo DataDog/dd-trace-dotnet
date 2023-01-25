@@ -112,7 +112,7 @@ public class MockLambdaExtension : IDisposable
 
             if (ShouldSendContext)
             {
-                var traceId = SpanIdGenerator.CreateNew();
+                var traceId = RandomIdGenerator.Shared.NextSpanId();
                 var samplingPriority = SamplingPriorityValues.AutoKeep;
                 StartInvocations.Push(new StartExtensionRequest(headers, body, traceId, samplingPriority));
                 Output?.WriteLine($"[LambdaExtension]Received start-invocation. Sending context trace ID {traceId}");

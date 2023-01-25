@@ -5,8 +5,8 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
@@ -46,7 +46,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 var paramName = state.MethodMetadataInfo.ParameterNames[index];
-                state.SnapshotCreator.CaptureArgument(arg, paramName);
+                var captureInfo = new CaptureInfo<TArg>(value: arg, type: typeof(TArg), methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
+                if (!ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator))
+                {
+                    state.IsActive = false;
+                }
+
                 state.HasLocalsOrReturnValue = false;
             }
             catch (Exception e)
@@ -78,7 +83,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                state.SnapshotCreator.CaptureLocal(local, localName);
+                var captureInfo = new CaptureInfo<TLocal>(value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+                if (!ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator))
+                {
+                    state.IsActive = false;
+                }
+
                 state.HasLocalsOrReturnValue = true;
             }
             catch (Exception e)
@@ -137,11 +147,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                if (!ProbeRateLimiter.Instance.Sample(probeId))
-                {
-                    return CreateInvalidatedLineDebuggerState();
-                }
-
                 if (!MethodMetadataProvider.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
                 {
                     Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaId = {methodMetadataIndex}");
@@ -149,11 +154,18 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 var state = new LineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, lineNumber, probeFilePath, instance);
-                state.SnapshotCreator.StartDebugger();
-                state.SnapshotCreator.StartSnapshot();
-                state.SnapshotCreator.StartCaptures();
-                state.SnapshotCreator.StartLines(lineNumber);
-                state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
+
+                if (!state.SnapshotCreator.ProbeHasCondition &&
+                    !ProbeRateLimiter.Instance.Sample(probeId))
+                {
+                    return CreateInvalidatedLineDebuggerState();
+                }
+
+                var captureInfo = new CaptureInfo<Type>(invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLine, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath));
+                if (!ProbeExpressionsProcessor.Instance.Process(probeId, ref captureInfo, state.SnapshotCreator))
+                {
+                    state.IsActive = false;
+                }
 
                 return state;
             }
@@ -182,40 +194,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
                                            state.MethodMetadataInfo.ParameterNames.Length > 0 ||
                                            !state.MethodMetadataInfo.Method.IsStatic;
-                state.HasLocalsOrReturnValue = false;
-                if (state.InvocationTarget != null)
-                {
-                    state.SnapshotCreator.CaptureInstance(state.InvocationTarget, state.InvocationTarget.GetType());
-                }
 
-                state.SnapshotCreator.LineProbeEndReturn(hasArgumentsOrLocals);
-                FinalizeSnapshot(ref state);
+                var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.EndLine, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
+                ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator);
+
+                state.HasLocalsOrReturnValue = false;
             }
             catch (Exception e)
             {
                 LogException(e, ref state);
-            }
-        }
-
-        private static void FinalizeSnapshot(ref LineDebuggerState state)
-        {
-            using (state.SnapshotCreator)
-            {
-                var stackFrames = new StackTrace(skipFrames: 2, true).GetFrames();
-
-                state.SnapshotCreator.AddLineProbeInfo(
-                          state.ProbeId,
-                          state.ProbeFilePath,
-                          state.LineNumber)
-                     .FinalizeSnapshot(
-                          stackFrames,
-                          state.MethodMetadataInfo.Method?.Name,
-                          state.MethodMetadataInfo.DeclaringType?.FullName,
-                          state.StartTime,
-                          state.ProbeFilePath);
-
-                var snapshot = state.SnapshotCreator.GetSnapshotJson();
-                LiveDebugger.Instance.AddSnapshot(snapshot);
             }
         }
     }

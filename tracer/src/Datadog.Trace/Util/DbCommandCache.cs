@@ -39,8 +39,21 @@ namespace Datadog.Trace.Util
 
         public static TagsCacheItem GetTagsFromDbCommand(IDbCommand command)
         {
-            var connectionString = command.Connection?.ConnectionString;
+            IDbConnection dbConnection = null;
+            try
+            {
+                dbConnection = command.Connection;
+            }
+            catch (NotSupportedException nsException)
+            {
+                Log.Debug(nsException, "Connection cannot be retrieved from the command.");
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error trying to retrieve the connection from the command.");
+            }
 
+            var connectionString = dbConnection?.ConnectionString;
             if (connectionString is null)
             {
                 return default;

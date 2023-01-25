@@ -6,6 +6,7 @@
 using System.Collections.Specialized;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
@@ -18,9 +19,9 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void ShouldNotInitialize()
         {
-            using var waf = Waf.Create(string.Empty, string.Empty, string.Empty, string.Empty, "1.4.0");
-            waf.InitializedSuccessfully.Should().BeFalse();
-            waf.InitializationResult.ExportErrors.Should().BeTrue();
+            var initializationResult = WafLibraryInvoker.Initialize("1.4.0");
+            initializationResult.Success.Should().BeFalse();
+            initializationResult.ExportErrorHappened.Should().BeTrue();
         }
     }
 }

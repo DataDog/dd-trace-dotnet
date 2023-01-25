@@ -68,28 +68,8 @@ internal static class AsyncUtil
             var runTask = task();
             return runTask.IsCompleted
                        ? runTask
-#if NET6_0_OR_GREATER
                        : runTask.WaitAsync(TimeSpan.FromMilliseconds(millisecondsTimeout));
-#else
-                       : InternalTaskWithTimeoutAsync(runTask, millisecondsTimeout);
-#endif
         }
-
-#if !NET6_0_OR_GREATER
-        static async Task InternalTaskWithTimeoutAsync(Task runTask, int timeout)
-        {
-            using var cts = new CancellationTokenSource();
-            var completedTask = await Task.WhenAny(runTask, Task.Delay(timeout, cts.Token)).ConfigureAwait(false);
-            if (completedTask == runTask)
-            {
-                cts.Cancel();
-                await runTask.ConfigureAwait(false);
-                return;
-            }
-
-            throw new TimeoutException();
-        }
-#endif
     }
 
     /// <summary>
@@ -141,26 +121,50 @@ internal static class AsyncUtil
             var runTask = task();
             return runTask.IsCompleted
                        ? runTask
-#if NET6_0_OR_GREATER
                        : runTask.WaitAsync(TimeSpan.FromMilliseconds(millisecondsTimeout));
-#else
-                       : InternalTaskWithTimeoutAsync(runTask, millisecondsTimeout);
-#endif
         }
+    }
 
 #if !NET6_0_OR_GREATER
-        static async Task<TResult> InternalTaskWithTimeoutAsync(Task<TResult> runTask, int timeout)
+    /// <summary>Gets a <see cref="Task{TResult}"/> that will complete when this
+    /// <see cref="Task{TResult}"/> completes or when the specified timeout expires.</summary>
+    /// <param name="runTask">The task to atttempt to run within the time limit</param>
+    /// <param name="timeout">The timeout after which the <see cref="Task"/>
+    /// should be faulted with a <see cref="TimeoutException"/> if it hasn't otherwise completed.</param>
+    /// <returns>The <see cref="Task{TResult}"/> representing the asynchronous wait.
+    /// It may or may not be the same instance as the current instance.</returns>
+    public static async Task<TResult> WaitAsync<TResult>(this Task<TResult> runTask, TimeSpan timeout)
+    {
+        using var cts = new CancellationTokenSource();
+        var completedTask = await Task.WhenAny(runTask, Task.Delay(timeout, cts.Token)).ConfigureAwait(false);
+        if (completedTask == runTask)
         {
-            using var cts = new CancellationTokenSource();
-            var completedTask = await Task.WhenAny(runTask, Task.Delay(timeout, cts.Token)).ConfigureAwait(false);
-            if (completedTask == runTask)
-            {
-                cts.Cancel();
-                return await runTask.ConfigureAwait(false);
-            }
-
-            throw new TimeoutException();
+            cts.Cancel();
+            return await runTask.ConfigureAwait(false);
         }
-#endif
+
+        throw new TimeoutException();
     }
+
+    /// <summary>Gets a <see cref="Task{TResult}"/> that will complete when this
+    /// <see cref="Task{TResult}"/> completes or when the specified timeout expires.</summary>
+    /// <param name="runTask">The task to atttempt to run within the time limit</param>
+    /// <param name="timeout">The timeout after which the <see cref="Task"/>
+    /// should be faulted with a <see cref="TimeoutException"/> if it hasn't otherwise completed.</param>
+    /// <returns>The <see cref="Task{TResult}"/> representing the asynchronous wait.
+    /// It may or may not be the same instance as the current instance.</returns>
+    public static async Task WaitAsync(this Task runTask, TimeSpan timeout)
+    {
+        using var cts = new CancellationTokenSource();
+        var completedTask = await Task.WhenAny(runTask, Task.Delay(timeout, cts.Token)).ConfigureAwait(false);
+        if (completedTask == runTask)
+        {
+            cts.Cancel();
+            await runTask.ConfigureAwait(false);
+            return;
+        }
+
+        throw new TimeoutException();
+    }
+#endif
 }

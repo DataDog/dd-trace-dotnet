@@ -20,7 +20,7 @@
         "value": "user3"
       }
     ],
-    "id": "blocked_users2",
+    "id": "blocked_users",
     "type": "data_with_expiration"
   }
 ]

@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Snapshots;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -48,9 +49,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _startTime = startTime;
             _methodMetadataIndex = methodMetadataIndex;
             HasLocalsOrReturnValue = false;
-            SnapshotCreator = new DebuggerSnapshotCreator();
             InvocationTarget = invocationTarget;
+            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(probeId);
+            MethodPhase = EvaluateAt.Entry;
         }
+
+        internal EvaluateAt MethodPhase { get; set; }
 
         internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
 

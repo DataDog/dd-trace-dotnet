@@ -25,5 +25,7 @@ namespace Datadog.Trace.AppSec
 
         public const string ResponseBodyRaw = "server.response.body.raw";
         public const string ResponseHeaderNoCookies = "server.response.headers.no_cookies";
+
+        public const string UserId = "usr.id";
     }
 }

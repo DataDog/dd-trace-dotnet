@@ -30,17 +30,20 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        public BlockException(IResult result, bool reported = false)
+        public BlockException(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool reported = false)
         {
-            Result = result;
+            TriggerData = triggerData;
+            AggregatedTotalRuntime = aggregatedTotalRuntime;
+            AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
             Reported = reported;
         }
 
-        internal IResult Result { get; }
+        public string TriggerData { get; }
+
+        public ulong AggregatedTotalRuntime { get; }
+
+        public ulong AggregatedTotalRuntimeWithBindings { get; }
 
         public bool Reported { get; }
-
-        // can give a significant performance boost, this exception is currently caught and logged by the host web server
-        public override string ToString() => "BlockException";
     }
 }
