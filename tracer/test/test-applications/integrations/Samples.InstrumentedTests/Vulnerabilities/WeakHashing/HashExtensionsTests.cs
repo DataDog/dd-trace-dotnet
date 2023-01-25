@@ -7,7 +7,7 @@
 
 using Xunit;
 
-namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities.WeakHashing;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.WeakHashing;
 
 public class HashExtensionsTests : InstrumentationTestsBase
 {

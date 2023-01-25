@@ -9,10 +9,10 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities;
+using Samples.InstrumentedTests.Iast.Vulnerabilities;
 using Xunit;
 
-namespace Datadog.Trace.Instrumented.Iast.Unit.Tests
+namespace Samples.InstrumentedTests.Iast
 {
     public class BasicInstrumentationTests : InstrumentationTestsBase
     {

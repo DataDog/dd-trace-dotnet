@@ -10,7 +10,7 @@ using System.Security.Cryptography;
 using Moq;
 using Xunit;
 
-namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities.WeakHashing;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.WeakHashing;
 
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
 public class SHA1CryptoServiceProviderTests : InstrumentationTestsBase

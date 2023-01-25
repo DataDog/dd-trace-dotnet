@@ -11,7 +11,7 @@ using Xunit;
 
 #if !NETFRAMEWORK
 
-namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities.WeakHashing;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.WeakHashing;
 
 #pragma warning disable SYSLIB0007 // Type or member is obsolete
 public class HMACSHA1Tests : InstrumentationTestsBase

@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Process;
 using Xunit;
 
-namespace Datadog.Trace.Instrumented.Iast.Unit.Tests.Vulnerabilities;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
 public class ProcessStartTests : InstrumentationTestsBase
 {
