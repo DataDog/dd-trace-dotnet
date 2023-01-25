@@ -5,24 +5,24 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
-        private const string TestModuleConst = "Assembly";
-        private const string TestSuiteConst = "TestFixture";
+        internal const string TestModuleConst = "Assembly";
+        internal const string TestSuiteConst = "TestFixture";
 
-        private static readonly ConditionalWeakTable<object, object> TestItems = new();
+        private static readonly ConditionalWeakTable<object, object> ModulesItems = new();
+        private static readonly ConditionalWeakTable<object, object> SuiteItems = new();
+        private static readonly ConditionalWeakTable<object, object> ExistingTestCreation = new();
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.NUnit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.NUnit;
@@ -33,9 +33,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static Test? CreateTest(ITest currentTest)
         {
-            var testMethod = currentTest?.Method?.MethodInfo;
-            var testMethodArguments = currentTest?.Arguments;
-            var testMethodProperties = currentTest?.Properties;
+            if (ExistingTestCreation.TryGetValue(currentTest.Instance, out _))
+            {
+                return null;
+            }
+
+            var testMethod = currentTest.Method?.MethodInfo;
+            var testMethodArguments = currentTest.Arguments;
+            var testMethodProperties = currentTest.Properties;
 
             if (testMethod == null)
             {
@@ -49,6 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             var test = suite.CreateTest(testMethod.Name);
+            ExistingTestCreation.GetOrCreateValue(currentTest.Instance);
             string? skipReason = null;
 
             // Get test parameters
@@ -58,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 var testParameters = new TestParameters();
                 testParameters.Metadata = new Dictionary<string, object>();
                 testParameters.Arguments = new Dictionary<string, object>();
-                testParameters.Metadata[TestTags.MetadataTestName] = currentTest?.Name ?? string.Empty;
+                testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name ?? string.Empty;
 
                 for (int i = 0; i < methodParameters.Length; i++)
                 {
@@ -175,7 +181,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             if (test is not null &&
-                TestItems.TryGetValue(test.Instance, out var moduleObject) && moduleObject is TestModule module)
+                ModulesItems.TryGetValue(test.Instance, out var moduleObject) &&
+                moduleObject is TestModule module)
             {
                 return module;
             }
@@ -187,11 +194,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             if (test.TestType == TestModuleConst)
             {
-                TestItems.Add(test.Instance, module);
+                ModulesItems.Add(test.Instance, module);
             }
             else if (GetParentWithTestType(test, TestModuleConst) is { } assemblyITest)
             {
-                TestItems.Add(assemblyITest.Instance, module);
+                ModulesItems.Add(assemblyITest.Instance, module);
             }
         }
 
@@ -208,7 +215,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             if (test is not null &&
-                TestItems.TryGetValue(test.Instance, out var suiteObject) && suiteObject is TestSuite suite)
+                SuiteItems.TryGetValue(test.Instance, out var suiteObject) &&
+                suiteObject is TestSuite suite)
             {
                 return suite;
             }
@@ -220,11 +228,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             if (test.TestType == TestSuiteConst)
             {
-                TestItems.Add(test.Instance, suite);
+                SuiteItems.Add(test.Instance, suite);
             }
             else if (GetParentWithTestType(test, TestSuiteConst) is { } suiteITest)
             {
-                TestItems.Add(suiteITest.Instance, suite);
+                SuiteItems.Add(suiteITest.Instance, suite);
             }
         }
 
@@ -238,6 +246,74 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             var testMethod = currentTest.Method.MethodInfo;
             var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
             return Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+        }
+
+        internal static void WriteSetUpError(ICompositeWorkItem compositeWorkItem)
+        {
+            WriteSetUpError(compositeWorkItem.Result, compositeWorkItem.Test);
+            foreach (var item in compositeWorkItem.Children)
+            {
+                if (item?.GetType().Name is { Length: > 0 } itemName)
+                {
+                    if (itemName == "CompositeWorkItem" && item.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem2))
+                    {
+                        WriteSetUpError(compositeWorkItem2);
+                    }
+                    else if (item.TryDuckCast<IWorkItem>(out var itemWorkItem) && itemWorkItem is { Result: { } testResult })
+                    {
+                        WriteSetUpError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeWorkItem.Result, testResult.Test);
+                    }
+                }
+            }
+        }
+
+        internal static void WriteSkip(ITest item, string skipMessage)
+        {
+            if (item.Method?.MethodInfo is not null && CreateTest(item) is { } test)
+            {
+                test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
+            }
+
+            if (item.TestType == TestSuiteConst && GetTestSuiteFrom(item) is null && GetTestModuleFrom(item) is { } module)
+            {
+                SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
+            }
+
+            if (item.Tests is { Count: > 0 } tests)
+            {
+                foreach (var childTest in tests)
+                {
+                    if (childTest.TryDuckCast<ITest>(out var childTestDuckTyped))
+                    {
+                        WriteSkip(childTestDuckTyped, skipMessage);
+                    }
+                }
+            }
+        }
+
+        private static void WriteSetUpError(ITestResult testResult, ITest item)
+        {
+            if (item.Method?.MethodInfo is not null && CreateTest(item) is { } test)
+            {
+                test.SetErrorInfo("SetUpException", testResult.Message, testResult.StackTrace);
+                test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
+            }
+
+            if (item.TestType == TestSuiteConst && GetTestSuiteFrom(item) is null && GetTestModuleFrom(item) is { } module)
+            {
+                SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
+            }
+
+            if (item.Tests is { Count: > 0 } tests)
+            {
+                foreach (var childTest in tests)
+                {
+                    if (childTest.TryDuckCast<ITest>(out var childTestDuckTyped))
+                    {
+                        WriteSetUpError(testResult, childTestDuckTyped);
+                    }
+                }
+            }
         }
 
         private static ITest? GetParentWithTestType(ITest test, string testType)
