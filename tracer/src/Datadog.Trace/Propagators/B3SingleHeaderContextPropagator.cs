@@ -47,8 +47,10 @@ namespace Datadog.Trace.Propagators
                 // 80f198ee56343ba864fe8b2a57d3eff7-e457b5a2e4d86bd1-1
                 // e457b5a2e4d86bd1-e457b5a2e4d86bd1-1-05e3ac9a4f6e3b90
                 // e457b5a2e4d86bd1-e457b5a2e4d86bd1-1
-                if (brValue!.Length != 68 && brValue!.Length != 51 &&
-                    brValue!.Length != 52 && brValue!.Length != 35)
+                if (brValue!.Length != 68 &&
+                    brValue.Length != 51 &&
+                    brValue.Length != 52 &&
+                    brValue.Length != 35)
                 {
                     return false;
                 }

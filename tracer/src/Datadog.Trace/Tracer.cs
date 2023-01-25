@@ -57,9 +57,10 @@ namespace Datadog.Trace
         /// A <see cref="TracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources. This is used to configure global settings
         /// </param>
-        [Obsolete("This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
-                  "If you were using this API to configure the global Tracer.Instance in code, use the static "
-                + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
+        [Obsolete(
+            "This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
+            "If you were using this API to configure the global Tracer.Instance in code, " +
+            $"use the static {nameof(Tracer)}.{nameof(Configure)}() to replace the global Tracer settings for the application")]
         public Tracer(TracerSettings settings)
         {
             // TODO: Switch to immutable settings
@@ -141,8 +142,7 @@ namespace Datadog.Trace
             }
 
             // TODO: Make this API internal
-            [Obsolete("Use " + nameof(Tracer) + "." + nameof(Configure) + " to configure the global Tracer" +
-                      " instance in code.")]
+            [Obsolete($"Use {nameof(Tracer)}.{nameof(Configure)} to configure the global Tracer instance in code.")]
             set
             {
                 if (value is null)
@@ -163,20 +163,14 @@ namespace Datadog.Trace
                     _globalInstanceInitialized = true;
                 }
 
-                value?.TracerManager.Start();
+                value.TracerManager.Start();
             }
         }
 
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        public IScope ActiveScope
-        {
-            get
-            {
-                return DistributedTracer.Instance.GetActiveScope() ?? InternalActiveScope;
-            }
-        }
+        public IScope ActiveScope => DistributedTracer.Instance.GetActiveScope() ?? InternalActiveScope;
 
         /// <summary>
         /// Gets the active span context dictionary by consulting DistributedTracer.Instance
@@ -389,7 +383,15 @@ namespace Datadog.Trace
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
-            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+
+            return new SpanContext(
+                parent,
+                traceContext,
+                finalServiceName,
+                traceId: traceId,
+                spanId: spanId,
+                rawTraceId: rawTraceId,
+                rawSpanId: rawSpanId);
         }
 
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
@@ -403,9 +405,9 @@ namespace Datadog.Trace
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 
             var span = new Span(spanContext, startTime, tags)
-            {
-                OperationName = operationName,
-            };
+                       {
+                           OperationName = operationName,
+                       };
 
             // Apply any global tags
             if (Settings.GlobalTags.Count > 0)
