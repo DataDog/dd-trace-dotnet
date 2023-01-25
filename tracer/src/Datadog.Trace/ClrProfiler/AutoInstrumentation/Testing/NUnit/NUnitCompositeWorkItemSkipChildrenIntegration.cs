@@ -39,40 +39,21 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TSuite, TResultState>(TTarget instance, TSuite testSuite, TResultState resultState, string message)
     {
-        if (testSuite is not null)
+        if (testSuite?.GetType() is { Name: { } typeName })
         {
-            var typeName = testSuite.GetType().Name;
-            if (typeName == "CompositeWorkItem")
+            if (typeName == "CompositeWorkItem" && testSuite.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem))
             {
                 // In case we have a CompositeWorkItem we check if there is a OneTimeSetUp failure
-                var compositeWorkItem = testSuite.DuckCast<ICompositeWorkItem>();
-                var compositeTestResult = compositeWorkItem.Result;
-                if (compositeTestResult?.ResultState?.Status == TestStatus.Failed && compositeTestResult.ResultState.Site == FailureSite.SetUp)
+                if (NUnitIntegration.WriteIfSetUpError(compositeWorkItem))
                 {
-                    foreach (var item in compositeWorkItem.Children)
-                    {
-                        if (item.GetType().Name == "CompositeWorkItem")
-                        {
-                            var compositeWorkItem2 = item.DuckCast<ICompositeWorkItem>();
-                            foreach (var item2 in compositeWorkItem2.Children)
-                            {
-                                var testResult = item2.DuckCast<IWorkItem>().Result;
-                                WriteSetUpError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeTestResult, testResult.Test);
-                            }
-                        }
-                        else
-                        {
-                            var testResult = item.DuckCast<IWorkItem>().Result;
-                            WriteSetUpError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeTestResult, testResult.Test);
-                        }
-                    }
-
-                    return new CallTargetState((Scope)null, (object)null);
+                    return CallTargetState.GetDefault();
                 }
             }
+
+            return new CallTargetState(null, new object[] { typeName, testSuite, message });
         }
 
-        return new CallTargetState(null, new object[] { testSuite, message });
+        return CallTargetState.GetDefault();
     }
 
     /// <summary>
@@ -88,91 +69,40 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
         if (state.State != null)
         {
             var stateArray = (object[])state.State;
-            var testSuiteOrWorkItem = stateArray[0];
-            var skipMessage = (string)stateArray[1];
+            var typeName = (string)stateArray[0];
+            var testSuiteOrWorkItem = stateArray[1];
+            var skipMessage = (string)stateArray[2] ?? string.Empty;
 
             const string startString = "OneTimeSetUp:";
-            if (skipMessage?.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
+            if (skipMessage.StartsWith(startString, StringComparison.OrdinalIgnoreCase))
             {
                 skipMessage = skipMessage.Substring(startString.Length).Trim();
             }
 
-            if (testSuiteOrWorkItem?.GetType() is { Name: { } typeName })
+            if (typeName == "ParameterizedMethodSuite" && testSuiteOrWorkItem.TryDuckCast<ITestSuite>(out var testSuite))
             {
-                if (typeName == "ParameterizedMethodSuite")
+                // In case the TestSuite is a ParameterizedMethodSuite instance
+                foreach (var item in testSuite.Tests)
                 {
-                    // In case the TestSuite is a ParameterizedMethodSuite instance
-                    var testSuite = testSuiteOrWorkItem.DuckCast<ITestSuite>();
-                    foreach (var item in testSuite.Tests)
+                    if (item.TryDuckCast<ITest>(out var iTestItem) && NUnitIntegration.CreateTest(iTestItem) is { } test)
                     {
-                        if (NUnitIntegration.CreateTest(item.DuckCast<ITest>()) is { } test)
-                        {
-                            test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
-                        }
+                        test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
                     }
                 }
-                else if (typeName == "CompositeWorkItem")
+            }
+            else if (typeName == "CompositeWorkItem" && testSuiteOrWorkItem.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem))
+            {
+                // In case we have a CompositeWorkItem
+                foreach (var item in compositeWorkItem.Children)
                 {
-                    // In case we have a CompositeWorkItem
-                    var compositeWorkItem = testSuiteOrWorkItem.DuckCast<ICompositeWorkItem>();
-                    foreach (var item in compositeWorkItem.Children)
+                    if (item.TryDuckCast<IWorkItem>(out var testResult))
                     {
-                        var testResult = item.DuckCast<IWorkItem>().Result;
-                        WriteSkip(testResult.Test, skipMessage);
+                        NUnitIntegration.WriteSkip(testResult.Test, skipMessage);
                     }
                 }
             }
         }
 
         return default;
-    }
-
-    private static void WriteSetUpError(ITestResult testResult, ITest item)
-    {
-        if (item.Method?.MethodInfo is not null && NUnitIntegration.CreateTest(item) is { } test)
-        {
-            test.SetErrorInfo("SetUpException", testResult.Message, testResult.StackTrace);
-            test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
-        }
-
-        if (item.TestType == NUnitIntegration.TestSuiteConst &&
-            NUnitIntegration.GetTestSuiteFrom(item) is null &&
-            NUnitIntegration.GetTestModuleFrom(item) is { } module)
-        {
-            NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
-        }
-
-        if (item.Tests is { Count: > 0 } tests)
-        {
-            foreach (var childTest in tests)
-            {
-                var childTestDuckTyped = childTest.DuckCast<ITest>();
-                WriteSetUpError(testResult, childTestDuckTyped);
-            }
-        }
-    }
-
-    private static void WriteSkip(ITest item, string skipMessage)
-    {
-        if (item.Method?.MethodInfo is not null && NUnitIntegration.CreateTest(item) is { } test)
-        {
-            test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
-        }
-
-        if (item.TestType == NUnitIntegration.TestSuiteConst &&
-            NUnitIntegration.GetTestSuiteFrom(item) is null &&
-            NUnitIntegration.GetTestModuleFrom(item) is { } module)
-        {
-            NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
-        }
-
-        if (item.Tests is { Count: > 0 } tests)
-        {
-            foreach (var childTest in tests)
-            {
-                var childTestDuckTyped = childTest.DuckCast<ITest>();
-                WriteSkip(childTestDuckTyped, skipMessage);
-            }
-        }
     }
 }

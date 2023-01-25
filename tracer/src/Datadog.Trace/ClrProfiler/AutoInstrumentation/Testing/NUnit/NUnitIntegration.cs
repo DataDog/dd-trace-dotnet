@@ -5,14 +5,12 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
@@ -248,6 +246,81 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             var testMethod = currentTest.Method.MethodInfo;
             var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
             return Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+        }
+
+        internal static bool WriteIfSetUpError(ICompositeWorkItem compositeWorkItem)
+        {
+            var compositeTestResult = compositeWorkItem.Result;
+            if (compositeTestResult?.ResultState?.Status != TestStatus.Failed || compositeTestResult.ResultState.Site != FailureSite.SetUp)
+            {
+                return false;
+            }
+
+            foreach (var item in compositeWorkItem.Children)
+            {
+                if (item?.GetType().Name is { Length: > 0 } itemName)
+                {
+                    if (itemName == "CompositeWorkItem" && item.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem2))
+                    {
+                        WriteIfSetUpError(compositeWorkItem2);
+                    }
+                    else if (item.TryDuckCast<IWorkItem>(out var itemWorkItem) && itemWorkItem is { Result: { } testResult })
+                    {
+                        WriteSetUpError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeTestResult, testResult.Test);
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        internal static void WriteSkip(ITest item, string skipMessage)
+        {
+            if (item.Method?.MethodInfo is not null && CreateTest(item) is { } test)
+            {
+                test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
+            }
+
+            if (item.TestType == TestSuiteConst && GetTestSuiteFrom(item) is null && GetTestModuleFrom(item) is { } module)
+            {
+                SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
+            }
+
+            if (item.Tests is { Count: > 0 } tests)
+            {
+                foreach (var childTest in tests)
+                {
+                    if (childTest.TryDuckCast<ITest>(out var childTestDuckTyped))
+                    {
+                        WriteSkip(childTestDuckTyped, skipMessage);
+                    }
+                }
+            }
+        }
+
+        private static void WriteSetUpError(ITestResult testResult, ITest item)
+        {
+            if (item.Method?.MethodInfo is not null && CreateTest(item) is { } test)
+            {
+                test.SetErrorInfo("SetUpException", testResult.Message, testResult.StackTrace);
+                test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
+            }
+
+            if (item.TestType == TestSuiteConst && GetTestSuiteFrom(item) is null && GetTestModuleFrom(item) is { } module)
+            {
+                SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
+            }
+
+            if (item.Tests is { Count: > 0 } tests)
+            {
+                foreach (var childTest in tests)
+                {
+                    if (childTest.TryDuckCast<ITest>(out var childTestDuckTyped))
+                    {
+                        WriteSetUpError(testResult, childTestDuckTyped);
+                    }
+                }
+            }
         }
 
         private static ITest? GetParentWithTestType(ITest test, string testType)

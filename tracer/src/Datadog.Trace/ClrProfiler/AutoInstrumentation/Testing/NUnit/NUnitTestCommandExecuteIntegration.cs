@@ -54,9 +54,18 @@ public static class NUnitTestCommandExecuteIntegration
                 }
 
                 return CallTargetState.GetDefault();
-            default:
+            case "NUnit.Framework.Internal.Commands.TestMethodCommand":
                 return new CallTargetState(null, NUnitIntegration.CreateTest(executionContext.CurrentTest));
+            default:
+                if (executionContext.CurrentTest.Method is not null && !string.IsNullOrEmpty(executionContext.CurrentTest.MethodName))
+                {
+                    return new CallTargetState(null, NUnitIntegration.CreateTest(executionContext.CurrentTest));
+                }
+
+                break;
         }
+
+        return CallTargetState.GetDefault();
     }
 
     /// <summary>

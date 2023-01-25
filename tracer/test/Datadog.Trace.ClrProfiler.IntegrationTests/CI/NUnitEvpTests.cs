@@ -96,16 +96,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 if (@event.Type == SpanTypes.Test)
                                 {
                                     var testObject = JsonConvert.DeserializeObject<MockCIVisibilityTest>(@event.Content.ToString());
+                                    Output.WriteLine($"Test: {testObject.Meta[TestTags.Suite]}.{testObject.Meta[TestTags.Name]}");
                                     tests.Add(testObject);
                                 }
                                 else if (@event.Type == SpanTypes.TestSuite)
                                 {
                                     var suiteObject = JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(@event.Content.ToString());
+                                    Output.WriteLine($"Suite: {suiteObject.Meta[TestTags.Suite]}");
                                     testSuites.Add(suiteObject);
                                 }
                                 else if (@event.Type == SpanTypes.TestModule)
                                 {
                                     var moduleObject = JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(@event.Content.ToString());
+                                    Output.WriteLine($"Module: {moduleObject.Meta[TestTags.Module]}");
                                     testModules.Add(moduleObject);
                                 }
                             }

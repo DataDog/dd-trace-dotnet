@@ -265,6 +265,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("Npgsql", "Npgsql.NpgsqlCommand", "ExecuteScalarAsync",  new[] { "System.Threading.Tasks.Task`1<System.Object>", "System.Threading.CancellationToken" }, 4, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"),
 
                 // NUnit
+               new ("nunit.framework", "NUnit.Framework.Internal.Execution.CompositeWorkItem", "PerformOneTimeSetUp",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemPerformOneTimeSetUpIntegration"),
                new ("nunit.framework", "NUnit.Framework.Internal.Execution.CompositeWorkItem", "SkipChildren",  new[] { "System.Void", "_", "NUnit.Framework.Interfaces.ResultState", "System.String" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSkipChildrenIntegration"),
                new ("nunit.framework", "NUnit.Framework.Internal.Execution.WorkItem", "WorkItemComplete",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"),
 
@@ -743,6 +744,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NLog,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestCommandExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemPerformOneTimeSetUpIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSkipChildrenIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemPerformWorkIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"
