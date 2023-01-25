@@ -10,7 +10,8 @@
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
-    <CheckEolTargetFramework>false</CheckEolTargetFramework>  
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\iast.runsettings</RunSettingsFilePath>
   </PropertyGroup>  
   
   <ItemGroup>
