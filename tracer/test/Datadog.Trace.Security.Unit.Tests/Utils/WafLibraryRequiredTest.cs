@@ -4,7 +4,6 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Xunit;
 

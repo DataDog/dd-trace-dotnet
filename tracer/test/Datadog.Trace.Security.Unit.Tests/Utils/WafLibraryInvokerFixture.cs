@@ -5,19 +5,24 @@
 
 #nullable enable
 using System;
-using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.Security.Unit.Tests.Utils;
 
 public class WafLibraryInvokerFixture : IDisposable
 {
-    internal WafLibraryInvoker? WafLibraryInvoker { get; private set; }
+    private WafLibraryInvoker? _wafLibraryInvoker;
 
     /// <summary>
     /// GC would sometimes dispose of this invoker beforehand, but we have a waf callback registered on it..
     /// </summary>
-    public void Dispose() => GC.KeepAlive(WafLibraryInvoker);
+    public void Dispose()
+    {
+        if (_wafLibraryInvoker != null)
+        {
+            GC.KeepAlive(_wafLibraryInvoker);
+        }
+    }
 
     internal WafLibraryInvoker Initialize(string? version = null)
     {
@@ -27,6 +32,7 @@ public class WafLibraryInvokerFixture : IDisposable
             throw new ArgumentException("Waf could not load");
         }
 
-        return libInitResult.WafLibraryInvoker!;
+        _wafLibraryInvoker = libInitResult.WafLibraryInvoker!;
+        return _wafLibraryInvoker!;
     }
 }
