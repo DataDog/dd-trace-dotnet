@@ -30,16 +30,13 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public void TestUnit()
+    public void TestInstrumentedUnitTests()
     {
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
             EnableIast(true);
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, string.Empty);
-            var error = processResult.StandardError;
-            var output = processResult.StandardOutput;
-
-            error.Should().BeEmpty(error);
+            processResult.StandardError.Should().BeEmpty(processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
     }
 }
