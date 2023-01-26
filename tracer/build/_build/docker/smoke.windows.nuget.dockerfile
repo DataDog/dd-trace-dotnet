@@ -46,6 +46,9 @@ ENV CORECLR_ENABLE_PROFILING=1 \
     DD_PROFILING_ENABLED=1 \
     ASPNETCORE_URLS=http://localhost:5000
 
+# Set a random env var we should ignore
+ENV SUPER_SECRET_CANARY=MySuperSecretCanary
+
 # see https://github.com/DataDog/dd-trace-dotnet/pull/3579
 ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
