@@ -915,7 +915,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.0.2" },
                 new object[] { "4.1.1" },
                 new object[] { "5.0.1" },
-                new object[] { "5.1.0" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "1.0.19269.1" },
@@ -927,7 +926,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.0.2" },
                 new object[] { "4.1.1" },
                 new object[] { "5.0.1" },
-                new object[] { "5.1.0" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "1.0.19269.1" },

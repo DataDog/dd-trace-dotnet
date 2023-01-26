@@ -158,7 +158,11 @@
       "3.*.*",
       "4.*.*",
       "5.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "5.1.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "StackExchangeRedis",
