@@ -160,20 +160,20 @@ public static class Program
         using var parentSpan = _source.StartActivity("ParentSpan");
         // https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.activity.setparentid?view=net-7.0
         var childSpan = new Activity("ChildSpan"); // can't create with StartActivity because ParentId is automatically set
-        childSpan.SetParentId(parentSpan.Id);
+        childSpan.SetParentId(parentSpan!.Id!);
         childSpan.Start();
         childSpan.Stop();
 
         // W3C overload
         using var parentSpan2 = _source.StartActivity("W3CParentSpan");
         var childSpan2 = new Activity("W3CChildSpan");
-        childSpan2.SetParentId(parentSpan2.TraceId, parentSpan2.SpanId); // TODO should ActivityTraceFlags be added? (None by default)
+        childSpan2.SetParentId(parentSpan2!.TraceId, parentSpan2.SpanId); // TODO should ActivityTraceFlags be added? (None by default)
         childSpan2.Start();
         childSpan2.Stop();
 
         // other misc properties that work with StartActivity
         using var miscSpan = _source.StartActivity("MiscSpan");
-        miscSpan.DisplayName = "IAmMiscSpan";
+        miscSpan!.DisplayName = "IAmMiscSpan";
         miscSpan.TraceStateString = "app=hello";
         miscSpan.SetCustomProperty("CustomPropertyKey", "CustomPropertyValue");
         miscSpan.SetStartTime(new DateTime(2000, 1, 1, 1, 1, 1).ToUniversalTime());
