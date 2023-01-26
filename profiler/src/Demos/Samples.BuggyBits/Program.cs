@@ -5,6 +5,8 @@
 
 using System;
 using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Demos.Util;
@@ -36,7 +38,7 @@ namespace BuggyBits
 
             EnvironmentInfo.PrintDescriptionToConsole();
 
-            ParseCommandLine(args, out var timeout, out var iterations, out var scenario, out var nbIdleThreads);
+            ParseCommandLine(args, out var timeout, out var iterations, out var scenario, out var nbIdleThreads, out var runAsService);
 
             using (var host = CreateHostBuilder(args).Build())
             {
@@ -57,57 +59,64 @@ namespace BuggyBits
                 var cts = new CancellationTokenSource();
                 using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads))
                 {
-                    await host.StartAsync();
-
-                    WriteLine();
-                    WriteLine($"Started at {DateTime.UtcNow}.");
-
-                    sw.Start();
-
-                    if (iterations > 0)
+                    if (runAsService)
                     {
-                        await selfInvoker.RunAsync(rootUrl, iterations);
-                        return;
-                    }
-
-                    var selfInvokerTask = selfInvoker.RunAsync(rootUrl);
-
-                    // allow interaction with user
-                    if (timeout == TimeSpan.MinValue)
-                    {
-                        WriteLine("Press ENTER to exit...");
-                        Console.ReadLine();
+                        RunAsService(host, selfInvoker, cts, rootUrl);
                     }
                     else
                     {
-                        // otherwise, wait for a specific duration before exiting
-                        // or wait forever (for linux support)
-                        if (timeout == Timeout.InfiniteTimeSpan)
+                        await host.StartAsync();
+
+                        WriteLine();
+                        WriteLine($"Started at {DateTime.UtcNow}.");
+
+                        sw.Start();
+
+                        if (iterations > 0)
                         {
-                            WriteLine($"The application will run non-interactively forever.");
+                            await selfInvoker.RunAsync(rootUrl, iterations);
+                            return;
+                        }
+
+                        var selfInvokerTask = selfInvoker.RunAsync(rootUrl);
+
+                        // allow interaction with user
+                        if (timeout == TimeSpan.MinValue)
+                        {
+                            WriteLine("Press ENTER to exit...");
+                            Console.ReadLine();
                         }
                         else
                         {
-                            WriteLine($"The application will run non-interactively for {timeout} and exit.");
+                            // otherwise, wait for a specific duration before exiting
+                            // or wait forever (for linux support)
+                            if (timeout == Timeout.InfiniteTimeSpan)
+                            {
+                                WriteLine($"The application will run non-interactively forever.");
+                            }
+                            else
+                            {
+                                WriteLine($"The application will run non-interactively for {timeout} and exit.");
+                            }
+
+                            Thread.Sleep(timeout);
                         }
 
-                        Thread.Sleep(timeout);
-                    }
-
-                    WriteLine("Stopping...");
-                    cts.Cancel();
-                    try
-                    {
-                        await selfInvokerTask;
-                        await host.StopAsync();
-                    }
-                    catch (OperationCanceledException ocx)
-                    {
-                        WriteLine($"Operation cancelled while stopping host: {ocx.Message}");
-                    }
-                    catch (Exception x)
-                    {
-                        WriteLine($"Error while stopping host: {x.GetType().Name} | {x.Message}");
+                        WriteLine("Stopping...");
+                        cts.Cancel();
+                        try
+                        {
+                            await selfInvokerTask;
+                            await host.StopAsync();
+                        }
+                        catch (OperationCanceledException ocx)
+                        {
+                            WriteLine($"Operation cancelled while stopping host: {ocx.Message}");
+                        }
+                        catch (Exception x)
+                        {
+                            WriteLine($"Error while stopping host: {x.GetType().Name} | {x.Message}");
+                        }
                     }
                 }
             }
@@ -123,13 +132,20 @@ namespace BuggyBits
                     webBuilder.UseStartup<Startup>();
                 });
 
-        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
+        private static void RunAsService(IHost host, SelfInvoker selfInvoker, CancellationTokenSource cts, string urls)
+        {
+            var windowsService = new WindowsService(host, selfInvoker, cts, urls);
+            ServiceBase.Run(windowsService);
+        }
+
+        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads, out bool runAsService)
         {
             // by default, need interactive action to exit and string.Concat scenario
+            scenario = Scenario.StringConcat;
             timeout = TimeSpan.MinValue;
             iterations = 0;
-            scenario = Scenario.StringConcat;
             nbIdleThreads = 0;
+            runAsService = false;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -153,6 +169,11 @@ namespace BuggyBits
                     {
                         throw new InvalidOperationException($"Invalid or missing count after --iterations");
                     }
+                }
+                else
+                if ("--service".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    runAsService = true;
                 }
                 else
                 if ("--timeout".Equals(arg, StringComparison.OrdinalIgnoreCase))
@@ -190,6 +211,8 @@ namespace BuggyBits
             {
                 throw new InvalidOperationException("It is not possible to iterate on scenario 0");
             }
+
+            // NOTE: iterations and timeout are discarded in service mode
         }
 
         private static void WriteLine(string line = null)
@@ -201,6 +224,44 @@ namespace BuggyBits
             else
             {
                 Console.WriteLine($" ########### {line}");
+            }
+        }
+
+        internal class WindowsService : ServiceBase
+        {
+            private IHost _host;
+            private SelfInvoker _selfInvoker;
+            private CancellationTokenSource _cts;
+            private Task _selfInvokerTask;
+            private string _urls;
+
+            public WindowsService(IHost host, SelfInvoker selfInvoker, CancellationTokenSource cts, string urls)
+            {
+                _host = host;
+                _selfInvoker = selfInvoker;
+                _cts = cts;
+                _urls = urls;
+            }
+
+            protected override void OnStart(string[] args)
+            {
+                // start in a different thread to be sure to start in less than 3 seconds
+                Task.Run(() =>
+                {
+                    _host.StartAsync().Wait();
+                    _selfInvokerTask = _selfInvoker.RunAsync(_urls);
+                });
+
+                base.OnStart(args);
+            }
+
+            protected override void OnStop()
+            {
+                _cts.Cancel();
+                _selfInvokerTask.Wait();
+                _host.StopAsync().Wait();
+
+                base.OnStop();
             }
         }
     }
