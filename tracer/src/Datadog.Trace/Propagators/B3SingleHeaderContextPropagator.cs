@@ -56,9 +56,10 @@ namespace Datadog.Trace.Propagators
                 }
 
 #if NETCOREAPP
-                ReadOnlySpan<char> rawTraceId = null;
-                ReadOnlySpan<char> rawSpanId = null;
-                char rawSampled = '0';
+                ReadOnlySpan<char> rawTraceId;
+                ReadOnlySpan<char> rawSpanId;
+                char rawSampled;
+
                 if (brValue.Length > 50 && brValue[32] == '-' && brValue[49] == '-')
                 {
                     // 128 bits trace id
@@ -84,11 +85,20 @@ namespace Datadog.Trace.Propagators
                 var parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString());
+                spanContext = new SpanContext(
+                    traceId: traceId,
+                    spanId: parentId,
+                    samplingPriority: samplingPriority,
+                    origin: null,
+                    rawTraceId: rawTraceId.ToString(),
+                    rawSpanId: rawSpanId.ToString(),
+                    propagatedTags: null,
+                    additionalW3CTraceState: null);
 #else
-                string? rawTraceId = null;
-                string? rawSpanId = null;
-                char rawSampled = '0';
+                string? rawTraceId;
+                string? rawSpanId;
+                char rawSampled;
+
                 if (brValue.Length > 50 && brValue[32] == '-' && brValue[49] == '-')
                 {
                     // 128 bits trace id
@@ -114,7 +124,15 @@ namespace Datadog.Trace.Propagators
                 var parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
+                spanContext = new SpanContext(
+                    traceId: traceId,
+                    spanId: parentId,
+                    samplingPriority: samplingPriority,
+                    origin: null,
+                    rawTraceId: rawTraceId,
+                    rawSpanId: rawSpanId,
+                    propagatedTags: null,
+                    additionalW3CTraceState: null);
 #endif
 
                 return true;
