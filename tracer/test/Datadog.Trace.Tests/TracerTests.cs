@@ -459,7 +459,7 @@ namespace Datadog.Trace.Tests
             const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
 
-            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, origin);
             Assert.Equal(origin, propagatedContext.Origin);
 
             var spanCreationSettings = new SpanCreationSettings() { Parent = propagatedContext };
@@ -487,7 +487,7 @@ namespace Datadog.Trace.Tests
             const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
 
-            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, origin);
 
             var spanCreationSettings = new SpanCreationSettings() { Parent = propagatedContext };
             using var firstScope = (Scope)_tracer.StartActive("First Span", spanCreationSettings);

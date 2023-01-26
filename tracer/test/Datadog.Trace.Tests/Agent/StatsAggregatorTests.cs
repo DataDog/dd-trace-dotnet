@@ -175,7 +175,7 @@ namespace Datadog.Trace.Tests.Agent
                 span.OperationName = operationName;
                 span.Type = type;
                 span.SetTag(Tags.HttpStatusCode, httpStatusCode);
-                span.Context.Origin = origin;
+                span.Context.TraceContext.Origin = origin;
 
                 return span;
             }

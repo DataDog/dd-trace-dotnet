@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanSampling_CanComputeStats_ShouldNotSend_WhenSpanSamplingDoesNotMatch()
         {
             var api = new Mock<IApi>();
-            var rules = new List<SpanSamplingRule>() { new SpanSamplingRule("*", "*", 0.0f) }; // don't sample any rule
+            var rules = new List<SpanSamplingRule> { new("*", "*", 0.0f) }; // don't sample any rule
             var spanSampler = new SpanSampler(rules);
             var statsAggregator = new Mock<IStatsAggregator>();
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);

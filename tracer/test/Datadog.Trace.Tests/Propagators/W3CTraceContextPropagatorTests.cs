@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData(123456789, 987654321, SamplingPriorityValues.UserKeep, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
         public void CreateTraceParentHeader(ulong traceId, ulong spanId, int? samplingPriority, string expected)
         {
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, "origin");
+            var context = new SpanContext(traceId, spanId, samplingPriority, "origin");
             var traceparent = W3CTraceContextPropagator.CreateTraceParentHeader(context);
 
             traceparent.Should().Be(expected);
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests.Propagators
         {
             var propagatedTags = TagPropagation.ParseHeader(tags, 100);
 
-            var traceContext = new TraceContext(tracer: null, propagatedTags)
+            var traceContext = new TraceContext(tracer: null, tags: propagatedTags)
                                {
                                    Origin = origin,
                                    AdditionalW3CTraceState = additionalState
@@ -428,10 +428,9 @@ namespace Datadog.Trace.Tests.Propagators
                 traceParent.TraceId,
                 traceParent.ParentId,
                 samplingPriority: SamplingPriorityValues.AutoKeep,
-                serviceName: null,
                 origin: null,
-                traceParent.RawTraceId,
-                traceParent.RawParentId);
+                rawTraceId: traceParent.RawTraceId,
+                rawSpanId: traceParent.RawParentId);
 
             W3CTraceContextPropagator.CreateTraceParentHeader(spanContext).Should().Be(traceParentHeader);
         }

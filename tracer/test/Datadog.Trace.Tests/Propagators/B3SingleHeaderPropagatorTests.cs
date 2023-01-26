@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Propagators
             ulong traceId = 123456789;
             ulong spanId = 987654321;
             var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var context = new SpanContext(traceId, spanId, samplingPriority);
             var headers = new Mock<IHeadersCollection>();
 
             B3Propagator.Inject(context, headers.Object);
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Propagators
             ulong traceId = 123456789;
             ulong spanId = 987654321;
             var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var context = new SpanContext(traceId, spanId, samplingPriority);
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();

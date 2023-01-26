@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tests
             propagatedTags.SetTag("_dd.p.key1", "value1");
             propagatedTags.SetTag("_dd.p.key2", "value2");
 
-            var traceContext = new TraceContext(tracer: null, propagatedTags);
+            var traceContext = new TraceContext(tracer: null, tags: propagatedTags);
             traceContext.SetSamplingPriority(samplingPriority);
             traceContext.Origin = origin;
             traceContext.AdditionalW3CTraceState = additionalW3CTraceState;
