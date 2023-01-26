@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
 using System;
 using System.IO;
 using System.Linq;
@@ -40,4 +39,3 @@ public class IastInstrumentationUnitTests : TestHelper
         }
     }
 }
-#endif
