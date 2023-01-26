@@ -491,7 +491,7 @@ namespace Datadog.Trace
 
                     foreach (System.Collections.DictionaryEntry e in Environment.GetEnvironmentVariables())
                     {
-                        writer.WriteValue(e.Value);
+                        writer.WriteValue(e.Key);
                     }
 
                     writer.WriteEndArray();
