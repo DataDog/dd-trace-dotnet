@@ -10,6 +10,7 @@
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -119,9 +120,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(ClientIp, string.Empty);
-            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
+            settings.AddIastScrubbing();
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
@@ -139,10 +138,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-            settings.AddRegexScrubber(ClientIp, string.Empty);
-            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
+            settings.AddIastScrubbing();
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
@@ -151,11 +147,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
 
     public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        protected static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
-        protected static readonly Regex ClientIp = new(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}");
-        protected static readonly Regex NetworkClientIp = new(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}");
-        protected static readonly Regex HashRegex = new(@"(\S)*""hash"": (-){0,1}([0-9]){1,12},(\r|\n){1,2}      ");
-
         public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
         {
@@ -198,10 +189,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-            settings.AddRegexScrubber(ClientIp, string.Empty);
-            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
+            settings.AddIastScrubbing();
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();

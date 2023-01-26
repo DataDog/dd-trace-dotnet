@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -24,8 +25,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 public class WeakHashingTests : TestHelper
 {
     private const string ExpectedOperationName = "weak_hashing";
-    private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
-    private static readonly Regex HashRegex = new(@"(\S)*""hash"": (-){0,1}([0-9]){1,12},(\r|\n){1,2}      ");
 
     public WeakHashingTests(ITestOutputHelper output)
         : base("WeakHashing", output)
@@ -59,8 +58,7 @@ public class WeakHashingTests : TestHelper
         spans.Should().HaveCount(expectedSpanCount);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-        settings.AddRegexScrubber(HashRegex, string.Empty);
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();

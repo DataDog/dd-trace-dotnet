@@ -35,13 +35,13 @@ internal readonly struct Evidence
 
         foreach (var range in _ranges)
         {
-            if (range.Source != null)
+            if (!range.IsEmpty() && range.Source != null)
             {
                 valueParts.Add(new ValuePart(Value.Substring(range.Start, range.Length), range.Source.GetInternalId()));
             }
         }
 
-        return valueParts;
+        return valueParts.Count > 0 ? valueParts : null;
     }
 
     public Range[]? GetRanges()

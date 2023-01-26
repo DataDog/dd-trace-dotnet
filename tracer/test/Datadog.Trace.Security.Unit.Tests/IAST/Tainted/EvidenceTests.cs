@@ -40,4 +40,42 @@ public class EvidenceTests
         ev.ValueParts[0].Value.Should().Be("sq");
         ev.ValueParts[1].Value.Should().Be("l_");
     }
+
+    [Fact]
+    public void GivenAnEvidence_WhenGetValueParts_ValuePartsIsCorrect3()
+    {
+        var ev = new Evidence("sql_query", null);
+        ev.ValueParts.Should().BeNull();
+    }
+
+    [Fact]
+    public void GivenAnEvidence_WhenGetValueParts_ValuePartsIsCorrect4()
+    {
+        var source = new Source(2, "name", "value");
+        source.SetInternalId(0);
+        Range emptyRange = new(0, 0, source);
+        var ranges = new Range[] { emptyRange };
+        var ev = new Evidence("sql_query", ranges);
+        ev.ValueParts.Should().BeNull();
+    }
+
+    [Fact]
+    public void GivenAnEvidence_WhenGetValueParts_ValuePartsIsCorrect5()
+    {
+        var ranges = new Range[] { new Range(0, 2, null), new Range(2, 2, null) };
+        var ev = new Evidence("sql_query", ranges);
+        ev.ValueParts.Should().BeNull();
+    }
+
+    [Fact]
+    public void GivenAnEvidence_WhenGetValueParts_ValuePartsIsCorrect6()
+    {
+        var source = new Source(2, "name", "value");
+        source.SetInternalId(0);
+        var ranges = new Range[] { new Range(0, 2, null), new Range(2, 2, source) };
+        var ev = new Evidence("sql_query", ranges);
+        ev.ValueParts.Count.Should().Be(1);
+        ev.ValueParts[0].Source.Should().Be(0);
+        ev.ValueParts[0].Value.Should().Be("l_");
+    }
 }
