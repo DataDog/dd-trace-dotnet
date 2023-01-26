@@ -86,11 +86,8 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
 
     private static void Execute(IReadOnlyList<string> definitions, SourceProductionContext context)
     {
-        if (definitions.Count != 0)
-        {
-            string source = GetSource(definitions);
-            context.AddSource("AspectsDefinitions.g.cs", SourceText.From(source, Encoding.UTF8));
-        }
+        string source = GetSource(definitions);
+        context.AddSource("AspectsDefinitions.g.cs", SourceText.From(source, Encoding.UTF8));
     }
 
     private static IReadOnlyList<string> GetAspectSources(Compilation compilation, IEnumerable<ClassDeclarationSyntax> classes, CancellationToken cancellationToken)

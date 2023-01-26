@@ -793,6 +793,7 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
     if (methodInfo == nullptr)
     {
         trace::Logger::Debug("DefineMemberRef : Could not find Method ", shared::ToString(typeName), ".", shared::ToString(methodName), shared::ToString(methodParams));
+        return 0;
     }
 
     mdTypeRef typeRef;
