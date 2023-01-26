@@ -16,6 +16,9 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal,
       _dd.p.dm: -0
     },
@@ -42,6 +45,9 @@
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -60,6 +66,9 @@
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -78,6 +87,9 @@
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -93,11 +105,11 @@
       env: integration_tests,
       language: dotnet,
       otel.library.name: ,
-      otel.library.version: ,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
-      span.kind: internal
+      span.kind: internal,
+      version: 1.0.x
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -118,6 +130,9 @@
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -133,11 +148,11 @@
       env: integration_tests,
       language: dotnet,
       otel.library.name: ,
-      otel.library.version: ,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
-      span.kind: internal
+      span.kind: internal,
+      version: 1.0.x
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -158,6 +173,9 @@
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -173,11 +191,11 @@
       env: integration_tests,
       language: dotnet,
       otel.library.name: ,
-      otel.library.version: ,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
-      span.kind: internal
+      span.kind: internal,
+      version: 1.0.x
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -196,8 +214,11 @@
       otel.library.name: MyServiceName,
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
       runtime-id: Guid_2,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal,
       _dd.p.dm: -0
     },
@@ -233,7 +254,10 @@
       otel.library.name: MyServiceName,
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     },
     Metrics: {
@@ -265,7 +289,10 @@
       otel.library.name: MyServiceName,
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       set-string: str,
       span.kind: internal
     },
@@ -288,7 +315,10 @@
       otel.library.name: MyServiceName,
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -306,7 +336,10 @@
       otel.library.name: MyServiceName,
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -324,7 +357,10 @@
       otel.library.name: MyServiceName,
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -342,7 +378,10 @@
       otel.library.name: MyServiceName,
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -360,7 +399,10 @@
       otel.library.name: MyServiceName,
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -378,7 +420,10 @@
       otel.library.name: MyServiceName,
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   },
@@ -396,7 +441,10 @@
       otel.library.name: MyServiceName,
       otel.library.version: 1.0.x,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_4,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal
     }
   }
