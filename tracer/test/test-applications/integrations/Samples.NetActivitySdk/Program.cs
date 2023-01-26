@@ -1,13 +1,7 @@
-using System;
 using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
-using OpenTelemetry.Exporter;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Security.Cryptography.X509Certificates;
-using System.Runtime.CompilerServices;
 
 namespace NetActivitySdk;
 
@@ -73,7 +67,6 @@ public static class Program
         using var span = _source.StartActivity("SetTagsActivity");
         // SetTag will update an existing key or add it if it doesn't exist
 
-        // first add tags that we want
         span?.AddTag("set-string", "test");
         span?.SetTag("set-string", "str");
 
@@ -211,31 +204,10 @@ public static class Program
         return keyValuePairs;
     }
 
-    private static void PrintSpanStartedInformation(Activity span)
-    {
-        Console.WriteLine($"[Main] Started span with span_id: {span?.Context.SpanId}");
-        PrintCurrentSpanUpdateIfNeeded();
-        Console.WriteLine();
-    }
-
     private static void EnsureAutomaticInstrumentationEnabled()
     {
         var process = new Process();
         return;
-    }
-
-    private static void PrintSpanStartedInformation(TelemetrySpan span)
-    {
-        Console.WriteLine($"[Main] Started span with span_id: {span.Context.SpanId}");
-        PrintCurrentSpanUpdateIfNeeded();
-        Console.WriteLine();
-    }
-
-    private static void PrintSpanClosedInformation(TelemetrySpan span)
-    {
-        Console.WriteLine($"[Main] Closed span with span_id: {span.Context.SpanId}");
-        PrintCurrentSpanUpdateIfNeeded();
-        Console.WriteLine();
     }
 
     private static void PrintCurrentSpanUpdateIfNeeded()
