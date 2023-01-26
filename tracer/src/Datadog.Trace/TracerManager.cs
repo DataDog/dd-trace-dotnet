@@ -485,17 +485,6 @@ namespace Datadog.Trace
                     writer.WritePropertyName("stats_computation_enabled");
                     writer.WriteValue(instanceSettings.StatsComputationEnabled);
 
-                    // TESTING THAT WE DETECT THIS. DO NOT SHIP!
-                    writer.WritePropertyName("env_vars");
-                    writer.WriteStartArray();
-
-                    foreach (System.Collections.DictionaryEntry e in Environment.GetEnvironmentVariables())
-                    {
-                        writer.WriteValue(e.Key);
-                    }
-
-                    writer.WriteEndArray();
-
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
