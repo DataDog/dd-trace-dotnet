@@ -16,21 +16,21 @@ public class HashAlgorithmTests : InstrumentationTestsBase
     private readonly Mock<HashAlgorithm> hashMock = new Mock<HashAlgorithm>();
 
     [Fact]
-    public void GivenAPage_WhenMapPath_Vulnerable()
+    public void GivenAHashAlgorithm_WhenComputeHash_Vulnerable()
     {
         hashMock.Object.ComputeHash(new byte[] { 3, 5 });
         AssertNotVulnerable();
     }
 
     [Fact]
-    public void GivenAPage_WhenMapPath_Vulnerable2()
+    public void GivenAHashAlgorithm_WhenComputeHash_Vulnerable2()
     {
         hashMock.Object.ComputeHash(new byte[] { 3, 5 }, 0, 2);
         AssertNotVulnerable();
     }
 
     [Fact]
-    public void GivenAPage_WhenMapPath_Vulnerable3()
+    public void GivenAHashAlgorithm_WhenComputeHash_Vulnerable3()
     {
         hashMock.Object.ComputeHash(new MemoryStream(100));
         AssertNotVulnerable();
