@@ -1,7 +1,12 @@
+#nullable enable
+
 using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
+using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 
 namespace NetActivitySdk;
 
