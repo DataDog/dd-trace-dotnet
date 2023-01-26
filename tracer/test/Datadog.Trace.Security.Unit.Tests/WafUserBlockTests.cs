@@ -16,7 +16,6 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    [Collection("WafTests")]
     public class WafUserBlockTests : WafLibraryRequiredTest
     {
         public WafUserBlockTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)

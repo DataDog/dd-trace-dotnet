@@ -15,7 +15,6 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    [Collection("WafTests")]
     public class WafObfuscationTests : WafLibraryRequiredTest
     {
         public WafObfuscationTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)

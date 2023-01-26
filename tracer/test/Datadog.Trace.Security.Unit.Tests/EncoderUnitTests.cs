@@ -3,11 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Xunit;
 using Encoder = Datadog.Trace.AppSec.Waf.Encoder;
