@@ -128,9 +128,9 @@ private:
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
     void SaveMetricsToDisk(const std::string& content) const;
 
-    bool Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter) const;
+    static bool Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter) ;
     std::string GeneratePprofFilePath(const std::string& applicationName, int idx) const;
-    fs::path CreatePprofOutputPath(IConfiguration* configuration) const;
+    static fs::path CreatePprofOutputPath(IConfiguration* configuration) ;
     std::string CreateMetricsFileContent() const;
 
     static tags CommonTags;

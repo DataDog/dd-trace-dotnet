@@ -45,13 +45,13 @@ const static WSTRING EndLWStr = WStr("\n");
 
 std::string ToString(const std::string& str);
 std::string ToString(const char* str);
-std::string ToString(const uint64_t i);
+std::string ToString(uint64_t i);
 std::string ToString(const WSTRING& wstr);
 std::string ToString(const WCHAR* wstr, std::size_t nbChars);
 std::string ToString(const GUID& uid);
 
 WSTRING ToWSTRING(const std::string& str);
-WSTRING ToWSTRING(const uint64_t i);
+WSTRING ToWSTRING(uint64_t i);
 
 bool TryParse(WSTRING const& s, int& result);
 

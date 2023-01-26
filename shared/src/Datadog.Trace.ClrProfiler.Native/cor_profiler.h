@@ -30,8 +30,8 @@ namespace datadog::shared::nativeloader
         ICorProfilerInfo4* m_info;
         std::shared_ptr<ICorProfilerInfo12> m_writeToDiskCorProfilerInfo;
 
-        void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
-        void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
+        static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
+        static void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
 
     public:
         CorProfiler(IDynamicDispatcher* dispatcher);

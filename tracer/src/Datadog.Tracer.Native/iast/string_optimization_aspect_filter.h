@@ -24,12 +24,12 @@ namespace iast
 		HRESULT ResolveTargetMemberRefs();
 
 		bool IsTargetMemberRef(mdMemberRef memberRef);
-		bool IsStLoc(int opcode);
-		bool IsCall(int opcode);
+		static bool IsStLoc(int opcode);
+		static bool IsCall(int opcode);
 
 	public:
 		StringOptimizationAspectFilter(ModuleAspects* module);
-		virtual ~StringOptimizationAspectFilter();
+		~StringOptimizationAspectFilter() override;
 
 		bool AllowInstruction(ILInstr* instruction, ILRewriter* processor) override;
 	

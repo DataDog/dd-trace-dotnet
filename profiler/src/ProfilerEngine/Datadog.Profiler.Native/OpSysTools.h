@@ -36,7 +36,7 @@ public:
     static inline HANDLE GetCurrentProcess();
 
     static bool SetNativeThreadName(std::thread* pNativeThread, const WCHAR* description);
-    static bool GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadDescrBuff, const std::uint32_t threadDescrBuffSize);
+    static bool GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadDescrBuff, std::uint32_t threadDescrBuffSize);
 
     static bool GetModuleHandleFromInstructionPointer(void* nativeIP, std::uint64_t* pModuleHandle);
     static std::string GetModuleName(void* nativeIP);

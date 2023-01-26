@@ -40,9 +40,9 @@ public:
     void PerformInstrumentAllIfNeeded(const ModuleID& module_id, const mdToken& function_token);
     const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
-    void RequestRejitForLoadedModule(const ModuleID moduleId);
-    void ModuleLoadFinished_AddMetadataToModule(const ModuleID moduleId) const;
-    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(const ModuleID moduleId);
+    void RequestRejitForLoadedModule(ModuleID moduleId);
+    void ModuleLoadFinished_AddMetadataToModule(ModuleID moduleId) const;
+    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID moduleId);
 
     static HRESULT NotifyReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus);
 };

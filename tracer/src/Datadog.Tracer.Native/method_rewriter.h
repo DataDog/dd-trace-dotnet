@@ -26,7 +26,7 @@ class TracerMethodRewriter : public MethodRewriter, public shared::Singleton<Tra
 
 private:
     TracerMethodRewriter(){}
-    ILInstr* CreateFilterForException(ILRewriterWrapper* rewriter, mdTypeRef exception, mdTypeRef type_ref, ULONG exceptionValueIndex) const;
+    static ILInstr* CreateFilterForException(ILRewriterWrapper* rewriter, mdTypeRef exception, mdTypeRef type_ref, ULONG exceptionValueIndex) ;
 
 public:
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;

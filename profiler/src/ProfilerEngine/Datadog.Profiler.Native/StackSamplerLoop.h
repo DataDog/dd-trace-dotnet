@@ -103,9 +103,9 @@ private:
                                      PROFILING_TYPE profilingType);
     void LogEncounteredStackSnapshotResultStatistics(int64_t thisSampleTimestampNanosecs, bool useStdOutInsteadOfLog = false);
     int64_t ComputeWallTime(int64_t currentTimestampNs, int64_t prevTimestampNs);
-    void UpdateSnapshotInfos(StackSnapshotResultBuffer* const pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp);
+    static void UpdateSnapshotInfos(StackSnapshotResultBuffer* pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp);
     void UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames);
-    time_t GetCurrentTimestamp();
+    static time_t GetCurrentTimestamp();
     void PersistStackSnapshotResults(StackSnapshotResultBuffer const* pSnapshotResult,
                                      std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
                                      PROFILING_TYPE profilingType);

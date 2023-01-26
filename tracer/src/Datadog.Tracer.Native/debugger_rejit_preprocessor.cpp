@@ -243,7 +243,7 @@ DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandle
 
 const std::unique_ptr<RejitHandlerModuleMethod>
 DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
-                                        const FunctionInfo& functionInfo) const
+                                        const FunctionInfo& functionInfo) 
 {
     return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo);
 }
@@ -294,7 +294,7 @@ void DebuggerRejitPreprocessor::EnqueueNewMethod(const MethodProbeDefinition& de
 }
 
 HRESULT DebuggerRejitPreprocessor::GetMoveNextMethodFromKickOffMethod(const ComPtr<IMetaDataImport2>& metadataImport, mdTypeDef typeDef, mdMethodDef methodDef, 
-                                                                      const FunctionInfo& function, mdMethodDef& moveNextMethod, mdTypeDef& nestedAsyncClassOrStruct) const
+                                                                      const FunctionInfo& function, mdMethodDef& moveNextMethod, mdTypeDef& nestedAsyncClassOrStruct) 
 {
     // TODO: We might consider rewriting this code using CustomAttributeParser [AsyncStateMachine(typeof(<X>d__1))]
 

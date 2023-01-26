@@ -101,7 +101,7 @@ public:
     ModuleMetadata* GetModuleMetadata();
     void SetModuleMetadata(ModuleMetadata* metadata);
 
-    bool CreateMethodIfNotExists(const mdMethodDef methodDef, RejitHandlerModuleMethodCreatorFunc creator,
+    bool CreateMethodIfNotExists(mdMethodDef methodDef, RejitHandlerModuleMethodCreatorFunc creator,
                                  RejitHandlerModuleMethodUpdaterFunc updater);
     bool ContainsMethod(mdMethodDef methodDef);
     bool TryGetMethod(mdMethodDef methodDef, /* OUT */ RejitHandlerModuleMethod** methodHandler);
@@ -159,7 +159,7 @@ public:
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                   ICorProfilerFunctionControl* pFunctionControl);
-    HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
+    static HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
 
     ICorProfilerInfo7* GetCorProfilerInfo();
 

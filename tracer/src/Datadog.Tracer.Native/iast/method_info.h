@@ -35,18 +35,18 @@ namespace iast
         MemberRefInfo(ModuleInfo* pModuleInfo, mdMemberRef memberRef);
         virtual ~MemberRefInfo();
     protected:
-        ModuleInfo* _module = NULL;
+        ModuleInfo* _module = nullptr;
         WSTRING _name = EmptyWStr;
         WSTRING _fullName = EmptyWStr;
         WSTRING _fullNameWithReturnType = EmptyWStr;
         WSTRING _memberName = EmptyWStr;
 
         mdTypeDef _typeDef = 0;
-        TypeInfo* _typeInfo = NULL;
+        TypeInfo* _typeInfo = nullptr;
         mdMemberRef _id = 0;
         DWORD _methodAttributes = 0;
-        SignatureInfo* _pSignature = NULL;
-        PCCOR_SIGNATURE _pSig = NULL;
+        SignatureInfo* _pSignature = nullptr;
+        PCCOR_SIGNATURE _pSig = nullptr;
         ULONG _nSig = 0;
 
     public:
@@ -104,20 +104,20 @@ namespace iast
         bool _disableInlining = false;
         bool _isWritten = false;
 
-        LPCBYTE _pOriginalMehodIL = NULL;
+        LPCBYTE _pOriginalMehodIL = nullptr;
         DWORD _nOriginalMehodIL = 0;
-        LPBYTE _pMethodIL = NULL;
+        LPBYTE _pMethodIL = nullptr;
         DWORD _nMethodIL = 0;
 
     protected:
-        ILRewriter* _rewriter = NULL;
+        ILRewriter* _rewriter = nullptr;
         std::string _applyMessage = "";
     private:
         // LPBYTE AllocBuffer(DWORD size);
         void FreeBuffer();
     public:
         MethodInfo(ModuleInfo* pModuleInfo, mdMethodDef methodDef);
-        virtual ~MethodInfo();
+        ~MethodInfo() override;
 
         WSTRING GetMethodName();
         WSTRING GetKey(FunctionID functionID = 0);
@@ -136,12 +136,12 @@ namespace iast
         HRESULT CommitILRewriter(const std::string& applyMessage = "");
         HRESULT GetMethodIL(LPCBYTE* ppMehodIL, ULONG* pnSize, bool original = false);
         
-        HRESULT SetMethodIL(ULONG nSize, LPCBYTE pMehodIL, ICorProfilerFunctionControl* pFunctionControl = NULL);
-        HRESULT ApplyFinalInstrumentation(ICorProfilerFunctionControl* pFunctionControl = NULL);
+        HRESULT SetMethodIL(ULONG nSize, LPCBYTE pMehodIL, ICorProfilerFunctionControl* pFunctionControl = nullptr);
+        HRESULT ApplyFinalInstrumentation(ICorProfilerFunctionControl* pFunctionControl = nullptr);
 
         void ReJITCompilationStarted();
         void ReJITCompilationFinished();
 
-        void DumpIL(const std::string message = "", ULONG pnMethodIL = 0, LPCBYTE pMethodIL = NULL);
+        void DumpIL(std::string message = "", ULONG pnMethodIL = 0, LPCBYTE pMethodIL = nullptr);
     };
 }
