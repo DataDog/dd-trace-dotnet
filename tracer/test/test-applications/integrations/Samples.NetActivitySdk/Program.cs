@@ -7,7 +7,6 @@ namespace NetActivitySdk;
 
 public static class Program
 {
-    private static SpanContext _previousSpanContext;
     private static ActivitySource _source;
 
     public static async Task Main(string[] args)
@@ -37,7 +36,8 @@ public static class Program
         }
 
         // needs to be outside of the above root span as we don't want a parent here
-        RunActivityUpdate(); //  9 spans (total 19)
+        RunActivityConstructors(); // 4 spans (total 14)
+        RunActivityUpdate(); //  9 spans (total 23)
         //RunActivityLink();
         await Task.Delay(1000);
     }
@@ -184,14 +184,22 @@ public static class Program
 
     private static void RunActivityConstructors()
     {
-        using var nameOnly = _source.StartActivity("NameOnlyActivity");
+        using var ctor1 = _source.StartActivity("Ctor1", ActivityKind.Server);
 
-        var tags = new List<KeyValuePair<string, object?>>();
-        tags.Add(new KeyValuePair<string, object?>("attribute-string", "str"));
-        tags.Add(new KeyValuePair<string, object?>("attribute-int", 1));
-        using var nameOnly2 = _source.StartActivity(ActivityKind.Client, nameOnly.Context, tags, null, DateTimeOffset.Now, "OperationName");
+        var someContext = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.None);
+        using var ctor2 = _source.StartActivity("Ctor2", ActivityKind.Server, someContext);
 
+        var tags = new List<KeyValuePair<string, object?>>
+        {
+            new KeyValuePair<string, object?>("attribute-string", "str"),
+            new KeyValuePair<string, object?>("attribute-int", 1)
+        };
+        using var ctor3 = _source.StartActivity("Ctor3", ActivityKind.Server, someContext, tags);
 
+        var links = new List<ActivityLink>();
+        links.Add(new ActivityLink(someContext));
+
+        using var ctor4 = _source.StartActivity("Ctor4", ActivityKind.Server, default(ActivityContext), tags, links);
     }
 
     private static IEnumerable<KeyValuePair<string, object?>> GenerateKeyValuePairs()
@@ -208,17 +216,5 @@ public static class Program
     {
         var process = new Process();
         return;
-    }
-
-    private static void PrintCurrentSpanUpdateIfNeeded()
-    {
-        // Console.WriteLine($"Created span with span_id: {span.Context.SpanId}");
-        var currentSpanContext = Tracer.CurrentSpan.Context;
-        if (_previousSpanContext != currentSpanContext)
-        {
-            Console.WriteLine($"       ===> Active span has changed: Activity.Current.DisplayName={Activity.Current.DisplayName}, Tracer.CurrentSpan span_id={Tracer.CurrentSpan.Context.SpanId}");
-        }
-
-        _previousSpanContext = currentSpanContext;
     }
 }
