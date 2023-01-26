@@ -357,9 +357,9 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal void AddSnapshot(string snapshot)
+        internal void AddSnapshot(string probeId, string snapshot)
         {
-            _debuggerSink.AddSnapshot(snapshot);
+            _debuggerSink.AddSnapshot(probeId, snapshot);
         }
 
         internal void AddReceivedProbeStatus(string probeId)

@@ -142,7 +142,7 @@ public class LiveDebuggerTests
             return Task.CompletedTask;
         }
 
-        public void AddSnapshot(string snapshot)
+        public void AddSnapshot(string probeId, string snapshot)
         {
             throw new NotImplementedException();
         }

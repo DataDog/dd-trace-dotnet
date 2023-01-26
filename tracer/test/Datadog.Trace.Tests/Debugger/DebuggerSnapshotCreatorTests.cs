@@ -5,13 +5,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -94,76 +90,15 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         /// <summary>
-        /// Generate a debugger snapshot by simulating the same flow of method calls as our instrumentation produces for a method probe.
-        /// </summary>
-        private static string GenerateSnapshot(object instance, object[] args, object[] locals)
-        {
-            var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false);
-            {
-                // method entry
-                snapshotCreator.StartEntry();
-                if (instance != null)
-                {
-                    snapshotCreator.CaptureInstance(instance, instance.GetType());
-                }
-
-                for (var i = 0; i < args.Length; i++)
-                {
-                    snapshotCreator.CaptureArgument(args[i], "arg" + i, args[i].GetType());
-                }
-
-                snapshotCreator.EndEntry(hasArgumentsOrLocals: args.Length > 0);
-            }
-
-            {
-                // method exit
-                snapshotCreator.StartReturn();
-                for (var i = 0; i < locals.Length; i++)
-                {
-                    snapshotCreator.CaptureLocal(locals[i], "local" + i, locals[i]?.GetType() ?? typeof(object));
-                }
-
-                for (var i = 0; i < args.Length; i++)
-                {
-                    snapshotCreator.CaptureArgument(args[i], "arg" + i, args[i].GetType());
-                }
-
-                if (instance != null)
-                {
-                    snapshotCreator.CaptureInstance(instance, instance.GetType());
-                }
-
-                snapshotCreator.EndReturn(hasArgumentsOrLocals: args.Length + locals.Length > 0);
-            }
-
-            snapshotCreator.FinalizeSnapshot("Foo", "Bar", DateTimeOffset.MinValue, "foo");
-
-            var snapshot = snapshotCreator.GetSnapshotJson();
-            return JsonPrettify(snapshot);
-        }
-
-        private static string JsonPrettify(string json)
-        {
-            using (var stringReader = new StringReader(json))
-            using (var stringWriter = new StringWriter())
-            {
-                var jsonReader = new JsonTextReader(stringReader);
-                var jsonWriter = new JsonTextWriter(stringWriter) { Formatting = Formatting.Indented };
-                jsonWriter.WriteToken(jsonReader);
-                return stringWriter.ToString();
-            }
-        }
-
-        /// <summary>
         /// Validate that we produce valid json for a specific value, and that the output conforms to the given set of limits on capture.
         /// </summary>
-        private async Task ValidateSingleValue(object local)
+        internal async Task ValidateSingleValue(object local)
         {
-            var snapshot = GenerateSnapshot(null, new object[] { }, new object[] { local });
+            var snapshot = SnapshotHelper.GenerateSnapshot(local);
 
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
-            var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals");
+            var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return");
             await Verifier.Verify(localVariableAsJson, verifierSettings);
         }
 
