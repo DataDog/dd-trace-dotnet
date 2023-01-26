@@ -24,16 +24,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitEvpTests : TestHelper
     {
-        private const int ExpectedTestCount = 20;
-        private const int ExpectedTestSuiteCount = 4;
+        private const int ExpectedTestCount = 28;
+        private const int ExpectedTestSuiteCount = 7;
 
         private const string TestBundleName = "Samples.NUnitTests";
-        private static string[] _testSuiteNames = new string[]
+        private static readonly string[] _testSuiteNames =
         {
             "Samples.NUnitTests.TestSuite",
             "Samples.NUnitTests.TestFixtureTest(\"Test01\")",
             "Samples.NUnitTests.TestFixtureTest(\"Test02\")",
             "Samples.NUnitTests.TestString",
+            "Samples.NUnitTests.TestFixtureSetupError(\"Test01\")",
+            "Samples.NUnitTests.TestFixtureSetupError(\"Test02\")",
+            "Samples.NUnitTests.TestSetupError",
         };
 
         public NUnitEvpTests(ITestOutputHelper output)
@@ -80,6 +83,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 {
                     agent.EventPlatformProxyPayloadReceived += (sender, e) =>
                     {
+                        if (e.Value.PathAndQuery != "/evp_proxy/v2/api/v2/citestcycle")
+                        {
+                            return;
+                        }
+
                         var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
                         if (payload.Events?.Length > 0)
                         {
@@ -87,15 +95,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             {
                                 if (@event.Type == SpanTypes.Test)
                                 {
-                                    tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(@event.Content.ToString()));
+                                    var testObject = JsonConvert.DeserializeObject<MockCIVisibilityTest>(@event.Content.ToString());
+                                    Output.WriteLine($"Test: {testObject.Meta[TestTags.Suite]}.{testObject.Meta[TestTags.Name]}");
+                                    tests.Add(testObject);
                                 }
                                 else if (@event.Type == SpanTypes.TestSuite)
                                 {
-                                    testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(@event.Content.ToString()));
+                                    var suiteObject = JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(@event.Content.ToString());
+                                    Output.WriteLine($"Suite: {suiteObject.Meta[TestTags.Suite]}");
+                                    testSuites.Add(suiteObject);
                                 }
                                 else if (@event.Type == SpanTypes.TestModule)
                                 {
-                                    testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(@event.Content.ToString()));
+                                    var moduleObject = JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(@event.Content.ToString());
+                                    Output.WriteLine($"Module: {moduleObject.Meta[TestTags.Module]}");
+                                    testModules.Add(moduleObject);
                                 }
                             }
                         }
@@ -120,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         testSuites[0].TestSessionId.Should().Be(testModules[0].TestSessionId);
                         testModules[0].TestSessionId.Should().Be(sessionId);
 
-                        foreach (var targetTest in tests)
+                        foreach (var targetTest in tests.ToArray())
                         {
                             // Remove decision maker tag (not used by the backend for civisibility)
                             targetTest.Meta.Remove(Tags.Propagated.DecisionMaker);
@@ -139,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanAnyOf(targetTest, TestTags.Module, TestBundleName);
 
                             // check the suite name
-                            AssertTargetSpanAnyOf(targetTest, TestTags.Suite, _testSuiteNames);
+                            var suite = AssertTargetSpanAnyOf(targetTest, TestTags.Suite, _testSuiteNames);
 
                             // check the test type
                             AssertTargetSpanEqual(targetTest, TestTags.Type, TestTags.TypeTest);
@@ -180,8 +194,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             switch (targetTest.Meta[TestTags.Name])
                             {
                                 case "SimplePassTest":
-                                case "Test":
-                                case "IsNull":
+                                case "Test" when !suite.Contains("SetupError"):
+                                case "IsNull" when !suite.Contains("SetupError"):
                                     CheckSimpleTestSpan(targetTest);
                                     break;
 
@@ -245,10 +259,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "SimpleAssertInconclusive":
                                     CheckSimpleSkipFromAttributeTest(targetTest, "The test is inconclusive.");
                                     break;
+
+                                case "Test" when suite.Contains("SetupError"):
+                                case "Test01" when suite.Contains("SetupError"):
+                                case "Test02" when suite.Contains("SetupError"):
+                                case "Test03" when suite.Contains("SetupError"):
+                                case "Test04" when suite.Contains("SetupError"):
+                                case "Test05" when suite.Contains("SetupError"):
+                                case "IsNull" when suite.Contains("SetupError"):
+                                    CheckSetupErrorTest(targetTest);
+                                    break;
                             }
 
                             // check remaining tag (only the name)
                             Assert.Single(targetTest.Meta);
+
+                            tests.Remove(targetTest);
                         }
                     }
                 }
@@ -299,11 +325,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Console.WriteLine("***********************************");
         }
 
-        private static void AssertTargetSpanAnyOf(MockCIVisibilityTest targetTest, string key, params string[] values)
+        private static string AssertTargetSpanAnyOf(MockCIVisibilityTest targetTest, string key, params string[] values)
         {
             string actualValue = targetTest.Meta[key];
             Assert.Contains(actualValue, values);
             targetTest.Meta.Remove(key);
+            return actualValue;
         }
 
         private static void AssertTargetSpanEqual(MockCIVisibilityTest targetTest, string key, string value)
@@ -432,6 +459,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             // Check the error message
             AssertTargetSpanEqual(targetTest, Tags.ErrorMsg, new DivideByZeroException().Message);
+        }
+
+        private static void CheckSetupErrorTest(MockCIVisibilityTest targetTest)
+        {
+            // Check the Test Status
+            AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusFail);
+
+            // Check the span error flag
+            Assert.Equal(1, targetTest.Error);
+
+            // Check the error type
+            AssertTargetSpanAnyOf(targetTest, Tags.ErrorType, "SetUpException", "Exception");
+
+            // Check the error message
+            AssertTargetSpanEqual(targetTest, Tags.ErrorMsg, "System.Exception : SetUp exception.");
+
+            // Remove the stacktrace
+            targetTest.Meta.Remove(Tags.ErrorStack);
         }
     }
 }

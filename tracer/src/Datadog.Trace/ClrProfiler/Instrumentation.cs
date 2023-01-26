@@ -204,6 +204,38 @@ namespace Datadog.Trace.ClrProfiler
                 }
             }
 
+            if (!Iast.Iast.Instance.Settings.Enabled)
+            {
+                Log.Debug("Skipping Iast initialization because Iast is disabled");
+            }
+            else
+            {
+                try
+                {
+                    int defs = 0, derived = 0;
+                    Log.Debug("Adding CallTarget IAST integration definitions to native library.");
+                    var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.Iast);
+                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                    defs = payload.Definitions.Length;
+
+                    Log.Debug("Adding CallTarget IAST derived integration definitions to native library.");
+                    payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.Iast);
+                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                    derived = payload.Definitions.Length;
+
+                    Log.Information($"{defs} IAST definitions and {derived} IAST derived definitions added to the profiler.");
+
+                    Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
+                    var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions.Aspects);
+                    Log.Information($"{aspects} IAST Callsite Dataflow Aspects added to the profiler.");
+                }
+                catch (Exception ex)
+                {
+                    Iast.Iast.Instance.Settings.Enabled = false;
+                    Log.Error(ex, "DDIAST-0001-01: IAST could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
+                }
+            }
+
 #if NETSTANDARD2_0 || NETCOREAPP3_1
             try
             {

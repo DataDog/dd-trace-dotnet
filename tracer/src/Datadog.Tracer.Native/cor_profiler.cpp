@@ -22,6 +22,8 @@
 
 #include "../../../shared/src/native-src/pal.h"
 
+#include "iast/dataflow.h"
+
 #ifdef MACOS
 #include <mach-o/dyld.h>
 #include <mach-o/getsect.h>
@@ -326,6 +328,23 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
+    // iast stuff
+    if (IsIastEnabled())
+    {
+        Logger::Info("IAST Callsite instrumentation is enabled.");
+        _dataflow = new iast::Dataflow(info_);
+        if (FAILED(_dataflow->Init()))
+        {
+            Logger::Error("IAST Dataflow failed to initialize");
+            DEL(_dataflow);
+        }
+    }
+    else
+    {
+        Logger::Info("IAST Callsite instrumentation is disabled.");
+    }
+
+
     // we're in!
     Logger::Info("Profiler filepath: ", currentModuleFileName);
     Logger::Info("Profiler attached.");
@@ -623,6 +642,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         debugger_instrumentation_requester->ModuleLoadFinished(module_id);
     }
 
+    if (_dataflow != nullptr)
+    {
+        _dataflow->ModuleLoaded(module_id);
+    }
+
     return hr;
 }
 
@@ -829,6 +853,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         const auto& assemblyVersion = assemblyImport.version.str();
 
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
+        managedProfilerModuleId_ = module_id;
 #ifdef _WIN32
         RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
@@ -1168,6 +1193,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         rejit_handler->RemoveModule(module_id);
     }
 
+    if (_dataflow != nullptr)
+    {
+        _dataflow->ModuleUnloaded(module_id);
+    }
+
     const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
     if (!moduleInfo.IsValid())
     {
@@ -1208,11 +1238,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     // to prevent it from unloading while in use
     std::lock_guard<std::mutex> guard(module_ids_lock_);
 
+    DEL(_dataflow);
+
     if (rejit_handler != nullptr)
     {
         rejit_handler->Shutdown();
         rejit_handler = nullptr;
     }
+
     Logger::Info("Exiting...");
     Logger::Debug("   ModuleIds: ", module_ids_.size());
     Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
@@ -1231,6 +1264,19 @@ void CorProfiler::DisableTracerCLRProfiler()
     // https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo3-requestprofilerdetach-method
     Logger::Info("Disabling Tracer CLR Profiler...");
     Shutdown();
+}
+
+void CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+{
+    if (_dataflow != nullptr)
+    {
+        Logger::Info("Registerubg IAST Aspects.");
+        _dataflow->LoadAspects(aspects, aspectsLength);
+    }
+    else
+    {
+        Logger::Info("IAST is disabled.");
+    }
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
@@ -1314,6 +1360,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     {
         // Loader was already injected in a calltarget scenario, we don't need to do anything else here
 
+        if (_dataflow != nullptr)
+        {
+            _dataflow->JITCompilationStarted(module_id, function_token);
+        }
+
         if (debugger_instrumentation_requester != nullptr)
         {
             debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
@@ -1352,13 +1403,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                       " name=", caller.type.name, ".", caller.name, "()");
     }
 
-    // In NETFx, NInject creates a temporary appdomain where the tracer can be laoded
+    // In NETFx, NInject creates a temporary appdomain where the tracer can be loaded
     // If Runtime metrics are enabled, we can encounter a CannotUnloadAppDomainException
     // certainly because we are initializing perf counters at that time.
     // As there are no use case where we would like to load the tracer in that appdomain, just don't
     if (module_info.assembly.app_domain_name == WStr("NinjectModuleLoader") && !runtime_information_.is_core())
     {
-        Logger::Info("JITCompilationStarted: NInjectModuleLoader appdomain deteceted. Not registering startup hook.");
+        Logger::Info("JITCompilationStarted: NInjectModuleLoader appdomain detected. Not registering startup hook.");
         return S_OK;
     }
 
@@ -1435,6 +1486,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
         return S_OK;
     }
 
+    if (_dataflow != nullptr)
+    {
+        _dataflow->AppDomainShutdown(appDomainId);
+    }
+
     // remove appdomain metadata from map
     const auto& count = first_jit_compilation_app_domains.erase(appDomainId);
 
@@ -1469,8 +1525,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
         return S_OK;
     }
 
-    if (is_attached_ && rejit_handler != nullptr &&
-        rejit_handler->HasModuleAndMethod(calleeModuleId, calleFunctionToken))
+    if (is_attached_ &&
+            (
+                (rejit_handler != nullptr && rejit_handler->HasModuleAndMethod(calleeModuleId, calleFunctionToken)) ||
+                (_dataflow != nullptr && !_dataflow->IsInlineEnabled(calleeModuleId, calleFunctionToken))
+            )
+       )
     {
         Logger::Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
                       ", MethodDef=", shared::TokenStr(&calleFunctionToken), "]");
@@ -3625,6 +3685,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     {
         // Process the current module to detect inliners.
         rejit_handler->AddNGenInlinerModule(module_id);
+    }
+
+    // Check for Dataflow call site instrumentation
+    if (_dataflow != nullptr && !_dataflow->IsInlineEnabled(module_id, functionId))
+    {
+        // The function has been instrumented by Dataflow
+        // so we reject the NGEN image
+        *pbUseCachedFunction = false;
+        return S_OK;
     }
 
     // Verify that we have the metadata for this module

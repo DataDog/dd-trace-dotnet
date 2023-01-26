@@ -36,20 +36,7 @@ internal class Iast
 
     private Iast(IastSettings settings = null)
     {
-        try
-        {
-            _settings = settings ?? IastSettings.FromDefaultSources();
-
-            if (_settings.Enabled)
-            {
-                AddIastSpecificInstrumentations();
-            }
-        }
-        catch (Exception ex)
-        {
-            _settings = new(source: null) { Enabled = false };
-            Log.Error(ex, "DDIAST-0001-01: IAST could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
-        }
+        _settings = settings ?? IastSettings.FromDefaultSources();
     }
 
     internal IastSettings Settings => _settings;
@@ -69,35 +56,5 @@ internal class Iast
                 _globalInstanceInitialized = true;
             }
         }
-    }
-
-    private static void AddIastSpecificInstrumentations()
-    {
-        int defs = 0, derived = 0;
-        try
-        {
-            Log.Debug("Adding CallTarget IAST integration definitions to native library.");
-            var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.Iast);
-            NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-            defs = payload.Definitions.Length;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, ex.Message);
-        }
-
-        try
-        {
-            Log.Debug("Adding CallTarget IAST derived integration definitions to native library.");
-            var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.Iast);
-            NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-            derived = payload.Definitions.Length;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, ex.Message);
-        }
-
-        Log.Information($"{defs} IAST definitions and {derived} IAST derived definitions added to the profiler.");
     }
 }
