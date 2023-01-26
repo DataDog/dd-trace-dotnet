@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -29,21 +30,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData(true, "pwd", "select pg_sleep", "select pg_sleep")]
         public void AttacksWithSecrets(bool obfuscate, string key, string fullAttack, string highlight)
         {
-            var value = new Dictionary<string, string[]>
-                {
-                    {
-                        key, new[]
-                        {
-                            fullAttack
-                        }
-                    }
-                };
-            var args = new Dictionary<string, object>
-            {
-                {
-                    AddressesConstants.RequestQuery, value
-                }
-            };
+            var value = new Dictionary<string, string[]> { { key, new[] { fullAttack } } };
+            var args = new Dictionary<string, object> { { AddressesConstants.RequestQuery, value } };
             if (!args.ContainsKey(AddressesConstants.RequestUriRaw))
             {
                 args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
@@ -54,16 +42,24 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            using var waf =
-                    obfuscate
-                        ? Waf.Create(SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
-                        : Waf.Create(string.Empty, string.Empty);
+            var libInitResult = WafLibraryInvoker.Initialize();
+            if (!libInitResult.Success)
+            {
+                throw new ArgumentException("Waf couldnt load");
+            }
 
+            var initResult =
+                obfuscate
+                    ? Waf.Create(libInitResult.WafLibraryInvoker!, SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
+                    : Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
+            initResult.Success.Should().BeTrue();
+            using var waf = initResult.Waf;
             var expectedHighlight = obfuscate ? "<Redacted>" : highlight;
             var expectedValue = obfuscate ? "<Redacted>" : fullAttack;
 
             waf.Should().NotBeNull();
-            using var context = waf.CreateContext();
+            using var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
+            using var context = waf.CreateContext(readwriteLocker);
             var result = context.Run(args, 1_000_000);
             result.ReturnCode.Should().Be(ReturnCode.Match);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();

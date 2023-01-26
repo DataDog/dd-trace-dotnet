@@ -15,6 +15,124 @@
 
 
 
+
+## [Release 2.22.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.22.0)
+
+## Summary
+
+Write here any high level summary you may find relevant or delete the section.
+
+## Changes
+
+### Tracer
+* [Tracer] Add OpenTelemetry Resources as span tags (#3572)
+* [Tracer] W3C Trace Context part 3: include additional vendor values in `tracestate` header (#3578)
+* [Tracer] W3C Trace Context part 4: change default header settings (#3583)
+* [Tracer] Fix sending multiple logs via DirectLogSubmission when using sub-loggers (#3589)
+* [Tracer] Detect the actual Redis server when connecting to a cluster (#3594)
+* [Tracer] Add support for Couchbase 3.4.1 (#3596)
+* [Tracer] Small clean-up in `TraceContext.AddSpan()` (#3598)
+* [Tracer] Allow throwing exception of type CallTargetBubbleUpException in call target integrations (#3608)
+* [Tracer] Fix Remote Configuration Service Name not being sent as lower-case + added more DEBUG-level logging  (#3614)
+* [Tracer] W3C Trace Context part 5: propagate `tracestate` in version-mismatch scenario (#3630)
+* [Tracer] Add missing private ctors to singleton propagators (#3631)
+* [Tracer] Log the version of the native tracer in the managed logs (#3643)
+* [Tracer] Wait for ReJIT request call to complete before returning from ModuleLoadFinished profiler callback (#3650)
+* [Tracer] Support standardized name for polling env var (#3653)
+* [Tracer] Simplify `ThreadSafeRandom` API (#3656)
+* [Tracer] Add a 100ms timeout on rejit request (#3664)
+
+### CI Visibility
+* [CI Visibility] Reduce integrations required for NUnit testing framework (#3577)
+* [CI Visibility] Code Coverage Payload Format v2 (#3588)
+* [CI Visibility] Replace XUnit sync integration for flushing with an async one. (#3591)
+* [CI Visibility] Update spec for azurepipelines with required env vars for correlation (#3592)
+* [CI Visibility] Port some sync thread primitives to the async version (#3609)
+* [CI Visibility] Fixes multiple thread access to the global coverage List<> with a lock (#3611)
+* [CI Visibility] Remove stdout output from debug level in the CoverageCollector (#3612)
+* [CI Visibility] Change GetAwaiter().GetResult() with AsyncUtil.RunSync() (#3615)
+* [CI Visibility] Refactor MSTest integration and add support for nuget version 3.x (#3616)
+* [CI Visibility] Enable IntelligentTestRunner configuration request by default (#3647)
+* [CI Visibility] Fix dd-trace arguments handling (#3676)
+* [CI Visibility] Add Logs to the dd-trace command (#3683)
+* [CI Visibility] Modify the .deps.json file only when the Datadog.Trace.dll is copied (#3686)
+* [CI Visibility] Fix casting error on ITR skip validator (#3689)
+* [CI Visibility] Small changes to improve stability (#3693)
+
+### ASM
+* [ASM] Stop throwing exception on unknown objects (#3553)
+* [ASM] SQL injection vulnerability (#3595)
+* [ASM] adding missing usings to dispose (#3622)
+* [ASM] Fix access violation memory exception (#3666)
+
+### Continuous Profiler
+* [Profiler] Fix sanitizer jobs (#3181)
+* [Profiler] Update the architecture to support heap profiling (#3445)
+* [Profiler] Add MetricsRegistry (#3576)
+* [Profiler] Detect and fix CPU overlaps (#3623)
+* [Profiler] Add numeric labels (#3624)
+* [Profiler] Fix warnings (#3634)
+* [Profiler] Fix using nanoseconds instead of milliseconds (#3638)
+* [Profiler] Provides an alternative stackwalk (#3642)
+* [Profiler] Review log messages (#3648)
+* [Profiler] Add a test scenario where short lived threads are created over and over again (#3649)
+* [Profiler] Allow multiple scenarios to run sequentially in BuggyBits (#3655)
+* [Profiler] Fix deadlock due to TLS initialization while unwinding (#3661)
+* [Profiler] Fix text error (#3667)
+* [Profiler] Check max CPU/Wall time consumption in tests (#3673)
+* [Profiler] Remove internal metrics (#3678)
+
+### Debugger
+* [Dynamic Instrumentation] Added missing tags to `RcmClientTracer` (#3405)
+* [Dynamic Instrumentation] Added messages to erroneous probe statuses (#3582)
+* [Debugger] Run integrations tests with different debug type and optimizations (#3618)
+* [Dynamic Instrumentation] Implement expression evaluator, conditions and log probes (#3688)
+* [Debugger] Add default sampling rate for log probes (#3692)
+
+### Serverless
+* Add delay to serverless tests to reduce flakiness (#3619)
+
+### Fixes
+* Modernize C++ code (#3551)
+
+### Build / Test
+* [Test Package Versions Bump] Updating package versions (#3540)
+* Add integration tests for OWIN apps hosted on Microsoft.Owin.Host.SystemWeb (#3558)
+* Exclude some processes from being profiled in nuke targets (#3568)
+* Move maximum possible tasks from `Datadog.Trace.proj` to `Nuke` (#3573)
+* Increase timeout for agent malfunction flaky test. (#3574)
+* Improves ExitCodeException (#3580)
+* Upload crank throughput results to AzDo artifacts (#3581)
+* Removes Task.Delay dependency on TaskContinuation tests (#3584)
+* Minor build fixes when testing all package versions (#3590)
+* [Tracer/Native loader] Run tracer and native loader native unit tests (#3593)
+* Update global.json to pin to the only supported version of the SDK (#3601)
+* [Test Package Versions Bump] Updating package versions (#3602)
+* Add testing against multiple package versions for OpenTelemetry.Api (#3604)
+* Adds debugger break environment variable (#3613)
+* Allow to build native code in Debug on Linux from Nuke (#3627)
+* Write throughput results as a PR comment (#3628)
+* Rework build to always build for AnyCPU instead of x64/x86 (#3632)
+* Bump sdk used in CI to 7.0.101 (#3633)
+* [Tracer] Update span metadata rules documentation with integration names (#3635)
+* Allow azure upload via a variable (#3637)
+* Fix CodeQL action and GitLab build (#3645)
+* Fix execution time (startup time) benchmarks and save artifacts (#3654)
+* [Tests] Refactor ASM integration tests to use IClassFixture for application and agent (#3657)
+* Fix path to FakeDbCommand in execution time benchmarks (#3658)
+* Drop SDK in global.json down to 7.0.100 (#3659)
+* Add missing dependencies to `build_runner_tool_and_standalone` stage  (#3665)
+* [Tests] Enable the parametric test suite from the system-tests repo (#3675)
+* Log the PID in more test paths (#3677)
+
+### Miscellaneous
+* Add instance info to the IL dump (#3660)
+* [Tracer] Fix the Datadog ServiceName for spans generated by different ActivitySource's (#3663)
+* RCM requests should normalize 'service' and 'env`, but not other tags (#3669)
+
+
+[Changes since 2.21.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.21.0...v2.22.0)
+
 ## [Release 2.21.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.21.0)
 
 ## Summary

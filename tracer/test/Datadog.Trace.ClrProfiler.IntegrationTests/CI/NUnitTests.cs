@@ -19,15 +19,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitTests : TestHelper
     {
-        private const int ExpectedSpanCount = 20;
+        private const int ExpectedSpanCount = 28;
 
         private const string TestBundleName = "Samples.NUnitTests";
-        private static string[] _testSuiteNames = new string[]
+        private static string[] _testSuiteNames =
         {
             "Samples.NUnitTests.TestSuite",
             "Samples.NUnitTests.TestFixtureTest(\"Test01\")",
             "Samples.NUnitTests.TestFixtureTest(\"Test02\")",
             "Samples.NUnitTests.TestString",
+            "Samples.NUnitTests.TestFixtureSetupError(\"Test01\")",
+            "Samples.NUnitTests.TestFixtureSetupError(\"Test02\")",
+            "Samples.NUnitTests.TestSetupError",
         };
 
         public NUnitTests(ITestOutputHelper output)
@@ -70,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // Check the span count
                         Assert.Equal(ExpectedSpanCount, spans.Count);
 
-                        foreach (var targetSpan in spans)
+                        foreach (var targetSpan in spans.ToArray())
                         {
                             // Remove decision maker tag (not used by the backend for civisibility)
                             targetSpan.Tags.Remove(Tags.Propagated.DecisionMaker);
@@ -89,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanAnyOf(targetSpan, TestTags.Module, TestBundleName);
 
                             // check the suite name
-                            AssertTargetSpanAnyOf(targetSpan, TestTags.Suite, _testSuiteNames);
+                            var suite = AssertTargetSpanAnyOf(targetSpan, TestTags.Suite, _testSuiteNames);
 
                             // check the test type
                             AssertTargetSpanEqual(targetSpan, TestTags.Type, TestTags.TypeTest);
@@ -133,8 +136,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             switch (targetSpan.Tags[TestTags.Name])
                             {
                                 case "SimplePassTest":
-                                case "Test":
-                                case "IsNull":
+                                case "Test" when !suite.Contains("SetupError"):
+                                case "IsNull" when !suite.Contains("SetupError"):
                                     CheckSimpleTestSpan(targetSpan);
                                     break;
 
@@ -198,10 +201,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "SimpleAssertInconclusive":
                                     CheckSimpleSkipFromAttributeTest(targetSpan, "The test is inconclusive.");
                                     break;
+
+                                case "Test" when suite.Contains("SetupError"):
+                                case "Test01" when suite.Contains("SetupError"):
+                                case "Test02" when suite.Contains("SetupError"):
+                                case "Test03" when suite.Contains("SetupError"):
+                                case "Test04" when suite.Contains("SetupError"):
+                                case "Test05" when suite.Contains("SetupError"):
+                                case "IsNull" when suite.Contains("SetupError"):
+                                    CheckSetupErrorTest(targetSpan);
+                                    break;
                             }
 
                             // check remaining tag (only the name)
                             Assert.Single(targetSpan.Tags);
+
+                            spans.Remove(targetSpan);
                         }
                     }
                 }
@@ -252,11 +267,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Console.WriteLine("***********************************");
         }
 
-        private static void AssertTargetSpanAnyOf(MockSpan targetSpan, string key, params string[] values)
+        private static string AssertTargetSpanAnyOf(MockSpan targetSpan, string key, params string[] values)
         {
             string actualValue = targetSpan.Tags[key];
             Assert.Contains(actualValue, values);
             targetSpan.Tags.Remove(key);
+            return actualValue;
         }
 
         private static void AssertTargetSpanEqual(MockSpan targetSpan, string key, string value)
@@ -376,6 +392,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             // Check the error message
             AssertTargetSpanEqual(targetSpan, Tags.ErrorMsg, new DivideByZeroException().Message);
+        }
+
+        private static void CheckSetupErrorTest(MockSpan targetTest)
+        {
+            // Check the Test Status
+            AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusFail);
+
+            // Check the span error flag
+            Assert.Equal(1, targetTest.Error);
+
+            // Check the error type
+            AssertTargetSpanAnyOf(targetTest, Tags.ErrorType, "SetUpException", "Exception");
+
+            // Check the error message
+            AssertTargetSpanEqual(targetTest, Tags.ErrorMsg, "System.Exception : SetUp exception.");
+
+            // Remove the stacktrace
+            targetTest.Tags.Remove(Tags.ErrorStack);
         }
     }
 }

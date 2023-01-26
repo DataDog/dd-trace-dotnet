@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using CallTargetNativeTest.NoOp;
@@ -273,6 +274,11 @@ namespace CallTargetNativeTest
                         Extras();
                         break;
                     }
+                case "callsite":
+                    {
+                        CallSite();
+                        break;
+                    }
                 case "all":
                     {
                         Argument0();
@@ -349,6 +355,8 @@ namespace CallTargetNativeTest
                         // StructParentAbstractMethod();
                         // GenericParentAbstractMethod();
                         Extras();
+                        //.
+                        CallSite();
                         break;
                     }
                 default:

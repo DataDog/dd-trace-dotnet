@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
@@ -27,7 +28,7 @@ namespace Benchmarks.Trace
                 var config = DefaultConfig.Instance
                     .AddExporter(DatadogExporter.Default)
                     .AddExporter(JsonExporter.FullCompressed);
-
+                // config = config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
                 var agentName = Environment.GetEnvironmentVariable("AGENT_NAME");
                 if (Enum.TryParse(agentName, out AgentFilterAttribute.Agent benchmarkAgent))
                 {

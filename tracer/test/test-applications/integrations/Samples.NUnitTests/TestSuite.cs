@@ -143,4 +143,51 @@ namespace Samples.NUnitTests
 
     public class TestString : TestBase<string>
     { }
+
+    public class TestSetupError : TestBase<object>
+    {
+        [SetUp]
+        public void Setup()
+        {
+            throw new Exception("SetUp exception.");
+        }
+        
+        [Test]
+        public void Test01()
+        {
+        }
+        
+        [Test]
+        public void Test02()
+        {
+        }
+        
+        [Test]
+        public void Test03()
+        {
+        }
+        
+        [Test]
+        public void Test04()
+        {
+        }
+        
+        [Test]
+        public void Test05()
+        {
+        }
+    }
+
+    public class TestFixtureSetupError : TestFixtureTest
+    {
+        public TestFixtureSetupError(string name)
+            : base(name)
+        {}
+        
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            throw new Exception("SetUp exception.");
+        }
+    }
 }

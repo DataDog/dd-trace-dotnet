@@ -90,6 +90,13 @@ EXTERN_C VOID STDAPICALLTYPE DisableTracerCLRProfiler()
     return trace::profiler->DisableTracerCLRProfiler();
 }
 
+EXTERN_C VOID STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+{
+    return trace::profiler->RegisterIastAspects(aspects, aspectsLength);
+}
+
+
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {

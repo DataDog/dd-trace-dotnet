@@ -202,18 +202,6 @@ namespace Datadog.Trace.TestHelpers
             var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
             var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
 
-            if (!ranToCompletion && !process.HasExited)
-            {
-                var tookMemoryDump = TakeMemoryDump(process);
-                process.Kill();
-                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump.Result}. Killing process.");
-            }
-
-            var exitCode = process.ExitCode;
-
-            Output.WriteLine($"ProcessId: " + process.Id);
-            Output.WriteLine($"Exit Code: " + exitCode);
-
             var standardOutput = helper.StandardOutput;
 
             if (!string.IsNullOrWhiteSpace(standardOutput))
@@ -227,6 +215,18 @@ namespace Datadog.Trace.TestHelpers
             {
                 Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
             }
+
+            if (!ranToCompletion && !process.HasExited)
+            {
+                var tookMemoryDump = TakeMemoryDump(process);
+                process.Kill();
+                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump.Result}. Killing process.");
+            }
+
+            var exitCode = process.ExitCode;
+
+            Output.WriteLine($"ProcessId: " + process.Id);
+            Output.WriteLine($"Exit Code: " + exitCode);
 
 #if NETCOREAPP2_1
             if (exitCode == 139)

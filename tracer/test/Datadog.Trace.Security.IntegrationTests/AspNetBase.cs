@@ -29,7 +29,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         protected const string DefaultRuleFile = "ruleset.3.0.json";
         protected const string MainIp = "86.242.244.246";
-        private const string Prefix = "Security.";
+        protected const string Prefix = "Security.";
+        private const string XffHeader = "X-FORWARDED-FOR";
         private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafDurationWithBindings = new(@"_dd.appsec.waf.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafVersion = new(@"\s*_dd.appsec.waf.version: \d.\d.\d(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -49,7 +50,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _shutdownPath = shutdownPath;
 
             // adding these header so we can later assert it was collect properly
-            _httpClient.DefaultRequestHeaders.Add("X-FORWARDED", MainIp);
+            _httpClient.DefaultRequestHeaders.Add(XffHeader, MainIp);
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
@@ -108,6 +109,12 @@ namespace Datadog.Trace.Security.IntegrationTests
             await Verifier.Verify(spans, settings)
                           .UseMethodName(methodNameOverride ?? "_")
                           .UseTypeName(GetTestName());
+        }
+
+        protected void SetClientIp(string ip)
+        {
+            _httpClient.DefaultRequestHeaders.Remove(XffHeader);
+            _httpClient.DefaultRequestHeaders.Add(XffHeader, ip);
         }
 
         protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int spansPerRequest)
