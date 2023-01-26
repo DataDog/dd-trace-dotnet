@@ -1,4 +1,4 @@
-// <copyright file="NUnitCompositeWorkItemPerformOneTimeSetUpIntegration.cs" company="Datadog">
+// <copyright file="NUnitCompositeWorkItemPerformOneTimeTearDownIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,12 +11,12 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 /// <summary>
-/// NUnit.Framework.Internal.Execution.CompositeWorkItem.PerformOneTimeSetUp() calltarget instrumentation
+/// NUnit.Framework.Internal.Execution.CompositeWorkItem.PerformOneTimeTearDown() calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "nunit.framework",
     TypeName = "NUnit.Framework.Internal.Execution.CompositeWorkItem",
-    MethodName = "PerformOneTimeSetUp",
+    MethodName = "PerformOneTimeTearDown",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new string[0],
     MinimumVersion = "3.0.0",
@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class NUnitCompositeWorkItemPerformOneTimeSetUpIntegration
+public class NUnitCompositeWorkItemPerformOneTimeTearDownIntegration
 {
     /// <summary>
     /// OnMethodEnd callback

@@ -248,20 +248,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             return Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
         }
 
-        internal static void WriteSetUpError(ICompositeWorkItem compositeWorkItem)
+        internal static void WriteSetUpOrTearDownError(ICompositeWorkItem compositeWorkItem, string exceptionType)
         {
-            WriteSetUpError(compositeWorkItem.Result, compositeWorkItem.Test);
+            WriteSetUpOrTearDownError(compositeWorkItem.Result, compositeWorkItem.Test, exceptionType);
             foreach (var item in compositeWorkItem.Children)
             {
                 if (item?.GetType().Name is { Length: > 0 } itemName)
                 {
                     if (itemName == "CompositeWorkItem" && item.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem2))
                     {
-                        WriteSetUpError(compositeWorkItem2);
+                        WriteSetUpOrTearDownError(compositeWorkItem2, exceptionType);
                     }
                     else if (item.TryDuckCast<IWorkItem>(out var itemWorkItem) && itemWorkItem is { Result: { } testResult })
                     {
-                        WriteSetUpError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeWorkItem.Result, testResult.Test);
+                        WriteSetUpOrTearDownError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeWorkItem.Result, testResult.Test, exceptionType);
                     }
                 }
             }
@@ -291,17 +291,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
         }
 
-        private static void WriteSetUpError(ITestResult testResult, ITest item)
+        private static void WriteSetUpOrTearDownError(ITestResult testResult, ITest item, string exceptionType)
         {
             if (item.Method?.MethodInfo is not null && CreateTest(item) is { } test)
             {
-                test.SetErrorInfo("SetUpException", testResult.Message, testResult.StackTrace);
+                test.SetErrorInfo(exceptionType, testResult.Message, testResult.StackTrace);
                 test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
             }
 
-            if (item.TestType == TestSuiteConst && GetTestSuiteFrom(item) is null && GetTestModuleFrom(item) is { } module)
+            TestSuite? suite = null;
+            if (item.TestType == TestSuiteConst)
             {
-                SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
+                if (GetTestSuiteFrom(item) is { } existingSuite)
+                {
+                    existingSuite.SetErrorInfo(exceptionType, testResult.Message, testResult.StackTrace);
+                    existingSuite.Tags.Status = TestTags.StatusFail;
+                }
+                else if (GetTestModuleFrom(item) is { } module)
+                {
+                    suite = module.GetOrCreateSuite(item.FullName);
+                    suite.SetErrorInfo(exceptionType, testResult.Message, testResult.StackTrace);
+                    suite.Tags.Status = TestTags.StatusFail;
+                    SetTestSuiteTo(item, suite);
+                }
             }
 
             if (item.Tests is { Count: > 0 } tests)
@@ -310,10 +322,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 {
                     if (childTest.TryDuckCast<ITest>(out var childTestDuckTyped))
                     {
-                        WriteSetUpError(testResult, childTestDuckTyped);
+                        WriteSetUpOrTearDownError(testResult, childTestDuckTyped, exceptionType);
                     }
                 }
             }
+
+            suite?.Close();
         }
 
         private static ITest? GetParentWithTestType(ITest test, string testType)
