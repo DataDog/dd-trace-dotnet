@@ -1,9 +1,6 @@
 #nullable enable
 
 using System.Diagnostics;
-using OpenTelemetry;
-using OpenTelemetry.Trace;
-using OpenTelemetry.Resources;
 using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
@@ -18,19 +15,7 @@ public static class Program
     {
         EnsureAutomaticInstrumentationEnabled();
 
-        var serviceName = "MyServiceName";
-        var serviceVersion = "1.0.x";
-
-        using var tracerProvider = Sdk.CreateTracerProviderBuilder()
-                .AddSource(serviceName)
-                .SetResourceBuilder(
-                    ResourceBuilder.CreateDefault()
-                        .AddService(serviceName: serviceName, serviceVersion: serviceVersion))
-                .AddConsoleExporter()
-                .AddOtlpExporterIfEnvironmentVariablePresent()
-                .Build();
-
-        _source = new ActivitySource(serviceName, serviceVersion);
+        _source = new ActivitySource("Samples.NetActivitySdk");
 
         using (var rootSpan = _source.StartActivity("RootSpan")) // 1 span (total 1)
         {
