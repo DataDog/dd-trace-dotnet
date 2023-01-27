@@ -8,6 +8,7 @@
     <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\iast.runsettings</RunSettingsFilePath>
+    <RuntimeIdentifiers Condition="'$(OS)' == 'Windows_NT' AND '$(TargetFramework)' == 'net462'">win7-x86;win7-x64</RuntimeIdentifiers>
   </PropertyGroup>  
   
   <ItemGroup>
