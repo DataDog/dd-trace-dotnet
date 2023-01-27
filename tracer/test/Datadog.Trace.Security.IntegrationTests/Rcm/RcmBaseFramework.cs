@@ -19,7 +19,7 @@ public class RcmBaseFramework : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
 
-        // evem if not using the log entry watcher , it s nice to have different logs directories to read artifacts
+        // even if not using the log entry watcher , it's nice to have different logs directories to read artifacts
         Directory.CreateDirectory(LogDirectory);
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
     }
