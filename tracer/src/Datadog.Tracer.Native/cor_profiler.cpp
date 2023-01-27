@@ -3688,7 +3688,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     // Check for Dataflow call site instrumentation
-    if (_dataflow != nullptr && !_dataflow->IsInlineEnabled(module_id, functionId))
+    if (_dataflow != nullptr && !_dataflow->IsInlineEnabled(module_id, function_token))
     {
         // The function has been instrumented by Dataflow
         // so we reject the NGEN image
