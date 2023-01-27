@@ -282,10 +282,11 @@
     "SampleProjectName": "Samples.Kafka",
     "NugetPackageSearchName": "Confluent.Kafka",
     "MinVersion": "1.4.0",
-    "MaxVersionExclusive": "2.0.0",
+    "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
       "1.4.*",
-      "1.*.*"
+      "1.*.*",
+      "2.*.*"
     ]
   },
   {
