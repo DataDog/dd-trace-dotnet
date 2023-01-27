@@ -24,7 +24,7 @@ internal class IastModule
 
     public static Scope? OnSqlQuery(string query, IntegrationId integrationId, Iast iast)
     {
-        return GetScope(query, integrationId, VulnerabilityType.SqlInjection, OperationNameSqlInjection, iast, true);
+        return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, iast, true);
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
@@ -62,22 +62,10 @@ internal class IastModule
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
 
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
-        if (!isRequest && vulnerabilityType == VulnerabilityType.SqlInjection)
+        if (!isRequest && vulnerabilityType == VulnerabilityTypeName.SqlInjection)
         {
             return null;
         }
-
-        TaintedObject? tainted = null;
-        if (taintedFromEvidenceRequired)
-        {
-            tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue);
-            if (tainted is null)
-            {
-                return null;
-            }
-        }
-
-        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
 
         TaintedObject? tainted = null;
         if (taintedFromEvidenceRequired)
