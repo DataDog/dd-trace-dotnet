@@ -193,6 +193,10 @@ namespace Datadog.Trace.TestHelpers
             // see https://github.com/DataDog/dd-trace-dotnet/pull/3579
             environmentVariables["DD_INTERNAL_WORKAROUND_77973_ENABLED"] = "1";
 
+            // Set a canary variable that should always be ignored
+            // and check that it doesn't appear in the logs
+            environmentVariables["SUPER_SECRET_CANARY"] = "MySuperSecretCanary";
+
             // Everything should be using the native loader now
             var nativeLoaderPath = GetNativeLoaderPath();
 
