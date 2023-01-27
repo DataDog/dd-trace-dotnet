@@ -15,7 +15,6 @@
     <PackageReference Include="Moq" Version="4.18.4" />
     <PackageReference Include="FluentAssertions" Version="6.4.0" />
     <PackageReference Include="xunit" Version="2.4.2" />
-    <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" /> 
   </ItemGroup>
     
   <!-- Have to use the latest version of the test SDK on .NET Framework so that code coverage works -->
@@ -39,20 +38,5 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>  
-    
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftTestSDKVersion)" />
-    <None Update="wrong-tags-rule-set.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="wrong-tags-name-rule-set.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="rule-data1.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="rule-data2.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+
 </Project>
