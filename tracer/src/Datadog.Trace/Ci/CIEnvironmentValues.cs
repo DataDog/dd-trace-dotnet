@@ -155,10 +155,7 @@ namespace Datadog.Trace.Ci
                 var value = EnvironmentHelpers.GetEnvironmentVariable(key);
                 if (!string.IsNullOrEmpty(value))
                 {
-                    lock (dictionary)
-                    {
-                        dictionary[key] = value;
-                    }
+                    dictionary[key] = value;
                 }
             }
         }
