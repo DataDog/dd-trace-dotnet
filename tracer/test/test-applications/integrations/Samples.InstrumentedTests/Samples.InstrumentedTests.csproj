@@ -1,43 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../../..'))" />
   <PropertyGroup>
-    <!-- Strong name signature -->
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(ProjectDir)../../../../../Datadog.Trace.snk</AssemblyOriginatorKeyFile>
-    <DelaySign>false</DelaySign>
     <OutputType>Library</OutputType>
-    <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
-    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\iast.runsettings</RunSettingsFilePath>
-    <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
   </PropertyGroup>  
   
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-    <PackageReference Include="Moq" Version="4.18.4" />
-    <PackageReference Include="FluentAssertions" Version="6.4.0" />
-    <PackageReference Include="xunit" Version="2.4.2" />
   </ItemGroup>
-    
-  <!-- Have to use the latest version of the test SDK on .NET Framework so that code coverage works -->
-  <!-- But this version does not support .NET Core 2.1/3.0, so need to ifdef here -->
-  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
-    <!-- Note that we're using a custom version of coverlet from the Azure feed that supports StrongNaming -->
-    <PackageReference Include="coverlet.collector" Version="3.2.1-preview.4.g46dda4ea49">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'">
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
-    <!-- Note that we're using a custom version of coverlet from the Azure feed that supports StrongNaming -->
-    <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>  
-
 </Project>
