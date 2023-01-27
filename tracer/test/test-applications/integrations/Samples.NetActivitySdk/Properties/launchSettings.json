@@ -4,7 +4,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "DD_ENV": "",
-        "DD_SERVICE": "",
+        "DD_SERVICE": "Samples.NetActivitySdk",
         "DD_VERSION": "",
 
         "COR_ENABLE_PROFILING": "1",
