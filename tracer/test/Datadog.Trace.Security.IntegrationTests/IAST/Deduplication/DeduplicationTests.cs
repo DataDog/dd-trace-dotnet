@@ -6,6 +6,7 @@
 #if NETCOREAPP
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -17,7 +18,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 public class DeduplicationTests : TestHelper
 {
     private const string ExpectedOperationName = "weak_hashing";
-    private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
 
     public DeduplicationTests(ITestOutputHelper output)
         : base("Deduplication", output)
@@ -47,7 +47,7 @@ public class DeduplicationTests : TestHelper
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();

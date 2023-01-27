@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyXunit;
@@ -21,7 +22,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 public class WeakCipherTests : TestHelper
 {
     private const string ExpectedOperationName = "weak_cipher";
-    private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
 
     public WeakCipherTests(ITestOutputHelper output)
         : base("WeakCipher", output)
@@ -45,7 +45,7 @@ public class WeakCipherTests : TestHelper
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();

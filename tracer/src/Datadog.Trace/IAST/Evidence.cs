@@ -5,22 +5,52 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.Iast;
 
 internal readonly struct Evidence
 {
+    private readonly Range[]? _ranges;
+
     public Evidence(string value, Range[]? ranges = null)
     {
         this.Value = value;
-        this.Ranges = ranges;
+        this._ranges = ranges;
     }
 
     public string Value { get; }
 
-    public Range[]? Ranges { get; }
+    // This method is only used once when serializing to json (and it is also called from unit tests)
+    public List<ValuePart>? ValueParts => GetValuePartsFromRanges();
+
+    private List<ValuePart>? GetValuePartsFromRanges()
+    {
+        if (_ranges is null || _ranges.Length == 0)
+        {
+            return null;
+        }
+
+        var valueParts = new List<ValuePart>(_ranges.Length);
+
+        foreach (var range in _ranges)
+        {
+            if (!range.IsEmpty() && range.Source != null)
+            {
+                valueParts.Add(new ValuePart(Value.Substring(range.Start, range.Length), range.Source.GetInternalId()));
+            }
+        }
+
+        return valueParts.Count > 0 ? valueParts : null;
+    }
+
+    public Range[]? GetRanges()
+    {
+        return _ranges;
+    }
 
     public override int GetHashCode()
     {
-        return IastUtils.GetHashCode(Value, Ranges);
+        return IastUtils.GetHashCode(Value, _ranges);
     }
 }
