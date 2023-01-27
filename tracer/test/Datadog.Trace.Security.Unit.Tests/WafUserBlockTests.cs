@@ -4,40 +4,30 @@
 // </copyright>
 
 #nullable enable
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    [Collection("WafTests")]
-    public class WafUserBlockTests
+    public class WafUserBlockTests : WafLibraryRequiredTest
     {
+        public WafUserBlockTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
+            : base(wafLibraryInvokerFixture)
+        {
+        }
+
         [Fact]
         public void TestOk()
         {
-            var libInitResult = WafLibraryInvoker.Initialize();
-            if (!libInitResult.Success)
-            {
-                throw new ArgumentException("Waf couldn't load");
-            }
-
             var js = JsonSerializer.Create();
-            var initResult = Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
             using var waf = initResult.Waf!;
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);

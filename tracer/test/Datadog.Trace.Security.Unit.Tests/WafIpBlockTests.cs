@@ -4,34 +4,31 @@
 // </copyright>
 
 #nullable enable
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    [Collection("WafTests")]
-    public class WafIpBlockTests
+    public class WafIpBlockTests : WafLibraryRequiredTest
     {
+        public WafIpBlockTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
+            : base(wafLibraryInvokerFixture)
+        {
+        }
+
         [Fact]
         public void TestOk()
         {
             var js = JsonSerializer.Create();
-            var libInitResult = WafLibraryInvoker.Initialize();
-            if (!libInitResult.Success)
-            {
-                throw new ArgumentException("Waf couldnt load");
-            }
-
-            var initResult = Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
             var waf = initResult.Waf;
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
@@ -70,13 +67,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestMergeWithWaf()
         {
             var js = JsonSerializer.Create();
-            var libInitResult = WafLibraryInvoker.Initialize();
-            if (!libInitResult.Success)
-            {
-                throw new ArgumentException("Waf couldnt load");
-            }
-
-            var initResult = Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
 
             using var waf = initResult.Waf;
             using var sr = new StreamReader("rule-data1.json");
