@@ -5,8 +5,6 @@
     <AssemblyOriginatorKeyFile>$(ProjectDir)../../../../../Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <OutputType>Library</OutputType>
-    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
-    <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\iast.runsettings</RunSettingsFilePath>
   </PropertyGroup>  
   
