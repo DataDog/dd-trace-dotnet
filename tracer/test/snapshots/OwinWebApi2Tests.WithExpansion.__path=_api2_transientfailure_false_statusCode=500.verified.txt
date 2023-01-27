@@ -17,8 +17,6 @@
 System.ArgumentException: Passed in value was not 'true': false
 at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String value),
       error.type: System.ArgumentException,
-      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api2/{action}/{value},
@@ -28,6 +26,8 @@ at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String 
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -46,12 +46,12 @@ at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String 
     Service: Samples.Owin.WebApi2,
     Tags: {
       env: integration_tests,
-      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
