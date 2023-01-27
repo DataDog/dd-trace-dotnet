@@ -192,7 +192,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 }
             }
 
-            ConfigureTransportVariables(environmentVariables, agent);
+            if (agent != null)
+            {
+                ConfigureTransportVariables(environmentVariables, agent);
+            }
 
             foreach (var key in CustomEnvironmentVariables.Keys)
             {

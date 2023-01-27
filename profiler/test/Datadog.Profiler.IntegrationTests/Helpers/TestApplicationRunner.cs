@@ -70,6 +70,26 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             PrintTestInfo();
         }
 
+        public ProcessHelper LaunchProcess(MockDatadogAgent agent = null)
+        {
+            var (executor, arguments) = BuildTestCommandLine();
+
+            var process = new Process();
+
+            SetEnvironmentVariables(process.StartInfo.EnvironmentVariables, agent);
+
+            process.StartInfo.FileName = executor;
+            process.StartInfo.Arguments = arguments;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.StartInfo.RedirectStandardInput = false;
+            process.Start();
+
+            return new ProcessHelper(process);
+        }
+
         private void PrintTestInfo()
         {
             _output.WriteLine("Test information:");
@@ -141,23 +161,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 throw new XunitException("Agent was not ready to accept connection from profiler");
             }
 
-            (var executor, var arguments) = BuildTestCommandLine();
 
-            using var process = new Process();
+            using var processHelper = LaunchProcess(agent);
 
-            SetEnvironmentVariables(process.StartInfo.EnvironmentVariables, agent);
-
-            process.StartInfo.FileName = executor;
-            process.StartInfo.Arguments = arguments;
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.CreateNoWindow = true;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.RedirectStandardError = true;
-            process.StartInfo.RedirectStandardInput = false;
-            var startTime = DateTime.Now;
-            process.Start();
-
-            using var processHelper = new ProcessHelper(process);
+            var process = processHelper.Process;
 
             var ranToCompletion = process.WaitForExit((int)_maxTestRunDuration.TotalMilliseconds) && processHelper.Drain((int)_maxTestRunDuration.TotalMilliseconds / 2);
 

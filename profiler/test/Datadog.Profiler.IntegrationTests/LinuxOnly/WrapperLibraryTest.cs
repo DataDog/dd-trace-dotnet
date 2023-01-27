@@ -79,5 +79,37 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             var lines = File.ReadAllLines(logFile);
             lines.Should().ContainMatch(expectedErrorMessage);
         }
+
+        [TestAppFact("Samples.ExceptionGenerator")]
+        public void RedirectCrashHandler(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 6");
+
+            runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", "/usr/bin/echo");
+            runner.Environment.SetVariable("DOTNET_DbgEnableMiniDump", "1");
+
+            using var processHelper = runner.LaunchProcess();
+
+            processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
+            processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
+            processHelper.StandardOutput.Should().MatchRegex(@"createdump \d+ --signal 6 --crashthread \d+")
+                .And.NotContain("[createdump] Dump successfully written");
+        }
+
+        [TestAppFact("Samples.ExceptionGenerator")]
+        public void DontRedirectCrashHandlerIfPathNotSet(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 6");
+
+            // Don't set DD_TRACE_CRASH_HANDLER. In that case, the call to createdump shouldn't be redirected
+            runner.Environment.SetVariable("DOTNET_DbgEnableMiniDump", "1");
+
+            using var processHelper = runner.LaunchProcess();
+
+            processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
+            processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
+            processHelper.StandardOutput.Should().NotMatchRegex(@"createdump \d+ --signal 6 --crashthread \d+")
+                .And.Contain("[createdump] Dump successfully written");
+        }
     }
 }
