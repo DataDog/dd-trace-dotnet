@@ -117,10 +117,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-            settings.AddRegexScrubber(ClientIp, string.Empty);
-            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
+            settings.AddIastScrubbing();
             await VerifyHelper.VerifySpans(spansFiltered, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
