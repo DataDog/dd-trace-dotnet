@@ -8,11 +8,11 @@
     ParentId: Id_3,
     Tags: {
       env: integration_tests,
-      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -30,8 +30,6 @@
 System.ArgumentException: Source: TerminatingQuerySuccessMessageHandler. Error: Query param ts was set to a non-true value
 at Samples.AspNetMvc5.Handlers.TerminatingQuerySuccessMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken),
       error.type: System.ArgumentException,
-      git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
@@ -41,6 +39,8 @@ at Samples.AspNetMvc5.Handlers.TerminatingQuerySuccessMessageHandler.SendAsync(H
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {

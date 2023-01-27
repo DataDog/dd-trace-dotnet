@@ -376,9 +376,9 @@ namespace Datadog.Trace.Configuration
         public string CustomSamplingRules { get; }
         public string Environment { get; }
         public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
-        public string GitCommitSha { get; set; }
+        public string GitCommitSha { get; }
         public bool GitMetadataEnabled { get; }
-        public string GitRepositoryUrl { get; set; }
+        public string GitRepositoryUrl { get; }
         public double? GlobalSamplingRate { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GlobalTags { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GrpcTags { get; }
