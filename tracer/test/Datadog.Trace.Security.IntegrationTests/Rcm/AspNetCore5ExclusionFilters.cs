@@ -22,7 +22,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
-    public class AspNetCore5ExclusionFilters : AspNetBase, IDisposable
+    public class AspNetCore5ExclusionFilters : RcmBase
     {
 // TODO we used to have a second condition in the first filter, but that seems to break it ... ask WAF people why
 // @",
@@ -89,8 +89,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
   }
 ]";
 
-        public AspNetCore5ExclusionFilters(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5ExclusionFilters))
+        public AspNetCore5ExclusionFilters(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5ExclusionFilters))
         {
         }
 
@@ -103,7 +103,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test });
 
             var url = "/admin/?[$slice]=value";
-            var agent = await RunOnSelfHosted(true);
+            await TryStartApp();
+            var agent = Fixture.Agent;
 
             var spanBeforeAsmData = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, ip: "192.0.240.56");
 
@@ -128,7 +129,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var spans = new List<MockSpan>();
             spans.AddRange(spanBeforeAsmData);
             spans.AddRange(spanAfterAsmData);
-            await VerifySpans(spans.ToImmutableList(), settings, true);
+            await VerifySpans(spans.ToImmutableList(), settings);
         }
 
         [SkippableTheory]
@@ -137,7 +138,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestAllowUserAgent(string test, string url)
         {
-            var agent = await RunOnSelfHosted(true);
+            await TryStartApp();
+            var agent = Fixture.Agent;
 
             var spanBeforeAsmData = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, userAgent: "MyAllowedScanner");
 
@@ -163,7 +165,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var spans = new List<MockSpan>();
             spans.AddRange(spanBeforeAsmData);
             spans.AddRange(spanAfterAsmData);
-            await VerifySpans(spans.ToImmutableList(), settings, true);
+            await VerifySpans(spans.ToImmutableList(), settings);
         }
     }
 }

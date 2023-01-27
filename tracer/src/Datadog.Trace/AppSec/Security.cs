@@ -43,8 +43,8 @@ namespace Datadog.Trace.AppSec
         private bool _enabled = false;
         private IDictionary<string, Payload> _asmDataConfigs = new Dictionary<string, RcmModels.AsmData.Payload>();
         private IDictionary<string, bool> _ruleStatus = null;
-        private string _remoteRulesJson = null;
         private InitializationResult _wafInitializationResult;
+        private WafInitializationState _wafInitializationState = WafInitializationState.Empty;
 
         static Security()
         {
@@ -200,11 +200,8 @@ namespace Datadog.Trace.AppSec
             var asmDD = e.GetConfigurationAsString().FirstOrDefault();
             if (!string.IsNullOrEmpty(asmDD.TypedFile))
             {
-                lock (_sync)
-                {
-                    _wafInitializationState =
-                        _wafInitializationState.WithRules(asmDD.TypedFile);
-                }
+                _wafInitializationState =
+                    _wafInitializationState.WithRules(asmDD.TypedFile);
 
                 UpdateStatus(true);
             }
@@ -239,10 +236,7 @@ namespace Datadog.Trace.AppSec
                 e.Acknowledge(asmDataConfig.Name);
             }
 
-            lock (_sync)
-            {
-                _asmDataConfigs = new ReadOnlyDictionary<string, Payload>(nextAsmDataConfig);
-            }
+            _asmDataConfigs = new ReadOnlyDictionary<string, Payload>(nextAsmDataConfig);
 
             var updated = UpdateRulesData();
             foreach (var asmDataConfig in asmDataConfigs)
@@ -320,11 +314,8 @@ namespace Datadog.Trace.AppSec
             var exclusionsFullList = asmConfigs.SelectMany(x => x.TypedFile.Exclusions);
             var exclusions = new JArray(exclusionsFullList);
 
-            lock (_sync)
-            {
-                _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
-                _wafInitializationState = _wafInitializationState.WithExclusionsAndOnMatch(exclusions, onMatch);
-            }
+            _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
+            _wafInitializationState = _wafInitializationState.WithExclusionsAndOnMatch(exclusions, onMatch);
 
             UpdateStatus(true);
             UpdateRuleStatus(_ruleStatus);
@@ -332,11 +323,7 @@ namespace Datadog.Trace.AppSec
 
         private bool UpdateRulesData()
         {
-            bool res = false;
-            lock (_asmDataConfigs)
-            {
-                res = _waf?.UpdateRulesData(_asmDataConfigs?.SelectMany(p => p.Value.RulesData)) ?? false;
-            }
+            var res = _waf?.UpdateRulesData(_asmDataConfigs?.SelectMany(p => p.Value.RulesData)) ?? false;
 
             UpdateRuleStatus(_ruleStatus);
             return res;
@@ -367,7 +354,7 @@ namespace Datadog.Trace.AppSec
                     _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
                 }
 
-                _wafInitializationResult = Waf.Waf.Create(_wafLibraryInvoker, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
+                _wafInitializationResult = Waf.Waf.Create(_wafLibraryInvoker, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, wafInitializationState: _wafInitializationState);
                 if (_wafInitializationResult.Success)
                 {
                     if (_wafLocker.EnterWriteLock())

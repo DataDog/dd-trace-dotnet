@@ -21,6 +21,8 @@ internal class WafInitializationState
 
     public string RemoteRulesJson { get; }
 
+    public bool AreRemoteRulesJsonAvailable => !string.IsNullOrEmpty(RemoteRulesJson);
+
     public JArray Exclusions { get; }
 
     public Dictionary<string, bool> RuleStatus { get; }

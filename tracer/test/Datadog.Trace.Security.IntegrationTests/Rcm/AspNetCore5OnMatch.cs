@@ -30,8 +30,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     {
         private const string ASMProduct = "ASM";
 
-        public AspNetCore5OnMatch(ITestOutputHelper outputHelper)
-            : base(outputHelper, testName: nameof(AspNetCore5OnMatch))
+        public AspNetCore5OnMatch(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5OnMatch))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
@@ -41,7 +41,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestSuspiciousRequestBlockingActivation()
         {
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(true);
+            await TryStartApp();
+            var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
             var ruleId = "crs-942-290";
 
@@ -56,7 +57,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans1);
             spans.AddRange(spans2);
 
-            await VerifySpans(spans.ToImmutableList(), settings, true);
+            await VerifySpans(spans.ToImmutableList(), settings);
         }
     }
 }

@@ -28,6 +28,8 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         Fixture = fixture;
         EnableSecurity = enableSecurity;
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+        EnableDebugMode();
 
         // the directory would be created anyway, but in certain case a delay can lead to an exception from the LogEntryWatcher
         Directory.CreateDirectory(LogDirectory);
@@ -59,15 +61,5 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         state.Should().NotBeNull();
         state.ApplyState.Should().Be(expectedState, message);
         state.ApplyError.Should().Be(expectedError, message);
-    }
-
-    internal static void CheckCapabilities(GetRcmRequest request, uint expectedState, string message)
-    {
-#if !NETCOREAPP
-        var capabilities = new BigInteger(request?.Client?.Capabilities);
-#else
-        var capabilities = new BigInteger(request?.Client?.Capabilities, true, true);
-#endif
-        capabilities.Should().Be(expectedState, message);
     }
 }

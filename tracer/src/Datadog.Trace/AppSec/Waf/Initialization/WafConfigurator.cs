@@ -88,17 +88,17 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return File.OpenRead(rulesFile);
         }
 
-        internal InitializationResult Configure(string rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal InitializationResult Configure(string rulesFile, WafInitializationState wafInitializationState, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             var argCache = new List<Obj>();
-            var rulesObj = GetConfigObj(rulesFile, argCache);
+            var rulesObj = GetConfigObj(rulesFile, wafInitializationState, argCache);
             return Configure(rulesObj, rulesFile, argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
-        internal InitializationResult ConfigureFromRemoteConfig(string rulesJson, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal InitializationResult ConfigureFromRemoteConfig(WafInitializationState wafInitializationState, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             var argCache = new List<Obj>();
-            return Configure(GetConfigObjFromRemoteJson(rulesJson, argCache), "RemoteConfig", argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            return Configure(GetConfigObjFromRemoteJson(wafInitializationState, argCache), "RemoteConfig", argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
         private InitializationResult Configure(Obj rulesObj, string rulesFile, List<Obj> argCache, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
@@ -175,7 +175,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
         }
 
-        private Obj GetConfigObj(string rulesFile, List<Obj> argCache)
+        private Obj GetConfigObj(string rulesFile, WafInitializationState wafInitializationState, List<Obj> argCache)
         {
             Obj configObj;
             try
@@ -188,7 +188,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 }
 
                 using var reader = new StreamReader(stream);
-                configObj = GetConfigObj(reader, argCache);
+                configObj = GetConfigObj(reader, wafInitializationState, argCache);
             }
             catch (Exception ex)
             {
@@ -207,13 +207,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return configObj;
         }
 
-        private Obj GetConfigObjFromRemoteJson(string rulesJson, List<Obj> argCache)
+        private Obj GetConfigObjFromRemoteJson(WafInitializationState wafInitializationState, List<Obj> argCache)
         {
             Obj configObj;
             try
             {
-                using var reader = new StringReader(rulesJson);
-                configObj = GetConfigObj(reader, argCache);
+                using var reader = new StringReader(wafInitializationState.RemoteRulesJson);
+                configObj = GetConfigObj(reader, wafInitializationState, argCache);
             }
             catch (Exception ex)
             {
@@ -225,10 +225,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return configObj;
         }
 
-        private Obj GetConfigObj(TextReader reader, List<Obj> argCache)
+        private Obj GetConfigObj(TextReader reader, WafInitializationState wafInitializationState, List<Obj> argCache)
         {
             using var jsonReader = new JsonTextReader(reader);
             var root = JToken.ReadFrom(jsonReader);
+            AddInExclusionsAndActions((JObject)root, wafInitializationState.Exclusions, wafInitializationState.OnMatch);
 
             LogRuleDetailsIfDebugEnabled(root);
             // applying safety limits during rule parsing could result in truncated rules

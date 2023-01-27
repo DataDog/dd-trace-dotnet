@@ -221,14 +221,14 @@ namespace Datadog.Trace.Security.IntegrationTests
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
             }
 
-            if (!string.IsNullOrEmpty(ip) && _httpClient.DefaultRequestHeaders.GetValues("X-FORWARDED").All(c => c != ip))
+            if (!string.IsNullOrEmpty(ip) && _httpClient.DefaultRequestHeaders.GetValues(XffHeader).All(c => c != ip))
             {
-                if (_httpClient.DefaultRequestHeaders.GetValues("X-FORWARDED").Any())
+                if (_httpClient.DefaultRequestHeaders.GetValues(XffHeader).Any())
                 {
-                    _httpClient.DefaultRequestHeaders.Remove("X-FORWARDED");
+                    _httpClient.DefaultRequestHeaders.Remove(XffHeader);
                 }
 
-                _httpClient.DefaultRequestHeaders.Add("X-FORWARDED",  ip);
+                _httpClient.DefaultRequestHeaders.Add(XffHeader,  ip);
             }
 
             try

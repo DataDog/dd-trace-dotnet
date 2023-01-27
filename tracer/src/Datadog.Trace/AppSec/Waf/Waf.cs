@@ -49,20 +49,22 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="obfuscationParameterValueRegex">the regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious,
         /// empty string means use default embedded in the WAF</param>
         /// <param name="rulesFile">can be null, means use rules embedded in the manifest </param>
-        /// <param name="rulesJson">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
+        /// <param name="wafInitializationState">can be null. Waf initialization setting from remote config. Takes precedence over rulesFile </param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static InitializationResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? rulesFile = null, string? rulesJson = null)
+        internal static InitializationResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? rulesFile = null, WafInitializationState? wafInitializationState = null)
         {
+            wafInitializationState ??= WafInitializationState.Empty;
+
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
             InitializationResult initializationResult;
 
-            if (!string.IsNullOrEmpty(rulesJson))
+            if (wafInitializationState.AreRemoteRulesJsonAvailable)
             {
-                initializationResult = wafConfigurator.ConfigureFromRemoteConfig(rulesJson, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                initializationResult = wafConfigurator.ConfigureFromRemoteConfig(wafInitializationState, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
             else
             {
-                initializationResult = wafConfigurator.Configure(rulesFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                initializationResult = wafConfigurator.Configure(rulesFile, wafInitializationState, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
 
             return initializationResult;
