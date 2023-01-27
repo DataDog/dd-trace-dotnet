@@ -42,8 +42,18 @@ namespace Datadog.Trace
             }
 
             Tracer = tracer;
-            TraceId = traceId ?? RandomIdGenerator.Shared.NextSpanId();
-            RawTraceId = rawTraceId;
+
+            if (traceId == null)
+            {
+                TraceId = RandomIdGenerator.Shared.NextSpanId();
+                RawTraceId = null;
+            }
+            else
+            {
+                TraceId = (ulong)traceId;
+                RawTraceId = rawTraceId;
+            }
+
             Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
 
             if (CIVisibility.IsRunning)
@@ -95,7 +105,53 @@ namespace Datadog.Trace
 
         private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
 
-        internal void EnableIastInRequest()
+        /// <summary>
+        /// Starts a new trace, optionally using the specified trace id.
+        /// </summary>
+        public static TraceContext StartNewTrace(Tracer tracer, ulong? traceId, string rawTraceId)
+        {
+            var traceContext = new TraceContext(
+                tracer,
+                traceId,
+                rawTraceId,
+                tags: null);
+
+            // in a version-mismatch scenario, try to get the sampling priority
+            // from the "other" tracer's active trace, if any
+            if (DistributedTracer.Instance.GetSamplingPriority() is { } samplingPriority)
+            {
+                traceContext.SetSamplingPriority(samplingPriority);
+            }
+
+            return traceContext;
+        }
+
+        /// <summary>
+        /// Starts a new trace from a propagated span context.
+        /// </summary>
+        internal static TraceContext StartNewTraceFromPropagatedContext(Tracer tracer, ISpanContext propagatedContext)
+        {
+            if(propagatedContext is SpanContext)
+            var propagatedTags = TagPropagation.ParseHeader(propagatedContext.PropagatedTags, tracer.Settings.OutgoingTagPropagationHeaderMaxLength);
+
+            var traceContext = new TraceContext(
+                tracer,
+                propagatedContext.TraceId,
+                propagatedContext.RawTraceId,
+                propagatedTags);
+
+            if (propagatedContext.SamplingPriority is { } samplingPriority)
+            {
+                traceContext.SetSamplingPriority(samplingPriority);
+            }
+
+            traceContext.Origin = propagatedContext.Origin;
+            traceContext.AdditionalW3CTraceState = propagatedContext.AdditionalW3CTraceState;
+
+            return traceContext;
+        }
+
+        public void EnableIastInRequest()
         {
             if (_iastRequestContext is null)
             {
@@ -207,6 +263,11 @@ namespace Datadog.Trace
                 return;
             }
 
+            SetSamplingPriority((int)priority, mechanism, notifyDistributedTracer);
+        }
+
+        public void SetSamplingPriority(int priority, int? mechanism = null, bool notifyDistributedTracer = true)
+        {
             _samplingPriority = priority;
 
             const string tagName = Trace.Tags.Propagated.DecisionMaker;

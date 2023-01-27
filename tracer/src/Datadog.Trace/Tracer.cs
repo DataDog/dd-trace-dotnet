@@ -333,62 +333,17 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        /// <summary>
-        /// Starts a new local trace from a propagated span context.
-        /// </summary>
-        internal TraceContext CreateTraceContext(SpanContext propagatedSpanContext)
-        {
-            var traceTags = TagPropagation.ParseHeader(propagatedSpanContext.PropagatedTags, Settings.OutgoingTagPropagationHeaderMaxLength);
-
-            var traceContext = new TraceContext(
-                this,
-                propagatedSpanContext.TraceId,
-                propagatedSpanContext.RawTraceId,
-                traceTags);
-
-            if (propagatedSpanContext.SamplingPriority is { } samplingPriority)
-            {
-                traceContext.SetSamplingPriority(samplingPriority);
-            }
-
-            traceContext.Origin = propagatedSpanContext.Origin;
-            traceContext.AdditionalW3CTraceState = propagatedSpanContext.AdditionalW3CTraceState;
-
-            return traceContext;
-        }
-
-        /// <summary>
-        /// Starts a new root trace, optionally using the specified traceId.
-        /// If traceId is null, try to get a traceId from the current Activity.
-        /// If there is no current activity, a random traceId is generated.
-        /// </summary>
-        internal TraceContext CreateTraceContext(ulong? traceId, string rawTraceId)
-        {
-            if (traceId == null)
-            {
-                TryGetTraceIdFromCurrentActivity(out traceId, out rawTraceId);
-            }
-
-            var traceContext = new TraceContext(this, traceId, rawTraceId, tags: null);
-
-            // in a version-mismatch scenario, try to get the sampling priority from the "other" tracer
-            if (DistributedTracer.Instance.GetSamplingPriority() is { } samplingPriority)
-            {
-                traceContext.SetSamplingPriority(samplingPriority);
-            }
-
-            return traceContext;
-        }
-
         private static bool TryGetTraceIdFromCurrentActivity(
-            [NotNullWhen(true)] out ulong? traceId,
-            [NotNullWhen(true)] out string rawTraceId)
+            out ulong traceId,
+            out string rawTraceId)
         {
+            traceId = 0;
+            rawTraceId = null;
             var activity = Activity.ActivityListener.GetCurrentActivity();
 
-            if (activity is Activity.DuckTypes.IW3CActivity w3CActivity)
+            if (activity is Activity.DuckTypes.IW3CActivity { TraceId: { } tid })
             {
-                rawTraceId = w3CActivity.TraceId;
+                rawTraceId = tid;
 
 #if NETCOREAPP3_1_OR_GREATER
                 // TODO: use the entire rawTraceId (32 hex chars) when we add 128-bit support
@@ -405,8 +360,6 @@ namespace Datadog.Trace
                 return true;
             }
 
-            traceId = null;
-            rawTraceId = null;
             return false;
         }
 
@@ -415,37 +368,44 @@ namespace Datadog.Trace
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
 
+            // fallback to the default service name if override was not specified
+            serviceName ??= DefaultServiceName;
+
             TraceContext traceContext;
 
-            // try to get the trace context from the parent
-            if (parent is SpanContext spanContext)
+            // If parent is a SpanContext with a valid trace id...
+            if (parent is SpanContext { TraceId: > 0 } parentContext)
             {
-                // If parent's TraceContext is not null, parent is a local span and
-                // we should continue using the same context.
-                // If parent's TraceContext is null, then the context was extracted from
-                // propagation headers. Create a new TraceContext (this will start a new local trace) and initialize
-                // it with the propagated values (trace id, sampling priority, origin, tags, W3C trace state, etc).
-                traceContext = spanContext.TraceContext ?? CreateTraceContext(spanContext);
-            }
-            else
-            {
-                // If parent is not a SpanContext, it must be either null (no parent), a ReadOnlySpanContext,
-                // or a user-defined ISpanContext implementation.
-                // Since we don't have a TraceContext, so we must create a new one (this will start a new local trace).
-                // Note that we may have a traceId for this trace.
-                traceContext = CreateTraceContext(traceId, rawTraceId);
+                if (parentContext.TraceContext != null)
+                {
+                    // If parent is associated to a trace, then parent is a local span
+                    // and this new context will belong to a child span.
+                    return SpanContext.CreateChildOfLocalParent(parentContext, serviceName, spanId, rawSpanId);
+                }
+
+                // If parent is not associated to a trace, then we assume it represents propagated context.
+                // Start a new local trace and initialize it with the propagated state
+                // (trace id, sampling priority, origin, tags, etc).
+                traceContext = TraceContext.StartNewTraceFromPropagatedContext(this, parentContext);
+                return SpanContext.CreateContextForLocalRoot(traceContext, serviceName, spanId, rawSpanId);
             }
 
-            var finalServiceName = serviceName ?? DefaultServiceName;
+            // If parent is not a SpanContext, it must be one of:
+            //  - null (no trace id, no parent id)
+            //  - ReadOnlySpanContext (could have trace id and parent span id)
+            //  - user-defined ISpanContext type (could have trace id and parent span id)
 
-            return new SpanContext(
-                parent,
-                traceContext,
-                finalServiceName,
-                traceId: traceId,
-                spanId: spanId,
-                rawTraceId: rawTraceId,
-                rawSpanId: rawSpanId);
+            var finalTraceId = parent?.TraceId ?? traceId ?? 0;
+            var finalSpanId = parent?.SpanId ?? spanId ?? 0;
+
+            if (finalTraceId == 0)
+            {
+                TryGetTraceIdFromCurrentActivity(out finalTraceId, out rawTraceId);
+            }
+
+            // Since we don't have a TraceContext, we start a new local trace.
+            traceContext = TraceContext.StartNewTrace(this, traceId, rawTraceId);
+            return SpanContext.CreateContextForLocalRoot(traceContext, serviceName, spanId, rawSpanId);
         }
 
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
