@@ -4,13 +4,9 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Security;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Process;
 using Xunit;
 
