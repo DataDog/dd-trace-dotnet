@@ -196,20 +196,22 @@ namespace Datadog.Trace.Tests.Agent
 
             try
             {
-                var parentSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), traceId: 1);
+
+                var parentSpan = new Span(new SpanContext(parent: SpanContext.None, traceContext, serviceName: "service"), start);
                 parentSpan.OperationName = "web.request";
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // childSpan shouldn't be recorded, because it's not top-level and doesn't have the Measured tag
-                var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var childSpan = new Span(new SpanContext(parentSpan.Context, traceContext, "service"), start);
                 childSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var measuredChildSpan1 = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var measuredChildSpan1 = new Span(new SpanContext(parentSpan.Context, traceContext, "service"), start);
                 measuredChildSpan1.OperationName = "child.op1";
                 measuredChildSpan1.SetTag(Tags.Measured, "1");
                 measuredChildSpan1.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var measuredChildSpan2 = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var measuredChildSpan2 = new Span(new SpanContext(parentSpan.Context, traceContext, "service"), start);
                 measuredChildSpan2.OperationName = "child.op2";
                 measuredChildSpan2.SetTag(Tags.Measured, "1");
                 measuredChildSpan2.SetDuration(TimeSpan.FromMilliseconds(100));
@@ -259,10 +261,12 @@ namespace Datadog.Trace.Tests.Agent
 
             try
             {
-                var simpleSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var traceContext1 = new TraceContext(Mock.Of<IDatadogTracer>(), traceId: 1);
+                var simpleSpan = new Span(new SpanContext(parent: SpanContext.None, traceContext1, serviceName: "service"), start);
                 simpleSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var parentSpan = new Span(new SpanContext(2, 2, serviceName: "service"), start);
+                var traceContext2 = new TraceContext(Mock.Of<IDatadogTracer>(), traceId: 2);
+                var parentSpan = new Span(new SpanContext(parent: SpanContext.None, traceContext2, serviceName: "service"), start);
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(200));
 
                 // snapshotSpan shouldn't be recorded, because it has the PartialSnapshot metric (even though it is top-level)
@@ -271,7 +275,7 @@ namespace Datadog.Trace.Tests.Agent
                 snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(300));
 
                 // Create a new child span that is a service entry span, which means it will have stats computed for it
-                var httpClientServiceSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service-http-client"), start);
+                var httpClientServiceSpan = new Span(new SpanContext(parentSpan.Context, parentSpan.Context.TraceContext, "service-http-client"), start);
                 httpClientServiceSpan.SetDuration(TimeSpan.FromMilliseconds(400));
 
                 aggregator.Add(simpleSpan, parentSpan, snapshotSpan, httpClientServiceSpan);

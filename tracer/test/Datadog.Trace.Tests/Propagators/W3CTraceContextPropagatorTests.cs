@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void CreateTraceStateHeader_WithPublicPropagatedTags()
         {
-            var traceContext = new TraceContext(tracer: null);
+            var traceContext = new TraceContext(tracer: null, traceId: null);
             var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: 1, spanId: 2);
             var span = new Span(spanContext, DateTimeOffset.Now);
 
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_IHeadersCollection()
         {
-            var traceContext = new TraceContext(tracer: null, tags: null)
+            var traceContext = new TraceContext(tracer: null, traceId: 123456789, tags: null)
                                {
                                    Origin = "origin",
                                    AdditionalW3CTraceState = "key1=value1"
@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_CarrierAndDelegate()
         {
-            var traceContext = new TraceContext(tracer: null, tags: null)
+            var traceContext = new TraceContext(tracer: null, traceId: 123456789, tags: null)
                                {
                                    Origin = "origin",
                                    AdditionalW3CTraceState = "key1=value1"
