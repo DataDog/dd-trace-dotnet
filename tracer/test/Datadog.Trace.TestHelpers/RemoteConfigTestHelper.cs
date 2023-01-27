@@ -67,12 +67,9 @@ namespace Datadog.Trace.TestHelpers
                 {
                     // prefer a request that has been processed, meaning the config states have been filled in
                     request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
-                    if (request?.Client?.State?.ConfigStates?.Count is > 0)
+                    if (request?.Client?.State?.ConfigStates?.Count is > 0 && (appliedServiceNames == null || !appliedServiceNames.Except(request.Client.State.ConfigStates.Select(c => c.Id)).Any()))
                     {
-                        if (appliedServiceNames == null || !appliedServiceNames.Except(request.Client.State.ConfigStates.Select(c => c.Id)).Any())
-                        {
-                            return request;
-                        }
+                        return request;
                     }
                 }
             }

@@ -7,9 +7,11 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using Xunit;
 
 namespace Datadog.Trace.TestHelpers
 {
+    [CollectionDefinition("IisTests", DisableParallelization = false)]
     public sealed class IisFixture : GacFixture, IDisposable
     {
         public (Process Process, string ConfigFile) IisExpress { get; private set; }
