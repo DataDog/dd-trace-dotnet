@@ -17,7 +17,7 @@
   </Target>
 
   <!-- default target -->
-  <Target Name="Build" DependsOnTargets="Restore">
+  <Target Name="Build">
     <MSBuild Targets="Build" Projects="@(CppProject);@(CppTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>

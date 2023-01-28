@@ -13,6 +13,7 @@ using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Nuke.Common.Tools.NuGet;
 using System.Xml.Linq;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 partial class Build
 {
@@ -92,8 +93,9 @@ partial class Build
             var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
             Chmod.Value.Invoke("+x " + exePath);
 
+            var testsResultFile = ProfilerBuildDataDirectory / "Datadog.Profiler.Tests.Results.xml";
             var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
         });
 
     Target CompileProfilerNativeTestsWindows => _ => _
@@ -130,18 +132,12 @@ partial class Build
     Target RunProfilerNativeUnitTestsWindows => _ => _
         .Unlisted()
         .After(CompileProfilerNativeTestsWindows)
+        .After(CompileProfilerWithAsanWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var configAndTarget = $"{BuildConfiguration}-{TargetPlatform}";
-            var workingDirectory = ProfilerOutputDirectory / "bin" / configAndTarget / "profiler" / "test" / "Datadog.Profiler.Native.Tests";
-            EnsureExistingDirectory(workingDirectory);
-
-            var exePath = workingDirectory / "Datadog.Profiler.Native.Tests.exe";
-            var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+            RunProfilerUnitTestsOnWindows(BuildConfiguration, TargetPlatform);
         });
-
 
     Target PublishProfiler => _ => _
         .Unlisted()
@@ -323,10 +319,9 @@ partial class Build
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             NuGetTasks.NuGetRestore(s => s
-                   .SetTargetPath(ProfilerMsBuildProject)
-                   .SetVerbosity(NuGetVerbosity.Detailed)
-                   .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                       o.SetPackagesDirectory(NugetPackageDirectory)));
+                .SetTargetPath(ProfilerMsBuildProject)
+                .SetVerbosity(NuGetVerbosity.Normal)
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackagesDirectory(NugetPackageDirectory)));
 
             var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
 
@@ -466,7 +461,7 @@ partial class Build
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
 
-            RunClangTidy.Value($"-j {Environment.ProcessorCount} -checks=\"{ClangTidyChecks}\" -p {NativeBuildDirectory}", logFile:outputFile, logOutput: false);
+            RunClangTidy.Value($"-j {Environment.ProcessorCount} -checks=\"{ClangTidyChecks}\" -p {NativeBuildDirectory}", logFile: outputFile, logOutput: false);
         });
 
     Target RunCppCheckProfilerLinux => _ => _
@@ -484,4 +479,205 @@ partial class Build
 
             CppCheck.Value($"-j {Environment.ProcessorCount} --enable=all --project={NativeBuildDirectory}/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list={ProfilerDirectory}/cppcheck-suppressions.txt --xml --output-file={outputFile}");
         });
+
+    Target RunProfilerAsanTest => _ => _
+        .Unlisted()
+        .Description("Compile and run the profiler with Clang Address sanitizer")
+        .OnlyWhenStatic(() => IsLinux)
+        .DependsOn(BuildNativeLoader)
+        .DependsOn(CompileProfilerWithAsanLinux)
+        .DependsOn(CompileProfilerWithAsanWindows)
+        .DependsOn(PublishProfiler)
+        .DependsOn(RunSampleWithProfilerAsan);
+
+    Target CompileProfilerWithAsanLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Before(PublishProfiler)
+        .Triggers(RunUnitTestsWithAsanLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ASAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
+        });
+
+    Target RunUnitTestsWithAsanLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            var workingDirectory = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests";
+            EnsureExistingDirectory(workingDirectory);
+
+            var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
+            Chmod.Value.Invoke("+x " + exePath);
+
+            var envVars = new Dictionary<string, string>()
+            {
+                { "ASAN_OPTIONS", "detect_leaks=0" }
+            };
+
+            var testsResultFile = ProfilerBuildDataDirectory / "Datadog.Profiler.Tests.Results.Linux.x64.xml";
+            var testExe = ToolResolver.GetLocalTool(exePath);
+            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
+        });
+
+    Target CompileProfilerWithAsanWindows => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .Before(PublishProfiler)
+        .Triggers(RunUnitTestsWithAsanWindows)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
+
+            var testProjects = ProfilerDirectory.GlobFiles("test/**/*.vcxproj");
+
+            NuGetTasks.NuGetRestore(s => s
+                   .SetTargetPath(ProfilerMsBuildProject)
+                   .SetVerbosity(NuGetVerbosity.Detailed)
+                   .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                       o.SetPackagesDirectory(NugetPackageDirectory))
+                   .CombineWith(testProjects, (m, testProjects) => m.SetTargetPath(testProjects)));
+
+            var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
+
+            // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
+            // Build native profiler assets
+            MSBuild(s => s
+                .SetTargetPath(ProfilerMsBuildProject)
+                .SetConfiguration(Configuration.Release)
+                .SetMSBuildPath()
+                .DisableRestore()
+                .SetMaxCpuCount(null)
+                .SetTargets("Build")
+                .AddProperty("EnableASAN", "true")
+                .CombineWith(platforms, (m, platform) => m
+                    .SetTargetPlatform(platform)));
+        });
+
+    Target RunUnitTestsWithAsanWindows => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            foreach (var platform in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
+            {
+                RunProfilerUnitTestsOnWindows(Configuration.Release, platform);
+            }
+        });
+
+    Target RunSampleWithProfilerAsan => _ => _
+        .Unlisted()
+        .Requires(() => Framework)
+        .OnlyWhenStatic(() => IsWin || IsLinux)
+        .After(BuildNativeLoader)
+        .After(PublishProfiler)
+        .After(CompileProfilerWithAsanLinux)
+        .After(CompileProfilerWithAsanWindows)
+        .Triggers(CheckTestResultForProfilerWithSanitizer)
+        .Executes(() =>
+        {
+            var envVars = new Dictionary<string, string>()
+            {
+                { "DD_TRACE_ENABLED", "0" }, // Disable tracer for this test
+                { "DD_PROFILING_ENABLED", "1" },
+                { "DD_PROFILING_EXCEPTION_ENABLED", "1" },
+                { "DD_PROFILING_ALLOCATION_ENABLED", "1"},
+                { "DD_PROFILING_CONTENTION_ENABLED","1" },
+                { "DD_TRACE_DEBUG", "1" },
+            };
+
+            if (IsLinux)
+            {
+                envVars["LD_PRELOAD"] = "libasan.so.6";
+                // detect_leaks set to 0 to avoid false positive since not all libs are compiled against ASAN (ex. CLR binaries)
+                envVars["ASAN_OPTIONS"] = "detect_leaks=0";
+            }
+
+            AddContinuousProfilerEnvironmentVariables(envVars);
+
+            var platforms =
+                IsWin
+                ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
+                : new[] { MSBuildTargetPlatform.x64 };
+
+            var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
+
+            foreach (var platform in platforms)
+            {
+                envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = ProfilerBuildDataDirectory / platform.ToString() / "pprofs";
+                envVars["DD_PROFILING_LOG_DIR"] = ProfilerBuildDataDirectory / platform.ToString() / "logs";
+                envVars["DD_TRACE_LOG_DIRECTORY"] = ProfilerBuildDataDirectory / platform.ToString() / "logs"; // for the native loader log files
+
+                DotNetBuild(s => s
+                    .SetFramework(Framework)
+                    .SetProjectFile(sampleApp)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetNoWarnDotNetCore3()
+                    .SetTargetPlatform(platform));
+
+                var sampleBaseOutputDir = ProfilerOutputDirectory / "bin" / $"{BuildConfiguration}-{platform}" / "profiler" / "src" / "Demos";
+                var sampleAppDll = sampleBaseOutputDir / sampleApp.Name / Framework / $"{sampleApp.Name}.dll";
+
+                CustomDotNetTasks.DotNet($"{sampleAppDll} --scenario 1 --timeout 10", platform: platform, environmentVariables: envVars);
+            }
+        });
+
+    Target CheckTestResultForProfilerWithSanitizer => _ => _
+        .Unlisted()
+        .Executes(() =>
+        {
+            var platforms =
+                IsWin
+                ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
+                : new[] { MSBuildTargetPlatform.x64 };
+
+            foreach (var platform in platforms)
+            {
+                var pprofsOutputDir = ProfilerBuildDataDirectory / platform.ToString() / "pprofs";
+                Logger.Info($"Check if pprofs file(s) was/were generated at {pprofsOutputDir}");
+
+                var pprofFiles = pprofsOutputDir.GlobFiles(
+                    "*.pprof"
+                );
+
+                if (pprofFiles.Count == 0)
+                {
+                    Logger.Error("::error::No pprof file(s) was/were generated. Maybe the profiler is not correctly attached.");
+                    throw new Exception("No pprof file(s) was/were generated.");
+                }
+
+                var logsOutputDir = ProfilerBuildDataDirectory / platform.ToString() / "logs";
+                Logger.Info($"Look for profiler log file(s) in {logsOutputDir}");
+
+                var logFiles = logsOutputDir.GlobFiles(
+                    "DD-DotNet-Profiler-Native-*.log"
+                );
+
+                if (logFiles.Count == 0)
+                {
+                    Logger.Error("::error::No profiler log files was/were found. Was the profiler attached to the app?");
+                    throw new Exception("No profiler log files was/were found.");
+                }
+            }
+        });
+
+    void RunProfilerUnitTestsOnWindows(Configuration configuration, MSBuildTargetPlatform platform)
+    {
+        var configAndTarget = $"{configuration}-{platform}";
+        var workingDirectory = ProfilerOutputDirectory / "bin" / configAndTarget / "profiler" / "test" / "Datadog.Profiler.Native.Tests";
+        EnsureExistingDirectory(workingDirectory);
+
+        var testsResultFile = ProfilerBuildDataDirectory / $"Datadog.Profiler.Tests.Results.Windows.{configuration}.{platform}.xml";
+        var exePath = workingDirectory / "Datadog.Profiler.Native.Tests.exe";
+        var testExe = ToolResolver.GetLocalTool(exePath);
+        testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
+    }
+
 }

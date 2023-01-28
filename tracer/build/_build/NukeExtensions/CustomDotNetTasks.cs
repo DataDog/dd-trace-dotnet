@@ -1,6 +1,10 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Nuke.Common;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.MSBuild;
 
 public static class CustomDotNetTasks
 {
@@ -39,5 +43,29 @@ public static class CustomDotNetTasks
     public static IEnumerable<(DotNetMSBuildSettings Settings, IReadOnlyCollection<Output> Output)> DotNetMSBuild(CombinatorialConfigure<DotNetMSBuildSettings> configurator, int degreeOfParallelism = 1, bool completeOnFailure = false)
     {
         return configurator.Invoke(DotNetMSBuild, DotNetTasks.DotNetLogger, degreeOfParallelism, completeOnFailure);
+    }
+
+    public static IReadOnlyCollection<Output> DotNet(string arguments, MSBuildTargetPlatform platform, string workingDirectory = null, IReadOnlyDictionary<string, string> environmentVariables = null, int? timeout = null, bool? logOutput = null, bool? logInvocation = null, bool? logTimestamp = null, string logFile = null, Func<string, string> outputFilter = null)
+    {
+        var dotnetPath = GetDotNetPath(platform);
+
+        using var process = ProcessTasks.StartProcess(dotnetPath, arguments, workingDirectory, environmentVariables, timeout, logOutput, logInvocation, logTimestamp, logFile, DotNetTasks.DotNetLogger, outputFilter);
+        process.AssertZeroExitCode();
+        return process.Output;
+
+        static string GetDotNetPath(MSBuildTargetPlatform platform)
+        {
+            if (platform == MSBuildTargetPlatform.x64 || platform == null)
+                return DotNetTasks.DotNetPath;
+
+            var dotnetPath = EnvironmentInfo.GetVariable<string>("DOTNET_EXE_32")
+                     ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "dotnet.exe");
+
+            if (!File.Exists(dotnetPath))
+            {
+                throw new Exception($"Error locating 32-bit dotnet process. Expected at '{dotnetPath}'");
+            }
+            return dotnetPath;
+        }
     }
 }

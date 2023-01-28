@@ -1,4 +1,4 @@
-﻿FROM gleocadie/centos7-clang9 as base
+﻿FROM gleocadie/centos7-clang9:v2 as base
 
 ARG DOTNETSDK_VERSION
 
@@ -46,7 +46,8 @@ RUN yum update -y \
         rpm-build \
         expect \
         sudo \
-        gawk
+        gawk \
+        libasan6
 
 # Install newer version of fpm and specific version of dotenv 
 RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \

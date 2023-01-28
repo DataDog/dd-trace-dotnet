@@ -1167,101 +1167,6 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-- stage: asan_tests_windows_profiler
-#address sanitizer tests
-  condition: > 
-    and(
-      succeeded(), 
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
-    )
-  dependsOn: [master_commit_id, generate_variables, build_windows_tracer, build_windows_profiler]
-  variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [Win]
-
-  - job: Win
-    pool:
-      vmImage: windows-2022
-    timeoutInMinutes: 60 #default value
-    strategy:
-      matrix:
-        x86:
-          platform: x86
-        x64:
-          platform: x64
-    
-    steps:
-    - task: UseDotNet@2
-      inputs:
-        version: 7.0.101
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows tracer home
-      inputs:
-        artifact: windows-tracer-home
-        path: $(monitoringHome)
-        
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows profiler home
-      inputs:
-        artifact: windows-profiler-binaries
-        path: $(System.DefaultWorkingDirectory)/profiler/_build
-
-    - task: MSBuild@1
-      inputs:
-        solution: profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj
-        configuration: Release
-        platfom: $(platform)
-        msbuildArguments: /target:BuildCppWithAsan /property:DeployToMonitoringHome=True
-      displayName: Build Native profiler and tests
-
-    - powershell: |        
-        dotnet restore /p:Configuration="Release" /p:Platform="$(platform)" profiler/src/Demos/Datadog.Demos.sln
-      displayName: restore sample applications
-
-    - powershell: |        
-        dotnet build --no-restore -c Release -p:Platform=$(platform) profiler/src/Demos/Datadog.Demos.sln
-      displayName: build sample applications
-
-    - powershell: |
-        # Prepare environment
-        $env:DD_INSIDE_CI=$true
-        $env:DD_HOSTNAME="dd-profiler-dotnet"
-        $env:DD_SERVICE="dd-profiler-dotnet"
-        $env:DD_PROFILING_ENABLED="1"
-
-        # Set profiler deployment and test output dir folder path for the test
-        $test_output_dir="$(System.DefaultWorkingDirectory)\test_output"
-
-        $env:DD_TESTING_OUPUT_DIR=$test_output_dir
-        $env:DD_TRACE_DEBUG="1"
-        $env:DD_PROFILING_LOG_DIR="$test_output_dir\logs"
-        $env:DD_PROFILING_OUTPUT_DIR="$test_output_dir\pprofs"
-        $env:DD_TRACE_ENABLED="0"
-        $env:COR_ENABLE_PROFILING="1"
-        $env:COR_PROFILER="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-        $env:COR_PROFILER_PATH="$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/win-$(platform)/Datadog.Trace.ClrProfiler.Native.dll)"
-        $env:DD_DOTNET_PROFILER_HOME="$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home)"
-
-        # Run Computer01 for 2min
-        cd profiler\_build\bin\Release-$(platform)\profiler\src\Demos\Samples.Computer01\net45
-        .\Samples.Computer01.exe --scenario 1 --timeout 120
-      displayName: run asan test
-      workingDirectory: $(System.DefaultWorkingDirectory)
-      env:
-        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        DD_API_KEY: $(ddApiKey)
-
-    - publish: $(System.DefaultWorkingDirectory)/test_output
-      displayName: Uploading test results
-      artifact: _$(System.StageName)_$(Agent.JobName)_tests_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: false
-
 - stage: static_analysis_tests_profiler
   condition: >
     and(
@@ -1958,94 +1863,67 @@ stages:
         testResultsFiles: profiler/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-- stage: asan_tests_linux_profiler
-#address sanitizer tests
-  condition: > 
+- stage: asan_profiler_tests
+  #address sanitizer tests
+  condition: >
     and(
       succeeded(), 
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
-  dependsOn: [master_commit_id, generate_variables, build_linux_tracer, build_linux_profiler]
+  dependsOn: [master_commit_id, generate_variables]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Test]
+      jobs: [Linux,Windows]
 
-  - job: Test
+  - job: Linux
     timeoutInMinutes: 60 #default value
-    strategy:
-      matrix:
-        centos:
-          baseImage: centos7
-        alpine:
-          baseImage: alpine
-    
     pool:
       vmImage: ubuntu-20.04
 
     steps:
-    - task: UseDotNet@2
-      inputs:
-        version: 6.0.x
-
-    - task: UseDotNet@2
-      inputs:
-        version: 7.0.101
-
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
 
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: linux-profiler-binaries-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/profiler/_build
-      displayName: Download linux profiler binaries
+    - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: |
-        sudo apt-get update
-        sudo apt-get install -y libasan6
-      displayName: install libasan
-    
-    - script: |
-        CXX=clang++ CC=clang cmake -S . -B __build -DRUN_ASAN=ON
-        cmake --build __build --config Release --target all-profiler
-      displayName: Build Native Profiler Engine
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        command: "Clean RunProfilerAsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
-    - script: |
-        dotnet restore /p:Configuration="Release" /p:Platform="x64" profiler/src/Demos/Datadog.Demos.sln
-      displayName: restore sample applications
+    - publish: profiler/build_data
+      displayName: Uploading Address sanitizer test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
 
-    - script: |
-        dotnet build --no-restore -c Release -p:Platform=x64 profiler/src/Demos/Datadog.Demos.sln
-      displayName: build sample applications
+  - job: Windows
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-windows-scale-set-3
 
-    - script: |
-        # set profiler deployment and test output dir folder path for the test
-        test_output_dir="$(System.DefaultWorkingDirectory)/test_output"
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
 
-        export DD_TESTING_OUPUT_DIR="$test_output_dir"
-        export DD_PROFILING_LOG_DIR="$test_output_dir/logs"
-        export DD_PROFILING_OUTPUT_DIR="$test_output_dir/pprofs"
-        export DD_TRACE_DEBUG="1"
+    - template: steps/install-latest-dotnet-sdk.yml
+      parameters:
+        includeX86: true
 
-        # Run Computer01 for 2min
-        source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
-        cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net6.0 &&
-        # LD_PRELOAD was previously set in the DDProf-SetEnv.sh script, but ASAN does not work with other
-        # library in LD_PRELOAD (segfault)
-        ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
-      displayName: run asan test
-      env:
-        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        DD_API_KEY: $(ddApiKey)
+    - script: tracer\build.cmd RunProfilerAsanTest -Framework net7.0
+      displayName: Run Profiler ASAN test
 
-    - publish: $(System.DefaultWorkingDirectory)/test_output
-      displayName: Uploading test results
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+    - publish: profiler/build_data
+      displayName: Uploading Address sanitizer test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: false
 
