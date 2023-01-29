@@ -22,7 +22,7 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
     protected const string LogFileNamePrefix = "dotnet-tracer-managed-";
 
-    public RcmBase(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
+    protected RcmBase(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
         : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
     {
         Fixture = fixture;
@@ -37,8 +37,6 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     protected AspNetCoreTestFixture Fixture { get; }
 
     protected bool? EnableSecurity { get; }
-
-    protected TimeSpan LogEntryWatcherTimeout => TimeSpan.FromSeconds(20);
 
     protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetType().Name}Logs");
 
@@ -72,12 +70,4 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 #endif
         capabilities.Should().Be(expectedState, message);
     }
-
-    protected string AppSecDisabledMessage() => $"AppSec is now Disabled, _settings.Enabled is false, coming from remote config: true  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
-
-    protected string AppSecEnabledMessage() => $"AppSec is now Enabled, _settings.Enabled is true, coming from remote config: true  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
-
-    protected string RulesUpdatedMessage() => $"rules have been updated and waf status is \"DDWAF_OK\"  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
-
-    protected string WafUpdateRule() => $"DDAS-0015-00: AppSec loaded 1 rules from file RemoteConfig.  {{ MachineName: \".\", Process: \"[{Fixture.Process.Id}";
 }
