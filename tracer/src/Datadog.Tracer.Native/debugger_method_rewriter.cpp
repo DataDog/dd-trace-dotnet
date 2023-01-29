@@ -17,6 +17,11 @@ int DebuggerMethodRewriter::GetNextInstrumentedMethodIndex()
     return std::atomic_fetch_add(&_nextInstrumentedMethodIndex, 1);
 }
 
+int DebuggerMethodRewriter::GetNextInstrumentedProbeIndex()
+{
+    return std::atomic_fetch_add(&_nextInstrumentedProbeIndex, 1);
+}
+
 // Get function locals
 HRESULT DebuggerMethodRewriter::GetFunctionLocalSignature(const ModuleMetadata& module_metadata, ILRewriter& rewriter, FunctionLocalSignature& localSignature)
 {
@@ -395,6 +400,8 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     }
 
     rewriterWrapper.LoadStr(lineProbeIdToken);
+    
+    rewriterWrapper.LoadInt32(GetNextInstrumentedProbeIndex());
 
     ILInstr* loadInstanceInstr;
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr, debuggerTokens);
@@ -532,6 +539,8 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     // ***
 
     auto hr = LoadProbeIdIntoStack(module_id, module_metadata, function_token, methodProbeId, rewriterWrapper);
+
+    rewriterWrapper.LoadInt32(GetNextInstrumentedProbeIndex());
 
     ILInstr* loadInstanceInstr;
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr, debuggerTokens);
@@ -1019,9 +1028,11 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
 
 
     // the manage call look like this: 
-    // static AsyncMethodDebuggerState BeginMethod<TTarget>(string probeId, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, ref bool isReEntryToMoveNext)
+    // static AsyncMethodDebuggerState BeginMethod<TTarget>(string probeId, int probeMetadataIndex, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, ref bool isReEntryToMoveNext)
     hr = LoadProbeIdIntoStack(moduleId, moduleMetadata, functionToken, methodProbeId, rewriterWrapper);
     IfFailRet(hr);
+
+    rewriterWrapper.LoadInt32(GetNextInstrumentedProbeIndex());
 
     ILInstr* loadInstanceInstr;
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr, debuggerTokens);

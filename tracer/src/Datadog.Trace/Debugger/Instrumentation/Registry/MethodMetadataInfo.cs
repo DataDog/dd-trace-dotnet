@@ -7,7 +7,7 @@ using System;
 using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.Instrumentation
+namespace Datadog.Trace.Debugger.Instrumentation.Registry
 {
     /// <summary>
     /// Holds data needed during Debugger instrumentation execution.
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Gets the method base of the instrumented method
         /// </summary>
-        public MethodBase Method { get;  }
+        public MethodBase Method { get; }
 
         /// <summary>
         /// Gets the type that represents the "this" object of the async kick-off method (i.e. original method)

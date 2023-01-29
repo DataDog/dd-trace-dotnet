@@ -372,20 +372,22 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     unsigned runtimeTypeHandleBuffer;
     auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
 
-    unsigned long signatureLength = (probeType == AsyncMethodProbe ? 12 : 10) + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
+    unsigned long signatureLength = (probeType == AsyncMethodProbe ? 13 : 11) + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
 
     COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
     signature[offset++] = 0x01; // generic arguments count
-    signature[offset++] = probeType == AsyncMethodProbe ? 0x06 : 0x05; // arguments count
+    signature[offset++] = probeType == AsyncMethodProbe ? 0x07 : 0x06; // arguments count
 
     signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;
 
     signature[offset++] = ELEMENT_TYPE_STRING;
+
+    signature[offset++] = ELEMENT_TYPE_I4; // probeMetadataIndex
 
     signature[offset++] = ELEMENT_TYPE_MVAR;
     signature[offset++] = 0x00;
@@ -793,20 +795,22 @@ HRESULT DebuggerTokens::WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo*
         unsigned runtimeTypeHandleBuffer;
         auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
 
-        unsigned long signatureLength = 12 + lineStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
+        unsigned long signatureLength = 13 + lineStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
 
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
         signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
         signature[offset++] = 0x01; // generic arguments count
-        signature[offset++] = 0x07; // arguments count
+        signature[offset++] = 0x08; // arguments count
 
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, lineStateSize);
         offset += lineStateSize;
 
         signature[offset++] = ELEMENT_TYPE_STRING;
+
+        signature[offset++] = ELEMENT_TYPE_I4; // probeMetadataIndex
 
         signature[offset++] = ELEMENT_TYPE_MVAR;
         signature[offset++] = 0x00;

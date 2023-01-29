@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 namespace Datadog.Trace.Debugger.Snapshots
@@ -68,15 +69,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        public static DebuggerSnapshotCreator BuildSnapshotCreator(string probeId)
+        public static DebuggerSnapshotCreator BuildSnapshotCreator(ProbeProcessor processor)
         {
-            var probeInfo = ProbeExpressionsProcessor.Instance.GetProbeInfo(probeId);
-            if (probeInfo.HasValue)
-            {
-                return new DebuggerSnapshotCreator(probeInfo.Value.IsFullSnapshot, probeInfo.Value.ProbeLocation, probeInfo.Value.HasCondition);
-            }
-
-            throw new InvalidOperationException("Probe info not found for probe id: " + probeId);
+            return new DebuggerSnapshotCreator(processor.ProbeInfo.IsFullSnapshot, processor.ProbeInfo.ProbeLocation, processor.ProbeInfo.HasCondition);
         }
 
         internal CaptureBehaviour DefineSnapshotBehavior<TCapture>(ref CaptureInfo<TCapture> info, EvaluateAt evaluateAt, bool hasCondition)

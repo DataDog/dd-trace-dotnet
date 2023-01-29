@@ -41,6 +41,11 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private static AdaptiveSampler CreateSampler(int samplesPerSecond = DefaultSamplesPerSecond) =>
             new(TimeSpan.FromSeconds(1), samplesPerSecond, 180, 16, null);
 
+        public AdaptiveSampler GerOrAddSampler(string probeId)
+        {
+            return _samplers.GetOrAdd(probeId, _ => CreateSampler(1));
+        }
+
         public bool Sample(string probeId)
         {
             // Rate limiter is engaged at ~1 probe per second (1 probes per 1s time window)
