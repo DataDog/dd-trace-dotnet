@@ -1,0 +1,11 @@
+﻿{
+  entry: {},
+  return: {
+    locals: {
+      local0: {
+        type: VeryComplexClass,
+        value: VeryComplexClass
+      }
+    }
+  }
+}

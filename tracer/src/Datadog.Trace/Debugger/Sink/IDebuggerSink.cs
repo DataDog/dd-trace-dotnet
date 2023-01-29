@@ -13,7 +13,7 @@ namespace Datadog.Trace.Debugger.Sink
     {
         Task StartFlushingAsync();
 
-        void AddSnapshot(string snapshot);
+        void AddSnapshot(string probeId, string snapshot);
 
         void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null);
     }

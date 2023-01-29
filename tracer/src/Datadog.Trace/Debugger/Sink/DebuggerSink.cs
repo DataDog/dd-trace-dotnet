@@ -132,9 +132,9 @@ namespace Datadog.Trace.Debugger.Sink
             return newInterval;
         }
 
-        public void AddSnapshot(string snapshot)
+        public void AddSnapshot(string probeId, string snapshot)
         {
-            _snapshotSink.Add(snapshot);
+            _snapshotSink.Add(probeId, snapshot);
         }
 
         public void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null)
