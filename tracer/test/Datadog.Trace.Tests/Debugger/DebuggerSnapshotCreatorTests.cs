@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
-            var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return");
+            var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals");
             await Verifier.Verify(localVariableAsJson, verifierSettings);
         }
 
