@@ -49,7 +49,13 @@ partial class Build : NukeBuild
                     const string baseBranch = "origin/master";
                     bool isChanged;
                     var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
-                    if (bool.Parse(Environment.GetEnvironmentVariable(forceExplorationTestsWithVariableName) ?? "false"))
+
+                    if (Environment.GetEnvironmentVariable("Build.Reason") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
+                    {
+                        Logger.Info("Running scheduled build on master, forcing tests");
+                        isChanged = true;
+                    }
+                    else if (bool.Parse(Environment.GetEnvironmentVariable(forceExplorationTestsWithVariableName) ?? "false"))
                     {
                         Logger.Info($"{forceExplorationTestsWithVariableName} was set - forcing exploration tests");
                         isChanged = true;
