@@ -13,6 +13,26 @@ namespace Samples.AspNetMvc5
             GlobalConfiguration.Configure(WebApiConfig.Register);
             AreaRegistration.RegisterAllAreas();
             RouteConfig.RegisterRoutes(RouteTable.Routes);
+
+            ThrowSillyException();
+
+        }
+
+        private static void ThrowSillyException()
+        {
+            // For some insane reason, it seems the .PDB file is only copied to the "Temporary ASP.NET Files" folder
+            // after the first exception gets thrown. Because SourceLink tests rely on the PDB file being present,
+            // this created a dependency on the order in which we run our tests. To prevent that, we throw an exception
+            // as part of application startup, to ensure that the .PDB file will consistently be present from the very first
+            // test onwards.
+            try
+            {
+                throw new ApplicationException();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
         }
 
         protected void Application_Error(object sender, EventArgs e)
