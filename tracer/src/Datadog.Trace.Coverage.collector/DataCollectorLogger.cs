@@ -46,19 +46,29 @@ namespace Datadog.Trace.Coverage.Collector
 
         public void Error(string? text)
         {
-            _logger.LogError(_collectionContext, text ?? string.Empty);
+            _logger.LogWarning(_collectionContext, text ?? string.Empty);
             _datadogLogger.Error(text);
         }
 
         public void Error(Exception exception)
         {
-            _logger.LogError(_collectionContext, exception);
+            _logger.LogWarning(_collectionContext, exception.ToString());
             _datadogLogger.Error(exception, exception.Message);
         }
 
         public void Error(Exception exception, string? text)
         {
-            _logger.LogError(_collectionContext, text ?? string.Empty, exception);
+            var textToLogger = text;
+            if (string.IsNullOrEmpty(textToLogger))
+            {
+                textToLogger = exception?.ToString();
+            }
+            else
+            {
+                textToLogger += Environment.NewLine + exception;
+            }
+
+            _logger.LogWarning(_collectionContext, textToLogger);
             _datadogLogger.Error(exception, text);
         }
 
