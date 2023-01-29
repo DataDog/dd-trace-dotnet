@@ -5,11 +5,13 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb.SourceLink;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Serilog;
 
 #nullable enable
 
@@ -17,6 +19,8 @@ namespace Datadog.Trace.Pdb;
 
 internal static class SourceLinkInformationExtractor
 {
+    private static IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(SourceLinkInformationExtractor));
+
     public static bool TryGetSourceLinkInfo(Assembly assembly, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
         // Extracting the SourceLink information from the assembly attributes will only work if:
@@ -32,9 +36,19 @@ internal static class SourceLinkInformationExtractor
     {
         commitSha = null;
         repositoryUrl = null;
+
+        var pdbFullPath = Path.ChangeExtension(assembly.Location, "pdb");
+        if (!File.Exists(pdbFullPath))
+        {
+            // The PDB file doesn't exist, so we can't extract the information from it
+            Log.Information("PDB file {PdbFullPath} does not exist", pdbFullPath);
+            return false;
+        }
+
         var sourceLinkJsonDocument = DatadogPdbReader.CreatePdbReader(assembly)?.GetSourceLinkJsonDocument();
         if (sourceLinkJsonDocument == null)
         {
+            Log.Information("PDB file {PdbFullPath} does not contain SourceLink information", pdbFullPath);
             return false;
         }
 
@@ -46,9 +60,11 @@ internal static class SourceLinkInformationExtractor
         var sourceLinkMappedUrl = JObject.Parse(sourceLinkJsonDocument).SelectTokens("$.documents.*").FirstOrDefault()?.ToString();
         if (string.IsNullOrWhiteSpace(sourceLinkMappedUrl) || !Uri.TryCreate(sourceLinkMappedUrl, UriKind.Absolute, out var sourceLinkMappedUri))
         {
+            Log.Information("PDB file {PdbFullPath} contained SourceLink information, but we failed to parse it.", pdbFullPath);
             return false;
         }
 
+        Log.Information("PDB file {PdbFullPath} contained SourceLink information, and we successfully parsed it. The mapping uri is {SourceLinkMappedUri}.", pdbFullPath, sourceLinkMappedUri);
         return CompositeSourceLinkUrlParser.Instance.ParseSourceLinkUrl(sourceLinkMappedUri, out commitSha, out repositoryUrl);
     }
 
