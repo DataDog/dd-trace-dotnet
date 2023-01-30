@@ -5,7 +5,6 @@
 
 #if NETFRAMEWORK
 using System.Linq;
-using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
