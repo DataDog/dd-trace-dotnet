@@ -1,5 +1,5 @@
 PROJECT_FOLDER="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-SOLUTIONFOLDER="$( cd -- "$(dirname "$0")/../../../" >/dev/null 2>&1 ; pwd -P )"
+SOLUTIONFOLDER="$( cd -- "$(dirname "$0")/../../../../../" >/dev/null 2>&1 ; pwd -P )"
 MONITORING_HOME_FOLDER="${SOLUTIONFOLDER}/shared/bin/monitoring-home"
 FILE="${PROJECT_FOLDER}/iast.runsettings"
 DISTRIBUTION="$(cat /etc/*-release)"

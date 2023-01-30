@@ -1,6 +1,6 @@
 set projectFolder=%~dp0
 set file=%projectFolder%iast.runsettings
-set solutionFolder=%projectFolder%..\..\..\
+set solutionFolder=%projectFolder%..\..\..\..\..\
 echo ^<^?xml version="1.0" encoding="utf-8" ^?^> > %file%
 echo ^<RunSettings^>^<RunConfiguration^>^<EnvironmentVariables^> >> %file%
 echo ^<CORECLR_ENABLE_PROFILING^>1^</CORECLR_ENABLE_PROFILING^> >> %file%
