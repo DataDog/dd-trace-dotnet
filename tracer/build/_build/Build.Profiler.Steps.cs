@@ -14,6 +14,8 @@ using Nuke.Common.Tools.NuGet;
 using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using Nuke.Common.Utilities;
+using System.Collections;
 
 partial class Build
 {
@@ -87,15 +89,7 @@ partial class Build
         .After(CompileProfilerNativeSrcAndTestLinux)
         .Executes(() =>
         {
-            var workingDirectory = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests";
-            EnsureExistingDirectory(workingDirectory);
-
-            var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
-            Chmod.Value.Invoke("+x " + exePath);
-
-            var testsResultFile = ProfilerBuildDataDirectory / "Datadog.Profiler.Tests.Results.xml";
-            var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
+            RunProfilerUnitTests(Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None);
         });
 
     Target CompileProfilerNativeTestsWindows => _ => _
@@ -136,7 +130,7 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            RunProfilerUnitTestsOnWindows(BuildConfiguration, TargetPlatform);
+            RunProfilerUnitTests(BuildConfiguration, TargetPlatform);
         });
 
     Target PublishProfiler => _ => _
@@ -510,20 +504,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var workingDirectory = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests";
-            EnsureExistingDirectory(workingDirectory);
-
-            var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
-            Chmod.Value.Invoke("+x " + exePath);
-
-            var envVars = new Dictionary<string, string>()
-            {
-                { "ASAN_OPTIONS", "detect_leaks=0" }
-            };
-
-            var testsResultFile = ProfilerBuildDataDirectory / "Datadog.Profiler.Tests.Results.Linux.x64.xml";
-            var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
+            RunProfilerUnitTests(Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Asan);
         });
 
     Target CompileProfilerWithAsanWindows => _ => _
@@ -567,7 +548,7 @@ partial class Build
         {
             foreach (var platform in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
             {
-                RunProfilerUnitTestsOnWindows(Configuration.Release, platform);
+                RunProfilerUnitTests(Configuration.Release, platform);
             }
         });
 
@@ -582,25 +563,6 @@ partial class Build
         .Triggers(CheckTestResultForProfilerWithSanitizer)
         .Executes(() =>
         {
-            var envVars = new Dictionary<string, string>()
-            {
-                { "DD_TRACE_ENABLED", "0" }, // Disable tracer for this test
-                { "DD_PROFILING_ENABLED", "1" },
-                { "DD_PROFILING_EXCEPTION_ENABLED", "1" },
-                { "DD_PROFILING_ALLOCATION_ENABLED", "1"},
-                { "DD_PROFILING_CONTENTION_ENABLED","1" },
-                { "DD_TRACE_DEBUG", "1" },
-            };
-
-            if (IsLinux)
-            {
-                envVars["LD_PRELOAD"] = "libasan.so.6";
-                // detect_leaks set to 0 to avoid false positive since not all libs are compiled against ASAN (ex. CLR binaries)
-                envVars["ASAN_OPTIONS"] = "detect_leaks=0";
-            }
-
-            AddContinuousProfilerEnvironmentVariables(envVars);
-
             var platforms =
                 IsWin
                 ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
@@ -610,21 +572,7 @@ partial class Build
 
             foreach (var platform in platforms)
             {
-                envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = ProfilerBuildDataDirectory / platform.ToString() / "pprofs";
-                envVars["DD_PROFILING_LOG_DIR"] = ProfilerBuildDataDirectory / platform.ToString() / "logs";
-                envVars["DD_TRACE_LOG_DIRECTORY"] = ProfilerBuildDataDirectory / platform.ToString() / "logs"; // for the native loader log files
-
-                DotNetBuild(s => s
-                    .SetFramework(Framework)
-                    .SetProjectFile(sampleApp)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetNoWarnDotNetCore3()
-                    .SetTargetPlatform(platform));
-
-                var sampleBaseOutputDir = ProfilerOutputDirectory / "bin" / $"{BuildConfiguration}-{platform}" / "profiler" / "src" / "Demos";
-                var sampleAppDll = sampleBaseOutputDir / sampleApp.Name / Framework / $"{sampleApp.Name}.dll";
-
-                CustomDotNetTasks.DotNet($"{sampleAppDll} --scenario 1 --timeout 120", platform: platform, environmentVariables: envVars);
+                RunSampleWithSanitizer(platform, SanitizerKind.Asan);
             }
         });
 
@@ -639,11 +587,12 @@ partial class Build
 
             foreach (var platform in platforms)
             {
-                var pprofsOutputDir = ProfilerBuildDataDirectory / platform.ToString() / "pprofs";
+                var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
+                var pprofsOutputDir = baseOutputDir / "pprofs";
                 Logger.Info($"Check if pprofs file(s) was/were generated at {pprofsOutputDir}");
 
                 var pprofFiles = pprofsOutputDir.GlobFiles(
-                    "*.pprof"
+                    $"*.pprof"
                 );
 
                 if (pprofFiles.Count == 0)
@@ -652,11 +601,11 @@ partial class Build
                     throw new Exception("No pprof file(s) was/were generated.");
                 }
 
-                var logsOutputDir = ProfilerBuildDataDirectory / platform.ToString() / "logs";
+                var logsOutputDir = baseOutputDir / "logs";
                 Logger.Info($"Look for profiler log file(s) in {logsOutputDir}");
 
                 var logFiles = logsOutputDir.GlobFiles(
-                    "DD-DotNet-Profiler-Native-*.log"
+                    $"DD-DotNet-Profiler-Native-*.log"
                 );
 
                 if (logFiles.Count == 0)
@@ -667,18 +616,6 @@ partial class Build
             }
         });
 
-    void RunProfilerUnitTestsOnWindows(Configuration configuration, MSBuildTargetPlatform platform)
-    {
-        var configAndTarget = $"{configuration}-{platform}";
-        var workingDirectory = ProfilerOutputDirectory / "bin" / configAndTarget / "profiler" / "test" / "Datadog.Profiler.Native.Tests";
-        EnsureExistingDirectory(workingDirectory);
-
-        var testsResultFile = ProfilerBuildDataDirectory / $"Datadog.Profiler.Tests.Results.Windows.{configuration}.{platform}.xml";
-        var exePath = workingDirectory / "Datadog.Profiler.Native.Tests.exe";
-        var testExe = ToolResolver.GetLocalTool(exePath);
-        testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
-    }
-
     Target RunProfilerUbsanTest => _ => _
         .Unlisted()
         .Description("Compile and run the profiler with Clang Undefined-behavior sanitizer")
@@ -687,7 +624,6 @@ partial class Build
         .DependsOn(CompileProfilerWithUbsanLinux)
         .DependsOn(PublishProfiler)
         .DependsOn(RunSampleWithProfilerUbsan);
-
 
 
     Target CompileProfilerWithUbsanLinux => _ => _
@@ -711,20 +647,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var workingDirectory = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests";
-            EnsureExistingDirectory(workingDirectory);
-
-            var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
-            Chmod.Value.Invoke("+x " + exePath);
-
-            var envVars = new Dictionary<string, string>()
-            {
-                { "UBSAN_OPTIONS", "print_stacktrace=1" }
-            };
-
-            var testsResultFile = ProfilerBuildDataDirectory / "Datadog.Profiler.Tests.Results.Linux.x64.xml";
-            var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
+            RunProfilerUnitTests(Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
         });
 
     Target RunSampleWithProfilerUbsan => _ => _
@@ -737,7 +660,19 @@ partial class Build
         .Triggers(CheckTestResultForProfilerWithSanitizer)
         .Executes(() =>
         {
-            var envVars = new Dictionary<string, string>()
+            RunSampleWithSanitizer(MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
+        });
+
+    enum SanitizerKind
+    {
+        None,
+        Asan,
+        Ubsan
+    };
+
+    void RunSampleWithSanitizer(MSBuildTargetPlatform platform, SanitizerKind sanitizer)
+    {
+        var envVars = new Dictionary<string, string>()
             {
                 { "DD_TRACE_ENABLED", "0" }, // Disable tracer for this test
                 { "DD_PROFILING_ENABLED", "1" },
@@ -747,27 +682,95 @@ partial class Build
                 { "DD_TRACE_DEBUG", "1" },
             };
 
-            envVars["LD_PRELOAD"] = "libubsan.so.1";
-            envVars["UBSAN_OPTIONS"] = "print_stacktrace=1";
+        if (IsLinux)
+        {
+            if (sanitizer is SanitizerKind.Asan)
+            {
+                envVars["LD_PRELOAD"] = "libasan.so.6";
+                // detect_leaks set to 0 to avoid false positive since not all libs are compiled against ASAN (ex. CLR binaries)
+                envVars["ASAN_OPTIONS"] = "detect_leaks=0";
+            }
+            else if (sanitizer is SanitizerKind.Ubsan)
+            {
+                envVars["LD_PRELOAD"] = "libubsan.so.1";
+                envVars["UBSAN_OPTIONS"] = "print_stacktrace=1";
+            }
+            else if (sanitizer is SanitizerKind.None)
+            {
+                throw new Exception($"No sanitizer has been selected. This job must run with a sanitizer");
+            }
+        }
 
-            AddContinuousProfilerEnvironmentVariables(envVars);
+        AddContinuousProfilerEnvironmentVariables(envVars);
 
-            var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
+        var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
 
-            envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = ProfilerBuildDataDirectory / "x64" / "pprofs";
-            envVars["DD_PROFILING_LOG_DIR"] = ProfilerBuildDataDirectory /  "x64" / "logs";
-            envVars["DD_TRACE_LOG_DIRECTORY"] = ProfilerBuildDataDirectory / "x64" / "logs"; // for the native loader log files
+        var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
 
-            DotNetBuild(s => s
-                .SetFramework(Framework)
-                .SetProjectFile(sampleApp)
-                .SetConfiguration(BuildConfiguration)
-                .SetNoWarnDotNetCore3()
-                .SetTargetPlatform(MSBuildTargetPlatform.x64));
+        envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = baseOutputDir / "pprofs";
+        envVars["DD_PROFILING_LOG_DIR"] = baseOutputDir / "logs";
+        envVars["DD_TRACE_LOG_DIRECTORY"] = baseOutputDir / "logs"; // for the native loader log files
 
-            var sampleBaseOutputDir = ProfilerOutputDirectory / "bin" / $"{BuildConfiguration}-{MSBuildTargetPlatform.x64}" / "profiler" / "src" / "Demos";
-            var sampleAppDll = sampleBaseOutputDir / sampleApp.Name / Framework / $"{sampleApp.Name}.dll";
+        DotNetBuild(s => s
+            .SetFramework(Framework)
+            .SetProjectFile(sampleApp)
+            .SetConfiguration(Configuration.Release)
+            .SetNoWarnDotNetCore3()
+            .SetTargetPlatform(platform));
 
-            DotNet($"{sampleAppDll} --scenario 1 --timeout 120", environmentVariables: envVars);
-        });
+        var sampleBaseOutputDir = ProfilerOutputDirectory / "bin" / $"{Configuration.Release}-{platform}" / "profiler" / "src" / "Demos";
+        var sampleAppDll = sampleBaseOutputDir / sampleApp.Name / Framework / $"{sampleApp.Name}.dll";
+
+        CustomDotNetTasks.DotNet($"{sampleAppDll} --scenario 1 --timeout 120", platform, environmentVariables: envVars);
+    }
+
+    void RunProfilerUnitTests(Configuration configuration, MSBuildTargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None)
+    {
+        var intermediateDirPath =
+            IsWin
+            ? (RelativePath)$"{configuration}-{platform}" / "profiler" / "test"
+            : string.Empty;
+
+        var workingDirectory = ProfilerOutputDirectory / "bin" / intermediateDirPath / "Datadog.Profiler.Native.Tests";
+        EnsureExistingDirectory(workingDirectory);
+
+        // Nuke.Tool creates a Process and run the executable inside.
+        // If not set, the process will have no environment variables.
+        // Profiler code relies environment variables with special meaning (ex: %ProgramData%)
+        // If those environment variables are not set, some tests will fail.
+        // To make sure they do not fail, just replicate the environment variables of the current process
+        // and pass them along with specific variable
+        // https://devblogs.microsoft.com/oldnewthing/20200520-00/?p=103775
+
+        Dictionary<string, string> envVars = new();
+        var currentEnvVars = Environment.GetEnvironmentVariables();
+        if (currentEnvVars != null)
+        {
+            foreach (DictionaryEntry item in currentEnvVars)
+            {
+                envVars[item.Key.ToString()] = item.Value.ToString();
+            }
+        }
+
+        var ext = IsWin ? ".exe" : string.Empty;
+        var exePath = workingDirectory / $"Datadog.Profiler.Native.Tests{ext}";
+
+        if (IsLinux)
+        {
+            Chmod.Value.Invoke("+x " + exePath);
+
+            if (sanitizer is SanitizerKind.Asan)
+            {
+                envVars["ASAN_OPTIONS"] = "detect_leaks=0";
+            }
+            else if (sanitizer is SanitizerKind.Ubsan)
+            {
+                envVars["UBSAN_OPTIONS"] = "print_stacktrace=1";
+            }
+        }
+
+        var testsResultFile = ProfilerBuildDataDirectory / $"Datadog.Profiler.Tests.Results.{Platform}.{configuration}.{platform}.xml";
+        var testExe = ToolResolver.GetLocalTool(exePath);
+        testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
+    }
 }
