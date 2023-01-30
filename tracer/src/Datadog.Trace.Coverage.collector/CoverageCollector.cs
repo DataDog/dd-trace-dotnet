@@ -162,7 +162,7 @@ namespace Datadog.Trace.Coverage.Collector
                     {
                         if (File.Exists(Path.Combine(path, fileWithoutExtension + ".pdb")) || File.Exists(Path.Combine(path, fileWithoutExtension + ".PDB")))
                         {
-                            List<Exception>? lstExceptions = null;
+                            List<Exception>? exceptions = null;
                             var remain = 3;
                             Retry:
                             if (--remain > 0)
@@ -196,8 +196,8 @@ namespace Datadog.Trace.Coverage.Collector
                                     // We do retries if we have an IOException.
                                     // For cases like: `The process cannot access the file 'file path' because
                                     // it is being used by another process`
-                                    lstExceptions ??= new List<Exception>();
-                                    lstExceptions.Add(ioException);
+                                    exceptions ??= new List<Exception>();
+                                    exceptions.Add(ioException);
                                     Thread.Sleep(1000);
                                     goto Retry;
                                 }
@@ -207,9 +207,9 @@ namespace Datadog.Trace.Coverage.Collector
                                 }
                             }
 
-                            if (lstExceptions?.Count > 0)
+                            if (exceptions?.Count > 0)
                             {
-                                _logger?.Error(new AggregateException(lstExceptions));
+                                _logger?.Error(new AggregateException(exceptions));
                             }
                         }
                     }
