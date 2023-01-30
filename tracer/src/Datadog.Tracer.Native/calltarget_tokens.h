@@ -72,8 +72,8 @@ protected:
     virtual const shared::WSTRING& GetCallTargetReturnGenericType() = 0;
     virtual void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod);
 
-    CallTargetTokens(ModuleMetadata* moduleMetadataPtr, const bool enableByRefInstrumentation,
-                     const bool enableCallTargetStateByRef);
+    CallTargetTokens(ModuleMetadata* moduleMetadataPtr, bool enableByRefInstrumentation,
+                     bool enableCallTargetStateByRef);
 
 public:
     virtual int GetAdditionalLocalsCount();

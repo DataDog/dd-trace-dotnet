@@ -3519,7 +3519,7 @@ extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_p
 #endif
 
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
-                                             int* symbolsSize) const
+                                             int* symbolsSize) 
 {
 #ifdef _WIN32
     HINSTANCE hInstance = DllHandle;
@@ -3688,7 +3688,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     // Check for Dataflow call site instrumentation
-    if (_dataflow != nullptr && !_dataflow->IsInlineEnabled(module_id, functionId))
+    if (_dataflow != nullptr && !_dataflow->IsInlineEnabled(module_id, function_token))
     {
         // The function has been instrumented by Dataflow
         // so we reject the NGEN image

@@ -582,7 +582,7 @@ inline bool StackSamplerLoopManager::GetUpdateIsThreadSafeForStackSampleCollecti
 
 inline bool StackSamplerLoopManager::ShouldCollectThread(
     std::uint64_t threadAggPeriodDeadlockCount,
-    std::uint64_t globalAggPeriodDeadlockCount) const
+    std::uint64_t globalAggPeriodDeadlockCount) 
 {
     return (threadAggPeriodDeadlockCount <= DeadlocksPerThreadThreshold) &&
            (globalAggPeriodDeadlockCount <= TotalDeadlocksThreshold);

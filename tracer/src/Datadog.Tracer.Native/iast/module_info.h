@@ -57,11 +57,11 @@ namespace iast
         //std::map<mdMethodDef, std::function<HRESULT(MethodInfo*, Dataflow*)>> _jitHooks;
 
     protected:
-        Dataflow* _dataflow = NULL;
-        IMetaDataImport2* _metadataImport = NULL;
-        IMetaDataEmit2* _metadataEmit = NULL;
-        IMetaDataAssemblyImport* _assemblyImport = NULL;
-        IMetaDataAssemblyEmit* _assemblyEmit = NULL;
+        Dataflow* _dataflow = nullptr;
+        IMetaDataImport2* _metadataImport = nullptr;
+        IMetaDataEmit2* _metadataEmit = nullptr;
+        IMetaDataAssemblyImport* _assemblyImport = nullptr;
+        IMetaDataAssemblyEmit* _assemblyEmit = nullptr;
         bool _isExcluded = false;
 
 
@@ -75,7 +75,7 @@ namespace iast
         HRESULT GetTypeRef(mdToken tkResolutionScope, const WSTRING& name, mdTypeRef* typeRef, bool create = true);
         HRESULT GetMemberRefInfo(mdTypeRef typeRef, const WSTRING& memberName, PCCOR_SIGNATURE pSignature, ULONG nSignature, mdMemberRef* memberRef, bool create = true);
 
-        HRESULT FindTypeRefByName(const WSTRING& name, mdTypeRef* typeRef, mdToken* tkResolutionScope = NULL);
+        HRESULT FindTypeRefByName(const WSTRING& name, mdTypeRef* typeRef, mdToken* tkResolutionScope = nullptr);
         
         mdString DefineUserString(const WSTRING& string);
 
@@ -131,10 +131,10 @@ namespace iast
         MethodInfo* GetMethod(const WSTRING& typeName, const WSTRING& methodName, const WSTRING& methodParams);
         MethodInfo* GetMethod(mdTypeDef typeDef, const WSTRING& methodName, const WSTRING& methodParams);
 
-        HRESULT GetILRewriter(MethodInfo* methodInfo, ILRewriter** rewriter);
+        static HRESULT GetILRewriter(MethodInfo* methodInfo, ILRewriter** rewriter);
         HRESULT GetILRewriter(const WSTRING& typeName, const WSTRING& methodName, int requiredParamCount, ILRewriter** rewriter);
-        HRESULT GetILRewriter(const WSTRING& typeName, const WSTRING& methodName, PCCOR_SIGNATURE pSignature, ULONG nSignature, ILRewriter** rewriter, MethodInfo** pMethodInfo = NULL);
-        HRESULT CommitILRewriter(ILRewriter** rewriter, const std::string& applyMessage = "");
+        HRESULT GetILRewriter(const WSTRING& typeName, const WSTRING& methodName, PCCOR_SIGNATURE pSignature, ULONG nSignature, ILRewriter** rewriter, MethodInfo** pMethodInfo = nullptr);
+        static HRESULT CommitILRewriter(ILRewriter** rewriter, const std::string& applyMessage = "");
 
         bool AreSameTypes(mdTypeRef typeRef1, mdTypeRef typeRef2);
 

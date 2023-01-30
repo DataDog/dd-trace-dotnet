@@ -11,21 +11,6 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
-@"[AspectClass(""mscorlib,netstandard,System.Private.CoreLib"",[StringOptimization],PROPAGATION,"""")] Datadog.Trace.Iast.Aspects.StringAspect",
-@"  [AspectMethodReplace(""System.String::Concat(System.String,System.String)"","""",[0],[False],[StringLiterals_Any],PROPAGATION,"""")] Concat(System.String,System.String)",
-@"  [AspectMethodReplace(""System.String::Concat(System.String,System.String)"","""",[0],[False],[StringLiteral_0],PROPAGATION,"""")] Concat_0(System.String,System.String)",
-@"  [AspectMethodReplace(""System.String::Concat(System.String,System.String)"","""",[0],[False],[StringLiteral_1],PROPAGATION,"""")] Concat_1(System.String,System.String)",
-@"  [AspectMethodReplace(""System.String::Concat(System.Object,System.Object)"","""",[0],[False],[None],PROPAGATION,"""")] Concat(System.Object,System.Object)",
-@"  [AspectMethodReplace(""System.String::Concat(System.String,System.String,System.String)"","""",[0],[False],[StringLiterals],PROPAGATION,"""")] Concat(System.String,System.String,System.String)",
-@"  [AspectMethodReplace(""System.String::Concat(System.Object,System.Object,System.Object)"","""",[0],[False],[None],PROPAGATION,"""")] Concat(System.Object,System.Object,System.Object)",
-@"  [AspectMethodReplace(""System.String::Concat(System.String,System.String,System.String,System.String)"","""",[0],[False],[StringLiterals],PROPAGATION,"""")] Concat(System.String,System.String,System.String,System.String)",
-@"  [AspectMethodReplace(""System.String::Concat(System.Object,System.Object,System.Object,System.Object)"","""",[0],[False],[None],PROPAGATION,"""")] Concat(System.Object,System.Object,System.Object,System.Object)",
-@"  [AspectMethodReplace(""System.String::Concat(System.String,System.String,System.String,System.String,System.String)"","""",[0],[False],[StringLiterals],PROPAGATION,"""")] Concat(System.String,System.String,System.String,System.String,System.String)",
-@"  [AspectMethodReplace(""System.String::Concat(System.Object,System.Object,System.Object,System.Object,System.Object)"","""",[0],[False],[None],PROPAGATION,"""")] Concat(System.Object,System.Object,System.Object,System.Object,System.Object)",
-@"  [AspectMethodReplace(""System.String::Concat(System.Object[])"","""",[0],[False],[None],PROPAGATION,"""")] Concat(System.Object)",
-@"  [AspectMethodReplace(""System.String::Concat(System.String[])"","""",[0],[False],[None],PROPAGATION,"""")] Concat(System.String)",
-@"  [AspectMethodReplace(""System.String::Concat(System.Collections.Generic.IEnumerable`1<System.String>)"","""",[0],[False],[None],PROPAGATION,"""")] Concat(System.Object)",
-@"  [AspectMethodReplace(""System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)"","""",[0],[False],[None],PROPAGATION,"""")] Concat(System.Object)",
 };
     }
 }

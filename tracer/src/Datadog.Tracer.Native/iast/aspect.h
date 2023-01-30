@@ -51,7 +51,7 @@ namespace iast
     AspectType ParseAspectType(const std::string& txt);
     std::string ToString(VulnerabilityType type);
     VulnerabilityType ParseVulnerabilityType(const std::string& txt);
-    std::string ToString(const std::vector<VulnerabilityType> types);
+    std::string ToString(std::vector<VulnerabilityType> types);
     std::vector<VulnerabilityType> ParseVulnerabilityTypes(const std::string& txt);
 
     class Aspect;

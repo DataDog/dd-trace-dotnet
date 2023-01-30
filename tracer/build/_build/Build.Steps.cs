@@ -1728,29 +1728,25 @@ partial class Build
         var managedFiles = logDirectory.GlobFiles("**/dotnet-tracer-managed-*");
         var managedErrors = managedFiles
                            .SelectMany(ParseManagedLogFiles)
-                           .Where(x => x.Level >= minLogLevel)
-                           .Where(IsNewError)
-                           .ToList();
+                           .Where(IsProblematic)
+                           .ToList<ParsedLogLine>();
 
         var nativeTracerFiles = logDirectory.GlobFiles("**/dotnet-tracer-native-*");
         var nativeTracerErrors = nativeTracerFiles
                                 .SelectMany(ParseNativeTracerLogFiles)
-                                .Where(x => x.Level >= minLogLevel)
-                                .Where(IsNewError)
+                                .Where(IsProblematic)
                                 .ToList();
 
         var nativeProfilerFiles = logDirectory.GlobFiles("**/DD-DotNet-Profiler-Native-*");
         var nativeProfilerErrors = nativeProfilerFiles
                                   .SelectMany(ParseNativeProfilerLogFiles)
-                                  .Where(x => x.Level >= minLogLevel)
-                                  .Where(IsNewError)
+                                  .Where(IsProblematic)
                                   .ToList();
 
         var nativeLoaderFiles = logDirectory.GlobFiles("**/dotnet-native-loader-*");
         var nativeLoaderErrors = nativeLoaderFiles
                                   .SelectMany(ParseNativeProfilerLogFiles) // native loader has same format as profiler
-                                  .Where(x => x.Level >= minLogLevel)
-                                  .Where(IsNewError)
+                                  .Where(IsProblematic)
                                   .ToList();
 
         var hasRequiredFiles = !allFilesMustExist
@@ -1765,11 +1761,11 @@ partial class Build
          && nativeProfilerErrors.Count == 0
          && nativeLoaderErrors.Count == 0)
         {
-            Logger.Info("No errors found in managed or native logs");
+            Logger.Info("No problems found in managed or native logs");
             return;
         }
 
-        Logger.Warn("Found the following errors in log files:");
+        Logger.Warn("Found the following problems in log files:");
         var allErrors = managedErrors
                        .Concat(nativeTracerErrors)
                        .Concat(nativeProfilerErrors)
@@ -1778,18 +1774,43 @@ partial class Build
 
         foreach (var erroredFile in allErrors)
         {
-            Logger.Info();
-            Logger.Error($"Found errors in log file '{erroredFile.Key}':");
-            foreach (var error in erroredFile)
+            var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
+            if(errors.Any())
             {
-                Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
+                Logger.Info();
+                Logger.Error($"Found errors in log file '{erroredFile.Key}':");
+                foreach (var error in errors)
+                {
+                    Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
+                }
+            }
+
+            var canaries = erroredFile.Where(ContainsCanary).ToList();
+            if(canaries.Any())
+            {
+                Logger.Info();
+                Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
+                foreach (var canary in canaries)
+                {
+                    Logger.Error($"{canary.Timestamp:hh:mm:ss} [{canary.Level}] {canary.Message}");
+                }
             }
         }
 
         ExitCode = 1;
 
-        bool IsNewError(ParsedLogLine logLine)
+        bool IsProblematic(ParsedLogLine logLine)
         {
+            if(ContainsCanary(logLine))
+            {
+                return true;
+            }
+
+            if(logLine.Level < minLogLevel)
+            {
+                return false;
+            }
+
             foreach (var pattern in knownPatterns)
             {
                 if (pattern.IsMatch(logLine.Message))
@@ -1800,6 +1821,10 @@ partial class Build
 
             return true;
         }
+
+        bool ContainsCanary(ParsedLogLine logLine)
+            => logLine.Message.Contains("SUPER_SECRET_CANARY")
+                || logLine.Message.Contains("MySuperSecretCanary");
 
         static List<ParsedLogLine> ParseManagedLogFiles(AbsolutePath logFile)
         {

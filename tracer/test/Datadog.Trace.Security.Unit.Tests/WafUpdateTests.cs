@@ -3,23 +3,26 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    [Collection("WafTests")]
-    public class WafUpdateTests
+    public class WafUpdateTests : WafLibraryRequiredTest
     {
         public const int TimeoutMicroSeconds = 1_000_000;
+
+        public WafUpdateTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
+            : base(wafLibraryInvokerFixture)
+        {
+        }
 
         [Theory]
         [InlineData("[$ne]|arg|crs-942-290", "attack|appscan_fingerprint|crs-913-120")]
@@ -30,13 +33,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             attackParts1.Length.Should().Be(3);
             var attackParts2 = attack2.Split('|');
             attackParts2.Length.Should().Be(3);
-            var libInitResult = WafLibraryInvoker.Initialize();
-            if (!libInitResult.Success)
-            {
-                throw new ArgumentException("Waf couldnt load");
-            }
-
-            var initresult = Waf.Create(libInitResult.WafLibraryInvoker!, string.Empty, string.Empty);
+            var initresult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
             using var waf = initresult.Waf;
             waf.Should().NotBeNull();
             var ruleStatus = new Dictionary<string, bool>();

@@ -393,7 +393,7 @@ WSTRING ModuleInfo::GetTypeName(mdTypeDef typeDef)
     auto typeFromToken = TypeFromToken(typeDef);
     if (typeFromToken == mdtTypeDef)
     {
-        _metadataImport->GetTypeDefProps(typeDef, typeName, 1024, nullptr, &typeDefFlags, 0);
+        _metadataImport->GetTypeDefProps(typeDef, typeName, 1024, nullptr, &typeDefFlags, nullptr);
         res = typeName;
     }
     else if (typeFromToken == mdtTypeRef)
@@ -418,7 +418,7 @@ WSTRING ModuleInfo::GetTypeName(mdTypeDef typeDef)
         hr = _metadataImport->GetNestedClassProps(typeDef, &enclosingClassTypeDef);
         if (SUCCEEDED(hr))
         {
-            hr = _metadataImport->GetTypeDefProps(enclosingClassTypeDef, typeName, 1024, nullptr, &typeDefFlags, 0);
+            hr = _metadataImport->GetTypeDefProps(enclosingClassTypeDef, typeName, 1024, nullptr, &typeDefFlags, nullptr);
         }
         if (FAILED(hr))
         {
@@ -793,6 +793,7 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
     if (methodInfo == nullptr)
     {
         trace::Logger::Debug("DefineMemberRef : Could not find Method ", shared::ToString(typeName), ".", shared::ToString(methodName), shared::ToString(methodParams));
+        return 0;
     }
 
     mdTypeRef typeRef;

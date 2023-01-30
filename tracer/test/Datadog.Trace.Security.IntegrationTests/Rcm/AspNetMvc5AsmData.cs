@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -70,8 +71,8 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
         _iisFixture = iisFixture;
         _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetMvc5AsmData)
-                 + (classicMode ? ".Classic" : ".Integrated")
-                 + ".enableSecurity=" + enableSecurity;
+                                + (classicMode ? ".Classic" : ".Integrated")
+                                + ".enableSecurity=" + enableSecurity;
         SetHttpPort(iisFixture.HttpPort);
     }
 
@@ -82,34 +83,21 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
     [Trait("LoadFromGAC", "True")]
     public async Task TestBlockedRequestIp(string test, string url)
     {
-        HttpStatusCode expectedStatusCode = SecurityEnabled ? HttpStatusCode.OK : HttpStatusCode.Forbidden;
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{_iisFixture.IisExpress.Process.ProcessName}*", LogDirectory);
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         // we want to see the ip here
         var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
         var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, sanitisedUrl });
         var spanBeforeAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
+        var acknowledgedId = nameof(TestBlockedRequestIp) + Guid.NewGuid();
+        var acknowledgedId2 = nameof(TestBlockedRequestIp) + Guid.NewGuid();
 
         var product = new AsmDataProduct();
         _iisFixture.Agent.SetupRcm(
             Output,
-            new[]
-            {
-                    (
-                        (object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, "asm_data"),
-                    (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, "asm_data_servicea"),
-            },
+            new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, acknowledgedId), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgedId2), },
             product.Name);
 
-        var request1 = await _iisFixture.Agent.WaitRcmRequestAndReturnLast();
-        if (SecurityEnabled)
-        {
-            await logEntryWatcher.WaitForLogEntry(RulesUpdatedMessage(_iisFixture.IisExpress.Process.Id), LogEntryWatcherTimeout);
-        }
-        else
-        {
-            await Task.Delay(1500);
-        }
+        await _iisFixture.Agent.WaitRcmRequestAndReturnLast(appliedServiceNames: new[] { acknowledgedId, acknowledgedId2 });
 
         var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
         var spans = new List<MockSpan>();
@@ -128,29 +116,18 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
         SetClientIp("90.91.8.235");
         try
         {
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{_iisFixture.IisExpress.Process.ProcessName}*", LogDirectory);
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(parameters: new object[] { test, sanitisedUrl });
             var spanBeforeAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
+            var acknowledgedId = nameof(TestBlockedRequestUser) + Guid.NewGuid();
 
             var product = new AsmDataProduct();
             _iisFixture.Agent.SetupRcm(
                 Output,
-                new[]
-                {
-                    ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, "asm_data")
-                },
+                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, acknowledgedId) },
                 product.Name);
 
-            var request1 = await _iisFixture.Agent.WaitRcmRequestAndReturnLast();
-            if (SecurityEnabled)
-            {
-                await logEntryWatcher.WaitForLogEntry(RulesUpdatedMessage(_iisFixture.IisExpress.Process.Id), LogEntryWatcherTimeout);
-            }
-            else
-            {
-                await Task.Delay(1500);
-            }
+            await _iisFixture.Agent.WaitRcmRequestAndReturnLast(appliedServiceNames: new[] { acknowledgedId });
 
             var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
             var spans = new List<MockSpan>();

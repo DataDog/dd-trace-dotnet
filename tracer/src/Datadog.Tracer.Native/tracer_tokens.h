@@ -29,14 +29,14 @@ protected:
     void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod) override;
 
 public:
-    TracerTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation,
-                 const bool enableCallTargetStateByRef);
+    TracerTokens(ModuleMetadata* module_metadata_ptr, bool enableByRefInstrumentation,
+                 bool enableCallTargetStateByRef);
 
     int GetAdditionalLocalsCount() override;
 
     HRESULT WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo* currentType,
                              const std::vector<TypeSignature>& methodArguments,
-                             const bool ignoreByRefInstrumentation, ILInstr** instruction);
+                             bool ignoreByRefInstrumentation, ILInstr** instruction);
 
     HRESULT WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
                                         const TypeInfo* currentType, ILInstr** instruction);
