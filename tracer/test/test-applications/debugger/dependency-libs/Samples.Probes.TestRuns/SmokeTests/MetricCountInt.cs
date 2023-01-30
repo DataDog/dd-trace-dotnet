@@ -1,28 +1,26 @@
 using System.Runtime.CompilerServices;
 using Samples.Probes.TestRuns.Shared;
 
-namespace Samples.Probes.TestRuns.ExpressionTests
+namespace Samples.Probes.TestRuns.SmokeTests
 {
-    internal class PartialSnapshotAtEntry : IRun
+    public class MetricCountInt : IRun
     {
-        private const string Json = @"{
-    ""gt"": [
-      {""ref"": ""intArg""},
-      2
-    ]
-}";
+        private const string Json = @"{""ref"": ""intArg""}";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
-            Method(3);
+            Method(2);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(
-            conditionJson: Json,
+            metricJson: Json,
+            metricKind: Const.Count,
+            metricName: nameof(MetricCountInt),
             captureSnapshot: false,
-            evaluateAt: Const.Entry,
+            evaluateAt: Const.Exit,
+            expectedNumberOfSnapshots: 0,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)

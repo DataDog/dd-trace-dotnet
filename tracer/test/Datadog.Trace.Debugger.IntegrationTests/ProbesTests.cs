@@ -15,6 +15,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using FluentAssertions;
 using Samples.Probes.TestRuns;
 using Samples.Probes.TestRuns.ExpressionTests;
 using Samples.Probes.TestRuns.SmokeTests;
@@ -226,7 +227,7 @@ public class ProbesTests : TestHelper
     {
         var probes = GetProbeConfiguration(testDescription.TestType, false, new DeterministicGuidGenerator());
 
-        using var agent = EnvironmentHelper.GetMockAgent();
+        using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
         SetDebuggerEnvironment(agent);
         using var logEntryWatcher = CreateLogEntryWatcher();
         using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
@@ -268,7 +269,7 @@ public class ProbesTests : TestHelper
                 }
             }
 
-            async Task RunPhase(LogProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
+            async Task RunPhase(ProbeDefinition[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
             {
                 SetProbeConfiguration(agent, snapshotProbes);
 
@@ -293,18 +294,30 @@ public class ProbesTests : TestHelper
 
                 await sample.RunCodeSample();
 
-                var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(probeData);
-                string[] snapshots;
-                if (expectedNumberOfSnapshots == 0)
+                if (DebuggerTestHelper.IsMetricProbe(probeData))
                 {
-                    Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+                    var requests = await agent.WaitForStatsdRequests(probeData.Count(d => d.MetricName != null));
+
+                    foreach (var probeAttributeBase in probeData)
+                    {
+                        requests.Should().Contain(r => r.Contains(probeAttributeBase.MetricName));
+                    }
                 }
                 else
                 {
-                    snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
-                    Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
-                    await ApproveSnapshots(snapshots, testDescription, isMultiPhase, phaseNumber);
-                    agent.ClearSnapshots();
+                    var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(probeData);
+                    string[] snapshots;
+                    if (expectedNumberOfSnapshots == 0)
+                    {
+                        Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+                    }
+                    else
+                    {
+                        snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+                        Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+                        await ApproveSnapshots(snapshots, testDescription, isMultiPhase, phaseNumber);
+                        agent.ClearSnapshots();
+                    }
                 }
 
                 // The Datadog-Agent is continuously receiving probe statuses.
@@ -341,7 +354,7 @@ public class ProbesTests : TestHelper
         }
     }
 
-    private async Task RunSingleTestWithApprovals(ProbeTestDescription testDescription, int expectedNumberOfSnapshots, params LogProbe[] probes)
+    private async Task RunSingleTestWithApprovals(ProbeTestDescription testDescription, int expectedNumberOfSnapshots, params ProbeDefinition[] probes)
     {
         using var agent = EnvironmentHelper.GetMockAgent();
 
@@ -531,7 +544,7 @@ public class ProbesTests : TestHelper
                .Replace(@"\n", @"\r\n");
     }
 
-    private (ProbeAttributeBase ProbeTestData, LogProbe Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)
+    private (ProbeAttributeBase ProbeTestData, ProbeDefinition Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
         var probes = DebuggerTestHelper.GetAllProbes(testType, EnvironmentHelper.GetTargetFramework(), unlisted, guidGenerator);
         if (!probes.Any())
@@ -553,12 +566,58 @@ public class ProbesTests : TestHelper
         SetProbeConfiguration(agent, Array.Empty<LogProbe>());
     }
 
-    private void SetProbeConfiguration(MockTracerAgent agent, LogProbe[] snapshotProbes)
+    private void SetProbeConfiguration(MockTracerAgent agent, ProbeDefinition[] snapshotProbes)
     {
         var configurations = snapshotProbes
-            .Select(snapshotProbe => (snapshotProbe, $"{DefinitionPaths.LogProbe}{snapshotProbe.Id}"))
+            .Select(snapshotProbe =>
+                             {
+                                 var path = snapshotProbe switch
+                                 {
+                                     LogProbe log => DefinitionPaths.LogProbe,
+                                     MetricProbe metric => DefinitionPaths.MetricProbe,
+                                     SpanProbe span => DefinitionPaths.SpanProbe,
+                                     _ => throw new ArgumentOutOfRangeException(snapshotProbe.GetType().FullName, "Add a new probe kind"),
+                                 };
+                                 return (snapshotProbe, $"{path}{snapshotProbe.Id}");
+                             })
             .Select(dummy => ((object Config, string Id))dummy);
 
         agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);
+    }
+
+    [Fact]
+    private void RunMetricTest()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription<GreaterThanArgumentFalse>();
+        var probes = GetProbeConfiguration(testDescription.TestType, false, new DeterministicGuidGenerator());
+
+        using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+        using var processResult = RunSampleAndWaitForExit(agent);
+        var requests = agent.StatsdRequests;
+
+        // Check if we receive 2 kinds of metrics:
+        // - exception count is gathered using common .NET APIs
+        // - contention count is gathered using platform-specific APIs
+
+        var exceptionRequestsCount = requests.Count(r => r.Contains("runtime.dotnet.exceptions.count"));
+
+        Assert.True(exceptionRequestsCount > 0, "No exception metrics received. Metrics received: " + string.Join("\n", requests));
+
+        // Assert service, env, and version
+        requests.Should().OnlyContain(s => s.Contains("env:integration_tests"));
+        requests.Should().OnlyContain(s => s.Contains("version:1.0.0"));
+
+        // Check if .NET Framework or .NET Core 3.1+
+        if (!EnvironmentHelper.IsCoreClr()
+         || (Environment.Version.Major == 3 && Environment.Version.Minor == 1)
+         || Environment.Version.Major >= 5)
+        {
+            var contentionRequestsCount = requests.Count(r => r.Contains("runtime.dotnet.threads.contention_count"));
+
+            Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
+        }
+
+        Assert.Empty(agent.Exceptions);
+        VerifyInstrumentation(processResult.Process);
     }
 }

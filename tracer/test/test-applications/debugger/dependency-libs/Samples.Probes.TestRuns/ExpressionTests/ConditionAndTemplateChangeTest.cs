@@ -5,10 +5,8 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 {
     // Phase 1
     [LineProbeTestData(92, 
-                       templateDsl: Phase1_TemplateDsl, 
                        templateJson: Phase1_TemplateJson, 
                        templateStr: "Result is: ", 
-                       conditionDsl: Condition_EvaluatesToTrue_Dsl, 
                        conditionJson: Condition_EvaluatesToTrue_Json, 
                        captureSnapshot: true,
                        phase: 1,
@@ -16,10 +14,8 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
     // Phase 2
     [LineProbeTestData(92,
-                       templateDsl: TemplateDsl,
                        templateJson: TemplateJson,
                        templateStr: "This is a new Template, the local is: ",
-                       conditionDsl: Condition_EvaluatesToFalse_Dsl,
                        conditionJson: Condition_EvaluatesToFalse_Json,
                        captureSnapshot: true,
                        phase: 2,
@@ -28,10 +24,8 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
     // Phase 3
     [LineProbeTestData(92,
-                       templateDsl: TemplateDsl,
                        templateJson: TemplateJson,
                        templateStr: "This is a new Template, the local is: ",
-                       conditionDsl: Condition_EvaluatesToTrue_Dsl,
                        conditionJson: Condition_EvaluatesToTrue_Json,
                        captureSnapshot: true,
                        phase: 3,

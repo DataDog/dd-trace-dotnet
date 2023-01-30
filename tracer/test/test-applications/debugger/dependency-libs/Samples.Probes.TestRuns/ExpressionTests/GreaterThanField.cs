@@ -1,15 +1,12 @@
 using System;
 using System.Runtime.CompilerServices;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     public class GreaterThanField : IRun
     {
         private int _field;
-        private const string Dsl = @"{
-  ""dsl"": ""ref _field > 6""
-}";
-
         private const string Json = @"{
     ""gt"": [
       {""ref"": ""_field""},
@@ -26,10 +23,9 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(
-            conditionDsl: Dsl,
             conditionJson: Json,
             captureSnapshot: true,
-            evaluateAt: 1,
+            evaluateAt: Const.Exit,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)

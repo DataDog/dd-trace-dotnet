@@ -28,7 +28,7 @@ internal class LiveDebuggerFactory
         if (!settings.Enabled)
         {
             Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
-            return LiveDebugger.Create(settings, string.Empty, null, null, null, null, null, null);
+            return LiveDebugger.Create(settings, string.Empty, null, null, null, null, null, null, null);
         }
 
         var snapshotSlicer = SnapshotSlicer.Create(settings);
@@ -51,6 +51,8 @@ internal class LiveDebuggerFactory
         var probeStatusPoller = ProbeStatusPoller.Create(probeStatusSink, settings);
 
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
-        return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater);
+
+        var dogStats = DogStats.Create(tracerSettings.Environment, tracerSettings.ServiceVersion, tracerSettings.Exporter, serviceName);
+        return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, dogStats);
     }
 }
