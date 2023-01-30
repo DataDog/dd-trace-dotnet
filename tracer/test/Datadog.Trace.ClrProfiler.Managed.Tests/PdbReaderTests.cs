@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             var datadogTraceAssembly = typeof(DatadogPdbReader).Assembly;
 
-            bool result = SourceLinkInformationExtractor.TryGetSourceLinkInfo(datadogTraceAssembly, out string commitSha, out string repositoryUrl);
+            bool result = SourceLinkInformationExtractor.ExtractFromAssemblyAttributes(datadogTraceAssembly, out string commitSha, out string repositoryUrl);
             result.Should().BeTrue();
             repositoryUrl.Should().BeOneOf(
                 "https://github.com/DataDog/dd-trace-dotnet.git",
