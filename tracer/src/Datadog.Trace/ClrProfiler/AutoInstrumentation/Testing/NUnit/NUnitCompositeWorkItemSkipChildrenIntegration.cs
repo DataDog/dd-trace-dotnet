@@ -50,12 +50,22 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
 
             if (typeName == "CompositeWorkItem" && testSuite.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem))
             {
-                // In case we have a CompositeWorkItem we check if there is a OneTimeSetUp failure
-                if ((compositeWorkItem.Result.ResultState.Status == TestStatus.Failed &&
-                    compositeWorkItem.Result.ResultState.Site == FailureSite.SetUp) ||
-                    message.Contains("NpgsqlException"))
+                // In case we have a CompositeWorkItem we check if there is a setup or teardown failure
+                if (compositeWorkItem.Result.ResultState.Status == TestStatus.Failed || message.Contains("Exception:"))
                 {
-                    NUnitIntegration.WriteSetUpError(compositeWorkItem);
+                    if (compositeWorkItem.Result.ResultState.Site == FailureSite.SetUp)
+                    {
+                        NUnitIntegration.WriteSetUpOrTearDownError(compositeWorkItem, "SetUpException");
+                    }
+                    else if (compositeWorkItem.Result.ResultState.Site == FailureSite.TearDown)
+                    {
+                        NUnitIntegration.WriteSetUpOrTearDownError(compositeWorkItem, "TearDownException");
+                    }
+                    else if (message.Contains("Exception:"))
+                    {
+                        NUnitIntegration.WriteSetUpOrTearDownError(compositeWorkItem, "Exception");
+                    }
+
                     return CallTargetState.GetDefault();
                 }
             }

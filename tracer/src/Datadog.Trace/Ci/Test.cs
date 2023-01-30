@@ -249,7 +249,7 @@ public sealed class Test
         scope.Dispose();
 
         Current = null;
-        CIVisibility.Log.Debug("######### Test Closed: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
+        CIVisibility.Log.Debug("######### Test Closed: {name} ({suite} | {module}) | {status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
     }
 
     internal void ResetStartTime()

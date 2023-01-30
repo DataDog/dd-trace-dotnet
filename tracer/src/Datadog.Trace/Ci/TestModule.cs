@@ -388,7 +388,7 @@ public sealed class TestModule
         span.Finish(duration.Value);
 
         Current = null;
-        CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
+        CIVisibility.Log.Debug("### Test Module Closed: {name} | {status}", Name, Tags.Status);
 
         if (_fakeSession is { } fakeSession)
         {

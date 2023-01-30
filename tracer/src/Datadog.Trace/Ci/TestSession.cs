@@ -338,7 +338,7 @@ public sealed class TestSession
         }
 
         Current = null;
-        CIVisibility.Log.Debug("### Test Session Closed: {command}", Command);
+        CIVisibility.Log.Debug("### Test Session Closed: {command} | {status}", Command, Tags.Status);
         return true;
     }
 

@@ -24,8 +24,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitEvpTests : TestHelper
     {
-        private const int ExpectedTestCount = 28;
-        private const int ExpectedTestSuiteCount = 7;
+        private const int ExpectedTestCount = 30;
+        private const int ExpectedTestSuiteCount = 9;
 
         private const string TestBundleName = "Samples.NUnitTests";
         private static readonly string[] _testSuiteNames =
@@ -37,6 +37,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             "Samples.NUnitTests.TestFixtureSetupError(\"Test01\")",
             "Samples.NUnitTests.TestFixtureSetupError(\"Test02\")",
             "Samples.NUnitTests.TestSetupError",
+            "Samples.NUnitTests.TestTearDownError",
+            "Samples.NUnitTests.TestTearDown2Error",
         };
 
         public NUnitEvpTests(ITestOutputHelper output)
@@ -96,19 +98,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 if (@event.Type == SpanTypes.Test)
                                 {
                                     var testObject = JsonConvert.DeserializeObject<MockCIVisibilityTest>(@event.Content.ToString());
-                                    Output.WriteLine($"Test: {testObject.Meta[TestTags.Suite]}.{testObject.Meta[TestTags.Name]}");
+                                    Output.WriteLine($"Test: {testObject.Meta[TestTags.Suite]}.{testObject.Meta[TestTags.Name]} | {testObject.Meta[TestTags.Status]}");
                                     tests.Add(testObject);
                                 }
                                 else if (@event.Type == SpanTypes.TestSuite)
                                 {
                                     var suiteObject = JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(@event.Content.ToString());
-                                    Output.WriteLine($"Suite: {suiteObject.Meta[TestTags.Suite]}");
+                                    Output.WriteLine($"Suite: {suiteObject.Meta[TestTags.Suite]} | {suiteObject.Meta[TestTags.Status]}");
                                     testSuites.Add(suiteObject);
                                 }
                                 else if (@event.Type == SpanTypes.TestModule)
                                 {
                                     var moduleObject = JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(@event.Content.ToString());
-                                    Output.WriteLine($"Module: {moduleObject.Meta[TestTags.Module]}");
+                                    Output.WriteLine($"Module: {moduleObject.Meta[TestTags.Module]} | {moduleObject.Meta[TestTags.Status]}");
                                     testModules.Add(moduleObject);
                                 }
                             }
@@ -133,6 +135,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         tests.Should().OnlyContain(t => t.TestSessionId == testSuites[0].TestSessionId);
                         testSuites[0].TestSessionId.Should().Be(testModules[0].TestSessionId);
                         testModules[0].TestSessionId.Should().Be(sessionId);
+
+                        foreach (var targetSuite in testSuites.ToArray())
+                        {
+                            switch (targetSuite.Meta[TestTags.Suite])
+                            {
+                                case "Samples.NUnitTests.TestSuite":
+                                case "Samples.NUnitTests.TestSetupError":
+                                case "Samples.NUnitTests.TestFixtureSetupError(\"Test01\")":
+                                case "Samples.NUnitTests.TestFixtureSetupError(\"Test02\")":
+                                case "Samples.NUnitTests.TestTearDownError":
+                                case "Samples.NUnitTests.TestTearDown2Error":
+                                    Assert.Equal(TestTags.StatusFail, targetSuite.Meta[TestTags.Status]);
+                                    Assert.True(targetSuite.Meta.ContainsKey(Tags.ErrorType));
+                                    Assert.True(targetSuite.Meta.ContainsKey(Tags.ErrorMsg));
+                                    break;
+                                default:
+                                    Assert.Equal(TestTags.StatusPass, targetSuite.Meta[TestTags.Status]);
+                                    break;
+                            }
+                        }
 
                         foreach (var targetTest in tests.ToArray())
                         {
@@ -281,48 +303,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
             catch
             {
-                Console.WriteLine("Framework Version: " + new Version(FrameworkDescription.Instance.ProductVersion));
+                Output.WriteLine("Framework Version: " + new Version(FrameworkDescription.Instance.ProductVersion));
                 if (!string.IsNullOrWhiteSpace(packageVersion))
                 {
-                    Console.WriteLine("Package Version: " + new Version(packageVersion));
+                    Output.WriteLine("Package Version: " + new Version(packageVersion));
                 }
 
+                WriteSpans(testSuites);
                 WriteSpans(tests);
                 throw;
             }
-        }
-
-        private static void WriteSpans(List<MockCIVisibilityTest> tests)
-        {
-            if (tests is null || tests.Count == 0)
-            {
-                return;
-            }
-
-            Console.WriteLine("***********************************");
-
-            int i = 0;
-            foreach (var test in tests)
-            {
-                Console.Write($" {i++}) ");
-                Console.Write($"TraceId={test.TraceId}, ");
-                Console.Write($"SpanId={test.SpanId}, ");
-                Console.Write($"Service={test.Service}, ");
-                Console.Write($"Name={test.Name}, ");
-                Console.Write($"Resource={test.Resource}, ");
-                Console.Write($"Type={test.Type}, ");
-                Console.Write($"Error={test.Error}");
-                Console.WriteLine();
-                Console.WriteLine($"   Tags=");
-                foreach (var kv in test.Meta)
-                {
-                    Console.WriteLine($"       => {kv.Key} = {kv.Value}");
-                }
-
-                Console.WriteLine();
-            }
-
-            Console.WriteLine("***********************************");
         }
 
         private static string AssertTargetSpanAnyOf(MockCIVisibilityTest targetTest, string key, params string[] values)
@@ -477,6 +467,75 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             // Remove the stacktrace
             targetTest.Meta.Remove(Tags.ErrorStack);
+        }
+
+        private void WriteSpans(List<MockCIVisibilityTestSuite> suites)
+        {
+            if (suites is null || suites.Count == 0)
+            {
+                return;
+            }
+
+            var sb = StringBuilderCache.Acquire(250);
+            sb.AppendLine("***********************************");
+
+            int i = 0;
+            foreach (var suite in suites)
+            {
+                sb.Append($" {i++}) ");
+                sb.Append($"TestSuiteId={suite.TestSuiteId}, ");
+                sb.Append($"Service={suite.Service}, ");
+                sb.Append($"Name={suite.Name}, ");
+                sb.Append($"Resource={suite.Resource}, ");
+                sb.Append($"Type={suite.Type}, ");
+                sb.Append($"Error={suite.Error}");
+                sb.AppendLine();
+                sb.AppendLine("   Tags=");
+                foreach (var kv in suite.Meta)
+                {
+                    sb.AppendLine($"       => {kv.Key} = {kv.Value}");
+                }
+
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("***********************************");
+            Output.WriteLine(StringBuilderCache.GetStringAndRelease(sb));
+        }
+
+        private void WriteSpans(List<MockCIVisibilityTest> tests)
+        {
+            if (tests is null || tests.Count == 0)
+            {
+                return;
+            }
+
+            var sb = StringBuilderCache.Acquire(250);
+            sb.AppendLine("***********************************");
+
+            int i = 0;
+            foreach (var test in tests)
+            {
+                sb.Append($" {i++}) ");
+                sb.Append($"TraceId={test.TraceId}, ");
+                sb.Append($"SpanId={test.SpanId}, ");
+                sb.Append($"Service={test.Service}, ");
+                sb.Append($"Name={test.Name}, ");
+                sb.Append($"Resource={test.Resource}, ");
+                sb.Append($"Type={test.Type}, ");
+                sb.Append($"Error={test.Error}");
+                sb.AppendLine();
+                sb.AppendLine("   Tags=");
+                foreach (var kv in test.Meta)
+                {
+                    sb.AppendLine($"       => {kv.Key} = {kv.Value}");
+                }
+
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("***********************************");
+            Output.WriteLine(StringBuilderCache.GetStringAndRelease(sb));
         }
     }
 }

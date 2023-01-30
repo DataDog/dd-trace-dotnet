@@ -190,4 +190,22 @@ namespace Samples.NUnitTests
             throw new Exception("SetUp exception.");
         }
     }
+    
+    public class TestTearDownError : TestBase<object>
+    {
+        [TearDown]
+        public void TearDown()
+        {
+            throw new Exception("TearDown exception.");
+        }
+    }
+
+    public class TestTearDown2Error : TestBase<object>
+    {
+        [OneTimeTearDown]
+        public void TearDown()
+        {
+            throw new Exception("TearDown exception.");
+        }
+    }
 }
