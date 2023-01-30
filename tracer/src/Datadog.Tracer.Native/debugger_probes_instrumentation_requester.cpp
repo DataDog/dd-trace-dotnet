@@ -270,6 +270,12 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
         {
             const DebuggerMethodProbeDefinition& current = methodProbes[i];
 
+            if (IsProbeIdExist(current.probeId))
+            {
+                Logger::Info("[AddMethodProbes] Method Probe Id: ", current.probeId, " is already processed.");
+                continue;
+            }
+
             const shared::WSTRING& probeId = shared::WSTRING(current.probeId);
             const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
             const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
@@ -305,6 +311,12 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
 
             methodProbeDefinitions.push_back(methodProbe);
             ProbesMetadataTracker::Instance()->CreateNewProbeIfNotExists(probeId);
+        }
+
+        if (methodProbeDefinitions.empty())
+        {
+            Logger::Info("[AddMethodProbes] Early exiting, there are no new method probes to be added.");
+            return;
         }
 
         std::scoped_lock<std::mutex> moduleLock(m_corProfiler->module_ids_lock_);
@@ -352,11 +364,23 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
         {
             const DebuggerLineProbeDefinition& current = lineProbes[i];
 
+            if (IsProbeIdExist(current.probeId))
+            {
+                Logger::Info("[AddLineProbes] Method Probe Id: ", current.probeId, " is already processed.");
+                continue;
+            }
+
             const shared::WSTRING& probeId = shared::WSTRING(current.probeId);
             const shared::WSTRING& probeFilePath = shared::WSTRING(current.probeFilePath);
             const auto& lineProbe = std::make_shared<LineProbeDefinition>(LineProbeDefinition(probeId, current.bytecodeOffset, current.lineNumber, current.mvid, current.methodId, probeFilePath));
             
             lineProbeDefinitions.push_back(lineProbe);
+        }
+
+        if (lineProbeDefinitions.empty())
+        {
+            Logger::Info("[AddLineProbes] Early exiting, there are no new line probes to be added.");
+            return;
         }
 
         std::scoped_lock<std::mutex> moduleLock(m_corProfiler->module_ids_lock_);
@@ -437,6 +461,14 @@ void DebuggerProbesInstrumentationRequester::DetermineReInstrumentProbes(std::se
             reInstrumentRequests.emplace(request);
         }
     }
+}
+
+// Assumes `m_probes_mutex` is held
+bool DebuggerProbesInstrumentationRequester::IsProbeIdExist(const WCHAR* probeId)
+{
+    auto it = std::find_if(m_probes.begin(), m_probes.end(),
+                           [&](ProbeDefinition_S const& probeDef) { return probeDef->probeId == probeId; });
+    return it != m_probes.end();
 }
 
 void DebuggerProbesInstrumentationRequester::InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes,
