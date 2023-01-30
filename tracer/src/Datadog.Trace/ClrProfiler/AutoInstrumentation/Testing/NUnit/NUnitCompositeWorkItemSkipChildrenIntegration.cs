@@ -50,7 +50,7 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
 
             if (typeName == "CompositeWorkItem" && testSuite.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem))
             {
-                // In case we have a CompositeWorkItem we check if there is a OneTimeSetUp failure
+                // In case we have a CompositeWorkItem we check if there is a setup or teardown failure
                 if (compositeWorkItem.Result.ResultState.Status == TestStatus.Failed || message.Contains("Exception:"))
                 {
                     if (compositeWorkItem.Result.ResultState.Site == FailureSite.SetUp)
