@@ -224,7 +224,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(IDbCommand command)
             {
-                var connectionString = command.Connection?.ConnectionString;
+                IDbConnection dbConnection = null;
+                try
+                {
+                    dbConnection = command.Connection;
+                }
+                catch (NotSupportedException nsException)
+                {
+                    Log.Debug(nsException, "Connection cannot be retrieved from the command.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Error trying to retrieve the connection from the command.");
+                }
+
+                var connectionString = dbConnection?.ConnectionString;
 
                 // Check if the connection string is the one in the cache
                 var tagsByConnectionString = _tagsByConnectionStringCache;
