@@ -108,7 +108,8 @@ TEST(ConfigurationTest, CheckIfOperationalMetricsIsNotEnabledWhenVariableIsNotSe
     ASSERT_FALSE(configuration.IsOperationalMetricsEnabled());
 }
 
-#if not defined(_WINDOWS) || not defined(DD_SANITIZERS)
+// This test must be deactivated if it's run on windows with a sanitizer
+#if not defined(_WINDOWS) || defined(DD_SANITIZERS)
 TEST(ConfigurationTest, CheckDefaultLogDirectoryWhenVariableIsNotSet)
 {
     unsetenv(EnvironmentVariables::LogDirectory);
