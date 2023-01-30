@@ -7,14 +7,8 @@
   </PropertyGroup>
 
   <!-- .NET Core 2.0/3.0/3.1 and .NET Framework don't have the Activity* APIs -->
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == net462 OR '$(TargetFramework)'=='netcoreapp2.1' OR '$(TargetFramework)'=='netcoreapp3.0' OR '$(TargetFramework)'=='netcoreapp3.1'">
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0" />
   </ItemGroup>
-
-  <!--<ItemGroup>
-    <PackageReference Include="OpenTelemetry" Version="1.3.1" />
-    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.3.1" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.3.1" />
-  </ItemGroup>-->
 
 </Project>
