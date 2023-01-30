@@ -1,5 +1,3 @@
-#nullable enable
-
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System;
@@ -141,24 +139,24 @@ public static class Program
         using var unsetStatusSpan = _source.StartActivity("UnsetStatusSpan");
         unsetStatusSpan?.SetStatus(ActivityStatusCode.Unset);
 
-        var parentId = ActivityTraceId.CreateRandom(); // TODO maybe need to create this from a string if we are going to snapshot
+        var parentId = ActivityTraceId.CreateRandom();
         using var parentSpan = _source.StartActivity("ParentSpan");
         // https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.activity.setparentid?view=net-7.0
         var childSpan = new Activity("ChildSpan"); // can't create with StartActivity because ParentId is automatically set
-        childSpan.SetParentId(parentSpan!.Id!);
+        childSpan.SetParentId(parentSpan.Id);
         childSpan.Start();
         childSpan.Stop();
 
         // W3C overload
         using var parentSpan2 = _source.StartActivity("W3CParentSpan");
         var childSpan2 = new Activity("W3CChildSpan");
-        childSpan2.SetParentId(parentSpan2!.TraceId, parentSpan2.SpanId); // TODO should ActivityTraceFlags be added? (None by default)
+        childSpan2.SetParentId(parentSpan2.TraceId, parentSpan2.SpanId);
         childSpan2.Start();
         childSpan2.Stop();
 
         // other misc properties that work with StartActivity
         using var miscSpan = _source.StartActivity("MiscSpan");
-        miscSpan!.DisplayName = "IAmMiscSpan";
+        miscSpan.DisplayName = "IAmMiscSpan";
         miscSpan.TraceStateString = "app=hello";
         miscSpan.SetCustomProperty("CustomPropertyKey", "CustomPropertyValue");
         miscSpan.SetStartTime(new DateTime(2000, 1, 1, 1, 1, 1).ToUniversalTime());
@@ -179,10 +177,10 @@ public static class Program
         var someContext = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.None);
         using var ctor2 = _source.StartActivity("Ctor2", ActivityKind.Server, someContext);
 
-        var tags = new List<KeyValuePair<string, object?>>
+        var tags = new List<KeyValuePair<string, object>>
         {
-            new KeyValuePair<string, object?>("attribute-string", "str"),
-            new KeyValuePair<string, object?>("attribute-int", 1)
+            new KeyValuePair<string, object>("attribute-string", "str"),
+            new KeyValuePair<string, object>("attribute-int", 1)
         };
         using var ctor3 = _source.StartActivity("Ctor3", ActivityKind.Server, someContext, tags);
 
@@ -192,9 +190,9 @@ public static class Program
         using var ctor4 = _source.StartActivity("Ctor4", ActivityKind.Server, default(ActivityContext), tags, links);
     }
 
-    private static IEnumerable<KeyValuePair<string, object?>> GenerateKeyValuePairs()
+    private static IEnumerable<KeyValuePair<string, object>> GenerateKeyValuePairs()
     {
-        var keyValuePairs = new Dictionary<string, object?>(); // TODO enable nullable
+        var keyValuePairs = new Dictionary<string, object>();
 
         keyValuePairs.Add("key-str", "str");
         keyValuePairs.Add("key-int", 5);
