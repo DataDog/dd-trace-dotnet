@@ -48,6 +48,11 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
+            if (Program.CallbackForTests is null)
+            {
+                Utils.SetCommonTracerSettingsToCurrentProcess(settings);
+            }
+
             var arguments = args.Count > 1 ? Utils.GetArgumentsAsString(args.Skip(1).ToArray()) : null;
 
             // CI Visibility mode is enabled.

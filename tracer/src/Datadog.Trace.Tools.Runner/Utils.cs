@@ -35,22 +35,22 @@ namespace Datadog.Trace.Tools.Runner
 
             if (!string.IsNullOrWhiteSpace(options.Environment))
             {
-                envVars["DD_ENV"] = options.Environment;
+                envVars[ConfigurationKeys.Environment] = options.Environment;
             }
 
             if (!string.IsNullOrWhiteSpace(options.Service))
             {
-                envVars["DD_SERVICE"] = options.Service;
+                envVars[ConfigurationKeys.ServiceName] = options.Service;
             }
 
             if (!string.IsNullOrWhiteSpace(options.Version))
             {
-                envVars["DD_VERSION"] = options.Version;
+                envVars[ConfigurationKeys.ServiceVersion] = options.Version;
             }
 
             if (!string.IsNullOrWhiteSpace(options.AgentUrl))
             {
-                envVars["DD_TRACE_AGENT_URL"] = options.AgentUrl;
+                envVars[ConfigurationKeys.AgentUri] = options.AgentUrl;
             }
 
             return envVars;
@@ -96,6 +96,33 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             return envVars;
+        }
+
+        public static void SetCommonTracerSettingsToCurrentProcess(CommonTracerSettings options)
+        {
+            // Settings back DD_ENV to use it in the current process (eg for CIVisibility's TestSession)
+            if (!string.IsNullOrWhiteSpace(options.Environment))
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Environment, options.Environment);
+            }
+
+            // Settings back DD_SERVICE to use it in the current process (eg for CIVisibility's TestSession)
+            if (!string.IsNullOrWhiteSpace(options.Service))
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceName, options.Service);
+            }
+
+            // Settings back DD_VERSION to use it in the current process (eg for CIVisibility's TestSession)
+            if (!string.IsNullOrWhiteSpace(options.Version))
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, options.Version);
+            }
+
+            // Settings back DD_TRACE_AGENT_URL to use it in the current process (eg for CIVisibility's TestSession)
+            if (!string.IsNullOrWhiteSpace(options.AgentUrl))
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.AgentUri, options.AgentUrl);
+            }
         }
 
         public static string DirectoryExists(string name, params string[] paths)
