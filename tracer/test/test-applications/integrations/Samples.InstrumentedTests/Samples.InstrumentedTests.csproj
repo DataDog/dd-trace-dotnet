@@ -2,6 +2,10 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\iast.runsettings</RunSettingsFilePath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateRuntimeConfigDevFile>true</GenerateRuntimeConfigDevFile>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>  
   
   <ItemGroup>
