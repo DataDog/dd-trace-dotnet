@@ -47,7 +47,8 @@ RUN yum update -y \
         expect \
         sudo \
         gawk \
-        libasan6
+        libasan6 \
+        libubsan1
 
 # Install newer version of fpm and specific version of dotenv 
 RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \

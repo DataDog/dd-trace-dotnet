@@ -1881,8 +1881,9 @@ stages:
 
   - job: Linux
     timeoutInMinutes: 60 #default value
+
     pool:
-      vmImage: ubuntu-20.04
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -1927,7 +1928,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: false
 
-- stage: ubsan_tests_linux_profiler
+- stage: ubsan_profiler_tests
 #undefined behavior sanitizer tests
   condition: > 
     and(
@@ -1935,78 +1936,36 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
-  dependsOn: [master_commit_id, generate_variables, build_linux_tracer, build_linux_profiler]
+  dependsOn: [master_commit_id, generate_variables]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Test]
+      jobs: [Linux]
 
-  - job: Test
+  - job: Linux
     timeoutInMinutes: 60 #default value
-    strategy:
-      matrix:
-        centos7:
-          baseImage: centos7
-        alpine:
-          baseImage: alpine
-
+ 
     pool:
-      vmImage: ubuntu-20.04
+      name: azure-linux-scale-set
 
     steps:
-    - task: UseDotNet@2
-      inputs:
-        version: 6.0.x
-        
-    - task: UseDotNet@2
-      inputs:
-        version: 7.0.101
 
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
 
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: linux-profiler-binaries-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/profiler/_build
-      displayName: Download linux profiler binaries
+    - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: |
-        sudo apt-get update
-        sudo apt-get install -y libubsan1
-      displayName: install libasan
-    
-    - script: |
-          CXX=clang++ CC=clang cmake -S . -B __build -DRUN_UBSAN=ON
-          cmake --build __build --config Release --target all-profiler
-      displayName: Build Native Profiler Engine
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        command: "Clean RunProfilerUbsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
-    - script: |
-        dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
-      displayName: build sample applications
-
-    - script: |
-        # set profiler deployment and test output dir folder path for the test
-        test_output_dir="$(realpath .)/test_output"
-
-        export DD_TESTING_OUPUT_DIR="$test_output_dir"
-        export DD_PROFILING_LOG_DIR="$test_output_dir/logs"
-        export DD_PROFILING_OUTPUT_DIR="$test_output_dir/pprofs"
-        export DD_TRACE_DEBUG="1"
-
-        # Run Computer01 for 2min
-        source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
-        cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net6.0 &&
-        UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
-      displayName: run asan test
-      env:
-        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        DD_API_KEY: $(ddApiKey)
-
-    - publish: $(System.DefaultWorkingDirectory)/test_output
+    - publish: profiler/build_data
       displayName: Uploading test results
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()

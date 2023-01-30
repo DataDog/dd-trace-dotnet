@@ -483,7 +483,6 @@ partial class Build
     Target RunProfilerAsanTest => _ => _
         .Unlisted()
         .Description("Compile and run the profiler with Clang Address sanitizer")
-        .OnlyWhenStatic(() => IsLinux)
         .DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithAsanLinux)
         .DependsOn(CompileProfilerWithAsanWindows)
@@ -625,7 +624,7 @@ partial class Build
                 var sampleBaseOutputDir = ProfilerOutputDirectory / "bin" / $"{BuildConfiguration}-{platform}" / "profiler" / "src" / "Demos";
                 var sampleAppDll = sampleBaseOutputDir / sampleApp.Name / Framework / $"{sampleApp.Name}.dll";
 
-                CustomDotNetTasks.DotNet($"{sampleAppDll} --scenario 1 --timeout 10", platform: platform, environmentVariables: envVars);
+                CustomDotNetTasks.DotNet($"{sampleAppDll} --scenario 1 --timeout 120", platform: platform, environmentVariables: envVars);
             }
         });
 
@@ -680,4 +679,95 @@ partial class Build
         testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
     }
 
+    Target RunProfilerUbsanTest => _ => _
+        .Unlisted()
+        .Description("Compile and run the profiler with Clang Undefined-behavior sanitizer")
+        .OnlyWhenStatic(() => IsLinux)
+        .DependsOn(BuildNativeLoader)
+        .DependsOn(CompileProfilerWithUbsanLinux)
+        .DependsOn(PublishProfiler)
+        .DependsOn(RunSampleWithProfilerUbsan);
+
+
+
+    Target CompileProfilerWithUbsanLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Before(PublishProfiler)
+        .Triggers(RunUnitTestsWithUbsanLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_UBSAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
+        });
+
+    Target RunUnitTestsWithUbsanLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            var workingDirectory = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests";
+            EnsureExistingDirectory(workingDirectory);
+
+            var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
+            Chmod.Value.Invoke("+x " + exePath);
+
+            var envVars = new Dictionary<string, string>()
+            {
+                { "UBSAN_OPTIONS", "print_stacktrace=1" }
+            };
+
+            var testsResultFile = ProfilerBuildDataDirectory / "Datadog.Profiler.Tests.Results.Linux.x64.xml";
+            var testExe = ToolResolver.GetLocalTool(exePath);
+            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
+        });
+
+    Target RunSampleWithProfilerUbsan => _ => _
+        .Unlisted()
+        .Requires(() => Framework)
+        .OnlyWhenStatic(() => IsLinux)
+        .After(BuildNativeLoader)
+        .After(PublishProfiler)
+        .After(CompileProfilerWithUbsanLinux)
+        .Triggers(CheckTestResultForProfilerWithSanitizer)
+        .Executes(() =>
+        {
+            var envVars = new Dictionary<string, string>()
+            {
+                { "DD_TRACE_ENABLED", "0" }, // Disable tracer for this test
+                { "DD_PROFILING_ENABLED", "1" },
+                { "DD_PROFILING_EXCEPTION_ENABLED", "1" },
+                { "DD_PROFILING_ALLOCATION_ENABLED", "1"},
+                { "DD_PROFILING_CONTENTION_ENABLED","1" },
+                { "DD_TRACE_DEBUG", "1" },
+            };
+
+            envVars["LD_PRELOAD"] = "libubsan.so.1";
+            envVars["UBSAN_OPTIONS"] = "print_stacktrace=1";
+
+            AddContinuousProfilerEnvironmentVariables(envVars);
+
+            var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
+
+            envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = ProfilerBuildDataDirectory / "x64" / "pprofs";
+            envVars["DD_PROFILING_LOG_DIR"] = ProfilerBuildDataDirectory /  "x64" / "logs";
+            envVars["DD_TRACE_LOG_DIRECTORY"] = ProfilerBuildDataDirectory / "x64" / "logs"; // for the native loader log files
+
+            DotNetBuild(s => s
+                .SetFramework(Framework)
+                .SetProjectFile(sampleApp)
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetTargetPlatform(MSBuildTargetPlatform.x64));
+
+            var sampleBaseOutputDir = ProfilerOutputDirectory / "bin" / $"{BuildConfiguration}-{MSBuildTargetPlatform.x64}" / "profiler" / "src" / "Demos";
+            var sampleAppDll = sampleBaseOutputDir / sampleApp.Name / Framework / $"{sampleApp.Name}.dll";
+
+            DotNet($"{sampleAppDll} --scenario 1 --timeout 120", environmentVariables: envVars);
+        });
 }

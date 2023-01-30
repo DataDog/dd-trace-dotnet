@@ -266,8 +266,6 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: Install libubsan
-        run: sudo apt-get install -y libubsan1
 
       - uses: actions/setup-dotnet@v3
         with:
@@ -278,45 +276,10 @@ jobs:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
 
-      - name: Build Native Profiler Engine
-        run: |
-          CXX=clang++ CC=clang cmake -S . -B __build -DRUN_UBSAN=ON
-          cmake --build __build --config Release --target all-profiler
-
-      - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
-
-      - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
-
-      - name: Run unit tests
-        run: |
-          sudo mkdir -p /var/log/datadog/dotnet
-          sudo chmod a+rwx /var/log/datadog/dotnet
-          UBSAN_OPTIONS=print_stacktrace=1 ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests
-
-      - name: Prepare environment to run the application
-        run: |
-          #
-          # set profiler deployment and test output dir folder path for the test
-          #
-          tests_output_dir="$(realpath .)/test_output"
-          echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
-          echo "DD_PROFILING_LOG_DIR=$tests_output_dir/logs" >> $GITHUB_ENV
-          echo "DD_INTERNAL_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
-          echo "DD_PROFILING_ENABLED=1" >> $GITHUB_ENV
-          echo "DD_PROFILING_EXCEPTION_ENABLED=1" >> $GITHUB_ENV
-          echo "DD_PROFILING_ALLOCATION_ENABLED=1" >> $GITHUB_ENV
-          echo "DD_PROFILING_CONTENTION_ENABLED=1" >> $GITHUB_ENV
-          echo "DD_TRACE_DEBUG=1" >> $GITHUB_ENV
-
-      - name: Run Computer01 for 2min
-        timeout-minutes: 4
-        if: '${{ always() }}'
-        run: |
-          source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
-          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net6.0 &&
-          UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
+      - uses: ./.github/actions/run-in-docker
+        name: Build profiler with UBSAN and run Computer01
+        with:
+          command: "RunProfilerUbsanTest --Framework net7.0"
 
       - name: 'Publish Test results, Logs and PProf files'
         uses: actions/upload-artifact@v3
@@ -324,8 +287,7 @@ jobs:
         with:
           if-no-files-found: error
           name: Ubsan_Tests_result_logs_and_pprofs_files.Linux.Release.x64
-          path: |
-            ${{ env.DD_TESTING_OUPUT_DIR }}
+          path: profiler/build_data
           retention-days: 1
 
   build_windows:
