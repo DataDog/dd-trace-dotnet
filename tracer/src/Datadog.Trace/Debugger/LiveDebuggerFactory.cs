@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -14,6 +15,7 @@ using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Debugger;
@@ -52,7 +54,12 @@ internal class LiveDebuggerFactory
 
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
 
-        var dogStats = DogStats.Create(tracerSettings.Environment, tracerSettings.ServiceVersion, tracerSettings.Exporter, serviceName);
+        var constantTags = new List<string>
+        {
+            $"service:{NormalizerTraceProcessor.NormalizeService(serviceName)}"
+        };
+
+        var dogStats = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, constantTags);
         return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, dogStats);
     }
 }

@@ -212,20 +212,10 @@ namespace Datadog.Trace
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
             => DiscoveryService.Create(settings.Exporter);
 
-        private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName)
+        internal static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, List<string> constantTags)
         {
             try
             {
-                var constantTags = new List<string>
-                                   {
-                                       "lang:.NET",
-                                       $"lang_interpreter:{FrameworkDescription.Instance.Name}",
-                                       $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
-                                       $"tracer_version:{TracerConstants.AssemblyVersion}",
-                                       $"service:{NormalizerTraceProcessor.NormalizeService(serviceName)}",
-                                       $"{Tags.RuntimeId}:{Tracer.RuntimeId}"
-                                   };
-
                 if (settings.Environment != null)
                 {
                     constantTags.Add($"env:{settings.Environment}");
@@ -277,6 +267,21 @@ namespace Datadog.Trace
                 Log.Error(ex, "Unable to instantiate StatsD client.");
                 return new NoOpStatsd();
             }
+        }
+
+        private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName)
+        {
+            var constantTags = new List<string>
+            {
+                "lang:.NET",
+                $"lang_interpreter:{FrameworkDescription.Instance.Name}",
+                $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
+                $"tracer_version:{TracerConstants.AssemblyVersion}",
+                $"service:{NormalizerTraceProcessor.NormalizeService(serviceName)}",
+                $"{Tags.RuntimeId}:{Tracer.RuntimeId}"
+            };
+
+            return CreateDogStatsdClient(settings, constantTags);
         }
 
         /// <summary>
