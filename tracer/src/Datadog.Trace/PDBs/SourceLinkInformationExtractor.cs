@@ -21,29 +21,13 @@ internal static class SourceLinkInformationExtractor
 {
     private static IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(SourceLinkInformationExtractor));
 
-    public static bool TryGetSourceLinkInfo(Assembly assembly, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
-    {
-        // Extracting the SourceLink information from the assembly attributes will only work if:
-        // 1. The assembly was built using the .NET Core SDK 2.1.300 or newer or MSBuild 15.7 or newer.
-        // 2. The assembly was built using an SDK-Style project file (i.e. <Project Sdk="Microsoft.NET.Sdk">).
-        // If these conditions weren't met, the attributes won't be there, so we'll need to extract the information from the PDB file.
-
-        return ExtractFromAssemblyAttributes(assembly, out commitSha, out repositoryUrl) ||
-               ExtractFromPdb(assembly, out commitSha, out repositoryUrl);
-    }
-
-    private static bool ExtractFromPdb(Assembly assembly, out string? commitSha, out string? repositoryUrl)
+    /// <summary>
+    /// Extract the SourceLink information from the PDB file for the specified assembly.
+    /// </summary>
+    public static bool ExtractFromPdb(Assembly assembly, string pdbFullPath, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
         commitSha = null;
         repositoryUrl = null;
-
-        var pdbFullPath = Path.ChangeExtension(assembly.Location, "pdb");
-        if (!File.Exists(pdbFullPath))
-        {
-            // The PDB file doesn't exist, so we can't extract the information from it
-            Log.Information("PDB file {PdbFullPath} does not exist", pdbFullPath);
-            return false;
-        }
 
         var sourceLinkJsonDocument = DatadogPdbReader.CreatePdbReader(assembly)?.GetSourceLinkJsonDocument();
         if (sourceLinkJsonDocument == null)
@@ -71,7 +55,7 @@ internal static class SourceLinkInformationExtractor
     /// <summary>
     /// Extract the SourceLink information from the assembly attributes "AssemblyMetadataAttribute" and "AssemblyInformationalVersionAttribute".
     /// </summary>
-    private static bool ExtractFromAssemblyAttributes(Assembly assembly, out string? commitSha, out string? repositoryUrl)
+    public static bool ExtractFromAssemblyAttributes(Assembly assembly, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
         commitSha = null;
         repositoryUrl = null;

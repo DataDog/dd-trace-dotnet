@@ -5,6 +5,9 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 
@@ -16,6 +19,7 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 {
     private readonly ImmutableTracerSettings _immutableTracerSettings;
     private GitMetadata? _cachedGitTags = null;
+    private Assembly? _entryAssembly;
 
     public GitMetadataTagsProvider(ImmutableTracerSettings immutableTracerSettings)
     {
@@ -28,12 +32,6 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
     {
         try
         {
-            if (_cachedGitTags != null)
-            {
-                gitMetadata = _cachedGitTags;
-                return true;
-            }
-
             if (_immutableTracerSettings.GitMetadataEnabled == false)
             {
                 // The user has explicitly disabled tagging telemetry events with Git metadata
@@ -78,22 +76,53 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
     /// <returns>False if the method was called too early and should be called again later. Otherwise, true.</returns>
     private bool TryGetGitTagsFromSourceLink([NotNullWhen(true)] out GitMetadata? result)
     {
-        if (EntryAssemblyLocator.GetEntryAssembly() is not { } assembly)
+        if (_entryAssembly == null)
         {
-            // Cannot determine the entry assembly. This may mean this method was called too early.
-            // Return false to indicate that we should try again later.
-            result = default;
+            _entryAssembly = EntryAssemblyLocator.GetEntryAssembly();
+            if (_entryAssembly == null)
+            {
+                // Cannot determine the entry assembly. This may mean this method was called too early.
+                // Return false to indicate that we should try again later.
+                result = default;
+                return false;
+            }
+
+            if (SourceLinkInformationExtractor.ExtractFromAssemblyAttributes(_entryAssembly, out var commitSha, out var repositoryUrl))
+            {
+                Log.Information($"Found SourceLink information for assembly {_entryAssembly.GetName().Name} in assembly attributes: commit {commitSha} from {repositoryUrl}");
+                result = new GitMetadata(commitSha, repositoryUrl);
+                return true;
+            }
+        }
+
+        // Extracting the SourceLink information from the assembly attributes will only work if:
+        // 1. The assembly was built using the .NET Core SDK 2.1.300 or newer or MSBuild 15.7 or newer.
+        // 2. The assembly was built using an SDK-Style project file (i.e. <Project Sdk="Microsoft.NET.Sdk">).
+        // If these conditions weren't met, the attributes won't be there, so we'll need to extract the information from the PDB file.
+        var pdbFullPath = Path.ChangeExtension(_entryAssembly.Location, "pdb");
+        if (File.Exists(pdbFullPath))
+        {
+            if (SourceLinkInformationExtractor.ExtractFromPdb(_entryAssembly, pdbFullPath, out var commitSha, out var repositoryUrl))
+            {
+                Log.Information($"Found SourceLink information for assembly {_entryAssembly.GetName().Name} in its pdb: commit {commitSha} from {repositoryUrl}");
+                result = new GitMetadata(commitSha, repositoryUrl);
+                return true;
+            }
+        }
+        else if (pdbFullPath.Contains("Temporary ASP.NET Files"))
+        {
+            // The PDB file doesn't exist, but this is probably because the application is running in IIS
+            // and utilizing Dynamic Compilation. In this scenario, the PDB file will be copied on the fly
+            // on the first time an exception is thrown, so we may need to try again later.
+            result = null;
             return false;
         }
-
-        if (SourceLinkInformationExtractor.TryGetSourceLinkInfo(assembly, out var commitSha, out var repositoryUrl))
+        else
         {
-            Log.Information($"Found SourceLink information for assembly {assembly.GetName().Name}: commit {commitSha} from {repositoryUrl}");
-            result = new GitMetadata(commitSha, repositoryUrl);
-            return true;
+            Log.Debug("PDB file {PdbFullPath} does not exist", pdbFullPath);
         }
 
-        Log.Information("No SourceLink information found for assembly {AssemblyName}", assembly.GetName().Name);
+        Log.Information("No SourceLink information found for assembly {AssemblyName}", _entryAssembly.GetName().Name);
         result = GitMetadata.Empty;
         return true;
     }
