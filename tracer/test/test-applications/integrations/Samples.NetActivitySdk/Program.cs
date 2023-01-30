@@ -26,7 +26,6 @@ public static class Program
         // needs to be outside of the above root span as we don't want a parent here
         RunActivityConstructors(); // 4 spans (total 14)
         RunActivityUpdate(); //  9 spans (total 23)
-        //RunActivityLink();
         await Task.Delay(1000);
     }
 
@@ -97,23 +96,6 @@ public static class Program
         var event2 = new ActivityEvent("event-2", DateTimeOffset.Now);
         span5?.AddEvent(event1);
         span5?.AddEvent(event2);
-    }
-
-    private static void RunActivityLink()
-    {
-        using var span1 = _source.StartActivity("SomeUnrelatedSpan");
-        //var context1 = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.None);
-        //var context2 = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.None);
-        //var contexts = new[] { context1, context2 };
-
-        //var links = contexts.Select(context => new ActivityLink(context));
-        List<ActivityLink> links;
-        if(span1 is not null)
-        {
-            links = new List<ActivityLink>() { new ActivityLink(span1.Context) };
-            using var span2 = _source.StartActivity(name: "ActivityLinks", kind: ActivityKind.Internal, links: links);
-        }
-
     }
 
     private static void RunActivityAddBaggage()
