@@ -42,12 +42,10 @@ namespace Datadog.Trace.Util
             string connectionString = null;
             try
             {
-#if NET7_0_OR_GREATER
-                    if (command.GetType().FullName == "System.Data.Common.DbDataSource.DbCommandWrapper")
-                    {
-                        return default;
-                    }
-#endif
+                if (command.GetType().FullName == "System.Data.Common.DbDataSource.DbCommandWrapper")
+                {
+                    return default;
+                }
 
                 connectionString = command.Connection?.ConnectionString;
             }

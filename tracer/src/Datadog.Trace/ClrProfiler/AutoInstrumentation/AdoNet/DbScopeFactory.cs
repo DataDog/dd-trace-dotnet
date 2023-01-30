@@ -227,12 +227,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 string connectionString = null;
                 try
                 {
-#if NET7_0_OR_GREATER
                     if (command.GetType().FullName == "System.Data.Common.DbDataSource.DbCommandWrapper")
                     {
                         return default;
                     }
-#endif
 
                     connectionString = command.Connection?.ConnectionString;
                 }
