@@ -393,7 +393,7 @@ WSTRING ModuleInfo::GetTypeName(mdTypeDef typeDef)
     auto typeFromToken = TypeFromToken(typeDef);
     if (typeFromToken == mdtTypeDef)
     {
-        _metadataImport->GetTypeDefProps(typeDef, typeName, 1024, nullptr, &typeDefFlags, 0);
+        _metadataImport->GetTypeDefProps(typeDef, typeName, 1024, nullptr, &typeDefFlags, nullptr);
         res = typeName;
     }
     else if (typeFromToken == mdtTypeRef)
@@ -418,7 +418,7 @@ WSTRING ModuleInfo::GetTypeName(mdTypeDef typeDef)
         hr = _metadataImport->GetNestedClassProps(typeDef, &enclosingClassTypeDef);
         if (SUCCEEDED(hr))
         {
-            hr = _metadataImport->GetTypeDefProps(enclosingClassTypeDef, typeName, 1024, nullptr, &typeDefFlags, 0);
+            hr = _metadataImport->GetTypeDefProps(enclosingClassTypeDef, typeName, 1024, nullptr, &typeDefFlags, nullptr);
         }
         if (FAILED(hr))
         {

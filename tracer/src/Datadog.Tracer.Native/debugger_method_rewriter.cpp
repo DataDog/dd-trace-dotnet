@@ -465,7 +465,7 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
     ILRewriterWrapper& rewriterWrapper, 
     ULONG lineProbeCallTargetStateIndex, 
     std::vector<EHClause>& newClauses,
-    bool isAsyncMethod) const
+    bool isAsyncMethod) 
 {
     if (isAsyncMethod && caller->type.isGeneric && caller->type.valueType)
     {
@@ -909,7 +909,7 @@ HRESULT DebuggerMethodRewriter::LoadProbeIdIntoStack(const ModuleID moduleId, co
     return hr;
 }
 
-void DebuggerMethodRewriter::LogDebugCallerInfo(const FunctionInfo* caller, const int instrumentedMethodIndex) const
+void DebuggerMethodRewriter::LogDebugCallerInfo(const FunctionInfo* caller, const int instrumentedMethodIndex) 
 {
     if (!IsDebugEnabled()) return;
 
@@ -1171,7 +1171,7 @@ HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<I
 }
 
 HRESULT DebuggerMethodRewriter::IsAsyncMethodProbe(const ComPtr<IMetaDataImport2>& metadataImport,
-                                                   const FunctionInfo* caller, bool& isAsyncMethod) const
+                                                   const FunctionInfo* caller, bool& isAsyncMethod) 
 {
     if (caller->name != WStr("MoveNext") || caller->method_signature.NumberOfArguments() > 0 ||
         std::get<unsigned>(caller->method_signature.GetReturnValue().GetElementTypeAndFlags()) != ELEMENT_TYPE_VOID)

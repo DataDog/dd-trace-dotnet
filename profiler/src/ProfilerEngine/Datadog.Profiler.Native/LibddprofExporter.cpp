@@ -635,7 +635,7 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
     return ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, RequestTimeOutMs);
 }
 
-bool LibddprofExporter::Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter) const
+bool LibddprofExporter::Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter)
 {
     assert(request != nullptr);
 
@@ -659,7 +659,7 @@ bool LibddprofExporter::Send(ddog_prof_Exporter_Request* request, ddog_prof_Expo
     return !failed;
 }
 
-fs::path LibddprofExporter::CreatePprofOutputPath(IConfiguration* configuration) const
+fs::path LibddprofExporter::CreatePprofOutputPath(IConfiguration* configuration)
 {
     auto const& pprofOutputPath = configuration->GetProfilesOutputDirectory();
     if (pprofOutputPath.empty())

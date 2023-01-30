@@ -27,10 +27,10 @@ namespace iast
         WSTRING GetReturnTypeString();
         WSTRING GetParamsRepresentation();
     protected:
-        ModuleInfo* _module = NULL;
+        ModuleInfo* _module = nullptr;
 
         std::vector<BYTE> _dynamicSig;
-        PCCOR_SIGNATURE _pSig = NULL;
+        PCCOR_SIGNATURE _pSig = nullptr;
         DWORD _nSig = 0;
         SignatureTypes _signatureType;
 
@@ -47,7 +47,7 @@ namespace iast
 
     public:
         CorCallingConvention _callingConvention = IMAGE_CEE_CS_CALLCONV_DEFAULT;
-        SignatureType* _returnType = NULL;
+        SignatureType* _returnType = nullptr;
         ULONG _genericParamCount = 0;
         std::vector<SignatureType*> _params;
 
@@ -55,16 +55,16 @@ namespace iast
         WSTRING _paramsString;
 
         SignatureTypes GetType();
-        PCCOR_SIGNATURE GetSignature(DWORD* sigSize = NULL);
+        PCCOR_SIGNATURE GetSignature(DWORD* sigSize = nullptr);
         bool HasThis();
         int GetEffectiveParamCount();
         WSTRING CharacterizeMember(WSTRING memberName, bool addReturyType);
 
     public:
         // Inherited via ISignatureBuilder
-        virtual HRESULT AddElementType(CorElementType corType) override;
-        virtual HRESULT AddToken(mdToken token) override;
-        virtual HRESULT AddData(const BYTE* data, ULONG size) override;
-        virtual HRESULT Add(DWORD data) override;
+        HRESULT AddElementType(CorElementType corType) override;
+        HRESULT AddToken(mdToken token) override;
+        HRESULT AddData(const BYTE* data, ULONG size) override;
+        HRESULT Add(DWORD data) override;
     };
 }

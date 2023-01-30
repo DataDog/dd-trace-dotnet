@@ -166,14 +166,14 @@ private:
     GCDetails& GetCurrentGC();
     void InitializeGC(GCDetails& gc, GCStartPayload& payload);
     void ClearCollections();
-    void ResetGC(GCDetails& gc);
-    uint64_t GetCurrentTimestamp();
+    static void ResetGC(GCDetails& gc);
+    static uint64_t GetCurrentTimestamp();
 
 
 private:
     // Points to the UTF16, null terminated string from the given event data buffer
     // and update the offset accordingly
-    WCHAR* ReadWideString(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
+    static WCHAR* ReadWideString(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
     {
         WCHAR* start = (WCHAR*)(eventData + *offset);
         size_t length = WStrLen(start);

@@ -38,12 +38,12 @@ public:
     uint32_t Count() override;
     uint32_t CreateIterator() override;
     std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) override;
-    bool TryGetThreadInfo(const std::uint32_t profilerThreadInfoId,
+    bool TryGetThreadInfo(std::uint32_t profilerThreadInfoId,
                           ThreadID* pClrThreadId,
                           DWORD* pOsThreadId,
                           HANDLE* pOsThreadHandle,
                           WCHAR* pThreadNameBuff,
-                          const std::uint32_t threadNameBuffLen,
+                          std::uint32_t threadNameBuffLen,
                           std::uint32_t* pActualThreadNameLen) override;
     HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
 

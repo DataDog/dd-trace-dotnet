@@ -177,7 +177,7 @@ public:
         _stopWorker = true;
     }
 
-    void SimulateInPthreadCreate()
+    static void SimulateInPthreadCreate()
     {
         dd_IsPthreadCreateCall = 1;
     }
@@ -224,7 +224,7 @@ public:
         EXPECT_EQ(ips[collectedNbFrames - 2], (uintptr_t)expectedCallstack[expectedNbFrames - 2]);
     }
 
-    ProfilerSignalManager* GetSignalManager()
+    static ProfilerSignalManager* GetSignalManager()
     {
         return ProfilerSignalManager::Get();
     }

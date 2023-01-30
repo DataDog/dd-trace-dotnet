@@ -97,7 +97,7 @@ private:
     StackSamplerLoopManager() = delete;
 
     inline bool GetUpdateIsThreadSafeForStackSampleCollection(ManagedThreadInfo* pThreadInfo, bool* pIsStatusChanged);
-    inline bool ShouldCollectThread(std::uint64_t threadAggPeriodDeadlockCount, std::uint64_t globalAggPeriodDeadlockCount) const;
+    static inline bool ShouldCollectThread(std::uint64_t threadAggPeriodDeadlockCount, std::uint64_t globalAggPeriodDeadlockCount) ;
 
     void RunStackSampling();
     void GracefulShutdownStackSampling();
