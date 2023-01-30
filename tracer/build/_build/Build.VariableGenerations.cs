@@ -52,7 +52,7 @@ partial class Build : NukeBuild
 
                     if (Environment.GetEnvironmentVariable("Build.Reason") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
                     {
-                        Logger.Info("Running scheduled build on master, forcing tests");
+                        Logger.Info("Running scheduled build on master, forcing all tests to run regardless of whether there has been a change.");
                         isChanged = true;
                     }
                     else if (bool.Parse(Environment.GetEnvironmentVariable(forceExplorationTestsWithVariableName) ?? "false"))
