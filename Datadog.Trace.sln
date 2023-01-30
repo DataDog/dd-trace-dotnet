@@ -506,7 +506,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OpenTelemetrySdk", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Owin.Iis.WebApi2", "tracer\test\test-applications\aspnet\Samples.Owin.Iis.WebApi2\Samples.Owin.Iis.WebApi2.csproj", "{B417E258-A21F-4546-B78F-8A7A4879472A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.InstrumentedTests", "tracer\test\test-applications\integrations\Samples.InstrumentedTests\Samples.InstrumentedTests.csproj", "{64E32F7A-8989-480E-AFE7-3BD343424F6A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.InstrumentedTests", "tracer\test\Datadog.InstrumentedTests\Datadog.InstrumentedTests.csproj", "{64E32F7A-8989-480E-AFE7-3BD343424F6A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1385,7 +1385,7 @@ Global
 		{4F377216-3D76-4169-BE2B-8DA3A653DD5E} = {0884B566-D22E-498C-BAA9-26D50ABCAE3A}
 		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B417E258-A21F-4546-B78F-8A7A4879472A} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
-		{64E32F7A-8989-480E-AFE7-3BD343424F6A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{64E32F7A-8989-480E-AFE7-3BD343424F6A} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

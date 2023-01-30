@@ -3,11 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace;
 using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
