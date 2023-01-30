@@ -58,7 +58,7 @@ public:
 
     inline std::uint64_t GetSnapshotsPerformedSuccessCount() const;
     inline std::uint64_t GetSnapshotsPerformedFailureCount() const;
-    inline std::uint64_t IncSnapshotsPerformedCount(const bool isStackSnapshotSuccessful);
+    inline std::uint64_t IncSnapshotsPerformedCount(bool isStackSnapshotSuccessful);
 
     inline void GetOrResetDeadlocksCount(std::uint64_t deadlocksAggregationPeriodIndex,
                                          std::uint64_t* pPrevCount,

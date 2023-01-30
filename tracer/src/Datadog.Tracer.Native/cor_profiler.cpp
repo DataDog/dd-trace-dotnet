@@ -3519,7 +3519,7 @@ extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_p
 #endif
 
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
-                                             int* symbolsSize) const
+                                             int* symbolsSize) 
 {
 #ifdef _WIN32
     HINSTANCE hInstance = DllHandle;

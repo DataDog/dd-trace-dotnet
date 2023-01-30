@@ -46,23 +46,23 @@ public:
 
 public:
     // Inherited via IService
-    virtual bool Start() override;
-    virtual bool Stop() override;
+    bool Start() override;
+    bool Stop() override;
 
     // Inherited via IBatchedSamplesProvider
-    virtual std::list<std::shared_ptr<Sample>> GetSamples() override;
-    virtual const char* GetName() override;
+    std::list<std::shared_ptr<Sample>> GetSamples() override;
+    const char* GetName() override;
 
     // Inherited via ISampledAllocationsListener
-    virtual void OnAllocation(RawAllocationSample& rawSample) override;
+    void OnAllocation(RawAllocationSample& rawSample) override;
 
     // Inherited via IGarbageCollectionsListener
-    virtual void OnGarbageCollectionStart(
+    void OnGarbageCollectionStart(
         int32_t number,
         uint32_t generation,
         GCReason reason,
         GCType type) override;
-    virtual void OnGarbageCollectionEnd(
+    void OnGarbageCollectionEnd(
         int32_t number,
         uint32_t generation,
         GCReason reason,

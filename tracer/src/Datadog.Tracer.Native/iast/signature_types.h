@@ -56,7 +56,7 @@ namespace iast
         friend class SignatureInfo;
     protected:
         SignatureSimpleType(CorElementType corType);
-        virtual ~SignatureSimpleType();
+        ~SignatureSimpleType() override;
     };
 
     class SignatureTokenType : public SignatureType //, public ITokenType
@@ -64,7 +64,7 @@ namespace iast
         friend class SignatureInfo;
     protected:
         SignatureTokenType(ModuleInfo* module, mdToken token, CorElementType type);
-        virtual ~SignatureTokenType();
+        ~SignatureTokenType() override;
     private:
         mdToken _token;
         ModuleInfo* _pOwningModule;
@@ -86,7 +86,7 @@ namespace iast
         friend class SignatureInfo;
     protected:
         SignatureCompositeType(CorElementType type, SignatureType* relatedType);
-        virtual ~SignatureCompositeType();
+        ~SignatureCompositeType() override;
     private:
         SignatureType* _relatedType;
     public:
@@ -103,7 +103,7 @@ namespace iast
         friend class SignatureInfo;
     protected:
         SignatureFunctionType(CorCallingConvention callingConvention, SignatureType* pReturnType, const std::vector<SignatureType*>& parameters, DWORD dwGenericParameterCount);
-        virtual ~SignatureFunctionType();
+        ~SignatureFunctionType() override;
     private:
         CorCallingConvention _callingConvention;
         SignatureType* _pReturnType;
@@ -119,14 +119,14 @@ namespace iast
         friend class SignatureInfo;
     protected:
         SignatureArrayType(SignatureType* relatedType, ULONG rank, const std::vector<ULONG>& counts, const std::vector<ULONG>& bounds);
-        virtual ~SignatureArrayType();
+        ~SignatureArrayType() override;
     private:
         ULONG _rank;
         std::vector<ULONG> _counts;
         std::vector<ULONG> _bounds;
     public:
         // IType
-        HRESULT AddToSignature(ISignatureBuilder* pSignatureBuilder);
+        HRESULT AddToSignature(ISignatureBuilder* pSignatureBuilder) override;
 
     };
 
@@ -135,7 +135,7 @@ namespace iast
         friend class SignatureInfo;
     protected:
         SignatureGenericParameterType(CorElementType type, ULONG position);
-        virtual ~SignatureGenericParameterType();
+        ~SignatureGenericParameterType() override;
     private:
         ULONG _position;
     public:
@@ -152,7 +152,7 @@ namespace iast
         friend class SignatureInfo;
     protected:
         SignatureGenericInstance(SignatureType* typeDefinition, const std::vector<SignatureType*>& genericParameters);
-        virtual ~SignatureGenericInstance();
+        ~SignatureGenericInstance() override;
     private:
         std::vector<SignatureType*> _genericParameters;
     public:
@@ -166,7 +166,7 @@ namespace iast
         friend class SignatureInfo;
     protected:
         SignatureModifierType(CorElementType type, mdToken token);
-        virtual ~SignatureModifierType();
+        ~SignatureModifierType() override;
     private:
         mdToken _token;
     public:

@@ -28,7 +28,7 @@ protected:
     void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
                             ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
                             ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
-                            const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests);
+                            mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests);
 
     virtual void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
                           ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit,
@@ -40,7 +40,7 @@ protected:
     virtual const bool GetIsDerived(const RejitRequestDefinition& definition) = 0;
     virtual const bool GetIsInterface(const RejitRequestDefinition& definition) = 0;
     virtual const bool GetIsExactSignatureMatch(const RejitRequestDefinition& definition) = 0;
-    virtual const std::unique_ptr<RejitHandlerModuleMethod> CreateMethod(const mdMethodDef methodDef,
+    virtual const std::unique_ptr<RejitHandlerModuleMethod> CreateMethod(mdMethodDef methodDef,
                                                                          RejitHandlerModule* module,
                                                                          const FunctionInfo& functionInfo,
                                                                          const RejitRequestDefinition& definition) = 0;
@@ -101,7 +101,7 @@ protected:
     const bool GetIsInterface(const IntegrationDefinition& definition) final;
     const bool GetIsExactSignatureMatch(const IntegrationDefinition& definition) final;
     const std::unique_ptr<RejitHandlerModuleMethod>
-    CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
+    CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
                  const IntegrationDefinition& integrationDefinition) final;
     bool ShouldSkipModule(const ModuleInfo& moduleInfo, const IntegrationDefinition& integrationDefinition) final;
 };

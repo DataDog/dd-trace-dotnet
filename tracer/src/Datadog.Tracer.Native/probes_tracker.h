@@ -24,9 +24,9 @@ namespace debugger
         ProbesMetadataTracker() = default;
 
         bool TryGetMetadata(const shared::WSTRING& probeId, std::shared_ptr<ProbeMetadata>& probeMetadata);
-        std::set<WSTRING> GetProbeIds(const ModuleID moduleId, const mdMethodDef methodId);
+        std::set<WSTRING> GetProbeIds(ModuleID moduleId, mdMethodDef methodId);
         void CreateNewProbeIfNotExists(const shared::WSTRING& probeId);
-        void AddMethodToProbe(const shared::WSTRING& probeId, const ModuleID moduleId, const mdMethodDef methodId);
+        void AddMethodToProbe(const shared::WSTRING& probeId, ModuleID moduleId, mdMethodDef methodId);
         bool SetProbeStatus(const shared::WSTRING& probeId, ProbeStatus newStatus);
         bool SetErrorProbeStatus(const shared::WSTRING& probeId, const shared::WSTRING& errorMessage);
         int RemoveProbes(const std::vector<shared::WSTRING>& probes);

@@ -131,7 +131,7 @@ namespace Datadog.Trace.Debugger
 
                 if (!Volatile.Read(ref _isRcmAvailable))
                 {
-                    Log.Warning("Live Debugger could not be enabled because Remote Configuration Management is not available. Please ensure that you are using datadog-agent version 7.38.0 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.");
+                    Log.Warning("Live Debugger could not be enabled because Remote Configuration Management is not available. Please ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.");
                     return false;
                 }
 
