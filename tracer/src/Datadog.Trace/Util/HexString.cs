@@ -32,6 +32,13 @@ internal static class HexString
         return BitConverter.IsLittleEndian ? BinaryPrimitivesHelper.ReverseEndianness(value) : value;
     }
 
+    /// <summary>
+    /// Converts the specified <see cref="ulong"/> value into hexadecimal characters, two for each byte,
+    /// and places the result into the specified buffer.
+    /// </summary>
+    /// <param name="bytes">The bytes to convert into hexadecimal characters.</param>
+    /// <param name="chars">The buffer to place the output into.</param>
+    /// <param name="lowerCase"><c>true</c> to generate lower-case characters, <c>false</c> otherwise.</param>
 #if NETCOREAPP3_1_OR_GREATER
     public static void ToHexChars(ReadOnlySpan<byte> bytes, Span<char> chars, bool lowerCase = true)
 #else
@@ -47,6 +54,9 @@ internal static class HexString
         HexConverter.EncodeToUtf16(bytes, chars, casing);
     }
 
+    /// <summary>
+    /// Converts the specified bytes into a hexadecimal string.
+    /// </summary>
     [Pure]
 #if NETCOREAPP3_1_OR_GREATER
     public static string ToHexString(ReadOnlySpan<byte> bytes, bool lowerCase = true)
@@ -58,6 +68,9 @@ internal static class HexString
         return HexConverter.ToString(bytes, casing);
     }
 
+    /// <summary>
+    /// Converts the specified <see cref="ulong"/> value into a hexadecimal string.
+    /// </summary>
     [Pure]
     public static string ToHexString(ulong value, bool lowerCase = true)
     {
@@ -74,6 +87,12 @@ internal static class HexString
     }
 
 #if NETCOREAPP3_1_OR_GREATER
+    /// <summary>
+    /// Tries to parse the specified hexadecimal string into the specified byte array.
+    /// </summary>
+    /// <param name="chars">The hexadecimal string to parse. Must contain an even number of characters, two for each output byte.</param>
+    /// <param name="bytes">The buffer to write the parsed bytes into. Must be half in length as <paramref name="chars"/></param>
+    /// <returns><c>true</c> if it parsed successfully, <c>false</c> otherwise.</returns>
     public static bool TryParseBytes(ReadOnlySpan<char> chars, Span<byte> bytes)
     {
         if (chars.Length != bytes.Length * 2)
@@ -85,6 +104,12 @@ internal static class HexString
     }
 #endif
 
+    /// <summary>
+    /// Tries to parse the specified hexadecimal string into the specified byte array.
+    /// </summary>
+    /// <param name="chars">The hexadecimal string to parse. Must contain an even number of characters, two for each output byte.</param>
+    /// <param name="bytes">The buffer to write the parsed bytes into. Must be half in length as <paramref name="chars"/></param>
+    /// <returns><c>true</c> if it parsed successfully, <c>false</c> otherwise.</returns>
     public static bool TryParseBytes(string chars, byte[] bytes)
     {
         // this overload exists in NETCOREAPP3_1_OR_GREATER so we can catch null strings,
@@ -97,6 +122,12 @@ internal static class HexString
         return HexConverter.TryDecodeFromUtf16(chars, bytes);
     }
 
+    /// <summary>
+    /// Tries to parse the specified hexadecimal string into a <see cref="ulong"/> value.
+    /// </summary>
+    /// <param name="chars">The hexadecimal string to parse. Must contain exactly 16 characters, so it may need to be left-padded with zeros.</param>
+    /// <param name="value">The integer value parsed out of the hexadecimal string.</param>
+    /// <returns><c>true</c> if it parsed successfully, <c>false</c> otherwise.</returns>
 #if NETCOREAPP3_1_OR_GREATER
     [Pure]
     public static bool TryParseUInt64(ReadOnlySpan<char> chars, out ulong value)
@@ -144,6 +175,12 @@ internal static class HexString
     }
 #endif
 
+    /// <summary>
+    /// Tries to parse the specified hexadecimal string into a <see cref="byte"/> value.
+    /// </summary>
+    /// <param name="chars">The hexadecimal string to parse. Must contain exactly 2 characters, so it may need to be left-padded with zeros.</param>
+    /// <param name="value">The integer value parsed out of the hexadecimal string.</param>
+    /// <returns><c>true</c> if it parsed successfully, <c>false</c> otherwise.</returns>
     [Pure]
 #if NETCOREAPP3_1_OR_GREATER
     public static bool TryParseByte(ReadOnlySpan<char> chars, out byte value)
