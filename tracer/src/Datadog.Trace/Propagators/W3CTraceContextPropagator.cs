@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -94,7 +95,8 @@ namespace Datadog.Trace.Propagators
         }
 
         [Flags]
-        private enum TraceFlags : byte
+        [EnumExtensions]
+        internal enum TraceFlags : byte
         {
             None = 0,
             Sampled = 1,
@@ -295,7 +297,7 @@ namespace Datadog.Trace.Propagators
 
             if (HexString.TryParseByte(header.Substring(53, 2), out var traceFlags))
             {
-                sampled = ((TraceFlags)traceFlags & TraceFlags.Sampled) == TraceFlags.Sampled;
+                sampled = ((TraceFlags)traceFlags).HasFlagFast(TraceFlags.Sampled);
             }
             else
             {
