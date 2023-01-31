@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -55,11 +56,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
 
     public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>
     {
-        private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
-        private static readonly Regex ClientIp = new(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}");
-        private static readonly Regex NetworkClientIp = new(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}");
-        private static readonly Regex HashRegex = new(@"(\S)*""hash"": (-){0,1}([0-9]){1,12},(\r|\n){1,2}      ");
-
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
         private readonly bool _enableIast;
@@ -92,10 +88,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
             var filename = _enableIast ? "Iast.SqlInjection.AspNetMvc5.IastEnabled" : "Iast.SqlInjection.AspNetMvc5.IastDisabled";
             var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-            settings.AddRegexScrubber(ClientIp, string.Empty);
-            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
+            settings.AddIastScrubbing();
             await VerifyHelper.VerifySpans(spansFiltered, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
