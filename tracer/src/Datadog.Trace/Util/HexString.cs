@@ -70,16 +70,26 @@ internal static class HexString
         var bytes = BitConverter.GetBytes(value);
 #endif
 
-        return ToHexString(bytes);
+        return ToHexString(bytes, lowerCase);
     }
 
 #if NETCOREAPP3_1_OR_GREATER
     public static bool TryParseBytes(ReadOnlySpan<char> chars, Span<byte> bytes)
-#else
-    public static bool TryParseBytes(string chars, byte[] bytes)
-#endif
     {
         if (chars.Length != bytes.Length * 2)
+        {
+            return false;
+        }
+
+        return HexConverter.TryDecodeFromUtf16(chars, bytes);
+    }
+#endif
+
+    public static bool TryParseBytes(string chars, byte[] bytes)
+    {
+        // this overload exists in NETCOREAPP3_1_OR_GREATER so we can catch null strings,
+        // otherwise we can't distinguish them from empty ReadOnlySpan<char>
+        if (chars == null! || chars.Length != bytes.Length * 2)
         {
             return false;
         }
@@ -91,6 +101,13 @@ internal static class HexString
     [Pure]
     public static bool TryParseUInt64(ReadOnlySpan<char> chars, out ulong value)
     {
+        value = default;
+
+        if (chars.Length != 16)
+        {
+            return false;
+        }
+
         // benchmarks show that UInt64.TryParse() is faster than
         // HexString.TryParseBytes() + BitConverter.ToUInt64() on .NET Core 3.1+
         return ulong.TryParse(
