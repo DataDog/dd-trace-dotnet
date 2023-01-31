@@ -11,8 +11,6 @@ public static class Program
 
     public static async Task Main(string[] args)
     {
-        EnsureAutomaticInstrumentationEnabled();
-
         _source = new ActivitySource("Samples.NetActivitySdk");
 
         using (var rootSpan = _source.StartActivity("RootSpan")) // 1 span (total 1)
@@ -180,11 +178,5 @@ public static class Program
         keyValuePairs.Add("key-int", 5);
 
         return keyValuePairs;
-    }
-
-    private static void EnsureAutomaticInstrumentationEnabled()
-    {
-        var process = new Process();
-        return;
     }
 }
