@@ -67,21 +67,24 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 
         public static IEnumerable<object[]> NonPublicCombination { get; } =
             from attrs in GetPublicApiAttributes
+            from includeNamespace in new[] { true, false }
             from api in NonPublicApiAccesses
             from conditional in new[] { true, false }
-            select new object[] { attrs, api, conditional };
+            select new object[] { attrs, includeNamespace, api, conditional };
 
         public static IEnumerable<object[]> PublicCombination { get; } =
             from attrs in GetPublicApiAttributes
+            from includeNamespace in new[] { true, false }
             from api in PublicApiAccesses
             from conditional in new[] { true, false }
-            select new object[] { attrs, api, conditional };
+            select new object[] { attrs, includeNamespace, api, conditional };
 
         public static IEnumerable<object[]> NotSupportedCombination { get; } =
             from attrs in GetPublicApiAttributes
+            from includeNamespace in new[] { true, false }
             from api in ShouldThrowButDoesnt
             from conditional in new[] { true, false }
-            select new object[] { attrs, api, conditional };
+            select new object[] { attrs, includeNamespace, api, conditional };
 
         [Fact]
         public async Task EmptySourceShouldNotHaveDiagnostics()
@@ -94,18 +97,18 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 
         [Theory]
         [MemberData(nameof(NonPublicCombination))]
-        public async Task ShouldNotFlagUsageOfNonPublicApi(string publicAttribute, string testFragment, bool attributeIsConditional)
+        public async Task ShouldNotFlagUsageOfNonPublicApi(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
-            var code = GetSampleCode(publicAttribute, testFragment, attributeIsConditional);
+            var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
 
             await Verifier.VerifyAnalyzerAsync(code);
         }
 
         [Theory]
         [MemberData(nameof(PublicCombination))]
-        public async Task ShouldFlagUsageOfPublicApi(string publicAttribute, string testFragment, bool attributeIsConditional)
+        public async Task ShouldFlagUsageOfPublicApi(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
-            var code = GetSampleCode(publicAttribute, testFragment, attributeIsConditional);
+            var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
 
             var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Error)
                .WithLocation(0);
@@ -114,10 +117,10 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
 
         [Theory]
         [MemberData(nameof(NotSupportedCombination))]
-        public async Task NotSupported(string publicAttribute, string testFragment, bool attributeIsConditional)
+        public async Task NotSupported(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
             // We'd like to catch these cases, but they're currently unsupported
-            var code = GetSampleCode(publicAttribute, testFragment, attributeIsConditional);
+            var code = GetSampleCode(publicAttribute, includeNamespace, testFragment, attributeIsConditional);
 
             var ideallyShouldThrow = async () =>
             {
@@ -130,8 +133,10 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             await ideallyShouldThrow.Should().ThrowAsync<EqualWithMessageException>();
         }
 
-        private static string GetSampleCode(string publicAttribute, string testFragment, bool attributeIsConditional)
+        private static string GetSampleCode(string publicAttribute, bool includeNamespace, string testFragment, bool attributeIsConditional)
         {
+            var attributePrefix = includeNamespace ? "ConsoleApplication1." : string.Empty;
+
             var code = $$"""
                 using System;
                 using System.Collections.Generic;
@@ -149,24 +154,24 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
                 {
                     private string _nonPublicField;
 
-                    [{{publicAttribute}}]
+                    [{{attributePrefix}}{{publicAttribute}}]
                     public string _publicField;
 
                     internal TestClass(string arg1) { }
 
-                    [{{publicAttribute}}]
+                    [{{attributePrefix}}{{publicAttribute}}]
                     public TestClass() { }
                     
                     public string NonPublicProperty { get; set; }
 
-                    [{{publicAttribute}}]
+                    [{{attributePrefix}}{{publicAttribute}}]
                     public string PublicProperty { get; set; }
 
-                    public string PublicSetterProperty { get; [{{publicAttribute}}] set; }
+                    public string PublicSetterProperty { get; [{{attributePrefix}}{{publicAttribute}}] set; }
 
                     public string NonPublicMethod() => "test";
 
-                    [{{publicAttribute}}]
+                    [{{attributePrefix}}{{publicAttribute}}]
                     public string PublicMethod() => "test";
 
                     public string NonPublicMethod<T>(Func<T, string> getter, T arg)
@@ -174,7 +179,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
                         return getter(arg);
                     }
 
-                    [{{publicAttribute}}]
+                    [{{attributePrefix}}{{publicAttribute}}]
                     public string PublicMethod<T>(Func<T, string> getter, T arg)
                     {
                         return getter(arg);
@@ -193,11 +198,11 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
                     public static string PublicProperty { get; set; }
                     public static string PublicMethod() => "test";
 
-                    [{{publicAttribute}}]
+                    [{{attributePrefix}}{{publicAttribute}}]
                     string IPublic.PublicMethod() => "explicit interface";
                 }
 
-                [{{publicAttribute}}]
+                [{{attributePrefix}}{{publicAttribute}}]
                 class PublicClass
                 {
                     public static string _publicField;
