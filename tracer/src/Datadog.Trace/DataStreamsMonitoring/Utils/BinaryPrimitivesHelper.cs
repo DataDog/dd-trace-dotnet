@@ -87,6 +87,9 @@ internal static class BinaryPrimitivesHelper
 #endif
     }
 
+    // ReverseEndianness() from .NET repository.
+    // https://github.com/dotnet/runtime/blob/f8ab5554091d2124dffa6002650d9a5ca0a7fba3/src/libraries/System.Private.CoreLib/src/System/Buffers/Binary/BinaryPrimitives.ReverseEndianness.cs
+
 #if NETCOREAPP3_1_OR_GREATER
 
     /// <summary>
@@ -141,6 +144,9 @@ internal static class BinaryPrimitivesHelper
               +
                RotateLeft(value & 0xFF00FF00u, 8); // ww yy
     }
+
+    // RotateRight() and RotateLeft() from .NET repository.
+    // https://github.com/dotnet/runtime/blob/f8ab5554091d2124dffa6002650d9a5ca0a7fba3/src/libraries/System.Private.CoreLib/src/System/Numerics/BitOperations.cs
 
     /// <summary>
     /// Rotates the specified value right by the specified number of bits.
