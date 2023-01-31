@@ -74,10 +74,11 @@ namespace Datadog.Trace.Pdb
             // On .NET Framework IIS-based applications, the PDB file may be in the application directory.
             // (e.g. C:\inetpub\wwwroot\MyApp\bin\MyApp.pdb)
             string fileName = Path.GetFileName(pdbInSameFolder);
-            string pdbInAppFolder = Path.Combine(System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath, fileName);
-            if (File.Exists(pdbInAppFolder))
+            var pdbInAppDirectory = Directory.EnumerateFiles(System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath, fileName, SearchOption.AllDirectories).FirstOrDefault();
+
+            if (pdbInAppDirectory != null)
             {
-                pdbFullPath = pdbInAppFolder;
+                pdbFullPath = pdbInAppDirectory;
                 return true;
             }
 #endif
