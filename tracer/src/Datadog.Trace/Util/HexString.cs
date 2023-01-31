@@ -139,13 +139,16 @@ internal static class HexString
             return false;
         }
 
-        // benchmarks show that UInt64.TryParse() is faster than
-        // HexConverter.TryDecodeFromUtf16() + BitConverter.ToUInt64() on .NET Core 3.1+
-        return ulong.TryParse(
-            chars,
-            System.Globalization.NumberStyles.AllowHexSpecifier,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out value);
+        Span<byte> bytes = stackalloc byte[8];
+
+        if (!TryParseBytes(chars, bytes))
+        {
+            return false;
+        }
+
+        var result = BitConverter.ToUInt64(bytes);
+        value = ReverseIfLittleEndian(result);
+        return true;
     }
 #else
     [Pure]
@@ -159,17 +162,13 @@ internal static class HexString
         }
 
         var bytes = _buffer8 ??= new byte[8];
-        ulong result;
 
-        if (TryParseBytes(chars, bytes))
-        {
-            result = BitConverter.ToUInt64(bytes, 0);
-        }
-        else
+        if (!TryParseBytes(chars, bytes))
         {
             return false;
         }
 
+        var result = BitConverter.ToUInt64(bytes, 0);
         value = ReverseIfLittleEndian(result);
         return true;
     }
