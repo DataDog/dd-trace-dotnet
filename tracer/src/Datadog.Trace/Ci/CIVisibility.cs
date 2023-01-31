@@ -139,6 +139,43 @@ namespace Datadog.Trace.Ci
             }
         }
 
+        internal static void InitializeFromRunner()
+        {
+            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
+            {
+                // Initialize() was already called before
+                return;
+            }
+
+            Log.Information("Initializing CI Visibility from dd-trace");
+
+            LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
+
+            TracerSettings tracerSettings = _settings.TracerSettings;
+
+            // Set the service name if empty
+            Log.Debug("Setting up the service name");
+            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
+            {
+                // Extract repository name from the git url and use it as a default service name.
+                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+            }
+
+            // Normalize the service name
+            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
+
+            // Initialize Tracer
+            Log.Information("Initialize Test Tracer instance");
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings, NullDiscoveryService.Instance));
+            _ = Tracer.Instance;
+
+            // Initialize FrameworkDescription
+            _ = FrameworkDescription.Instance;
+
+            // Initialize CIEnvironment
+            _ = CIEnvironmentValues.Instance;
+        }
+
         internal static void Flush()
         {
             var sContext = SynchronizationContext.Current;

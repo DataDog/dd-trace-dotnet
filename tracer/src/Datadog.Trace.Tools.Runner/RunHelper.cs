@@ -64,7 +64,8 @@ namespace Datadog.Trace.Tools.Runner
             string codeCoveragePath = null;
             if (settings is RunCiSettings ciSettings)
             {
-                var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
+                CIVisibility.InitializeFromRunner();
+                var ciVisibilitySettings = CIVisibility.Settings;
                 var agentless = ciVisibilitySettings.Agentless;
                 var apiKey = ciVisibilitySettings.ApiKey;
                 var applicationKey = ciVisibilitySettings.ApplicationKey;
@@ -105,6 +106,9 @@ namespace Datadog.Trace.Tools.Runner
 
                 if (agentless || !string.IsNullOrEmpty(agentConfiguration.EventPlatformProxyEndpoint))
                 {
+                    var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
+                    AsyncUtil.RunSync(() => itrClient.UploadRepositoryChangesAsync());
+
                     // We can activate all features here (Agentless or EVP proxy mode)
                     createTestSession = true;
                     if (!agentless)
@@ -136,7 +140,6 @@ namespace Datadog.Trace.Tools.Runner
                         try
                         {
                             CIVisibility.Log.Debug("RunHelper: Calling configuration api...");
-                            var itrClient = new Ci.IntelligentTestRunnerClient(Ci.CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
                             // we skip the framework info because we are interested in the target projects info not the runner one.
                             var itrSettings = AsyncUtil.RunSync(() => itrClient.GetSettingsAsync(skipFrameworkInfo: true));
                             codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
