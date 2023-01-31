@@ -13,8 +13,8 @@ public class HexStringTests
 {
     [Theory]
     [InlineData("0000000000000000", 0)]
-    [InlineData("00000000075bcd15", 123456789)]
-    [InlineData("ffffffffffffffff", 18446744073709551615)]
+    [InlineData("00000000075bcd15", 0x75bcd15)]
+    [InlineData("ffffffffffffffff", 0xffffffffffffffff)]
     public void TryParseUInt64_Valid(string hex, ulong expected)
     {
         HexString.TryParseUInt64(hex, out var actual).Should().BeTrue();
