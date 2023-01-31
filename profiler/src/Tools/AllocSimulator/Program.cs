@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.Threading;
-
 namespace AllocSimulator
 {
     public class Program
@@ -12,30 +10,55 @@ namespace AllocSimulator
         public static void Main(string[] args)
         {
             ParseCommandLine(args, out string allocFile, out string allocDirectory);
-            // TODO support scanning a directory
 
-            var provider = new FileAllocProvider(allocFile);
-            var sampler = new AllocSampler();
-            Engine engine = new Engine(provider, sampler);
-            engine.Run();
-            var realAllocations = engine.GetAllocations();
-            var sampledAllocations = sampler.GetAllocs().ToList();
-
-            foreach (var allocation in realAllocations)
+            if (string.IsNullOrEmpty(allocDirectory))
             {
-                var realKey = $"{allocation.Type}+{allocation.Key}";
-                Console.WriteLine($"{allocation.Count,9} | {allocation.Size,13} - {realKey}");
-                var sampled = sampledAllocations.FirstOrDefault(a => (realKey == $"{a.Type}+{a.Key}"));
-                if (sampled != null)
+                SimulateAllocations(allocFile);
+                return;
+            }
+
+            foreach (var filename in Directory.GetFiles(allocDirectory, "*.alloc"))
+            {
+                SimulateAllocations(filename);
+            }
+        }
+
+        private static void SimulateAllocations(string allocFile)
+        {
+            try
+            {
+                var provider = new FileAllocProvider(allocFile);
+                var sampler = new AllocSampler();
+                Engine engine = new Engine(provider, sampler);
+                engine.Run();
+                var realAllocations = engine.GetAllocations();
+                var sampledAllocations = sampler.GetAllocs().ToList();
+
+                var filename = Path.GetFileNameWithoutExtension(allocFile);
+                Console.WriteLine($"Simulate allocations - {filename}");
+                Console.WriteLine("---------------------------------------------");
+                foreach (var allocation in realAllocations)
                 {
-                    Console.WriteLine($"{sampled.Count,9} | {sampled.Size,13}");
-                }
-                else
-                {
-                    Console.WriteLine($"        ~ |-----------------^");
+                    var realKey = $"{allocation.Type}+{allocation.Key}";
+                    Console.WriteLine($"{allocation.Count,9} | {allocation.Size,13} - {realKey}");
+                    var sampled = sampledAllocations.FirstOrDefault(a => (realKey == $"{a.Type}+{a.Key}"));
+                    if (sampled != null)
+                    {
+                        Console.WriteLine($"{sampled.Count,9} | {sampled.Size,13}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"        ~ |-----------------^");
+                    }
+
+                    Console.WriteLine();
                 }
 
                 Console.WriteLine();
+            }
+            catch (Exception x)
+            {
+                Console.WriteLine($"Error in {allocFile}: {x.Message}");
             }
         }
 
