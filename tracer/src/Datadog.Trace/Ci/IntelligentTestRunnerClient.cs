@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
@@ -550,7 +549,15 @@ internal class IntelligentTestRunnerClient
         var temporaryFolder = string.Empty;
         var temporaryPath = Path.GetTempFileName();
 
-        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c));
+        var getObjectsArgumentsBuilder = StringBuilderCache.Acquire(200);
+        getObjectsArgumentsBuilder.Append("rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD");
+        foreach (var commit in commitsToExclude)
+        {
+            getObjectsArgumentsBuilder.Append(" ^");
+            getObjectsArgumentsBuilder.Append(commit);
+        }
+
+        var getObjectsArguments = StringBuilderCache.GetStringAndRelease(getObjectsArgumentsBuilder);
         var getObjectsCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getObjectsArguments, _workingDirectory)).ConfigureAwait(false);
         if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {

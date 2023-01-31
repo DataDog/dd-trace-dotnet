@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
@@ -70,9 +69,14 @@ namespace Datadog.Trace.Configuration
             // create dictionary copy without "env" or "version",
             // these value are used for "Environment" and "ServiceVersion"
             // or overriden with DD_ENV and DD_VERSION
-            var globalTags = settings.GlobalTags
-                                     .Where(kvp => kvp.Key is not (Tags.Env or Tags.Version))
-                                     .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            var globalTags = new Dictionary<string, string>();
+            foreach (var kvp in settings.GlobalTags)
+            {
+                if (kvp.Key is not (Tags.Env or Tags.Version))
+                {
+                    globalTags[kvp.Key] = kvp.Value;
+                }
+            }
 
             GlobalTags = new ReadOnlyDictionary<string, string>(globalTags);
 
