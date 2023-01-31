@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
@@ -25,34 +26,18 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
     /// because the same instrumented bytecode could execute in different AppDomains, and static fields are not shared across AppDomains.
     internal class ProbeMetadataRegistry : EverGrowingRegistry<ProbeMetadataInfo>
     {
-        private static readonly object InstanceLock = new();
-
         private static ProbeMetadataRegistry _instance;
-        private static volatile bool _instanceInitialized;
+        private static object _instanceLock = new();
+        private static bool _instanceInitialized;
 
-        public static ProbeMetadataRegistry Instance
+        internal static ProbeMetadataRegistry Instance
         {
             get
             {
-                if (_instanceInitialized)
-                {
-                    return _instance;
-                }
-
-                ProbeMetadataRegistry instance;
-                lock (InstanceLock)
-                {
-                    if (_instanceInitialized)
-                    {
-                        return _instance;
-                    }
-
-                    instance = new ProbeMetadataRegistry();
-                    _instance = instance;
-                    _instanceInitialized = true;
-                }
-
-                return instance;
+                return LazyInitializer.EnsureInitialized(
+                    ref _instance,
+                    ref _instanceInitialized,
+                    ref _instanceLock);
             }
         }
 
