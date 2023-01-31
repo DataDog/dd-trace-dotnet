@@ -37,14 +37,19 @@ namespace AllocSimulator
                 var filename = Path.GetFileNameWithoutExtension(allocFile);
                 Console.WriteLine($"Simulate allocations - {filename}");
                 Console.WriteLine("---------------------------------------------");
-                foreach (var allocation in realAllocations)
+                foreach (var realAllocation in realAllocations)
                 {
-                    var realKey = $"{allocation.Type}+{allocation.Key}";
-                    Console.WriteLine($"{allocation.Count,9} | {allocation.Size,13} - {realKey}");
+                    var realKey = $"{realAllocation.Type}+{realAllocation.Key}";
+                    Console.WriteLine($"{realAllocation.Count,9} | {realAllocation.Size,13} - {realKey}");
                     var sampled = sampledAllocations.FirstOrDefault(a => (realKey == $"{a.Type}+{a.Key}"));
                     if (sampled != null)
                     {
                         Console.WriteLine($"{sampled.Count,9} | {sampled.Size,13}");
+
+                        float countRatio = -(float)(realAllocation.Count - sampled.Count) / (float)realAllocation.Count;
+                        float sizeRatio = -(float)(realAllocation.Size - sampled.Size) / (float)realAllocation.Size;
+
+                        Console.WriteLine($"{countRatio,9:P1} | {sizeRatio,13:P1}");
                     }
                     else
                     {

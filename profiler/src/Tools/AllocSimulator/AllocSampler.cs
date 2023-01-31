@@ -21,7 +21,8 @@ namespace AllocSimulator
 
         public void OnAllocationTick(string type, int key, long size, long allocationsAmount)
         {
-            // TODO: simulate the sampler
+            // TODO: simulate the sub-sampler
+
             var dictKey = $"{type}+{key}";
             if (!_sampledAllocations.TryGetValue(dictKey, out var info))
             {
@@ -46,10 +47,20 @@ namespace AllocSimulator
 
         public IEnumerable<AllocInfo> GetAllocs()
         {
-            // TODO: implement the upscale
+            // implement the upscaling strategy
+            // -> ratio = total allocated amount / total sampled size
             foreach (var group in _sampledAllocations.Keys)
             {
-                yield return _sampledAllocations[group];
+                var sampled = _sampledAllocations[group];
+                var upscaled = new AllocInfo()
+                {
+                    Key = sampled.Key,
+                    Type = sampled.Type,
+                    Size = (long)((sampled.Size * _totalAllocatedAmount) / _totalSampledSize),
+                    Count = (int)((sampled.Count * _totalAllocatedAmount) / _totalSampledSize),
+                };
+
+                yield return upscaled;
             }
         }
     }
