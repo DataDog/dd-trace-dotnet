@@ -247,13 +247,15 @@ namespace Datadog.Trace.Tools.Analyzers.PublicApiAnalyzer
 
             private static bool IsWithinConditionalOperation(IFieldReferenceOperation pOperation) =>
                 pOperation.ConstantValue.HasValue &&
-                pOperation.Parent is IBinaryOperation bo &&
-                (bo.OperatorKind == BinaryOperatorKind.Equals ||
-                 bo.OperatorKind == BinaryOperatorKind.NotEquals ||
-                 bo.OperatorKind == BinaryOperatorKind.GreaterThan ||
-                 bo.OperatorKind == BinaryOperatorKind.LessThan ||
-                 bo.OperatorKind == BinaryOperatorKind.GreaterThanOrEqual ||
-                 bo.OperatorKind == BinaryOperatorKind.LessThanOrEqual);
+                pOperation.Parent is IBinaryOperation
+                {
+                    OperatorKind: BinaryOperatorKind.Equals
+                    or BinaryOperatorKind.NotEquals
+                    or BinaryOperatorKind.GreaterThan
+                    or BinaryOperatorKind.LessThan
+                    or BinaryOperatorKind.GreaterThanOrEqual
+                    or BinaryOperatorKind.LessThanOrEqual
+                };
 
             private static bool TryGetOrCreatePublicApiAttributes(
                 ISymbol symbol,
