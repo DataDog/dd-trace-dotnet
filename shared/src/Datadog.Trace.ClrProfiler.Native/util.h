@@ -13,6 +13,7 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/string.h"
+#include "./log.h"
 
 const std::string conf_filename = "loader.conf";
 const ::shared::WSTRING cfg_filepath_env = WStr("DD_NATIVELOADER_CONFIGFILE");
@@ -67,14 +68,19 @@ static ::shared::WSTRING GetDatadogLogsDirectoryPath()
 static fs::path GetConfigurationFilePath()
 {
     fs::path env_configfile = shared::GetEnvironmentValue(cfg_filepath_env);
+
     if (!env_configfile.empty())
     {
-        return env_configfile;
+        // In 2.14.0, we have moved this file and the config may point to a path where it's not present
+        // So we check if we can find it, if not, we default to the current module folder
+        if (fs::exists(env_configfile))
+        {
+            return env_configfile;
+        }
+        Log::Warn("File set in '", cfg_filepath_env, "' doesn't exist. Using the default path");
     }
-    else
-    {
-        return GetCurrentModuleFolderPath() / conf_filename;
-    }
+
+    return GetCurrentModuleFolderPath() / conf_filename;
 }
 
 inline bool IsRunningOnIIS()
