@@ -54,14 +54,14 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProcessArgumentConfigurator(
             arg => arg.Add("/nowarn:netsdk1138"));
     }
-    
+
     public static T SetPlatform<T>(this T settings, MSBuildTargetPlatform platform)
         where T: NuGetRestoreSettings
     {
         return settings.SetProcessArgumentConfigurator(
             arg => arg.Add($"/p:\"Platform={platform}\""));
     }
-    
+
     public static T SetDDEnvironmentVariables<T>(this T settings, string serviceName)
         where T: ToolSettings
     {
@@ -73,7 +73,7 @@ internal static partial class DotNetSettingsExtensions
     {
         return settings.SetProcessEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logsDirectory);
     }
-    
+
     public static T SetProcessEnvironmentVariables<T>(this T settings, IEnumerable<KeyValuePair<string, string>> variables)
         where T: ToolSettings
     {
@@ -145,28 +145,32 @@ internal static partial class DotNetSettingsExtensions
     public static T SetDotnetPath<T>(this T settings, MSBuildTargetPlatform platform)
         where T : ToolSettings
     {
-        if (platform != MSBuildTargetPlatform.x86 && platform != MSBuildTargetPlatform.Win32)
-        {
-            return settings;
-        }
+        var dotnetPath = GetDotNetPath(platform);
+        return settings.SetProcessToolPath(dotnetPath);
+    }
 
+    /// <summary>
+    /// Get the path to `dotnet` depending on the platform
+    /// </summary>
+    public static string GetDotNetPath(MSBuildTargetPlatform platform)
+    {
+        if (platform == MSBuildTargetPlatform.x64 || platform == null)
+            return DotNetTasks.DotNetPath;
 
-        // assume it's installed where we expect
         var dotnetPath = EnvironmentInfo.GetVariable<string>("DOTNET_EXE_32")
-                      ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "dotnet.exe");
+                 ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "dotnet.exe");
 
         if (!File.Exists(dotnetPath))
         {
             throw new Exception($"Error locating 32-bit dotnet process. Expected at '{dotnetPath}'");
         }
-
-        return settings.SetProcessToolPath(dotnetPath);
+        return dotnetPath;
     }
 
     public static T SetTestTargetPlatform<T>(this T settings, MSBuildTargetPlatform platform)
         where T : ToolSettings
     {
-        // To avoid annoying differences in the test code, convert the MSBuildTargetPlatform string values to 
+        // To avoid annoying differences in the test code, convert the MSBuildTargetPlatform string values to
         // the same values returned by Environment.Platform(), and skip unsupported values (e.g. MSIL, arm)
         var target = platform.ToString() switch
         {

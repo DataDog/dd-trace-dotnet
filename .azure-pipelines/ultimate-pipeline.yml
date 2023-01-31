@@ -1227,11 +1227,11 @@ stages:
       parameters:
         build: true
         target: builder
-        command: "Clean RunCppCheckProfiler RunClangTidyProfiler"
+        command: "RunCppCheckProfiler RunClangTidyProfiler"
 
     - template: steps/run-in-docker.yml
       parameters:
-        build: true
+        build: false
         target: builder
         command: "CheckProfilerStaticAnalysisResults"
 
@@ -1896,7 +1896,7 @@ stages:
       parameters:
         build: true
         target: builder
-        command: "Clean RunProfilerAsanTest -Framework net7.0"
+        command: "RunProfilerAsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -1962,7 +1962,7 @@ stages:
       parameters:
         build: true
         target: builder
-        command: "Clean RunProfilerUbsanTest -Framework net7.0"
+        command: "RunProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data

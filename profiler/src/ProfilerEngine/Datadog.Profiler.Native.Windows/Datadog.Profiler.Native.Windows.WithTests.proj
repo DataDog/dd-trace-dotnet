@@ -38,13 +38,13 @@
   <Target Name="BuildCppTests" DependsOnTargets="Restore;BuildCppTestsOnly">
   </Target>
 
-  <Target Name="BuildCppWithAsan"  DependsOnTargets="Restore">
+  <Target Name="BuildCppWithAsan">
     <MSBuild Targets="Build" Projects="@(CppProject)" Properties="EnableASAN=true">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
 
-  <Target Name="RunCppCheck" DependsOnTargets="Restore">
+  <Target Name="RunCppCheck">
     <!-- if we change the "cppcheck-results-" prefix, we must propage the change in the .github\workflow\cppcheck.yml file.
           Environment variable CI_ANALYSIS_RESULTS_FOLDER is set in CI.
      -->

@@ -721,7 +721,17 @@ partial class Build
         var sampleBaseOutputDir = ProfilerOutputDirectory / "bin" / $"{Configuration.Release}-{platform}" / "profiler" / "src" / "Demos";
         var sampleAppDll = sampleBaseOutputDir / sampleApp.Name / Framework / $"{sampleApp.Name}.dll";
 
-        CustomDotNetTasks.DotNet($"{sampleAppDll} --scenario 1 --timeout 120", platform, environmentVariables: envVars);
+        DotNet($"{sampleAppDll} --scenario 1 --timeout 120", platform, environmentVariables: envVars);
+
+        static IReadOnlyCollection<Output> DotNet(string arguments, MSBuildTargetPlatform platform, string workingDirectory = null, IReadOnlyDictionary<string, string> environmentVariables = null, int? timeout = null, bool? logOutput = null, bool? logInvocation = null, bool? logTimestamp = null, string logFile = null, Func<string, string> outputFilter = null)
+        {
+            var dotnetPath = DotNetSettingsExtensions.GetDotNetPath(platform);
+
+            using var process = ProcessTasks.StartProcess(dotnetPath, arguments, workingDirectory, environmentVariables, timeout, logOutput, logInvocation, logTimestamp, logFile, DotNetTasks.DotNetLogger, outputFilter);
+            process.AssertZeroExitCode();
+            return process.Output;
+
+        }
     }
 
     void RunProfilerUnitTests(Configuration configuration, MSBuildTargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None)
