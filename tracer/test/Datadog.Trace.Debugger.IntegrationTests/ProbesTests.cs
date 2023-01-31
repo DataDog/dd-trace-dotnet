@@ -297,10 +297,13 @@ public class ProbesTests : TestHelper
                 if (DebuggerTestHelper.IsMetricProbe(probeData))
                 {
                     var requests = await agent.WaitForStatsdRequests(probeData.Count(d => d.MetricName != null));
+                    requests.Should().OnlyContain(s => s.Contains($"service:{EnvironmentHelper.SampleName}"));
 
                     foreach (var probeAttributeBase in probeData)
                     {
-                        requests.Should().Contain(r => r.Contains(probeAttributeBase.MetricName));
+                        var req = requests.SingleOrDefault(r => r.Contains(probeAttributeBase.MetricName));
+                        Assert.NotNull(req);
+                        req.Should().Contain($"service:{EnvironmentHelper.SampleName}");
                     }
                 }
                 else

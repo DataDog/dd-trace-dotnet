@@ -19,6 +19,7 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -156,6 +157,7 @@ namespace Datadog.Trace.Debugger
                 LifetimeManager.Instance.AddShutdownTask(() => _discoveryService.RemoveSubscription(DiscoveryCallback));
                 LifetimeManager.Instance.AddShutdownTask(_debuggerSink.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(_dogStats.Dispose);
             }
         }
 
@@ -396,6 +398,11 @@ namespace Datadog.Trace.Debugger
 
         internal void SendMetrics(MetricKind metricKind, string metricName, double value)
         {
+            if (_dogStats is NoOpStatsd)
+            {
+                Log.Error($"Can't send metric with instance of {nameof(NoOpStatsd)}");
+            }
+
             switch (metricKind)
             {
                 case MetricKind.COUNT:

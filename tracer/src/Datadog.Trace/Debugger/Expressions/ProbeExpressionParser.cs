@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq.Expressions;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -400,24 +401,22 @@ internal partial class ProbeExpressionParser<T>
             return finalExpr;
         }
 
+        if (typeof(T).IsNumeric()
+            && typeof(IConvertible).IsAssignableFrom(finalExpr.Type))
+        {
+            return Expression.Call(
+                Expression.Convert(finalExpr, typeof(IConvertible)),
+                GetMethodByReflection(
+                    typeof(IConvertible),
+                    nameof(IConvertible.ToDouble),
+                    new[] { typeof(IFormatProvider) }),
+                Expression.Constant(NumberFormatInfo.CurrentInfo));
+        }
+
         if (typeof(T) != typeof(string))
         {
-            if (typeof(T) == typeof(double) /* metric probe */
-            && typeof(IConvertible).IsAssignableFrom(finalExpr.Type))
-            {
-                return Expression.Call(
-                    Expression.Convert(finalExpr, typeof(IConvertible)),
-                    GetMethodByReflection(
-                        typeof(IConvertible),
-                        nameof(IConvertible.ToDouble),
-                        new[] { typeof(IFormatProvider) }),
-                    Expression.Constant(NumberFormatInfo.CurrentInfo));
-            }
-            else
-            {
-                // let the caller throw the correct exception
-                return finalExpr;
-            }
+            // let the caller throw the correct exception
+            return finalExpr;
         }
 
         // for string, call ToString when possible, build exception message or return the type name

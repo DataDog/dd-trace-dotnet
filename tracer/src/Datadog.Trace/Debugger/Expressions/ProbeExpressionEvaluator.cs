@@ -84,12 +84,11 @@ internal class ProbeExpressionEvaluator
         {
             EnsureNotNull(_compiledTemplates);
 
-            if (_compiledTemplates.Value == null)
+            var compiledExpressions = _compiledTemplates.Value;
+            if (compiledExpressions == null)
             {
                 return;
             }
-
-            var compiledExpressions = _compiledTemplates.Value;
 
             for (int i = 0; i < compiledExpressions.Length; i++)
             {
