@@ -140,7 +140,7 @@ internal static class HexString
         }
 
         // benchmarks show that UInt64.TryParse() is faster than
-        // HexString.TryParseBytes() + BitConverter.ToUInt64() on .NET Core 3.1+
+        // HexConverter.TryDecodeFromUtf16() + BitConverter.ToUInt64() on .NET Core 3.1+
         return ulong.TryParse(
             chars,
             System.Globalization.NumberStyles.AllowHexSpecifier,
