@@ -70,7 +70,7 @@ internal class Sources
           | System.AttributeTargets.Property
           | System.AttributeTargets.Method
           | System.AttributeTargets.Constructor)]
-        internal class PublicApiAttribute : System.Attribute
+        internal sealed class PublicApiAttribute : System.Attribute
         {
         }
 
