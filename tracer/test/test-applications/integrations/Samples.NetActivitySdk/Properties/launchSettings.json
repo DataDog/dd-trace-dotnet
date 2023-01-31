@@ -25,10 +25,7 @@
       "environmentVariables": {
         "DD_ENV": "",
         "DD_SERVICE": "",
-        "DD_VERSION": "",
-
-        "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
-        "OTEL_EXPORTER_OTLP_ENABLED": "true"
+        "DD_VERSION": ""
       },
       "nativeDebugging": false
     }
