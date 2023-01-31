@@ -141,6 +141,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             if (!asyncState.SnapshotCreator.ProbeHasCondition &&
                 !asyncState.ProbeMetadataInfo.Sampler.Sample())
             {
+                RestoreContext();
                 return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
             }
 
