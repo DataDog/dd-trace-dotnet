@@ -18,7 +18,7 @@ using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class RunCiCommand : Command<RunCiSettings>
+    internal class RunCiCommand : AsyncCommand<RunCiSettings>
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RunCiCommand));
         private readonly ApplicationContext _applicationContext;
@@ -28,18 +28,7 @@ namespace Datadog.Trace.Tools.Runner
             _applicationContext = applicationContext;
         }
 
-        public override int Execute(CommandContext context, RunCiSettings settings)
-        {
-            return AsyncUtil.RunSync(() => ExecuteAsync(context, settings));
-        }
-
-        public override ValidationResult Validate(CommandContext context, RunCiSettings settings)
-        {
-            var runValidation = RunHelper.Validate(context, settings);
-            return !runValidation.Successful ? runValidation : base.Validate(context, settings);
-        }
-
-        private async Task<int> ExecuteAsync(CommandContext context, RunCiSettings settings)
+        public override async Task<int> ExecuteAsync(CommandContext context, RunCiSettings settings)
         {
             // CI Visibility mode is enabled.
             var args = RunHelper.GetArguments(context, settings);
@@ -291,6 +280,12 @@ namespace Datadog.Trace.Tools.Runner
                     await session.CloseAsync(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail).ConfigureAwait(false);
                 }
             }
+        }
+
+        public override ValidationResult Validate(CommandContext context, RunCiSettings settings)
+        {
+            var runValidation = RunHelper.Validate(context, settings);
+            return !runValidation.Successful ? runValidation : base.Validate(context, settings);
         }
     }
 }
