@@ -3335,12 +3335,14 @@ stages:
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
 
-      - script: tar -czvf artifact.tar.gz $(ls | grep logs)
+      - script: |
+          mkdir -p all_logs
+          cp -r ./logs* ./all_logs
         workingDirectory: system-tests
         condition: always()
-        displayName: Compress logs
+        displayName: Group logs
 
-      - publish: system-tests/artifact.tar.gz
+      - publish: system-tests/all_logs/
         condition: always()
         displayName: System tests logs
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
