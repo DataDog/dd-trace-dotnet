@@ -23,6 +23,8 @@
 
         "COMPlus_EnableDiagnostics": "1",
 
+        "DD_TRACE_DEBUG": "1",
+
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
         "DD_PROFILING_EXCEPTION_ENABLED": "1",
@@ -37,7 +39,7 @@
     },
     "BuggyBits+Tracer": {
       "commandName": "Project",
-      "commandLineArgs": "--timeout 600 --scenario 1",
+      "commandLineArgs": "--timeout 600 --scenario 63 --urls http://localhost:5500",
       "launchBrowser": true,
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
@@ -50,15 +52,22 @@
 
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "1",
         "DD_PROFILING_EXCEPTION_ENABLED": "1",
+        "DD_PROFILING_LOCK_ENABLED": "1",
         "DD_PROFILING_ALLOCATION_ENABLED": "1",
+        "DD_PROFILING_HEAP_ENABLED": "1",
+
+        "DD_PROFILING_GC_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED": "1",
+
         "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
 
-        "DD_TRACE_DEBUG": "1",
         "DD_RUNTIME_METRICS_ENABLED": "1",
         "DD_ENV": "apm-profiling-local",
+        "DD_SERVICE": "dd-dotnet-all",
 
-        "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "true",
+        "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "false",
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "nativeDebugging": true,
