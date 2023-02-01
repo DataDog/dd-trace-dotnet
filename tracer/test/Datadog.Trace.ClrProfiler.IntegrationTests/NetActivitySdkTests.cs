@@ -22,9 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public NetActivitySdkTests(ITestOutputHelper output)
             : base("NetActivitySdk", output)
         {
-            // Intentionally unset service name and version, which may be derived from OTEL SDK
-            SetServiceName(string.Empty);
-            SetServiceVersion(string.Empty);
+            SetServiceVersion("1.0.0");
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span) =>
