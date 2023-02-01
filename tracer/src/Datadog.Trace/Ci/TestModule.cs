@@ -391,13 +391,13 @@ public sealed class TestModule
 
         if (CIVisibility.Settings.TestsSkippingEnabled.HasValue)
         {
-            span.SetTag(CommonTags.TestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
+            span.SetTag(CommonTags.TestModuleTestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
             span.SetTag(CommonTags.TestsSkipped, CIVisibility.HasSkippableTests() ? "true" : "false");
         }
 
         if (CIVisibility.Settings.CodeCoverageEnabled.HasValue)
         {
-            span.SetTag(CommonTags.CodeCoverageEnabled, CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false");
+            span.SetTag(CommonTags.TestModuleCodeCoverageEnabled, CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false");
         }
 
         span.Finish(duration.Value);
