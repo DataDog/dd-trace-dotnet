@@ -323,7 +323,6 @@ bool Configuration::IsTimestampsAsLabelEnabled() const
     return _isTimestampsAsLabelEnabled;
 }
 
-
 //
 // shared::TryParse does not work on Linux
 // not found the issue yet.

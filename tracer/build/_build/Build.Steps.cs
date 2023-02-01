@@ -88,6 +88,7 @@ partial class Build
     [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
     [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
     [LazyPathExecutable(name: "cppcheck")] readonly Lazy<Tool> CppCheck;
+    [LazyPathExecutable(name: "run-clang-tidy")] readonly Lazy<Tool> RunClangTidy;
 
     //OSX Tools
     readonly string[] OsxArchs = { "arm64", "x86_64" };
@@ -155,6 +156,7 @@ partial class Build
             EnsureExistingDirectory(MonitoringHomeDirectory);
             EnsureExistingDirectory(ArtifactsDirectory);
             EnsureExistingDirectory(BuildDataDirectory);
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
             EnsureExistingDirectory(SymbolsDirectory);
         });
 

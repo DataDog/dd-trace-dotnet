@@ -70,7 +70,6 @@ pr:
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
-      - profiler/
 
 schedules:
   - cron: "0 3 * * *"
@@ -274,6 +273,10 @@ stages:
     - publish: $(symbols)
       displayName: Upload Windows profiler symbols
       artifact: windows-profiler-symbols
+      
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Upload Windows profiler directory
+      artifact: windows-profiler-binaries
 
 - stage: build_linux_tracer
   dependsOn: [master_commit_id]
@@ -1164,6 +1167,80 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+- stage: static_analysis_tests_profiler
+  condition: >
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [master_commit_id, generate_variables]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Win, Linux]
+
+  - job: Win
+    pool:
+      name: azure-windows-scale-set-3
+    timeoutInMinutes: 60 #default value
+    
+    steps:
+    - powershell: |
+        choco install cppcheck -y
+        Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};C:\Program Files\Cppcheck";
+        refreshenv
+      displayName: Install CppCheck
+
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - script: tracer\build.cmd RunCppCheckProfiler RunClangTidyProfiler
+      displayName: Run CppCheck and Clang-Tidy on Profiler
+
+    - script: tracer\build.cmd CheckProfilerStaticAnalysisResults
+      displayName: Check static analyzers results for errors
+
+    - publish: profiler/build_data
+      displayName: Publish Static Analysis Results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+  - job: Linux
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        command: "RunCppCheckProfiler RunClangTidyProfiler"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: false
+        target: builder
+        command: "CheckProfilerStaticAnalysisResults"
+
+    - publish: profiler/build_data
+      displayName: Publish Static Analysis Results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: msi_integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
@@ -1786,6 +1863,114 @@ stages:
         testResultsFiles: profiler/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+- stage: asan_profiler_tests
+  #address sanitizer tests
+  condition: >
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [master_commit_id, generate_variables]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux,Windows]
+
+  - job: Linux
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        command: "RunProfilerAsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: profiler/build_data
+      displayName: Uploading Address sanitizer test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+
+  - job: Windows
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+      parameters:
+        includeX86: true
+
+    - script: tracer\build.cmd RunProfilerAsanTest -Framework net7.0
+      displayName: Run Profiler ASAN test
+
+    - publish: profiler/build_data
+      displayName: Uploading Address sanitizer test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+
+- stage: ubsan_profiler_tests
+#undefined behavior sanitizer tests
+  condition: > 
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [master_commit_id, generate_variables]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux]
+
+  - job: Linux
+    timeoutInMinutes: 60 #default value
+ 
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        command: "RunProfilerUbsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: profiler/build_data
+      displayName: Uploading test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+      
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_arm64, generate_variables, master_commit_id]
@@ -2929,6 +3114,7 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
+        
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
@@ -2939,10 +3125,12 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp tracer/tracer-home-linux/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
         cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "linux" "$(runExtendedThroughputTests)"
-      displayName: Crank
+      displayName: Crank tracer
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
@@ -2969,6 +3157,7 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
+
     - task: DownloadPipelineArtifact@2
       displayName: Download windows native binary
       inputs:
@@ -2979,10 +3168,12 @@ stages:
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp tracer/tracer-home-win/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
         cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "windows" "$(runExtendedThroughputTests)"
-      displayName: Crank
+      displayName: Crank tracer 
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
@@ -3019,6 +3210,8 @@ stages:
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so does not exist" && exit 1
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp tracer/tracer-home-linux-arm64/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
         ./run.sh "linux_arm64" "$(runExtendedThroughputTests)"
@@ -3039,6 +3232,107 @@ stages:
     - publish: "$(CrankDir)/results"
       displayName: Publish results
       artifact: crank_linux_arm64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+- stage: throughput_profiler
+  condition: > 
+    and(
+      succeeded(), 
+      ne(variables['isNgenTestBuild'], 'True'),
+      eq(variables.isMainRepository, true),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [package_linux, generate_variables, build_windows_tracer, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    crankDir: $(System.DefaultWorkingDirectory)/profiler/build/crank
+  pool: Throughput-profiler
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux64, Windows64]
+  #### Throughput Linux 64, windows 64, linux arm 64
+
+  - job: Linux64
+    timeoutInMinutes: 60
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+        
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux native binary
+      inputs:
+        artifact: linux-monitoring-home-centos7
+        path: $(System.DefaultWorkingDirectory)/monitoring-home-linux
+
+    - script: |
+        test ! -s "monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
+        test ! -s "monitoring-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "monitoring-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
+        test ! -s "monitoring-home-linux/linux-x64/libddwaf.so" && echo "monitoring-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
+        cd $(crankDir)
+        chmod +x ./run.sh
+        ./run.sh "linux"
+      displayName: Crank profiler
+      env:
+        DD_SERVICE: dd-trace-dotnet-profiler
+        DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(crankDir)/results
+        cp $(crankDir)/*.json $(crankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(crankDir)/results"
+      displayName: Publish results
+      artifact: crank_profiler_linux_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+  - job: Windows64
+    timeoutInMinutes: 60
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows native binary
+      inputs:
+        artifact: windows-tracer-home
+        path: $(System.DefaultWorkingDirectory)/monitoring-home-windows
+
+    - script: |
+        test ! -s "monitoring-home-windows/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "monitoring-home-windows/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "monitoring-home-windows/win-x64/ddwaf.dll" && echo "monitoring-home-windows/win-x64/ddwaf.dll does not exist" && exit 1
+        cd $(crankDir)
+        chmod +x ./run.sh
+        ./run.sh "windows"
+      displayName: Crank profiler
+
+      env:
+        DD_SERVICE: dd-trace-dotnet-profiler
+        DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(crankDir)/results
+        cp $(crankDir)/*.json $(crankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(crankDir)/results"
+      displayName: Publish results
+      artifact: crank_profiler_windows64_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
