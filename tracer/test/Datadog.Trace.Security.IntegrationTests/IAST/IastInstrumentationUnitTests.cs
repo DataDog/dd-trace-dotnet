@@ -32,7 +32,11 @@ public class IastInstrumentationUnitTests : TestHelper
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
             EnableIast(true);
-            ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, string.Empty);
+            string arguments = string.Empty;
+#if NET462
+            arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
+#endif
+            ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments);
             processResult.StandardError.Should().BeEmpty(processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
     }
