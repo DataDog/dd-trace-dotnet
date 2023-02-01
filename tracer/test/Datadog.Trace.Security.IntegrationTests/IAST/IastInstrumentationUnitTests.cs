@@ -44,6 +44,7 @@ public class IastInstrumentationUnitTests : TestHelper
         }
     }
 
+    /*
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
@@ -92,6 +93,24 @@ public class IastInstrumentationUnitTests : TestHelper
             string sampleAppPath = string.Empty;
 #if NET462
             sampleAppPath = EnvironmentHelper.GetSampleProjectDirectory() + "\\Samples.InstrumentedTests.csproj";
+#endif
+            ProcessResult processResult = RunDotnetTestSampleAndWaitForExit2(agent, arguments: arguments, dllPath: sampleAppPath);
+            processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
+        }
+    }
+    */
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestInstrumentedUnitTests5()
+    {
+        using (var agent = EnvironmentHelper.GetMockAgent())
+        {
+            EnableIast(true);
+            string arguments = "  -f net462 ";
+            string sampleAppPath = string.Empty;
+#if NET462
+            sampleAppPath = EnvironmentTools.GetSolutionDirectory() + "\\tracer\\test\\Samples.InstrumentedTests\\Samples.InstrumentedTests.csproj";
 #endif
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit2(agent, arguments: arguments, dllPath: sampleAppPath);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
