@@ -10,6 +10,7 @@ namespace Samples
 {
     public class SampleHelpers
     {
+        private static readonly Type InstrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace");
         private static readonly Type NativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
         private static readonly Type TracerType = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace");
         private static readonly Type ScopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
@@ -19,6 +20,8 @@ namespace Samples
         private static readonly Type SpanCreationSettingsType = Type.GetType("Datadog.Trace.SpanCreationSettings, Datadog.Trace");
         private static readonly Type SpanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
         private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.TracerSettings, Datadog.Trace.Configuration");
+        private static readonly Type TracerConstantsType = Type.GetType("Datadog.Trace.TracerConstants, Datadog.Trace");
+        private static readonly MethodInfo GetNativeTracerVersionMethod = InstrumentationType?.GetMethod("GetNativeTracerVersion");
         private static readonly MethodInfo GetTracerInstance = TracerType?.GetProperty("Instance")?.GetMethod;
         private static readonly MethodInfo StartActiveMethod = TracerType?.GetMethod("StartActive", types: new[] { typeof(string) });
         private static readonly MethodInfo StartActiveWithContextMethod;
@@ -36,6 +39,7 @@ namespace Samples
         private static readonly MethodInfo SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SetService = TracerSettingsType?.GetProperty("Service")?.SetMethod;
+        private static readonly FieldInfo TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
 
 
         static SampleHelpers()
@@ -91,6 +95,32 @@ namespace Samples
         public static string GetTracerAssemblyLocation()
         {
             return NativeMethodsType?.Assembly.Location ?? "(none)";
+        }
+
+        public static string GetNativeTracerVersion()
+        {
+            try
+            {
+                return (string)GetNativeTracerVersionMethod.Invoke(null, Array.Empty<object>()) ?? "None";
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return "None";
+            }
+        }
+
+        public static string GetManagedTracerVersion()
+        {
+            try
+            {
+                return (string) TracerThreePartVersionField.GetValue(null);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return "None";
+            }
         }
 
         public static void RunShutDownTasks(object caller)

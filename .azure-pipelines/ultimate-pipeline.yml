@@ -2939,6 +2939,8 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp tracer/tracer-home-linux/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
         cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "linux" "$(runExtendedThroughputTests)"
@@ -2979,6 +2981,8 @@ stages:
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp tracer/tracer-home-win/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
         cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "windows" "$(runExtendedThroughputTests)"
@@ -3019,6 +3023,8 @@ stages:
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so does not exist" && exit 1
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp tracer/tracer-home-linux-arm64/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
         ./run.sh "linux_arm64" "$(runExtendedThroughputTests)"

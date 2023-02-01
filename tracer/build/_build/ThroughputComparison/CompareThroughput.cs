@@ -105,7 +105,10 @@ public class CompareThroughput
     private static string GetName(CrankScenario source) => source switch
     {
         CrankScenario.Baseline => "Baseline",
-        CrankScenario.Instrumented => "Instrumented",
+        CrankScenario.AutomaticInstrumentation => "Automatic",
+        CrankScenario.ManualInstrumentation => "Manual",
+        CrankScenario.ManualAndAutomaticInstrumentation => "Manual + Automatic",
+        CrankScenario.VersionConflict => "Version Conflict",
         CrankScenario.TraceStats => "Trace stats",
         CrankScenario.NoAttack => "No attack",
         CrankScenario.AttackNoBlocking => "Attack",
@@ -115,13 +118,43 @@ public class CompareThroughput
 
     static readonly (string Path, CrankTestSuite Type, (string Filename, CrankScenario Scenario)[] Scenarios)[] ExpectedScenarios =
     {
-        ("crank_linux_x64_1", CrankTestSuite.LinuxX64, new[] { ("baseline_linux.json", CrankScenario.Baseline), ("calltarget_ngen_linux.json", CrankScenario.Instrumented), ("trace_stats_linux.json", CrankScenario.TraceStats), }
+        ("crank_linux_x64_1", CrankTestSuite.LinuxX64, new[]
+            {
+                ("baseline_linux.json", CrankScenario.Baseline),
+                ("calltarget_ngen_linux.json", CrankScenario.AutomaticInstrumentation),
+                ("trace_stats_linux.json", CrankScenario.TraceStats),
+                ("manual_only_linux.json", CrankScenario.ManualInstrumentation),
+                ("manual_and_automatic_linux.json", CrankScenario.ManualAndAutomaticInstrumentation),
+                ("version_conflict_linux.json", CrankScenario.VersionConflict),
+            }
         ),
-        ("crank_linux_arm64_1", CrankTestSuite.LinuxArm64, new[] { ("baseline_linux_arm64.json", CrankScenario.Baseline), ("calltarget_ngen_linux_arm64.json", CrankScenario.Instrumented), ("trace_stats_linux_arm64.json", CrankScenario.TraceStats), }
+        ("crank_linux_arm64_1", CrankTestSuite.LinuxArm64, new[]
+            {
+                ("baseline_linux_arm64.json", CrankScenario.Baseline),
+                ("calltarget_ngen_linux_arm64.json", CrankScenario.AutomaticInstrumentation),
+                ("trace_stats_linux_arm64.json", CrankScenario.TraceStats),
+                ("manual_only_linux_arm64.json", CrankScenario.ManualInstrumentation),
+                ("manual_and_automatic_linux_arm64.json", CrankScenario.ManualAndAutomaticInstrumentation),
+                ("version_conflict_linux_arm64.json", CrankScenario.VersionConflict),
+            }
         ),
-        ("crank_windows_x64_1", CrankTestSuite.WindowsX64, new[] { ("baseline_windows.json", CrankScenario.Baseline), ("calltarget_ngen_windows.json", CrankScenario.Instrumented), ("trace_stats_windows.json", CrankScenario.TraceStats), }
+        ("crank_windows_x64_1", CrankTestSuite.WindowsX64, new[]
+            {
+                ("baseline_windows.json", CrankScenario.Baseline),
+                ("calltarget_ngen_windows.json", CrankScenario.AutomaticInstrumentation),
+                ("trace_stats_windows.json", CrankScenario.TraceStats),
+                ("manual_only_windows.json", CrankScenario.ManualInstrumentation),
+                ("manual_and_automatic_windows.json", CrankScenario.ManualAndAutomaticInstrumentation),
+                ("version_conflict_windows.json", CrankScenario.VersionConflict),
+            }
         ),
-        ("crank_linux_x64_asm_1", CrankTestSuite.ASMLinuxX64, new[] { ("appsec_baseline.json", CrankScenario.Baseline), ("appsec_noattack.json", CrankScenario.NoAttack), ("appsec_attack_noblocking.json", CrankScenario.AttackNoBlocking), ("appsec_attack_blocking.json", CrankScenario.AttackBlocking), }
+        ("crank_linux_x64_asm_1", CrankTestSuite.ASMLinuxX64, new[]
+            {
+                ("appsec_baseline.json", CrankScenario.Baseline),
+                ("appsec_noattack.json", CrankScenario.NoAttack),
+                ("appsec_attack_noblocking.json", CrankScenario.AttackNoBlocking),
+                ("appsec_attack_blocking.json", CrankScenario.AttackBlocking),
+            }
         ),
     };
 
@@ -161,8 +194,11 @@ public class CompareThroughput
     public enum CrankScenario
     {
         Baseline,
-        Instrumented,
+        AutomaticInstrumentation,
         TraceStats,
+        ManualInstrumentation,
+        ManualAndAutomaticInstrumentation,
+        VersionConflict,
         NoAttack,
         AttackNoBlocking,
         AttackBlocking,
