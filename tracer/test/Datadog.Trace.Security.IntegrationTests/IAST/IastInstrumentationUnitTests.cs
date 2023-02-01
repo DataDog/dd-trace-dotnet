@@ -91,7 +91,7 @@ public class IastInstrumentationUnitTests : TestHelper
             string arguments = "  -f net462 ";
             string sampleAppPath = string.Empty;
 #if NET462
-            sampleAppPath = EnvironmentHelper.GetSampleProjectDirectory() + "\\Samples.InstrumentedTests2.csproj";
+            sampleAppPath = EnvironmentHelper.GetSampleProjectDirectory() + "\\Samples.InstrumentedTests.csproj";
 #endif
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit2(agent, arguments: arguments, dllPath: sampleAppPath);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
