@@ -445,7 +445,7 @@ namespace Datadog.Trace.Tools.Runner
         /// </remarks>
         /// <param name="args">Arguments array</param>
         /// <returns>String of arguments</returns>
-        public static string GetArgumentsAsString(string[] args)
+        public static string GetArgumentsAsString(IEnumerable<string> args)
         {
             const char Quote = '\"';
             const char Backslash = '\\';
