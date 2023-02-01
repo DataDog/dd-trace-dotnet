@@ -10,5 +10,4 @@ namespace Datadog.Trace.Logging.Internal.Configuration;
 internal static class LogSinkOptions
 {
     public const string File = "file";
-    public const string Datadog = "datadog";
 }

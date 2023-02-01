@@ -536,43 +536,6 @@ namespace Datadog.Trace.Configuration
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
         }
 
-        internal static class Telemetry
-        {
-            /// <summary>
-            /// Configuration key for enabling or disabling internal telemetry.
-            /// Default value is <c>true</c> (enabled).
-            /// </summary>
-            public const string Enabled = "DD_INSTRUMENTATION_TELEMETRY_ENABLED";
-
-            /// <summary>
-            /// Configuration key for sending telemetry direct to telemetry intake. If enabled, and
-            /// <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake if agent is not
-            /// available. Enabled by default if <see cref="ConfigurationKeys.ApiKey"/> is available.
-            /// </summary>
-            public const string AgentlessEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED";
-
-            /// <summary>
-            /// Configuration key for sending telemetry via agent proxy. If enabled, sends telemetry
-            /// via agent proxy. Enabled by default. If disabled, or agent is not available, telemetry
-            /// is sent to agentless endpoint, based on <see cref="AgentlessEnabled"/> setting.
-            /// </summary>
-            public const string AgentProxyEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED";
-
-            /// <summary>
-            /// Configuration key for the telemetry URL where the Tracer sends telemetry. Only applies when agentless
-            /// telemetry is in use (otherwise telemetry is sent to the agent using
-            /// <see cref="ExporterSettings.AgentUri"/> instead)
-            /// </summary>
-            public const string Uri = "DD_INSTRUMENTATION_TELEMETRY_URL";
-
-            /// <summary>
-            /// Configuration key for how often telemetry should be sent, in seconds. Must be between 1 and 3600.
-            /// For testing purposes. Defaults to 60
-            /// <see cref="TelemetrySettings.HeartbeatInterval"/>
-            /// </summary>
-            public const string HeartbeatIntervalSeconds = "DD_TELEMETRY_HEARTBEAT_INTERVAL";
-        }
-
         internal static class TagPropagation
         {
             /// <summary>

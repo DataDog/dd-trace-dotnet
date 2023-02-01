@@ -34,7 +34,7 @@ internal static class DatadogLoggingFactory
         }
 
         TelemetryLoggingConfiguration? telemetryConfig = null;
-        if (Contains(logSinkOptions, LogSinkOptions.Datadog))
+        if (source?.GetBool(ConfigurationKeys.Telemetry.LogCollectionEnabled) ?? false)
         {
             telemetryConfig = GetTelemetryLoggingConfiguration(source);
         }
