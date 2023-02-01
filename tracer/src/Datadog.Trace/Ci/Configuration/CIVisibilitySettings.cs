@@ -58,22 +58,22 @@ namespace Datadog.Trace.Ci.Configuration
         /// <summary>
         /// Gets a value indicating whether the Agentless writer is going to be used.
         /// </summary>
-        public bool Agentless { get; }
+        public bool Agentless { get; private set; }
 
         /// <summary>
         /// Gets the Agentless url.
         /// </summary>
-        public string? AgentlessUrl { get; }
+        public string? AgentlessUrl { get; private set; }
 
         /// <summary>
         /// Gets the Api Key to use in Agentless mode
         /// </summary>
-        public string? ApiKey { get; }
+        public string? ApiKey { get; private set; }
 
         /// <summary>
         /// Gets the Application Key to use in ITR
         /// </summary>
-        public string? ApplicationKey { get; }
+        public string? ApplicationKey { get; private set; }
 
         /// <summary>
         /// Gets the Datadog site
@@ -158,6 +158,14 @@ namespace Datadog.Trace.Ci.Configuration
         internal void SetTestsSkippingEnabled(bool value)
         {
             TestsSkippingEnabled = value;
+        }
+
+        internal void SetAgentlessConfiguration(bool enabled, string? apiKey, string? applicationKey, string? agentlessUrl)
+        {
+            Agentless = enabled;
+            ApiKey = apiKey;
+            ApplicationKey = applicationKey;
+            AgentlessUrl = agentlessUrl;
         }
 
         private TracerSettings InitializeTracerSettings()

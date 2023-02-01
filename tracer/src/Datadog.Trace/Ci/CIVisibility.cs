@@ -25,8 +25,8 @@ namespace Datadog.Trace.Ci
 {
     internal class CIVisibility
     {
-        private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static readonly Lazy<bool> _enabledLazy = new(InternalEnabled, true);
+        private static CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
         private static Task? _skippableTestsTask;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        internal static void InitializeFromRunner()
+        internal static void InitializeFromRunner(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled)
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
@@ -148,10 +148,10 @@ namespace Datadog.Trace.Ci
             }
 
             Log.Information("Initializing CI Visibility from dd-trace");
-
+            _settings = settings;
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
-            TracerSettings tracerSettings = _settings.TracerSettings;
+            var tracerSettings = settings.TracerSettings;
 
             // Set the service name if empty
             Log.Debug("Setting up the service name");
@@ -166,7 +166,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings, NullDiscoveryService.Instance));
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings, discoveryService, eventPlatformProxyEnabled));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription

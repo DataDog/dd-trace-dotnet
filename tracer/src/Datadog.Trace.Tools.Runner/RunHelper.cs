@@ -64,7 +64,6 @@ namespace Datadog.Trace.Tools.Runner
             string codeCoveragePath = null;
             if (settings is RunCiSettings ciSettings)
             {
-                CIVisibility.InitializeFromRunner();
                 var ciVisibilitySettings = CIVisibility.Settings;
                 var agentless = ciVisibilitySettings.Agentless;
                 var apiKey = ciVisibilitySettings.ApiKey;
@@ -80,6 +79,7 @@ namespace Datadog.Trace.Tools.Runner
                 }
 
                 AgentConfiguration agentConfiguration = null;
+                IDiscoveryService discoveryService = NullDiscoveryService.Instance;
                 if (agentless)
                 {
                     Log.Debug("RunHelper: Agentless has been enabled. Checking API key");
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Tools.Runner
                 else
                 {
                     Log.Debug("RunHelper: Agent-based mode has been enabled. Checking agent connection.");
-                    agentConfiguration = AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(settings.AgentUrl));
+                    (agentConfiguration, discoveryService) = AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(settings.AgentUrl));
                     if (agentConfiguration is null)
                     {
                         Log.Error("RunHelper: Agent configuration cannot be retrieved.");
@@ -101,10 +101,18 @@ namespace Datadog.Trace.Tools.Runner
                     }
                 }
 
+                // Set Agentless configuration from the command line options
+                ciVisibilitySettings.SetAgentlessConfiguration(agentless, apiKey, applicationKey, ciVisibilitySettings.AgentlessUrl);
+
+                // Initialize flags to enable code coverage and test skipping
                 codeCoverageEnabled = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
                 testSkippingEnabled = ciVisibilitySettings.TestsSkippingEnabled == true;
 
-                if (agentless || !string.IsNullOrEmpty(agentConfiguration.EventPlatformProxyEndpoint))
+                // Initialize CI Visibility with the current settings
+                var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration.EventPlatformProxyEndpoint);
+                CIVisibility.InitializeFromRunner(ciVisibilitySettings, discoveryService, hasEvpProxy);
+
+                if (agentless || hasEvpProxy)
                 {
                     var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
                     AsyncUtil.RunSync(() => itrClient.UploadRepositoryChangesAsync());
