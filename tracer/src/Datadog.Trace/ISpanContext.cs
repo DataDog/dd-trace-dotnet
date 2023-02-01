@@ -11,12 +11,12 @@ namespace Datadog.Trace
     public interface ISpanContext
     {
         /// <summary>
-        /// Gets the trace identifier.
+        /// Gets the lower 64 bits of the 128-bit trace identifier.
         /// </summary>
         ulong TraceId { get; }
 
         /// <summary>
-        /// Gets the span identifier.
+        /// Gets the 64-bit span identifier.
         /// </summary>
         ulong SpanId { get; }
 
