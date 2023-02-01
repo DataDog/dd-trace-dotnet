@@ -7,6 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -27,6 +28,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public override async Task TryStartApp()
         {
             EnableIast(IastEnabled);
+            DisableObfuscationQueryString();
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
@@ -143,6 +145,26 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
         }
+
+        [SkippableFact]
+        [Trait("Category", "ArmUnsupported")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastSqlInjectionRequest()
+        {
+            var filename = IastEnabled ? "Iast.SqlInjection.AspNetCore5.IastEnabled" : "Iast.SqlInjection.AspNetCore5.IastDisabled";
+            var url = "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27";
+            IncludeAllHttpSpans = true;
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddIastScrubbing();
+            await VerifyHelper.VerifySpans(spansFiltered, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
     }
 
     public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
@@ -176,6 +198,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public virtual async Task TryStartApp()
         {
             EnableIast(IastEnabled);
+            DisableObfuscationQueryString();
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
