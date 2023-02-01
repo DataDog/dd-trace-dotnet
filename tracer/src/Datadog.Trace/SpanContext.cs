@@ -55,8 +55,11 @@ namespace Datadog.Trace
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority = null, string serviceName = null)
-            : this(traceId, serviceName)
+            : this(traceId ?? 0, serviceName)
         {
+            // public ctor must keep accepting legacy types:
+            // - traceId: ulong? => TraceId
+            // - samplingPriority: SamplingPriority? => int?
             SpanId = spanId;
             SamplingPriority = (int?)samplingPriority;
         }
@@ -71,7 +74,7 @@ namespace Datadog.Trace
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         /// <param name="origin">The propagated origin of the trace.</param>
-        internal SpanContext(ulong? traceId, ulong spanId, int? samplingPriority, string serviceName, string origin)
+        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin)
             : this(traceId, serviceName)
         {
             SpanId = spanId;
@@ -91,7 +94,7 @@ namespace Datadog.Trace
         /// <param name="origin">The propagated origin of the trace.</param>
         /// <param name="rawTraceId">The raw propagated trace id</param>
         /// <param name="rawSpanId">The raw propagated span id</param>
-        internal SpanContext(ulong? traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId)
+        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId)
             : this(traceId, serviceName)
         {
             SpanId = spanId;
@@ -112,10 +115,14 @@ namespace Datadog.Trace
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
-        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
+        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
             : this(parent?.TraceId > 0 ? parent.TraceId : traceId, serviceName)
         {
-            SpanId = spanId ?? RandomIdGenerator.Shared.NextSpanId();
+            // TODO: ^^^ try to get 128-bit parent.TraceId above
+
+            // if 128-bit trace ids are not enabled, use legacy span ids (so-called uint63)
+            var legacySpanId = !(traceContext?.Tracer?.Settings?.TraceId128BitGenerationEnabled ?? false);
+            SpanId = spanId == 0 ? RandomIdGenerator.Shared.NextSpanId(legacySpanId) : spanId;
             Parent = parent;
             TraceContext = traceContext;
 
@@ -132,11 +139,11 @@ namespace Datadog.Trace
             RawSpanId = rawSpanId;
         }
 
-        private SpanContext(ulong? traceId, string serviceName)
+        private SpanContext(TraceId traceId, string serviceName)
         {
-            TraceId = traceId > 0
-                          ? traceId.Value
-                          : RandomIdGenerator.Shared.NextSpanId();
+            TraceId = traceId == 0
+                          ? RandomIdGenerator.Shared.NextTraceId()
+                          : traceId;
 
             ServiceName = serviceName;
 
@@ -156,17 +163,27 @@ namespace Datadog.Trace
         public ISpanContext Parent { get; }
 
         /// <summary>
-        /// Gets the trace id
+        /// Gets the lower 64-bits of the 128-bit trace id.
         /// </summary>
-        public ulong TraceId { get; }
+        ulong ISpanContext.TraceId => TraceId128.Lower;
 
         /// <summary>
-        /// Gets the span id of the parent span
+        /// Gets the 128-bit trace id.
+        /// </summary>
+        internal TraceId TraceId128 { get; }
+
+        /// <summary>
+        /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.
+        /// </summary>
+        public ulong TraceId => TraceId128.Lower;
+
+        /// <summary>
+        /// Gets the span id of the parent span.
         /// </summary>
         public ulong? ParentId => Parent?.SpanId;
 
         /// <summary>
-        /// Gets the span id
+        /// Gets the span id.
         /// </summary>
         public ulong SpanId { get; }
 
@@ -304,7 +321,8 @@ namespace Datadog.Trace
             {
                 case Keys.TraceId:
                 case HttpHeaderNames.TraceId:
-                    value = TraceId.ToString(invariant);
+                    // use the lower 64-bits for backwards compat, truncate using TraceId.Lower
+                    value = TraceId.Lower.ToString(invariant);
                     return true;
 
                 case Keys.ParentId:
