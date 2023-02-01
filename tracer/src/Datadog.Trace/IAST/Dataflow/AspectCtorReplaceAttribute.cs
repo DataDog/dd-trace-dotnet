@@ -5,24 +5,23 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Dataflow
+namespace Datadog.Trace.Iast.Dataflow;
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+internal class AspectCtorReplaceAttribute : AspectAttribute
 {
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    internal class AspectCtorReplaceAttribute : AspectAttribute
+    public AspectCtorReplaceAttribute(string targetMethod)
+        : base(targetMethod)
     {
-        public AspectCtorReplaceAttribute(string targetMethod)
-            : base(targetMethod)
-        {
-        }
+    }
 
-        public AspectCtorReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-            : base(targetMethod, filters)
-        {
-        }
+    public AspectCtorReplaceAttribute(string targetMethod, params AspectFilter[] filters)
+        : base(targetMethod, filters)
+    {
+    }
 
-        public AspectCtorReplaceAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
-            : base(targetMethod, aspectType, vulnerabilityTypes)
-        {
-        }
+    public AspectCtorReplaceAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
+        : base(targetMethod, aspectType, vulnerabilityTypes)
+    {
     }
 }

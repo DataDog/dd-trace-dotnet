@@ -10,12 +10,12 @@ partial class Program
     {
         string[] aspects = new string[]
         {
-                @"[AspectClass(""CallTargetNativeTest"",[None],PROPAGATION,"""")] Datadog.Trace.Iast.Aspects.DebugAspects",
-                @"  [AspectCtorReplace(""CallTargetNativeTest.Program+CallSiteTargets::.ctor(System.String,System.String)"","""",[0],[False],[None],PROPAGATION,"""")] AspectCtorReplace(System.String,System.String)",
-                @"  [AspectMethodReplace(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodReplace(System.String,System.String)"","""",[0],[False],[None],PROPAGATION,"""")] AspectMethodReplace(System.String,System.String)",
-                @"  [AspectMethodInsertBefore(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertBefore_0(System.String,System.String)"","""",[0],[False],[None],PROPAGATION,"""")] AspectMethodInsertBefore_0(System.String)",
-                @"  [AspectMethodInsertBefore(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertBefore_1(System.String,System.String)"","""",[1],[False],[None],PROPAGATION,"""")] AspectMethodInsertBefore_1(System.String)",
-                @"  [AspectMethodInsertAfter(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertAfter(System.String,System.String)"","""",[0],[False],[None],PROPAGATION,"""")] AspectMethodInsertAfter(System.String)",
+                @"[AspectClass(""CallTargetNativeTest"",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.DebugAspects",
+                @"  [AspectCtorReplace(""CallTargetNativeTest.Program+CallSiteTargets::.ctor(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectCtorReplace(System.String,System.String)",
+                @"  [AspectMethodReplace(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodReplace(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodReplace(System.String,System.String)",
+                @"  [AspectMethodInsertBefore(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertBefore_0(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodInsertBefore_0(System.String)",
+                @"  [AspectMethodInsertBefore(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertBefore_1(System.String,System.String)"","""",[1],[False],[None],Propagation,[])] AspectMethodInsertBefore_1(System.String)",
+                @"  [AspectMethodInsertAfter(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertAfter(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodInsertAfter(System.String)",
         };
         NativeMethods.RegisterIastAspects(aspects);
     }

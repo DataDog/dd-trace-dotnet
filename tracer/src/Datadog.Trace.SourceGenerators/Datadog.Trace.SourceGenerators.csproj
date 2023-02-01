@@ -7,7 +7,7 @@
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />
     <Compile Include="..\Datadog.Trace\ClrProfiler\DefinitionsIdAttribute.cs" Link="InstrumentationDefinitions\DefinitionsIdAttribute.cs" />
-    <Compile Include="..\Datadog.Trace\IAST\AspectType.cs" Link="AspectsDefinitions\AspectType.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectType.cs" Link="AspectsDefinitions\AspectType.cs" />
     <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectAttribute.cs" Link="AspectsDefinitions\AspectAttribute.cs" />
     <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectClassAttribute.cs" Link="AspectsDefinitions\AspectClassAttribute.cs" />
     <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectCtorReplaceAttribute.cs" Link="AspectsDefinitions\AspectCtorReplaceAttribute.cs" />

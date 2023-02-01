@@ -6,6 +6,7 @@
 #if DEBUG
 
 using System;
+using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
 

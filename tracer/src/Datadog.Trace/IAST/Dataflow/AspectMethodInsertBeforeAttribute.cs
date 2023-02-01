@@ -5,24 +5,23 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Dataflow
+namespace Datadog.Trace.Iast.Dataflow;
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+internal class AspectMethodInsertBeforeAttribute : AspectAttribute
 {
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    internal class AspectMethodInsertBeforeAttribute : AspectAttribute
+    public AspectMethodInsertBeforeAttribute(string targetMethod, int paramShift = 0, bool boxParam = false)
+        : base(targetMethod, string.Empty, paramShift, boxParam)
     {
-        public AspectMethodInsertBeforeAttribute(string targetMethod, int paramShift = 0, bool boxParam = false)
-            : base(targetMethod, string.Empty, paramShift, boxParam)
-        {
-        }
+    }
 
-        public AspectMethodInsertBeforeAttribute(string targetMethod, params int[] paramShift)
-            : base(targetMethod, string.Empty, paramShift, new bool[0], new AspectFilter[0])
-        {
-        }
+    public AspectMethodInsertBeforeAttribute(string targetMethod, params int[] paramShift)
+        : base(targetMethod, string.Empty, paramShift, new bool[0], new AspectFilter[0])
+    {
+    }
 
-        public AspectMethodInsertBeforeAttribute(string targetMethod, int[] paramShift, bool[] boxParam)
-            : base(targetMethod, string.Empty, paramShift, boxParam, new AspectFilter[0])
-        {
-        }
+    public AspectMethodInsertBeforeAttribute(string targetMethod, int[] paramShift, bool[] boxParam)
+        : base(targetMethod, string.Empty, paramShift, boxParam, new AspectFilter[0])
+    {
     }
 }
