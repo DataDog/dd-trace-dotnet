@@ -5,13 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.Vendors.dnlib.DotNet;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed;
@@ -31,19 +31,19 @@ namespace Datadog.Trace.Pdb
         private readonly SymbolReader _symbolReader;
         private readonly ModuleDefMD _module;
 
-        private DatadogPdbReader(SymbolReader symbolReader, ModuleDefMD module)
+        private DatadogPdbReader(SymbolReader symbolReader, ModuleDefMD module, string pdbFullPath)
         {
+            PdbFullPath = pdbFullPath;
             _symbolReader = symbolReader;
             _module = module;
         }
 
+        internal string PdbFullPath { get; }
+
         public static DatadogPdbReader CreatePdbReader(Assembly assembly)
         {
-            var assemblyFullPath = assembly.Location;
             var module = ModuleDefMD.Load(assembly.ManifestModule, new ModuleCreationOptions { TryToLoadPdbFromDisk = false });
-            var pdbFullPath = Path.ChangeExtension(assemblyFullPath, "pdb");
-
-            if (!File.Exists(pdbFullPath))
+            if (!TryFindPdbFile(assembly, out var pdbFullPath))
             {
                 return null;
             }
@@ -57,7 +57,37 @@ namespace Datadog.Trace.Pdb
 
             dnlibReader.Initialize(module);
             module.LoadPdb(dnlibReader);
-            return new DatadogPdbReader(dnlibReader, module);
+            return new DatadogPdbReader(dnlibReader, module, pdbFullPath);
+        }
+
+        private static bool TryFindPdbFile(Assembly assembly, [NotNullWhen(true)] out string pdbFullPath)
+        {
+            string pdbInSameFolder = Path.ChangeExtension(assembly.Location, "pdb");
+
+            if (File.Exists(pdbInSameFolder))
+            {
+                pdbFullPath = pdbInSameFolder;
+                return true;
+            }
+
+#if NETFRAMEWORK
+            // On .NET Framework IIS-based applications that use Dynamic Compilation, we may need to look for the PDB file in the application directory
+            // (e.g. C:\inetpub\wwwroot\MyApp\bin\MyApp.pdb), as we may not find it in the same folder as the DLL.
+            // This is because in this scenario, the DLL is loaded from the shadow copy folder
+            // e.g. C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\1234567890abcdef\MyApp.dll)
+            // and the PDB may be copied to the shadow copy folder too late (or never), as it is only copied on demand (typically when an exception is thrown).
+            string fileName = Path.GetFileName(pdbInSameFolder);
+            var pdbInAppDirectory = Directory.EnumerateFiles(System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath, fileName, SearchOption.AllDirectories).FirstOrDefault();
+
+            if (pdbInAppDirectory != null)
+            {
+                pdbFullPath = pdbInAppDirectory;
+                return true;
+            }
+#endif
+
+            pdbFullPath = null;
+            return false;
         }
 
         public string GetSourceLinkJsonDocument()
