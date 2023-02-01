@@ -13,6 +13,16 @@ public static class Program
     {
         _source = new ActivitySource("Samples.NetActivitySdk");
 
+        var activityListener = new ActivityListener
+        {
+            //ActivityStarted = activity => Console.WriteLine($"{activity.DisplayName} - Started"),
+            ActivityStopped = activity => PrintSpanStoppedInformation(activity),
+            ShouldListenTo = _ => true,
+            Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData
+        };
+
+        ActivitySource.AddActivityListener(activityListener);
+
         using (var rootSpan = _source.StartActivity("RootSpan")) // 1 span (total 1)
         {
             RunActivityAddTags(); // 1 span (total 2)
@@ -25,6 +35,30 @@ public static class Program
         RunActivityConstructors(); // 4 spans (total 14)
         RunActivityUpdate(); //  9 spans (total 23)
         await Task.Delay(1000);
+    }
+
+    private static void PrintSpanStoppedInformation(Activity activity)
+    {
+        if (activity is null)
+        {
+            Console.WriteLine("ERROR: activity was null");
+            return;
+        }
+        Console.Write("\n*****\n");
+        Console.WriteLine($"{activity.DisplayName} Stopped");
+        Console.WriteLine($"{activity.DisplayName} Info:");
+        Console.WriteLine($"ID: {activity.Id}");
+        Console.WriteLine($"Span ID: {activity.SpanId}");
+        Console.WriteLine($"ParentID: {activity.ParentId}");
+        Console.WriteLine($"span.kind: {activity.Kind}");
+        Console.WriteLine($"Status: {activity.Status}");
+        Console.WriteLine($"Status Desc: {activity.StatusDescription}");
+        Console.WriteLine($"Trace State String: {activity.TraceStateString}");
+        Console.WriteLine("Tags:");
+        foreach(var tag in activity.TagObjects)
+        {
+            Console.WriteLine($"{tag.Key}: {tag.Value}");
+        }
     }
 
     private static void RunActivityAddTags()
