@@ -56,7 +56,7 @@ namespace Datadog.Trace.Ci
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
-                // Initialize() was already called before
+                // Initialize() or InitializeFromRunner() was already called before
                 return;
             }
 
@@ -143,7 +143,7 @@ namespace Datadog.Trace.Ci
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
-                // Initialize() was already called before
+                // Initialize() or InitializeFromRunner() was already called before
                 return;
             }
 
