@@ -24,8 +24,6 @@ internal readonly struct Location
 
     public override int GetHashCode()
     {
-        // we do not include the span id in the hash because that can cause repeated vulnerabilities if DbScopeFactory.CreateDbCommandScope
-        // is called multiple times within the same sql query with different active spans
-        return IastUtils.GetHashCode(Path, Line);
+        return IastUtils.GetHashCode(Path, Line, SpanId);
     }
 }
