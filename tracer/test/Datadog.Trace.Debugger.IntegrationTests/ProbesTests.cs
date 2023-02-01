@@ -181,7 +181,7 @@ public class ProbesTests : TestHelper
     public async Task MethodProbeTest(ProbeTestDescription testDescription)
     {
         SkipOverTestIfNeeded(testDescription);
-        await RunMethodProbeTests(testDescription);
+        await RunMethodProbeTests(testDescription, true);
     }
 
     [SkippableFact]
@@ -200,7 +200,7 @@ public class ProbesTests : TestHelper
         var testDescription = DebuggerTestHelper.SpecificTestDescription<AsyncGenericMethod>();
         EnvironmentHelper.EnableWindowsNamedPipes();
 
-        await RunMethodProbeTests(testDescription);
+        await RunMethodProbeTests(testDescription, false);
     }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -212,7 +212,7 @@ public class ProbesTests : TestHelper
         var testType = DebuggerTestHelper.SpecificTestDescription<AsyncGenericMethod>();
         EnvironmentHelper.EnableUnixDomainSockets();
 
-        await RunMethodProbeTests(testType);
+        await RunMethodProbeTests(testType, false);
     }
 
 #endif
@@ -223,11 +223,11 @@ public class ProbesTests : TestHelper
         return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*");
     }
 
-    private async Task RunMethodProbeTests(ProbeTestDescription testDescription)
+    private async Task RunMethodProbeTests(ProbeTestDescription testDescription, bool useStatsD)
     {
         var probes = GetProbeConfiguration(testDescription.TestType, false, new DeterministicGuidGenerator());
 
-        using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+        using var agent = EnvironmentHelper.GetMockAgent(useStatsD: useStatsD);
         SetDebuggerEnvironment(agent);
         using var logEntryWatcher = CreateLogEntryWatcher();
         using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
