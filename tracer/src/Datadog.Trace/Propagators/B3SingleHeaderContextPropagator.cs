@@ -101,14 +101,14 @@ namespace Datadog.Trace.Propagators
                 char rawSampled = '0';
                 if (brValue.Length > 50 && brValue[32] == '-' && brValue[49] == '-')
                 {
-                    // 128 bits trace id
+                    // 128-bit trace id
                     rawTraceId = brValue.Substring(0, 32);
                     rawSpanId = brValue.Substring(33, 16);
                     rawSampled = brValue[50];
                 }
                 else if (brValue.Length > 34 && brValue[16] == '-' && brValue[33] == '-')
                 {
-                    // 64 bits trace id
+                    // 64-bit trace id
                     rawTraceId = brValue.Substring(0, 16);
                     rawSpanId = brValue.Substring(17, 16);
                     rawSampled = brValue[34];

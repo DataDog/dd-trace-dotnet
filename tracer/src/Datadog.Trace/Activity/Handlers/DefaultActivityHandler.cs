@@ -58,8 +58,8 @@ namespace Datadog.Trace.Activity.Handlers
                 }
 
                 // If the user has specified a parent context, get the parent Datadog SpanContext
-                if (w3cActivity.ParentSpanId is not null
-                 && w3cActivity.ParentId is { } parentId)
+                if (w3cActivity.ParentSpanId != null!
+                    && w3cActivity.ParentId is { } parentId)
                 {
                     // we know that we have a parent context, but we use TraceId+ParentSpanId for the mapping
                     // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the

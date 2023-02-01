@@ -16,8 +16,8 @@ namespace Datadog.Trace.Sampling
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceSampler>();
 
         private readonly IRateLimiter _limiter;
-        private readonly DefaultSamplingRule _defaultRule = new DefaultSamplingRule();
-        private readonly List<ISamplingRule> _rules = new List<ISamplingRule>();
+        private readonly DefaultSamplingRule _defaultRule = new();
+        private readonly List<ISamplingRule> _rules = new();
 
         public TraceSampler(IRateLimiter limiter)
         {
