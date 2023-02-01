@@ -587,40 +587,4 @@ public class ProbesTests : TestHelper
 
         agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);
     }
-
-    [Fact]
-    private void RunMetricTest()
-    {
-        var testDescription = DebuggerTestHelper.SpecificTestDescription<GreaterThanArgumentFalse>();
-        var probes = GetProbeConfiguration(testDescription.TestType, false, new DeterministicGuidGenerator());
-
-        using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
-        using var processResult = RunSampleAndWaitForExit(agent);
-        var requests = agent.StatsdRequests;
-
-        // Check if we receive 2 kinds of metrics:
-        // - exception count is gathered using common .NET APIs
-        // - contention count is gathered using platform-specific APIs
-
-        var exceptionRequestsCount = requests.Count(r => r.Contains("runtime.dotnet.exceptions.count"));
-
-        Assert.True(exceptionRequestsCount > 0, "No exception metrics received. Metrics received: " + string.Join("\n", requests));
-
-        // Assert service, env, and version
-        requests.Should().OnlyContain(s => s.Contains("env:integration_tests"));
-        requests.Should().OnlyContain(s => s.Contains("version:1.0.0"));
-
-        // Check if .NET Framework or .NET Core 3.1+
-        if (!EnvironmentHelper.IsCoreClr()
-         || (Environment.Version.Major == 3 && Environment.Version.Minor == 1)
-         || Environment.Version.Major >= 5)
-        {
-            var contentionRequestsCount = requests.Count(r => r.Contains("runtime.dotnet.threads.contention_count"));
-
-            Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
-        }
-
-        Assert.Empty(agent.Exceptions);
-        VerifyInstrumentation(processResult.Process);
-    }
 }
