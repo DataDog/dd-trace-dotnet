@@ -19,8 +19,6 @@ namespace Datadog.Trace
     /// </summary>
     public static partial class SpanExtensions
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
-
         /// <summary>
         /// Sets the details of the user on the local root span
         /// </summary>
@@ -87,8 +85,18 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="span">The span to be tagged</param>
         /// <param name="userId">The userId associated with the login success</param>
+        public static void TrackUserLoginSuccessEvent(this ISpan span, string userId)
+        {
+            TrackUserLoginSuccessEvent(span, userId, null);
+        }
+
+        /// <summary>
+        /// Sets the details of a successful logon on the local root span
+        /// </summary>
+        /// <param name="span">The span to be tagged</param>
+        /// <param name="userId">The userId associated with the login success</param>
         /// <param name="metadata">Metadata associated with the login success</param>
-        public static void TrackUserLoginSuccessEvent(this ISpan span, string userId, IDictionary<string, string> metadata = null)
+        public static void TrackUserLoginSuccessEvent(this ISpan span, string userId, IDictionary<string, string> metadata)
         {
             if (span is null)
             {
@@ -120,8 +128,19 @@ namespace Datadog.Trace
         /// <param name="span">The span to be tagged</param>
         /// <param name="userId">The userId associated with the login failure</param>
         /// <param name="exists">If the userId associated with the login failure exists</param>
+        public static void TrackUserLoginFailureEvent(this ISpan span, string userId, bool exists)
+        {
+            TrackUserLoginFailureEvent(span, userId, exists, null);
+        }
+
+        /// <summary>
+        /// Sets the details of a logon failure on the local root span
+        /// </summary>
+        /// <param name="span">The span to be tagged</param>
+        /// <param name="userId">The userId associated with the login failure</param>
+        /// <param name="exists">If the userId associated with the login failure exists</param>
         /// <param name="metadata">Metadata associated with the login failure</param>
-        public static void TrackUserLoginFailureEvent(this ISpan span, string userId, bool exists, IDictionary<string, string> metadata = null)
+        public static void TrackUserLoginFailureEvent(this ISpan span, string userId, bool exists, IDictionary<string, string> metadata)
         {
             if (span is null)
             {
@@ -153,8 +172,18 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="span">The span to be tagged</param>
         /// <param name="eventName">the name of the event to be tracked</param>
+        public static void TrackCustomEvent(this ISpan span, string eventName)
+        {
+            TrackCustomEvent(span, eventName, null);
+        }
+
+        /// <summary>
+        /// Sets the details of a custom event the local root span
+        /// </summary>
+        /// <param name="span">The span to be tagged</param>
+        /// <param name="eventName">the name of the event to be tracked</param>
         /// <param name="metadata">Metadata associated with the custom event</param>
-        public static void TrackCustomEvent(this ISpan span, string eventName, IDictionary<string, string> metadata = null)
+        public static void TrackCustomEvent(this ISpan span, string eventName, IDictionary<string, string> metadata)
         {
             if (span is null)
             {
