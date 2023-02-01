@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -37,7 +38,7 @@ public class IastInstrumentationUnitTests : TestHelper
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #endif
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments);
-            processResult.StandardError.Should().BeEmpty(processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
+            processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
     }
 }
