@@ -73,7 +73,8 @@ static fs::path GetConfigurationFilePath()
     {
         // In 2.14.0, we have moved this file and the config may point to a path where it's not present
         // So we check if we can find it, if not, we default to the current module folder
-        if (fs::exists(env_configfile))
+        std::error_code ec; // fs::exists might throw if no error_code parameter is provided
+        if (fs::exists(env_configfile, ec))
         {
             return env_configfile;
         }
