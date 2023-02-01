@@ -162,33 +162,54 @@ namespace Datadog.Trace.Coverage.Collector
                     {
                         if (File.Exists(Path.Combine(path, fileWithoutExtension + ".pdb")) || File.Exists(Path.Combine(path, fileWithoutExtension + ".PDB")))
                         {
-                            try
+                            List<Exception>? exceptions = null;
+                            var remain = 3;
+                            Retry:
+                            if (--remain > 0)
                             {
-                                var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
-                                asmProcessor.Process();
-                                Interlocked.Increment(ref numAssemblies);
-                                if (asmProcessor.HasTracerAssemblyCopied)
+                                try
                                 {
-                                    lock (processedDirectories)
+                                    var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
+                                    asmProcessor.Process();
+                                    Interlocked.Increment(ref numAssemblies);
+                                    if (asmProcessor.HasTracerAssemblyCopied)
                                     {
-                                        processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                        lock (processedDirectories)
+                                        {
+                                            processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                        }
                                     }
                                 }
+                                catch (PdbNotFoundException)
+                                {
+                                    // If the PDB file was not found, we skip the assembly without throwing error.
+                                    _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
+                                }
+                                catch (BadImageFormatException)
+                                {
+                                    // If the Assembly has not the correct format (eg. native dll / exe)
+                                    // We skip processing the assembly.
+                                    _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
+                                }
+                                catch (IOException ioException)
+                                {
+                                    // We do retries if we have an IOException.
+                                    // For cases like: `The process cannot access the file 'file path' because
+                                    // it is being used by another process`
+                                    exceptions ??= new List<Exception>();
+                                    exceptions.Add(ioException);
+                                    Thread.Sleep(1000);
+                                    goto Retry;
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger?.Error(ex);
+                                }
                             }
-                            catch (PdbNotFoundException)
+
+                            if (exceptions?.Count > 0)
                             {
-                                // If the PDB file was not found, we skip the assembly without throwing error.
-                                _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
-                            }
-                            catch (BadImageFormatException)
-                            {
-                                // If the Assembly has not the correct format (eg. native dll / exe)
-                                // We skip processing the assembly.
-                                _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger?.Error(ex);
+                                _logger?.Error(new AggregateException(exceptions));
                             }
                         }
                     }

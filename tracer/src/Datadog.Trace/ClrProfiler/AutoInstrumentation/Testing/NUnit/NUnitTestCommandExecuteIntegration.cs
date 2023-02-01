@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
@@ -41,6 +42,30 @@ public static class NUnitTestCommandExecuteIntegration
         if (!NUnitIntegration.IsEnabled)
         {
             return CallTargetState.GetDefault();
+        }
+
+        var testResult = executionContext.CurrentResult;
+        if (testResult.ResultState.Status == TestStatus.Failed && executionContext.CurrentTest.TestType == NUnitIntegration.TestSuiteConst)
+        {
+            CIVisibility.Log.Warning($"{typeof(TTarget).FullName} | {executionContext.CurrentTest.TestType} | {executionContext.CurrentTest.FullName} | {executionContext.CurrentResult.Message} | {executionContext.CurrentResult.ResultState.Status} | {executionContext.CurrentResult.ResultState.Site}");
+
+            if (NUnitIntegration.GetTestSuiteFrom(executionContext.CurrentTest) is { } suite)
+            {
+                if (testResult.ResultState.Site == FailureSite.SetUp)
+                {
+                    suite.SetErrorInfo("SetUpException", testResult.Message, testResult.StackTrace);
+                }
+                else if (testResult.ResultState.Site == FailureSite.TearDown)
+                {
+                    suite.SetErrorInfo("TearDownException", testResult.Message, testResult.StackTrace);
+                }
+                else if (testResult.ResultState.Site == FailureSite.Child)
+                {
+                    suite.SetErrorInfo("Exception", testResult.Message, testResult.StackTrace);
+                }
+
+                suite.Tags.Status = TestTags.StatusFail;
+            }
         }
 
         switch (typeof(TTarget).FullName)

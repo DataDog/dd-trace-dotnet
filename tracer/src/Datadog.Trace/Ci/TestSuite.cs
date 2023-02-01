@@ -163,7 +163,7 @@ public sealed class TestSuite
 
         Current = null;
         Module.RemoveSuite(Name);
-        CIVisibility.Log.Debug("###### Test Suite Closed: {name} ({module})", Name, Module.Name);
+        CIVisibility.Log.Debug("###### Test Suite Closed: {name} ({module}) | {status}", Name, Module.Name, Tags.Status);
     }
 
     /// <summary>

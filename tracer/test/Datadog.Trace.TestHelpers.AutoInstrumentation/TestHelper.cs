@@ -376,6 +376,11 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString());
         }
 
+        public void DisableObfuscationQueryString()
+        {
+            SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegex, string.Empty);
+        }
+
         public void SetEnvironmentVariable(string key, string value)
         {
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;

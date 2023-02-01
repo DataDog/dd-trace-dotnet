@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitTests : TestHelper
     {
-        private const int ExpectedSpanCount = 28;
+        private const int ExpectedSpanCount = 30;
 
         private const string TestBundleName = "Samples.NUnitTests";
         private static string[] _testSuiteNames =
@@ -31,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             "Samples.NUnitTests.TestFixtureSetupError(\"Test01\")",
             "Samples.NUnitTests.TestFixtureSetupError(\"Test02\")",
             "Samples.NUnitTests.TestSetupError",
+            "Samples.NUnitTests.TestTearDownError",
+            "Samples.NUnitTests.TestTearDown2Error",
         };
 
         public NUnitTests(ITestOutputHelper output)

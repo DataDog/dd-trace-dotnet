@@ -11,4 +11,13 @@
 	  <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace\Util\System.Diagnostics.CodeAnalysis.Attributes.cs">
+      <Link>Helpers\System.Diagnostics.CodeAnalysis.Attributes.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Util\System.Runtime.CompilerServices.Attributes.cs">
+      <Link>Helpers\System.Runtime.CompilerServices.Attributes.cs</Link>
+    </Compile>
+  </ItemGroup>
+
 </Project>

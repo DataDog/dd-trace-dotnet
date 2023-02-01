@@ -37,10 +37,16 @@ public class NUnitCompositeWorkItemPerformOneTimeSetUpIntegration
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
         if (instance.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem) &&
-            compositeWorkItem.Result.ResultState.Status == TestStatus.Failed &&
-            compositeWorkItem.Result.ResultState.Site == FailureSite.SetUp)
+            compositeWorkItem.Result.ResultState.Status == TestStatus.Failed)
         {
-            NUnitIntegration.WriteSetUpError(compositeWorkItem);
+            if (compositeWorkItem.Result.ResultState.Site == FailureSite.SetUp)
+            {
+                NUnitIntegration.WriteSetUpOrTearDownError(compositeWorkItem, "SetUpException");
+            }
+            else if (compositeWorkItem.Result.ResultState.Site == FailureSite.TearDown)
+            {
+                NUnitIntegration.WriteSetUpOrTearDownError(compositeWorkItem, "TearDownException");
+            }
         }
 
         return CallTargetReturn.GetDefault();

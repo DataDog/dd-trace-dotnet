@@ -1,11 +1,17 @@
 using System.Security.Cryptography;
 using System.Web.Mvc;
+using System.Data.SQLite;
+using System;
+using System.Text;
+using Samples.Security.Data;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
     [Route("[controller]")]
     public class IastController : Controller
     {
+        static SQLiteConnection dbConnection = null;
+
         public ActionResult Index()
         {
             return Content("Ok\n");
@@ -21,6 +27,37 @@ namespace Samples.Security.AspNetCore5.Controllers
             SHA1.Create().ComputeHash(byteArg);
             return Content($"Weak hashes launched with delays {delay1} and {delay2}.\n");
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
+        }
+
+        [Route("SqlQuery")]
+        public ActionResult SqlQuery(string username, string query)
+        {
+            try
+            { 
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+
+                if (!string.IsNullOrEmpty(username))
+                {
+                    var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";
+                    var rname = new SQLiteCommand(taintedQuery, dbConnection).ExecuteScalar();
+                    return Content($"Result: " + rname);
+                }
+
+                if (!string.IsNullOrEmpty(query))
+                {
+                    var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+                    return Content($"Result: " + rname);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return Content($"No query or username was provided");
         }
     }
 }

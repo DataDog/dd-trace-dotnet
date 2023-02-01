@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -57,6 +58,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 scope.Span.ResourceName = command.CommandText;
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+
+                if (Iast.Iast.Instance.Settings.Enabled)
+                {
+                    IastModule.OnSqlQuery(command.CommandText, integrationId, Iast.Iast.Instance);
+                }
             }
             catch (Exception ex)
             {
@@ -224,7 +230,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(IDbCommand command)
             {
-                var connectionString = command.Connection?.ConnectionString;
+                string connectionString = null;
+                try
+                {
+                    if (command.GetType().FullName == "System.Data.Common.DbDataSource.DbCommandWrapper")
+                    {
+                        return default;
+                    }
+
+                    connectionString = command.Connection?.ConnectionString;
+                }
+                catch (NotSupportedException nsException)
+                {
+                    Log.Debug(nsException, "ConnectionString cannot be retrieved from the command.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Error trying to retrieve the ConnectionString from the command.");
+                }
+
+                if (connectionString is null)
+                {
+                    return default;
+                }
 
                 // Check if the connection string is the one in the cache
                 var tagsByConnectionString = _tagsByConnectionStringCache;
