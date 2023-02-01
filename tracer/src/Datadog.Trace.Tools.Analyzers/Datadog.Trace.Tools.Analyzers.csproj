@@ -12,10 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Datadog.Trace\Util\System.Diagnostics.CodeAnalysis.Attributes.cs">
+    <Compile Include="..\Datadog.Trace2\Util\System.Diagnostics.CodeAnalysis.Attributes.cs">
       <Link>Helpers\System.Diagnostics.CodeAnalysis.Attributes.cs</Link>
     </Compile>
-    <Compile Include="..\Datadog.Trace\Util\System.Runtime.CompilerServices.Attributes.cs">
+    <Compile Include="..\Datadog.Trace2\Util\System.Runtime.CompilerServices.Attributes.cs">
       <Link>Helpers\System.Runtime.CompilerServices.Attributes.cs</Link>
     </Compile>
   </ItemGroup>
