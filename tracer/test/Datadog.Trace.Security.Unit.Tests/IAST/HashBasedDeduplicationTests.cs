@@ -137,7 +137,6 @@ public class HashBasedDeduplicationTests
     {
         var instance = new HashBasedDeduplication();
         var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
-        var ranges2 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue2")), new Range(1, 1, new Source(0, "sourceName", "sourceValue2")) };
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", 23, 1), new Evidence("MD5", ranges1))));
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.WeakHash, new Location("path.cs", 23, 33), new Evidence("MD5", ranges1))));
     }
