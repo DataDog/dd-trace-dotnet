@@ -13,7 +13,7 @@ internal readonly struct Location
     {
         this.Path = path;
         this.Line = line;
-        this.SpanId = spanId;
+        this.SpanId = spanId == 0 ? null : spanId;
     }
 
     public ulong? SpanId { get; }
