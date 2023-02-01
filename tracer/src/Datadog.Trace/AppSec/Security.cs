@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
-using Datadog.Trace.AppSec.RcmModels.AsmData;
+using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -21,6 +21,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
+using Payload = Datadog.Trace.AppSec.RcmModels.AsmData.Payload;
 
 namespace Datadog.Trace.AppSec
 {
@@ -180,6 +181,51 @@ namespace Datadog.Trace.AppSec
             Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions removed from the profiler.");
         }
 
+        private static void RuleCount(ProductConfigChangedEventArgs e, RuleOverride[] rulesOverrides, string asmConfigName, Dictionary<string, bool> ruleStatus, Dictionary<string, List<string>> onMatch)
+        {
+            var ruleCount = 0;
+
+            foreach (var data in rulesOverrides)
+            {
+                if (data.Id == null || (data.Enabled == null && (data.OnMatch == null || data.OnMatch.Count == 0)))
+                {
+                    var id = data.Id ?? "NULL";
+                    var enabled = data.Enabled?.ToString() ?? "NULL";
+                    var actions = string.Join(",", data.OnMatch ?? Enumerable.Empty<string>());
+                    e.Error(asmConfigName, $"Received Null values on message ({id}= {enabled}, {actions}).");
+                    continue;
+                }
+
+                if (data.Enabled != null)
+                {
+                    ruleStatus[data.Id] = data.Enabled.Value;
+                }
+
+                if (data.OnMatch != null)
+                {
+                    if (onMatch.TryGetValue(data.Id, out var actions))
+                    {
+                        actions.AddRange(data.OnMatch);
+                    }
+                    else
+                    {
+                        onMatch[data.Id] = data.OnMatch;
+                    }
+                }
+
+                ruleCount++;
+            }
+
+            if (ruleCount > 0 || rulesOverrides.Length == 0)
+            {
+                e.Acknowledge(asmConfigName);
+            }
+            else
+            {
+                e.Error(asmConfigName, "No valid Waf rule status data received.");
+            }
+        }
+
         /// <summary> Frees resources </summary>
         public void Dispose() => _waf?.Dispose();
 
@@ -257,61 +303,34 @@ namespace Datadog.Trace.AppSec
             if (!_enabled) { return; }
 
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
-            int ruleCount = 0;
+            if (asmConfigs == null)
+            {
+                Log.Debug("AsmProductConfigChanged asmConfigs is null");
+                return;
+            }
+
             var ruleStatus = new Dictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase);
             var onMatch = new Dictionary<string, List<string>>(StringComparer.InvariantCultureIgnoreCase);
+            var exclusionsFullList = new List<JToken>();
+
             foreach (var asmConfig in asmConfigs)
             {
                 try
                 {
-                    var rulesStatus = asmConfig.TypedFile.RuleOverride;
-                    foreach (var data in rulesStatus)
+                    var rulesOverrides = asmConfig.TypedFile.RuleOverride;
+                    if (rulesOverrides != null)
                     {
-                        if (data.Id == null || (data.Enabled == null && (data.OnMatch == null && data.OnMatch.Count == 0)))
-                        {
-                            var id = data.Id ?? "NULL";
-                            var enabled = data.Enabled?.ToString() ?? "NULL";
-                            var actions = string.Join(",", data.OnMatch ?? Enumerable.Empty<string>());
-                            e.Error(asmConfig.Name, $"Received Null values on message ({id}= {enabled}, {actions}).");
-                            continue;
-                        }
-
-                        if (data.Enabled != null)
-                        {
-                            ruleStatus[data.Id] = data.Enabled.Value;
-                        }
-
-                        if (data.OnMatch != null)
-                        {
-                            if (onMatch.TryGetValue(data.Id, out var actions))
-                            {
-                                actions.AddRange(data.OnMatch);
-                            }
-                            else
-                            {
-                                onMatch[data.Id] = data.OnMatch;
-                            }
-                        }
-
-                        ruleCount++;
+                        RuleCount(e, rulesOverrides, asmConfig.Name, ruleStatus, onMatch);
                     }
 
-                    if (ruleCount > 0)
-                    {
-                        e.Acknowledge(asmConfig.Name);
-                    }
-                    else
-                    {
-                        e.Error(asmConfig.Name, "No valid Waf rule status data received.");
-                    }
+                    exclusionsFullList.AddRange(asmConfig.TypedFile.Exclusions);
                 }
                 catch (Exception err)
                 {
-                    e.Error(asmConfig.Name, "Waf rule status data error: " + err.Message);
+                    e.Error(asmConfig.Name, "Waf rule status data error: " + err);
                 }
             }
 
-            var exclusionsFullList = asmConfigs.SelectMany(x => x.TypedFile.Exclusions);
             var exclusions = new JArray(exclusionsFullList);
 
             _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);

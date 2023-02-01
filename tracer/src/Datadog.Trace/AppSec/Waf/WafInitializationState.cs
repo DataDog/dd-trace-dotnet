@@ -25,8 +25,6 @@ internal class WafInitializationState
 
     public JArray Exclusions { get; }
 
-    public Dictionary<string, bool> RuleStatus { get; }
-
     public Dictionary<string, List<string>> OnMatch { get; }
 
     public WafInitializationState WithRules(string rules)

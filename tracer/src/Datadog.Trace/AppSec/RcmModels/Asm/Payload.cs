@@ -13,5 +13,6 @@ internal class Payload
     [JsonProperty("rules_override")]
     public RuleOverride[]? RuleOverride { get; set; }
 
+    [JsonProperty("exclusions")]
     public JArray Exclusions { get; set; } = new JArray();
 }

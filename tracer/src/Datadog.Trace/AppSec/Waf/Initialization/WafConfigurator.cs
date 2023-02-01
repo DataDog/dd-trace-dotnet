@@ -43,6 +43,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     ruleObject.Add(prop);
                 }
             }
+
+            Log.Information("waf config after modifications: " + root);
         }
 
         private static void LogRuleDetailsIfDebugEnabled(JToken root)

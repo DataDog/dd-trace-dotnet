@@ -5,6 +5,7 @@
 
 #nullable enable
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.RcmModels.Asm;
@@ -16,10 +17,10 @@ internal class RuleOverride
     public bool? Enabled { get; set; }
 
     [JsonProperty("on_match")]
-    public List<string> OnMatch { get; set; } = new List<string>();
+    public List<string>? OnMatch { get; set; } = new List<string>();
 
     public override string ToString()
     {
-        return $"{{{Id} : {Enabled}}}";
+        return $"{{{Id} : Enabled: {Enabled}, OnMatch: {string.Join(", ", OnMatch ?? Enumerable.Empty<string>())} }}";
     }
 }

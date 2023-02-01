@@ -48,7 +48,14 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload() { RuleOverride = new[] { new RuleOverride { Id = ruleId, OnMatch = new List<string>() { "block" } } } }, "1") }, ASMProduct);
+            var acknowledgeId = nameof(AspNetCore5OnMatch) + Guid.NewGuid();
+
+            var request1 =
+                await agent.SetupRcmAndWait(
+                    Output,
+                    new[] { ((object)new Payload() { RuleOverride = new[] { new RuleOverride { Id = ruleId, OnMatch = new List<string>() { "block" } } } }, acknowledgeId) },
+                    ASMProduct,
+                    appliedServiceNames: new[] { acknowledgeId });
             CheckAckState(request1, ASMProduct, ApplyStates.ACKNOWLEDGED, null, "First RCM call");
 
             var spans2 = await SendRequestsAsync(agent, url);

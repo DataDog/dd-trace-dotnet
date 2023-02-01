@@ -4,6 +4,8 @@
 // </copyright>
 
 #if NETCOREAPP3_0_OR_GREATER
+#pragma warning disable SA1402 // File may only contain a single class
+#pragma warning disable SA1649 // File name must match first type name
 
 using System;
 using System.Collections.Generic;
@@ -22,85 +24,75 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
-    public class AspNetCore5ExclusionFilters : RcmBase
+    public class Exclusions
     {
-// TODO we used to have a second condition in the first filter, but that seems to break it ... ask WAF people why
-// @",
-// {
-// ""operator"": ""match_regex"",
-// ""parameters"": {
-//   ""inputs"": [
-//  {
-//    ""address"": ""server.request.uri.raw""
-//  }
-//   ],
-//   ""regex"": ""^/admin""
-// }
-// }"
-
-        private const string Exclusions = @"[
+        internal const string ExampleExclusionFilters = """
+[
   {
-    ""id"": ""865D405F-0CA7-4810-847D-EEE5107DD4E1"",
-    ""conditions"": [
+    "id": "865D405F-0CA7-4810-847D-EEE5107DD4E1",
+    "conditions": [
       {
-        ""operator"": ""ip_match"",
-        ""parameters"": {
-          ""inputs"": [
+        "operator": "ip_match",
+        "parameters": {
+          "inputs": [
             {
-              ""address"": ""http.client_ip""
+              "address": "http.client_ip"
             }
           ],
-          ""list"": [
-            ""192.0.240.56/28""
+          "list": [
+            "192.0.240.56/28"
           ]
         }
       }
     ]
   },
   {
-    ""id"": ""0FD9CE7B-3C2C-4EDE-9AEA-B0A5B5F18014"",
-    ""conditions"": [
+    "id": "0FD9CE7B-3C2C-4EDE-9AEA-B0A5B5F18014",
+    "conditions": [
       {
-        ""operator"": ""match_regex"",
-        ""parameters"": {
-          ""inputs"": [
+        "operator": "match_regex",
+        "parameters": {
+          "inputs": [
             {
-              ""address"": ""server.request.headers.no_cookies"",
-              ""key_path"": [
-                ""user-agent""
+              "address": "server.request.headers.no_cookies",
+              "key_path": [
+                "user-agent"
               ]
             }
           ],
-          ""regex"": ""MyAllowedScanner""
+          "regex": "MyAllowedScanner"
         }
       }
     ],
-    ""rules_target"": [
+    "rules_target": [
       {
-        ""tags"": {
-          ""category"": ""attack_attempt"",
-          ""type"": ""security_scanner""
+        "tags": {
+          "category": "attack_attempt",
+          "type": "security_scanner"
         }
       },
       {
-        ""rule_id"": ""sqr-000-011""
+        "rule_id": "sqr-000-011"
       }
     ]
   }
-]";
+]
+""";
+    }
 
-        public AspNetCore5ExclusionFilters(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5ExclusionFilters))
+    public class AspNetCore5ExclusionFiltersAllowIp : RcmBase
+    {
+        public AspNetCore5ExclusionFiltersAllowIp(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5ExclusionFiltersAllowIp))
         {
         }
 
-        [SkippableTheory]
-        [InlineData("allow-ip-url-combo")]
+        [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        public async Task TestAllowIp(string test)
+        public async Task RunTest()
         {
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
-            var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test });
+            var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] {  });
 
             var url = "/admin/?[$slice]=value";
             await TryStartApp();
@@ -108,22 +100,18 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var spanBeforeAsmData = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, ip: "192.0.240.56");
 
-            using var reader = new StringReader(Exclusions);
+            using var reader = new StringReader(Exclusions.ExampleExclusionFilters);
             using var jsonReader = new JsonTextReader(reader);
             var root = (JArray)JToken.ReadFrom(jsonReader);
 
+            var acknowledgeId = nameof(AspNetCore5ExclusionFiltersAllowIp) + Guid.NewGuid();
+
             var product = new AsmProduct();
-            agent.SetupRcm(
+            await agent.SetupRcmAndWait(
                 Output,
-                new[]
-                {
-                    (
-                        (object)new Payload { Exclusions = root }, "asm_exclusions"),
-                },
-                product.Name);
-            var request1 = await agent.WaitRcmRequestAndReturnLast();
-            // TODO add log and wait for this log
-            await Task.Delay(1500);
+                new[] { ((object)new Payload { Exclusions = root }, acknowledgeId) },
+                product.Name,
+                appliedServiceNames: new[] { acknowledgeId });
 
             var spanAfterAsmData = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, ip: "192.0.240.56");
             var spans = new List<MockSpan>();
@@ -131,35 +119,44 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spanAfterAsmData);
             await VerifySpans(spans.ToImmutableList(), settings);
         }
+    }
 
-        [SkippableTheory]
-        [InlineData("allow-user-agent", "/Health/?arg&[$slice]")]
-        [InlineData("allow-user-agent", "/health/params/appscan_fingerprint")]
+    public class AspNetCore5ExclusionFiltersAllowUserAgent : RcmBase
+    {
+        public AspNetCore5ExclusionFiltersAllowUserAgent(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5ExclusionFiltersAllowUserAgent))
+        {
+        }
+
+        [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        public async Task TestAllowUserAgent(string test, string url)
+        public async Task RunTest()
         {
             await TryStartApp();
             var agent = Fixture.Agent;
 
+            var url = "/health/params/appscan_fingerprint";
+
             var spanBeforeAsmData = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, userAgent: "MyAllowedScanner");
 
-            using var reader = new StringReader(Exclusions);
+            using var reader = new StringReader(Exclusions.ExampleExclusionFilters);
             using var jsonReader = new JsonTextReader(reader);
             var root = (JArray)JToken.ReadFrom(jsonReader);
 
+            var acknowledgeId = nameof(AspNetCore5ExclusionFiltersAllowUserAgent) + Guid.NewGuid();
+
             var product = new AsmProduct();
-            agent.SetupRcm(
+            await agent.SetupRcmAndWait(
                 Output,
                 new[]
                 {
                     (
-                        (object)new Payload { Exclusions = root }, "asm_exclusions"),
+                        (object)new Payload { Exclusions = root }, acknowledgeId),
                 },
-                product.Name);
-            var request1 = await agent.WaitRcmRequestAndReturnLast();
-            await Task.Delay(1500);
+                product.Name,
+                appliedServiceNames: new[] { acknowledgeId });
 
-            var settings = VerifyHelper.GetSpanVerifierSettings(test, url);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var spanAfterAsmData = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, userAgent: "MyAllowedScanner");
             var spans = new List<MockSpan>();
