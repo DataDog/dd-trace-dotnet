@@ -86,7 +86,6 @@ public static class Program
         using var span = _source.StartActivity("SetTagsActivity");
         // SetTag will update an existing key or add it if it doesn't exist
 
-        span?.AddTag("set-string", "test");
         span?.SetTag("set-string", "str");
 
         span?.SetTag("attribute-string", "str");
