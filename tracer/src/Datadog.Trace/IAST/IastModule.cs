@@ -39,7 +39,6 @@ internal static class IastModule
 
     public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId)
     {
-        var iast = Iast.Instance;
         if (algorithm == null || !InvalidHashAlgorithm(algorithm))
         {
             return null;
