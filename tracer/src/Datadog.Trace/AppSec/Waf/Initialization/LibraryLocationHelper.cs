@@ -180,7 +180,9 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         internal static string[] GetRuntimeIds(FrameworkDescription fwk)
             => fwk.OSPlatform switch
             {
-                OSPlatformName.MacOS => new[] { $"osx-x64" },
+                OSPlatformName.MacOS => fwk.ProcessArchitecture == ProcessArchitecture.Arm64
+                                            ? new[] { "osx-arm64" }
+                                            : new[] { "osx-x64" },
                 OSPlatformName.Windows => new[] { $"win-{fwk.ProcessArchitecture}" },
                 OSPlatformName.Linux => fwk.ProcessArchitecture == ProcessArchitecture.Arm64
                                             ? new[] { "linux-arm64" }

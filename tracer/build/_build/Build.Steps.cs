@@ -58,7 +58,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.5.1";
+    const string LibDdwafVersion = "1.6.2";
 
     const string OlderLibDdwafVersion = "1.4.0";
 
@@ -413,7 +413,7 @@ partial class Build
                   CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
               }
           }
-          else if (IsLinux)
+          else if (IsLinux | IsOsx)
           {
               var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
               var (destArch, _) = GetUnixArchitectureAndExtension();
@@ -422,15 +422,6 @@ partial class Build
 
               var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
               var dest = MonitoringHomeDirectory / destArch;
-              CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-          }
-          else if (IsOsx)
-          {
-              var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
-              var ddwafFileName = $"libddwaf.{ext}";
-
-              var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
-              var dest = MonitoringHomeDirectory / "osx";
               CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
           }
         });
@@ -2019,9 +2010,8 @@ partial class Build
     private (string Arch, string Ext) GetLibDdWafUnixArchitectureAndExtension() =>
         (IsOsx) switch
         {
-            // (true) => ($"osx-{UnixArchitectureIdentifier}", "dylib"), //LibDdWaf doesn't support osx-arm64 yet.
-            (true) => ($"osx-x64", "dylib"),
-            (false) => ($"linux-{UnixArchitectureIdentifier}", "so"), // LibDdWaf doesn't
+            (true) => ($"osx-{UnixArchitectureIdentifier}", "dylib"),
+            (false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
         };
 
     private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
