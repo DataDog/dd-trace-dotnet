@@ -121,7 +121,7 @@ namespace Datadog.Trace.Ci
                     _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
                     LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
                 }
-                else if (_settings.GitUploadEnabled)
+                else if (_settings.GitUploadEnabled != false)
                 {
                     // Update and upload git tree metadata.
                     Log.Information("ITR: Update and uploading git tree metadata.");
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Ci
             {
                 Log.Warning("ITR: Intelligent test runner cannot be activated. Agent doesn't support the event platform proxy endpoint.");
             }
-            else if (_settings.GitUploadEnabled)
+            else if (_settings.GitUploadEnabled != false)
             {
                 Log.Warning("ITR: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
             }
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Ci
                 return;
             }
 
-            Log.Information("Initializing CI Visibility from dd-trace");
+            Log.Information("Initializing CI Visibility from dd-trace / runner");
             _settings = settings;
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
@@ -493,8 +493,11 @@ namespace Datadog.Trace.Ci
             {
                 var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
 
-                // Upload the git metadata
-                await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                if (_settings.GitUploadEnabled != false)
+                {
+                    // Upload the git metadata
+                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                }
 
                 if (!_settings.Agentless || !string.IsNullOrEmpty(_settings.ApplicationKey))
                 {

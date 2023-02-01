@@ -44,7 +44,7 @@ namespace Datadog.Trace.Ci.Configuration
             CodeCoverageEnableJitOptimizations = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations) ?? true;
 
             // Git upload
-            GitUploadEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.GitUploadEnabled) ?? false;
+            GitUploadEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.GitUploadEnabled);
 
             // Force evp proxy
             ForceAgentsEvpProxy = source?.GetBool(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy) ?? false;
@@ -123,7 +123,7 @@ namespace Datadog.Trace.Ci.Configuration
         /// <summary>
         /// Gets a value indicating whether the Git Upload metadata is going to be used.
         /// </summary>
-        public bool GitUploadEnabled { get; }
+        public bool? GitUploadEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the Intelligent Test Runner Tests skipping feature is enabled.

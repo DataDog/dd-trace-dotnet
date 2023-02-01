@@ -109,13 +109,22 @@ namespace Datadog.Trace.Tools.Runner
                 testSkippingEnabled = ciVisibilitySettings.TestsSkippingEnabled == true;
 
                 // Initialize CI Visibility with the current settings
-                var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration.EventPlatformProxyEndpoint);
-                CIVisibility.InitializeFromRunner(ciVisibilitySettings, discoveryService, hasEvpProxy);
+                Log.Debug("RunHelper: Initialize CI Visibility for the runner.");
+                var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint);
+                if (Program.CallbackForTests is null)
+                {
+                    CIVisibility.InitializeFromRunner(ciVisibilitySettings, discoveryService, hasEvpProxy);
+                }
 
                 if (agentless || hasEvpProxy)
                 {
+                    Log.Debug("RunHelper: Uploading repository changes.");
                     var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
                     AsyncUtil.RunSync(() => itrClient.UploadRepositoryChangesAsync());
+
+                    // Once the repository has been uploaded we switch off the git upload in children processes
+                    profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled] = "0";
+                    EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled, "0");
 
                     // We can activate all features here (Agentless or EVP proxy mode)
                     createTestSession = true;
