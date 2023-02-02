@@ -154,6 +154,8 @@ namespace Datadog.Trace.Tools.Runner
 
             Log.Debug("RunCiCommand: CodeCoverageEnabled = {value}", codeCoverageEnabled);
             Log.Debug("RunCiCommand: TestSkippingEnabled = {value}", testSkippingEnabled);
+            ciVisibilitySettings.SetCodeCoverageEnabled(codeCoverageEnabled);
+            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
 
             // Let's set the code coverage datacollector if the code coverage is enabled
             if (codeCoverageEnabled)
@@ -219,8 +221,8 @@ namespace Datadog.Trace.Tools.Runner
             if (createTestSession && Program.CallbackForTests is null)
             {
                 session = TestSession.GetOrCreate(command, null, null, null, true);
-                session.SetTag(CommonTags.TestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
-                session.SetTag(CommonTags.CodeCoverageEnabled, codeCoverageEnabled ? "true" : "false");
+                session.SetTag(CommonTags.TestSessionTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
+                session.SetTag(CommonTags.TestSessionCodeCoverageEnabled, codeCoverageEnabled ? "true" : "false");
 
                 // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
                 // In that case we tell the backend no tests are going to be skipped.
