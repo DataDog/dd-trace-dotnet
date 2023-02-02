@@ -349,7 +349,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunProfilerLinuxIntegrationTests
+    command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerLinuxIntegrationTests
     volumes:
       - ./:/project
     cap_add:
