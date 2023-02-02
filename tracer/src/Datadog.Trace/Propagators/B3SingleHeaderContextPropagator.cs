@@ -27,8 +27,8 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
-            var traceId = IsValidTraceId(context.RawTraceId) ? context.RawTraceId : context.TraceId.ToString("x16");
-            var spanId = IsValidSpanId(context.RawSpanId) ? context.RawSpanId : context.SpanId.ToString("x16");
+            var traceId = IsValidTraceId(context.RawTraceId) ? context.RawTraceId : HexString.ToHexString(context.TraceId, pad16To32: false);
+            var spanId = IsValidSpanId(context.RawSpanId) ? context.RawSpanId : HexString.ToHexString(context.SpanId);
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
             var sampled = samplingPriority > 0 ? "1" : "0";
             carrierSetter.Set(carrier, B3, $"{traceId}-{spanId}-{sampled}");
@@ -77,11 +77,7 @@ namespace Datadog.Trace.Propagators
                     return false;
                 }
 
-                ulong traceId;
-
-                var success = rawTraceId.Length == 32 ?
-                                  HexString.TryParseUInt64(rawTraceId.Slice(16), out traceId) :
-                                  HexString.TryParseUInt64(rawTraceId, out traceId);
+                var success = HexString.TryParseTraceId(rawTraceId, out var traceId);
 
                 if (!success || traceId == 0)
                 {
@@ -96,9 +92,10 @@ namespace Datadog.Trace.Propagators
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
                 spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString());
 #else
-                string? rawTraceId = null;
-                string? rawSpanId = null;
-                char rawSampled = '0';
+                string? rawTraceId;
+                string? rawSpanId;
+                char rawSampled;
+
                 if (brValue.Length > 50 && brValue[32] == '-' && brValue[49] == '-')
                 {
                     // 128-bit trace id
@@ -118,11 +115,7 @@ namespace Datadog.Trace.Propagators
                     return false;
                 }
 
-                ulong traceId;
-
-                var success = rawTraceId.Length == 32 ?
-                                  HexString.TryParseUInt64(rawTraceId.Substring(16), out traceId) :
-                                  HexString.TryParseUInt64(rawTraceId, out traceId);
+                var success = HexString.TryParseTraceId(rawTraceId, out var traceId);
 
                 if (!success || traceId == 0)
                 {

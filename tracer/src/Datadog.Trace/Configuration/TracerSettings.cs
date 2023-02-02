@@ -606,6 +606,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal DbmPropagationLevel DbmPropagationMode { get; set; }
 
+        /// <summary>
         /// Gets or sets a value indicating whether the tracer will generate 128-bit trace ids
         /// instead of 64-bits trace ids.
         /// </summary>

@@ -6,6 +6,7 @@
 #nullable enable
 
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Activity.Handlers
 {
@@ -97,13 +98,13 @@ namespace Datadog.Trace.Activity.Handlers
                     // for propagation then the current active span will appear as parentId
                     // in the context propagation, and we will keep the entire trace.
 
-                    // TraceId
+                    // TraceId (always 32 chars long even when using 64-bit ids)
                     w3cActivity.TraceId = string.IsNullOrWhiteSpace(span.Context.RawTraceId) ?
-                                              span.TraceId.ToString("x32") : span.Context.RawTraceId;
+                                              HexString.ToHexString(span.TraceId, pad16To32: true) : span.Context.RawTraceId;
 
-                    // SpanId
+                    // SpanId (always 16 chars long)
                     w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(span.Context.RawSpanId) ?
-                                                   span.SpanId.ToString("x16") : span.Context.RawSpanId;
+                                                   HexString.ToHexString(span.SpanId) : span.Context.RawSpanId;
 
                     // We clear internals Id and ParentId values to force recalculation.
                     w3cActivity.RawId = null;

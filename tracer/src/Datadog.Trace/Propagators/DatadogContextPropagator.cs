@@ -24,7 +24,8 @@ namespace Datadog.Trace.Propagators
         {
             var invariantCulture = CultureInfo.InvariantCulture;
 
-            carrierSetter.Set(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(invariantCulture));
+            // x-datadog-trace-id only supports 64-bit trace ids, truncate by using TraceId128.Lower
+            carrierSetter.Set(carrier, HttpHeaderNames.TraceId, context.TraceId128.Lower.ToString(invariantCulture));
             carrierSetter.Set(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(invariantCulture));
 
             if (context.Origin != null)
@@ -63,6 +64,7 @@ namespace Datadog.Trace.Propagators
             spanContext = null;
 
             var traceId = ParseUtility.ParseUInt64(carrier, carrierGetter, HttpHeaderNames.TraceId);
+
             if (traceId is null or 0)
             {
                 // a valid traceId is required to use distributed tracing
@@ -76,7 +78,7 @@ namespace Datadog.Trace.Propagators
 
             var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
+            spanContext = new SpanContext((TraceId)traceId, parentId, samplingPriority, serviceName: null, origin)
                           {
                               PropagatedTags = traceTags
                           };

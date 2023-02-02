@@ -383,8 +383,8 @@ namespace Datadog.Trace
                 if (traceId == 0 &&
                     Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IW3CActivity { TraceId: { } activityTraceId })
                 {
-                    // if there's an existing Activity we try to use its TraceId, but if Activity.IdFormat
-                    // is not ActivityIdFormat.W3C, its TraceId & SpanId will be null or unparsable
+                    // if there's an existing Activity we try to use its TraceId,
+                    // but if Activity.IdFormat is not ActivityIdFormat.W3C, it may be null or unparsable
                     rawTraceId = activityTraceId;
                     HexString.TryParseTraceId(activityTraceId, out traceId);
                 }

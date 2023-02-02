@@ -40,8 +40,8 @@ namespace Datadog.Trace.Activity.Handlers
 
             // Propagate Trace and Parent Span ids
             SpanContext? parent = null;
-            ulong? traceId = null;
-            ulong? spanId = null;
+            TraceId traceId = 0;
+            ulong spanId = 0;
             string? rawTraceId = null;
             string? rawSpanId = null;
 
@@ -101,13 +101,15 @@ namespace Datadog.Trace.Activity.Handlers
 
                     if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
                     {
-                        // TraceId
+                        // TraceId (always 32 chars long even when using 64-bit ids)
                         w3cActivity.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
-                                                  activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
+                                                  HexString.ToHexString(activeSpan.TraceId, pad16To32: true) :
+                                                  activeSpan.Context.RawTraceId;
 
-                        // SpanId
+                        // SpanId (always 16 chars long)
                         w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
-                                                       activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
+                                                       HexString.ToHexString(activeSpan.SpanId) :
+                                                       activeSpan.Context.RawSpanId;
 
                         // We clear internals Id and ParentId values to force recalculation.
                         w3cActivity.RawId = null;
@@ -118,14 +120,19 @@ namespace Datadog.Trace.Activity.Handlers
                     }
                 }
 
-                // We convert the activity traceId and spanId to use it in the
-                // Datadog span creation.
-                if (w3cActivity.TraceId is { } w3cTraceId && w3cActivity.SpanId is { } w3cSpanId)
+                // if there's an existing Activity we try to use its TraceId and SpanId,
+                // but if Activity.IdFormat is not ActivityIdFormat.W3C, they may be null or unparsable
+                if (w3cActivity is { TraceId: { } activityTraceId, SpanId: { } activitySpanId })
                 {
-                    // If the Activity has an ActivityIdFormat.Hierarchical instead of W3C it's TraceId & SpanId will be null
-                    traceId ??= Convert.ToUInt64(w3cTraceId.Substring(16), 16);
-                    spanId = Convert.ToUInt64(w3cSpanId, 16);
-                    rawTraceId = w3cTraceId;
+                    if (traceId == 0)
+                    {
+                        _ = HexString.TryParseTraceId(activityTraceId, out traceId);
+                    }
+
+                    _ = HexString.TryParseUInt64(activitySpanId, out spanId);
+
+                    rawTraceId = activityTraceId;
+                    rawSpanId = activitySpanId;
                 }
             }
 
@@ -150,7 +157,7 @@ namespace Datadog.Trace.Activity.Handlers
                 Log.Error(ex, "Error processing the OnActivityStarted callback");
             }
 
-            static Scope CreateScopeFromActivity(T activity, SpanContext? parent, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId)
+            static Scope CreateScopeFromActivity(T activity, SpanContext? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
             {
                 var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
                 Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);

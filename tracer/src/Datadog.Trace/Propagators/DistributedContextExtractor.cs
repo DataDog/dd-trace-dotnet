@@ -46,7 +46,7 @@ namespace Datadog.Trace.Propagators
 
             var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId)
+            spanContext = new SpanContext((TraceId)traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId)
                           {
                               PropagatedTags = traceTags,
                               AdditionalW3CTraceState = w3CTraceState,

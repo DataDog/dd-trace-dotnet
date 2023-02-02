@@ -79,8 +79,9 @@ namespace Datadog.Trace.Sampling
 
         private SamplingDecision MakeSamplingDecision(Span span, float rate, int mechanism)
         {
-            // make a sampling decision as a function of traceId and sampling rate
-            var sample = SamplingHelpers.SampleByRate(span.TraceId, rate);
+            // make a sampling decision as a function of traceId and sampling rate.
+            // sampling decision uses lower 64-bits of 128-bit trace ids, truncate by using TraceId.Lower
+            var sample = SamplingHelpers.SampleByRate(span.TraceId.Lower, rate);
 
             var priority = mechanism switch
                            {

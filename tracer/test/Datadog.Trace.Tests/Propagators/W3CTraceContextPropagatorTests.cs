@@ -169,11 +169,11 @@ namespace Datadog.Trace.Tests.Propagators
         public void TryParseTraceParent(string header, ulong traceId, ulong spanId, bool sampled, string rawTraceId, string rawParentId)
         {
             var expected = new W3CTraceParent(
-                traceId,
-                spanId,
-                sampled,
-                rawTraceId,
-                rawParentId);
+                traceId: traceId,
+                parentId: spanId,
+                sampled: sampled,
+                rawTraceId: rawTraceId,
+                rawParentId: rawParentId);
 
             W3CTraceContextPropagator.TryParseTraceParent(header, out var traceParent).Should().BeTrue();
 

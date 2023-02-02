@@ -141,8 +141,8 @@ namespace Datadog.Trace
 
         private SpanContext(TraceId traceId, string serviceName)
         {
-            TraceId = traceId == 0
-                          ? RandomIdGenerator.Shared.NextTraceId()
+            TraceId128 = traceId == 0
+                          ? RandomIdGenerator.Shared.NextTraceId(useAllBits: false)
                           : traceId;
 
             ServiceName = serviceName;
@@ -321,8 +321,8 @@ namespace Datadog.Trace
             {
                 case Keys.TraceId:
                 case HttpHeaderNames.TraceId:
-                    // use the lower 64-bits for backwards compat, truncate using TraceId.Lower
-                    value = TraceId.Lower.ToString(invariant);
+                    // use the lower 64-bits for backwards compat, truncate using TraceId128.Lower
+                    value = TraceId128.Lower.ToString(invariant);
                     return true;
 
                 case Keys.ParentId:
