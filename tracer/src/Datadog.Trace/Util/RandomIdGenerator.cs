@@ -69,9 +69,9 @@ internal sealed class RandomIdGenerator
             _s2 = int64Span[2];
             _s3 = int64Span[3];
 #else
-            // we can't use `unsafe` and pointers in code called
-            // from manual instrumentation because it could be running in partial trust.
-            // if we prove someday that nobody is using partial trust,
+            // we can't use `unsafe` pointers in this code because it can be called
+            // from manual instrumentation which could be running in partial trust.
+            // if we ever drop support for partial trust,
             // we can rewrite this to use `unsafe` instead of allocating these arrays.
             var guidBytes1 = Guid.NewGuid().ToByteArray();
             var guidBytes2 = Guid.NewGuid().ToByteArray();
@@ -129,18 +129,50 @@ internal sealed class RandomIdGenerator
     }
 
     /// <summary>
-    /// Returns a random number that is greater than zero and less than or equal to Int64.MaxValue.
+    /// Returns a random number that is greater than zero
+    /// and less than or equal to Int64.MaxValue (0x7fffffffffffffff).
+    /// Used for backwards compatibility with tracers that parse ids as signed integers.
     /// </summary>
-    public ulong NextSpanId()
+    private ulong NextLegacyId()
     {
         while (true)
         {
-            // Get top 63 bits to get a value in the range [0, Int64.MaxValue], but try again
-            // if the value is 0 to get a value in the range (0, Int64.MaxValue].
-            var result = NextUInt64() >> 1;
+            // get a value in the range [0, UInt64.MaxValue]
+            var result = NextUInt64();
+
+            // shift bits right to get a value in the range [0, Int64.MaxValue]
+            result >>= 1;
 
             if (result > 0)
             {
+                // try again if the value is 0
+                return result;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns a random number that is greater than zero. If <paramref name="useUInt64MaxValue"/> is <c>false</c> (default),
+    /// the number is less than or equal to Int64.MaxValue (0x7fffffffffffffff). This is the default mode (aka uint63)
+    /// and is used for backwards compatibility with tracers that parse ids as signed integers.
+    /// Otherwise, it is less than or equal to UInt64.MaxValue (0xffffffffffffffff).
+    /// </summary>
+    public ulong NextSpanId(bool useUInt64MaxValue = false)
+    {
+        if (!useUInt64MaxValue)
+        {
+            // get a value in the range (0, Int64.MaxValue]
+            return NextLegacyId();
+        }
+
+        while (true)
+        {
+            // get a value in the range [0, UInt64.MaxValue]
+            var result = NextUInt64();
+
+            if (result > 0)
+            {
+                // try again if the value is 0
                 return result;
             }
         }
