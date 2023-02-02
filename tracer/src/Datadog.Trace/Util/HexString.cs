@@ -32,6 +32,20 @@ internal static class HexString
         return BitConverter.IsLittleEndian ? BinaryPrimitivesHelper.ReverseEndianness(value) : value;
     }
 
+#if !NETCOREAPP3_1_OR_GREATER
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static byte[] GetBuffer8()
+    {
+        return _buffer8 ??= new byte[8];
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static byte[] GetBuffer1()
+    {
+        return _buffer1 ??= new byte[1];
+    }
+#endif
+
     /// <summary>
     /// Converts the specified <see cref="ulong"/> value into hexadecimal characters, two for each byte,
     /// and places the result into the specified buffer.
@@ -156,12 +170,12 @@ internal static class HexString
     {
         value = default;
 
-        if (chars?.Length != 16)
+        if (chars == null! || chars.Length != 16)
         {
             return false;
         }
 
-        var bytes = _buffer8 ??= new byte[8];
+        var bytes = GetBuffer8();
 
         if (!TryParseBytes(chars, bytes))
         {
@@ -207,12 +221,12 @@ internal static class HexString
     {
         value = default;
 
-        if (chars?.Length != 2)
+        if (chars == null! || chars.Length != 2)
         {
             return false;
         }
 
-        var bytes = _buffer1 ??= new byte[1];
+        var bytes = GetBuffer1();
 
         if (TryParseBytes(chars, bytes))
         {
