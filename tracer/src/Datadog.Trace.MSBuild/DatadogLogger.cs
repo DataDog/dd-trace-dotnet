@@ -2,21 +2,16 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Logging.DirectSubmission;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
 
 namespace Datadog.Trace.MSBuild
@@ -28,15 +23,18 @@ namespace Datadog.Trace.MSBuild
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogLogger));
 
-        private Tracer _tracer = null;
-        private Span _buildSpan = null;
-        private ConcurrentDictionary<int, Span> _projects = new ConcurrentDictionary<int, Span>();
+        private readonly ConcurrentDictionary<int, object> _projects = new();
+        private TestSession? _testSession;
+        private TestModule? _testModule;
+        private bool _buildError;
 
         static DatadogLogger()
         {
             try
             {
                 Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
+                Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage, "0", EnvironmentVariableTarget.Process);
+                Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled, "0", EnvironmentVariableTarget.Process);
             }
             catch
             {
@@ -54,22 +52,16 @@ namespace Datadog.Trace.MSBuild
         /// <summary>
         /// Gets or sets the logger Parameters
         /// </summary>
-        public string Parameters { get; set; }
-
-        /// <summary>
-        /// Gets or sets the Number of processors
-        /// </summary>
-        public int NumberOfProcessors { get; set; } = 1;
+        public string? Parameters { get; set; }
 
         /// <inheritdoc />
-        public void Initialize(IEventSource eventSource, int nodeCount)
+        public void Initialize(IEventSource? eventSource, int nodeCount)
         {
-            NumberOfProcessors = nodeCount;
             Initialize(eventSource);
         }
 
         /// <inheritdoc />
-        public void Initialize(IEventSource eventSource)
+        public void Initialize(IEventSource? eventSource)
         {
             if (eventSource == null)
             {
@@ -78,7 +70,7 @@ namespace Datadog.Trace.MSBuild
 
             try
             {
-                _tracer = Tracer.Instance;
+                _testSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, "MSBuild");
 
                 // Attach to the eventSource events only if we successfully get the tracer instance.
                 eventSource.BuildStarted += EventSource_BuildStarted;
@@ -97,6 +89,7 @@ namespace Datadog.Trace.MSBuild
         /// <inheritdoc />
         public void Shutdown()
         {
+            _testSession?.Close(_buildError ? TestStatus.Fail : TestStatus.Pass);
         }
 
         private void EventSource_BuildStarted(object sender, BuildStartedEventArgs e)
@@ -105,28 +98,14 @@ namespace Datadog.Trace.MSBuild
             {
                 Log.Debug("Build Started");
 
-                _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
-                _buildSpan.SetMetric(Tags.Analytics, 1.0d);
-
-                if (_buildSpan.Context.TraceContext is { } traceContext)
+                _testModule = _testSession?.CreateModule(BuildTags.BuildOperationName, "MSBuild", string.Empty);
+                if (_testModule is not null)
                 {
-                    traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
-                    traceContext.Origin = TestTags.CIAppTestOriginName;
+                    _testModule.SetTag(BuildTags.BuildName, e.SenderName);
+                    _testModule.SetTag(BuildTags.BuildCommand, Environment.CommandLine);
+                    _testModule.SetTag(BuildTags.BuildWorkingFolder, Environment.CurrentDirectory);
+                    Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, _testModule.GetInternalSpan()));
                 }
-
-                _buildSpan.Type = SpanTypes.Build;
-                _buildSpan.SetTag(BuildTags.BuildName, e.SenderName);
-
-                _buildSpan.SetTag(BuildTags.BuildCommand, Environment.CommandLine);
-                _buildSpan.SetTag(BuildTags.BuildWorkingFolder, Environment.CurrentDirectory);
-
-                _buildSpan.SetTag(CommonTags.OSArchitecture, Environment.Is64BitOperatingSystem ? "x64" : "x86");
-                _buildSpan.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
-                _buildSpan.SetTag(CommonTags.RuntimeArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
-                _buildSpan.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
-                CIEnvironmentValues.Instance.DecorateSpan(_buildSpan);
-
-                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, _buildSpan));
             }
             catch (Exception ex)
             {
@@ -139,19 +118,21 @@ namespace Datadog.Trace.MSBuild
             try
             {
                 Log.Debug("Build Finished");
-                if (_buildSpan is null)
+                if (_testModule is null)
                 {
                     return;
                 }
 
-                _buildSpan.SetTag(BuildTags.BuildStatus, e.Succeeded ? BuildTags.BuildSucceededStatus : BuildTags.BuildFailedStatus);
+                _testModule.Tags.Status = TestTags.StatusPass;
                 if (!e.Succeeded)
                 {
-                    _buildSpan.Error = true;
+                    _buildError = true;
+                    _testModule.Tags.Status = TestTags.StatusFail;
+                    _testModule.SetErrorInfo(null, null, null);
                 }
 
-                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, _buildSpan));
-                _buildSpan.Finish(e.Timestamp);
+                Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, _testModule.GetInternalSpan()));
+                _testModule.Close(e.Timestamp - _testModule.StartTime);
             }
             catch (Exception ex)
             {
@@ -171,45 +152,60 @@ namespace Datadog.Trace.MSBuild
 
                 Log.Debug("Project Started");
 
-                int parentContext = e.ParentProjectBuildEventContext.ProjectContextId;
-                int context = e.BuildEventContext.ProjectContextId;
-                if (!_projects.TryGetValue(parentContext, out Span parentSpan))
+                var parentContext = e.ParentProjectBuildEventContext.ProjectContextId;
+                var context = e.BuildEventContext.ProjectContextId;
+                var projectName = !string.IsNullOrEmpty(e.ProjectFile) ? Path.GetFileName(e.ProjectFile) : null;
+                var targetName = string.IsNullOrEmpty(e.TargetNames) ? "build" : e.TargetNames?.ToLowerInvariant() ?? string.Empty;
+
+                if (_projects.TryGetValue(parentContext, out var parentContextObject))
                 {
-                    parentSpan = _buildSpan;
-                }
-
-                string projectName = Path.GetFileName(e.ProjectFile);
-
-                string targetName = string.IsNullOrEmpty(e.TargetNames) ? "build" : e.TargetNames?.ToLowerInvariant();
-                Span projectSpan = _tracer.StartSpan($"msbuild.{targetName}", parent: parentSpan.Context);
-
-                if (projectName != null)
-                {
-                    projectSpan.ServiceName = projectName;
-                }
-
-                projectSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
-                projectSpan.Type = SpanTypes.Build;
-
-                string targetFramework = null;
-                foreach (KeyValuePair<string, string> prop in e.GlobalProperties)
-                {
-                    projectSpan.SetTag($"{BuildTags.ProjectProperties}.{prop.Key}", prop.Value);
-                    if (string.Equals(prop.Key, "TargetFramework", StringComparison.OrdinalIgnoreCase))
+                    var parentSpan = parentContextObject is Test { } test ? test.GetInternalSpan() : (Span)parentContextObject;
+                    var projectSpan = Tracer.Instance.StartSpan($"msbuild.{targetName}", parent: parentSpan.Context);
+                    _projects.TryAdd(context, projectSpan);
+                    if (projectName != null)
                     {
-                        targetFramework = prop.Value;
+                        projectSpan.ServiceName = projectName;
                     }
+
+                    projectSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+                    projectSpan.Type = SpanTypes.Build;
+
+                    string? targetFramework = null;
+                    foreach (KeyValuePair<string, string> prop in e.GlobalProperties)
+                    {
+                        projectSpan.SetTag($"{BuildTags.ProjectProperties}.{prop.Key}", prop.Value);
+                        if (string.Equals(prop.Key, "TargetFramework", StringComparison.OrdinalIgnoreCase))
+                        {
+                            targetFramework = prop.Value;
+                        }
+                    }
+
+                    projectSpan.ResourceName = (string.IsNullOrEmpty(e.TargetNames) ? "Build" : e.TargetNames) + $"/{targetFramework}";
+                    projectSpan.SetTag(BuildTags.ProjectFile, e.ProjectFile);
+                    projectSpan.SetTag(BuildTags.ProjectSenderName, e.SenderName);
+                    projectSpan.SetTag(BuildTags.ProjectTargetNames, e.TargetNames);
+                    projectSpan.SetTag(BuildTags.ProjectToolsVersion, e.ToolsVersion);
+                    projectSpan.SetTag(BuildTags.BuildName, projectName);
+                    Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, projectSpan));
                 }
+                else if (_testModule is { } testModule)
+                {
+                    var testSuite = testModule.GetOrCreateSuite(targetName);
+                    var test = testSuite.CreateTest($"msbuild.{targetName}");
+                    _projects.TryAdd(context, test);
 
-                projectSpan.ResourceName = (string.IsNullOrEmpty(e.TargetNames) ? "Build" : e.TargetNames) + $"/{targetFramework}";
+                    foreach (KeyValuePair<string, string> prop in e.GlobalProperties)
+                    {
+                        test.SetTag($"{BuildTags.ProjectProperties}.{prop.Key}", prop.Value);
+                    }
 
-                projectSpan.SetTag(BuildTags.ProjectFile, e.ProjectFile);
-                projectSpan.SetTag(BuildTags.ProjectSenderName, e.SenderName);
-                projectSpan.SetTag(BuildTags.ProjectTargetNames, e.TargetNames);
-                projectSpan.SetTag(BuildTags.ProjectToolsVersion, e.ToolsVersion);
-                projectSpan.SetTag(BuildTags.BuildName, projectName);
-                _projects.TryAdd(context, projectSpan);
-                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, projectSpan));
+                    test.SetTag(BuildTags.ProjectFile, e.ProjectFile);
+                    test.SetTag(BuildTags.ProjectSenderName, e.SenderName);
+                    test.SetTag(BuildTags.ProjectTargetNames, e.TargetNames);
+                    test.SetTag(BuildTags.ProjectToolsVersion, e.ToolsVersion);
+                    test.SetTag(BuildTags.BuildName, projectName);
+                    Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, test.GetInternalSpan()));
+                }
             }
             catch (Exception ex)
             {
@@ -221,19 +217,35 @@ namespace Datadog.Trace.MSBuild
         {
             try
             {
-                int context = e.BuildEventContext.ProjectContextId;
-                if (_projects.TryRemove(context, out Span projectSpan))
+                var context = e.BuildEventContext.ProjectContextId;
+                if (_projects.TryRemove(context, out var projectObject))
                 {
                     Log.Debug("Project Finished");
 
-                    projectSpan.SetTag(BuildTags.BuildStatus, e.Succeeded ? BuildTags.BuildSucceededStatus : BuildTags.BuildFailedStatus);
-                    if (!e.Succeeded)
+                    if (projectObject is Span { } projectSpan)
                     {
-                        projectSpan.Error = true;
-                    }
+                        projectSpan.SetTag(BuildTags.BuildStatus, e.Succeeded ? BuildTags.BuildSucceededStatus : BuildTags.BuildFailedStatus);
+                        if (!e.Succeeded)
+                        {
+                            projectSpan.Error = true;
+                        }
 
-                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, projectSpan));
-                    projectSpan.Finish(e.Timestamp);
+                        Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, projectSpan));
+                        projectSpan.Finish(e.Timestamp);
+                        _projects.TryRemove(context, out _);
+                    }
+                    else if (projectObject is Test { } projectTest)
+                    {
+                        if (!e.Succeeded)
+                        {
+                            projectTest.SetErrorInfo(null, null, null);
+                        }
+
+                        Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, projectTest.GetInternalSpan()));
+                        projectTest.Close(e.Succeeded ? TestStatus.Pass : TestStatus.Fail, e.Timestamp - projectTest.StartTime);
+                        projectTest.Suite.Close();
+                        _projects.TryRemove(context, out _);
+                    }
                 }
             }
             catch (Exception ex)
@@ -253,57 +265,52 @@ namespace Datadog.Trace.MSBuild
 
                 Log.Debug("Error Raised");
 
-                int context = e.BuildEventContext.ProjectContextId;
-                if (_projects.TryGetValue(context, out Span projectSpan))
+                var context = e.BuildEventContext.ProjectContextId;
+                if (_projects.TryGetValue(context, out var projectObject))
                 {
-                    string correlation = $"[{CorrelationIdentifier.TraceIdKey}={projectSpan.TraceId},{CorrelationIdentifier.SpanIdKey}={projectSpan.SpanId}]";
-                    string message = e.Message;
-                    string type = $"{e.SenderName?.ToUpperInvariant()} ({e.Code}) Error";
-                    string code = e.Code;
-                    int? lineNumber = e.LineNumber > 0 ? (int?)e.LineNumber : null;
-                    int? columnNumber = e.ColumnNumber > 0 ? (int?)e.ColumnNumber : null;
-                    int? endLineNumber = e.EndLineNumber > 0 ? (int?)e.EndLineNumber : null;
-                    int? endColumnNumber = e.EndColumnNumber > 0 ? (int?)e.EndColumnNumber : null;
-                    string projectFile = e.ProjectFile;
-                    string filePath = null;
-                    string stack = null;
-                    string subCategory = e.Subcategory;
-
+                    var projectSpan = projectObject is Test { } projectTest ? projectTest.GetInternalSpan() : (Span)projectObject;
                     projectSpan.Error = true;
-                    projectSpan.SetTag(BuildTags.ErrorMessage, message);
-                    projectSpan.SetTag(BuildTags.ErrorType, type);
-                    projectSpan.SetTag(BuildTags.ErrorCode, code);
-                    projectSpan.SetTag(BuildTags.ErrorStartLine, lineNumber.ToString());
-                    projectSpan.SetTag(BuildTags.ErrorStartColumn, columnNumber.ToString());
-                    projectSpan.SetTag(BuildTags.ErrorProjectFile, projectFile);
+                    projectSpan.SetTag(BuildTags.ErrorMessage, e.Message);
+                    projectSpan.SetTag(BuildTags.ErrorType, $"{e.SenderName?.ToUpperInvariant()} ({e.Code}) Error");
+                    projectSpan.SetTag(BuildTags.ErrorCode, e.Code);
+                    projectSpan.SetTag(BuildTags.ErrorProjectFile, e.ProjectFile);
 
                     if (!string.IsNullOrEmpty(e.File))
                     {
-                        filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
+                        var filePath = Path.Combine(Path.GetDirectoryName(e.ProjectFile) ?? string.Empty, e.File);
                         projectSpan.SetTag(BuildTags.ErrorFile, filePath);
-                        if (lineNumber.HasValue && lineNumber != 0)
+                        if (e.LineNumber > 0)
                         {
-                            stack = $" at Source code in {filePath}:line {e.LineNumber}";
-                            projectSpan.SetTag(BuildTags.ErrorStack, stack);
+                            projectSpan.SetTag(BuildTags.ErrorStack, $" at Source code in {filePath}:line {e.LineNumber}");
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(subCategory))
+                    if (!string.IsNullOrEmpty(e.Subcategory))
                     {
-                        projectSpan.SetTag(BuildTags.ErrorSubCategory, subCategory);
+                        projectSpan.SetTag(BuildTags.ErrorSubCategory, e.Subcategory);
                     }
 
-                    if (endLineNumber.HasValue && endLineNumber != 0)
+                    if (e.LineNumber > 0)
                     {
-                        projectSpan.SetTag(BuildTags.ErrorEndLine, endLineNumber.ToString());
+                        projectSpan.SetTag(BuildTags.ErrorStartLine, e.LineNumber.ToString());
                     }
 
-                    if (endColumnNumber.HasValue && endColumnNumber != 0)
+                    if (e.ColumnNumber > 0)
                     {
-                        projectSpan.SetTag(BuildTags.ErrorEndColumn, endColumnNumber.ToString());
+                        projectSpan.SetTag(BuildTags.ErrorStartColumn, e.ColumnNumber.ToString());
                     }
 
-                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Error, e.Message, projectSpan));
+                    if (e.EndLineNumber > 0)
+                    {
+                        projectSpan.SetTag(BuildTags.ErrorEndLine, e.EndLineNumber.ToString());
+                    }
+
+                    if (e.EndColumnNumber > 0)
+                    {
+                        projectSpan.SetTag(BuildTags.ErrorEndColumn, e.EndColumnNumber.ToString());
+                    }
+
+                    Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, projectSpan));
                 }
             }
             catch (Exception ex)
@@ -323,91 +330,16 @@ namespace Datadog.Trace.MSBuild
 
                 Log.Debug("Warning Raised");
 
-                int context = e.BuildEventContext.ProjectContextId;
-                if (_projects.TryGetValue(context, out Span projectSpan))
+                var context = e.BuildEventContext.ProjectContextId;
+                if (_projects.TryGetValue(context, out var projectObject))
                 {
-                    string correlation = $"[{CorrelationIdentifier.TraceIdKey}={projectSpan.TraceId},{CorrelationIdentifier.SpanIdKey}={projectSpan.SpanId}]";
-                    string message = e.Message;
-                    string type = $"{e.SenderName?.ToUpperInvariant()} ({e.Code}) Warning";
-                    string code = e.Code;
-                    int? lineNumber = e.LineNumber > 0 ? (int?)e.LineNumber : null;
-                    int? columnNumber = e.ColumnNumber > 0 ? (int?)e.ColumnNumber : null;
-                    int? endLineNumber = e.EndLineNumber > 0 ? (int?)e.EndLineNumber : null;
-                    int? endColumnNumber = e.EndColumnNumber > 0 ? (int?)e.EndColumnNumber : null;
-                    string projectFile = e.ProjectFile;
-                    string filePath = null;
-                    string stack = null;
-                    string subCategory = e.Subcategory;
-
-                    if (!string.IsNullOrEmpty(e.File))
-                    {
-                        filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
-                        if (lineNumber.HasValue && lineNumber != 0)
-                        {
-                            stack = $" at Source code in {filePath}:line {e.LineNumber}";
-                        }
-                    }
-
-                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Warning, e.Message, projectSpan));
+                    var projectSpan = projectObject is Test { } projectTest ? projectTest.GetInternalSpan() : (Span)projectObject;
+                    Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "warning", e.Message, projectSpan));
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in WarningRaised event");
-            }
-        }
-
-        private class MsBuildLogEvent : DatadogLogEvent
-        {
-            private readonly string _level;
-            private readonly string _message;
-            private readonly Context? _context;
-
-            public MsBuildLogEvent(string level, string message, Span span)
-            {
-                _level = level;
-                _message = message;
-                _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.Context.Origin);
-            }
-
-            public override void Format(StringBuilder sb, LogFormatter formatter)
-            {
-                formatter.FormatLog<Context?>(
-                    sb,
-                    in _context,
-                    DateTime.UtcNow,
-                    _message,
-                    eventId: null,
-                    logLevel: _level,
-                    exception: null,
-                    (JsonTextWriter writer, in Context? state) =>
-                    {
-                        if (state.HasValue)
-                        {
-                            writer.WritePropertyName("dd.trace_id");
-                            writer.WriteValue($"{state.Value.TraceId}");
-                            writer.WritePropertyName("dd.span_id");
-                            writer.WriteValue($"{state.Value.SpanId}");
-                            writer.WritePropertyName("_dd.origin");
-                            writer.WriteValue($"{state.Value.Origin}");
-                        }
-
-                        return default;
-                    });
-            }
-
-            private readonly struct Context
-            {
-                public readonly ulong TraceId;
-                public readonly ulong SpanId;
-                public readonly string Origin;
-
-                public Context(ulong traceId, ulong spanId, string origin)
-                {
-                    TraceId = traceId;
-                    SpanId = spanId;
-                    Origin = origin;
-                }
             }
         }
     }

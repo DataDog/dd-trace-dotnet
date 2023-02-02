@@ -107,12 +107,20 @@ public sealed class Test
     /// <param name="type">Error type</param>
     /// <param name="message">Error message</param>
     /// <param name="callStack">Error callstack</param>
-    public void SetErrorInfo(string type, string message, string? callStack)
+    public void SetErrorInfo(string? type, string? message, string? callStack)
     {
         var span = _scope.Span;
         span.Error = true;
-        span.SetTag(Trace.Tags.ErrorType, type);
-        span.SetTag(Trace.Tags.ErrorMsg, message);
+        if (type is not null)
+        {
+            span.SetTag(Trace.Tags.ErrorType, type);
+        }
+
+        if (message is not null)
+        {
+            span.SetTag(Trace.Tags.ErrorMsg, message);
+        }
+
         if (callStack is not null)
         {
             span.SetTag(Trace.Tags.ErrorStack, callStack);
