@@ -12,7 +12,7 @@ namespace Datadog.Trace.Util;
 /// <summary>
 /// Generates random numbers suitable for use as Datadog trace ids and span ids.
 /// </summary>
-internal sealed class RandomIdGenerator
+internal sealed class RandomIdGenerator : IRandomIdGenerator
 {
     // On .NET 6+, we delegate to System.Random.Shared which can be safely accessed from
     // multiple threads and implements xoshiro128** or xoshiro256**.

@@ -33,7 +33,7 @@ namespace Datadog.Trace.Util;
 /// <summary>
 /// Generates random numbers suitable for use as Datadog trace ids and span ids.
 /// </summary>
-internal sealed class RandomIdGenerator
+internal sealed class RandomIdGenerator : IRandomIdGenerator
 {
     [ThreadStatic]
     private static RandomIdGenerator? _shared;
