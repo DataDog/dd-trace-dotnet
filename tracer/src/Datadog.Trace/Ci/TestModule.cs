@@ -362,7 +362,8 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
-        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
+        if (CIVisibility.Settings.CodeCoverageEnabled == true &&
+            CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
             coverageHandler.GetCodeCoveragePercentage() is { } globalCoverage)
         {
             // We only report global code coverage if we don't skip any test
