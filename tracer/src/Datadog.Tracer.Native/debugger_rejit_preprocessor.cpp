@@ -243,7 +243,7 @@ DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandle
 
 const std::unique_ptr<RejitHandlerModuleMethod>
 DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
-                                        const FunctionInfo& functionInfo) 
+                                        const FunctionInfo& functionInfo) const
 {
     return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo, std::make_unique<DebuggerMethodRewriter>(m_corProfiler));
 }

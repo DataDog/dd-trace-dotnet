@@ -62,7 +62,7 @@ private:
                             std::vector<TypeSignature>& methodArguments, int numArgs, ILRewriter& rewriter,
                             std::vector<TypeSignature>& methodLocals, int numLocals, ILRewriterWrapper& rewriterWrapper,
                             ULONG lineProbeCallTargetStateIndex, std::vector<EHClause>& lineProbesEHClauses,
-                            bool isAsyncMethod);
+                            bool isAsyncMethod) const;
     HRESULT ApplyMethodProbe(ModuleID module_id, ModuleMetadata& module_metadata,
                              FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken function_token,
                              TypeSignature retFuncArg, bool isVoid, bool isStatic,
@@ -79,10 +79,10 @@ private:
                                        const std::vector<TypeSignature>& methodLocals, int numLocals,
                                        ULONG callTargetStateIndex, ULONG callTargetReturnIndex,
                                        std::vector<EHClause>& newClauses, ILInstr** setResultEndMethodTryStartInstr,
-                                       ILInstr** endMethodOriginalCodeFirstInstr);
+                                       ILInstr** endMethodOriginalCodeFirstInstr) const;
     static HRESULT LoadProbeIdIntoStack(ModuleID moduleId, const ModuleMetadata& moduleMetadata, mdToken functionToken,
                                         const shared::WSTRING& methodProbeId, const ILRewriterWrapper& rewriterWrapper);
-    void LogDebugCallerInfo(const FunctionInfo* caller, int instrumentedMethodIndex) const;
+    static void LogDebugCallerInfo(const FunctionInfo* caller, int instrumentedMethodIndex) ;
     HRESULT ApplyAsyncMethodProbe(ModuleID moduleId, ModuleMetadata& moduleMetadata,
                                   FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken functionToken,
                                   bool isStatic, TypeSignature* methodReturnType, const shared::WSTRING& methodProbeId,
@@ -107,7 +107,7 @@ public:
     static HRESULT IsTypeImplementIAsyncStateMachine(const ComPtr<IMetaDataImport2>& metadataImport,
                                                      ULONG32 typeToken, bool& isTypeImplementIAsyncStateMachine);
     HRESULT IsAsyncMethodProbe(const ComPtr<IMetaDataImport2>& metadataImport, const FunctionInfo* caller,
-                               bool& isAsyncMethod) ;
+                               bool& isAsyncMethod) const;
     static HRESULT GetTaskReturnType(const ILInstr* instruction, ModuleMetadata& moduleMetadata,
                                      const std::vector<TypeSignature>& methodLocals, TypeSignature* returnType);
     static void MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
