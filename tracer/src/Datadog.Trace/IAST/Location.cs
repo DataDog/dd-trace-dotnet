@@ -9,11 +9,14 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
-    public Location(string? path, int? line)
+    public Location(string? path, int? line, ulong? spanId)
     {
         this.Path = path;
         this.Line = line;
+        this.SpanId = spanId == 0 ? null : spanId;
     }
+
+    public ulong? SpanId { get; }
 
     public string? Path { get; }
 
@@ -21,6 +24,6 @@ internal readonly struct Location
 
     public override int GetHashCode()
     {
-        return IastUtils.GetHashCode(Path, Line);
+        return IastUtils.GetHashCode(Path, Line, SpanId);
     }
 }
