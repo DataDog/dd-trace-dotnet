@@ -160,8 +160,7 @@ namespace Datadog.Trace.MSBuild
                 if (_projects.TryGetValue(parentContext, out var parentContextObject))
                 {
                     var parentSpan = parentContextObject is Test { } test ? test.GetInternalSpan() : (Span)parentContextObject;
-                    var projectSpan = Tracer.Instance.StartSpan($"msbuild.{targetName}", parent: parentSpan.Context);
-                    _projects.TryAdd(context, projectSpan);
+                    var projectSpan = Tracer.Instance.StartSpan(targetName, parent: parentSpan.Context);
                     if (projectName != null)
                     {
                         projectSpan.ServiceName = projectName;
@@ -187,12 +186,12 @@ namespace Datadog.Trace.MSBuild
                     projectSpan.SetTag(BuildTags.ProjectToolsVersion, e.ToolsVersion);
                     projectSpan.SetTag(BuildTags.BuildName, projectName);
                     Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, projectSpan));
+                    _projects.TryAdd(context, projectSpan);
                 }
                 else if (_testModule is { } testModule)
                 {
-                    var testSuite = testModule.GetOrCreateSuite(targetName);
-                    var test = testSuite.CreateTest($"msbuild.{targetName}");
-                    _projects.TryAdd(context, test);
+                    var testSuite = testModule.GetOrCreateSuite(projectName ?? "project");
+                    var test = testSuite.CreateTest(projectName ?? "project");
 
                     foreach (KeyValuePair<string, string> prop in e.GlobalProperties)
                     {
@@ -205,6 +204,7 @@ namespace Datadog.Trace.MSBuild
                     test.SetTag(BuildTags.ProjectToolsVersion, e.ToolsVersion);
                     test.SetTag(BuildTags.BuildName, projectName);
                     Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, test.GetInternalSpan()));
+                    _projects.TryAdd(context, test);
                 }
             }
             catch (Exception ex)
