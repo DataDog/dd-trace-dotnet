@@ -19,7 +19,10 @@ internal static class HexString
 {
 #if !NETCOREAPP3_1_OR_GREATER
     [ThreadStatic]
-    private static byte[]? _buffer8; // always 8 bytes for ulong
+    private static byte[]? _buffer16; // always 16 bytes for TraceId
+
+    [ThreadStatic]
+    private static byte[]? _buffer8; // always 8 bytes for UInt64 (ulong)
 
     [ThreadStatic]
     private static byte[]? _buffer1; // always 1 byte
@@ -32,7 +35,31 @@ internal static class HexString
         return BitConverter.IsLittleEndian ? BinaryPrimitivesHelper.ReverseEndianness(value) : value;
     }
 
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static TraceId ReverseIfLittleEndian(TraceId value)
+    {
+        if (BitConverter.IsLittleEndian)
+        {
+            var upper = BinaryPrimitivesHelper.ReverseEndianness(value.Upper);
+            var lower = BinaryPrimitivesHelper.ReverseEndianness(value.Lower);
+
+            // We're intentionally not flipping upper/lower around. This struct doesn't act like a UInt128,
+            // where the order of the field needs to be reversed. Instead, Upper is always Upper
+            // and Lower is always Lower. We may need to revisit this if we ever use the UInt128 added in .NET 7.
+            return new TraceId(upper, lower);
+        }
+
+        return value;
+    }
+
 #if !NETCOREAPP3_1_OR_GREATER
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static byte[] GetBuffer16()
+    {
+        return _buffer16 ??= new byte[16];
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static byte[] GetBuffer8()
     {
@@ -100,6 +127,37 @@ internal static class HexString
         return ToHexString(bytes, lowerCase);
     }
 
+    /// <summary>
+    /// Converts the specified <see cref="TraceId"/> value into a hexadecimal string.
+    /// </summary>
+    [Pure]
+    public static string ToHexString(TraceId value, bool pad16To32 = true, bool lowerCase = true)
+    {
+        if (!pad16To32 && value.Upper == 0)
+        {
+            // trace id fits in 16 hex characters
+            return ToHexString(value.Lower);
+        }
+
+        value = ReverseIfLittleEndian(value);
+        var upper = value.Upper;
+        var lower = value.Lower;
+
+#if NETCOREAPP3_1_OR_GREATER
+        // NOTE: don't use MemoryMarshal.Write(bytes, ref value) because .NET will
+        // flip upper/lower around on little endian architectures
+        Span<byte> bytes = stackalloc byte[16];
+        System.Runtime.InteropServices.MemoryMarshal.Write(bytes, ref upper);
+        System.Runtime.InteropServices.MemoryMarshal.Write(bytes[8..], ref lower);
+#else
+        var bytes = GetBuffer16();
+        BitConverter.GetBytes(upper).CopyTo(bytes, 0);
+        BitConverter.GetBytes(lower).CopyTo(bytes, sizeof(ulong));
+#endif
+
+        return ToHexString(bytes, lowerCase);
+    }
+
 #if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Tries to parse the specified hexadecimal string into the specified byte array.
@@ -135,6 +193,83 @@ internal static class HexString
 
         return HexConverter.TryDecodeFromUtf16(chars, bytes);
     }
+
+    /// <summary>
+    /// Tries to parse the specified hexadecimal string into a <see cref="ulong"/> value.
+    /// </summary>
+    /// <param name="chars">The hexadecimal string to parse. Must contain exactly 16 characters, so it may need to be left-padded with zeros.</param>
+    /// <param name="value">The integer value parsed out of the hexadecimal string.</param>
+    /// <returns><c>true</c> if it parsed successfully, <c>false</c> otherwise.</returns>
+#if NETCOREAPP3_1_OR_GREATER
+    [Pure]
+    public static bool TryParseTraceId(ReadOnlySpan<char> chars, out TraceId value)
+    {
+        value = default;
+        ulong lower;
+
+        if (chars.Length == 16)
+        {
+            // allow parsing a 64-bit trace id
+            var success = TryParseUInt64(chars, out lower);
+            value = new TraceId(0, lower);
+            return success;
+        }
+
+        if (chars.Length != 32)
+        {
+            return false;
+        }
+
+        Span<byte> bytes = stackalloc byte[16];
+
+        if (!TryParseBytes(chars, bytes))
+        {
+            return false;
+        }
+
+        var upper = BitConverter.ToUInt64(bytes);
+        lower = BitConverter.ToUInt64(bytes[8..]);
+        value = ReverseIfLittleEndian(new TraceId(upper, lower));
+        return true;
+    }
+#else
+    [Pure]
+    public static bool TryParseTraceId(string chars, out TraceId value)
+    {
+        value = default;
+        ulong lower;
+
+        if (chars == null!)
+        {
+            return false;
+        }
+
+        if (chars.Length == 16)
+        {
+            // allow parsing a 64-bit trace id
+            var success = TryParseUInt64(chars, out lower);
+            value = new TraceId(0, lower);
+            return success;
+        }
+
+        if (chars.Length != 32)
+        {
+            return false;
+        }
+
+        var bytes = GetBuffer16();
+
+        if (!TryParseBytes(chars, bytes))
+        {
+            return false;
+        }
+
+        var upper = BitConverter.ToUInt64(bytes, 0);
+        lower = BitConverter.ToUInt64(bytes, 8);
+        value = ReverseIfLittleEndian(new TraceId(upper, lower));
+        return true;
+    }
+#endif
 
     /// <summary>
     /// Tries to parse the specified hexadecimal string into a <see cref="ulong"/> value.

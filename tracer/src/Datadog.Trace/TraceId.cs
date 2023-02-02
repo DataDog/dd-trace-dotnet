@@ -52,6 +52,6 @@ internal readonly struct TraceId : IEquatable<TraceId>
     [Pure]
     public override string ToString()
     {
-        return $"{HexString.ToHexString(Upper)}{HexString.ToHexString(Lower)}";
+        return HexString.ToHexString(this, pad16To32: true, lowerCase: true);
     }
 }
