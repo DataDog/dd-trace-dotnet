@@ -20,7 +20,7 @@ namespace Datadog.Trace.Iast.Dataflow;
 /// </summary>
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
-internal class AspectAttribute : Attribute
+internal abstract class AspectAttribute : Attribute
 {
     private static Regex nameSplitter = new Regex(@"(?:([^|]+)\|)?(([^:]+)(?:::[^()]+\(.*\))?)", RegexOptions.Compiled); // 1->Assembly 2->Function 3->Type
     private readonly List<object> parameters = new List<object>();

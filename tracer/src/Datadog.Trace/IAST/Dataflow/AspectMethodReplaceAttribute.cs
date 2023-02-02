@@ -8,7 +8,7 @@
 namespace Datadog.Trace.Iast.Dataflow;
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-internal class AspectMethodReplaceAttribute : AspectAttribute
+internal sealed class AspectMethodReplaceAttribute : AspectAttribute
 {
     public AspectMethodReplaceAttribute(string targetMethod)
         : base(targetMethod)

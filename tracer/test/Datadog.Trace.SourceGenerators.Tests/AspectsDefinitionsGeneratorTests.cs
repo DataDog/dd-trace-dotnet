@@ -94,9 +94,9 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
-"""[AspectClass("mscorlib,netstandard,System.Private.CoreLib",[StringOptimization],Propagation,[])] MyTests.TestAspectClass""",
-"""  [AspectMethodReplace("System.String::Concat(System.String,System.String)","",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)""",
-"""  [AspectMethodReplace("System.String::Concat(System.Object,System.Object,System.Object)","",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.Object,System.Object,System.Object)""",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.Object,System.Object,System.Object)",
         };
     }
 }
@@ -146,9 +146,9 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
-"""[AspectClass("mscorlib,netstandard,System.Private.CoreLib",[StringOptimization],Propagation,[])] MyTests.TestAspectClass""",
-"""  [AspectMethodReplace("System.String::Concat(System.String,System.String)","",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)""",
-"""  [AspectMethodReplace("System.String::Concat(System.Object,System.Object,System.Object)","",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)""",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
         };
     }
 }
@@ -217,12 +217,12 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
-"""[AspectClass("mscorlib,netstandard,System.Private.CoreLib",[StringOptimization],Propagation,[])] MyTests.TestAspectClass1""",
-"""  [AspectMethodReplace("System.String::Concat(System.String,System.String)","",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)""",
-"""  [AspectMethodReplace("System.String::Concat(System.Object,System.Object,System.Object)","",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.Object,System.Object,System.Object)""",
-"""[AspectClass("mscorlib,netstandard,System.Private.CoreLib",[StringOptimization],Sink,[WeakCipher,WeakHash])] MyTests.TestAspectClass2""",
-"""  [AspectMethodReplace("System.String::Concat(System.String,System.String)","",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)""",
-"""  [AspectMethodReplace("System.String::Concat(System.Object,System.Object,System.Object)","",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.Object,System.Object,System.Object)""",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass1",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.Object,System.Object,System.Object)",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Sink,[WeakCipher,WeakHash])] MyTests.TestAspectClass2",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.Object,System.Object,System.Object)",
         };
     }
 }
@@ -280,10 +280,10 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
-"""[AspectClass("mscorlib,netstandard,System.Private.CoreLib",[StringLiterals_Any,StringLiterals],Source,[WeakCipher,WeakHash])] MyTests.TestAspectClass1""",
-"""  [AspectMethodReplace("System.String::Concat(System.String,System.String)","",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)""",
-"""[AspectClass("mscorlib,netstandard,System.Private.CoreLib",[StringLiteral_0,StringLiteral_1],Sink,[WeakCipher])] MyTests.TestAspectClass2""",
-"""  [AspectMethodReplace("System.Text.StringBuilder::.ctor(System.String)","System.Text.StringBuilder",[0],[False],[StringLiterals_Any],Propagation,[])] Init(System.String)""",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiterals_Any,StringLiterals],Source,[WeakCipher,WeakHash])] MyTests.TestAspectClass1",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiteral_0,StringLiteral_1],Sink,[WeakCipher])] MyTests.TestAspectClass2",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::.ctor(System.String)\",\"System.Text.StringBuilder\",[0],[False],[StringLiterals_Any],Propagation,[])] Init(System.String)",
         };
     }
 }
@@ -332,8 +332,8 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
-"""[AspectClass("mscorlib,netstandard,System.Private.CoreLib",[None],Propagation,[])] MyTests.TestAspectClass1""",
-"""  [AspectMethodReplace("System.String::Concat(System.String,System.String[])","",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String[])""",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[])] MyTests.TestAspectClass1",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String[])\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String[])",
         };
     }
 }
@@ -363,7 +363,7 @@ using Datadog.Trace.Iast.Helpers;
 namespace Datadog.Trace.Iast.Dataflow
 {
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
-internal class AspectAttribute : Attribute
+internal abstract class AspectAttribute : Attribute
 {
     private static Regex nameSplitter = new Regex(@"(?:([^|]+)\|)?(([^:]+)(?:::[^()]+\(.*\))?)", RegexOptions.Compiled); // 1->Assembly 2->Function 3->Type
     private readonly List<object> parameters = new List<object>();
@@ -498,7 +498,7 @@ internal class AspectAttribute : Attribute
     }
 }
 
-internal class AspectClassAttribute : Attribute
+internal sealed class AspectClassAttribute : Attribute
 {
     private readonly List<object> parameters = new List<object>();
 
@@ -551,7 +551,7 @@ internal class AspectClassAttribute : Attribute
     }
 }
 
-internal class AspectCtorReplaceAttribute : AspectAttribute
+internal sealed class AspectCtorReplaceAttribute : AspectAttribute
 {
     public AspectCtorReplaceAttribute(string targetMethod)
         : base(targetMethod)
@@ -590,7 +590,7 @@ internal enum AspectFilter
     StringLiteral_1,
 }
 
-internal class AspectMethodInsertAfterAttribute : AspectAttribute
+internal sealed class AspectMethodInsertAfterAttribute : AspectAttribute
 {
     public AspectMethodInsertAfterAttribute(string targetMethod)
         : base(targetMethod)
@@ -603,7 +603,7 @@ internal class AspectMethodInsertAfterAttribute : AspectAttribute
     }
 }
 
-internal class AspectMethodInsertBeforeAttribute : AspectAttribute
+internal sealed class AspectMethodInsertBeforeAttribute : AspectAttribute
 {
     public AspectMethodInsertBeforeAttribute(string targetMethod, int paramShift = 0, bool boxParam = false)
         : base(targetMethod, string.Empty, paramShift, boxParam)
@@ -621,7 +621,7 @@ internal class AspectMethodInsertBeforeAttribute : AspectAttribute
     }
 }
 
-internal class AspectMethodReplaceAttribute : AspectAttribute
+internal sealed class AspectMethodReplaceAttribute : AspectAttribute
 {
     public AspectMethodReplaceAttribute(string targetMethod)
         : base(targetMethod)

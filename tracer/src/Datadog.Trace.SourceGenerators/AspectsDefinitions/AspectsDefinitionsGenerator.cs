@@ -248,7 +248,9 @@ namespace Datadog.Trace.ClrProfiler
 
         foreach (var definition in definitions)
         {
-            sb.AppendLine(@$"""""""{definition}"""""",");
+            sb.Append("\"");
+            sb.Append(definition.Replace("\"", "\\\""));
+            sb.AppendLine("\",");
         }
 
         sb.AppendLine("""
