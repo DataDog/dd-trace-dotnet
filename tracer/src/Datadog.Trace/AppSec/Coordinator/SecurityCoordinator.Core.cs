@@ -35,7 +35,7 @@ internal readonly partial struct SecurityCoordinator
         {
             if (result.ShouldBlock)
             {
-                throw new BlockException(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
+                throw new BlockException(result);
             }
 
             Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, result.ShouldBlock);

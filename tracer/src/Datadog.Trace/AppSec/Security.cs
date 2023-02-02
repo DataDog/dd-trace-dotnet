@@ -7,7 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net;
 using System.Threading;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
@@ -17,6 +19,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
+using Action = Datadog.Trace.AppSec.RcmModels.Asm.Action;
 
 namespace Datadog.Trace.AppSec
 {
@@ -36,10 +39,11 @@ namespace Datadog.Trace.AppSec
         private WafLibraryInvoker _wafLibraryInvoker;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
-        private IDictionary<string, Payload> _asmDataConfigs = new Dictionary<string, RcmModels.AsmData.Payload>();
+        private IDictionary<string, Payload> _asmDataConfigs = new Dictionary<string, Payload>();
         private IDictionary<string, bool> _ruleStatus = null;
         private string _remoteRulesJson = null;
         private InitializationResult _wafInitializationResult;
+        private IReadOnlyDictionary<string, Action> _actions;
 
         static Security()
         {
@@ -115,6 +119,95 @@ namespace Datadog.Trace.AppSec
 
         internal IWaf CurrentWaf => _waf;
 
+        internal BlockingAction GetBlockingAction(string id, string[] requestAcceptHeaders)
+        {
+            var blockingAction = new BlockingAction();
+            Action action = null;
+            _actions?.TryGetValue(id, out action);
+
+            void SetAutomaticResponseContent()
+            {
+                if (requestAcceptHeaders != null)
+                {
+                    foreach (var value in requestAcceptHeaders)
+                    {
+                        if (value.Contains(AspNet.MimeTypes.Json))
+                        {
+                            SetJsonResponseContent();
+                            break;
+                        }
+
+                        if (value.Contains(AspNet.MimeTypes.TextHtml))
+                        {
+                            SetHtmlResponseContent();
+                        }
+                    }
+                }
+
+                if (blockingAction.ContentType == null)
+                {
+                    SetJsonResponseContent();
+                }
+            }
+
+            void SetJsonResponseContent()
+            {
+                blockingAction.ContentType = AspNet.MimeTypes.Json;
+                blockingAction.ResponseContent = _settings.BlockedJsonTemplate;
+            }
+
+            void SetHtmlResponseContent()
+            {
+                blockingAction.ContentType = AspNet.MimeTypes.TextHtml;
+                blockingAction.ResponseContent = _settings.BlockedHtmlTemplate;
+            }
+
+            if (action?.Parameters == null)
+            {
+                SetAutomaticResponseContent();
+                blockingAction.StatusCode = 403;
+            }
+            else
+            {
+                if (action.Type == BlockingAction.BlockRequestType)
+                {
+                    switch (action.Parameters!.Type)
+                    {
+                        case "auto":
+                            SetAutomaticResponseContent();
+                            break;
+
+                        case "json":
+                            SetJsonResponseContent();
+                            break;
+
+                        case "html":
+                            SetHtmlResponseContent();
+                            break;
+                    }
+
+                    blockingAction.StatusCode = action.Parameters.StatusCode;
+                }
+                else if (action.Type == BlockingAction.RedirectRequestType)
+                {
+                    if (action.Parameters.StatusCode is >= 300 and < 400)
+                    {
+                        blockingAction.StatusCode = action.Parameters.StatusCode;
+                        blockingAction.RedirectLocation = action.Parameters.Location;
+                        blockingAction.IsRedirect = true;
+                    }
+                    else
+                    {
+                        Log.Warning("Received a custom block action of type redirect with a status code {statusCode}, an automatic response will be set", action.Parameters.StatusCode.ToString());
+                        SetAutomaticResponseContent();
+                        blockingAction.StatusCode = 403;
+                    }
+                }
+            }
+
+            return blockingAction;
+        }
+
         private static void AddAppsecSpecificInstrumentations()
         {
             int defs = 0, derived = 0;
@@ -186,6 +279,7 @@ namespace Datadog.Trace.AppSec
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _settings.Rules == null);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, true);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _settings.Rules == null);
                 });
         }
 
@@ -247,8 +341,9 @@ namespace Datadog.Trace.AppSec
             if (!_enabled) { return; }
 
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
-            int ruleCount = 0;
             var ruleStatus = new Dictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase);
+            var actions = new Dictionary<string, Action>(StringComparer.InvariantCultureIgnoreCase);
+
             foreach (var asmConfig in asmConfigs)
             {
                 try
@@ -265,17 +360,18 @@ namespace Datadog.Trace.AppSec
                         }
 
                         ruleStatus[data.Id] = data.Enabled.Value;
-                        ruleCount++;
                     }
 
-                    if (ruleCount > 0)
+                    foreach (var action in asmConfig.TypedFile.Actions)
                     {
-                        e.Acknowledge(asmConfig.Name);
+                        if (action.Id is not null)
+                        {
+                            actions[action.Id] = action;
+                        }
                     }
-                    else
-                    {
-                        e.Error(asmConfig.Name, "No valid Waf rule status data received.");
-                    }
+
+                    // acknowledge in all cases
+                    e.Acknowledge(asmConfig.Name);
                 }
                 catch (Exception err)
                 {
@@ -283,6 +379,7 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
+            _actions = new ReadOnlyDictionary<string, Action>(actions);
             _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
             UpdateRuleStatus(_ruleStatus);
         }
