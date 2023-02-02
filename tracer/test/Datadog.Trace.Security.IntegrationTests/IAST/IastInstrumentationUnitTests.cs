@@ -23,7 +23,8 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestInstrumentedUnitTests()
     {
-        if (Environment.Is64BitProcess)
+        bool net462x86 = !Environment.Is64BitProcess && !EnvironmentHelper.IsCoreClr();
+        if (!net462x86)
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
             {
