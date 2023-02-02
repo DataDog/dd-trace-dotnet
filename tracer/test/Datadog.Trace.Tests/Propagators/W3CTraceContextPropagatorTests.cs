@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
@@ -256,6 +257,49 @@ namespace Datadog.Trace.Tests.Propagators
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            Origin = "rum",
                            PropagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345",
+                           Parent = null,
+                           ParentId = null,
+                       });
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData(null, null)]
+        [InlineData(null, null, null)]
+        [InlineData("")]
+        [InlineData("", "")]
+        [InlineData("", "", "")]
+        [InlineData("   ")]
+        [InlineData("   ", "   ")]
+        [InlineData("   ", "   ", "   ")]
+        public void Extract_IHeadersCollection_HandlesMultipleEmptyTraceState(params string[] traceState)
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            headers.Setup(h => h.GetValues("tracestate")).Returns(traceState);
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.AtMost(1));
+            headers.VerifyNoOtherCalls();
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId = 123456789,
+                           SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
+                           SamplingPriority = 1,
+                           Origin = null,
+                           PropagatedTags = null,
                            Parent = null,
                            ParentId = null,
                        });
