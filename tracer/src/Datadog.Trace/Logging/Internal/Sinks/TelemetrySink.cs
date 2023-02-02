@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Diagnostics;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -28,14 +29,14 @@ internal class TelemetrySink : ILogEventSink
             return;
         }
 
-        var message = logEvent.Exception is { } ex
-                      ? $"{logEvent.MessageTemplate.Render(logEvent.Properties)}. Ex: {ex.Message}"
-                      : logEvent.MessageTemplate.Render(logEvent.Properties);
+        var stackTrace = logEvent.Exception is { } ex
+                             ? StackTraceRedactor.Redact(ex.GetType().AssemblyQualifiedName ?? "Exception", new StackTrace(ex))
+                             : null;
 
-        var logLevel = ToLogLevel(logEvent.Level);
-        var telemetryLog = new LogMessageData(message, logLevel)
+        // Note: we're using the raw message template here to remove any chance of including customer information
+        var telemetryLog = new LogMessageData(logEvent.MessageTemplate.Text, ToLogLevel(logEvent.Level))
         {
-            StackTrace = logEvent.Exception?.StackTrace
+            StackTrace = stackTrace
         };
 
         _sink.EnqueueLog(telemetryLog);
