@@ -73,6 +73,18 @@ internal sealed class RandomIdGenerator
         // get a value in the range (0, Int64.MaxValue]
         return NextLegacyId();
     }
+
+    /// <summary>
+    /// Returns a random 128-bit number that is greater than zero
+    /// and less than or equal to Int128.MaxValue (0xffffffffffffffffffffffffffffffff).
+    /// </summary>
+    public TraceId NextTraceId()
+    {
+        var upper = NextNonZeroUInt64(); // TODO: use a 32-bit timestamp + 32 zero bits
+        var lower = NextNonZeroUInt64();
+
+        return new TraceId(upper, lower);
+    }
 }
 
 #endif
