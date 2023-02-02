@@ -145,7 +145,7 @@ internal readonly partial struct SecurityCoordinator
     internal void CheckAndBlock(Dictionary<string, object> args)
     {
         var result = RunWaf(args);
-        if (result?.ShouldBeReported ?? false)
+        if (result?.ShouldBeReported is true)
         {
             var reporting = MakeReportingFunction(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
 
