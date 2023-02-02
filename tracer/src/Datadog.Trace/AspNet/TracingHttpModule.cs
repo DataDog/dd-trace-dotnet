@@ -291,6 +291,7 @@ namespace Datadog.Trace.AspNet
                     }
                     finally
                     {
+                        scope.Dispose();
                         // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
                         TryClearContext(app.Context);
                         // no other checks, security might have been disabled in the meantime but contexts would still be open
@@ -299,8 +300,6 @@ namespace Datadog.Trace.AspNet
                             var securityTransport = new SecurityCoordinator.HttpTransport(app.Context);
                             securityTransport.DisposeAdditiveContext();
                         }
-
-                        scope.Dispose();
                     }
                 }
             }
