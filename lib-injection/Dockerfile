@@ -1,5 +1,6 @@
 FROM scratch AS dotnet_build
-COPY ./glibc /glibc/
+ARG LINUX_PACKAGE
+ADD ${LINUX_PACKAGE} /
 
 FROM busybox
 
@@ -9,7 +10,7 @@ RUN addgroup -g 10000 -S datadog && \
 USER ${UID}
 WORKDIR /datadog-init
 
+COPY copy-lib.sh /datadog-init/copy-lib.sh
 # using a separate stage for holding the assets - can allow us to build this dockerfile remotely,
 # and replace the assets when needed
-COPY --from=dotnet_build ./glibc /datadog-init/
-COPY copy-lib.sh /datadog-init/copy-lib.sh
+COPY --from=dotnet_build . /datadog-init/monitoring-home

@@ -33,13 +33,8 @@ jobs:
         MUSL_URL=https://apmdotnetci.blob.core.windows.net/apm-dotnet-ci-artifacts-master/$SHA/$MUSL_ARCHIVE
         curl -L --silent $MUSL_URL --output $MUSL_ARCHIVE
 
-        mkdir -p lib-injection/glibc/linux_amd64
-        mkdir -p lib-injection/glibc/linux_arm64
-        mkdir -p lib-injection/musl/linux_amd64
-
-        tar -C ./lib-injection/glibc/linux_amd64 -xzf $LIBC_ARCHIVE
-        tar -C ./lib-injection/glibc/linux_arm64 -xzf $ARM64_LIBC_ARCHIVE
-        tar -C ./lib-injection/musl/linux_amd64 -xzf $MUSL_ARCHIVE
+        mkdir -p lib-injection/linux-musl-arm
+        touch lib-injection/linux-musl-arm/placeholder.txt
 
         find ./lib-injection
 
@@ -75,19 +70,43 @@ jobs:
     - name: Login to Docker
       run: docker login -u publisher -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
 
-    - name: Docker Build
+    - name: Docker Build linux-x64 image
       uses: docker/build-push-action@v3
       with:
         push: true
         tags: ${{ steps.lib-injection-tags.outputs.tag-names }}
-        platforms: 'linux/amd64,linux/arm64/v8' # for windows, we can run windows/amd64,windows/386,windows/arm64
+        platforms: 'linux/amd64' # for windows, we can run windows/amd64,windows/386,windows/arm64
         context: ./lib-injection
+        build-args: |
+          LINUX_PACKAGE=$LIBC_ARCHIVE
 
-    - name: Docker Build musl images
+    - name: Docker Build linux-arm64 image
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: ${{ steps.lib-injection-tags.outputs.tag-names }}
+        platforms: 'linux/arm64/v8'
+        context: ./lib-injection
+        build-args: |
+          LINUX_PACKAGE=$ARM64_LIBC_ARCHIVE
+
+    - name: Docker Build linux-musl-x64 image
       uses: docker/build-push-action@v3
       with:
         push: true
         tags: ${{ steps.generate-musl-tags.outputs.musl-tag-names }}
-        platforms: 'linux/amd64,linux/arm64/v8'
+        platforms: 'linux/amd64'
         context: ./lib-injection
         file: ./lib-injection/Dockerfile.musl
+        build-args: |
+          LINUX_PACKAGE=$MUSL_ARCHIVE
+
+    - name: Docker Build linux-musl-arm64 image
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: ${{ steps.generate-musl-tags.outputs.musl-tag-names }}
+        platforms: 'linux/arm64/v8'
+        context: ./lib-injection
+        build-args: |
+          LINUX_PACKAGE=linux-musl-arm
