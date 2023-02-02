@@ -5,11 +5,11 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.AppSec.Waf;
 
-namespace Datadog.Trace.AppSec.Waf
+#nullable enable
+
+internal interface IContext : IDisposable
 {
-    internal interface IContext : IDisposable
-    {
-        IResult Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds);
-    }
+    IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds);
 }

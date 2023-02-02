@@ -220,6 +220,8 @@ namespace Datadog.Trace.AspNet
                     return;
                 }
 
+                var securityContextCleaned = false;
+
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
@@ -284,14 +286,21 @@ namespace Datadog.Trace.AspNet
                             }
 
                             securityCoordinator.Cleanup();
+                            securityContextCleaned = true;
                         }
-
-                        scope.Dispose();
                     }
                     finally
                     {
                         // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
                         TryClearContext(app.Context);
+                        // no other checks, security might have been disabled in the meantime but contexts would still be open
+                        if (!securityContextCleaned)
+                        {
+                            var securityTransport = new SecurityCoordinator.HttpTransport(app.Context);
+                            securityTransport.DisposeAdditiveContext();
+                        }
+
+                        scope.Dispose();
                     }
                 }
             }
