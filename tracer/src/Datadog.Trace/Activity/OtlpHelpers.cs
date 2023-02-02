@@ -118,7 +118,28 @@ namespace Datadog.Trace.Activity
             // Set OTEL status code and OTEL status description
             if (span.GetTag("otel.status_code") is null)
             {
-                span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
+                if (activity6 is not null)
+                {
+                    switch (activity6.Status)
+                    {
+                        case ActivityStatusCode.Unset:
+                            span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
+                            break;
+                        case ActivityStatusCode.Ok:
+                            span.SetTag("otel.status_code", "STATUS_CODE_OK");
+                            break;
+                        case ActivityStatusCode.Error:
+                            span.SetTag("otel.status_code", "STATUS_CODE_ERROR");
+                            break;
+                        default:
+                            span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
+                            break;
+                    }
+                }
+                else
+                {
+                    span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
+                }
             }
 
             // Map the OTEL status to error tags
