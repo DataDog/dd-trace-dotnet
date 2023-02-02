@@ -7,37 +7,18 @@
 namespace iast
 {
 BEGIN_ENUM_PARSE(AspectType)
-ENUM_VALUE(AspectType, NONE)
-ENUM_VALUE(AspectType, SOURCE)
-ENUM_VALUE(AspectType, SINK)
-ENUM_VALUE(AspectType, PROPAGATION)
+ENUM_VALUE(AspectType, None)
+ENUM_VALUE(AspectType, Source)
+ENUM_VALUE(AspectType, Sink)
+ENUM_VALUE(AspectType, Propagation)
 END_ENUM_PARSE(AspectType)
 
 BEGIN_ENUM_PARSE(VulnerabilityType)
-ENUM_VALUE(VulnerabilityType, NONE)
-ENUM_VALUE(VulnerabilityType, SQL_INJECTION)
-ENUM_VALUE(VulnerabilityType, XSS)
-ENUM_VALUE(VulnerabilityType, SSRF)
-ENUM_VALUE(VulnerabilityType, ARBITRARY_SOCKET_CONNECTION)
-ENUM_VALUE(VulnerabilityType, DEPENDENCY)
-ENUM_VALUE(VulnerabilityType, UNTRUSTED_DESERIALIZATION)
-ENUM_VALUE(VulnerabilityType, INSECURE_HASHING)
-ENUM_VALUE(VulnerabilityType, INSECURE_CIPHER)
-ENUM_VALUE(VulnerabilityType, WEAK_RANDOMNESS)
-ENUM_VALUE(VulnerabilityType, UNVALIDATED_REDIRECT)
-ENUM_VALUE(VulnerabilityType, CMD_INJECTION)
-ENUM_VALUE(VulnerabilityType, ARBITRARY_CODE_EXECUTION)
-ENUM_VALUE(VulnerabilityType, INSECURE_COOKIE)
-ENUM_VALUE(VulnerabilityType, NO_HTTP_ONLY_COOKIE)
-ENUM_VALUE(VulnerabilityType, PATH_TRAVERSAL)
-ENUM_VALUE(VulnerabilityType, REFLECTION_INJECTION)
-ENUM_VALUE(VulnerabilityType, TRUST_BOUNDARY_VIOLATION)
-ENUM_VALUE(VulnerabilityType, HEADER_INJECTION)
-ENUM_VALUE(VulnerabilityType, LDAP_INJECTION)
-ENUM_VALUE(VulnerabilityType, SQL_INJECTION)
-ENUM_VALUE(VulnerabilityType, XPATH_INJECTION)
-ENUM_VALUE(VulnerabilityType, NO_SQL_INJECTION)
-ENUM_VALUE(VulnerabilityType, SQL_INJECTION)
+ENUM_VALUE(VulnerabilityType, None)
+ENUM_VALUE(VulnerabilityType, SqlInjection)
+ENUM_VALUE(VulnerabilityType, Xss)
+ENUM_VALUE(VulnerabilityType, WeakCipher)
+ENUM_VALUE(VulnerabilityType, WeakHash)
 END_ENUM_PARSE(VulnerabilityType)
 
 std::string ToString(const std::vector<VulnerabilityType> types)
@@ -54,14 +35,11 @@ std::string ToString(const std::vector<VulnerabilityType> types)
 std::vector<VulnerabilityType> ParseVulnerabilityTypes(const std::string& txt)
 {
     std::vector<VulnerabilityType> res;
-    res.reserve(5);
-    for (auto v : Split(txt, ",; "))
+    res.reserve(2);
+    auto parts = Split(TrimEnd(TrimStart(txt, "["), "]"), ",");
+    for (auto part : parts)
     {
-        auto e = ParseVulnerabilityType(v);
-        if (e != VulnerabilityType::NONE)
-        {
-            res.push_back(e);
-        }
+        res.push_back(ParseVulnerabilityType(Trim(part)));
     }
     return res;
 }
@@ -79,11 +57,11 @@ SpotInfo::~SpotInfo()
 int SpotInfo::GetId()
 {
     auto status = _lastChangedCheckEnabledStatus; // GetStatus();
-    if (status == SpotInfoStatus::DISABLED)
+    if (status == SpotInfoStatus::Disabled)
     {
         return -1;
     }
-    if (status == SpotInfoStatus::ENABLED)
+    if (status == SpotInfoStatus::Enabled)
     {
         return 0;
     }
@@ -93,13 +71,13 @@ SpotInfoStatus SpotInfo::GetStatus()
 {
     if (_isUntracked)
     {
-        return SpotInfoStatus::ENABLED;
+        return SpotInfoStatus::Enabled;
     }
     if (!_isMethodExcluded && (_isDisabled || !_aspect->IsEnabled()))
     {
-        return SpotInfoStatus::DISABLED;
+        return SpotInfoStatus::Disabled;
     }
-    return SpotInfoStatus::TRACKED;
+    return SpotInfoStatus::Tracked;
 }
 
 bool SpotInfo::HasChanged(const std::set<int>& untrackedSpotIds, const std::set<int>& disabledSpotIds,
@@ -145,7 +123,7 @@ int Aspect::GetSpotInfoId(MethodInfo* method, int line, mdMemberRef* aspectMembe
 bool Aspect::IsEnabled()
 {
     auto aspectType = GetAspectType();
-    if (aspectType != AspectType::SINK)
+    if (aspectType != AspectType::Sink)
     {
         return true;
     }

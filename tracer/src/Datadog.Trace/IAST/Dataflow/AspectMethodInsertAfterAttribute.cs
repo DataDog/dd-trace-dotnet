@@ -5,19 +5,18 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Dataflow
-{
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    internal class AspectMethodInsertAfterAttribute : AspectAttribute
-    {
-        public AspectMethodInsertAfterAttribute(string targetMethod)
-            : base(targetMethod)
-        {
-        }
+namespace Datadog.Trace.Iast.Dataflow;
 
-        public AspectMethodInsertAfterAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
-            : base(targetMethod, aspectType, vulnerabilityTypes)
-        {
-        }
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+internal sealed class AspectMethodInsertAfterAttribute : AspectAttribute
+{
+    public AspectMethodInsertAfterAttribute(string targetMethod)
+        : base(targetMethod)
+    {
+    }
+
+    public AspectMethodInsertAfterAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
+        : base(targetMethod, aspectType, vulnerabilityTypes)
+    {
     }
 }

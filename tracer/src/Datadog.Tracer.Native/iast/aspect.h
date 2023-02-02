@@ -10,41 +10,24 @@ namespace iast
 
     enum class AspectType
     {
-        NONE,
-        SOURCE,
-        SINK,
-        PROPAGATION
+        None,
+        Source,
+        Sink,
+        Propagation
     };
     enum class VulnerabilityType
     {
-        NONE,
-        SQL_INJECTION,
-        XSS,
-        SSRF,
-        ARBITRARY_SOCKET_CONNECTION,
-        DEPENDENCY,
-        UNTRUSTED_DESERIALIZATION,
-        INSECURE_HASHING,
-        INSECURE_CIPHER,
-        WEAK_RANDOMNESS,
-        UNVALIDATED_REDIRECT,
-        CMD_INJECTION,
-        ARBITRARY_CODE_EXECUTION,
-        INSECURE_COOKIE,
-        NO_HTTP_ONLY_COOKIE,
-        PATH_TRAVERSAL,
-        REFLECTION_INJECTION,
-        TRUST_BOUNDARY_VIOLATION,
-        HEADER_INJECTION,
-        LDAP_INJECTION,
-        XPATH_INJECTION,
-        NO_SQL_INJECTION,
+        None,
+        SqlInjection,
+        Xss,
+        WeakCipher,
+        WeakHash
     };
     enum class SpotInfoStatus
     {
-        DISABLED,
-        ENABLED,
-        TRACKED
+        Disabled,
+        Enabled,
+        Tracked
     };
 
     std::string ToString(AspectType type);
@@ -61,7 +44,7 @@ namespace iast
         int _id = 0;
         int _line = 0;
         Aspect* _aspect = nullptr;
-        SpotInfoStatus _lastChangedCheckEnabledStatus = SpotInfoStatus::ENABLED;
+        SpotInfoStatus _lastChangedCheckEnabledStatus = SpotInfoStatus::Enabled;
         bool _isDisabled = false;
         bool _isUntracked = false;
         bool _isMethodExcluded = false;
