@@ -102,7 +102,12 @@ namespace Datadog.Trace.Activity
             // Add the library name and library version
             if (activity5 is not null)
             {
-                span.SetTag("otel.library.name", activity5.Source.Name);
+                // For .NET Activity .NET 5+ the Source.Name is only set via ActivitySource.StartActivity
+                // and not when an Activity object is created manually and having .Start() called on it
+                if (!string.IsNullOrEmpty(activity5.Source.Name))
+                {
+                    span.SetTag("otel.library.name", activity5.Source.Name);
+                }
 
                 if (!string.IsNullOrEmpty(activity5.Source.Version))
                 {
