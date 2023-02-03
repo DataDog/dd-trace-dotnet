@@ -86,7 +86,7 @@ internal readonly partial struct SecurityCoordinator
         return result;
     }
 
-    public void Cleanup()
+    public void AddResponseHeadersToSpanAndCleanup()
     {
         if (_localRootSpan.IsAppsecEvent())
         {

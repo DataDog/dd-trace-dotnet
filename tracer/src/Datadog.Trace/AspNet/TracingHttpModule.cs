@@ -285,7 +285,7 @@ namespace Datadog.Trace.AspNet
                                 securityCoordinator.CheckAndBlock(args);
                             }
 
-                            securityCoordinator.Cleanup();
+                            securityCoordinator.AddResponseHeadersToSpanAndCleanup();
                             securityContextCleaned = true;
                         }
                     }
