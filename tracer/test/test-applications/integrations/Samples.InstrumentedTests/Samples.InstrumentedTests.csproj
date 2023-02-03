@@ -3,7 +3,7 @@
     <IsPackable>false</IsPackable>
     <OutputType>Library</OutputType>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(ProjectDir)../../../../../Datadog.Trace.snk</AssemblyOriginatorKeyFile>    
+    <AssemblyOriginatorKeyFile>$(ProjectDir)../../../../../Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.3.1</ApiVersion>
     <MicrosoftTestSDKVersion Condition="$(ApiVersion.StartsWith('2.4'))">16.7.1</MicrosoftTestSDKVersion>
     <MicrosoftTestSDKVersion Condition="$(ApiVersion.StartsWith('2.3'))">16.2.0</MicrosoftTestSDKVersion>
@@ -11,9 +11,9 @@
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <GenerateRuntimeConfigDevFile>true</GenerateRuntimeConfigDevFile>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\iast.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net462'">
