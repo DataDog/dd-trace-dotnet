@@ -7,7 +7,6 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -19,7 +18,8 @@ namespace Datadog.Trace.Logging.Internal.Sinks;
 
 internal static class StackTraceRedactor
 {
-    private const string StackFrameAtConstant = "   at ";
+    internal const string StackFrameAt = "   at ";
+    internal const string Redacted = "REDACTED";
     private const string InFileLineNum = "in {0}:line {1}";
 
     public static string Redact(string exceptionType, StackTrace stackTrace)
@@ -52,8 +52,8 @@ internal static class StackTraceRedactor
 
             if (ShouldRedactFrame(methodInfo))
             {
-                sb.Append(StackFrameAtConstant);
-                sb.AppendLine("REDACTED");
+                sb.Append(StackFrameAt);
+                sb.AppendLine(Redacted);
                 continue;
             }
 
@@ -65,7 +65,8 @@ internal static class StackTraceRedactor
         => mb.DeclaringType switch
         {
             null => true, // "global" function
-            { Assembly.FullName: { } name } => !(name.StartsWith("Datadog")
+            { Assembly.FullName: { } name } => !(name.StartsWith("Datadog.")
+                                              || name.StartsWith("mscorlib,")
                                               || name.StartsWith("Microsoft.")
                                               || name.StartsWith("System.")
                                               || name.StartsWith("Azure.")),
@@ -80,7 +81,7 @@ internal static class StackTraceRedactor
         if (mb != null)
         {
             // We want a newline at the end of every line except for the last
-            sb.Append(StackFrameAtConstant);
+            sb.Append(StackFrameAt);
 
             var t = mb.DeclaringType;
              // if there is a type (non global method) print it
@@ -157,7 +158,6 @@ internal static class StackTraceRedactor
                 {
                     fileName = sf.GetFileName();
                 }
-#if FEATURE_CAS_POLICY
                 catch (NotSupportedException)
                 {
                     // Having a deprecated stack modifier on the callstack (such as Deny) will cause
@@ -165,7 +165,6 @@ internal static class StackTraceRedactor
                     // access the file names, we'll conservatively hide them.
                     displayFilenames = false;
                 }
-#endif // FEATURE_CAS_POLICY
                 catch (SecurityException)
                 {
                     // If the demand for displaying filenames fails, then it won't
@@ -199,7 +198,7 @@ internal static class StackTraceRedactor
         var mb = sf.GetMethod()!;
         if (ShowInStackTrace(mb))
         {
-            sb.Append(StackFrameAtConstant);
+            sb.Append(StackFrameAt);
 
             var isAsync = false;
             var declaringType = mb.DeclaringType;
