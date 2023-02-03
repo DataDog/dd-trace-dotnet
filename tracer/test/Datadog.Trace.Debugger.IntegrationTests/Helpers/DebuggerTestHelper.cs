@@ -35,9 +35,8 @@ internal static class DebuggerTestHelper
         }
     }
 
-    public static ProbeTestDescription SpecificTestDescription<T>()
+    public static ProbeTestDescription SpecificTestDescription(Type type)
     {
-        var type = typeof(T);
         var assembly = type.Assembly;
         var isOptimized = IsOptimized(assembly);
 

@@ -400,7 +400,8 @@ namespace Datadog.Trace.Debugger
         {
             if (_dogStats is NoOpStatsd)
             {
-                Log.Error($"Can't send metric with instance of {nameof(NoOpStatsd)}");
+                Log.Error($"Can't send metric, because {nameof(IDogStatsd)} is {nameof(NoOpStatsd)}");
+                return;
             }
 
             switch (metricKind)

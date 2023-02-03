@@ -13,6 +13,7 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
@@ -59,7 +60,8 @@ internal class LiveDebuggerFactory
             $"service:{NormalizerTraceProcessor.NormalizeService(serviceName)}"
         };
 
-        var dogStats = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, constantTags);
-        return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, dogStats);
+        var statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, constantTags);
+
+        return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, statsd);
     }
 }

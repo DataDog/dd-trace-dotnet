@@ -81,7 +81,7 @@ public class ProbesTests : TestHelper
     {
         Skip.If(true, "Not supported yet. Internal Jira Ticket: #DEBUG-1092.");
 
-        var testDescription = DebuggerTestHelper.SpecificTestDescription<AsyncMethodInGenericClassTest>();
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(AsyncMethodInGenericClassTest));
         const int expectedNumberOfSnapshots = 1;
 
         var guidGenerator = new DeterministicGuidGenerator();
@@ -99,7 +99,7 @@ public class ProbesTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task TransparentCodeCtorInstrumentationTest()
     {
-        var testDescription = DebuggerTestHelper.SpecificTestDescription<CtorTransparentCodeTest>();
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(CtorTransparentCodeTest));
         const int expectedNumberOfSnapshots = 1;
 
         var guidGenerator = new DeterministicGuidGenerator();
@@ -118,7 +118,7 @@ public class ProbesTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task InstallAndUninstallMethodProbeWithOverloadsTest()
     {
-        var testDescription = DebuggerTestHelper.SpecificTestDescription<OverloadAndSimpleNameTest>();
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(OverloadAndSimpleNameTest));
         const int expectedNumberOfSnapshots = 9;
 
         var probes = GetProbeConfiguration(testDescription.TestType, true, new DeterministicGuidGenerator());
@@ -136,7 +136,7 @@ public class ProbesTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task LineProbeEmit100SnapshotsTest()
     {
-        var testDescription = DebuggerTestHelper.SpecificTestDescription<Emit100LineProbeSnapshotsTest>();
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(Emit100LineProbeSnapshotsTest));
         const int expectedNumberOfSnapshots = 100;
 
         var probes = GetProbeConfiguration(testDescription.TestType, true, new DeterministicGuidGenerator());
@@ -197,7 +197,7 @@ public class ProbesTests : TestHelper
         }
 
         var testType = DebuggerTestHelper.FirstSupportedProbeTestType(EnvironmentHelper.GetTargetFramework());
-        var testDescription = DebuggerTestHelper.SpecificTestDescription<AsyncGenericMethod>();
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(AsyncGenericMethod));
         EnvironmentHelper.EnableWindowsNamedPipes();
 
         await RunMethodProbeTests(testDescription, false);
@@ -207,12 +207,13 @@ public class ProbesTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task MethodProbeTest_UDS()
+    [InlineData(typeof(MetricCountInt))]
+    [InlineData(typeof(AsyncGenericMethod))]
+    public async Task MethodProbeTest_UDS(Type type)
     {
-        var testType = DebuggerTestHelper.SpecificTestDescription<AsyncGenericMethod>();
+        var testType = DebuggerTestHelper.SpecificTestDescription(type);
         EnvironmentHelper.EnableUnixDomainSockets();
-
-        await RunMethodProbeTests(testType, false);
+        await RunMethodProbeTests(testType, true);
     }
 
 #endif

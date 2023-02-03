@@ -354,7 +354,7 @@ namespace Datadog.Trace.TestHelpers
 
         public async Task<string[]> WaitForStatsdRequests(int statsdRequestsCount, TimeSpan? timeout = null)
         {
-            using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
+            using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(120));
 
             var isFound = false;
             while (!isFound && !cancellationSource.IsCancellationRequested)
@@ -1314,10 +1314,9 @@ namespace Datadog.Trace.TestHelpers
                     ListenerInfo += $", Stats at {config.Metrics}";
                     _statsEndpoint = new UnixDomainSocketEndPoint(config.Metrics);
 
-                    _udsStatsSocket = new Socket(AddressFamily.Unix, SocketType.Dgram, ProtocolType.Unspecified);
-
+                    _udsStatsSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
                     _udsStatsSocket.Bind(_statsEndpoint);
-                    // NOTE: Connectionless protocols don't use Listen()
+                    _udsStatsSocket.Listen(1000);
                     _statsdTask = Task.Run(HandleUdsStats);
                 }
 
@@ -1360,16 +1359,17 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
 
-            private void HandleUdsStats()
+            private async Task HandleUdsStats()
             {
+                using var handler = await _udsStatsSocket.AcceptAsync();
+
                 while (!_cancellationTokenSource.IsCancellationRequested)
                 {
                     try
                     {
-                        var bytesReceived = new byte[0x1000];
-                        // Connectionless protocol doesn't need Accept, Receive will block until we get something
-                        var byteCount = _udsStatsSocket.Receive(bytesReceived);
-                        var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
+                        var bytesReceived = new byte[handler.ReceiveBufferSize];
+                        var length = handler.Receive(bytesReceived);
+                        var stats = Encoding.UTF8.GetString(bytesReceived, 0, length);
                         OnMetricsReceived(stats);
                         StatsdRequests.Enqueue(stats);
                     }
