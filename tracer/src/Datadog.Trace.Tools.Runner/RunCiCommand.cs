@@ -98,14 +98,17 @@ namespace Datadog.Trace.Tools.Runner
                 Log.Debug("RunCiCommand: Initialize CI Visibility for the runner.");
                 CIVisibility.InitializeFromRunner(ciVisibilitySettings, discoveryService, hasEvpProxy);
 
-                // Upload git metadata
+                // Upload git metadata by default (unless is disabled explicitly) or if ITR is enabled (required).
                 Log.Debug("RunCiCommand: Uploading repository changes.");
                 var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
-                await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                if (ciVisibilitySettings.GitUploadEnabled != false || ciVisibilitySettings.IntelligentTestRunnerEnabled)
+                {
+                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
 
-                // Once the repository has been uploaded we switch off the git upload in children processes
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled] = "0";
-                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled, "0");
+                    // Once the repository has been uploaded we switch off the git upload in children processes
+                    profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled] = "0";
+                    EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled, "0");
+                }
 
                 // We can activate all features here (Agentless or EVP proxy mode)
                 createTestSession = true;
@@ -147,7 +150,7 @@ namespace Datadog.Trace.Tools.Runner
                     }
                     catch (Exception ex)
                     {
-                        CIVisibility.Log.Warning(ex, ex.Message);
+                        CIVisibility.Log.Warning(ex,  "Error getting ITR settings from configuration api");
                     }
                 }
             }
