@@ -26,6 +26,7 @@ namespace Datadog.Trace.MSBuild
         private readonly ConcurrentDictionary<int, object> _projects = new();
         private TestSession? _testSession;
         private TestModule? _testModule;
+        private TestSuite? _testSuite;
         private bool _buildError;
 
         static DatadogLogger()
@@ -70,8 +71,6 @@ namespace Datadog.Trace.MSBuild
 
             try
             {
-                _testSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, "MSBuild");
-
                 // Attach to the eventSource events only if we successfully get the tracer instance.
                 eventSource.BuildStarted += EventSource_BuildStarted;
                 eventSource.BuildFinished += EventSource_BuildFinished;
@@ -89,7 +88,6 @@ namespace Datadog.Trace.MSBuild
         /// <inheritdoc />
         public void Shutdown()
         {
-            _testSession?.Close(_buildError ? TestStatus.Fail : TestStatus.Pass);
         }
 
         private void EventSource_BuildStarted(object sender, BuildStartedEventArgs e)
@@ -97,15 +95,13 @@ namespace Datadog.Trace.MSBuild
             try
             {
                 Log.Debug("Build Started");
-
-                _testModule = _testSession?.CreateModule(BuildTags.BuildOperationName, "MSBuild", string.Empty);
-                if (_testModule is not null)
-                {
-                    _testModule.SetTag(BuildTags.BuildName, e.SenderName);
-                    _testModule.SetTag(BuildTags.BuildCommand, Environment.CommandLine);
-                    _testModule.SetTag(BuildTags.BuildWorkingFolder, Environment.CurrentDirectory);
-                    Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, _testModule.GetInternalSpan()));
-                }
+                _testSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, "MSBuild");
+                _testModule = _testSession.CreateModule(BuildTags.BuildOperationName, "MSBuild", string.Empty);
+                _testModule.SetTag(BuildTags.BuildName, e.SenderName);
+                _testModule.SetTag(BuildTags.BuildCommand, Environment.CommandLine);
+                _testModule.SetTag(BuildTags.BuildWorkingFolder, Environment.CurrentDirectory);
+                Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, _testModule.GetInternalSpan()));
+                _testSuite = _testModule.GetOrCreateSuite(e.SenderName);
             }
             catch (Exception ex)
             {
@@ -118,7 +114,7 @@ namespace Datadog.Trace.MSBuild
             try
             {
                 Log.Debug("Build Finished");
-                if (_testModule is null)
+                if (_testSession is null || _testModule is null || _testSuite is null)
                 {
                     return;
                 }
@@ -128,11 +124,15 @@ namespace Datadog.Trace.MSBuild
                 {
                     _buildError = true;
                     _testModule.Tags.Status = TestTags.StatusFail;
+                    _testSession.SetErrorInfo(null, null, null);
                     _testModule.SetErrorInfo(null, null, null);
+                    _testSuite.SetErrorInfo(null, null, null);
                 }
 
+                _testSuite.Close();
                 Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, _testModule.GetInternalSpan()));
-                _testModule.Close(e.Timestamp - _testModule.StartTime);
+                _testModule.Close();
+                _testSession.Close(_buildError ? TestStatus.Fail : TestStatus.Pass);
             }
             catch (Exception ex)
             {
@@ -144,12 +144,6 @@ namespace Datadog.Trace.MSBuild
         {
             try
             {
-                if (e.TargetNames.StartsWith("_"))
-                {
-                    // Ignoring internal targetNames
-                    return;
-                }
-
                 Log.Debug("Project Started");
 
                 var parentContext = e.ParentProjectBuildEventContext.ProjectContextId;
@@ -179,7 +173,7 @@ namespace Datadog.Trace.MSBuild
                         }
                     }
 
-                    projectSpan.ResourceName = (string.IsNullOrEmpty(e.TargetNames) ? "Build" : e.TargetNames) + $"/{targetFramework}";
+                    projectSpan.ResourceName = (string.IsNullOrEmpty(e.TargetNames) ? "Build" : e.TargetNames) + $"/{projectName}/{targetFramework}";
                     projectSpan.SetTag(BuildTags.ProjectFile, e.ProjectFile);
                     projectSpan.SetTag(BuildTags.ProjectSenderName, e.SenderName);
                     projectSpan.SetTag(BuildTags.ProjectTargetNames, e.TargetNames);
@@ -188,11 +182,12 @@ namespace Datadog.Trace.MSBuild
                     Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, projectSpan));
                     _projects.TryAdd(context, projectSpan);
                 }
-                else if (_testModule is { } testModule)
+                else if (_testSuite is { } testSuite)
                 {
-                    var testSuite = testModule.GetOrCreateSuite(projectName ?? "project");
-                    var test = testSuite.CreateTest(projectName ?? "project");
-
+                    e.GlobalProperties.TryGetValue("Configuration", out var configuration);
+                    e.GlobalProperties.TryGetValue("TargetFramework", out var targetFramework);
+                    var name = $"{projectName}_{configuration}_{targetName}";
+                    var test = testSuite.CreateTest(name);
                     foreach (KeyValuePair<string, string> prop in e.GlobalProperties)
                     {
                         test.SetTag($"{BuildTags.ProjectProperties}.{prop.Key}", prop.Value);
@@ -231,7 +226,7 @@ namespace Datadog.Trace.MSBuild
                         }
 
                         Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, projectSpan));
-                        projectSpan.Finish(e.Timestamp);
+                        projectSpan.Finish();
                         _projects.TryRemove(context, out _);
                     }
                     else if (projectObject is Test { } projectTest)
@@ -242,8 +237,7 @@ namespace Datadog.Trace.MSBuild
                         }
 
                         Tracer.Instance.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("MSBuild", "info", e.Message, projectTest.GetInternalSpan()));
-                        projectTest.Close(e.Succeeded ? TestStatus.Pass : TestStatus.Fail, e.Timestamp - projectTest.StartTime);
-                        projectTest.Suite.Close();
+                        projectTest.Close(e.Succeeded ? TestStatus.Pass : TestStatus.Fail);
                         _projects.TryRemove(context, out _);
                     }
                 }
