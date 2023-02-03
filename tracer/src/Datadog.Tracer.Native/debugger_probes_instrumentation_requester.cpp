@@ -60,14 +60,13 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         return;
     }
 
-    const auto corProfiler = trace::profiler;
-    const auto& module_info = GetModuleInfo(corProfiler->info_, module_id);
+    const auto& module_info = GetModuleInfo(m_corProfiler->info_, module_id);
     const auto assembly_name = module_info.assembly.name;
 
     if (!IsCoreLibOr3rdParty(assembly_name))
     {
         ComPtr<IUnknown> metadataInterfaces;
-        auto hr = corProfiler->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+        auto hr = m_corProfiler->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                         metadataInterfaces.GetAddressOf());
 
         auto metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
@@ -80,8 +79,8 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
 
         std::unique_ptr<ModuleMetadata> module_metadata = std::make_unique<ModuleMetadata>(
             metadataImport, metadataEmit, assemblyImport, assemblyEmit, module_info.assembly.name,
-            module_info.assembly.app_domain_id, &corProfiler->corAssemblyProperty,
-            corProfiler->enable_by_ref_instrumentation, corProfiler->enable_calltarget_state_by_ref);
+            module_info.assembly.app_domain_id, &m_corProfiler->corAssemblyProperty,
+            m_corProfiler->enable_by_ref_instrumentation, m_corProfiler->enable_calltarget_state_by_ref);
 
         // get function info
         auto caller = GetFunctionInfo(module_metadata->metadata_import, function_token);
@@ -137,11 +136,13 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
 
 
 DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
+    CorProfiler* corProfiler,
     std::shared_ptr<trace::RejitHandler> rejit_handler, 
     std::shared_ptr<trace::RejitWorkOffloader> work_offloader) :
+    m_corProfiler(corProfiler),
     m_rejit_handler(rejit_handler),
     m_work_offloader(work_offloader),
-    m_debugger_rejit_preprocessor(std::make_unique<DebuggerRejitPreprocessor>(rejit_handler, work_offloader))
+    m_debugger_rejit_preprocessor(std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler, work_offloader))
 {
     is_debugger_enabled = IsDebuggerEnabled();
 }
@@ -263,8 +264,6 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
         if (methodProbesLength <= 0) 
             return;
 
-        const auto corProfiler = trace::profiler;
-
         std::vector<MethodProbeDefinition> methodProbeDefinitions;
 
         for (int i = 0; i < methodProbesLength; i++)
@@ -308,11 +307,11 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
             ProbesMetadataTracker::Instance()->CreateNewProbeIfNotExists(probeId);
         }
 
-        std::scoped_lock<std::mutex> moduleLock(trace::profiler->module_ids_lock_);
+        std::scoped_lock<std::mutex> moduleLock(m_corProfiler->module_ids_lock_);
 
         auto promise = std::make_shared<std::promise<std::vector<MethodIdentifier>>>();
         std::future<std::vector<MethodIdentifier>> future = promise->get_future();
-        m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(corProfiler->module_ids_, methodProbeDefinitions, promise);
+        m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(m_corProfiler->module_ids_, methodProbeDefinitions, promise);
 
         const auto& methodProbeRequests = future.get();
 
@@ -346,9 +345,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
 
         if (lineProbesLength <= 0)
             return;
-
-        const auto corProfiler = trace::profiler;
-
+        
         LineProbeDefinitions lineProbeDefinitions;
 
         for (int i = 0; i < lineProbesLength; i++)
@@ -362,11 +359,11 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
             lineProbeDefinitions.push_back(lineProbe);
         }
 
-        std::scoped_lock<std::mutex> moduleLock(trace::profiler->module_ids_lock_);
+        std::scoped_lock<std::mutex> moduleLock(m_corProfiler->module_ids_lock_);
 
         std::promise<std::vector<MethodIdentifier>> promise;
         std::future<std::vector<MethodIdentifier>> future = promise.get_future();
-        m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(corProfiler->module_ids_, lineProbeDefinitions, &promise);
+        m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(m_corProfiler->module_ids_, lineProbeDefinitions, &promise);
 
         const auto& lineProbeRequests = future.get();
 

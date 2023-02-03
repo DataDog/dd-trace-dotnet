@@ -34,7 +34,7 @@ using namespace std::chrono_literals;
 namespace trace
 {
 
-CorProfiler* profiler = nullptr;
+    CorProfiler* profiler = nullptr;
 
 //
 // ICorProfilerCallback methods
@@ -253,10 +253,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     rejit_handler = info10 != nullptr
                         ? std::make_shared<RejitHandler>(info10, work_offloader)
                         : std::make_shared<RejitHandler>(this->info_, work_offloader);
-    tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
+    tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(this, rejit_handler, work_offloader);
 
     debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(
-        rejit_handler, work_offloader);
+        this, rejit_handler, work_offloader);
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
