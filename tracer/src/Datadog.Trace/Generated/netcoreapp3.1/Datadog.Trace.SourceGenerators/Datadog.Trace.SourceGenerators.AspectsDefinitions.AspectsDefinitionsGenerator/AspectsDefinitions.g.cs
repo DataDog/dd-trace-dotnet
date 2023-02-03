@@ -11,6 +11,8 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.HashAlgorithmAspect",
+"  [AspectMethodInsertBefore(\"System.Security.Cryptography.HashAlgorithm::ComputeHash()\",\"\",[0],[False],[None],Propagation,[])] ComputeHash(System.Security.Cryptography.HashAlgorithm)",
         };
     }
 }
