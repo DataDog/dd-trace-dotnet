@@ -45,14 +45,12 @@ public class IastInstrumentationUnitTests : TestHelper
             using (var agent = EnvironmentHelper.GetMockAgent())
             {
                 EnableIast(true);
-                //  --configuration Release --collect "XPlat Code Coverage" --framework net462 --filter RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions --logger trx --no-build --no-restore --results-directory D:\a\1\s\tracer\build_data\results\Datadog.Trace.Security.IntegrationTests /property:Platform=AnyCPU --logger:datadog -- RunConfiguration.DisableAppDomain=true DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.SkipAutoProps=true DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.StrongNameKey="D:\a\1\s\Datadog.Trace.snk" DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[*]Datadog.Trace.Vendors.*,[Datadog.Trace]System.*,[Datadog.Trace]Mono.*", DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*"
                 string arguments = " --configuration Release --framework net462 --no-build --no-restore /property:Platform=AnyCPU -- RunConfiguration.DisableAppDomain=true ";
                 string sampleAppPath = string.Empty;
                 sampleAppPath = EnvironmentHelper.GetSampleProjectDirectory() + "\\Samples.InstrumentedTests.csproj";
 
                 var dir = GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory());
                 dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin");
-                // bin\Release\net462
                 dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release");
                 dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release/net462");
 
