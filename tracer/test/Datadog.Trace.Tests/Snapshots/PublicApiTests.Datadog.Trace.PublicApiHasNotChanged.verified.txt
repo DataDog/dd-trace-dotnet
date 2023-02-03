@@ -94,12 +94,6 @@ namespace Datadog.Trace
     public static class SpanExtensions
     {
         public static void SetUser(this Datadog.Trace.ISpan span, Datadog.Trace.UserDetails userDetails) { }
-        public static void TrackCustomEvent(this Datadog.Trace.ISpan span, string eventName) { }
-        public static void TrackCustomEvent(this Datadog.Trace.ISpan span, string eventName, System.Collections.Generic.IDictionary<string, string> metadata) { }
-        public static void TrackUserLoginFailureEvent(this Datadog.Trace.ISpan span, string userId, bool exists) { }
-        public static void TrackUserLoginFailureEvent(this Datadog.Trace.ISpan span, string userId, bool exists, System.Collections.Generic.IDictionary<string, string> metadata) { }
-        public static void TrackUserLoginSuccessEvent(this Datadog.Trace.ISpan span, string userId) { }
-        public static void TrackUserLoginSuccessEvent(this Datadog.Trace.ISpan span, string userId, System.Collections.Generic.IDictionary<string, string> metadata) { }
     }
     public static class SpanKinds
     {
@@ -177,6 +171,18 @@ namespace Datadog.Trace
         public string? Role { get; set; }
         public string? Scope { get; set; }
         public string? SessionId { get; set; }
+    }
+}
+namespace Datadog.Trace.AppSec
+{
+    public static class EventTrackingSdk
+    {
+        public static void TrackCustomEvent(string eventName) { }
+        public static void TrackCustomEvent(string eventName, System.Collections.Generic.IDictionary<string, string> metadata) { }
+        public static void TrackUserLoginFailureEvent(string userId, bool exists) { }
+        public static void TrackUserLoginFailureEvent(string userId, bool exists, System.Collections.Generic.IDictionary<string, string> metadata) { }
+        public static void TrackUserLoginSuccessEvent(string userId) { }
+        public static void TrackUserLoginSuccessEvent(string userId, System.Collections.Generic.IDictionary<string, string> metadata) { }
     }
 }
 namespace Datadog.Trace.Ci.Coverage.Attributes
