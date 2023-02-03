@@ -3,13 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-#pragma warning disable IDE0051 // Remove unused private members
+#pragma warning disable CS0169 // Remove unused private members
 #pragma warning disable IDE0049 // Simplify Names
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -366,4 +364,4 @@ namespace Samples.Computer01
     }
 }
 #pragma warning restore IDE0049 // Simplify Names
-#pragma warning restore IDE0051 // Remove unused private members
+#pragma warning restore CS0169 // Remove unused private members

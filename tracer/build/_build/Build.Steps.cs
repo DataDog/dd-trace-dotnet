@@ -2050,7 +2050,7 @@ partial class Build
 
     private void CopyDumpsToBuildData()
     {
-        CopyDumpsToBuildData();
+        CopyDumpsTo(BuildDataDirectory);
     }
 
     private void CopyDumpsTo(AbsolutePath root)
