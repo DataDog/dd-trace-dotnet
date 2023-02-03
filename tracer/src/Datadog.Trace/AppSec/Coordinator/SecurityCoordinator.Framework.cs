@@ -14,6 +14,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Web;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
