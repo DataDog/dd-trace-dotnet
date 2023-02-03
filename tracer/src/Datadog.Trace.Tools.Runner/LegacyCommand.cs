@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tools.Runner
                                 return 1;
                             }
                         }
-                        else if (AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(options.AgentUrl)) is null)
+                        else if (AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(options.AgentUrl)).Configuration is null)
                         {
                             return 1;
                         }
