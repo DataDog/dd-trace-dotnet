@@ -82,10 +82,10 @@ bool AllocationsRecorder::Serialize(std::string filename)
             file.write(alloc.Name.data(), alloc.Name.size());
             file.write(&endOfString, 1);
         }
-
-        // the last string is an empty string
-        file.write(&endOfString, 1);
     }
+
+    // the last string is an empty string
+    file.write(&endOfString, 1);
 
     // save allocations
     uint32_t stringId;
