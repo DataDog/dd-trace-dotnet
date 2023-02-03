@@ -26,37 +26,37 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestInstrumentedUnitTests()
     {
-        bool isNet462x86 = !Environment.Is64BitProcess && !EnvironmentHelper.IsCoreClr();
-        if (!isNet462x86)
+        using (var agent = EnvironmentHelper.GetMockAgent())
         {
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            {
-                EnableIast(true);
-                string arguments = string.Empty;
+            EnableIast(true);
+            string arguments = string.Empty;
 #if NET462
-                arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
+            arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #endif
-                ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments);
-                processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
-            }
+            ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments);
+            processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
-        else
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestInstrumentedUnitTests2()
+    {
+        using (var agent = EnvironmentHelper.GetMockAgent())
         {
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            {
-                EnableIast(true);
-                string arguments = " --configuration Release --framework net462 --no-build --no-restore /property:Platform=AnyCPU -- RunConfiguration.DisableAppDomain=true ";
-                string sampleAppPath = string.Empty;
-                sampleAppPath = EnvironmentHelper.GetSampleProjectDirectory() + "\\Samples.InstrumentedTests.csproj";
+            EnableIast(true);
+            string arguments = " --configuration Release --framework net462 --no-build --no-restore /property:Platform=AnyCPU -- RunConfiguration.DisableAppDomain=true ";
+            string sampleAppPath = string.Empty;
+            sampleAppPath = EnvironmentHelper.GetSampleProjectDirectory() + "\\Samples.InstrumentedTests.csproj";
 
-                var dir = GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory());
-                dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin");
-                dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release");
-                dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release/net462");
+            var dir = GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory());
+            dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin");
+            dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release");
+            dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release/net462");
 
-                (ProcessResult processResult, var commandline) = RunDotnetTestSampleAndWaitForExit2(agent, arguments: arguments, dllPath: sampleAppPath);
-                processResult.StandardError.Should().BeEmpty("commandline: " + commandline + Environment.NewLine + dir + "arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
-            }
+            (ProcessResult processResult, var commandline) = RunDotnetTestSampleAndWaitForExit2(agent, arguments: arguments, dllPath: sampleAppPath);
+            processResult.StandardError.Should().BeEmpty("commandline: " + commandline + Environment.NewLine + dir + "arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
     }
 
