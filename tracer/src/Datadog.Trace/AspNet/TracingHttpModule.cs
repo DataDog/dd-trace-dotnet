@@ -211,6 +211,8 @@ namespace Datadog.Trace.AspNet
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
+            var securityContextCleaned = false;
+
             try
             {
                 var tracer = Tracer.Instance;
@@ -219,8 +221,6 @@ namespace Datadog.Trace.AspNet
                     // integration disabled
                     return;
                 }
-
-                var securityContextCleaned = false;
 
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
@@ -294,18 +294,22 @@ namespace Datadog.Trace.AspNet
                         scope.Dispose();
                         // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
                         TryClearContext(app.Context);
-                        // no other checks, security might have been disabled in the meantime but contexts would still be open
-                        if (!securityContextCleaned)
-                        {
-                            var securityTransport = new SecurityCoordinator.HttpTransport(app.Context);
-                            securityTransport.DisposeAdditiveContext();
-                        }
                     }
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+            }
+            finally
+            {
+                // security might have been disabled in the meantime but contexts would still be open
+                // and this integration may be disabled but others might have opened a context
+                if (!securityContextCleaned && sender is HttpApplication app)
+                {
+                    var securityTransport = new SecurityCoordinator.HttpTransport(app.Context);
+                    securityTransport.DisposeAdditiveContext();
+                }
             }
         }
 
