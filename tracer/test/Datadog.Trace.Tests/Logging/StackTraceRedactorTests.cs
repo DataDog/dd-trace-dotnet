@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.Logging.Internal.Sinks;
@@ -31,6 +32,36 @@ public class StackTraceRedactorTests
     }
 
     [Theory]
+    [MemberData(nameof(TestData.MethodsToRedact), MemberType = typeof(TestData))]
+    public void Redact_RedactsUserCode(object method)
+    {
+        var methodBase = method.Should().NotBeNull().And.BeAssignableTo<MethodBase>().Subject;
+        var stackFrame = new TestStackFrame(methodBase);
+        var stackTrace = new StackTrace(stackFrame);
+
+        var sb = new StringBuilder();
+        StackTraceRedactor.Redact(sb, stackTrace);
+        var redacted = sb.ToString();
+
+        redacted.Should().Be($"{StackTraceRedactor.StackFrameAt}{StackTraceRedactor.Redacted}" + Environment.NewLine);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestData.MethodsToNotRedact), MemberType = typeof(TestData))]
+    public void Redact_DoesNotRedactBclAndDatadog(object method)
+    {
+        var methodBase = method.Should().NotBeNull().And.BeAssignableTo<MethodBase>().Subject;
+        var stackFrame = new TestStackFrame(methodBase);
+        var stackTrace = new StackTrace(stackFrame);
+
+        var sb = new StringBuilder();
+        StackTraceRedactor.Redact(sb, stackTrace);
+        var redacted = sb.ToString();
+
+        redacted.Should().Be(stackTrace.ToString());
+    }
+
+    [Theory]
     [MemberData(nameof(TestData.ToStringTestData), MemberType = typeof(TestData))]
     public void Redact_ContainsExpectedStrings(StackTrace stackTrace, string expectedToString)
     {
@@ -47,6 +78,8 @@ public class StackTraceRedactorTests
         redacted.Should().Contain(expectedToString);
         redacted.Should().EndWith(Environment.NewLine);
         var redactedFrames = redacted.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+        // assumes that all methods in the call stack include one of these in the namespace
+        // We actually filter based on assembly name so this isn't guaranteed, but works in tests
         var allowedPrefixes = new[] { "Datadog", "Microsoft", "System", "REDACTED" };
         redactedFrames.Should().OnlyContain(x => allowedPrefixes.Any(x.Contains));
 
@@ -89,6 +122,41 @@ public class StackTraceRedactorTests
 
     public static class TestData
     {
+        public static TheoryData<object> MethodsToRedact() => new()
+        {
+            typeof(AssertionExtensions).GetMethod(nameof(AssertionExtensions.Should), types: new[] { typeof(object) }),
+            typeof(Xunit.Assert).GetMethod(nameof(Assert.False), types: new[] { typeof(bool) }),
+            typeof(VerifyTests.VerifierSettings).GetMethod(nameof(VerifyTests.VerifierSettings.DisableClipboard)),
+            typeof(VerifyTests.VerifierSettings).GetProperty(nameof(VerifyTests.VerifierSettings.StrictJson))?.GetMethod,
+            typeof(VerifyTests.VerifierSettings).GetProperty(nameof(VerifyTests.VerifierSettings.StrictJson))?.SetMethod,
+            typeof(VerifyTests.SerializationSettings).GetConstructor(Array.Empty<Type>()),
+            typeof(Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.GetMethod,
+            typeof(Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.SetMethod,
+            typeof(Serilog.Log).GetMethod(nameof(Serilog.Log.CloseAndFlush)),
+            typeof(Serilog.Log).GetMethod(nameof(Serilog.Log.Error), types: new[] { typeof(string) }),
+        };
+
+        public static TheoryData<object> MethodsToNotRedact() => new()
+        {
+            typeof(StackTraceRedactorTests.TestData).GetMethod(nameof(NoParameters)),
+            typeof(Datadog.Trace.Tracer).GetMethod(nameof(Tracer.UnsafeSetTracerInstance), BindingFlags.Static | BindingFlags.NonPublic),
+            typeof(Datadog.Trace.Tracer).GetProperty(nameof(Tracer.Instance))?.GetMethod,
+            typeof(Datadog.Trace.Tracer).GetProperty(nameof(Tracer.Instance))?.SetMethod,
+            typeof(Datadog.Trace.Vendors.Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.GetMethod,
+            typeof(Datadog.Trace.Vendors.Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.SetMethod,
+            typeof(Datadog.Trace.Vendors.Serilog.Log).GetMethod(nameof(Serilog.Log.CloseAndFlush)),
+            typeof(StringBuilder).GetMethod(nameof(StringBuilder.Clear)),
+            typeof(string).GetMethod(nameof(string.IndexOf),  types: new[] { typeof(char) }),
+            typeof(System.Threading.Tasks.Task).GetMethod(nameof(System.Threading.Tasks.Task.Wait), types: Array.Empty<Type>()),
+            typeof(System.Data.SqlClient.SqlCommand).GetMethod(nameof(System.Data.SqlClient.SqlCommand.Clone)),
+            typeof(System.Data.SQLite.SQLiteCommand).GetProperty(nameof(System.Data.SQLite.SQLiteCommand.CommandType))?.GetMethod,
+            typeof(System.Data.SQLite.SQLiteCommand).GetProperty(nameof(System.Data.SQLite.SQLiteCommand.CommandType))?.SetMethod,
+#if !NETFRAMEWORK
+            typeof(Microsoft.CodeAnalysis.DiagnosticDescriptor).GetProperty(nameof(Microsoft.CodeAnalysis.DiagnosticDescriptor.Id))?.GetMethod,
+            typeof(Microsoft.Extensions.DependencyInjection.ServiceCollection).GetMethod(nameof(Microsoft.Extensions.DependencyInjection.ServiceCollection.Contains), types: new[] { typeof(Microsoft.Extensions.DependencyInjection.ServiceDescriptor) }),
+#endif
+        };
+
         public static IEnumerable<object[]> ToStringTestData()
         {
             yield return new object[] { new StackTrace(InvokeException()), "Datadog.Trace.Tests.Logging.StackTraceRedactorTests.ThrowException()" };
@@ -102,10 +170,10 @@ public class StackTraceRedactorTests
         }
 
         [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
-        internal static unsafe StackTrace FunctionPointerParameter(delegate*<void> x) => new();
+        public static unsafe StackTrace FunctionPointerParameter(delegate*<void> x) => new();
 
         [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
-        private static StackTrace NoParameters() => new();
+        public static StackTrace NoParameters() => new();
 
         [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
         private static StackTrace OneParameter(int x) => new();
@@ -126,5 +194,17 @@ public class StackTraceRedactorTests
 
             public StackTrace StackTrace { get; }
         }
+    }
+
+    public class TestStackFrame : StackFrame
+    {
+        private readonly MethodBase _methodBase;
+
+        public TestStackFrame(MethodBase methodBase)
+        {
+            _methodBase = methodBase;
+        }
+
+        public override MethodBase GetMethod() => _methodBase;
     }
 }
