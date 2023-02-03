@@ -62,12 +62,6 @@ internal class IastRequestContext
         _taintedObjects.TaintInputString(path, new Source(SourceType.GetByte(SourceTypeName.RequestPath), null, path));
     }
 
-    // Used ONLY for testing purposes
-    internal void AddTaintedForTest(string name, string value, SourceTypeName sourceType = SourceTypeName.RequestHeader)
-    {
-        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(sourceType), name, value));
-    }
-
     private void AddRouteData(IDictionary<string, object> routeData)
     {
         if (!_routedParametersAdded)

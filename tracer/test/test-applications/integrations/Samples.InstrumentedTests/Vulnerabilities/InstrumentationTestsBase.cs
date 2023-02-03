@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace;
+using Datadog.Trace.Iast;
+using Datadog.Trace.Util;
 using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
@@ -26,7 +28,8 @@ public class InstrumentationTestsBase
 
     protected void AddTainted(string tainted)
     {
-        traceContext.IastRequestContext.AddTaintedForTest(null, tainted);
+        var taintedObjects = (TaintedObjects) typeof(IastRequestContext).GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(traceContext.IastRequestContext);
+        taintedObjects.TaintInputString(tainted, new Source(SourceType.GetByte(SourceTypeName.RequestHeader), null, tainted));
     }
 
     protected void AssertTainted(string tainted)
@@ -91,7 +94,9 @@ public class InstrumentationTestsBase
     private List<Span> GetGeneratedSpans(TraceContext context)
     {
         var spans = new List<Span>();
-        var contextSpans = context.Spans.GetArray();
+
+        var spansArrayBuilder = (ArrayBuilder<Span>)typeof(TraceContext).GetField("_spans", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(context);
+        var contextSpans = spansArrayBuilder.GetArray();
 
         foreach (var span in contextSpans)
         {
