@@ -55,7 +55,7 @@ public class IastInstrumentationUnitTests : TestHelper
                 dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release/net462");
 
                 (ProcessResult processResult, var commandline) = RunDotnetTestSampleAndWaitForExit2(agent, arguments: arguments, dllPath: sampleAppPath);
-                processResult.StandardError.Should().BeEmpty("commandline: " + commandline + dir + "arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
+                processResult.StandardError.Should().BeEmpty("commandline: " + commandline + Environment.NewLine + dir + "arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
             }
         }
     }
@@ -89,7 +89,7 @@ public class IastInstrumentationUnitTests : TestHelper
         Output.WriteLine($"Starting Application: {sampleAppPath}");
         string testCli = EnvironmentHelper.GetDotNetTest();
         string exec = testCli;
-        string appPath = testCli.StartsWith("dotnet") ? $"test {sampleAppPath}" : sampleAppPath;
+        string appPath = $"test {sampleAppPath}";
         Output.WriteLine("Executable: " + exec);
         Output.WriteLine("ApplicationPath: " + appPath);
         var commandline = exec + " " + $"{appPath} {arguments ?? string.Empty}";
