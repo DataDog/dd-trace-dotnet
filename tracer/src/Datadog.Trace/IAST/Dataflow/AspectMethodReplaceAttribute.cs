@@ -5,29 +5,28 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Dataflow
+namespace Datadog.Trace.Iast.Dataflow;
+
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+internal sealed class AspectMethodReplaceAttribute : AspectAttribute
 {
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    internal class AspectMethodReplaceAttribute : AspectAttribute
+    public AspectMethodReplaceAttribute(string targetMethod)
+        : base(targetMethod)
     {
-        public AspectMethodReplaceAttribute(string targetMethod)
-            : base(targetMethod)
-        {
-        }
+    }
 
-        public AspectMethodReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-            : base(targetMethod, filters)
-        {
-        }
+    public AspectMethodReplaceAttribute(string targetMethod, params AspectFilter[] filters)
+        : base(targetMethod, filters)
+    {
+    }
 
-        public AspectMethodReplaceAttribute(string targetMethod, string targerType)
-            : base(targetMethod, targerType)
-        {
-        }
+    public AspectMethodReplaceAttribute(string targetMethod, string targetType, params AspectFilter[] filters)
+        : base(targetMethod, targetType, filters)
+    {
+    }
 
-        public AspectMethodReplaceAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
-            : base(targetMethod, aspectType, vulnerabilityTypes)
-        {
-        }
+    public AspectMethodReplaceAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
+        : base(targetMethod, aspectType, vulnerabilityTypes)
+    {
     }
 }

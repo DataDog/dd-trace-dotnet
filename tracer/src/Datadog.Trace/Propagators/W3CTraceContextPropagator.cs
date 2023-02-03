@@ -741,6 +741,12 @@ namespace Datadog.Trace.Propagators
                     break;
             }
 
+            if (sb.Length == 0)
+            {
+                StringBuilderCache.GetStringAndRelease(sb);
+                return string.Empty;
+            }
+
             // remove trailing ","
             if (sb[sb.Length - 1] == TraceStateHeaderValuesSeparator)
             {

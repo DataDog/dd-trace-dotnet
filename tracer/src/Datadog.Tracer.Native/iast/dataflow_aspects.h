@@ -46,7 +46,7 @@ namespace iast
 
         std::vector<WSTRING> _assemblies;
         WSTRING _aspectTypeName;
-        AspectType _aspectType = AspectType::NONE;// "PROPAGATION"_W;
+        AspectType _aspectType = AspectType::None;// "PROPAGATION"_W;
         std::vector<VulnerabilityType> _vulnerabilityTypes;
         std::vector<DataflowAspect> _aspects;
         std::vector<DataflowAspectFilterValue> _filters;
@@ -78,7 +78,7 @@ namespace iast
         bool _isVirtual = false;
         bool _isGeneric = false;
 
-        AspectType _aspectType = AspectType::NONE;
+        AspectType _aspectType = AspectType::None;
         std::vector<VulnerabilityType> _vulnerabilityTypes;
 
         std::vector<WSTRING> _targetMethodAssemblies;

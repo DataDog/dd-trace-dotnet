@@ -198,7 +198,7 @@ namespace iast
 
     AspectType DataflowAspect::GetAspectType()
     {
-        if (_aspectType != AspectType::NONE) { return _aspectType; }
+        if (_aspectType != AspectType::None) { return _aspectType; }
         return _aspectClass->_aspectType;
     }
     std::vector<VulnerabilityType> DataflowAspect::GetVulnerabilityTypes()

@@ -46,7 +46,8 @@
       },
       {
         "name": "body-parser",
-        "version": "1.19.0"
+        "version": "1.19.0",
+        "hash": "646DF3C3-959F-4011-8673-EE58BD9291E2"
       }
     ],
     "configuration": [],
