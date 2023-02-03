@@ -13,6 +13,7 @@
 #include "dd_profiler_version.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
+#include "IAllocationsRecorder.h"
 
 #include <cassert>
 #include <fstream>
@@ -61,12 +62,14 @@ LibddprofExporter::LibddprofExporter(
     IApplicationStore* applicationStore,
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers,
-    MetricsRegistry& metricsRegistry)
+    MetricsRegistry& metricsRegistry,
+    IAllocationsRecorder* allocationsRecorder)
     :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore},
-    _metricsRegistry{metricsRegistry}
+    _metricsRegistry{metricsRegistry},
+    _allocationsRecorder{allocationsRecorder}
 {
     _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
@@ -566,6 +569,22 @@ void LibddprofExporter::ExportToDisk(const std::string& applicationName, Seriali
     else
     {
         Log::Debug("Profile serialized in ", pprofFilePath);
+    }
+
+    // save recorded allocations if any
+    if (_allocationsRecorder == nullptr)
+    {
+        return;
+    }
+
+    auto allocFilePath = pprofFilePath + ".balloc";
+    if (!_allocationsRecorder->Serialize(allocFilePath))
+    {
+        Log::Error("Unable to write allocations on disk: ", allocFilePath);
+    }
+    else
+    {
+        Log::Debug("Allocations serialized in ", allocFilePath);
     }
 }
 

@@ -26,6 +26,7 @@ class IMetricsSender;
 class IApplicationStore;
 class IRuntimeInfo;
 class IEnabledProfilers;
+class IAllocationsRecorder;
 
 class LibddprofExporter : public IExporter
 {
@@ -36,7 +37,8 @@ public:
         IApplicationStore* applicationStore,
         IRuntimeInfo* runtimeInfo,
         IEnabledProfilers* enabledProfilers,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        IAllocationsRecorder* allocationsRecorder);
     ~LibddprofExporter() override;
     bool Export() override;
     void Add(std::shared_ptr<Sample> const& sample) override;
@@ -164,6 +166,7 @@ private:
     std::mutex _perAppInfoLock;
     MetricsRegistry& _metricsRegistry;
     fs::path _metricsFileFolder;
+    IAllocationsRecorder* _allocationsRecorder;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

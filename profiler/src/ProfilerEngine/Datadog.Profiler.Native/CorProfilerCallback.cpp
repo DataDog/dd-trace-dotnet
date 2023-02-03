@@ -45,6 +45,7 @@
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
+#include "AllocationsRecorder.h"
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
@@ -299,6 +300,11 @@ bool CorProfilerCallback::InitializeServices()
         // TODO: register any provider that needs to get notified when GCs start and end
     }
 
+    if (_pConfiguration->IsAllocationRecorderEnabled())
+    {
+        _pAllocationsRecorder = std::make_unique<AllocationsRecorder>(_pCorProfilerInfo, _pFrameStore.get());
+    }
+
     // Avoid iterating twice on all providers in order to inject this value in each constructor
     // and store it in CollectorBase so it can be used in TransformRawSample (where the sample is created)
     Sample::ValuesCount = sampleTypeDefinitions.size();
@@ -328,7 +334,9 @@ bool CorProfilerCallback::InitializeServices()
         _pApplicationStore,
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get(),
-        _metricsRegistry);
+        _metricsRegistry,
+        _pAllocationsRecorder.get()
+        );
 
     _pSamplesCollector = RegisterService<SamplesCollector>(
         _pConfiguration.get(),
@@ -941,6 +949,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_MONITOR_MODULE_LOADS;
     }
 
+    if (_pConfiguration->IsAllocationRecorderEnabled())
+    {
+        //              for GC                              for JIT
+        eventMask |= COR_PRF_MONITOR_OBJECT_ALLOCATED | COR_PRF_ENABLE_OBJECT_ALLOCATED;
+    }
+
     if (_pCorProfilerInfoEvents != nullptr)
     {
         // listen to CLR events via ICorProfilerCallback
@@ -1420,6 +1434,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::MovedReferences(ULONG cMovedObjec
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ObjectAllocated(ObjectID objectId, ClassID classId)
 {
+    if (_pAllocationsRecorder != nullptr)
+    {
+        _pAllocationsRecorder->OnObjectAllocated(objectId, classId);
+    }
+
     return S_OK;
 }
 

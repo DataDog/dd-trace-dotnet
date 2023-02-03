@@ -34,6 +34,7 @@ public:
 public :
     std::tuple<bool, std::string_view, std::string_view> GetFrame(uintptr_t instructionPointer) override;
     bool GetTypeName(ClassID classId, std::string& name) override;
+    bool GetTypeName(ClassID classId, std::string_view& name) override;
 
 private:
     bool GetFunctionInfo(

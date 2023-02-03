@@ -196,6 +196,22 @@ bool FrameStore::GetTypeName(ClassID classId, std::string& name)
     return true;
 }
 
+bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
+{
+    // no backend encoding --> C# like
+    bool isEncoded = false;
+
+    TypeDesc typeDesc;
+    if (!GetTypeDesc(classId, typeDesc, isEncoded))
+    {
+        return false;
+    }
+
+    name = typeDesc.Type;
+
+    return true;
+}
+
 
 bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc& typeDesc)
 {
