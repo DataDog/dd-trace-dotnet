@@ -52,7 +52,8 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Configuration key for locations to write internal diagnostic logs.
-        /// Defaults to <c>file</c>
+        /// Comma-separated list, e.g. file,datadog. Currently only <c>file</c> is supported.
+        /// Defaults to <c>file</c>.
         /// </summary>
         public const string LogSinks = "DD_TRACE_LOG_SINKS";
 }
