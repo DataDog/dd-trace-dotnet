@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Datadog.Trace.Iast;
 
@@ -32,13 +33,27 @@ internal readonly struct Evidence
         }
 
         var valueParts = new List<ValuePart>(_ranges.Length);
-
-        foreach (var range in _ranges)
+        var rangeList = _ranges.ToList();
+        rangeList.Sort();
+        int currentIndex = 0;
+        var valueLenght = Value.Length;
+        foreach (var range in rangeList)
         {
-            if (!range.IsEmpty() && range.Source != null)
+            if (!range.IsEmpty() && range.Source != null && range.Start >= 0 && range.Start + range.Length <= valueLenght && currentIndex <= range.Start)
             {
+                if (currentIndex != range.Start)
+                {
+                    valueParts.Add(new ValuePart(Value.Substring(currentIndex, range.Start - currentIndex), null));
+                }
+
                 valueParts.Add(new ValuePart(Value.Substring(range.Start, range.Length), range.Source.GetInternalId()));
+                currentIndex = range.Start + range.Length;
             }
+        }
+
+        if (valueParts.Count > 0 && currentIndex < Value.Length)
+        {
+            valueParts.Add(new ValuePart(Value.Substring(currentIndex), null));
         }
 
         return valueParts.Count > 0 ? valueParts : null;
