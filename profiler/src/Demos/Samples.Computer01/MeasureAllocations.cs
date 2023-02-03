@@ -1,3 +1,11 @@
+// <copyright file="MeasureAllocations.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
+#pragma warning disable IDE0051 // Remove unused private members
+#pragma warning disable IDE0049 // Simplify Names
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -357,3 +365,5 @@ namespace Samples.Computer01
         }
     }
 }
+#pragma warning restore IDE0049 // Simplify Names
+#pragma warning restore IDE0051 // Remove unused private members

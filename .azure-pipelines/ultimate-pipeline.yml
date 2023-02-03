@@ -682,7 +682,7 @@ stages:
         inputs:
           testResultsFiles: |
             tracer/test/**/test*.xml
-            profiler/_build/bin/**/test*.xml
+            profiler/build_data/*.xml
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
@@ -810,7 +810,7 @@ stages:
     - task: PublishTestResults@2
       displayName: publish profiler test results
       inputs:
-        testResultsFiles: profiler/_build/bin/**/test*.xml
+        testResultsFiles: profiler/build_data/*.xml
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64

@@ -2050,17 +2050,22 @@ partial class Build
 
     private void CopyDumpsToBuildData()
     {
+        CopyDumpsToBuildData();
+    }
+
+    private void CopyDumpsTo(AbsolutePath root)
+    {
         if (Directory.Exists(TempDirectory))
         {
             foreach (var dump in GlobFiles(TempDirectory, "coredump*"))
             {
-                MoveFileToDirectory(dump, BuildDataDirectory / "dumps", FileExistsPolicy.Overwrite);
+                MoveFileToDirectory(dump, root / "dumps", FileExistsPolicy.Overwrite);
             }
         }
 
         foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))
         {
-            CopyFileToDirectory(file, BuildDataDirectory, FileExistsPolicy.OverwriteIfNewer);
+            CopyFileToDirectory(file, root, FileExistsPolicy.OverwriteIfNewer);
         }
     }
 

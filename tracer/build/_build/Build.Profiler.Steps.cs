@@ -232,16 +232,17 @@ partial class Build
                                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                                 .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                                 .SetFilter(filter)
+                                .SetProcessLogOutput(true)
                                 .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .CombineWith(integrationTestProjects, (s, project) => s
                                                                                         .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
                                                                                         .SetProjectFile(project)),
-                        degreeOfParallelism: 2);
+                        degreeOfParallelism: 4);
         }
         finally
         {
-            CopyDumpsToBuildData();
+            CopyDumpsTo(ProfilerBuildDataDirectory);
         }
     }
 
