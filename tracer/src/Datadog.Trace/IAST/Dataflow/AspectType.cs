@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Iast.Dataflow;
 
 /// <summary>
 /// Type of an aspect function
@@ -11,14 +11,14 @@ namespace Datadog.Trace.Iast;
 internal enum AspectType
 {
     /// <summary> Default / undefined </summary>
-    DEFAULT,
+    Default,
 
     /// <summary> Propagation aspect </summary>
-    PROPAGATION,
+    Propagation,
 
     /// <summary> Sink aspect </summary>
-    SINK,
+    Sink,
 
     /// <summary> Source aspect </summary>
-    SOURCE,
+    Source,
 }

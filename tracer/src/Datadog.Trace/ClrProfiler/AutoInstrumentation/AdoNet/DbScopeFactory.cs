@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    IastModule.OnSqlQuery(command.CommandText, integrationId, Iast.Iast.Instance);
+                    IastModule.OnSqlQuery(command.CommandText, integrationId);
                 }
             }
             catch (Exception ex)

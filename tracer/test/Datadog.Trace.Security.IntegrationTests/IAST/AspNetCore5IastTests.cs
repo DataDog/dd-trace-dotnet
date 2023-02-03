@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -66,6 +67,21 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public AspNetCore5IastTestsTwoVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
     : base(fixture, outputHelper, vulnerabilitiesPerRequest: 2)
         {
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastLocationSpanId()
+        {
+            var url = "/Iast/WeakHashing";
+            IncludeAllHttpSpans = true;
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var parentSpan = spans.First(x => x.ParentId == null);
+            var childSpan = spans.First(x => x.ParentId == parentSpan.SpanId);
+            var vulnerabilityJson = parentSpan.GetTag(Tags.IastJson);
+            vulnerabilityJson.Should().Contain("\"spanId\": " + childSpan.SpanId);
         }
     }
 
@@ -198,6 +214,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public virtual async Task TryStartApp()
         {
             EnableIast(IastEnabled);
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
             DisableObfuscationQueryString();
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);

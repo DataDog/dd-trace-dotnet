@@ -7,43 +7,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
 {
     internal class ParseUtility
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ParseUtility>();
-
-#if NETCOREAPP
-        public static ulong ParseFromHexOrDefault(ReadOnlySpan<char> value)
-        {
-            // we use ulong.TryParse() here instead of Convert.ToUInt64() like we do in ParseFromHexOrDefault(string)
-            // because benchmarks show it has better performance in .NET Core
-            if (ulong.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
-            {
-                return result;
-            }
-
-            return default;
-        }
-#else
-        public static ulong ParseFromHexOrDefault(string value)
-        {
-            try
-            {
-                // we use Convert.ToUInt64() here instead of ulong.TryParse() like we do in ParseFromHexOrDefault(ReadOnlySpan<char>)
-                // because benchmarks show it has better performance in .NET Framework
-                return Convert.ToUInt64(value, 16);
-            }
-            catch
-            {
-                return default;
-            }
-        }
-#endif
 
         public static ulong? ParseUInt64<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter getter, string headerName)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>

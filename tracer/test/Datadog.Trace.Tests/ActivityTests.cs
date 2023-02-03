@@ -7,6 +7,7 @@ using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 using SD = System.Diagnostics;
@@ -60,8 +61,8 @@ namespace Datadog.Trace.Tests
                 // Extract values for assertions
                 var traceId = myActivity.TraceId.ToString();
                 var spanId = myActivity.SpanId.ToString();
-                var traceIdInULong = ParseUtility.ParseFromHexOrDefault(traceId.Substring(16));
-                var spanIdInULong = ParseUtility.ParseFromHexOrDefault(spanId);
+                HexString.TryParseUInt64(traceId.Substring(16), out var traceIdInULong);
+                HexString.TryParseUInt64(spanId, out var spanIdInULong);
 
                 // Assert scope created from activity
                 scopeFromActivity = Tracer.Instance.ActiveScope;
@@ -98,7 +99,8 @@ namespace Datadog.Trace.Tests
                         // Assert scope created from activity
                         scopeFromChildActivity = Tracer.Instance.ActiveScope;
                         scopeFromChildActivity.Span.TraceId.Should().Be(traceIdInULong);
-                        scopeFromChildActivity.Span.SpanId.Should().Be(ParseUtility.ParseFromHexOrDefault(childActivity.SpanId.ToString()));
+                        HexString.TryParseUInt64(childActivity.SpanId.ToString(), out var childActivitySpanId);
+                        scopeFromChildActivity.Span.SpanId.Should().Be(childActivitySpanId);
                         ((Span)scopeFromChildActivity.Span).Context.RawTraceId.Should().Be(traceId);
                         scopeFromChildActivity.Span.OperationName.Should().Be("Child activity");
 
@@ -161,7 +163,7 @@ namespace Datadog.Trace.Tests
                     // Assert trace id and parent span id
                     childActivity.TraceId.ToString().Should().Be(hexTraceId);
                     childActivity.ParentSpanId.ToString().Should().Be(hexSpanId);
-                    var spanIdInULong = ParseUtility.ParseFromHexOrDefault(childActivity.SpanId.ToString());
+                    HexString.TryParseUInt64(childActivity.SpanId.ToString(), out var spanIdInULong);
 
                     // Assert scope created from activity
                     var scopeFromChildActivity = Tracer.Instance.ActiveScope;

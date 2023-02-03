@@ -9,56 +9,55 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast.Settings;
 
 namespace Datadog.Trace.Iast;
 
-internal class IastModule
+internal static class IastModule
 {
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
     private const string OperationNameSqlInjection = "sql_injection";
+    private static IastSettings iastSettings = Iast.Instance.Settings;
 
-    public IastModule()
+    public static Scope? OnSqlQuery(string query, IntegrationId integrationId)
     {
+        return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, true);
     }
 
-    public static Scope? OnSqlQuery(string query, IntegrationId integrationId, Iast iast)
-    {
-        return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, iast, true);
-    }
-
-    public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
+    public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId)
     {
         var algorithm = type.BaseType?.Name;
 
-        if (algorithm is null || !InvalidCipherAlgorithm(type, algorithm, iast))
+        if (algorithm is null || !InvalidCipherAlgorithm(type, algorithm))
         {
             return null;
         }
 
-        return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakCipher, OperationNameWeakCipher, iast);
+        return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakCipher, OperationNameWeakCipher);
     }
 
-    public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
+    public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId)
     {
-        if (algorithm == null || !InvalidHashAlgorithm(algorithm, iast))
+        if (algorithm == null || !InvalidHashAlgorithm(algorithm))
         {
             return null;
         }
 
-        return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash, iast);
+        return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash);
     }
 
-    private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast, bool taintedFromEvidenceRequired = false)
+    private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
     {
         var tracer = Tracer.Instance;
-        if (!iast.Settings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
+        if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
             return null;
         }
 
-        var traceContext = (tracer.ActiveScope as Scope)?.Span?.Context?.TraceContext;
+        var currentSpan = (tracer.ActiveScope as Scope)?.Span;
+        var traceContext = currentSpan?.Context?.TraceContext;
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
 
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
@@ -93,9 +92,9 @@ internal class IastModule
 
         // Sometimes we do not have the file/line but we have the method/class.
         var filename = frameInfo.StackFrame?.GetFileName();
-        var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue, tainted?.Ranges));
+        var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null, currentSpan?.SpanId), new Evidence(evidenceValue, tainted?.Ranges));
 
-        if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
+        if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
             if (isRequest)
             {
@@ -144,9 +143,9 @@ internal class IastModule
         return $"{namespaceName}.{typeName}::{methodName}";
     }
 
-    private static bool InvalidHashAlgorithm(string algorithm, Iast iast)
+    private static bool InvalidHashAlgorithm(string algorithm)
     {
-        foreach (var weakHashAlgorithm in iast.Settings.WeakHashAlgorithmsArray)
+        foreach (var weakHashAlgorithm in iastSettings.WeakHashAlgorithmsArray)
         {
             if (string.Equals(algorithm, weakHashAlgorithm, StringComparison.OrdinalIgnoreCase))
             {
@@ -157,14 +156,14 @@ internal class IastModule
         return false;
     }
 
-    private static bool InvalidCipherAlgorithm(Type type, string algorithm, Iast iast)
+    private static bool InvalidCipherAlgorithm(Type type, string algorithm)
     {
         if (ProviderValid(type.Name))
         {
             return false;
         }
 
-        foreach (var weakCipherAlgorithm in iast.Settings.WeakCipherAlgorithmsArray)
+        foreach (var weakCipherAlgorithm in iastSettings.WeakCipherAlgorithmsArray)
         {
             if (string.Equals(algorithm, weakCipherAlgorithm, StringComparison.OrdinalIgnoreCase))
             {

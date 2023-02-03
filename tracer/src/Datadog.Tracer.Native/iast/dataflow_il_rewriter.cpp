@@ -769,9 +769,9 @@ namespace iast
     SpotInfoStatus ILRewriter::GetSpotInfoStatus(ILInstr* pInstr, Aspect* aspect)
     {
         int id = GetSpotInfoId(pInstr, aspect);
-        if (id < 0) { return SpotInfoStatus::DISABLED; }
-        if (id > 0) {return SpotInfoStatus::TRACKED; }
-        return SpotInfoStatus::ENABLED;
+        if (id < 0) { return SpotInfoStatus::Disabled; }
+        if (id > 0) {return SpotInfoStatus::Tracked; }
+        return SpotInfoStatus::Enabled;
     }
 
     HRESULT ILRewriter::AddProbeBefore(mdToken hookMethod, ILInstr* pInsertProbeBeforeThisInstr, OPCODE opCode, ULONG32* hookArg)

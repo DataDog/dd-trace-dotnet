@@ -55,6 +55,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public double TotalTestDurationInMilliseconds { get; set; } = 0;
 
+        public string ProcessOutput { get; set; }
+
         public static string GetApplicationOutputFolderPath(string appName)
         {
             var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";
@@ -154,6 +156,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             TotalTestDurationInMilliseconds = (endTime - startTime).TotalMilliseconds;
             var standardOutput = processHelper.StandardOutput;
             var errorOutput = processHelper.ErrorOutput;
+            ProcessOutput = standardOutput;
 
             if (!ranToCompletion)
             {
