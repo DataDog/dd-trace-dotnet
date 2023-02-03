@@ -45,7 +45,8 @@ public class IastInstrumentationUnitTests : TestHelper
             using (var agent = EnvironmentHelper.GetMockAgent())
             {
                 EnableIast(true);
-                string arguments = "  -f net462 ";
+                //  --configuration Release --collect "XPlat Code Coverage" --framework net462 --filter RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions --logger trx --no-build --no-restore --results-directory D:\a\1\s\tracer\build_data\results\Datadog.Trace.Security.IntegrationTests /property:Platform=AnyCPU --logger:datadog -- RunConfiguration.DisableAppDomain=true DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.SkipAutoProps=true DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.StrongNameKey="D:\a\1\s\Datadog.Trace.snk" DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[*]Datadog.Trace.Vendors.*,[Datadog.Trace]System.*,[Datadog.Trace]Mono.*", DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*"
+                string arguments = " --configuration Release --framework net462 --no-build --no-restore /property:Platform=AnyCPU -- RunConfiguration.DisableAppDomain=true ";
                 string sampleAppPath = string.Empty;
                 sampleAppPath = EnvironmentHelper.GetSampleProjectDirectory() + "\\Samples.InstrumentedTests.csproj";
 
@@ -53,10 +54,10 @@ public class IastInstrumentationUnitTests : TestHelper
                 dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin");
                 // bin\Release\net462
                 dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release");
-                dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/net462");
+                dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release/net462");
 
-                ProcessResult processResult = RunDotnetTestSampleAndWaitForExit2(agent, arguments: arguments, dllPath: sampleAppPath);
-                processResult.StandardError.Should().BeEmpty(dir + "arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
+                (ProcessResult processResult, var commandline) = RunDotnetTestSampleAndWaitForExit2(agent, arguments: arguments, dllPath: sampleAppPath);
+                processResult.StandardError.Should().BeEmpty("commandline: " + commandline + dir + "arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
             }
         }
     }
@@ -78,7 +79,7 @@ public class IastInstrumentationUnitTests : TestHelper
         return dir;
     }
 
-    private Process StartDotnetTestSample2(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", string dllPath = "")
+    private (Process Process, string Command) StartDotnetTestSample2(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", string dllPath = "")
     {
         // get path to sample app that the profiler will attach to
         string sampleAppPath = dllPath.IsNullOrEmpty() ? EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion) : dllPath;
@@ -93,6 +94,7 @@ public class IastInstrumentationUnitTests : TestHelper
         string appPath = testCli.StartsWith("dotnet") ? $"test {sampleAppPath}" : sampleAppPath;
         Output.WriteLine("Executable: " + exec);
         Output.WriteLine("ApplicationPath: " + appPath);
+        var commandline = exec + " " + $"{appPath} {arguments ?? string.Empty}";
         var process = ProfilerHelper.StartProcessWithProfiler(
             exec,
             EnvironmentHelper,
@@ -103,12 +105,12 @@ public class IastInstrumentationUnitTests : TestHelper
 
         Output.WriteLine($"ProcessId: {process.Id}");
 
-        return process;
+        return (process, commandline);
     }
 
-    private ProcessResult RunDotnetTestSampleAndWaitForExit2(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", string dllPath = "")
+    private (ProcessResult Result, string Command) RunDotnetTestSampleAndWaitForExit2(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", string dllPath = "")
     {
-        var process = StartDotnetTestSample2(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, dllPath: dllPath);
+        (var process, var commandline) = StartDotnetTestSample2(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, dllPath: dllPath);
 
         using var helper = new ProcessHelper(process);
 
@@ -132,6 +134,6 @@ public class IastInstrumentationUnitTests : TestHelper
             Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
         }
 
-        return new ProcessResult(process, standardOutput, standardError, exitCode);
+        return (new ProcessResult(process, standardOutput, standardError, exitCode), commandline);
     }
 }
