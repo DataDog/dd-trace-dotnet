@@ -177,42 +177,43 @@ partial class Build
             }
         });
 
-    Target BuildProfilerSamplesLinux => _ => _
-        .Description("Builds the profiler samples.")
-        .Unlisted()
-        .Executes(() =>
-        {
-            var samplesToBuild = ProfilerSamplesSolution.GetProjects("*");
+    Target BuildProfilerSamples => _ => _
+       .Description("Builds the profiler samples.")
+       .Unlisted()
+       .Executes(() =>
+       {
+           var samplesToBuild = ProfilerSamplesSolution.GetProjects("*");
 
-            // Always x64
-            DotNetBuild(x => x
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(MSBuildTargetPlatform.x64)
-                    .SetNoWarnDotNetCore3()
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                    .CombineWith(samplesToBuild, (c, project) => c
-                        .SetProjectFile(project)));
-        });
+           DotNetBuild(x => x
+                   .SetConfiguration(BuildConfiguration)
+                   .SetTargetPlatform(TargetPlatform)
+                   .SetNoWarnDotNetCore3()
+                   .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                   .CombineWith(samplesToBuild, (c, project) => c
+                       .SetProjectFile(project)));
+       });
 
     Target BuildAndRunProfilerCpuLimitTests => _ => _
-        .After(BuildProfilerSamplesLinux)
+        .After(BuildProfilerSamples)
         .Description("Run the profiler container tests")
         .Requires(() => IsLinux && !IsArm64)
         .Executes(() =>
         {
-            BuildAndRunProfilerIntegrationTests("(Category=CpuLimitTest)");
+            BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
         });
 
-    Target BuildAndRunProfilerLinuxIntegrationTests => _ => _
-        .After(BuildProfilerSamplesLinux)
-        .Description("Builds and runs the profiler linux integration tests")
-        .Requires(() => IsLinux && !IsArm64)
+    Target BuildAndRunProfilerIntegrationTests => _ => _
+        .After(BuildProfilerSamples)
+        .Description("Builds and runs the profiler integration tests")
+        .Requires(() => !IsArm64)
         .Executes(() =>
         {
-            BuildAndRunProfilerIntegrationTests("(Category!=WindowsOnly)");
+            // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
+            var filter = $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)";
+            BuildAndRunProfilerIntegrationTestsInternal(filter);
         });
 
-    private void BuildAndRunProfilerIntegrationTests(string filter)
+    private void BuildAndRunProfilerIntegrationTestsInternal(string filter)
     {
         EnsureExistingDirectory(ProfilerTestLogsDirectory);
 
@@ -223,24 +224,25 @@ partial class Build
         try
         {
             // Run these ones in parallel
-            // Always x64
             DotNetTest(config => config
                                 .SetConfiguration(BuildConfiguration)
-                                .SetTargetPlatform(MSBuildTargetPlatform.x64)
+                                .SetTargetPlatform(TargetPlatform)
+                                .SetDotnetPath(TargetPlatform)
                                 .SetNoWarnDotNetCore3()
                                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                                 .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                                 .SetFilter(filter)
+                                .SetProcessLogOutput(true)
                                 .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .CombineWith(integrationTestProjects, (s, project) => s
                                                                                         .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
                                                                                         .SetProjectFile(project)),
-                        degreeOfParallelism: 2);
+                        degreeOfParallelism: 4);
         }
         finally
         {
-            CopyDumpsToBuildData();
+            CopyDumpsTo(ProfilerBuildDataDirectory);
         }
     }
 
