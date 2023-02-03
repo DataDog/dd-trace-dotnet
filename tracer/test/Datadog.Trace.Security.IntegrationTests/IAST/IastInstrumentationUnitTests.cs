@@ -37,29 +37,6 @@ public class IastInstrumentationUnitTests : TestHelper
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
     }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestInstrumentedUnitTests2()
-    {
-        using (var agent = EnvironmentHelper.GetMockAgent())
-        {
-            EnableIast(true);
-            string arguments = " --configuration Release --framework net462 --no-build --no-restore /property:Platform=AnyCPU -- RunConfiguration.DisableAppDomain=true ";
-            string sampleAppPath = string.Empty;
-            sampleAppPath = EnvironmentHelper.GetSampleProjectDirectory() + "\\Samples.InstrumentedTests.csproj";
-
-            var dir = GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory());
-            dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin");
-            dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release");
-            dir += GetDirFiles(EnvironmentHelper.GetSampleProjectDirectory() + "/bin/Release/net462");
-
-            (ProcessResult processResult, var commandline) = RunDotnetTestSampleAndWaitForExit2(agent, arguments: arguments, dllPath: sampleAppPath);
-            processResult.StandardError.Should().BeEmpty("commandline: " + commandline + Environment.NewLine + dir + "arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
-        }
-    }
-
     private string GetDirFiles(string directory)
     {
         string dir = directory + " files: " + Environment.NewLine;
