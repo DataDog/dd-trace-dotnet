@@ -1822,20 +1822,20 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildProfilerLinuxIntegrationTests"
+        command: "BuildProfilerSamplesLinux"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "RunProfilerCpuLimitTests"
+        command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "RunProfilerCpuLimitTests"
+        command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
