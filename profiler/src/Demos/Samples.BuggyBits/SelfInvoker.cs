@@ -133,6 +133,11 @@ namespace BuggyBits
                 {
                     urls.Add($"{rootUrl}/News");
                 }
+
+                if ((_scenario & Scenario.EndpointsCount) == Scenario.EndpointsCount)
+                {
+                    urls.Add($"{rootUrl}/End.Point.With.Dots.js");
+                }
             }
 
             return urls;
