@@ -253,7 +253,7 @@ namespace Datadog.Trace.TestHelpers
                 if (!environmentVariables.TryGetValue(ConfigurationKeys.LogSinks, out _))
                 {
                     // enable sending logs via telemetry
-                    environmentVariables[ConfigurationKeys.LogSinks] = "file,datadog";
+                    environmentVariables[ConfigurationKeys.Telemetry.LogCollectionEnabled] = "1";
                 }
             }
 

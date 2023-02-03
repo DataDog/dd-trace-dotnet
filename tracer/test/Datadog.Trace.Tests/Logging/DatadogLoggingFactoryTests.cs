@@ -145,14 +145,13 @@ public class DatadogLoggingFactoryTests
             config.File.HasValue.Should().BeFalse();
         }
 
-        [Theory]
-        [InlineData("datadog")]
-        [InlineData("datadog,console")]
-        [InlineData("console, datadog")]
-        [InlineData("unknown,datadog")]
-        public void WhenTelemetrySinkIsIncluded_UsesTelemetrySink(string sinks)
+        [Fact]
+        public void WhenTelemetrySinkIsIncluded_UsesTelemetrySink()
         {
-            var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Telemetry.LogCollectionEnabled, "1" }
+            });
 
             var config = DatadogLoggingFactory.GetConfiguration(source);
             config.Telemetry.Should().NotBeNull();
@@ -166,7 +165,11 @@ public class DatadogLoggingFactoryTests
         [InlineData("unknown")]
         public void WhenTelemetrySinkIsNotIncluded_DoesNotUseTelemetrySink(string sinks)
         {
-            var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.LogSinks, sinks },
+                { ConfigurationKeys.Telemetry.LogCollectionEnabled, "0" },
+            });
 
             var config = DatadogLoggingFactory.GetConfiguration(source);
             config.Telemetry.Should().BeNull();
@@ -177,7 +180,6 @@ public class DatadogLoggingFactoryTests
         {
             var source = new NameValueConfigurationSource(new()
             {
-                { ConfigurationKeys.LogSinks, "datadog" },
                 { ConfigurationKeys.Telemetry.Enabled, "0" },
             });
 
@@ -188,17 +190,32 @@ public class DatadogLoggingFactoryTests
         [Theory]
         [InlineData("")]
         [InlineData(null)]
-        [InlineData("1")]
-        public void WhenTelemetryIsEnabledOrNotSpecified_UsesTelemetrySink(string telemetryEnabled)
+        [InlineData("0")]
+        public void WhenLogSinkIsDisabledOrNotSpecified_DoesNotUseTelemetrySink(string logCollectionEnabled)
         {
             var source = new NameValueConfigurationSource(new()
             {
-                { ConfigurationKeys.LogSinks, "datadog" },
+                { ConfigurationKeys.Telemetry.Enabled, "1" },
+                { ConfigurationKeys.Telemetry.LogCollectionEnabled, logCollectionEnabled },
+            });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source);
+            config.Telemetry.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(null)]
+        [InlineData("1")]
+        public void WhenTelemetryIsEnabledOrNotSpecified_DoesNotUseTelemetrySink(string telemetryEnabled)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
                 { ConfigurationKeys.Telemetry.Enabled, telemetryEnabled },
             });
 
             var config = DatadogLoggingFactory.GetConfiguration(source);
-            config.Telemetry.Should().NotBeNull();
+            config.Telemetry.Should().BeNull();
         }
     }
 }

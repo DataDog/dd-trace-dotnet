@@ -47,7 +47,7 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for whether to send redacted internal diagnostic logs to Datadog.
-            /// Defaults to true
+            /// Defaults to false
             /// </summary>
             public const string LogCollectionEnabled = "DD_TELEMETRY_LOG_COLLECTION_ENABLED";
         }
