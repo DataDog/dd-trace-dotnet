@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Pdb.SourceLink;
 
@@ -18,7 +19,7 @@ internal class GitLabSourceLinkUrlParser : SourceLinkUrlParser
     ///     - commit sha: dd35903c688a74b62d1c6a9e4f41371c65704db8
     ///     - repository URL: https://test-gitlab-domain/test-org/test-repo
     /// </summary>
-    internal override bool ParseSourceLinkUrl(Uri uri, out string? commitSha, out string? repositoryUrl)
+    internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
         var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length != 5 || segments[2] != "raw" || segments[4] != "*" || !IsValidCommitSha(segments[3]))

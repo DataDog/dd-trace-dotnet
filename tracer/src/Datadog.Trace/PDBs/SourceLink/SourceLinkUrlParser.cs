@@ -5,13 +5,14 @@
 
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Datadog.Trace.Pdb.SourceLink
 {
     internal abstract class SourceLinkUrlParser
     {
-        protected static bool IsValidCommitSha(string? commitSha) => commitSha is { Length: 40 } && commitSha.All(char.IsLetterOrDigit);
+        protected static bool IsValidCommitSha([NotNullWhen(true)] string? commitSha) => commitSha is { Length: 40 } && commitSha.All(char.IsLetterOrDigit);
 
         /// <summary>
         /// Extract the git commit sha and repository url from a GitHub SourceLink mapping string.
@@ -21,6 +22,6 @@ namespace Datadog.Trace.Pdb.SourceLink
         ///     - commit sha: dd35903c688a74b62d1c6a9e4f41371c65704db8
         ///     - repository URL: https://github.com/DataDog/dd-trace-dotnet
         /// </summary>
-        internal abstract bool ParseSourceLinkUrl(Uri uri, out string? commitSha, out string? repositoryUrl);
+        internal abstract bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl);
     }
 }

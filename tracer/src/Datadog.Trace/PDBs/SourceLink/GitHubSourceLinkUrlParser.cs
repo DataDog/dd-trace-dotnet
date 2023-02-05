@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Datadog.Trace.Pdb.SourceLink;
@@ -20,7 +21,7 @@ internal class GitHubSourceLinkUrlParser : SourceLinkUrlParser
     ///     - commit sha: dd35903c688a74b62d1c6a9e4f41371c65704db8
     ///     - repository URL: https://github.com/DataDog/dd-trace-dotnet
     /// </summary>
-    internal override bool ParseSourceLinkUrl(Uri uri, out string? commitSha, out string? repositoryUrl)
+    internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
         var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 

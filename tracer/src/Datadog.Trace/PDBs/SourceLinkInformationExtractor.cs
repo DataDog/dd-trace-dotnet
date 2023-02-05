@@ -32,7 +32,7 @@ internal static class SourceLinkInformationExtractor
                ExtractFromPdb(assembly, out commitSha, out repositoryUrl);
     }
 
-    private static bool ExtractFromPdb(Assembly assembly, out string? commitSha, out string? repositoryUrl)
+    private static bool ExtractFromPdb(Assembly assembly, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
         commitSha = null;
         repositoryUrl = null;
@@ -47,30 +47,49 @@ internal static class SourceLinkInformationExtractor
         var sourceLinkJsonDocument = pdbReader.GetSourceLinkJsonDocument();
         if (sourceLinkJsonDocument == null)
         {
-            Log.Information("PDB file for assembly does not contain SourceLink information", pdbReader.PdbFullPath);
+            Log.Information("PDB file {PdbFullPath} does not contain SourceLink information", pdbReader.PdbFullPath);
             return false;
         }
 
-        // Grab the SourceLink mapping URL. For example,
-        // From:
-        //       {"documents":{"C:\\dev\\dd-trace-dotnet\\*":"https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/dd35903c688a74b62d1c6a9e4f41371c65704db8/*"}}
-        // Extract:
-        //       https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/dd35903c688a74b62d1c6a9e4f41371c65704db8/*
-        var sourceLinkMappedUrl = JObject.Parse(sourceLinkJsonDocument).SelectTokens("$.documents.*").FirstOrDefault()?.ToString();
-        if (string.IsNullOrWhiteSpace(sourceLinkMappedUrl) || !Uri.TryCreate(sourceLinkMappedUrl, UriKind.Absolute, out var sourceLinkMappedUri))
+        if (!ExtractSourceLinkMappingUrl(sourceLinkJsonDocument, pdbReader.PdbFullPath, out var sourceLinkMappedUri))
         {
-            Log.Information("PDB file {PdbFullPath} contained SourceLink information, but we failed to parse it.", pdbReader.PdbFullPath);
             return false;
         }
 
-        Log.Information("PDB file {PdbFullPath} contained SourceLink information, and we successfully parsed it. The mapping uri is {SourceLinkMappedUri}.", pdbReader.PdbFullPath, sourceLinkMappedUri);
-        return CompositeSourceLinkUrlParser.Instance.ParseSourceLinkUrl(sourceLinkMappedUri, out commitSha, out repositoryUrl);
+        return CompositeSourceLinkUrlParser.Instance.TryParseSourceLinkUrl(sourceLinkMappedUri, out commitSha, out repositoryUrl);
+    }
+
+    // Grab the SourceLink mapping URL. For example,
+    // From:
+    //       {"documents":{"C:\\dev\\dd-trace-dotnet\\*":"https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/dd35903c688a74b62d1c6a9e4f41371c65704db8/*"}}
+    // Extract:
+    //       https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/dd35903c688a74b62d1c6a9e4f41371c65704db8/*
+    private static bool ExtractSourceLinkMappingUrl(string sourceLinkJsonDocument, string pdbFullPath, [NotNullWhen(true)] out Uri? sourceLinkMappedUri)
+    {
+        sourceLinkMappedUri = null;
+        try
+        {
+            string? sourceLinkMappedUrl = JObject.Parse(sourceLinkJsonDocument).SelectTokens("$.documents.*").FirstOrDefault()?.ToString();
+            if (string.IsNullOrWhiteSpace(sourceLinkMappedUrl) || !Uri.TryCreate(sourceLinkMappedUrl, UriKind.Absolute, out sourceLinkMappedUri))
+            {
+                Log.Information("PDB file {PdbFullPath} contained SourceLink information, but we failed to parse it.", pdbFullPath);
+                return false;
+            }
+
+            Log.Information("PDB file {PdbFullPath} contained SourceLink information, and we successfully parsed it. The mapping uri is {SourceLinkMappedUri}.", pdbFullPath, sourceLinkMappedUri);
+            return true;
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "PDB file {PdbFullPath} contained SourceLink document {document}, but we failed to parse it.", pdbFullPath, sourceLinkJsonDocument);
+            return false;
+        }
     }
 
     /// <summary>
     /// Extract the SourceLink information from the assembly attributes "AssemblyMetadataAttribute" and "AssemblyInformationalVersionAttribute".
     /// </summary>
-    private static bool ExtractFromAssemblyAttributes(Assembly assembly, out string? commitSha, out string? repositoryUrl)
+    private static bool ExtractFromAssemblyAttributes(Assembly assembly, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
         commitSha = null;
         repositoryUrl = null;

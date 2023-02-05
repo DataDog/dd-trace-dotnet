@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             var parser = (SourceLinkUrlParser)Activator.CreateInstance(parserType)!;
 
-            var result = parser.ParseSourceLinkUrl(new Uri(url), out var sha, out var repositoryUrl);
+            var result = parser.TryParseSourceLinkUrl(new Uri(url), out var sha, out var repositoryUrl);
 
             result.Should().BeTrue();
             sha.Should().Be(expectedSha);
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [SuppressMessage("Usage", "xUnit1026:Theory methods should use all of their parameters", Justification = "Testing the general implementation")]
         public void CompositeParser_ParsesSuccessfully(string url, string expectedSha, string expectedRepositoryUrl, Type parserType)
         {
-            var result = CompositeSourceLinkUrlParser.Instance.ParseSourceLinkUrl(new Uri(url), out var sha, out var repositoryUrl);
+            var result = CompositeSourceLinkUrlParser.Instance.TryParseSourceLinkUrl(new Uri(url), out var sha, out var repositoryUrl);
 
             result.Should().BeTrue();
             sha.Should().Be(expectedSha);
@@ -60,9 +60,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("https://test.visualstudio.com/test-org/_apis/git/repositories/my-repo/items?api-version=1.0&versionType=commit&path=/*")] // missing sha
         [InlineData("https://test-gitlab-domain.com/test-org/test-repo/raw/*")] // missing sha
         [InlineData("https://test.com/test-org/test-repo/raw/invalid-sha/*")] // missing sha
+        [InlineData("https://api.bitbucket.org/2.0/repositories/")] // too few segments
+        [InlineData("https://test.visualstudio.com/test-org/my-repo/items?api-version=1.0&versionType=commit&path=/*")] // too few segments
+        [InlineData("https://test-gitlab-domain.com/test-org/")] // too few segments
+        [InlineData("https://test.com/test-org/*")] // too few segments
         public void CompositeParser_ReturnsFalseForInvalidUrl(string url)
         {
-            var result = CompositeSourceLinkUrlParser.Instance.ParseSourceLinkUrl(new Uri(url), out var sha, out var repositoryUrl);
+            var result = CompositeSourceLinkUrlParser.Instance.TryParseSourceLinkUrl(new Uri(url), out var sha, out var repositoryUrl);
 
             result.Should().BeFalse();
             sha.Should().BeNull();

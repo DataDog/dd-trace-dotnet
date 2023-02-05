@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Pdb.SourceLink
 {
@@ -25,11 +26,11 @@ namespace Datadog.Trace.Pdb.SourceLink
 
         public static CompositeSourceLinkUrlParser Instance { get; } = new();
 
-        internal override bool ParseSourceLinkUrl(Uri uri, out string? commitSha, out string? repositoryUrl)
+        internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
         {
             foreach (var parser in _sourceLinkUrlParsers)
             {
-                if (parser.ParseSourceLinkUrl(uri, out commitSha, out repositoryUrl))
+                if (parser.TryParseSourceLinkUrl(uri, out commitSha, out repositoryUrl))
                 {
                     return true;
                 }

@@ -6,7 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Specialized;
-using System.Web;
+using System.Diagnostics.CodeAnalysis;
 
 #pragma warning disable CS1570
 
@@ -17,12 +17,12 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
     /// <summary>
     /// Extract the git commit sha and repository url from a Azure DevOps SourceLink mapping string.
     /// For example, for the following SourceLink mapping string:
-    ///     https://test.visualstudio.com/test-org/_apis/git/repositories/my-repo/items?api-version=1.0&versionType=commit&version=dd35903c688a74b62d1c6a9e4f41371c65704db8&path=/*
+    ///     https://test.visualstudio.com/test-org/_apis/git/repositories/my-repo/items?api-version=1.0&amp;versionType=commit&amp;version=dd35903c688a74b62d1c6a9e4f41371c65704db8&amp;path=/*
     /// It will return:
     ///     - commit sha: dd35903c688a74b62d1c6a9e4f41371c65704db8
     ///     - repository URL: https://test.visualstudio.com/test-org/_git/my-repo
     /// </summary>
-    internal override bool ParseSourceLinkUrl(Uri uri, out string? commitSha, out string? repositoryUrl)
+    internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
         commitSha = null;
         repositoryUrl = null;
@@ -45,6 +45,11 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
         }
 
         var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length < 5)
+        {
+            return false;
+        }
+
         repositoryUrl = $"https://{uri.Host}/{segments[0]}/_git/{segments[4]}";
 
         return true;
