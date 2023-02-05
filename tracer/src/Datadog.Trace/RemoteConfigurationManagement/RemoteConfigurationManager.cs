@@ -16,6 +16,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.Util;
@@ -100,7 +101,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             var tags = tracerSettings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
 
-            var environment = tracerSettings.Environment;
+            var environment = TraceUtil.NormalizeTag(tracerSettings.Environment);
             if (!string.IsNullOrEmpty(environment))
             {
                 tags.Add($"env:{environment}");

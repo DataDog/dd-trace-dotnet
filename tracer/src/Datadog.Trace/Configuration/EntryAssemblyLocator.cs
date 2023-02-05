@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration;
 
@@ -59,8 +60,9 @@ internal static class EntryAssemblyLocator
             }
 #endif
         }
-        catch
+        catch (Exception e)
         {
+            Log.Error(e, "Cannot find entry assembly");
         }
 
         return null;

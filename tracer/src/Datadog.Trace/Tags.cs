@@ -11,28 +11,28 @@ namespace Datadog.Trace
     public static class Tags
     {
         /// <summary>
-        /// The environment of the instrumented service. It's value is usually constant for the lifetime of a process,
+        /// The environment of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.Environment"/>.
         /// </summary>
         public const string Env = "env";
 
         /// <summary>
-        /// The version of the instrumented service. It's value is usually constant for the lifetime of a process,
+        /// The version of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.ServiceVersion"/>.
         /// </summary>
         public const string Version = "version";
 
         /// <summary>
-        /// The git commit hash of the instrumented service. It's value is usually constant for the lifetime of a process,
+        /// The git commit hash of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.GitCommitSha"/>.
         /// </summary>
         public const string GitCommitSha = "_dd.git.commit.sha";
 
         /// <summary>
-        /// The git repository URL of the instrumented service. It's value is usually constant for the lifetime of a process,
+        /// The git repository URL of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.GitRepositoryUrl"/>.
         /// </summary>

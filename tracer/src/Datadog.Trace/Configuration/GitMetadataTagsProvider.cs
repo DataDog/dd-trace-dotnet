@@ -24,20 +24,29 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 
     private IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(GitMetadataTagsProvider));
 
+    /// <summary>
+    /// Get the `git.commit.id` and `git.repository_url` tags, either from configuration or from the SourceLink
+    /// information embedded in the entry assembly or its PDB.
+    /// </summary>
+    /// <remarks>
+    /// The timing in which you call this method is important. If you call it too early or not in the context an active HTTP request,
+    /// we may fail to find the entry assembly, in which case we'll need to try again later.
+    /// </remarks>
+    /// <returns>False if the method was called too early and should be called again later. Otherwise, true.</returns>
     public bool TryExtractGitMetadata([NotNullWhen(true)] out GitMetadata? gitMetadata)
     {
         try
         {
-            if (_cachedGitTags != null)
-            {
-                gitMetadata = _cachedGitTags;
-                return true;
-            }
-
             if (_immutableTracerSettings.GitMetadataEnabled == false)
             {
                 // The user has explicitly disabled tagging telemetry events with Git metadata
                 gitMetadata = GitMetadata.Empty;
+                return true;
+            }
+
+            if (_cachedGitTags != null)
+            {
+                gitMetadata = _cachedGitTags;
                 return true;
             }
 
@@ -46,7 +55,7 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
             if (string.IsNullOrWhiteSpace(_immutableTracerSettings.GitCommitSha) == false &&
                 string.IsNullOrWhiteSpace(_immutableTracerSettings.GitRepositoryUrl) == false)
             {
-                gitMetadata = new GitMetadata(_immutableTracerSettings.GitCommitSha, _immutableTracerSettings.GitRepositoryUrl);
+                gitMetadata = _cachedGitTags = new GitMetadata(_immutableTracerSettings.GitCommitSha, _immutableTracerSettings.GitRepositoryUrl);
                 return true;
             }
 
@@ -82,6 +91,7 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
         {
             // Cannot determine the entry assembly. This may mean this method was called too early.
             // Return false to indicate that we should try again later.
+            Log.Debug("Cannot extract SourceLink information as the entry assembly could not be determined.");
             result = default;
             return false;
         }
