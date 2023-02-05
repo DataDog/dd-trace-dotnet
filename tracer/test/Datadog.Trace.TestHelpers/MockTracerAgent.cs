@@ -1377,6 +1377,25 @@ namespace Datadog.Trace.TestHelpers
                     {
                         return;
                     }
+                    catch (SocketException ex)
+                    {
+                        var message = ex.Message.ToLowerInvariant();
+                        if (message.Contains("interrupted"))
+                        {
+                            // Accept call is likely interrupted by a dispose
+                            // Swallow the exception and let the test finish
+                            return;
+                        }
+
+                        if (message.Contains("broken") || message.Contains("forcibly closed") || message.Contains("invalid argument"))
+                        {
+                            // The application was likely shut down
+                            // Swallow the exception and let the test finish
+                            return;
+                        }
+
+                        throw;
+                    }
                     catch (Exception ex)
                     {
                         Exceptions.Add(ex);
