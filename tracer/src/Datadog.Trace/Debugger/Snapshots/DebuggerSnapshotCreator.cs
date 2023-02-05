@@ -672,11 +672,15 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void FinalizeSnapshot(string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath)
         {
+            var activeScope = Tracer.Instance.InternalActiveScope;
+            var traceId = activeScope?.Span?.TraceId.ToString();
+            var spanId = activeScope?.Span?.SpanId.ToString();
+
             AddStackInfo()
             .EndSnapshot(startTime)
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, null, null) // internal ticket ID 929
+            .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, traceId, spanId) // internal ticket ID 929
             .AddMessage()
             .Complete();
         }
