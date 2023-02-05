@@ -52,11 +52,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         internal bool HasArguments { get; set; }
 
         /// <summary>
-        /// Gets or sets a value of the parent (caller) state
-        /// </summary>
-        internal AsyncMethodDebuggerState Parent { get; set; }
-
-        /// <summary>
         /// Gets the value of the MethodMetadataInfo that related to the current async method
         /// </summary>
         internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataRegistry.Instance.Get(MethodMetadataIndex);

@@ -771,6 +771,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
 {
     int numberOfCallsFounded = 0;
     auto lastEh = &rewriterWrapper.GetILRewriter()->GetEHPointer()[rewriterWrapper.GetILRewriter()->GetEHCount() - 1];
+    ILInstr* setExceptionReturnInstruction = nullptr; // Used by SetException to determine what is the index of the return value
     // search call to SetResult and SetException
     for (ILInstr* pInstr = rewriterWrapper.GetILRewriter()->GetILList()->m_pPrev;
          numberOfCallsFounded < 2 && pInstr != rewriterWrapper.GetILRewriter()->GetILList(); pInstr = pInstr->m_pPrev)
@@ -790,7 +791,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
         HRESULT hr;
         ILInstr* endMethodTryStartInstr = nullptr;
         ILInstr* endMethodCallInstr;
-        auto [elementType, flags] = methodReturnType->GetElementTypeAndFlags();
+        auto [elementType, returnTypeFlags] = methodReturnType->GetElementTypeAndFlags();
         if (functionInfo.name == WStr("SetResult"))
         {
             rewriterWrapper.SetILPosition(lastEh->m_pHandlerEnd->m_pNext);
@@ -811,6 +812,11 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
                 // create the instruction that load the return value
                 ILInstr* returnInstruction = rewriterWrapper.GetILRewriter()->NewILInstr();
                 memcpy(returnInstruction, pInstr->m_pPrev, sizeof(*returnInstruction));
+
+                // Used by SetException to determine what is the index that should be loaded in EndMethod_StartMarker callback
+                setExceptionReturnInstruction = rewriterWrapper.GetILRewriter()->NewILInstr();
+                memcpy(setExceptionReturnInstruction, pInstr->m_pPrev, sizeof(*setExceptionReturnInstruction));
+
                 rewriterWrapper.GetILRewriter()->InsertBefore(rewriterWrapper.GetCurrentILInstr(), returnInstruction);
                 rewriterWrapper.LoadNull(); // exception
                 rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
@@ -827,15 +833,14 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
             LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &endMethodTryStartInstr, debuggerTokens);
             if (elementType != ELEMENT_TYPE_VOID)
             {
-                rewriterWrapper.LoadNull(); // return value
-                auto emit = module_metadata.metadata_emit;
-                auto returnTypeToken = methodReturnType->GetTypeTok(emit, debuggerTokens->GetCorLibAssemblyRef());
-                if (returnTypeToken == mdTokenNil)
+                if (setExceptionReturnInstruction == nullptr)
                 {
-                    Logger::Error("Fail to get return type token. Element type is  ", elementType, " Method is: ", caller->type.name, ".", caller->name);
+                    Logger::Error("The return instruction is not initialized by the SetResult logic. elementType: " , elementType,
+                                  " Method is: ", caller->type.name, ".", caller->name);
                     return E_FAIL;
                 }
-                rewriterWrapper.UnboxAny(returnTypeToken);
+
+                rewriterWrapper.GetILRewriter()->InsertBefore(rewriterWrapper.GetCurrentILInstr(), setExceptionReturnInstruction);
             }
 
             // create the instruction that load the exception value

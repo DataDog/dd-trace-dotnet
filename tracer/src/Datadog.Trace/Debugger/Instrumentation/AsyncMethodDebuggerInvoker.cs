@@ -38,13 +38,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         // so we can differentiate between the first entry and reentry.
 
         /// <summary>
-        /// We use the AsyncLocal storage to store the debugger state of each logical invocation of the async method i.e. StateMachine.MoveNext run
-        /// Therefore, we must ensure that we have the same debugger state on reentry in same context (e.g. continuation that resulted from executing an "await" expression)
-        /// rather than a different debugger state when the entry is in a different context (e.g. in a recursive call into the same method).
-        /// </summary>
-        private static readonly AsyncLocal<AsyncMethodDebuggerState> AsyncContext = new();
-
-        /// <summary>
         /// Create a new context and save the parent.
         /// We call this method from the async kick off method before the state machine is created,
         /// so for each async state machine, this method will be called exactly once.
@@ -62,26 +55,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static AsyncMethodDebuggerState SetContext<TTarget>(AsyncHelper.AsyncKickoffMethodInfo kickoffInfo, string probeId, int methodMetadataIndex, int probeMetadataIndex, TTarget instance)
         {
-            var currentState = AsyncContext.Value;
             var newState = new AsyncMethodDebuggerState(probeId, probeMetadataIndex)
             {
-                Parent = currentState,
                 KickoffInvocationTarget = kickoffInfo.KickoffParentObject,
                 StartTime = DateTimeOffset.UtcNow,
                 MethodMetadataIndex = methodMetadataIndex,
                 MoveNextInvocationTarget = instance
             };
-            AsyncContext.Value = newState;
             return newState;
-        }
-
-        /// <summary>
-        /// Restore the async context to the parent
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void RestoreContext()
-        {
-            AsyncContext.Value = AsyncContext.Value?.Parent;
         }
 
         /// <summary>
@@ -97,7 +78,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="isReEntryToMoveNext">If it the first entry to the state machine MoveNext method</param>
         /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static AsyncMethodDebuggerState BeginMethod<TTarget>(string probeId, int probeMetadataIndex, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, ref bool isReEntryToMoveNext)
+        public static AsyncMethodDebuggerState BeginMethod<TTarget>(string probeId, int probeMetadataIndex, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, ref AsyncMethodDebuggerState isReEntryToMoveNext)
         {
             // State machine is null in case is a nested struct inside a generic parent.
             // This can happen if we operate in optimized code and the original async method was inside a generic class
@@ -108,13 +89,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
             }
 
-            if (isReEntryToMoveNext)
+            if (isReEntryToMoveNext != null)
             {
                 // we are in a continuation, return the current state
-                return AsyncContext.Value;
+                return isReEntryToMoveNext;
             }
-
-            isReEntryToMoveNext = true; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
 
             var stateMachineType = instance.GetType();
             var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
@@ -141,7 +120,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
             if (!asyncState.SnapshotCreator.ProbeHasCondition &&
                 !asyncState.ProbeMetadataInfo.Sampler.Sample())
             {
-                RestoreContext();
                 return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
             }
 
@@ -159,8 +137,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             asyncState.HasLocalsOrReturnValue = false;
             asyncState.HasArguments = false;
-            AsyncContext.Value = asyncState;
-            return AsyncContext.Value;
+
+            isReEntryToMoveNext = asyncState; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
+            return isReEntryToMoveNext;
         }
 
         /// <summary>
@@ -253,8 +232,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     asyncState.IsActive = false;
                 }
             }
-
-            if (returnValue != null)
+            else if (returnValue != null)
             {
                 var captureInfo = new CaptureInfo<TReturn>(value: returnValue, name: "@return", type: typeof(TReturn), methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Return, asyncCaptureInfo: asyncCaptureInfo);
                 if (!asyncState.ProbeMetadataInfo.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
@@ -290,8 +268,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
             {
                 asyncState.IsActive = false;
             }
-
-            RestoreContext();
         }
 
         /// <summary>
@@ -312,7 +288,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 Log.Warning(exception, "Error caused by our instrumentation");
                 asyncState.IsActive = false;
-                RestoreContext();
             }
             catch
             {

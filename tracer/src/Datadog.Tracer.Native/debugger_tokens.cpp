@@ -372,7 +372,7 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     unsigned runtimeTypeHandleBuffer;
     auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
 
-    unsigned long signatureLength = (probeType == AsyncMethodProbe ? 13 : 11) + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
+    unsigned long signatureLength = (probeType == AsyncMethodProbe ? 13 + callTargetStateSize : 11) + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
 
     COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
@@ -409,7 +409,9 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     {
         methodName = managed_profiler_debugger_begin_async_method_name;
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = ELEMENT_TYPE_BOOLEAN; // isFirstEntry
+        signature[offset++] = ELEMENT_TYPE_CLASS;
+        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+        offset += callTargetStateSize;
     }
     else
     {
