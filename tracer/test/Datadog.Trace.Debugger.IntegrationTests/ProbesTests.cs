@@ -69,6 +69,13 @@ public class ProbesTests : TestHelper
         EnableDebugMode();
     }
 
+    public static IEnumerable<object[]> UdsMemberData =>
+        new List<object[]>
+        {
+            new object[] { typeof(MetricCountInt) },
+            new object[] { typeof(AsyncGenericMethod) }
+        };
+
     public static IEnumerable<object[]> ProbeTests()
     {
         return DebuggerTestHelper.AllTestDescriptions();
@@ -204,11 +211,10 @@ public class ProbesTests : TestHelper
     }
 
 #if NETCOREAPP3_1_OR_GREATER
-    [SkippableFact]
+    [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    [InlineData(typeof(MetricCountInt))]
-    [InlineData(typeof(AsyncGenericMethod))]
+    [MemberData(nameof(UdsMemberData))]
     public async Task MethodProbeTest_UDS(Type type)
     {
         var testType = DebuggerTestHelper.SpecificTestDescription(type);
