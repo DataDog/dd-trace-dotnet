@@ -58,7 +58,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 probeType,
                 location,
                 evaluateAt,
-                HasCondition());
+                HasCondition(),
+                probe.Tags);
         }
 
         internal ProbeInfo ProbeInfo { get; }
