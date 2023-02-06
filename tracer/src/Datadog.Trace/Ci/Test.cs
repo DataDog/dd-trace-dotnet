@@ -136,9 +136,20 @@ public sealed class Test
     {
         if (MethodSymbolResolver.Instance.TryGetMethodSymbol(methodInfo, out var methodSymbol))
         {
+            var startLine = methodSymbol.StartLine;
+            // startline refers to the first instruction of method body.
+            // In order to improve the source code in the CI Visibility UI, we decrease
+            // this value by 2 so <bold>most of the time</bold> will show the missing
+            // `{` char and the method signature.
+            // There's no an easy way to extract the correct startline number.
+            if (startLine > 1)
+            {
+                startLine -= 2;
+            }
+
             var tags = (TestSpanTags)_scope.Span.Tags;
             tags.SourceFile = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
-            tags.SourceStart = methodSymbol.StartLine;
+            tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
 
             if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
