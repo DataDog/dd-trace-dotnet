@@ -20,9 +20,35 @@ namespace Datadog.Trace.Iast.Aspects
         /// ComputeHash not static
         /// </summary>
         /// <param name="target">main HashAlgorithm instance (not static)</param>
-        [AspectMethodInsertBefore("System.Security.Cryptography.HashAlgorithm::ComputeHash()")]
-        internal static void ComputeHash(HashAlgorithm target)
+        /// <param name="stream">ComputeHash stream</param>
+        [AspectMethodInsertBefore("System.Security.Cryptography.HashAlgorithm::ComputeHash(System.IO.Stream)")]
+        internal static void ComputeHash(HashAlgorithm target, System.IO.Stream stream)
         {
+            Console.WriteLine("INSIDE ASPECT");
+        }
+
+        /// <summary>
+        /// ComputeHash not static
+        /// </summary>
+        /// <param name="target">main HashAlgorithm instance (not static)</param>
+        /// <param name="buffer">ComputeHash buffer</param>
+        /// <param name="offset">ComputeHash offset</param>
+        /// <param name="count">ComputeHash count</param>
+        [AspectMethodInsertBefore("System.Security.Cryptography.HashAlgorithm::ComputeHash(System.Byte[],System.Int32,System.Int32)")]
+        internal static void ComputeHash(HashAlgorithm target, byte[] buffer, int offset, int count)
+        {
+            Console.WriteLine("INSIDE ASPECT");
+        }
+
+        /// <summary>
+        /// ComputeHash not static
+        /// </summary>
+        /// <param name="target">main HashAlgorithm instance (not static)</param>
+        /// <param name="buffer">ComputeHash buffer</param>
+        [AspectMethodInsertBefore("System.Security.Cryptography.HashAlgorithm::ComputeHash(System.Byte[])")]
+        internal static void ComputeHash(HashAlgorithm target, byte[] buffer)
+        {
+            Console.WriteLine("INSIDE ASPECT");
         }
     }
 }
