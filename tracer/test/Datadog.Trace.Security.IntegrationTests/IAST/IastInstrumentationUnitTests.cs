@@ -34,7 +34,7 @@ public class IastInstrumentationUnitTests : TestHelper
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #endif
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));
-            ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments);
+            ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
     }
