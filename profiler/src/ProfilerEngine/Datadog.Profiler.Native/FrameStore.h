@@ -52,7 +52,7 @@ private:
         ULONG32 genericParametersCount,
         ClassID* genericParameters
         );
-    bool GetTypeDesc(
+    bool BuildTypeDesc(
         IMetaDataImport2* pMetadataImport,
         ClassID classId,
         ModuleID moduleId,
@@ -61,7 +61,7 @@ private:
         bool isEncoded
         );
     bool GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded);
-    bool GetCachedTypeDesc(ClassID classId, TypeDesc& typeDesc);
+    bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     std::pair <std::string_view, std::string_view> GetManagedFrame(FunctionID functionId);
     std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
 

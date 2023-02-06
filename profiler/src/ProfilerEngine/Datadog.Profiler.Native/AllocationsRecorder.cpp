@@ -19,7 +19,8 @@ AllocationsRecorder::AllocInfo::AllocInfo(std::string_view name, uint32_t size)
 AllocationsRecorder::AllocationsRecorder(ICorProfilerInfo5* pCorProfilerInfo, IFrameStore* pFrameStore)
     :
     _pCorProfilerInfo {pCorProfilerInfo},
-    _pFrameStore {pFrameStore}
+    _pFrameStore {pFrameStore},
+    _missed{0}
 {
     // 1 million allocations
     _allocations = std::make_unique<std::vector<AllocInfo>>();
@@ -34,6 +35,8 @@ void AllocationsRecorder::OnObjectAllocated(ObjectID objectId, ClassID classId)
     std::string_view typeName;
     if (!_pFrameStore->GetTypeName(classId, typeName))
     {
+        _missed.fetch_add(1);
+
         // the doc states that it is possible to be notified BEFORE the class has even be loaded by the CLR
         // https://learn.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilercallback-objectallocated-method
         return;

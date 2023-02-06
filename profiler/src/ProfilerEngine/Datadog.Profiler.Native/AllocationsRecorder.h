@@ -42,4 +42,5 @@ private:
 private:
     std::mutex _lock;
     std::unique_ptr<std::vector<AllocInfo>> _allocations;
+    std::atomic<uint64_t> _missed;
 };

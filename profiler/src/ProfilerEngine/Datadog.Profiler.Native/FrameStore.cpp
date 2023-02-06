@@ -124,19 +124,20 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
 
     // get type related description (assembly, namespace and type name)
     // look into the cache first
-    TypeDesc typeDesc;
-    bool typeInCache = GetCachedTypeDesc(classId, typeDesc);
+    TypeDesc* pTypeDesc = nullptr;  // if already in the cache
+    TypeDesc typeDesc; // if needed to be built from a given classId
+    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
 
     if (!typeInCache)
     {
         // try to get the type description
         bool isEncoded = true;
-        if (!GetTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc, isEncoded))
+        if (!BuildTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc, isEncoded))
         {
             // This should never happen but in case it happens, we cache the module/frame value.
             // It's safe to cache, because there is no reason that the next calls to
-            // GetTypeDesc will succeed.
+            // BuildTypeDesc will succeed.
             auto& value = _methods[functionId];
             value = {UnknownManagedAssembly, UnknownManagedType + " |fn:" + std::move(methodName)};
             return value;
@@ -145,7 +146,7 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
         if (classId != 0)
         {
             std::lock_guard<std::mutex> lock(_typesLock);
-
+            pTypeDesc = &typeDesc;
             _types[classId] = typeDesc;
         }
         // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
@@ -153,12 +154,12 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
 
     // build the frame from assembly, namespace, type and method names
     std::stringstream builder;
-    if (!typeDesc.Assembly.empty())
+    if (!pTypeDesc->Assembly.empty())
     {
-        builder << "|lm:" << typeDesc.Assembly;
+        builder << "|lm:" << pTypeDesc->Assembly;
     }
-    builder << " |ns:" << typeDesc.Namespace;
-    builder << " |ct:" << typeDesc.Type;
+    builder << " |ns:" << pTypeDesc->Namespace;
+    builder << " |ct:" << pTypeDesc->Type;
     builder << " |fn:" << methodName;
 
     std::string managedFrame = builder.str();
@@ -167,7 +168,7 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
         std::lock_guard<std::mutex> lock(_methodsLock);
 
         // store it into the function cache and return an iterator to the stored elements
-        auto [it, _] = _methods.emplace(functionId, std::make_pair(typeDesc.Assembly, managedFrame));
+        auto [it, _] = _methods.emplace(functionId, std::make_pair(pTypeDesc->Assembly, managedFrame));
         // first is the key, second is the associated value
         return it->second;
     }
@@ -196,6 +197,11 @@ bool FrameStore::GetTypeName(ClassID classId, std::string& name)
     return true;
 }
 
+// This method is supposed to return a string_view over a string in the types cache
+// It is used by the allocations recorder to avoid duplicating type name strings
+// For example if 4 instances of MyType are allocated, the string_view for these 4 allocations
+// will point to the same "MyType" string.
+// This is why it is needed to get a pointer to the TypeDesc held by the cache
 bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
 {
     // no backend encoding --> C# like
@@ -207,13 +213,20 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
         return false;
     }
 
-    name = typeDesc.Type;
+    TypeDesc* pTypeDesc = nullptr;
+    if (!GetCachedTypeDesc(classId, pTypeDesc))
+    {
+        return false;
+    }
+
+    // ensure that the string_view is pointing to the string in the cache
+    name = pTypeDesc->Type;
 
     return true;
 }
 
 
-bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc& typeDesc)
+bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc)
 {
     if (classId != 0)
     {
@@ -222,7 +235,7 @@ bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc& typeDesc)
         auto typeEntry = _types.find(classId);
         if (typeEntry != _types.end())
         {
-            typeDesc = typeEntry->second;
+            typeDesc = &(_types.at(classId));
             return true;
         }
     }
@@ -234,7 +247,8 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded
 {
     // get type related description (assembly, namespace and type name)
     // look into the cache first
-    bool typeInCache = GetCachedTypeDesc(classId, typeDesc);
+    TypeDesc* pTypeDesc = nullptr;
+    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
 
     if (!typeInCache)
@@ -247,7 +261,7 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded
         INVOKE(_pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImport.GetAddressOf())));
 
         // try to get the type description
-        if (!GetTypeDesc(metadataImport.Get(), classId, moduleId, typeDefToken, typeDesc, isEncoded))
+        if (!BuildTypeDesc(metadataImport.Get(), classId, moduleId, typeDefToken, typeDesc, isEncoded))
         {
             return false;
         }
@@ -259,12 +273,16 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded
             _types[classId] = typeDesc;
         }
     }
+    else
+    {
+        typeDesc = *pTypeDesc;
+    }
 
     return true;
 }
 
 // More explanations in https://chnasarre.medium.com/dealing-with-modules-assemblies-and-types-with-clr-profiling-apis-a7522a5abaa9?source=friends_link&sk=3e010ab991456db0394d4cca29cb8cb2
-bool FrameStore::GetTypeDesc(
+bool FrameStore::BuildTypeDesc(
     IMetaDataImport2* pMetadataImport,
     ClassID classId,
     ModuleID moduleId,
