@@ -10,6 +10,8 @@ namespace trace
 {
 
 const shared::WSTRING env_vars_to_display[]{environment::tracing_enabled,
+                                    WStr("CORECLR_PROFILER_PATH"),
+                                    WStr("COR_PROFILER_PATH"),
                                     environment::debug_enabled,
                                     environment::profiler_home_path,
                                     environment::include_process_names,

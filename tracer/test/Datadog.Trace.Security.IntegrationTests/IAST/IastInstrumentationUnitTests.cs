@@ -33,6 +33,7 @@ public class IastInstrumentationUnitTests : TestHelper
 #if NET462
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #endif
+            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
