@@ -15,7 +15,7 @@ namespace Datadog.Trace.AppSec.Waf
     {
         public string Version { get; }
 
-        public IContext CreateContext(ReaderWriterLock wafLocker);
+        public IContext CreateContext();
 
         public bool UpdateRulesData(IEnumerable<RuleData> res);
 
