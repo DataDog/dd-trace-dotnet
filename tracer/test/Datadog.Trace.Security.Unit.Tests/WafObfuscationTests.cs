@@ -52,8 +52,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var expectedValue = obfuscate ? "<Redacted>" : fullAttack;
 
             waf.Should().NotBeNull();
-            using var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
-            using var context = waf.CreateContext(readwriteLocker);
+            using var context = waf.CreateContext();
             var result = context.Run(args, 1_000_000);
             result.ReturnCode.Should().Be(ReturnCode.Match);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();

@@ -34,8 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
             var res = waf.UpdateRulesData(rulesData!);
             res.Should().BeTrue();
-            var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
-            using var context = waf.CreateContext(readwriteLocker)!;
+            using var context = waf.CreateContext()!;
             var result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.UserId, "user3" } },
                 WafTests.TimeoutMicroSeconds);
