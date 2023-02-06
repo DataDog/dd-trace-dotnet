@@ -31,3 +31,39 @@ public struct BenchmarkJobInfo
     /// </summary>
     public string? RuntimeMoniker;
 }
+
+/*
+public struct BenchmarkMeasureData
+{
+    public double? N;
+    public double? Max;
+    public double? Min;
+    public double? Mean;
+    public double? Median;
+    public double? StdDev;
+    public double? StdErr;
+    public double? Kurtosis;
+    public double? Skewness;
+}
+*/
+/*
+span.SetMetric("benchmark.runs", stats.N);
+                        span.SetMetric("benchmark.duration.mean", stats.Mean);
+
+                        span.SetMetric("benchmark.statistics.n", stats.N);
+                        span.SetMetric("benchmark.statistics.max", stats.Max);
+                        span.SetMetric("benchmark.statistics.min", stats.Min);
+                        span.SetMetric("benchmark.statistics.mean", stats.Mean);
+                        span.SetMetric("benchmark.statistics.median", stats.Median);
+                        span.SetMetric("benchmark.statistics.std_dev", stats.StandardDeviation);
+                        span.SetMetric("benchmark.statistics.std_err", stats.StandardError);
+                        span.SetMetric("benchmark.statistics.kurtosis", stats.Kurtosis);
+                        span.SetMetric("benchmark.statistics.skewness", stats.Skewness);
+
+                        if (stats.Percentiles != null)
+                        {
+                            span.SetMetric("benchmark.statistics.p90", stats.Percentiles.P90);
+                            span.SetMetric("benchmark.statistics.p95", stats.Percentiles.P95);
+                            span.SetMetric("benchmark.statistics.p99", stats.Percentiles.Percentile(99));
+                        }
+*/

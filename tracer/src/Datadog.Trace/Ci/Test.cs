@@ -269,6 +269,16 @@ public sealed class Test
     }
 
     /// <summary>
+    /// Add benchmark data
+    /// </summary>
+    /// <param name="measureType">Measure type</param>
+    /// <param name="info">Measure info</param>
+    /// <param name="values">Values</param>
+    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, double[] values)
+    {
+    }
+
+    /// <summary>
     /// Close test
     /// </summary>
     /// <param name="status">Test status</param>
