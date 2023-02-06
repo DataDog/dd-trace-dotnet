@@ -149,6 +149,10 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
             pTypeDesc = &typeDesc;
             _types[classId] = typeDesc;
         }
+        else
+        {
+            pTypeDesc = &typeDesc;
+        }
         // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
     }
 
