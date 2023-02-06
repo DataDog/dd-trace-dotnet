@@ -13,6 +13,8 @@ namespace Datadog.Trace;
 
 internal readonly record struct TraceId(ulong Upper, ulong Lower)
 {
+    public const int Size = sizeof(ulong) * 2;
+
     public readonly ulong Lower = Lower;
     public readonly ulong Upper = Upper;
 
