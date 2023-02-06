@@ -173,6 +173,18 @@ namespace Datadog.Trace
         public string? SessionId { get; set; }
     }
 }
+namespace Datadog.Trace.AppSec
+{
+    public static class EventTrackingSdk
+    {
+        public static void TrackCustomEvent(string eventName) { }
+        public static void TrackCustomEvent(string eventName, System.Collections.Generic.IDictionary<string, string> metadata) { }
+        public static void TrackUserLoginFailureEvent(string userId, bool exists) { }
+        public static void TrackUserLoginFailureEvent(string userId, bool exists, System.Collections.Generic.IDictionary<string, string> metadata) { }
+        public static void TrackUserLoginSuccessEvent(string userId) { }
+        public static void TrackUserLoginSuccessEvent(string userId, System.Collections.Generic.IDictionary<string, string> metadata) { }
+    }
+}
 namespace Datadog.Trace.Ci.Coverage.Attributes
 {
     public class AvoidCoverageAttribute : System.Attribute
