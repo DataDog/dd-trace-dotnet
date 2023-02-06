@@ -136,7 +136,7 @@ internal class BlockingMiddleware
                             securityCoordinator.Report(e.TriggerData, e.AggregatedTotalRuntime, e.AggregatedTotalRuntimeWithBindings, endedResponse);
                         }
 
-                        securityCoordinator.Cleanup();
+                        securityCoordinator.AddResponseHeadersToSpanAndCleanup();
                     }
                     else
                     {

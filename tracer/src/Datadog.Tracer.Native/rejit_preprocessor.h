@@ -9,6 +9,7 @@
 
 namespace trace
 {
+class CorProfiler;
 class RejitHandler;
 class RejitWorkOffloader;
 class RejitHandlerModuleMethod;
@@ -22,6 +23,7 @@ template <class RejitRequestDefinition>
 class RejitPreprocessor
 {
 protected:
+    CorProfiler* m_corProfiler;
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
 
@@ -54,7 +56,7 @@ protected:
                           const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler);
 
 public:
-    RejitPreprocessor(std::shared_ptr<RejitHandler> rejit_handler, std::shared_ptr<RejitWorkOffloader> work_offloader);
+    RejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler, std::shared_ptr<RejitWorkOffloader> work_offloader);
 
     ULONG RequestRejitForLoadedModules(const std::vector<ModuleID>& modules,
                                        const std::vector<RejitRequestDefinition>& requests,

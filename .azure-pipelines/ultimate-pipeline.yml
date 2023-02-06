@@ -682,7 +682,7 @@ stages:
         inputs:
           testResultsFiles: |
             tracer/test/**/test*.xml
-            profiler/_build/bin/**/test*.xml
+            profiler/build_data/*.xml
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
@@ -810,7 +810,7 @@ stages:
     - task: PublishTestResults@2
       displayName: publish profiler test results
       inputs:
-        testResultsFiles: profiler/_build/bin/**/test*.xml
+        testResultsFiles: profiler/build_data/*.xml
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
@@ -1776,6 +1776,68 @@ stages:
         command: "CheckBuildLogsForErrors"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
+- stage: profiler_integration_tests_windows
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [package_windows, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Win]
+
+  - job: Win
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        x86:
+          targetPlatform: "x86"
+        x64:
+          targetPlatform: "x64"
+
+    variables:
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/install-dotnet-sdks.yml
+      parameters:
+        includeX86: true
+
+    # windows-tracer-home.zip file contains profiler, tracer...
+    - task: DownloadPipelineArtifact@2
+      displayName: Download monitoring home zip
+      inputs:
+        artifact: windows-tracer-home.zip
+        patterns: "windows-tracer-home.zip"
+        path: $(Agent.TempDirectory)
+
+    - task: ExtractFiles@1
+      inputs:
+        archiveFilePatterns: '$(Agent.TempDirectory)/windows-tracer-home.zip'
+        destinationFolder: $(monitoringHome)
+
+    - script: tracer\build.cmd BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform)
+      displayName: Run Profiler Integration tests
+
+    - publish: profiler/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: profiler/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
 - stage: profiler_integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, generate_variables, master_commit_id]
@@ -1822,20 +1884,20 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildProfilerLinuxIntegrationTests"
+        command: "BuildProfilerSamples"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "RunProfilerCpuLimitTests"
+        command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "RunProfilerCpuLimitTests"
+        command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -4509,6 +4571,7 @@ stages:
     - integration_tests_arm64
     - integration_tests_arm64_debugger
     - profiler_integration_tests_linux
+    - profiler_integration_tests_windows
     - exploration_tests_windows
     - exploration_tests_linux
     - benchmarks

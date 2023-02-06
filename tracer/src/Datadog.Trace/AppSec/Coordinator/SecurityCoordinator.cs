@@ -29,7 +29,7 @@ internal readonly partial struct SecurityCoordinator
 
     public void MarkBlocked() => _httpTransport.MarkBlocked();
 
-    private static void LogMatchesIfDebugEnabled(string result, bool blocked)
+    private static void LogMatchesIfDebugEnabled(string? result, bool blocked)
     {
         if (Log.IsEnabled(LogEventLevel.Debug) && result != null)
         {
@@ -86,7 +86,7 @@ internal readonly partial struct SecurityCoordinator
         return result;
     }
 
-    public void Cleanup()
+    public void AddResponseHeadersToSpanAndCleanup()
     {
         if (_localRootSpan.IsAppsecEvent())
         {

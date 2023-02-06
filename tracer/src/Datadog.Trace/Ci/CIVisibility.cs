@@ -25,8 +25,8 @@ namespace Datadog.Trace.Ci
 {
     internal class CIVisibility
     {
-        private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static readonly Lazy<bool> _enabledLazy = new(InternalEnabled, true);
+        private static CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
         private static Task? _skippableTestsTask;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Ci
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
-                // Initialize() was already called before
+                // Initialize() or InitializeFromRunner() was already called before
                 return;
             }
 
@@ -121,7 +121,7 @@ namespace Datadog.Trace.Ci
                     _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
                     LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
                 }
-                else if (_settings.GitUploadEnabled)
+                else if (_settings.GitUploadEnabled != false)
                 {
                     // Update and upload git tree metadata.
                     Log.Information("ITR: Update and uploading git tree metadata.");
@@ -133,10 +133,47 @@ namespace Datadog.Trace.Ci
             {
                 Log.Warning("ITR: Intelligent test runner cannot be activated. Agent doesn't support the event platform proxy endpoint.");
             }
-            else if (_settings.GitUploadEnabled)
+            else if (_settings.GitUploadEnabled != false)
             {
                 Log.Warning("ITR: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
             }
+        }
+
+        internal static void InitializeFromRunner(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled)
+        {
+            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
+            {
+                // Initialize() or InitializeFromRunner() was already called before
+                return;
+            }
+
+            Log.Information("Initializing CI Visibility from dd-trace / runner");
+            _settings = settings;
+            LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
+
+            var tracerSettings = settings.TracerSettings;
+
+            // Set the service name if empty
+            Log.Debug("Setting up the service name");
+            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
+            {
+                // Extract repository name from the git url and use it as a default service name.
+                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+            }
+
+            // Normalize the service name
+            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
+
+            // Initialize Tracer
+            Log.Information("Initialize Test Tracer instance");
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings, discoveryService, eventPlatformProxyEnabled));
+            _ = Tracer.Instance;
+
+            // Initialize FrameworkDescription
+            _ = FrameworkDescription.Instance;
+
+            // Initialize CIEnvironment
+            _ = CIEnvironmentValues.Instance;
         }
 
         internal static void Flush()
@@ -456,8 +493,11 @@ namespace Datadog.Trace.Ci
             {
                 var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
 
-                // Upload the git metadata
-                await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                if (_settings.GitUploadEnabled != false)
+                {
+                    // Upload the git metadata
+                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                }
 
                 if (!_settings.Agentless || !string.IsNullOrEmpty(_settings.ApplicationKey))
                 {
