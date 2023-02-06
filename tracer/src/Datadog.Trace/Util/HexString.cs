@@ -128,7 +128,8 @@ internal static class HexString
     }
 
     /// <summary>
-    /// Converts the specified <see cref="TraceId"/> value into a hexadecimal string.
+    /// Converts the specified <see cref="TraceId"/> value into a hexadecimal string using network byte order
+    /// (aka big endian), with the most significant byte first.
     /// </summary>
     [Pure]
     public static string ToHexString(TraceId value, bool pad16To32 = true, bool lowerCase = true)
@@ -144,8 +145,10 @@ internal static class HexString
         var lower = value.Lower;
 
 #if NETCOREAPP3_1_OR_GREATER
-        // NOTE: don't use MemoryMarshal.Write(bytes, ref value) because .NET will
-        // flip upper/lower around on little endian architectures
+        // NOTE: don't use MemoryMarshal.Write() with the entire TraceId because .NET will
+        // flip upper/lower around on little-endian architectures. Instead, call MemoryMarshal.Write()
+        // for each field so we can control the order ourselves. Trace id hex strings should
+        // always use network byte order, aka big endian.
         Span<byte> bytes = stackalloc byte[16];
         System.Runtime.InteropServices.MemoryMarshal.Write(bytes, ref upper);
         System.Runtime.InteropServices.MemoryMarshal.Write(bytes[8..], ref lower);
