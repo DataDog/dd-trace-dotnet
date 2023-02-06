@@ -6,24 +6,30 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects
 {
     /// <summary> HashAlgorithm class aspects </summary>
-    [AspectClass("mscorlib,netstandard,System.Private.CoreLib")]
+    [AspectClass("mscorlib,System.Security.Cryptography.Primitives,System.Security.Cryptography")]
     [System.ComponentModel.Browsable(false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    internal partial class HashAlgorithmAspect
+    public partial class HashAlgorithmAspect
     {
         /// <summary>
         /// ComputeHash not static
         /// </summary>
         /// <param name="target">main HashAlgorithm instance (not static)</param>
-        [AspectMethodInsertBefore("System.Security.Cryptography.HashAlgorithm::ComputeHash(System.IO.Stream)", paramShift: 1)]
-        internal static HashAlgorithm ComputeHash(HashAlgorithm target)
+        /// <returns>main HashAlgorithm instance</returns>
+        [AspectMethodInsertBefore($"System.Security.Cryptography.HashAlgorithm::ComputeHash({ClrNames.ByteArray})", paramShift: 1)]
+        [AspectMethodInsertBefore($"System.Security.Cryptography.HashAlgorithm::ComputeHash({ClrNames.ByteArray},{ClrNames.Int32},{ClrNames.Int32})", paramShift: 3)]
+        [AspectMethodInsertBefore($"System.Security.Cryptography.HashAlgorithm::ComputeHash({ClrNames.Stream})", paramShift: 1)]
+        public static HashAlgorithm ComputeHash(HashAlgorithm target)
         {
-            Console.WriteLine("INSIDE ASPECT");
+            var scope = HashAlgorithmIntegrationCommon.CreateScope(target);
+            scope?.Dispose();
             return target;
         }
 
@@ -31,21 +37,12 @@ namespace Datadog.Trace.Iast.Aspects
         /// ComputeHash not static
         /// </summary>
         /// <param name="target">main HashAlgorithm instance (not static)</param>
-        [AspectMethodInsertBefore("System.Security.Cryptography.HashAlgorithm::ComputeHash(System.Byte[],System.Int32,System.Int32)", paramShift: 3)]
-        internal static HashAlgorithm ComputeHash2(HashAlgorithm target)
+        /// <returns>main HashAlgorithm instance</returns>
+        [AspectMethodInsertBefore($"System.Security.Cryptography.HashAlgorithm::ComputeHashAsync({ClrNames.Stream},{ClrNames.CancellationToken})", paramShift: 2)]
+        public static HashAlgorithm ComputeHashAsync(HashAlgorithm target)
         {
-            Console.WriteLine("INSIDE ASPECT");
-            return target;
-        }
-
-        /// <summary>
-        /// ComputeHash not static
-        /// </summary>
-        /// <param name="target">main HashAlgorithm instance (not static)</param>
-        [AspectMethodInsertBefore("System.Security.Cryptography.HashAlgorithm::ComputeHash(System.Byte[])", paramShift: 1)]
-        internal static HashAlgorithm ComputeHash3(HashAlgorithm target)
-        {
-            Console.WriteLine("INSIDE ASPECT");
+            var scope = HashAlgorithmIntegrationCommon.CreateScope(target);
+            scope?.Dispose();
             return target;
         }
     }

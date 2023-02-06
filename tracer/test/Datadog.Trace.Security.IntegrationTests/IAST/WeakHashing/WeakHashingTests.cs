@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
 using System;
 using System.IO;
 using System.Linq;
@@ -38,6 +37,7 @@ public class WeakHashingTests : TestHelper
     public async Task SubmitsTraces()
     {
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
         // Avoid tests parallel log collision
         SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
@@ -45,9 +45,12 @@ public class WeakHashingTests : TestHelper
 #if NET5_0_OR_GREATER
         const int expectedSpanCount = 4 * 8;
         var filename = "WeakHashingTests.SubmitsTraces.Net50.60";
-#else
+#elif NETCOREAPP
         const int expectedSpanCount = 3 * 8;
         var filename = "WeakHashingTests.SubmitsTraces";
+#else
+        const int expectedSpanCount = 3 * 9;
+        var filename = "WeakHashingTests.SubmitsTraces.Net462";
 #endif
 
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -87,4 +90,3 @@ public class WeakHashingTests : TestHelper
         Assert.Empty(spans.Where(s => s.Name.Equals(ExpectedOperationName)));
     }
 }
-#endif
