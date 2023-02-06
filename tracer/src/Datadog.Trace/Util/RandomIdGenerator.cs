@@ -151,12 +151,7 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
         }
     }
 
-    /// <summary>
-    /// Returns a random number that is greater than zero. If <paramref name="useUInt64MaxValue"/> is <c>false</c> (default),
-    /// the number is less than or equal to Int64.MaxValue (0x7fffffffffffffff). This is the default mode (aka uint63)
-    /// and is used for backwards compatibility with tracers that parse ids as signed integers.
-    /// Otherwise, it is less than or equal to UInt64.MaxValue (0xffffffffffffffff).
-    /// </summary>
+    /// <inheritDoc />
     public ulong NextSpanId(bool useUInt64MaxValue = false)
     {
         if (!useUInt64MaxValue)
