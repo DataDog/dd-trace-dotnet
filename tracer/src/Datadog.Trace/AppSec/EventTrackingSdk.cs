@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Util;
 
@@ -34,16 +35,16 @@ public static class EventTrackingSdk
 
         internal static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata, Tracer tracer)
         {
+            if (string.IsNullOrEmpty(userId))
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(userId));
+            }
+
             var span = tracer?.ActiveScope?.Span;
 
             if (span is null)
             {
-                ThrowHelper.ThrowArgumentNullException(nameof(span));
-            }
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(span));
+                ThrowHelper.ThrowException("Can't create a tracking event with no active span");
             }
 
             var setTag = TaggingUtils.GetSpanSetter(span);
@@ -83,16 +84,16 @@ public static class EventTrackingSdk
 
         internal static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata, Tracer tracer)
         {
+            if (string.IsNullOrEmpty(userId))
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(userId));
+            }
+
             var span = tracer?.ActiveScope?.Span;
 
             if (span is null)
             {
-                ThrowHelper.ThrowArgumentNullException(nameof(span));
-            }
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(span));
+                ThrowHelper.ThrowException("Can't create a tracking event with no active span");
             }
 
             var setTag = TaggingUtils.GetSpanSetter(span);
@@ -131,16 +132,16 @@ public static class EventTrackingSdk
 
         internal static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata, Tracer tracer)
         {
+            if (string.IsNullOrEmpty(eventName))
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(eventName));
+            }
+
             var span = tracer?.ActiveScope?.Span;
 
             if (span is null)
             {
-                ThrowHelper.ThrowArgumentNullException(nameof(span));
-            }
-
-            if (string.IsNullOrEmpty(eventName))
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(span));
+                ThrowHelper.ThrowException("Can't create a tracking event with no active span");
             }
 
             var setTag = TaggingUtils.GetSpanSetter(span);
