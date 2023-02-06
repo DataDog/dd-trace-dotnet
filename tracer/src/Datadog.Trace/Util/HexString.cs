@@ -195,10 +195,10 @@ internal static class HexString
     }
 
     /// <summary>
-    /// Tries to parse the specified hexadecimal string into a <see cref="ulong"/> value.
+    /// Tries to parse the specified hexadecimal string into a <see cref="TraceId"/> value.
     /// </summary>
-    /// <param name="chars">The hexadecimal string to parse. Must contain exactly 16 characters, so it may need to be left-padded with zeros.</param>
-    /// <param name="value">The integer value parsed out of the hexadecimal string.</param>
+    /// <param name="chars">The hexadecimal string to parse. Must contain exactly 16 or 32 characters, so it may need to be left-padded with zeros.</param>
+    /// <param name="value">The TraceId parsed out of the hexadecimal string.</param>
     /// <returns><c>true</c> if it parsed successfully, <c>false</c> otherwise.</returns>
 #if NETCOREAPP3_1_OR_GREATER
     [Pure]

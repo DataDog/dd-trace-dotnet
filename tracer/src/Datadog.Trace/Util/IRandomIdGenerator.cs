@@ -6,7 +6,7 @@
 namespace Datadog.Trace.Util;
 
 /// <summary>
-/// This interface is not user at run time. It is here only to ensure than the different implementations
+/// This interface is not used at run time. It is here only to ensure that the different implementations
 /// with different target frameworks expose the same API.
 /// </summary>
 internal interface IRandomIdGenerator
