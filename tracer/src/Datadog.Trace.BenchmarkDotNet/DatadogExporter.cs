@@ -5,6 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Reflection;
 using System.Threading;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
@@ -14,6 +17,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.BenchmarkDotNet
 {
@@ -22,12 +26,12 @@ namespace Datadog.Trace.BenchmarkDotNet
     /// </summary>
     public class DatadogExporter : IExporter
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogExporter));
+
         /// <summary>
         /// Default DatadogExporter instance
         /// </summary>
         public static readonly IExporter Default = new DatadogExporter();
-
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogExporter));
 
         static DatadogExporter()
         {
@@ -52,16 +56,92 @@ namespace Datadog.Trace.BenchmarkDotNet
         /// <inheritdoc />
         public IEnumerable<string> ExportToFiles(Summary summary, ILogger consoleLogger)
         {
+            var startTime = DateTimeOffset.UtcNow;
+
             CIVisibility.Initialize();
-            DateTimeOffset startTime = DateTimeOffset.UtcNow;
+            var testSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, "BenchmarkDotNet", startTime, false);
+
+            Dictionary<Assembly, Tuple<TestModule, double>> testModules = new();
+            Dictionary<Type, Tuple<TestSuite, double>> testSuites = new();
+            double maxDurationInNanoseconds = 0;
             Exception exception = null;
 
             try
             {
+                /*
+                var json = JsonConvert.SerializeObject(summary, Formatting.Indented, new JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                });
+                File.WriteAllText("c:\\temp\\output.json", json);
                 Tracer tracer = Tracer.Instance;
-
+                */
                 foreach (var report in summary.Reports)
                 {
+                    if (report?.BenchmarkCase?.Descriptor is { Type: { } type } descriptor && summary.HostEnvironmentInfo is { CpuInfo.Value: { } cpuInfo } hostEnvironmentInfo)
+                    {
+                        TestModule testModule;
+                        if (!testModules.TryGetValue(type.Assembly, out var testModulePair))
+                        {
+                            testModule = testSession.CreateModule(type.Assembly.GetName().Name, "BenchmarkDotNet", hostEnvironmentInfo.BenchmarkDotNetVersion, startTime);
+                            testModules[type.Assembly] = Tuple.Create(testModule, 0d);
+                        }
+                        else
+                        {
+                            testModule = testModulePair.Item1;
+                        }
+
+                        var testSuite = testModule.GetOrCreateSuite(type.FullName ?? "Suite", startTime);
+                        testSuites[type] = Tuple.Create(testSuite, 0d);
+                        var testMethod = testSuite.CreateTest(descriptor.WorkloadMethod.Name, startTime);
+                        testMethod.SetTestMethodInfo(descriptor.WorkloadMethod);
+
+                        testMethod.SetBenchmarkMetadata(
+                            new BenchmarkHostInfo
+                            {
+                                ProcessorName = ProcessorBrandStringHelper.Prettify(cpuInfo),
+                                ProcessorCount = cpuInfo.PhysicalProcessorCount,
+                                PhysicalCoreCount = cpuInfo.PhysicalCoreCount,
+                                LogicalCoreCount = cpuInfo.LogicalCoreCount,
+                                ProcessorMaxFrequencyHertz = cpuInfo.MaxFrequency?.Hertz,
+                                OsVersion = hostEnvironmentInfo.OsVersion?.Value,
+                                RuntimeVersion = hostEnvironmentInfo.RuntimeVersion,
+                                ChronometerFrequencyHertz = hostEnvironmentInfo.ChronometerFrequency.Hertz,
+                                ChronometerResolution = hostEnvironmentInfo.ChronometerResolution.Nanoseconds
+                            },
+                            new BenchmarkJobInfo
+                            {
+                                Description = report.BenchmarkCase?.Job?.DisplayInfo,
+                                Platform = report.BenchmarkCase?.Job?.Environment?.Platform.ToString(),
+                                RuntimeName = report.BenchmarkCase?.Job?.Environment?.Runtime?.Name,
+                                RuntimeMoniker = report.BenchmarkCase?.Job?.Environment?.Runtime?.MsBuildMoniker
+                            });
+
+                        double durationInNanoseconds = 0;
+                        if (report.ResultStatistics is { } statistics)
+                        {
+                            durationInNanoseconds = statistics.Mean;
+                        }
+
+                        if (!testSuites.TryGetValue(type, out var suiteTuple) || suiteTuple.Item2 < durationInNanoseconds)
+                        {
+                            testSuites[type] = Tuple.Create(suiteTuple.Item1, durationInNanoseconds);
+                        }
+
+                        if (!testModules.TryGetValue(type.Assembly, out var moduleTuple) || moduleTuple.Item2 < durationInNanoseconds)
+                        {
+                            testModules[type.Assembly] = Tuple.Create(moduleTuple.Item1, durationInNanoseconds);
+                        }
+
+                        if (maxDurationInNanoseconds < durationInNanoseconds)
+                        {
+                            maxDurationInNanoseconds = durationInNanoseconds;
+                        }
+
+                        testMethod.Close(report.Success ? TestStatus.Pass : TestStatus.Fail, TimeSpan.FromTicks((long)(durationInNanoseconds / TimeConstants.NanoSecondsPerTick)));
+                    }
+
+                    /*
                     Span span = tracer.StartSpan("benchmarkdotnet.test", startTime: startTime);
                     double durationNanoseconds = 0;
 
@@ -79,33 +159,43 @@ namespace Datadog.Trace.BenchmarkDotNet
                     span.SetTag(TestTags.Status, report.Success ? TestTags.StatusPass : TestTags.StatusFail);
                     span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
 
-                    if (summary.HostEnvironmentInfo != null)
+                    if (summary.HostEnvironmentInfo is { } hostEnvironmentInfo2)
                     {
-                        span.SetTag("benchmark.host.processor.name", ProcessorBrandStringHelper.Prettify(summary.HostEnvironmentInfo.CpuInfo.Value));
-                        span.SetMetric("benchmark.host.processor.physical_processor_count", summary.HostEnvironmentInfo.CpuInfo.Value.PhysicalProcessorCount);
-                        span.SetMetric("benchmark.host.processor.physical_core_count", summary.HostEnvironmentInfo.CpuInfo.Value.PhysicalCoreCount);
-                        span.SetMetric("benchmark.host.processor.logical_core_count", summary.HostEnvironmentInfo.CpuInfo.Value.LogicalCoreCount);
-                        span.SetMetric("benchmark.host.processor.max_frequency_hertz", summary.HostEnvironmentInfo.CpuInfo.Value.MaxFrequency?.Hertz);
-                        span.SetTag("benchmark.host.os_version", summary.HostEnvironmentInfo.OsVersion.Value);
-                        span.SetTag("benchmark.host.runtime_version", summary.HostEnvironmentInfo.RuntimeVersion);
-                        span.SetMetric("benchmark.host.chronometer.frequency_hertz", summary.HostEnvironmentInfo.ChronometerFrequency.Hertz);
-                        span.SetMetric("benchmark.host.chronometer.resolution", summary.HostEnvironmentInfo.ChronometerResolution.Nanoseconds);
+                        if (hostEnvironmentInfo2.CpuInfo?.Value is { } cpuInfo2)
+                        {
+                            span.SetTag(BenchmarkTestTags.HostProcessorName, ProcessorBrandStringHelper.Prettify(cpuInfo2));
+                            span.SetMetric(BenchmarkTestTags.HostProcessorPhysicalProcessorCount, cpuInfo2.PhysicalProcessorCount);
+                            span.SetMetric(BenchmarkTestTags.HostProcessorPhysicalCoreCount, cpuInfo2.PhysicalCoreCount);
+                            span.SetMetric(BenchmarkTestTags.HostProcessorLogicalCoreCount, cpuInfo2.LogicalCoreCount);
+                            span.SetMetric(BenchmarkTestTags.HostProcessorMaxFrequencyHertz, cpuInfo2.MaxFrequency?.Hertz);
+                        }
+
+                        if (hostEnvironmentInfo2.OsVersion?.Value is { } osVersion)
+                        {
+                            span.SetTag(BenchmarkTestTags.HostOsVersion, osVersion);
+                        }
+
+                        if (hostEnvironmentInfo2.RuntimeVersion is { } runtimeVersion)
+                        {
+                            span.SetTag(BenchmarkTestTags.HostRuntimeVersion, runtimeVersion);
+                        }
+
+                        span.SetMetric(BenchmarkTestTags.HostChronometerFrequencyHertz, hostEnvironmentInfo2.ChronometerFrequency.Hertz);
+                        span.SetMetric(BenchmarkTestTags.HostChronometerResolution, hostEnvironmentInfo2.ChronometerResolution.Nanoseconds);
                     }
 
-                    if (report.BenchmarkCase.Job != null)
+                    if (report.BenchmarkCase.Job is { } job)
                     {
-                        var job = report.BenchmarkCase.Job;
-                        span.SetTag("benchmark.job.description", job.DisplayInfo);
+                        span.SetTag(BenchmarkTestTags.JobDescription, job.DisplayInfo);
 
-                        if (job.Environment != null)
+                        if (job.Environment is { } jobEnvironment)
                         {
-                            var jobEnv = job.Environment;
-                            span.SetTag("benchmark.job.environment.platform", jobEnv.Platform.ToString());
+                            span.SetTag(BenchmarkTestTags.JobPlatform, jobEnvironment.Platform.ToString());
 
-                            if (jobEnv.Runtime != null)
+                            if (jobEnvironment.Runtime is { } jobEnvironmentRuntime)
                             {
-                                span.SetTag("benchmark.job.runtime.name", jobEnv.Runtime.Name);
-                                span.SetTag("benchmark.job.runtime.moniker", jobEnv.Runtime.MsBuildMoniker);
+                                span.SetTag(BenchmarkTestTags.JobRuntimeName, jobEnvironmentRuntime.Name);
+                                span.SetTag(BenchmarkTestTags.JobRuntimeMoniker, jobEnvironmentRuntime.MsBuildMoniker);
                             }
                         }
                     }
@@ -169,6 +259,18 @@ namespace Datadog.Trace.BenchmarkDotNet
                 // Ensure all the spans gets flushed before we report the success.
                 // In some cases the process finishes without sending the traces in the buffer.
                 CIVisibility.Flush();
+                */
+                }
+
+                foreach (var item in testSuites)
+                {
+                    item.Value.Item1.Close(TimeSpan.FromTicks((long)(item.Value.Item2 / TimeConstants.NanoSecondsPerTick)));
+                }
+
+                foreach (var item in testModules)
+                {
+                    item.Value.Item1.Close(TimeSpan.FromTicks((long)(item.Value.Item2 / TimeConstants.NanoSecondsPerTick)));
+                }
             }
             catch (Exception ex)
             {
@@ -176,14 +278,19 @@ namespace Datadog.Trace.BenchmarkDotNet
                 consoleLogger.WriteLine(LogKind.Error, ex.ToString());
             }
 
-            if (exception is null)
+            if (exception is not null)
             {
-                return new string[] { "Datadog Exporter ran successfully." };
+                testSession.SetErrorInfo(exception);
             }
-            else
+
+            testSession.Close(exception is null ? TestStatus.Pass : TestStatus.Fail, TimeSpan.FromTicks((long)(maxDurationInNanoseconds / TimeConstants.NanoSecondsPerTick)));
+
+            if (exception is not null)
             {
-                return new string[] { "Datadog Exporter error: " + exception.ToString() };
+                return new[] { "Datadog Exporter error: " + exception };
             }
+
+            return new[] { "Datadog Exporter ran successfully." };
         }
     }
 }

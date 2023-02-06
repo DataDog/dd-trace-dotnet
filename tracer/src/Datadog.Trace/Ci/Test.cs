@@ -190,6 +190,85 @@ public sealed class Test
     }
 
     /// <summary>
+    /// Set benchmark metadata
+    /// </summary>
+    /// <param name="hostInfo">Host info</param>
+    /// <param name="jobInfo">Job info</param>
+    public void SetBenchmarkMetadata(BenchmarkHostInfo hostInfo, BenchmarkJobInfo jobInfo)
+    {
+        ((TestSpanTags)_scope.Span.Tags).Type = TestTags.TypeBenchmark;
+
+        // Host info
+
+        if (hostInfo.ProcessorName is not null)
+        {
+            SetTag(BenchmarkTestTags.HostProcessorName, hostInfo.ProcessorName);
+        }
+
+        if (hostInfo.ProcessorCount is not null)
+        {
+            SetTag(BenchmarkTestTags.HostProcessorPhysicalProcessorCount, hostInfo.ProcessorCount);
+        }
+
+        if (hostInfo.PhysicalCoreCount is not null)
+        {
+            SetTag(BenchmarkTestTags.HostProcessorPhysicalCoreCount, hostInfo.PhysicalCoreCount);
+        }
+
+        if (hostInfo.LogicalCoreCount is not null)
+        {
+            SetTag(BenchmarkTestTags.HostProcessorLogicalCoreCount, hostInfo.LogicalCoreCount);
+        }
+
+        if (hostInfo.ProcessorMaxFrequencyHertz is not null)
+        {
+            SetTag(BenchmarkTestTags.HostProcessorMaxFrequencyHertz, hostInfo.ProcessorMaxFrequencyHertz);
+        }
+
+        if (hostInfo.OsVersion is not null)
+        {
+            SetTag(BenchmarkTestTags.HostOsVersion, hostInfo.OsVersion);
+        }
+
+        if (hostInfo.RuntimeVersion is not null)
+        {
+            SetTag(BenchmarkTestTags.HostRuntimeVersion, hostInfo.RuntimeVersion);
+        }
+
+        if (hostInfo.ChronometerFrequencyHertz is not null)
+        {
+            SetTag(BenchmarkTestTags.HostChronometerFrequencyHertz, hostInfo.ChronometerFrequencyHertz);
+        }
+
+        if (hostInfo.ChronometerResolution is not null)
+        {
+            SetTag(BenchmarkTestTags.HostChronometerResolution, hostInfo.ChronometerResolution);
+        }
+
+        // Job info
+
+        if (jobInfo.Description is not null)
+        {
+            SetTag(BenchmarkTestTags.JobDescription, jobInfo.Description);
+        }
+
+        if (jobInfo.Platform is not null)
+        {
+            SetTag(BenchmarkTestTags.JobPlatform, jobInfo.Platform);
+        }
+
+        if (jobInfo.RuntimeName is not null)
+        {
+            SetTag(BenchmarkTestTags.JobRuntimeName, jobInfo.RuntimeName);
+        }
+
+        if (jobInfo.RuntimeMoniker is not null)
+        {
+            SetTag(BenchmarkTestTags.JobRuntimeMoniker, jobInfo.RuntimeMoniker);
+        }
+    }
+
+    /// <summary>
     /// Close test
     /// </summary>
     /// <param name="status">Test status</param>
