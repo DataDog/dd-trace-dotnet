@@ -21,6 +21,14 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         ActivitySource Source { get; }
 
+        /// <summary>
+        /// Gets the <see cref="ActivityContext" /> associated with this <see cref="IActivity5"/>.
+        /// <para>
+        /// Note that this will override the TraceID.
+        /// </para>
+        /// </summary>
+        ActivityContext Context { get; }
+
         object AddTag(string key, object value);
     }
 }
