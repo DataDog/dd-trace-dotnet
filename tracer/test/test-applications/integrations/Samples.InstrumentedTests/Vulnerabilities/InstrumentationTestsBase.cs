@@ -71,12 +71,18 @@ public class InstrumentationTestsBase
         var assemblyListString = "DD Assemblies:" + Environment.NewLine  + string.Join(Environment.NewLine, assemblies.Where(x => x.GetName().Name.IndexOf("datadog", StringComparison.OrdinalIgnoreCase) >= 0).Select(x => x.GetName().Name));
 
         string homeFiles = "COR files:" + Environment.NewLine;
+        try
+        {
 #if NETCOREAPP
-        homeFiles += string.Join("; ", Directory.GetFiles(System.IO.Path.GetDirectoryName(EnvironmentVariableMessage("CORECLR_PROFILER_PATH"))));
+            homeFiles += string.Join("; ", Directory.GetFiles(System.IO.Path.GetDirectoryName(Environment.GetEnvironmentVariable("CORECLR_PROFILER_PATH_64"))));
 #else
-        homeFiles += string.Join("; ", Directory.GetFiles(System.IO.Path.GetDirectoryName(EnvironmentVariableMessage("COR_PROFILER_PATH"))));
+            homeFiles += string.Join("; ", Directory.GetFiles(System.IO.Path.GetDirectoryName(Environment.GetEnvironmentVariable("COR_PROFILER_PATH"))));
 #endif
-
+        }
+        catch(Exception ex)
+        {
+            homeFiles += ex.Message;
+        }
         return "Test is not instrumented." + Environment.NewLine +
             EnvironmentVariableMessage("CORECLR_ENABLE_PROFILING") +
             EnvironmentVariableMessage("CORECLR_PROFILER_PATH") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_64") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_32") +
