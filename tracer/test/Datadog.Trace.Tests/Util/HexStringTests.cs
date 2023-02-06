@@ -31,7 +31,7 @@ public class HexStringTests
     public void ToHexChars(byte[] bytes, bool lowerCase, string expected)
     {
         var actual = new char[bytes.Length * 2];
-        HexString.ToHexChars(bytes, actual, lowerCase);
+        HexString.ToHexChars(new ArraySegment<byte>(bytes, offset: 0, count: bytes.Length), actual, lowerCase);
 
         actual.Should().BeEquivalentTo(expected.ToCharArray());
     }
