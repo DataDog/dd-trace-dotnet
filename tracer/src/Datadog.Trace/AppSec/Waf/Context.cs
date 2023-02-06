@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.AppSec.Concurrency;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -18,6 +17,10 @@ namespace Datadog.Trace.AppSec.Waf
     internal class Context : IContext
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
+
+        // the context handle should be locked, it is not safe for concurrent access and two
+        // waf events may be processed at the same time due to code being run asynchronously
+        private readonly object _sync = new object();
         private readonly IntPtr _contextHandle;
 
         private readonly Waf _waf;
@@ -77,7 +80,12 @@ namespace Datadog.Trace.AppSec.Waf
             _stopwatch.Start();
             using var pwArgs = Encoder.Encode(addresses, _wafLibraryInvoker, _argCache, applySafetyLimits: true);
             var rawArgs = pwArgs.RawPtr;
-            var code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+
+            DDWAF_RET_CODE code;
+            lock (_sync)
+            {
+                code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+            }
 
             _stopwatch.Stop();
             _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
@@ -109,7 +117,10 @@ namespace Datadog.Trace.AppSec.Waf
                 arg.Dispose();
             }
 
-            _wafLibraryInvoker.ContextDestroy(_contextHandle);
+            lock (_sync)
+            {
+                _wafLibraryInvoker.ContextDestroy(_contextHandle);
+            }
         }
 
         public void Dispose()

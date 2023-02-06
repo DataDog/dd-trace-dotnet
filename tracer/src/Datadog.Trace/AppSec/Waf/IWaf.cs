@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Concurrency;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
