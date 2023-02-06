@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -23,19 +24,16 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestInstrumentedUnitTests()
     {
-        bool isNet462x86 = !Environment.Is64BitProcess && !EnvironmentHelper.IsCoreClr();
-        if (!isNet462x86)
+        using (var agent = EnvironmentHelper.GetMockAgent())
         {
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            {
-                EnableIast(true);
-                string arguments = string.Empty;
+            EnableIast(true);
+            string arguments = string.Empty;
 #if NET462
-                arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
+            arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #endif
-                ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments);
-                processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
-            }
+            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));
+            ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
+            processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
     }
 }
