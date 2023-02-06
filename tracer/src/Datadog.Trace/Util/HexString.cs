@@ -18,14 +18,12 @@ namespace Datadog.Trace.Util;
 internal static class HexString
 {
 #if !NETCOREAPP3_1_OR_GREATER
+    /// <summary>
+    /// Thread static buffer Used to avoid allocating a new byte array on each conversion.
+    /// Length is always 16 bytes to fit either single bytes, 8-byte UInt16 (ulong), or 16-byte TraceIds.
+    /// </summary>
     [ThreadStatic]
-    private static byte[]? _buffer16; // always 16 bytes for TraceId
-
-    [ThreadStatic]
-    private static byte[]? _buffer8; // always 8 bytes for UInt64 (ulong)
-
-    [ThreadStatic]
-    private static byte[]? _buffer1; // always 1 byte
+    private static byte[]? _buffer;
 #endif
 
     [Pure]
@@ -55,21 +53,14 @@ internal static class HexString
 
 #if !NETCOREAPP3_1_OR_GREATER
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static byte[] GetBuffer16()
+    private static ArraySegment<byte> GetBuffer(int size)
     {
-        return _buffer16 ??= new byte[16];
-    }
+        if (_buffer == null || _buffer.Length < size)
+        {
+            _buffer = new byte[size];
+        }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static byte[] GetBuffer8()
-    {
-        return _buffer8 ??= new byte[8];
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static byte[] GetBuffer1()
-    {
-        return _buffer1 ??= new byte[1];
+        return new ArraySegment<byte>(_buffer, 0, size);
     }
 #endif
 
@@ -82,14 +73,19 @@ internal static class HexString
     /// <param name="lowerCase"><c>true</c> to generate lower-case characters, <c>false</c> otherwise.</param>
 #if NETCOREAPP3_1_OR_GREATER
     public static void ToHexChars(ReadOnlySpan<byte> bytes, Span<char> chars, bool lowerCase = true)
-#else
-    public static void ToHexChars(byte[] bytes, char[] chars, bool lowerCase = true)
-#endif
     {
         if (chars.Length < bytes.Length * 2)
         {
             ThrowHelper.ThrowArgumentException("Target buffer is too small for the provided bytes.", nameof(chars));
         }
+#else
+    public static void ToHexChars(ArraySegment<byte> bytes, char[] chars, bool lowerCase = true)
+    {
+        if (chars.Length < bytes.Count * 2)
+        {
+            ThrowHelper.ThrowArgumentException("Target buffer is too small for the provided bytes.", nameof(chars));
+        }
+#endif
 
         var casing = lowerCase ? HexConverter.Casing.Lower : HexConverter.Casing.Upper;
         HexConverter.EncodeToUtf16(bytes, chars, casing);
@@ -101,13 +97,22 @@ internal static class HexString
     [Pure]
 #if NETCOREAPP3_1_OR_GREATER
     public static string ToHexString(ReadOnlySpan<byte> bytes, bool lowerCase = true)
-#else
-    public static string ToHexString(byte[] bytes, bool lowerCase = true)
-#endif
     {
         var casing = lowerCase ? HexConverter.Casing.Lower : HexConverter.Casing.Upper;
         return HexConverter.ToString(bytes, casing);
     }
+#else
+    public static string ToHexString(byte[] bytes, bool lowerCase = true)
+    {
+        return ToHexString(new ArraySegment<byte>(bytes, offset: 0, count: bytes.Length), lowerCase);
+    }
+
+    public static string ToHexString(ArraySegment<byte> bytes, bool lowerCase = true)
+    {
+        var casing = lowerCase ? HexConverter.Casing.Lower : HexConverter.Casing.Upper;
+        return HexConverter.ToString(bytes, casing);
+    }
+#endif
 
     /// <summary>
     /// Converts the specified <see cref="ulong"/> value into a hexadecimal string.
@@ -136,29 +141,30 @@ internal static class HexString
     {
         if (!pad16To32 && value.Upper == 0)
         {
-            // trace id fits in 16 hex characters
+            // this trace id fits in 16 hex characters and padding to 32 characters was not requested
             return ToHexString(value.Lower);
         }
 
-        value = ReverseIfLittleEndian(value);
-        var upper = value.Upper;
-        var lower = value.Lower;
+        var (upper, lower) = ReverseIfLittleEndian(value);
 
 #if NETCOREAPP3_1_OR_GREATER
         // NOTE: don't use MemoryMarshal.Write() with the entire TraceId because .NET will
         // flip upper/lower around on little-endian architectures. Instead, call MemoryMarshal.Write()
         // for each field so we can control the order ourselves. Trace id hex strings should
         // always use network byte order, aka big endian.
-        Span<byte> bytes = stackalloc byte[16];
+        Span<byte> bytes = stackalloc byte[TraceId.Size];
         System.Runtime.InteropServices.MemoryMarshal.Write(bytes, ref upper);
-        System.Runtime.InteropServices.MemoryMarshal.Write(bytes[8..], ref lower);
-#else
-        var bytes = GetBuffer16();
-        BitConverter.GetBytes(upper).CopyTo(bytes, 0);
-        BitConverter.GetBytes(lower).CopyTo(bytes, sizeof(ulong));
-#endif
+        System.Runtime.InteropServices.MemoryMarshal.Write(bytes[sizeof(ulong)..], ref lower);
 
         return ToHexString(bytes, lowerCase);
+#else
+
+        var bytes = GetBuffer(TraceId.Size);
+        BitConverter.GetBytes(upper).CopyTo(bytes.Array, bytes.Offset);
+        BitConverter.GetBytes(lower).CopyTo(bytes.Array, bytes.Offset + sizeof(ulong));
+
+        return ToHexString(bytes, lowerCase);
+#endif
     }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -187,9 +193,20 @@ internal static class HexString
     /// <returns><c>true</c> if it parsed successfully, <c>false</c> otherwise.</returns>
     public static bool TryParseBytes(string chars, byte[] bytes)
     {
+        return TryParseBytes(chars, new ArraySegment<byte>(bytes, offset: 0, count: bytes.Length));
+    }
+
+    /// <summary>
+    /// Tries to parse the specified hexadecimal string into the specified byte array.
+    /// </summary>
+    /// <param name="chars">The hexadecimal string to parse. Must contain an even number of characters, two for each output byte.</param>
+    /// <param name="bytes">The buffer to write the parsed bytes into. Must be half in length as <paramref name="chars"/></param>
+    /// <returns><c>true</c> if it parsed successfully, <c>false</c> otherwise.</returns>
+    public static bool TryParseBytes(string chars, ArraySegment<byte> bytes)
+    {
         // this overload exists in NETCOREAPP3_1_OR_GREATER so we can catch null strings,
         // otherwise we can't distinguish them from empty ReadOnlySpan<char>
-        if (chars == null! || chars.Length != bytes.Length * 2)
+        if (chars == null! || chars.Length != bytes.Count * 2)
         {
             return false;
         }
@@ -260,15 +277,15 @@ internal static class HexString
             return false;
         }
 
-        var bytes = GetBuffer16();
+        var bytes = GetBuffer(TraceId.Size);
 
         if (!TryParseBytes(chars, bytes))
         {
             return false;
         }
 
-        var upper = BitConverter.ToUInt64(bytes, 0);
-        lower = BitConverter.ToUInt64(bytes, 8);
+        var upper = BitConverter.ToUInt64(bytes.Array!, bytes.Offset);
+        lower = BitConverter.ToUInt64(bytes.Array!, bytes.Offset + sizeof(ulong));
         value = ReverseIfLittleEndian(new TraceId(upper, lower));
         return true;
     }
@@ -313,14 +330,14 @@ internal static class HexString
             return false;
         }
 
-        var bytes = GetBuffer8();
+        var bytes = GetBuffer(sizeof(ulong));
 
         if (!TryParseBytes(chars, bytes))
         {
             return false;
         }
 
-        var result = BitConverter.ToUInt64(bytes, 0);
+        var result = BitConverter.ToUInt64(bytes.Array!, bytes.Offset);
         value = ReverseIfLittleEndian(result);
         return true;
     }
@@ -364,12 +381,12 @@ internal static class HexString
             return false;
         }
 
-        var bytes = GetBuffer1();
+        var bytes = GetBuffer(size: 1);
 
         if (TryParseBytes(chars, bytes))
         {
             // no need to reverse endianness on a single byte
-            value = bytes[0];
+            value = bytes.Array![bytes.Offset];
             return true;
         }
 
