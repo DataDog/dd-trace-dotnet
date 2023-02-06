@@ -155,6 +155,13 @@ public class HexStringTests
 #endif
 
     [Theory]
+    // 64-bits trace ids
+    [InlineData("0000000000000000", 0, 0x0000000000000000)]
+    [InlineData("1234567890abcdef", 0, 0x1234567890abcdef)]
+    [InlineData("1234567890ABCDEF", 0, 0x1234567890abcdef)]
+    [InlineData("ffffffffffffffff", 0, 0xffffffffffffffff)]
+    [InlineData("FFFFFFFFFFFFFFFF", 0, 0xffffffffffffffff)]
+    // 128-bits trace ids
     [InlineData("00000000000000000000000000000000", 0x0000000000000000, 0x0000000000000000)]
     [InlineData("1234567890abcdef1122334455667788", 0x1234567890abcdef, 0x1122334455667788)]
     [InlineData("1234567890ABCDEF1122334455667788", 0x1234567890abcdef, 0x1122334455667788)]
@@ -173,13 +180,18 @@ public class HexStringTests
     [InlineData("0000000000000000000000000000000z")]
     [InlineData("y0000000000000000000000000000000")]
     [InlineData("000000000000000 0000000000000000")]
-    [InlineData("0x000000000000000000000000000000")]
+    [InlineData("000000000000000-0000000000000000")]
     // invalid string length (not 16 or 32)
-    [InlineData("")]
-    [InlineData("000000000000000")]
-    [InlineData("00000000000000000")]
-    [InlineData("0000000000000000000000000000000")]
-    [InlineData("000000000000000000000000000000000")]
+    [InlineData("")]                                  // length:  0
+    [InlineData("000000000000000")]                   // length: 15
+    [InlineData("00000000000000000")]                 // length: 17
+    [InlineData("0000000000000000000000000000000")]   // length: 31
+    [InlineData("000000000000000000000000000000000")] // length: 33
+    // "0x" prefix
+    [InlineData("0x00000000000000")]                   // prefix + 14 chars (valid length, but invalid chars)
+    [InlineData("0x0000000000000000")]                 // prefix + 16 chars (both invalid length and chars)
+    [InlineData("0x000000000000000000000000000000")]   // prefix + 30 chars (valid length, but invalid chars)
+    [InlineData("0x00000000000000000000000000000000")] // prefix + 32 chars (both invalid length and chars)
     public void TryParseTraceId_Invalid(string hex)
     {
         HexString.TryParseTraceId(hex, out var actual).Should().BeFalse();
