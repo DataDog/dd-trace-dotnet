@@ -474,7 +474,8 @@ partial class Build
                         var (arch, _) = GetUnixArchitectureAndExtension();
                         var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
                         var source = MonitoringHomeDirectory / (IsOsx ? "osx" : arch);
-                        var oldVersionPath = oldVersionTempPath / "runtimes" / archWaf / "native" / $"libddwaf.{ext}";
+                        var patchedArchWaf = (IsOsx ? archWaf + "-x64" : archWaf);
+                        var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
                         foreach (var fmk in frameworks)
                         {
                             // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
