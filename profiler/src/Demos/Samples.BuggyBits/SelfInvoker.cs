@@ -136,7 +136,7 @@ namespace BuggyBits
 
                 if ((_scenario & Scenario.EndpointsCount) == Scenario.EndpointsCount)
                 {
-                    urls.Add($"{rootUrl}/End.Point.With.Dots.js");
+                    urls.Add($"{rootUrl}/End.Point.With.Dots");
                 }
             }
 
