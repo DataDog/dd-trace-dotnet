@@ -390,6 +390,7 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
         {
             hr = piUnk->QueryInterface(IID_IMetaDataImport2, (void**) ppMetadataImport);
         }
+        REL(piUnk);
     }
     if (SUCCEEDED(hr)) 
     {
@@ -399,7 +400,7 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
         {
             hr = piUnk->QueryInterface(IID_IMetaDataEmit2, (void**) ppMetadataEmit);
         }
-
+        REL(piUnk);
     }
     if (SUCCEEDED(hr)) 
     {
@@ -409,6 +410,7 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
         {
             hr = piUnk->QueryInterface(IID_IMetaDataAssemblyImport, (void**) ppAssemblyImport);
         }
+        REL(piUnk);
     }
     if (SUCCEEDED(hr)) 
     {
@@ -418,6 +420,7 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
         {
             hr = piUnk->QueryInterface(IID_IMetaDataAssemblyEmit, (void**) ppAssemblyEmit);
         }
+        REL(piUnk);
     }
     return hr;
 }
