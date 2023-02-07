@@ -48,7 +48,8 @@ public:
     static std::string GetHostname();
     static std::string GetProcessName();
 
-    static bool ParseThreadInfo(std::string line, char& state, int32_t& userTime, int32_t& kernelTime)
+#ifdef LINUX
+    static bool ParseThreadInfo(char const* line, char& state, int32_t& userTime, int32_t& kernelTime)
     {
         // based on https://linux.die.net/man/5/proc
         // state  = 3rd position  and 'R' for Running
@@ -57,17 +58,14 @@ public:
 
         // The thread name is in second position and wrapped by ()
         // Since the name can contain SPACE and () characters, skip it before scanning the values
-        auto pos = line.find_last_of(")");
-        const char* pEnd = line.c_str() + pos + 1;
+        auto pos = strrchr(line, ')');
+        pos++;
+        if (*pos == '\0')
+            return false;
 
-#ifdef _WINDOWS
-        bool result = sscanf_s(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, 1, &userTime, &kernelTime) == 3;
-#else
-        bool result = sscanf(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, &userTime, &kernelTime) == 3;
-#endif
-
-        return result;
+        return sscanf(pos, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, &userTime, &kernelTime) == 3;
     }
+#endif
 
     static bool IsSafeToStartProfiler(double coresThreshold);
     static std::int64_t GetHighPrecisionTimestamp();

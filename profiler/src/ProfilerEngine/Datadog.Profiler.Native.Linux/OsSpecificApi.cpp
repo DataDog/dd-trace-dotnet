@@ -9,6 +9,7 @@
 #include <sys/syscall.h>
 #include "OsSpecificApi.h"
 #include "OpSysTools.h"
+#include "ScopeFinalizer.h"
 
 #include "IConfiguration.h"
 #include "Log.h"
@@ -16,6 +17,7 @@
 #include "ProfilerSignalManager.h"
 #include "StackFramesCollectorBase.h"
 #include "shared/src/native-src/loader.h"
+
 
 namespace OsSpecificApi {
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
@@ -48,20 +50,27 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 //    pthread_getcpuclockid(pthread_self(), &clockid);
 //    if (clock_gettime(clockid, &cpu_time)) { ... }
 //
-static bool firstError = true;
 
 bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
 {
-    char statPath[64];
+    char statPath[64] = {'\0'};
     snprintf(statPath, sizeof(statPath), "/proc/self/task/%d/stat", tid);
 
-    // load the line to be able to parse it in memory
-    std::ifstream file;
-    file.open(statPath);
-    std::string sline;
-    std::getline(file, sline);
-    file.close();
-    if (sline.empty())
+    auto* fileStream = fopen(statPath, "r");
+
+    if (fileStream == nullptr)
+    {
+        return false;
+    }
+
+    on_leave { fclose(fileStream); };
+
+    // 1023 + 1 to ensure that the last char is a null one
+    // initialize the whole array slots to 0
+    char line[1024] = { 0 };
+
+    auto length = fread(line, 1, sizeof(line) - 1, fileStream);
+    if (ferror(fileStream) || length == 0)
     {
         return false;
     }
@@ -69,14 +78,15 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     char state = ' ';
     int32_t userTime = 0;
     int32_t kernelTime = 0;
-    bool success = OpSysTools::ParseThreadInfo(sline, state, userTime, kernelTime);
+    bool success = OpSysTools::ParseThreadInfo(line, state, userTime, kernelTime);
     if (!success)
     {
+        static bool firstError = true;
         // log the first error to be able to analyze unexpected string format
         if (firstError)
         {
             firstError = false;
-            Log::Error("Unexpected /proc/self/task/", tid, "/stat: ", sline);
+            Log::Info("Unexpected line format in ", statPath, ": ", line);
         }
 
         return false;
