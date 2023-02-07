@@ -4,7 +4,7 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(lineNumber: 33)]
+    [LineProbeTestData(lineNumber: 36)]
     internal class InterfaceProperties : IRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -24,6 +24,9 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
             IInterface iInterface = new Class { ShowMe = string.Empty};
             IGenericInterface<T> iGenericInterface = (IGenericInterface<T>)new Class<string> { GenericValue = "", Value = "Value"};
+
+            Console.WriteLine($"{iInterface.ShowMe}");
+            Console.WriteLine($"{iGenericInterface.Value}");
 
             if (Check(iInterface) && Check(iGenericInterface))
             {

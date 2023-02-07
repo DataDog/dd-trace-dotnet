@@ -11,7 +11,7 @@
             "arguments": {
               "parameter": {
                 "fields": {
-                  "_notAutoProp": {
+                  "_privateField": {
                     "type": "String",
                     "value": "bla bla"
                   },
@@ -37,9 +37,9 @@
             "arguments": {
               "parameter": {
                 "fields": {
-                  "_notAutoProp": {
+                  "_privateField": {
                     "type": "String",
-                    "value": "Samples.Probes.TestRuns.Shared.Class"
+                    "value": "This string should never be visible"
                   },
                   "Field": {
                     "type": "String",
@@ -107,9 +107,9 @@
               "arguments": {
                 "parameter": {
                   "fields": {
-                    "_notAutoProp": {
+                    "_privateField": {
                       "type": "String",
-                      "value": "Samples.Probes.TestRuns.Shared.Class"
+                      "value": "This string should never be visible"
                     },
                     "Field": {
                       "type": "String",
@@ -131,7 +131,7 @@
               "locals": {
                 "iInterface": {
                   "fields": {
-                    "_notAutoProp": {
+                    "_privateField": {
                       "isNull": "true",
                       "type": "String"
                     },

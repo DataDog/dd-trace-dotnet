@@ -10,7 +10,7 @@ namespace Samples.Probes.TestRuns.Shared
 
     public interface IInterface
     {
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
         // we should not see this property in the snapshot
         public string CallToString => DateTime.Now.ToString(CultureInfo.CurrentCulture);
 #endif
@@ -27,17 +27,17 @@ namespace Samples.Probes.TestRuns.Shared
             Field = "I'm a class field";
         }
 
-        private string _notAutoProp;
+        private string _privateField;
         public string DoNotShowMe
         {
             get
             {
-                _notAutoProp = ToString();
-                return $"Do not show me!: {_notAutoProp}";
+                _privateField = "This string should never be visible";
+                return $"Do not show me!: {_privateField}";
             }
             set
             {
-                _notAutoProp = value;
+                _privateField = value;
             }
         }
 

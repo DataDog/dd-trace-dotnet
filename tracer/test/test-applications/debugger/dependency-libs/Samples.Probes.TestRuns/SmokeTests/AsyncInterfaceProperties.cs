@@ -23,12 +23,12 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
             await Task.Delay(20);
             IInterface iInterface = new Class { ShowMe = string.Empty };
-
+            Console.WriteLine(iInterface.ShowMe);
             await Task.Yield();
 
             if (Check(iInterface))
             {
-                return parameter.DoNotShowMe;
+                return iInterface.DoNotShowMe;
             }
 
             return parameter.ShowMe;

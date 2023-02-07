@@ -25,7 +25,7 @@
               },
               "parameter2": {
                 "fields": {
-                  "_notAutoProp": {
+                  "_privateField": {
                     "type": "String",
                     "value": "bla bla"
                   },
@@ -65,9 +65,9 @@
               },
               "parameter2": {
                 "fields": {
-                  "_notAutoProp": {
+                  "_privateField": {
                     "type": "String",
-                    "value": "Samples.Probes.TestRuns.Shared.Class"
+                    "value": "This string should never be visible"
                   },
                   "Field": {
                     "type": "String",
@@ -107,7 +107,7 @@
               },
               "iInterface": {
                 "fields": {
-                  "_notAutoProp": {
+                  "_privateField": {
                     "isNull": "true",
                     "type": "String"
                   },
@@ -159,7 +159,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "33": {
+            "36": {
               "arguments": {
                 "parameter1": {
                   "fields": {
@@ -177,9 +177,9 @@
                 },
                 "parameter2": {
                   "fields": {
-                    "_notAutoProp": {
+                    "_privateField": {
                       "type": "String",
-                      "value": "Samples.Probes.TestRuns.Shared.Class"
+                      "value": "This string should never be visible"
                     },
                     "Field": {
                       "type": "String",
@@ -215,7 +215,7 @@
                 },
                 "iInterface": {
                   "fields": {
-                    "_notAutoProp": {
+                    "_privateField": {
                       "isNull": "true",
                       "type": "String"
                     },
@@ -243,7 +243,7 @@
           "location": {
             "file": "InterfaceProperties.cs",
             "lines": [
-              33
+              36
             ]
           }
         },
