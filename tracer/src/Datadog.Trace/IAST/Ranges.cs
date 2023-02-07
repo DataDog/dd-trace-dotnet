@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 
 namespace Datadog.Trace.Iast;
+
 internal static class Ranges
 {
     public static void CopyShift(Range[] src, Range[] dst, int dstPos, int shift)
