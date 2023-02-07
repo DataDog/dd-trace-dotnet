@@ -183,19 +183,19 @@ bool FrameStore::GetTypeName(ClassID classId, std::string& name)
     // no backend encoding --> C# like
     bool isEncoded = false;
 
-    TypeDesc typeDesc;
-    if (!GetTypeDesc(classId, typeDesc, isEncoded))
+    TypeDesc* pTypeDesc = nullptr;
+    if (!GetTypeDesc(classId, pTypeDesc, isEncoded))
     {
         return false;
     }
 
-    if (typeDesc.Namespace.empty())
+    if (pTypeDesc->Namespace.empty())
     {
-        name = typeDesc.Type;
+        name = pTypeDesc->Type;
     }
     else
     {
-        name = typeDesc.Namespace + "." + typeDesc.Type;
+        name = pTypeDesc->Namespace + "." + pTypeDesc->Type;
     }
 
     return true;
@@ -211,13 +211,12 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
     // no backend encoding --> C# like
     bool isEncoded = false;
 
-    TypeDesc typeDesc;
-    if (!GetTypeDesc(classId, typeDesc, isEncoded))
+    TypeDesc* pTypeDesc = nullptr;
+    if (!GetTypeDesc(classId, pTypeDesc, isEncoded))
     {
         return false;
     }
 
-    TypeDesc* pTypeDesc = nullptr;
     if (!GetCachedTypeDesc(classId, pTypeDesc))
     {
         return false;
@@ -247,11 +246,10 @@ bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc)
     return false;
 }
 
-bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded)
+bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncoded)
 {
     // get type related description (assembly, namespace and type name)
     // look into the cache first
-    TypeDesc* pTypeDesc = nullptr;
     bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
 
@@ -261,10 +259,17 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded
         mdTypeDef typeDefToken;
         INVOKE(_pCorProfilerInfo->GetClassIDInfo(classId, &moduleId, &typeDefToken));
 
+        // for some types, it is not possible to find the moduleId ???
+        if (moduleId == 0)
+        {
+            INVOKE(_pCorProfilerInfo->GetClassIDInfo2(classId, &moduleId, &typeDefToken, nullptr, 0, nullptr, nullptr));
+        }
+
         ComPtr<IMetaDataImport2> metadataImport;
         INVOKE(_pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImport.GetAddressOf())));
 
         // try to get the type description
+        TypeDesc typeDesc;
         if (!BuildTypeDesc(metadataImport.Get(), classId, moduleId, typeDefToken, typeDesc, isEncoded))
         {
             return false;
@@ -275,11 +280,14 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded
             std::lock_guard<std::mutex> lock(_typesLock);
 
             _types[classId] = typeDesc;
+            pTypeDesc = &(_types.at(classId));
         }
-    }
-    else
-    {
-        typeDesc = *pTypeDesc;
+        else
+        {
+            // TODO: check the number of times this happens because a TypeDefs has been constructed but
+            // it is not possible to return a pointer to it (the object is on the stack)!!!
+            return false;
+        }
     }
 
     return true;

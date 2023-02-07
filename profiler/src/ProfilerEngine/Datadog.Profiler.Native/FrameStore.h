@@ -60,7 +60,7 @@ private:
         TypeDesc& typeDesc,
         bool isEncoded
         );
-    bool GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded);
+    bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded);
     bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     std::pair <std::string_view, std::string_view> GetManagedFrame(FunctionID functionId);
     std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
