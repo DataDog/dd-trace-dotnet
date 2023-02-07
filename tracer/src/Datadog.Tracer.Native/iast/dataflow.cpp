@@ -7,6 +7,8 @@
 #include "aspect_filter_factory.h"
 #include <fstream>
 #include <chrono>
+#include "../../../../shared/src/native-src/com_ptr.h"
+
 using namespace std::chrono;
 
 namespace iast
@@ -380,10 +382,43 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
                                       IMetaDataAssemblyEmit** ppAssemblyEmit)
 {
     HRESULT hr = S_OK;
-    if (SUCCEEDED(hr)) { hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, (IUnknown**)ppMetadataImport); }
-    if (SUCCEEDED(hr)) { hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataEmit2, (IUnknown**)ppMetadataEmit); }
-    if (SUCCEEDED(hr)) { hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyImport, (IUnknown**)ppAssemblyImport); }
-    if (SUCCEEDED(hr)) { hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyEmit, (IUnknown**)ppAssemblyEmit); }
+    if (SUCCEEDED(hr)) 
+    {
+        IUnknown* piUnk = nullptr;
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, &piUnk); 
+        if (SUCCEEDED(hr))
+        {
+            hr = piUnk->QueryInterface(IID_IMetaDataImport2, (void**) ppMetadataImport);
+        }
+    }
+    if (SUCCEEDED(hr)) 
+    {
+        IUnknown* piUnk = nullptr;
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataEmit2, &piUnk);
+        if (SUCCEEDED(hr))
+        {
+            hr = piUnk->QueryInterface(IID_IMetaDataEmit2, (void**) ppMetadataEmit);
+        }
+
+    }
+    if (SUCCEEDED(hr)) 
+    {
+        IUnknown* piUnk = nullptr;
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyImport, &piUnk);
+        if (SUCCEEDED(hr))
+        {
+            hr = piUnk->QueryInterface(IID_IMetaDataAssemblyImport, (void**) ppAssemblyImport);
+        }
+    }
+    if (SUCCEEDED(hr)) 
+    {
+        IUnknown* piUnk = nullptr;
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyEmit, &piUnk);
+        if (SUCCEEDED(hr))
+        {
+            hr = piUnk->QueryInterface(IID_IMetaDataAssemblyEmit, (void**) ppAssemblyEmit);
+        }
+    }
     return hr;
 }
 
