@@ -1,4 +1,4 @@
-// <copyright file="MethodMetadataRegistry.cs" company="Datadog">
+// <copyright file="MethodMetadataCollection.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,16 +19,16 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
     /// Each debugger-instrumented method is given an index (hard-coded into the instrumented bytecode),
     /// and this index is used to perform O(1) lookup for the corresponding MethodMetadataInfo instance.
     /// The reason the index is incremented and dictated by the native side is to support multi-AppDomain scenarios.
-    /// In these scenario, there will be multiple <see cref="EverGrowingRegistry{TPayload}.Items"/> arrays, one for each AppDomain.
+    /// In these scenario, there will be multiple <see cref="EverGrowingCollection{TPayload}.Items"/> arrays, one for each AppDomain.
     /// In order for us to grab the same MethodMetadataInfo across all of them, we need to dereference the same index,
     /// because the same instrumented bytecode could execute in different AppDomains, and static fields are not shared across AppDomains.
-    internal class MethodMetadataRegistry : EverGrowingRegistry<MethodMetadataInfo>
+    internal class MethodMetadataCollection : EverGrowingCollection<MethodMetadataInfo>
     {
-        private static MethodMetadataRegistry _instance;
+        private static MethodMetadataCollection _instance;
         private static object _instanceLock = new();
         private static bool _instanceInitialized;
 
-        internal static MethodMetadataRegistry Instance
+        internal static MethodMetadataCollection Instance
         {
             get
             {
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
         /// Tries to create a new <see cref="MethodMetadataInfo"/> at <paramref name="index"/>.
         /// </summary>
         /// <param name="targetObject">The target object</param>
-        /// <param name="index">The index of the method inside <see cref="EverGrowingRegistry{TPayload}.Items"/></param>
+        /// <param name="index">The index of the method inside <see cref="EverGrowingCollection{TPayload}.Items"/></param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
         /// <param name="asyncKickOffInfo">The info for the async kickoff method</param>
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
-                    Log.Debug($"{nameof(MethodMetadataRegistry)}.{nameof(TryCreateAsyncMethodMetadataIfNotExists)}: Creating a new metadata info for Async method = {method}, index = {index}, Items.Length = {Items.Length}");
+                    Log.Debug($"{nameof(MethodMetadataCollection)}.{nameof(TryCreateAsyncMethodMetadataIfNotExists)}: Creating a new metadata info for Async method = {method}, index = {index}, Items.Length = {Items.Length}");
                 }
 
                 if (method == null)
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
         /// <summary>
         /// Tries to create a new <see cref="MethodMetadataInfo"/> at <paramref name="index"/>.
         /// </summary>
-        /// <param name="index">The index of the method inside <see cref="EverGrowingRegistry{TPayload}.Items"/></param>
+        /// <param name="index">The index of the method inside <see cref="EverGrowingCollection{TPayload}.Items"/></param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
-                    Log.Debug($"{nameof(MethodMetadataRegistry)}.{nameof(TryCreateNonAsyncMethodMetadataIfNotExists)}: Creating a new metadata info for Non-Async method = {method}, index = {index}, Items.Length = {Items.Length}");
+                    Log.Debug($"{nameof(MethodMetadataCollection)}.{nameof(TryCreateNonAsyncMethodMetadataIfNotExists)}: Creating a new metadata info for Non-Async method = {method}, index = {index}, Items.Length = {Items.Length}");
                 }
 
                 if (method == null)

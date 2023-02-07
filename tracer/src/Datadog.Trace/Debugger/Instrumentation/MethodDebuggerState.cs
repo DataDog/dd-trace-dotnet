@@ -42,7 +42,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="scope">Scope instance</param>
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
         /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Registry.MethodMetadataInfo"/></param>
-        /// <param name="probeMetadataIndex">The unique index of the probe <see cref="Registry.ProbeMetadataInfo"/></param>
+        /// <param name="probeMetadataIndex">The unique index of the probe <see cref="ProbeData"/></param>
         /// <param name="invocationTarget">The current invocation target ('this' object)</param>
         internal MethodDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, int probeMetadataIndex, object invocationTarget)
         {
@@ -52,16 +52,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _methodMetadataIndex = methodMetadataIndex;
             HasLocalsOrReturnValue = false;
             InvocationTarget = invocationTarget;
-            ProbeMetadataInfo = ProbeMetadataRegistry.Instance.Get(probeMetadataIndex);
-            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(ProbeMetadataInfo.Processor);
+            ProbeData = ProbeMetadataCollection.Instance.Get(probeMetadataIndex);
+            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(ProbeData.Processor);
             MethodPhase = EvaluateAt.Entry;
         }
 
         internal EvaluateAt MethodPhase { get; set; }
 
-        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataRegistry.Instance.Get(_methodMetadataIndex);
+        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(_methodMetadataIndex);
 
-        internal ProbeMetadataInfo ProbeMetadataInfo { get; }
+        internal ProbeData ProbeData { get; }
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator

@@ -1,4 +1,4 @@
-// <copyright file="ProbeMetadataRegistry.cs" company="Datadog">
+// <copyright file="ProbeMetadataCollection.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,20 +17,20 @@ using Datadog.Trace.Debugger.RateLimiting;
 
 namespace Datadog.Trace.Debugger.Instrumentation.Registry
 {
-    /// Acts as a registry of indexed <see cref="ProbeMetadataInfo"/>.
+    /// Acts as a registry of indexed <see cref="ProbeData"/>.
     /// Each instrumented probe is given an index (hard-coded into the instrumented bytecode),
-    /// and this index is used to perform O(1) lookup for the corresponding ProbeMetadataInfo instance.
+    /// and this index is used to perform O(1) lookup for the corresponding ProbeData instance.
     /// The reason the index is incremented and dictated by the native side is to support multi-AppDomain scenarios.
-    /// In these scenario, there will be multiple <see cref="EverGrowingRegistry{TPayload}.Items"/> arrays, one for each AppDomain.
-    /// In order for us to grab the same ProbeMetadataInfo across all of them, we need to dereference the same index,
+    /// In these scenario, there will be multiple <see cref="EverGrowingCollection{TPayload}.Items"/> arrays, one for each AppDomain.
+    /// In order for us to grab the same ProbeData across all of them, we need to dereference the same index,
     /// because the same instrumented bytecode could execute in different AppDomains, and static fields are not shared across AppDomains.
-    internal class ProbeMetadataRegistry : EverGrowingRegistry<ProbeMetadataInfo>
+    internal class ProbeMetadataCollection : EverGrowingCollection<ProbeData>
     {
-        private static ProbeMetadataRegistry _instance;
+        private static ProbeMetadataCollection _instance;
         private static object _instanceLock = new();
         private static bool _instanceInitialized;
 
-        internal static ProbeMetadataRegistry Instance
+        internal static ProbeMetadataCollection Instance
         {
             get
             {
@@ -42,9 +42,9 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
         }
 
         /// <summary>
-        /// Tries to create a new <see cref="ProbeMetadataInfo"/> at <paramref name="index"/>.
+        /// Tries to create a new <see cref="ProbeData"/> at <paramref name="index"/>.
         /// </summary>
-        /// <param name="index">The index of the probe inside <see cref="EverGrowingRegistry{TPayload}.Items"/></param>
+        /// <param name="index">The index of the probe inside <see cref="EverGrowingCollection{TPayload}.Items"/></param>
         /// <param name="probeId">The id of the probe/></param>
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
         public bool TryCreateProbeMetadataIfNotExists(int index, string probeId)
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
-                    Log.Debug($"{nameof(ProbeMetadataRegistry)}.{nameof(TryCreateProbeMetadataIfNotExists)}: Creating a new probe metadata info for index = {index}, Items.Length = {Items.Length}");
+                    Log.Debug($"{nameof(ProbeMetadataCollection)}.{nameof(TryCreateProbeMetadataIfNotExists)}: Creating a new probe metadata info for index = {index}, Items.Length = {Items.Length}");
                 }
 
                 var processor = ProbeExpressionsProcessor.Instance.Get(probeId);
@@ -78,14 +78,14 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
 
                 var sampler = ProbeRateLimiter.Instance.GerOrAddSampler(probeId);
 
-                Items[index] = new ProbeMetadataInfo(probeId, sampler, processor);
+                Items[index] = new ProbeData(probeId, sampler, processor);
             }
 
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override bool IsEmpty(ref ProbeMetadataInfo payload)
+        protected override bool IsEmpty(ref ProbeData payload)
         {
             return payload == default;
         }

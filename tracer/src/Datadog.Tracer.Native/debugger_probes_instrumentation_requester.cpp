@@ -271,9 +271,9 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
         {
             const DebuggerMethodProbeDefinition& current = methodProbes[i];
 
-            if (IsProbeIdExist(current.probeId))
+            if (ProbeIdExists(current.probeId))
             {
-                Logger::Info("[AddMethodProbes] Method Probe Id: ", current.probeId, " is already processed.");
+                Logger::Debug("[AddMethodProbes] Method Probe Id: ", current.probeId, " is already processed.");
                 continue;
             }
 
@@ -316,7 +316,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
 
         if (methodProbeDefinitions.empty())
         {
-            Logger::Info("[AddMethodProbes] Early exiting, there are no new method probes to be added.");
+            Logger::Debug("[AddMethodProbes] Early exiting, there are no new method probes to be added.");
             return;
         }
 
@@ -365,9 +365,9 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
         {
             const DebuggerLineProbeDefinition& current = lineProbes[i];
 
-            if (IsProbeIdExist(current.probeId))
+            if (ProbeIdExists(current.probeId))
             {
-                Logger::Info("[AddLineProbes] Method Probe Id: ", current.probeId, " is already processed.");
+                Logger::Debug("[AddLineProbes] Method Probe Id: ", current.probeId, " is already processed.");
                 continue;
             }
 
@@ -380,7 +380,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
 
         if (lineProbeDefinitions.empty())
         {
-            Logger::Info("[AddLineProbes] Early exiting, there are no new line probes to be added.");
+            Logger::Debug("[AddLineProbes] Early exiting, there are no new line probes to be added.");
             return;
         }
 
@@ -465,7 +465,7 @@ void DebuggerProbesInstrumentationRequester::DetermineReInstrumentProbes(std::se
 }
 
 // Assumes `m_probes_mutex` is held
-bool DebuggerProbesInstrumentationRequester::IsProbeIdExist(const WCHAR* probeId)
+bool DebuggerProbesInstrumentationRequester::ProbeIdExists(const WCHAR* probeId)
 {
     auto it = std::find_if(m_probes.begin(), m_probes.end(),
                            [&](ProbeDefinition_S const& probeDef) { return probeDef->probeId == probeId; });

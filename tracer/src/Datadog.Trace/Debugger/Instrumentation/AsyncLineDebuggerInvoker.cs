@@ -55,7 +55,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 var captureInfo = new CaptureInfo<TLocal>(value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
 
-                if (!state.ProbeMetadataInfo.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;
                 }
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="probeId">The id of the probe</param>
-        /// <param name="probeMetadataIndex">The index used to lookup for the <see cref="ProbeMetadataInfo"/></param>
+        /// <param name="probeMetadataIndex">The index used to lookup for the <see cref="ProbeData"/></param>
         /// <param name="instance">Instance value</param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
@@ -128,7 +128,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 // Assess if we have metadata associated with the given index
-                if (!MethodMetadataRegistry.Instance.IsIndexExists(methodMetadataIndex))
+                if (!MethodMetadataCollection.Instance.IsIndexExists(methodMetadataIndex))
                 {
                     // State machine is null when we run in Optimized code and the original async method was generic,
                     // in which case the state machine is a generic value type.
@@ -140,16 +140,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
                         Log.Warning($"{nameof(BeginLine)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
                     }
 
-                    if (!MethodMetadataRegistry.Instance.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
+                    if (!MethodMetadataCollection.Instance.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
                     {
                         Log.Warning($"([Async]BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance.GetType().Name}, methodMetadataId = {methodMetadataIndex}, probeId = {probeId}");
                         return CreateInvalidatedAsyncLineDebuggerState();
                     }
                 }
 
-                if (!ProbeMetadataRegistry.Instance.TryCreateProbeMetadataIfNotExists(probeMetadataIndex, probeId))
+                if (!ProbeMetadataCollection.Instance.TryCreateProbeMetadataIfNotExists(probeMetadataIndex, probeId))
                 {
-                    Log.Warning($"[Async]BeginLine: Failed to receive the ProbeMetadataInfo associated with the executing probe. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, probeMetadataIndex = {probeMetadataIndex}, probeId = {probeId}");
+                    Log.Warning($"[Async]BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, probeMetadataIndex = {probeMetadataIndex}, probeId = {probeId}");
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
 
@@ -157,7 +157,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var state = new AsyncLineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, probeMetadataIndex, lineNumber, probeFilePath, instance, kickoffParentObject);
 
                 if (!state.SnapshotCreator.ProbeHasCondition &&
-                    !state.ProbeMetadataInfo.Sampler.Sample())
+                    !state.ProbeData.Sampler.Sample())
                 {
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
@@ -165,7 +165,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var asyncInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments);
                 var captureInfo = new CaptureInfo<Type>(value: null, type: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLineAsync, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath), asyncCaptureInfo: asyncInfo);
 
-                if (!state.ProbeMetadataInfo.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;
                 }
@@ -201,7 +201,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 state.HasLocalsOrReturnValue = false;
                 var asyncCaptureInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, kickoffMethod: state.MethodMetadataInfo.KickoffMethod, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals);
                 var captureInfo = new CaptureInfo<object>(memberKind: ScopeMemberKind.This, methodState: MethodState.EndLineAsync, hasLocalOrArgument: hasArgumentsOrLocals, asyncCaptureInfo: asyncCaptureInfo, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
-                state.ProbeMetadataInfo.Processor.Process(ref captureInfo, state.SnapshotCreator);
+                state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator);
             }
             catch (Exception e)
             {

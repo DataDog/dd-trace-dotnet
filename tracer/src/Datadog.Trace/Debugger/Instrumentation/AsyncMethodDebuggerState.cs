@@ -27,8 +27,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             ProbeId = probeId;
             HasLocalsOrReturnValue = false;
             HasArguments = false;
-            ProbeMetadataInfo = ProbeMetadataRegistry.Instance.Get(probeMetadataIndex);
-            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(ProbeMetadataInfo.Processor);
+            ProbeData = ProbeMetadataCollection.Instance.Get(probeMetadataIndex);
+            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(ProbeData.Processor);
         }
 
         private AsyncMethodDebuggerState()
@@ -54,12 +54,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Gets the value of the MethodMetadataInfo that related to the current async method
         /// </summary>
-        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataRegistry.Instance.Get(MethodMetadataIndex);
+        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(MethodMetadataIndex);
 
         /// <summary>
-        /// Gets the value of ProbeMetadataInfo associated with the state
+        /// Gets the value of ProbeData associated with the state
         /// </summary>
-        internal ProbeMetadataInfo ProbeMetadataInfo { get; }
+        internal ProbeData ProbeData { get; }
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator

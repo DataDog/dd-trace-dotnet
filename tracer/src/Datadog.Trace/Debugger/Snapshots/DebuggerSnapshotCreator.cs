@@ -683,7 +683,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot(startTime)
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, traceId, spanId) // internal ticket ID 929
+            .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, traceId, spanId)
             .AddMessage()
             .Complete();
         }

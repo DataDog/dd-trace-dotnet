@@ -30,7 +30,7 @@ private:
                        std::set<MethodIdentifier>& rejitRequests);
     void DetermineReInstrumentProbes(std::set<MethodIdentifier>& revertRequests, std::set<MethodIdentifier>& reInstrumentRequests) const;
 
-    bool IsProbeIdExist(const WCHAR* probeId);
+    bool ProbeIdExists(const WCHAR* probeId);
 
 public:
     DebuggerProbesInstrumentationRequester(CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,

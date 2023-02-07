@@ -42,7 +42,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="scope">Scope instance</param>
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
         /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Registry.MethodMetadataInfo"/></param>
-        /// <param name="probeMetadataIndex">The unique index of the probe <see cref="Registry.ProbeMetadataInfo"/></param>
+        /// <param name="probeMetadataIndex">The unique index of the probe <see cref="ProbeData"/></param>
         /// <param name="lineNumber">The line number where the probe is located on</param>
         /// <param name="probeFilePath">The path to the file of the probe</param>
         /// <param name="invocationTarget">The instance object (or null for static methods)</param>
@@ -55,14 +55,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _lineNumber = lineNumber;
             _probeFilePath = probeFilePath;
             HasLocalsOrReturnValue = false;
-            ProbeMetadataInfo = ProbeMetadataRegistry.Instance.Get(probeMetadataIndex);
-            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(ProbeMetadataInfo.Processor);
+            ProbeData = ProbeMetadataCollection.Instance.Get(probeMetadataIndex);
+            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(ProbeData.Processor);
             InvocationTarget = invocationTarget;
         }
 
-        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataRegistry.Instance.Get(_methodMetadataIndex);
+        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(_methodMetadataIndex);
 
-        internal ProbeMetadataInfo ProbeMetadataInfo { get; }
+        internal ProbeData ProbeData { get; }
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator

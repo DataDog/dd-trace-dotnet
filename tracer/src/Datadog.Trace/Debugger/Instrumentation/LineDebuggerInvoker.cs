@@ -49,7 +49,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var paramName = state.MethodMetadataInfo.ParameterNames[index];
                 var captureInfo = new CaptureInfo<TArg>(value: arg, type: typeof(TArg), methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
 
-                if (!state.ProbeMetadataInfo.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;
                 }
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 var captureInfo = new CaptureInfo<TLocal>(value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
 
-                if (!state.ProbeMetadataInfo.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;
                 }
@@ -138,7 +138,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="probeId">The id of the probe</param>
-        /// <param name="probeMetadataIndex">The index used to lookup for the <see cref="ProbeMetadataInfo"/></param>
+        /// <param name="probeMetadataIndex">The index used to lookup for the <see cref="ProbeData"/></param>
         /// <param name="instance">Instance value</param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
@@ -151,29 +151,29 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                if (!MethodMetadataRegistry.Instance.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
+                if (!MethodMetadataCollection.Instance.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
                 {
                     Log.Warning($"BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadataId = {methodMetadataIndex}, probeId = {probeId}");
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                if (!ProbeMetadataRegistry.Instance.TryCreateProbeMetadataIfNotExists(probeMetadataIndex, probeId))
+                if (!ProbeMetadataCollection.Instance.TryCreateProbeMetadataIfNotExists(probeMetadataIndex, probeId))
                 {
-                    Log.Warning($"BeginLine: Failed to receive the ProbeMetadataInfo associated with the executing probe. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, probeMetadataIndex = {probeMetadataIndex}, probeId = {probeId}");
+                    Log.Warning($"BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, probeMetadataIndex = {probeMetadataIndex}, probeId = {probeId}");
                     return CreateInvalidatedLineDebuggerState();
                 }
 
                 var state = new LineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, probeMetadataIndex, lineNumber, probeFilePath, instance);
 
                 if (!state.SnapshotCreator.ProbeHasCondition &&
-                    !state.ProbeMetadataInfo.Sampler.Sample())
+                    !state.ProbeData.Sampler.Sample())
                 {
                     return CreateInvalidatedLineDebuggerState();
                 }
 
                 var captureInfo = new CaptureInfo<Type>(invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLine, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath));
 
-                if (!state.ProbeMetadataInfo.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;
                 }
@@ -207,7 +207,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                                            !state.MethodMetadataInfo.Method.IsStatic;
 
                 var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.EndLine, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
-                state.ProbeMetadataInfo.Processor.Process(ref captureInfo, state.SnapshotCreator);
+                state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator);
 
                 state.HasLocalsOrReturnValue = false;
             }

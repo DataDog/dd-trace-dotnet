@@ -52,7 +52,9 @@ public class ProbesTests : TestHelper
             typeof(HasLocalsAndReturnValue),
             typeof(MultipleLineProbes),
             typeof(MultiScopesWithSameLocalNameTest),
-            typeof(NotSupportedFailureTest)
+            typeof(NotSupportedFailureTest),
+            typeof(AsyncTaskReturnTest),
+            typeof(AsyncTaskReturnWithExceptionTest)
     };
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };

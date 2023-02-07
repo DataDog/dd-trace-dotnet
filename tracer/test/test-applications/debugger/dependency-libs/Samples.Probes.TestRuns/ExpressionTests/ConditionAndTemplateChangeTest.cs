@@ -81,7 +81,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
-            var result = Method(TimeSpan.FromSeconds(1).TotalSeconds);
+            var result = Method(1);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

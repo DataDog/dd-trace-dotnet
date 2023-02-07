@@ -1,4 +1,4 @@
-// <copyright file="EverGrowingRegistry.cs" company="Datadog">
+// <copyright file="EverGrowingCollection.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,12 +12,12 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Debugger.Instrumentation.Registry
 {
     /// <summary>
-    /// Holds a registry of indexed items that grow sparsely.
+    /// A very fast, lock free, ordered collection to which items can be added, but never removed.
     /// It utilizes a generic type <typeparamref name="TPayload"/> to define the type of items stored in the registry.
     /// </summary>
-    internal abstract class EverGrowingRegistry<TPayload>
+    internal abstract class EverGrowingCollection<TPayload>
     {
-        protected IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(EverGrowingRegistry<TPayload>));
+        protected IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(EverGrowingCollection<TPayload>));
 
         protected object ItemsLocker { get; } = new object();
 
