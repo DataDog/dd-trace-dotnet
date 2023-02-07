@@ -47,7 +47,7 @@ namespace Datadog.Trace
                     "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{tagsType}])",
                     new object[] { SpanId, Context.ParentId, TraceId, Tags, tagsType });
             }
-         }
+        }
 
         /// <summary>
         /// Gets or sets operation name

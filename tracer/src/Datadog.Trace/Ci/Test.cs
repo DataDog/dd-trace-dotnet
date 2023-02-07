@@ -273,9 +273,53 @@ public sealed class Test
     /// </summary>
     /// <param name="measureType">Measure type</param>
     /// <param name="info">Measure info</param>
-    /// <param name="values">Values</param>
-    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, double[] values)
+    /// <param name="statistics">Statistics values</param>
+    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, BenchmarkDiscreteStats statistics)
     {
+        var measureTypeAsString = string.Empty;
+        switch (measureType)
+        {
+            case BenchmarkMeasureType.Duration:
+                measureTypeAsString = "duration";
+                break;
+            case BenchmarkMeasureType.RunTime:
+                measureTypeAsString = "run_time";
+                break;
+            case BenchmarkMeasureType.ApplicationLaunch:
+                measureTypeAsString = "application_launch";
+                break;
+            case BenchmarkMeasureType.TotalHeapAllocations:
+                measureTypeAsString = "total_heap_allocations";
+                break;
+            default:
+                return;
+        }
+
+        SetTag($"benchmark.{measureTypeAsString}.run", statistics.N);
+        SetTag($"benchmark.{measureTypeAsString}.mean", GetValidDoubleValue(statistics.Mean));
+        SetTag($"benchmark.{measureTypeAsString}.info", info);
+        SetTag($"benchmark.{measureTypeAsString}.statistics.n", statistics.N);
+        SetTag($"benchmark.{measureTypeAsString}.statistics.max", GetValidDoubleValue(statistics.Max));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.min", GetValidDoubleValue(statistics.Min));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.mean", GetValidDoubleValue(statistics.Mean));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.median", GetValidDoubleValue(statistics.Median));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.std_dev", GetValidDoubleValue(statistics.StandardDeviation));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.std_err", GetValidDoubleValue(statistics.StandardError));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.kurtosis", GetValidDoubleValue(statistics.Kurtosis));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.skewness", GetValidDoubleValue(statistics.Skewness));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.p90", GetValidDoubleValue(statistics.P90));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.p95", GetValidDoubleValue(statistics.P95));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.p90", GetValidDoubleValue(statistics.P99));
+
+        static double GetValidDoubleValue(double value)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+            {
+                return 0;
+            }
+
+            return value;
+        }
     }
 
     /// <summary>
