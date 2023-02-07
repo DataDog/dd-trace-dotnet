@@ -270,6 +270,8 @@ namespace Datadog.Trace.Configuration
             {
                 HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator);
             }
+
+            DbmPropagationMode = CheckDbmPropagationInput(source?.GetString(ConfigurationKeys.DbmPropagationMode) ?? "disabled");
         }
 
         /// <summary>
@@ -563,6 +565,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsRunningInAzureAppService { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the tracer should propagate service data in db queries
+        /// </summary>
+        internal string DbmPropagationMode { get; set; }
+
+        /// <summary>
         /// Gets or sets the AAS settings
         /// </summary>
         internal ImmutableAzureAppServiceSettings AzureAppServiceMetadata { get; set; }
@@ -730,6 +737,17 @@ namespace Datadog.Trace.Configuration
             }
 
             return httpErrorCodesArray;
+        }
+
+        internal static string CheckDbmPropagationInput(string mode)
+        {
+            if (mode != null && mode != "disabled" && mode != "service" && mode != "full")
+            {
+                Log.Warning("Wrong format '{0}' for DD_DBM_PROPAGATION_MODE configuration, expected: disabled, service or full.", mode);
+                return "disabled";
+            }
+
+            return mode;
         }
     }
 }
