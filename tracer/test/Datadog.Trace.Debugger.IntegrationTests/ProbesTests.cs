@@ -52,7 +52,9 @@ public class ProbesTests : TestHelper
             typeof(HasLocalsAndReturnValue),
             typeof(MultipleLineProbes),
             typeof(MultiScopesWithSameLocalNameTest),
-            typeof(NotSupportedFailureTest)
+            typeof(NotSupportedFailureTest),
+            typeof(AsyncTaskReturnTest),
+            typeof(AsyncTaskReturnWithExceptionTest)
     };
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
@@ -487,7 +489,11 @@ public class ProbesTests : TestHelper
                                 if (IsParentName(item, parentName: "throwable"))
                                 {
                                     // take only the first frame of the exception stacktrace
-                                    item.Value.Replace(new JArray(item.Value.Children().First()));
+                                    var firstChild = item.Value.Children().FirstOrDefault();
+                                    if (firstChild != null)
+                                    {
+                                        item.Value.Replace(new JArray(firstChild));
+                                    }
                                 }
 
                                 break;

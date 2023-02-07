@@ -1,0 +1,134 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "caller": {
+                "type": "String",
+                "value": "RunAsync"
+              }
+            },
+            "staticFields": {
+              "Rooms": {
+                "elements": [
+                  {
+                    "fields": {
+                      "Id": {
+                        "type": "String",
+                        "value": "Foo"
+                      },
+                      "Status": {
+                        "type": "RoomStatus",
+                        "value": "Ready"
+                      }
+                    },
+                    "type": "Room",
+                    "value": "Room"
+                  },
+                  {
+                    "fields": {
+                      "Id": {
+                        "type": "String",
+                        "value": "Bar"
+                      },
+                      "Status": {
+                        "type": "RoomStatus",
+                        "value": "Ready"
+                      }
+                    },
+                    "type": "Room",
+                    "value": "Room"
+                  }
+                ],
+                "type": "List`1",
+                "value": "count: 2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "caller": {
+                "type": "String",
+                "value": "RunAsync"
+              }
+            },
+            "locals": {
+              "room": {
+                "isNull": "true",
+                "type": "Room"
+              }
+            },
+            "staticFields": {
+              "Rooms": {
+                "elements": [
+                  {
+                    "fields": {
+                      "Id": {
+                        "type": "String",
+                        "value": "Foo"
+                      },
+                      "Status": {
+                        "type": "RoomStatus",
+                        "value": "Ready"
+                      }
+                    },
+                    "type": "Room",
+                    "value": "Room"
+                  },
+                  {
+                    "fields": {
+                      "Id": {
+                        "type": "String",
+                        "value": "Bar"
+                      },
+                      "Status": {
+                        "type": "RoomStatus",
+                        "value": "Ready"
+                      }
+                    },
+                    "type": "Room",
+                    "value": "Room"
+                  }
+                ],
+                "type": "List`1",
+                "value": "count: 2"
+              }
+            },
+            "throwable": {
+              "message": "Sequence contains no matching element",
+              "stacktrace": [],
+              "type": "System.InvalidOperationException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnWithExceptionTest"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnWithExceptionTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

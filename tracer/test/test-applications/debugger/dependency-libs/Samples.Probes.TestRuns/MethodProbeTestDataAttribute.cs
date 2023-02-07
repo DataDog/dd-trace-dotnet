@@ -18,10 +18,11 @@ namespace Samples.Probes.TestRuns
             string templateDsl = null,
             string templateJson = null,
             string templateStr = null,
+            string probeId = null,
             bool captureSnapshot = true,
             int evaluateAt = 1,
             params string[] skipOnFramework)
-            : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, conditionJson: conditionJson, conditionDsl: conditionDsl, templateDsl: templateDsl, templateJson: templateJson, templateStr: templateStr, evaluateAt: evaluateAt, captureSnapshot: captureSnapshot)
+            : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, conditionJson: conditionJson, conditionDsl: conditionDsl, templateDsl: templateDsl, templateJson: templateJson, templateStr: templateStr, probeId: probeId, evaluateAt: evaluateAt, captureSnapshot: captureSnapshot)
         {
 
             ReturnTypeName = returnTypeName;

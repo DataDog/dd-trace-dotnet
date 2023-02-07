@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 namespace Datadog.Trace.Debugger.Snapshots
@@ -35,7 +36,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string _message;
         private List<EvaluationError> _errors;
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags)
         {
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
@@ -47,12 +48,15 @@ namespace Datadog.Trace.Debugger.Snapshots
             _errors = null;
             _message = null;
             ProbeHasCondition = hasCondition;
+            Tags = tags;
             Initialize();
         }
 
         internal MethodScopeMembers MethodScopeMembers { get; private set; }
 
         internal bool ProbeHasCondition { get; }
+
+        internal string[] Tags { get; }
 
         internal CaptureBehaviour CaptureBehaviour
         {
@@ -68,15 +72,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        public static DebuggerSnapshotCreator BuildSnapshotCreator(string probeId)
+        public static DebuggerSnapshotCreator BuildSnapshotCreator(ProbeProcessor processor)
         {
-            var probeInfo = ProbeExpressionsProcessor.Instance.GetProbeInfo(probeId);
-            if (probeInfo.HasValue)
-            {
-                return new DebuggerSnapshotCreator(probeInfo.Value.IsFullSnapshot, probeInfo.Value.ProbeLocation, probeInfo.Value.HasCondition);
-            }
-
-            throw new InvalidOperationException("Probe info not found for probe id: " + probeId);
+            return new DebuggerSnapshotCreator(processor.ProbeInfo.IsFullSnapshot, processor.ProbeInfo.ProbeLocation, processor.ProbeInfo.HasCondition, processor.ProbeInfo.Tags);
         }
 
         internal CaptureBehaviour DefineSnapshotBehavior<TCapture>(ref CaptureInfo<TCapture> info, EvaluateAt evaluateAt, bool hasCondition)
@@ -677,11 +675,15 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void FinalizeSnapshot(string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath)
         {
+            var activeScope = Tracer.Instance.InternalActiveScope;
+            var traceId = activeScope?.Span?.TraceId.ToString();
+            var spanId = activeScope?.Span?.SpanId.ToString();
+
             AddStackInfo()
             .EndSnapshot(startTime)
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, null, null) // internal ticket ID 929
+            .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, traceId, spanId)
             .AddMessage()
             .Complete();
         }
@@ -824,7 +826,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WritePropertyName("ddsource");
             _jsonWriter.WriteValue(DDSource);
 
-            // todo
             _jsonWriter.WritePropertyName("ddtags");
             _jsonWriter.WriteValue(UnknownValue);
 
