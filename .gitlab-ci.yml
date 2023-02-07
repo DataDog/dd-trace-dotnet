@@ -12,7 +12,10 @@ variables:
   DOWNSTREAM_BRANCH:
     value: "master"
     description: "Run a specific datadog-reliability-env branch downstream"
-    
+
+include:
+  remote: https://gitlab-templates.ddbuild.io/libdatadog/include/ci_authenticated_job.yml
+
 build:
   only:
     - master
@@ -89,3 +92,13 @@ deploy_to_reliability_env:
     UPSTREAM_PACKAGE_JOB: build
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
     FORCE_TRIGGER: $DEPLOY_TO_REL_ENV
+
+tracer-base-image:
+  extends: .ci_authenticated_job
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "robertomonteromiguel/docker_base_image_poc"'
+      when: always
+    - when: manual
+  stage: deploy
+  script:
+    - echo "Hello "
