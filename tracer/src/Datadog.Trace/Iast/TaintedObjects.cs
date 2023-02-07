@@ -24,7 +24,7 @@ namespace Datadog.Trace.Iast
             }
         }
 
-        public void Taint(object objectToTaint, Range[]? ranges)
+        public void Taint(object objectToTaint, Range[] ranges)
         {
             if (objectToTaint is not null && (objectToTaint is not string || objectToTaint as string != string.Empty))
             {

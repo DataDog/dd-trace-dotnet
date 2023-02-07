@@ -47,6 +47,20 @@ internal static class IastModule
         return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash);
     }
 
+    public static IastRequestContext? GetIastContext()
+    {
+        var tracer = Tracer.Instance;
+        if (!iastSettings.Enabled)
+        {
+            // integration disabled, don't create a scope, skip this span
+            return null;
+        }
+
+        var currentSpan = (tracer.ActiveScope as Scope)?.Span;
+        var traceContext = currentSpan?.Context?.TraceContext;
+        return traceContext?.IastRequestContext;
+    }
+
     private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
     {
         var tracer = Tracer.Instance;
