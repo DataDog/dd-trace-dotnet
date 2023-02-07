@@ -47,7 +47,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 var paramName = state.MethodMetadataInfo.ParameterNames[index];
-                var captureInfo = new CaptureInfo<TArg>(value: arg, type: typeof(TArg), methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
+                var captureInfo = new CaptureInfo<TArg>(value: arg, methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
 
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                var captureInfo = new CaptureInfo<TLocal>(value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+                var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
 
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {

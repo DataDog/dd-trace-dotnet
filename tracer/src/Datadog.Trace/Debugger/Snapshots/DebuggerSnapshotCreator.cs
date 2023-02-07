@@ -402,7 +402,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
                     else if (info.MemberKind == ScopeMemberKind.Return)
                     {
-                        CaptureLocal(info.Value, "@return");
+                        CaptureLocal(info.Value, "@return", info.Type);
                     }
 
                     break;
@@ -460,7 +460,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
 
                 var argumentValue = argument.GetValue(moveNextInvocationTarget);
-                CaptureArgument(argumentValue, argument.Name, argument.FieldType);
+                CaptureArgument(argumentValue, argument.Name, argumentValue?.GetType() ?? argument.FieldType);
                 hasArgument = true;
             }
 
@@ -489,7 +489,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
 
                 var localValue = local.Field.GetValue(moveNextInvocationTarget);
-                CaptureLocal(localValue, local.SanitizedName, local.Field.FieldType);
+                CaptureLocal(localValue, local.SanitizedName, localValue?.GetType() ?? local.Field.FieldType);
             }
         }
 

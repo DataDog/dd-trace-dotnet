@@ -109,7 +109,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var paramName = state.MethodMetadataInfo.ParameterNames[index];
-            var captureInfo = new CaptureInfo<TArg>(value: arg, type: typeof(TArg), methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
+            var captureInfo = new CaptureInfo<TArg>(value: arg, methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
 
             if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
             {
@@ -140,7 +140,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var captureInfo = new CaptureInfo<TLocal>(value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+            var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
 
             if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
             {
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             state.MethodPhase = EvaluateAt.Exit;
 
-            var captureInfo = new CaptureInfo<Exception>(value: exception, type: exception?.GetType(), invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
+            var captureInfo = new CaptureInfo<Exception>(value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
 
             if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
             {
@@ -200,7 +200,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             if (exception != null)
             {
-                var captureInfo = new CaptureInfo<Exception>(value: exception, type: exception.GetType(), invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
+                var captureInfo = new CaptureInfo<Exception>(value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;
@@ -208,7 +208,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
             else
             {
-                var captureInfo = new CaptureInfo<TReturn>(value: returnValue, name: "@return", type: typeof(TReturn), invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Return, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
+                var captureInfo = new CaptureInfo<TReturn>(value: returnValue, name: "@return", invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Return, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;

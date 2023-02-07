@@ -163,7 +163,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var captureInfo = new CaptureInfo<TLocal>(value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+            var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
             if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
             {
                 asyncState.IsActive = false;
@@ -192,7 +192,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
-            var capture = new CaptureInfo<Exception>(value: exception, methodState: MethodState.ExitStartAsync, type: exception?.GetType(), asyncCaptureInfo: asyncCaptureInfo, memberKind: ScopeMemberKind.Exception);
+            var capture = new CaptureInfo<Exception>(value: exception, methodState: MethodState.ExitStartAsync, asyncCaptureInfo: asyncCaptureInfo, memberKind: ScopeMemberKind.Exception);
 
             if (!asyncState.ProbeData.Processor.Process(ref capture, asyncState.SnapshotCreator))
             {
@@ -226,7 +226,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
             if (exception != null)
             {
-                var captureInfo = new CaptureInfo<Exception>(value: exception, type: exception.GetType(), methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Exception, asyncCaptureInfo: asyncCaptureInfo);
+                var captureInfo = new CaptureInfo<Exception>(value: exception, methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Exception, asyncCaptureInfo: asyncCaptureInfo);
                 if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
                 {
                     asyncState.IsActive = false;
@@ -234,7 +234,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
             else if (returnValue != null)
             {
-                var captureInfo = new CaptureInfo<TReturn>(value: returnValue, name: "@return", type: typeof(TReturn), methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Return, asyncCaptureInfo: asyncCaptureInfo);
+                var captureInfo = new CaptureInfo<TReturn>(value: returnValue, name: "@return", methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Return, asyncCaptureInfo: asyncCaptureInfo);
                 if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
                 {
                     asyncState.IsActive = false;

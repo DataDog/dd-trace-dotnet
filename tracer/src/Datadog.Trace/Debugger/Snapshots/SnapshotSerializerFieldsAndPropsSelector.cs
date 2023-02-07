@@ -49,7 +49,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         /// <param name="type">Object type</param>
         /// <param name="cts">Cancellation token source</param>
         /// <returns>Collection of fields and auto properties</returns>
-        private static IEnumerable<FieldInfo> GetAllFields(Type type, CancellationTokenSource cts)
+        private static IEnumerable<MemberInfo> GetAllFields(Type type, CancellationTokenSource cts)
         {
             int depth = 0;
             const int maxBaseClassesToExplore = 10;

@@ -1,0 +1,264 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "parameter1": {
+                "fields": {
+                  "GenericValue": {
+                    "type": "String",
+                    "value": "I'm a generic field"
+                  },
+                  "Value": {
+                    "type": "String",
+                    "value": "T Value"
+                  }
+                },
+                "type": "Class`1",
+                "value": "Class`1"
+              },
+              "parameter2": {
+                "fields": {
+                  "_notAutoProp": {
+                    "type": "String",
+                    "value": "bla bla"
+                  },
+                  "Field": {
+                    "type": "String",
+                    "value": "I'm a class field"
+                  },
+                  "ShowMe": {
+                    "type": "String",
+                    "value": "Show Me!"
+                  }
+                },
+                "type": "Class",
+                "value": "Class"
+              },
+              "this": {
+                "type": "InterfaceProperties",
+                "value": "InterfaceProperties"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "parameter1": {
+                "fields": {
+                  "GenericValue": {
+                    "type": "String",
+                    "value": "I'm a generic field"
+                  },
+                  "Value": {
+                    "type": "String",
+                    "value": "T Value"
+                  }
+                },
+                "type": "Class`1",
+                "value": "Class`1"
+              },
+              "parameter2": {
+                "fields": {
+                  "_notAutoProp": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns.Shared.Class"
+                  },
+                  "Field": {
+                    "type": "String",
+                    "value": "I'm a class field"
+                  },
+                  "ShowMe": {
+                    "type": "String",
+                    "value": "Show Me!"
+                  }
+                },
+                "type": "Class",
+                "value": "Class"
+              },
+              "this": {
+                "type": "InterfaceProperties",
+                "value": "InterfaceProperties"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "I'm a generic field"
+              },
+              "iGenericInterface": {
+                "fields": {
+                  "GenericValue": {
+                    "type": "String",
+                    "value": ""
+                  },
+                  "Value": {
+                    "type": "String",
+                    "value": "Value"
+                  }
+                },
+                "type": "Class`1",
+                "value": "Class`1"
+              },
+              "iInterface": {
+                "fields": {
+                  "_notAutoProp": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "Field": {
+                    "type": "String",
+                    "value": "I'm a class field"
+                  },
+                  "ShowMe": {
+                    "type": "String",
+                    "value": ""
+                  }
+                },
+                "type": "Class",
+                "value": "Class"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.InterfaceProperties"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.InterfaceProperties",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "33": {
+              "arguments": {
+                "parameter1": {
+                  "fields": {
+                    "GenericValue": {
+                      "type": "String",
+                      "value": "I'm a generic field"
+                    },
+                    "Value": {
+                      "type": "String",
+                      "value": "T Value"
+                    }
+                  },
+                  "type": "Class`1",
+                  "value": "Class`1"
+                },
+                "parameter2": {
+                  "fields": {
+                    "_notAutoProp": {
+                      "type": "String",
+                      "value": "Samples.Probes.TestRuns.Shared.Class"
+                    },
+                    "Field": {
+                      "type": "String",
+                      "value": "I'm a class field"
+                    },
+                    "ShowMe": {
+                      "type": "String",
+                      "value": "Show Me!"
+                    }
+                  },
+                  "type": "Class",
+                  "value": "Class"
+                },
+                "this": {
+                  "type": "InterfaceProperties",
+                  "value": "InterfaceProperties"
+                }
+              },
+              "locals": {
+                "iGenericInterface": {
+                  "fields": {
+                    "GenericValue": {
+                      "type": "String",
+                      "value": ""
+                    },
+                    "Value": {
+                      "type": "String",
+                      "value": "Value"
+                    }
+                  },
+                  "type": "Class`1",
+                  "value": "Class`1"
+                },
+                "iInterface": {
+                  "fields": {
+                    "_notAutoProp": {
+                      "isNull": "true",
+                      "type": "String"
+                    },
+                    "Field": {
+                      "type": "String",
+                      "value": "I'm a class field"
+                    },
+                    "ShowMe": {
+                      "type": "String",
+                      "value": ""
+                    }
+                  },
+                  "type": "Class",
+                  "value": "Class"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "InterfaceProperties.cs",
+            "lines": [
+              33
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.InterfaceProperties",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]
