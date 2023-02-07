@@ -37,6 +37,7 @@ namespace Samples.Computer01
 #endif
         private LinuxMallocDeadLock _linuxMallockDeadlock;
         private MeasureAllocations _measureAllocations;
+        private MeasureExceptions _measureExceptions;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -122,6 +123,10 @@ namespace Samples.Computer01
 
                 case Scenario.MeasureAllocations:
                     StartMeasureAllocations();
+                    break;
+
+                case Scenario.MeasureExceptions:
+                    StartMeasureExceptions();
                     break;
 
                 default:
@@ -210,6 +215,10 @@ namespace Samples.Computer01
 
                 case Scenario.MeasureAllocations:
                     StopMeasureAllocations();
+                    break;
+
+                case Scenario.MeasureExceptions:
+                    StopMeasureExceptions();
                     break;
             }
         }
@@ -302,6 +311,10 @@ namespace Samples.Computer01
 
                     case Scenario.MeasureAllocations:
                         RunMeasureAllocations();
+                        break;
+
+                    case Scenario.MeasureExceptions:
+                        RunMeasureExceptions();
                         break;
 
                     default:
@@ -439,6 +452,12 @@ namespace Samples.Computer01
             _measureAllocations.Start();
         }
 
+        private void StartMeasureExceptions()
+        {
+            _measureExceptions = new MeasureExceptions();
+            _measureExceptions.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -533,6 +552,11 @@ namespace Samples.Computer01
         private void StopMeasureAllocations()
         {
             _measureAllocations.Stop();
+        }
+
+        private void StopMeasureExceptions()
+        {
+            _measureExceptions.Stop();
         }
 
         private void RunComputer()
@@ -651,6 +675,12 @@ namespace Samples.Computer01
         {
             var measureAllocations = new MeasureAllocations();
             measureAllocations.Run();
+        }
+
+        private void RunMeasureExceptions()
+        {
+            var measureExceptions = new MeasureExceptions();
+            measureExceptions.Run();
         }
 
         public class MySpecialClassA
