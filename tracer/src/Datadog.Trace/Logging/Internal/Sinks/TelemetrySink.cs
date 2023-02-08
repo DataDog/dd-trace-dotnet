@@ -29,14 +29,10 @@ internal class TelemetrySink : ILogEventSink
             return;
         }
 
-        var stackTrace = logEvent.Exception is { } ex
-                             ? StackTraceRedactor.Redact(ex.GetType().AssemblyQualifiedName ?? "Exception", new StackTrace(ex))
-                             : null;
-
         // Note: we're using the raw message template here to remove any chance of including customer information
         var telemetryLog = new LogMessageData(logEvent.MessageTemplate.Text, ToLogLevel(logEvent.Level))
         {
-            StackTrace = stackTrace
+            StackTrace = logEvent.Exception is { } ex ? ExceptionRedactor.Redact(ex) : null
         };
 
         _sink.EnqueueLog(telemetryLog);

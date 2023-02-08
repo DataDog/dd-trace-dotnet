@@ -1,4 +1,4 @@
-﻿// <copyright file="StackTraceRedactorTests.cs" company="Datadog">
+﻿// <copyright file="ExceptionRedactorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,16 +16,41 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Logging;
 
-public class StackTraceRedactorTests
+public class ExceptionRedactorTests
 {
+    [Theory]
+    [InlineData(typeof(Exception))]
+    [InlineData(typeof(InvalidOperationException))]
+    [InlineData(typeof(ArgumentException))]
+    public void Redact_UsesExceptionTypeForEmptyException(Type exceptionType)
+    {
+        var ex = (Exception)Activator.CreateInstance(exceptionType);
+        var redacted = ExceptionRedactor.Redact(ex);
+
+        redacted.Should().Be(exceptionType.FullName);
+    }
+
     [Fact]
-    public void Redact_IsEmptyForEmptyException()
+    public void Redact_IncludesExceptionTypeWhenHaveStackFrames()
+    {
+        var ex = InvokeException();
+        var redacted = ExceptionRedactor.Redact(ex);
+
+        redacted.Should().StartWith("System.Exception" + Environment.NewLine);
+
+        // remove first line (exception) from redacted exception before comparing
+        var redactedStackTrace = string.Join(Environment.NewLine, redacted.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Skip(1));
+        HasExpectedFrames(new StackTrace(ex), redactedStackTrace);
+    }
+
+    [Fact]
+    public void RedactStackTrace_IsEmptyForEmptyException()
     {
         var ex = new Exception();
         var stackTrace = new StackTrace(ex);
 
         var sb = new StringBuilder();
-        StackTraceRedactor.Redact(sb, stackTrace);
+        ExceptionRedactor.RedactStackTrace(sb, stackTrace);
         var redacted = sb.ToString();
 
         redacted.Should().BeEmpty();
@@ -33,29 +58,29 @@ public class StackTraceRedactorTests
 
     [Theory]
     [MemberData(nameof(TestData.MethodsToRedact), MemberType = typeof(TestData))]
-    public void Redact_RedactsUserCode(object method)
+    public void RedactStackTrace_RedactsUserCode(object method)
     {
         var methodBase = method.Should().NotBeNull().And.BeAssignableTo<MethodBase>().Subject;
         var stackFrame = new TestStackFrame(methodBase);
         var stackTrace = new StackTrace(stackFrame);
 
         var sb = new StringBuilder();
-        StackTraceRedactor.Redact(sb, stackTrace);
+        ExceptionRedactor.RedactStackTrace(sb, stackTrace);
         var redacted = sb.ToString();
 
-        redacted.Should().Be($"{StackTraceRedactor.StackFrameAt}{StackTraceRedactor.Redacted}" + Environment.NewLine);
+        redacted.Should().Be($"{ExceptionRedactor.StackFrameAt}{ExceptionRedactor.Redacted}" + Environment.NewLine);
     }
 
     [Theory]
     [MemberData(nameof(TestData.MethodsToNotRedact), MemberType = typeof(TestData))]
-    public void Redact_DoesNotRedactBclAndDatadog(object method)
+    public void RedactStackTrace_DoesNotRedactBclAndDatadog(object method)
     {
         var methodBase = method.Should().NotBeNull().And.BeAssignableTo<MethodBase>().Subject;
         var stackFrame = new TestStackFrame(methodBase);
         var stackTrace = new StackTrace(stackFrame);
 
         var sb = new StringBuilder();
-        StackTraceRedactor.Redact(sb, stackTrace);
+        ExceptionRedactor.RedactStackTrace(sb, stackTrace);
         var redacted = sb.ToString();
 
         redacted.Should().Be(stackTrace.ToString());
@@ -63,10 +88,10 @@ public class StackTraceRedactorTests
 
     [Theory]
     [MemberData(nameof(TestData.ToStringTestData), MemberType = typeof(TestData))]
-    public void Redact_ContainsExpectedStrings(StackTrace stackTrace, string expectedToString)
+    public void RedactStackTrace_ContainsExpectedStrings(StackTrace stackTrace, string expectedToString)
     {
         var sb = new StringBuilder();
-        StackTraceRedactor.Redact(sb, stackTrace);
+        ExceptionRedactor.RedactStackTrace(sb, stackTrace);
         var redacted = sb.ToString();
 
         if (expectedToString.Length == 0)
@@ -77,6 +102,27 @@ public class StackTraceRedactorTests
 
         redacted.Should().Contain(expectedToString);
         redacted.Should().EndWith(Environment.NewLine);
+
+        HasExpectedFrames(stackTrace, redacted);
+    }
+
+    [Fact]
+    public unsafe void RedactStackTrace_WorksWithFunctionPointerSignature()
+    {
+        // This is separate from Redact_ContainsExpectedStrings since unsafe cannot be used for iterators
+        var stackTrace = TestData.FunctionPointerParameter(null);
+        var sb = new StringBuilder();
+        ExceptionRedactor.RedactStackTrace(sb, stackTrace);
+        var redacted = sb.ToString();
+
+        redacted.Should().Contain("Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.FunctionPointerParameter(IntPtr x)");
+        redacted.Should().EndWith(Environment.NewLine);
+
+        HasExpectedFrames(stackTrace, redacted);
+    }
+
+    private static void HasExpectedFrames(StackTrace stackTrace, string redacted)
+    {
         var redactedFrames = redacted.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
         // assumes that all methods in the call stack include one of these in the namespace
         // We actually filter based on assembly name so this isn't guaranteed, but works in tests
@@ -94,14 +140,6 @@ public class StackTraceRedactorTests
 
             redactedFrames[i].Should().Be(originalFrames[i]);
         }
-    }
-
-    [Fact]
-    public unsafe void FunctionPointerSignature_ContainsExpectedString()
-    {
-        // This is separate from Redact_ContainsExpectedStrings since unsafe cannot be used for iterators
-        var stackTrace = TestData.FunctionPointerParameter(null);
-        Assert.Contains("Datadog.Trace.Tests.Logging.StackTraceRedactorTests.TestData.FunctionPointerParameter(IntPtr x)", stackTrace.ToString());
     }
 
     [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
@@ -138,7 +176,7 @@ public class StackTraceRedactorTests
 
         public static TheoryData<object> MethodsToNotRedact() => new()
         {
-            typeof(StackTraceRedactorTests.TestData).GetMethod(nameof(NoParameters)),
+            typeof(ExceptionRedactorTests.TestData).GetMethod(nameof(NoParameters)),
             typeof(Datadog.Trace.Tracer).GetMethod(nameof(Tracer.UnsafeSetTracerInstance), BindingFlags.Static | BindingFlags.NonPublic),
             typeof(Datadog.Trace.Tracer).GetProperty(nameof(Tracer.Instance))?.GetMethod,
             typeof(Datadog.Trace.Tracer).GetProperty(nameof(Tracer.Instance))?.SetMethod,
@@ -159,14 +197,14 @@ public class StackTraceRedactorTests
 
         public static IEnumerable<object[]> ToStringTestData()
         {
-            yield return new object[] { new StackTrace(InvokeException()), "Datadog.Trace.Tests.Logging.StackTraceRedactorTests.ThrowException()" };
+            yield return new object[] { new StackTrace(InvokeException()), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.ThrowException()" };
             yield return new object[] { new StackTrace(new Exception()), string.Empty };
-            yield return new object[] { NoParameters(), "Datadog.Trace.Tests.Logging.StackTraceRedactorTests.TestData.NoParameters()" };
-            yield return new object[] { OneParameter(1), "Datadog.Trace.Tests.Logging.StackTraceRedactorTests.TestData.OneParameter(Int32 x)" };
-            yield return new object[] { TwoParameters(1, null), "Datadog.Trace.Tests.Logging.StackTraceRedactorTests.TestData.TwoParameters(Int32 x, String y)" };
-            yield return new object[] { Generic<int>(), "Datadog.Trace.Tests.Logging.StackTraceRedactorTests.TestData.Generic[T]()" };
-            yield return new object[] { Generic<int, string>(), "Datadog.Trace.Tests.Logging.StackTraceRedactorTests.TestData.Generic[T1,T2]()" };
-            yield return new object[] { new ClassWithConstructor().StackTrace, "Datadog.Trace.Tests.Logging.StackTraceRedactorTests.TestData.ClassWithConstructor..ctor()" };
+            yield return new object[] { NoParameters(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.NoParameters()" };
+            yield return new object[] { OneParameter(1), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.OneParameter(Int32 x)" };
+            yield return new object[] { TwoParameters(1, null), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.TwoParameters(Int32 x, String y)" };
+            yield return new object[] { Generic<int>(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.Generic[T]()" };
+            yield return new object[] { Generic<int, string>(), "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.Generic[T1,T2]()" };
+            yield return new object[] { new ClassWithConstructor().StackTrace, "Datadog.Trace.Tests.Logging.ExceptionRedactorTests.TestData.ClassWithConstructor..ctor()" };
         }
 
         [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]

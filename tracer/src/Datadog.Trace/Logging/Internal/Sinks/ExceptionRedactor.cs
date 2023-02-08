@@ -1,4 +1,4 @@
-﻿// <copyright file="StackTraceRedactor.cs" company="Datadog">
+﻿// <copyright file="ExceptionRedactor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,14 +16,25 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.Internal.Sinks;
 
-internal static class StackTraceRedactor
+internal static class ExceptionRedactor
 {
     internal const string StackFrameAt = "   at ";
     internal const string Redacted = "REDACTED";
     private const string InFileLineNum = "in {0}:line {1}";
 
-    public static string Redact(string exceptionType, StackTrace stackTrace)
+    /// <summary>
+    /// Redacts a stacktrace by replacing non-Datadog and non-BCL stack frames with REDACTED.
+    /// Uses code based on the <a href="https://github.com/dotnet/runtime/blob/v7.0.2/src/libraries/System.Private.CoreLib/src/System/Diagnostics/StackTrace.cs" >.NET Core <c>StackTrace</c></a> code and the
+    /// <a href="https://referencesource.microsoft.com/#mscorlib/system/diagnostics/stacktrace.cs" >.NET Framework <c>StackTrace</c></a>
+    /// Records the _type_ of the Exception instead of the exception message
+    /// </summary>
+    /// <param name="exception">The exception to generate the redacted stack trace for</param>
+    /// <returns>The redacted stack trace</returns>
+    public static string Redact(Exception exception)
     {
+        var exceptionType = exception.GetType().FullName ?? "Unknown Exception";
+        var stackTrace = new StackTrace(exception);
+
         var stackFrameCount = stackTrace.FrameCount;
         if (stackFrameCount == 0)
         {
@@ -33,13 +44,13 @@ internal static class StackTraceRedactor
         var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
         sb.AppendLine(exceptionType);
 
-        Redact(sb, stackTrace);
+        RedactStackTrace(sb, stackTrace);
 
         return StringBuilderCache.GetStringAndRelease(sb);
     }
 
     // internal for testing
-    internal static void Redact(StringBuilder sb, StackTrace stackTrace)
+    internal static void RedactStackTrace(StringBuilder sb, StackTrace stackTrace)
     {
         for (var i = 0; i < stackTrace.FrameCount; i++)
         {
