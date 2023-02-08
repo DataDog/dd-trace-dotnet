@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
@@ -35,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         {
             samplingProprity = samplingProprity > 0 ? 01 : 00;
 
-            return $",{SqlCommentTraceParent}='00-{traceId.ToString("X32")}-{spanId.ToString("X16")}-{samplingProprity}'";
+            return $",{SqlCommentTraceParent}='00-{traceId.ToString("x32")}-{spanId.ToString("x16")}-{samplingProprity}'";
         }
     }
 }
