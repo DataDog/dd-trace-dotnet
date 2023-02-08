@@ -92,4 +92,76 @@ TEST(GetThreadInfoTest, Check_SpaceAndParenthesisInThreadName_And_FinalParenthes
     ASSERT_EQ(0, kernelTime);
 }
 
+TEST(GetThreadInfoTest, Check_MalformedString1)
+{
+    auto const* line = "377 (dotnet)";
+    char state = ' ';
+    int userTime = 0;
+    int kernelTime = 0;
+
+    bool result = OpSysTools::ParseThreadInfo(line, state, userTime, kernelTime);
+
+    ASSERT_FALSE(result);;
+}
+
+TEST(GetThreadInfoTest, Check_MalformedString_NoParen_Around_ThreadName)
+{
+    auto const* line = "377 dotnet R 46 369 46 34817 369 4194368 95 0 0 0 1862 609 0 0 20 ";
+    char state = ' ';
+    int userTime = 0;
+    int kernelTime = 0;
+
+    bool result = OpSysTools::ParseThreadInfo(line, state, userTime, kernelTime);
+
+    ASSERT_FALSE(result);
+}
+
+TEST(GetThreadInfoTest, Check_EmptyString)
+{
+    auto const* line = "";
+    char state = ' ';
+    int userTime = 0;
+    int kernelTime = 0;
+
+    bool result = OpSysTools::ParseThreadInfo(line, state, userTime, kernelTime);
+
+    ASSERT_FALSE(result);
+}
+
+TEST(GetThreadInfoTest, Check_Missing_User_KernelTime)
+{
+    auto const* line = "377 (dotnet) R";
+    char state = ' ';
+    int userTime = 0;
+    int kernelTime = 0;
+
+    bool result = OpSysTools::ParseThreadInfo(line, state, userTime, kernelTime);
+
+    ASSERT_FALSE(result);
+}
+
+TEST(GetThreadInfoTest, Check_Missing_User_KernelTime2)
+{
+    auto const* line = "377 (dotnet) R 46 369 46 34817";
+    char state = ' ';
+    int userTime = 0;
+    int kernelTime = 0;
+
+    bool result = OpSysTools::ParseThreadInfo(line, state, userTime, kernelTime);
+
+    ASSERT_FALSE(result);
+}
+
+TEST(GetThreadInfoTest, Check_Missing_KernelTime)
+{
+    auto const* line = "377 (dotnet) R 46 369 46 34817 369 4194368 95 0 0 0 1862";
+    char state = ' ';
+    int userTime = 0;
+    int kernelTime = 0;
+
+    bool result = OpSysTools::ParseThreadInfo(line, state, userTime, kernelTime);
+
+    ASSERT_FALSE(result);
+}
+
 #endif

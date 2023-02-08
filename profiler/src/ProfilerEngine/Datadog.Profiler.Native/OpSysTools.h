@@ -58,12 +58,44 @@ public:
 
         // The thread name is in second position and wrapped by ()
         // Since the name can contain SPACE and () characters, skip it before scanning the values
-        auto pos = strrchr(line, ')');
-        pos++;
-        if (*pos == '\0')
+        auto* pos = strrchr(line, ')');
+
+        // paranoia
+        if (pos == nullptr)
             return false;
 
-        return sscanf(pos, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, &userTime, &kernelTime) == 3;
+        int currentIdx = 2; // because we are currently at the thread name offset which is 2
+        int nbElement = 0;
+        while (nbElement != 3)
+        {
+            pos = strchr(pos, ' ');
+            if (pos == nullptr)
+                break;
+
+            // skip whitespaces
+            pos = pos + strspn(pos, " ");
+
+            if (*pos == '\0')
+                break;
+
+            currentIdx++;
+            if (3 == currentIdx)
+            {
+                state = *pos;
+                nbElement++;
+            }
+            else if (14 == currentIdx)
+            {
+                userTime = atoi(pos);
+                nbElement++;
+            }
+            else if (15 == currentIdx)
+            {
+                kernelTime = atoi(pos);
+                nbElement++;
+            }
+        }
+        return nbElement == 3;
     }
 #endif
 

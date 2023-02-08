@@ -6,6 +6,13 @@
 #include <fstream>
 #include <string>
 
+#ifdef LINUX
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#endif
+
 #include <sys/syscall.h>
 #include "OsSpecificApi.h"
 #include "OpSysTools.h"
@@ -56,21 +63,21 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     char statPath[64] = {'\0'};
     snprintf(statPath, sizeof(statPath), "/proc/self/task/%d/stat", tid);
 
-    auto* fileStream = fopen(statPath, "r");
+    auto fd = open(statPath, O_RDONLY);
 
-    if (fileStream == nullptr)
+    if (fd == -1)
     {
         return false;
     }
 
-    on_leave { fclose(fileStream); };
+    on_leave { close(fd); };
 
     // 1023 + 1 to ensure that the last char is a null one
     // initialize the whole array slots to 0
     char line[1024] = { 0 };
 
-    auto length = fread(line, 1, sizeof(line) - 1, fileStream);
-    if (ferror(fileStream) || length == 0)
+    auto length = read(fd, line, sizeof(line) - 1);
+    if (length <= 0)
     {
         return false;
     }
