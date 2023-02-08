@@ -30,7 +30,6 @@ namespace Datadog.Trace.AppSec
         private static Security _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
-        private readonly Concurrency.ReaderWriterLock _wafLocker = new();
         private readonly SecuritySettings _settings;
         private LibraryInitializationResult _libraryInitializationResult;
         private IWaf _waf;
@@ -328,28 +327,17 @@ namespace Datadog.Trace.AppSec
                 _wafInitializationResult = Waf.Waf.Create(_wafLibraryInvoker, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
                 if (_wafInitializationResult.Success)
                 {
-                    if (_wafLocker.EnterWriteLock())
-                    {
-                        var oldWaf = _waf;
-                        _waf = _wafInitializationResult.Waf;
-                        oldWaf?.Dispose();
-                        _wafLocker.ExitWriteLock();
-                        Log.Debug("Disposed old waf and affected new waf");
-                        UpdateRulesData();
-                        AddInstrumentationsAndProducts(fromRemoteConfig);
-                    }
-                    else
-                    {
-                        _wafInitializationResult.Waf?.Dispose();
-                        Log.Warning("Could not replace waf because the writer lock couldn't be acquired within the specified timeout {timeout}", Concurrency.ReaderWriterLock.TimeoutInMs.ToString());
-                    }
+                    var oldWaf = _waf;
+                    _waf = _wafInitializationResult.Waf;
+                    oldWaf?.Dispose();
+                    Log.Debug("Disposed old waf and affected new waf");
+                    UpdateRulesData();
+                    AddInstrumentationsAndProducts(fromRemoteConfig);
                 }
                 else
                 {
-                    _wafLocker.EnterWriteLock();
                     _waf?.Dispose();
                     _wafInitializationResult.Waf?.Dispose();
-                    _wafLocker.ExitWriteLock();
                     _settings.Enabled = false;
                 }
             }
@@ -404,7 +392,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal IContext CreateAdditiveContext() => _waf?.CreateContext(_wafLocker);
+        internal IContext CreateAdditiveContext() => _waf?.CreateContext();
 
         private void RunShutdown()
         {
@@ -412,7 +400,6 @@ namespace Datadog.Trace.AppSec
             AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged -= AsmDDProductConfigChanged;
-            _wafLocker.Dispose();
             Dispose();
         }
     }
