@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFrameworks>net6.0;netcoreapp3.1;net472</TargetFrameworks>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
     <!-- benchmarkdotnet only support numberic values, not "latest"-->
@@ -33,7 +33,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
     <PackageReference Include="JetBrains.Profiler.Api" Version="1.1.7" />
     <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="NLog" Version="4.7.9" />

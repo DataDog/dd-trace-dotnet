@@ -13,65 +13,65 @@ internal static class BenchmarkTestTags
     /// <summary>
     /// Host processor name
     /// </summary>
-    public const string HostProcessorName = "benchmark.host.processor.name";
+    public const string HostProcessorName = "host.processor.name";
 
     /// <summary>
     /// Host processor physical processor count
     /// </summary>
-    public const string HostProcessorPhysicalProcessorCount = "benchmark.host.processor.physical_processor_count";
+    public const string HostProcessorPhysicalProcessorCount = "host.processor.physical_processor_count";
 
     /// <summary>
     /// Host processor physical core count
     /// </summary>
-    public const string HostProcessorPhysicalCoreCount = "benchmark.host.processor.physical_core_count";
+    public const string HostProcessorPhysicalCoreCount = "host.processor.physical_core_count";
 
     /// <summary>
     /// Host processor logical core count
     /// </summary>
-    public const string HostProcessorLogicalCoreCount = "benchmark.host.processor.logical_core_count";
+    public const string HostProcessorLogicalCoreCount = "host.processor.logical_core_count";
 
     /// <summary>
     /// Host processor max frequency hertz
     /// </summary>
-    public const string HostProcessorMaxFrequencyHertz = "benchmark.host.processor.max_frequency_hertz";
+    public const string HostProcessorMaxFrequencyHertz = "host.processor.max_frequency_hertz";
 
     /// <summary>
     /// Host os version
     /// </summary>
-    public const string HostOsVersion = "benchmark.host.os_version";
+    public const string HostOsVersion = "host.os_version";
 
     /// <summary>
     /// Host runtime version
     /// </summary>
-    public const string HostRuntimeVersion = "benchmark.host.runtime_version";
+    public const string HostRuntimeVersion = "host.runtime_version";
 
     /// <summary>
     /// Host chronometer frequency hertz
     /// </summary>
-    public const string HostChronometerFrequencyHertz = "benchmark.host.chronometer_frequency_hertz";
+    public const string HostChronometerFrequencyHertz = "host.chronometer_frequency_hertz";
 
     /// <summary>
     /// Host chronometer resolution
     /// </summary>
-    public const string HostChronometerResolution = "benchmark.host.chronometer_resolution";
+    public const string HostChronometerResolution = "host.chronometer_resolution";
 
     /// <summary>
     /// Job description
     /// </summary>
-    public const string JobDescription = "benchmark.job.description";
+    public const string JobDescription = "job.description";
 
     /// <summary>
     /// Job platform
     /// </summary>
-    public const string JobPlatform = "benchmark.job.platform";
+    public const string JobPlatform = "job.platform";
 
     /// <summary>
     /// Job runtime name
     /// </summary>
-    public const string JobRuntimeName = "benchmark.job.runtime_name";
+    public const string JobRuntimeName = "job.runtime_name";
 
     /// <summary>
     /// Job runtime name
     /// </summary>
-    public const string JobRuntimeMoniker = "benchmark.job.runtime_moniker";
+    public const string JobRuntimeMoniker = "job.runtime_moniker";
 }

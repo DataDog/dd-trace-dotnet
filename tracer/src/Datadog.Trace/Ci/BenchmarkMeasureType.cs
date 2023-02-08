@@ -22,6 +22,11 @@ public enum BenchmarkMeasureType
     RunTime,
 
     /// <summary>
+    /// Mean heap allocations in bytes
+    /// </summary>
+    MeanHeapAllocations,
+
+    /// <summary>
     /// Total heap allocations in bytes
     /// </summary>
     TotalHeapAllocations,
@@ -29,5 +34,25 @@ public enum BenchmarkMeasureType
     /// <summary>
     /// Application launch in nanoseconds
     /// </summary>
-    ApplicationLaunch
+    ApplicationLaunch,
+
+    /// <summary>
+    /// Garbage collector gen0 count
+    /// </summary>
+    GarbageCollectorGen0,
+
+    /// <summary>
+    /// Garbage collector gen1 count
+    /// </summary>
+    GarbageCollectorGen1,
+
+    /// <summary>
+    /// Garbage collector gen2 count
+    /// </summary>
+    GarbageCollectorGen2,
+
+    /// <summary>
+    /// Memory total operations count
+    /// </summary>
+    MemoryTotalOperations,
 }

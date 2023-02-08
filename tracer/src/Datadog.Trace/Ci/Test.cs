@@ -288,8 +288,23 @@ public sealed class Test
             case BenchmarkMeasureType.ApplicationLaunch:
                 measureTypeAsString = "application_launch";
                 break;
+            case BenchmarkMeasureType.MeanHeapAllocations:
+                measureTypeAsString = "mean_heap_allocations";
+                break;
             case BenchmarkMeasureType.TotalHeapAllocations:
                 measureTypeAsString = "total_heap_allocations";
+                break;
+            case BenchmarkMeasureType.GarbageCollectorGen0:
+                measureTypeAsString = "gc_gen0_collections";
+                break;
+            case BenchmarkMeasureType.GarbageCollectorGen1:
+                measureTypeAsString = "gc_gen1_collections";
+                break;
+            case BenchmarkMeasureType.GarbageCollectorGen2:
+                measureTypeAsString = "gc_gen2_collections";
+                break;
+            case BenchmarkMeasureType.MemoryTotalOperations:
+                measureTypeAsString = "memory_total_operations";
                 break;
             default:
                 return;
