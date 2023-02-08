@@ -53,7 +53,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                var captureInfo = new CaptureInfo<TLocal>(value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+                var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
 
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {

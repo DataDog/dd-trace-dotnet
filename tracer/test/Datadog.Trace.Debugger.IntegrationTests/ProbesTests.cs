@@ -40,21 +40,22 @@ public class ProbesTests : TestHelper
             typeof(AsyncGenericMethodWithLineProbeTest),
             typeof(AsyncGenericStruct),
             typeof(AsyncInstanceMethod),
+            typeof(AsyncInterfaceProperties),
             typeof(AsyncLineProbeWithFieldsArgsAndLocalsTest),
             typeof(AsyncMethodInsideTaskRun),
             typeof(AsyncRecursiveCall),
             typeof(AsyncStaticMethod),
             typeof(AsyncThrowException),
             typeof(AsyncTemplateLocalExitFullSnapshot),
+            typeof(AsyncTaskReturnTest),
+            typeof(AsyncTaskReturnWithExceptionTest),
+            typeof(AsyncTemplateArgExitFullSnapshot),
             typeof(AsyncVoid),
             typeof(AsyncWithGenericArgumentAndLocal),
-            typeof(AsyncTemplateArgExitFullSnapshot),
             typeof(HasLocalsAndReturnValue),
             typeof(MultipleLineProbes),
             typeof(MultiScopesWithSameLocalNameTest),
-            typeof(NotSupportedFailureTest),
-            typeof(AsyncTaskReturnTest),
-            typeof(AsyncTaskReturnWithExceptionTest)
+            typeof(NotSupportedFailureTest)
     };
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };

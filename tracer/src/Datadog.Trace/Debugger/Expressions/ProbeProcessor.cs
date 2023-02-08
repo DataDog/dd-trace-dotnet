@@ -271,7 +271,8 @@ namespace Datadog.Trace.Debugger.Expressions
                     continue;
                 }
 
-                snapshotCreator.AddScopeMember(arg.Name, arg.FieldType, arg.GetValue(asyncCaptureInfo.MoveNextInvocationTarget), ScopeMemberKind.Argument);
+                var argValue = arg.GetValue(asyncCaptureInfo.MoveNextInvocationTarget);
+                snapshotCreator.AddScopeMember(arg.Name, argValue?.GetType() ?? arg.FieldType, argValue, ScopeMemberKind.Argument);
             }
         }
 
@@ -286,7 +287,8 @@ namespace Datadog.Trace.Debugger.Expressions
                     continue;
                 }
 
-                snapshotCreator.AddScopeMember(local.SanitizedName, local.Field.FieldType, local.Field.GetValue(asyncCaptureInfo.MoveNextInvocationTarget), ScopeMemberKind.Local);
+                var localValue = local.Field.GetValue(asyncCaptureInfo.MoveNextInvocationTarget);
+                snapshotCreator.AddScopeMember(local.SanitizedName, localValue?.GetType() ?? local.Field.FieldType, localValue, ScopeMemberKind.Local);
             }
         }
 
