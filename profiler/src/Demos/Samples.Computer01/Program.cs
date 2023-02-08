@@ -29,8 +29,7 @@ namespace Samples.Computer01
         MemoryLeak,          // parameter = number of objects to allocate
         QuicklyDeadThreads, // parameter = number of short lived threads to create
         LinuxMallocDeadlock,
-        MeasureAllocations,
-        MeasureExceptions
+        MeasureAllocations
     }
 
     public class Program
@@ -57,7 +56,6 @@ namespace Samples.Computer01
             // 14: start n threads creating short lived threads
             // 15: trigger malloc deadlock on Linux
             // 16: count sized allocations
-            // 17: count exceptions
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +
