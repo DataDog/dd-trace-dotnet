@@ -73,7 +73,8 @@ public class WeakHashingTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [InlineData("DD_IAST_ENABLED", "false")]
-    [InlineData("DD_IAST_WEAK_HASH_ALGORITHMS", "")]
+    // if we define a variable as string.empty, in net462 Environment.GetEnvironmentVariable(key) returns null, which is equivalent to variable not defined.
+    [InlineData("DD_IAST_WEAK_HASH_ALGORITHMS", " ")]
     [InlineData($"DD_TRACE_{nameof(IntegrationId.HashAlgorithm)}_ENABLED", "false")]
     public void IntegrationDisabled(string variableName, string variableValue)
     {
