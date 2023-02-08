@@ -1,5 +1,7 @@
 # See https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-on-github/about-code-owners
 
+# By default every team is owner
+*                                         @DataDog/apm-dotnet @DataDog/debugger-dotnet @DataDog/profiling-dotnet
 
 # Tracer
 /tracer/                                  @DataDog/apm-dotnet
