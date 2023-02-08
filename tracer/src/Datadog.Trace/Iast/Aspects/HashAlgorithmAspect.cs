@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Aspects
 {
@@ -18,6 +19,8 @@ namespace Datadog.Trace.Iast.Aspects
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public partial class HashAlgorithmAspect
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmAspect));
+
         /// <summary>
         /// ComputeHash not static
         /// </summary>
@@ -26,23 +29,19 @@ namespace Datadog.Trace.Iast.Aspects
         [AspectMethodInsertBefore($"System.Security.Cryptography.HashAlgorithm::ComputeHash({ClrNames.ByteArray})", paramShift: 1)]
         [AspectMethodInsertBefore($"System.Security.Cryptography.HashAlgorithm::ComputeHash({ClrNames.ByteArray},{ClrNames.Int32},{ClrNames.Int32})", paramShift: 3)]
         [AspectMethodInsertBefore($"System.Security.Cryptography.HashAlgorithm::ComputeHash({ClrNames.Stream})", paramShift: 1)]
+        [AspectMethodInsertBefore($"System.Security.Cryptography.HashAlgorithm::ComputeHashAsync({ClrNames.Stream},{ClrNames.CancellationToken})", paramShift: 2)]
         public static HashAlgorithm ComputeHash(HashAlgorithm target)
         {
-            var scope = HashAlgorithmIntegrationCommon.CreateScope(target);
-            scope?.Dispose();
-            return target;
-        }
+            try
+            {
+                var scope = HashAlgorithmIntegrationCommon.CreateScope(target);
+                scope?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error in HashAlgorithmAspect.");
+            }
 
-        /// <summary>
-        /// ComputeHash not static
-        /// </summary>
-        /// <param name="target">main HashAlgorithm instance (not static)</param>
-        /// <returns>main HashAlgorithm instance</returns>
-        [AspectMethodInsertBefore($"System.Security.Cryptography.HashAlgorithm::ComputeHashAsync({ClrNames.Stream},{ClrNames.CancellationToken})", paramShift: 2)]
-        public static HashAlgorithm ComputeHashAsync(HashAlgorithm target)
-        {
-            var scope = HashAlgorithmIntegrationCommon.CreateScope(target);
-            scope?.Dispose();
             return target;
         }
     }
