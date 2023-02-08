@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       azdo_build_id:
-        description: 'The specific AzDo build from which the release artifacts will be downloaded. This must match the forced_commit_id input for GitLab arti'
+        description: 'The specific AzDo build from which the release artifacts will be downloaded.'
         required: true
 
 jobs:
@@ -110,5 +110,6 @@ jobs:
         tags: ${{ steps.generate-musl-tags.outputs.musl-tag-names }}
         platforms: 'linux/arm64/v8'
         context: ${{steps.assets.outputs.artifacts_path}}
+        # When we actually produce linux-musl-arm64 binaries, use that instead of the placeholder 'linux-musl-arm' directory
         build-args: |
           LINUX_PACKAGE=linux-musl-arm
