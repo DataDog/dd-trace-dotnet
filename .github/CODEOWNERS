@@ -31,6 +31,8 @@
 /tracer/test/test-applications/debugger/   @DataDog/debugger-dotnet
 debugger_*.cpp                             @DataDog/debugger-dotnet
 debugger_*.h                               @DataDog/debugger-dotnet
+/.github                                   @DataDog/debugger-dotnet
+CODEOWNERS                                 @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.Debugger.IntegrationTests/ @DataDog/debugger-dotnet
 tracer/src/Datadog.InstrumentedAssemblyGenerator/ @DataDog/debugger-dotnet
 tracer/src/Datadog.InstrumentedAssemblyVerification/ @DataDog/debugger-dotnet
