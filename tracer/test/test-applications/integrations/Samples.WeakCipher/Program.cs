@@ -2,11 +2,30 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace Samples.WeakHashing;
+namespace Samples.WeakCipher;
 
 internal static class Program
 {
     private static void Main()
+    {
+        VulnerableSection();
+        NotVulnerableSection();
+    }
+
+    private static void NotVulnerableSection()
+    {
+#pragma warning disable SYSLIB0021 // Type or member is obsolete
+        // Not vulnerable section
+#pragma warning disable SYSLIB0022 // Type or member is obsolete
+        testSymmetricAlgorithm(Rijndael.Create());
+        testSymmetricAlgorithm(new RijndaelManaged());
+#pragma warning restore SYSLIB0022 // Type or member is obsolete
+        testSymmetricAlgorithm(Aes.Create());
+        testSymmetricAlgorithm(new AesCryptoServiceProvider());
+#pragma warning restore SYSLIB0021 // Type or member is obsolete
+    }
+
+    private static void VulnerableSection()
     {
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
         // Vulnerable section
@@ -18,14 +37,6 @@ internal static class Program
         // https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5350
         testSymmetricAlgorithm(TripleDES.Create());
         testSymmetricAlgorithm(new TripleDESCryptoServiceProvider());
-
-        // Not vulnerable section
-#pragma warning disable SYSLIB0022 // Type or member is obsolete
-        testSymmetricAlgorithm(Rijndael.Create());
-        testSymmetricAlgorithm(new RijndaelManaged());
-#pragma warning restore SYSLIB0022 // Type or member is obsolete
-        testSymmetricAlgorithm(Aes.Create());
-        testSymmetricAlgorithm(new AesCryptoServiceProvider());
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
     }
 

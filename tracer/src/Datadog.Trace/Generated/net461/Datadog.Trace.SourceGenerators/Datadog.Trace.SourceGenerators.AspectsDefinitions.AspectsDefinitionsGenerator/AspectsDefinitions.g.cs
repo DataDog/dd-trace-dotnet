@@ -16,6 +16,22 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertBefore(\"System.Security.Cryptography.HashAlgorithm::ComputeHash(System.Byte[],System.Int32,System.Int32)\",\"\",[3],[False],[None],Propagation,[])] ComputeHash(System.Security.Cryptography.HashAlgorithm)",
 "  [AspectMethodInsertBefore(\"System.Security.Cryptography.HashAlgorithm::ComputeHash(System.IO.Stream)\",\"\",[1],[False],[None],Propagation,[])] ComputeHash(System.Security.Cryptography.HashAlgorithm)",
 "  [AspectMethodInsertBefore(\"System.Security.Cryptography.HashAlgorithm::ComputeHashAsync(System.IO.Stream,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Propagation,[])] ComputeHash(System.Security.Cryptography.HashAlgorithm)",
+"[AspectClass(\"mscorlib\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.SymmetricAlgorithmAspect",
+"  [AspectCtorReplace(\"System.Security.Cryptography.DESCryptoServiceProvider::.ctor()\",\"\",[0],[False],[None],Propagation,[])] InitDES()",
+"  [AspectCtorReplace(\"System.Security.Cryptography.RC2CryptoServiceProvider::.ctor()\",\"\",[0],[False],[None],Propagation,[])] InitRC2()",
+"  [AspectCtorReplace(\"System.Security.Cryptography.TripleDESCryptoServiceProvider::.ctor()\",\"\",[0],[False],[None],Propagation,[])] InitTripleDES()",
+"  [AspectCtorReplace(\"System.Security.Cryptography.RijndaelManaged::.ctor()\",\"\",[0],[False],[None],Propagation,[])] InitRijndaelManaged()",
+"  [AspectCtorReplace(\"System.Security.Cryptography.AesCryptoServiceProvider::.ctor()\",\"\",[0],[False],[None],Propagation,[])] InitAesCryptoServiceProvider()",
+"  [AspectMethodInsertAfter(\"System.Security.Cryptography.DES::Create()\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
+"  [AspectMethodInsertAfter(\"System.Security.Cryptography.DES::Create(System.String)\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
+"  [AspectMethodInsertAfter(\"System.Security.Cryptography.RC2::Create()\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
+"  [AspectMethodInsertAfter(\"System.Security.Cryptography.RC2::Create(System.String)\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
+"  [AspectMethodInsertAfter(\"System.Security.Cryptography.TripleDES::Create()\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
+"  [AspectMethodInsertAfter(\"System.Security.Cryptography.TripleDES::Create(System.String)\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
+"  [AspectMethodInsertAfter(\"System.Security.Cryptography.Rijndael::Create()\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
+"  [AspectMethodInsertAfter(\"System.Security.Cryptography.Rijndael::Create(System.String)\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
+"  [AspectMethodInsertAfter(\"System.Security.Cryptography.Aes::Create()\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
+"  [AspectMethodInsertAfter(\"System.Security.Cryptography.Aes::Create(System.String)\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
         };
     }
 }
