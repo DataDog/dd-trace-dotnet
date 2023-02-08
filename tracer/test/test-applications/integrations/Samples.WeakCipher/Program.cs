@@ -32,8 +32,10 @@ internal static class Program
         //https://rules.sonarsource.com/csharp/type/Vulnerability/RSPEC-5547
         testSymmetricAlgorithm(DES.Create());
         testSymmetricAlgorithm(new DESCryptoServiceProvider());
+        System.Threading.Thread.Sleep(100);
         testSymmetricAlgorithm(RC2.Create());
         testSymmetricAlgorithm(new RC2CryptoServiceProvider());
+        System.Threading.Thread.Sleep(100);
         // https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5350
         testSymmetricAlgorithm(TripleDES.Create());
         testSymmetricAlgorithm(new TripleDESCryptoServiceProvider());
