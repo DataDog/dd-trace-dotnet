@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
 
             Scope scope = null;
+            string commandText = command.CommandText;
 
             try
             {
@@ -35,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     parent.GetTag(Tags.DbType) == dbType &&
-                    parent.ResourceName == command.CommandText)
+                    parent.ResourceName == commandText)
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -55,14 +56,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
-                scope.Span.ResourceName = command.CommandText;
+                scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    IastModule.OnSqlQuery(command.CommandText, integrationId);
+                    IastModule.OnSqlQuery(commandText, integrationId);
                 }
+
+                if (tracer.Settings.DbmPropagationMode != "disabled" && (integrationId == IntegrationId.MySql || integrationId == IntegrationId.Npgsql))
+                {
+                    command.CommandText = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.Settings.ServiceName, commandText, scope);
+                    scope.Span.SetTag(Tags.DbmDataPropagated, "true");
+                }
+
+                Log.Information("MMGV command.CommandText=" + command.CommandText);
             }
             catch (Exception ex)
             {

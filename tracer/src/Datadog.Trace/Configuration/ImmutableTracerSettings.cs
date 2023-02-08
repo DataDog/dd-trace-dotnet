@@ -133,6 +133,8 @@ namespace Datadog.Trace.Configuration
 
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
+
+            DbmPropagationMode = settings.DbmPropagationMode;
         }
 
         /// <summary>
@@ -396,6 +398,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in AAS
         /// </summary>
         internal bool IsRunningInAzureAppService { get; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the tracer should propagate service data in db queries
+        /// </summary>
+        internal string DbmPropagationMode { get; }
 
         /// <summary>
         /// Gets the AAS settings

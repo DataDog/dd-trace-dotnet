@@ -529,6 +529,11 @@ namespace Datadog.Trace
 
         internal const string TagPropagationError = "_dd.propagation_error";
 
+        /// <summary>
+        /// Marks a span as when dmb needed data was injected
+        /// </summary>
+        internal const string DbmDataPropagated = "_dd.dbm_trace_injected";
+
         internal static class AppSec
         {
             internal const string Events = "appsec.events.";
