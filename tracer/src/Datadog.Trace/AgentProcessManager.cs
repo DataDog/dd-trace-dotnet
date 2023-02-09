@@ -68,7 +68,7 @@ namespace Datadog.Trace
                 var azureAppServiceSettings = new ImmutableAzureAppServiceSettings(GlobalConfigurationSource.Instance);
                 if (azureAppServiceSettings.IsUnsafeToTrace)
                 {
-                    Log.Error("The Azure Site Extension doesn't have the required parameters to work. The API_KEY is certainly missing. The trace_agent and dogstatsd process will not be started. Add the API key in the app configuration and restart it.");
+                    Log.Error("The Azure Site Extension doesn't have the required parameters to work. The API_KEY is likely missing. The trace_agent and dogstatsd process will not be started. Check your app configuration and restart the app service to try again.");
                     return;
                 }
 
@@ -372,7 +372,7 @@ namespace Datadog.Trace
             {
                 var namedPipe = $"\\\\.\\pipe\\{PipeName}";
                 var namedPipeIsBound = File.Exists(namedPipe);
-                if (namedPipeIsBound)
+                if (!namedPipeIsBound)
                 {
                     Log.Debug("NamedPipe  [{namedPipe}] is not present.", namedPipe);
                 }
