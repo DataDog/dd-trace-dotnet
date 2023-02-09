@@ -246,6 +246,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                                 case "SimpleParameterizedTest":
                                     CheckSimpleTestSpan(targetTest);
+                                    CheckParametrizedTraitsValues(targetTest);
                                     AssertTargetSpanAnyOf(
                                         targetTest,
                                         TestTags.Parameters,
@@ -404,6 +405,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             // Check the traits tag value
             AssertTargetSpanEqual(targetTest, TestTags.Traits, "{\"Category\":[\"Category01\"],\"Compatibility\":[\"Windows\",\"Linux\"]}");
+        }
+
+        private static void CheckParametrizedTraitsValues(MockCIVisibilityTest targetTest)
+        {
+            // Check the traits tag value
+            AssertTargetSpanAnyOf(
+                targetTest,
+                TestTags.Traits,
+                "{\"Category\":[\"ParemeterizedTest\",\"FirstCase\"]}",
+                "{\"Category\":[\"ParemeterizedTest\",\"SecondCase\"]}",
+                "{\"Category\":[\"ParemeterizedTest\",\"ThirdCase\"]}");
         }
 
         private static void CheckOriginTag(MockCIVisibilityTest targetTest)
