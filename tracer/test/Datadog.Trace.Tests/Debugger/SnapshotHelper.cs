@@ -23,7 +23,7 @@ internal static class SnapshotHelper
     /// </summary>
     private static string GenerateSnapshot(object instance, object[] args, object[] locals, bool prettify)
     {
-        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false);
+        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" });
         {
             // method entry
             snapshotCreator.StartEntry();
