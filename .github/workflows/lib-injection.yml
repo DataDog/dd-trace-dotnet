@@ -121,6 +121,7 @@ jobs:
         lib-injection-connection: ['network','uds']
         lib-injection-use-admission-controller: ['', 'use-admission-controller']
         weblog-variant: ['dd-lib-dotnet-init-test-app']
+        runtime: ['bullseye-slim','alpine']
       fail-fast: false
     env:
       TEST_LIBRARY: dotnet
@@ -129,11 +130,13 @@ jobs:
       LIBRARY_INJECTION_ADMISSION_CONTROLLER: ${{ matrix.lib-injection-use-admission-controller }}
       DOCKER_REGISTRY_IMAGES_PATH: ghcr.io/datadog
       DOCKER_IMAGE_TAG: ${{ github.sha }}
-      BUILDX_PLATFORMS: linux/amd64,linux/arm64/v8 
+      DOCKER_IMAGE_WEBLOG_TAG: ${{ github.sha }}-${{ matrix.runtime }}
+      RUNTIME: ${{ matrix.runtime }}
+      BUILDX_PLATFORMS: linux/amd64
     steps:
       - name: lib-injection test runner
         id: lib-injection-test-runner
-        uses: DataDog/system-tests/lib-injection/runner@b3ca75b6ce109a349f7390a9f111e6b3ef3c97ef
+        uses: DataDog/system-tests/lib-injection/runner@1282714bfd25baae821f10cf6f1e77f990a82a89 # zach/lib-injection-dotnet
         with:
           docker-registry: ghcr.io
           docker-registry-username: ${{ github.repository_owner }}
