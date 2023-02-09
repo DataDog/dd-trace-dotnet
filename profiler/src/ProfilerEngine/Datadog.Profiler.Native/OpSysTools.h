@@ -79,17 +79,17 @@ public:
                 break;
 
             currentIdx++;
-            if (3 == currentIdx)
+            if (currentIdx == 3)
             {
                 state = *pos;
                 nbElement++;
             }
-            else if (14 == currentIdx)
+            else if (currentIdx == 14)
             {
                 userTime = atoi(pos);
                 nbElement++;
             }
-            else if (15 == currentIdx)
+            else if (currentIdx == 15)
             {
                 kernelTime = atoi(pos);
                 nbElement++;

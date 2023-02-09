@@ -60,7 +60,7 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 
 bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
 {
-    char statPath[64] = {'\0'};
+    char statPath[64] = {0};
     snprintf(statPath, sizeof(statPath), "/proc/self/task/%d/stat", tid);
 
     auto fd = open(statPath, O_RDONLY);
@@ -99,6 +99,7 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
         return false;
     }
 
+    // TODO: can we cache sysconf(_SC_CLK_TCK)? Can this value change while the app is running ?
     cpuTime = ((userTime + kernelTime) * 1000) / sysconf(_SC_CLK_TCK);
     isRunning = (state == 'R') || (state == 'D') || (state == 'W');
     return true;
