@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Instrumentation.Registry;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
@@ -46,8 +47,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 var paramName = state.MethodMetadataInfo.ParameterNames[index];
-                var captureInfo = new CaptureInfo<TArg>(value: arg, type: typeof(TArg), methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
-                if (!ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator))
+                var captureInfo = new CaptureInfo<TArg>(value: arg, methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
+
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;
                 }
@@ -83,8 +85,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                var captureInfo = new CaptureInfo<TLocal>(value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
-                if (!ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator))
+                var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;
                 }
@@ -135,6 +138,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="probeId">The id of the probe</param>
+        /// <param name="probeMetadataIndex">The index used to lookup for the <see cref="ProbeData"/></param>
         /// <param name="instance">Instance value</param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
@@ -143,26 +147,33 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="probeFilePath">The path to the file of the probe</param>
         /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static LineDebuggerState BeginLine<TTarget>(string probeId, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, int lineNumber, string probeFilePath)
+        public static LineDebuggerState BeginLine<TTarget>(string probeId, int probeMetadataIndex, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, int lineNumber, string probeFilePath)
         {
             try
             {
-                if (!MethodMetadataProvider.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
+                if (!MethodMetadataCollection.Instance.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
                 {
-                    Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaId = {methodMetadataIndex}");
+                    Log.Warning($"BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadataId = {methodMetadataIndex}, probeId = {probeId}");
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                var state = new LineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, lineNumber, probeFilePath, instance);
+                if (!ProbeMetadataCollection.Instance.TryCreateProbeMetadataIfNotExists(probeMetadataIndex, probeId))
+                {
+                    Log.Warning($"BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, probeMetadataIndex = {probeMetadataIndex}, probeId = {probeId}");
+                    return CreateInvalidatedLineDebuggerState();
+                }
+
+                var state = new LineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, probeMetadataIndex, lineNumber, probeFilePath, instance);
 
                 if (!state.SnapshotCreator.ProbeHasCondition &&
-                    !ProbeRateLimiter.Instance.Sample(probeId))
+                    !state.ProbeData.Sampler.Sample())
                 {
                     return CreateInvalidatedLineDebuggerState();
                 }
 
                 var captureInfo = new CaptureInfo<Type>(invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLine, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath));
-                if (!ProbeExpressionsProcessor.Instance.Process(probeId, ref captureInfo, state.SnapshotCreator))
+
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;
                 }
@@ -196,7 +207,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                                            !state.MethodMetadataInfo.Method.IsStatic;
 
                 var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.EndLine, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
-                ProbeExpressionsProcessor.Instance.Process(state.ProbeId, ref captureInfo, state.SnapshotCreator);
+                state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator);
 
                 state.HasLocalsOrReturnValue = false;
             }

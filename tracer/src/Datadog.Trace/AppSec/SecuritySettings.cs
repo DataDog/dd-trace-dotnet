@@ -21,7 +21,7 @@ namespace Datadog.Trace.AppSec
         public SecuritySettings(IConfigurationSource source)
         {
             BlockedHtmlTemplate = source?.GetString(ConfigurationKeys.AppSec.HtmlBlockedTemplate) ?? SecurityConstants.BlockedHtmlTemplate;
-            BlockedJsonTemplate = source?.GetString(ConfigurationKeys.AppSec.HtmlBlockedTemplate) ?? SecurityConstants.BlockedJsonTemplate;
+            BlockedJsonTemplate = source?.GetString(ConfigurationKeys.AppSec.JsonBlockedTemplate) ?? SecurityConstants.BlockedJsonTemplate;
             // both should default to false
             var enabledEnvVar = source?.GetBool(ConfigurationKeys.AppSec.Enabled);
             _enabled = enabledEnvVar ?? false;
