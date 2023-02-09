@@ -21,6 +21,7 @@ Json:
 Expression: (
     scopeMember,
     scopeMember,
+    scopeMember,
     exception,
     scopeMemberArray) =>
 {
