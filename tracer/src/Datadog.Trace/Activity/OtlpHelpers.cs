@@ -102,7 +102,12 @@ namespace Datadog.Trace.Activity
             // Add the library name and library version
             if (activity5 is not null)
             {
-                span.SetTag("otel.library.name", activity5.Source.Name);
+                // For .NET Activity .NET 5+ the Source.Name is only set via ActivitySource.StartActivity
+                // and not when an Activity object is created manually and having .Start() called on it
+                if (!string.IsNullOrEmpty(activity5.Source.Name))
+                {
+                    span.SetTag("otel.library.name", activity5.Source.Name);
+                }
 
                 if (!string.IsNullOrEmpty(activity5.Source.Version))
                 {
@@ -113,7 +118,28 @@ namespace Datadog.Trace.Activity
             // Set OTEL status code and OTEL status description
             if (span.GetTag("otel.status_code") is null)
             {
-                span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
+                if (activity6 is not null)
+                {
+                    switch (activity6.Status)
+                    {
+                        case ActivityStatusCode.Unset:
+                            span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
+                            break;
+                        case ActivityStatusCode.Ok:
+                            span.SetTag("otel.status_code", "STATUS_CODE_OK");
+                            break;
+                        case ActivityStatusCode.Error:
+                            span.SetTag("otel.status_code", "STATUS_CODE_ERROR");
+                            break;
+                        default:
+                            span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
+                            break;
+                    }
+                }
+                else
+                {
+                    span.SetTag("otel.status_code", "STATUS_CODE_UNSET");
+                }
             }
 
             // Map the OTEL status to error tags
