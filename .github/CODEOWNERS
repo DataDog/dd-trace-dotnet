@@ -29,6 +29,11 @@
 /tracer/src/Datadog.Trace/PDBs/            @DataDog/debugger-dotnet @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Debugger/ @DataDog/debugger-dotnet
 /tracer/test/test-applications/debugger/   @DataDog/debugger-dotnet
+debugger_*.cpp                             @DataDog/debugger-dotnet
+debugger_*.h                               @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.Debugger.IntegrationTests/ @DataDog/debugger-dotnet
+tracer/src/Datadog.InstrumentedAssemblyGenerator/ @DataDog/debugger-dotnet
+tracer/src/Datadog.InstrumentedAssemblyVerification/ @DataDog/debugger-dotnet
 
 # Shared code we could move to the root folder
 /tracer/build/                            @DataDog/apm-dotnet @DataDog/debugger-dotnet @DataDog/profiling-dotnet @DataDog/asm-dotnet
