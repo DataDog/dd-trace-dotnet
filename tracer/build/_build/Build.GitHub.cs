@@ -733,7 +733,7 @@ partial class Build
             Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
         });
 
-    Target DownloadAzurePipelineAndGitlabArtifacts => _ => _
+    Target DownloadReleaseArtifacts => _ => _
        .Unlisted()
        .Description("Downloads the latest artifacts from Azure Devops and Gitlab that has the provided version")
        .DependsOn(CreateRequiredDirectories)
