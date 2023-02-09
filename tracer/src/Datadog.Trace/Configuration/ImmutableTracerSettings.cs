@@ -400,7 +400,7 @@ namespace Datadog.Trace.Configuration
         internal bool IsRunningInAzureAppService { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the tracer should propagate service data in db queries
+        /// Gets a value indicating whether the tracer should propagate service data in db queries
         /// </summary>
         internal string DbmPropagationMode { get; }
 

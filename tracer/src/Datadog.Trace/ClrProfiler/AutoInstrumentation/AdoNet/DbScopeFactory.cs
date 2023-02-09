@@ -36,7 +36,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     parent.GetTag(Tags.DbType) == dbType &&
-                    parent.ResourceName == commandText)
+                    (parent.GetTag(Tags.DbmDataPropagated) != null ||
+                    parent.ResourceName == commandText))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -67,11 +68,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (tracer.Settings.DbmPropagationMode != "disabled" && (integrationId == IntegrationId.MySql || integrationId == IntegrationId.Npgsql))
                 {
-                    command.CommandText = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.Settings.ServiceName, commandText, scope);
+                    command.CommandText = $"{DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span)} {commandText}";
                     scope.Span.SetTag(Tags.DbmDataPropagated, "true");
                 }
-
-                Log.Information("MMGV command.CommandText=" + command.CommandText);
             }
             catch (Exception ex)
             {

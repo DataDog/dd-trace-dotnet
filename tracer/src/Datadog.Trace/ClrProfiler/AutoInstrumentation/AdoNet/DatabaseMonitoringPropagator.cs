@@ -1,9 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Datadog.Trace.Util;
+// <copyright file="DatabaseMonitoringPropagator.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
@@ -16,27 +14,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         private const string SqlCommentTraceParent = "traceparent";
 
-        internal static string PropagateSpanData(string propagationStyle, string configuredServiceName, string sqlCommand, Scope scope)
+        internal static string PropagateSpanData(string propagationStyle, string configuredServiceName, Span span)
         {
             var propgationComment =
                 $"{SqlCommentRootService}='{configuredServiceName}'," +
-                $"{SqlCommentSpanService}='{scope.Span.ServiceName}'," +
-                $"{SqlCommentVersion}='{scope.Span.GetTag(Tags.Version)}'," +
-                $"{SqlCommentEnv}='{scope.Span.GetTag(Tags.Env)}'";
+                $"{SqlCommentSpanService}='{span.ServiceName}'," +
+                $"{SqlCommentVersion}='{span.GetTag(Tags.Version)}'," +
+                $"{SqlCommentEnv}='{span.GetTag(Tags.Env)}'";
 
             if (propagationStyle == "full")
             {
-                propgationComment = propgationComment + CreateTraceParent(scope.Span.TraceId, scope.Span.SpanId, scope.Span.GetMetric(Tags.SamplingPriority));
+                return $"/*{propgationComment},{CreateTraceParent(span.TraceId, span.SpanId, span.GetMetric(Tags.SamplingPriority))}*/";
             }
 
-            return $"/*{propgationComment}*/ {sqlCommand}";
+            return $"/*{propgationComment}*/";
         }
 
         internal static string CreateTraceParent(ulong traceId, ulong spanId, double? samplingProprity)
         {
-            samplingProprity = samplingProprity > 0 ? 01 : 00;
+            string sampling = samplingProprity >= 1.0 ? "01" : "00";
 
-            return $",{SqlCommentTraceParent}='00-{traceId.ToString("x32")}-{spanId.ToString("x16")}-{samplingProprity}'";
+            return $"{SqlCommentTraceParent}='00-{traceId.ToString("x32")}-{spanId.ToString("x16")}-{sampling}'";
         }
     }
 }

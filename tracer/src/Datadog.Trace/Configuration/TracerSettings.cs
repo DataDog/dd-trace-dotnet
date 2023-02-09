@@ -271,7 +271,24 @@ namespace Datadog.Trace.Configuration
                 HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator);
             }
 
-            DbmPropagationMode = CheckDbmPropagationInput(source?.GetString(ConfigurationKeys.DbmPropagationMode) ?? "disabled");
+            DbmPropagationLevel dbmPropagationValue;
+            DbmPropagationMode = Enum.TryParse(source?.GetString(ConfigurationKeys.DbmPropagationMode), true, out dbmPropagationValue) ?
+                $"{dbmPropagationValue}".ToLower() : "disabled";
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the tracer should propagate service data in db queries
+        /// </summary>
+        public enum DbmPropagationLevel
+        {
+            /// <summary>Nothing should be propagated</summary>
+            Disabled,
+
+            /// <summary>Only service tags should be injected</summary>
+            Service,
+
+            /// <summary>Both service details and span traceparent should be injected</summary>
+            Full
         }
 
         /// <summary>
@@ -737,17 +754,6 @@ namespace Datadog.Trace.Configuration
             }
 
             return httpErrorCodesArray;
-        }
-
-        internal static string CheckDbmPropagationInput(string mode)
-        {
-            if (mode != null && mode != "disabled" && mode != "service" && mode != "full")
-            {
-                Log.Warning("Wrong format '{0}' for DD_DBM_PROPAGATION_MODE configuration, expected: disabled, service or full.", mode);
-                return "disabled";
-            }
-
-            return mode;
         }
     }
 }
