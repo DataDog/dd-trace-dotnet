@@ -26,7 +26,7 @@ public:
     {
         std::unique_lock lock(_knownGroupsMutex);
 
-        auto [it, inserted] = _knownGroups.insert(group);
+        auto [it, inserted] = _knownGroups.insert(std::move(group));
         if (inserted)
         {
             // This is the first time we see this group in this time window,

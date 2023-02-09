@@ -895,7 +895,7 @@ jobs:
       - name: Install CppCheck
         shell: pwsh
         run: |
-          choco install cppcheck -y
+          choco install cppcheck -y --version 2.9
           refreshenv
           echo "C:\Program Files\Cppcheck" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
       
