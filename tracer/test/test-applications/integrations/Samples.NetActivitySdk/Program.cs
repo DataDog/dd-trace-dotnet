@@ -44,16 +44,17 @@ public static class Program
             Console.WriteLine("ERROR: activity was null");
             return;
         }
+
         Console.Write("\n*****\n");
-        Console.WriteLine($"{activity.DisplayName} Stopped");
-        Console.WriteLine($"{activity.DisplayName} Info:");
-        Console.WriteLine($"ID: {activity.Id}");
-        Console.WriteLine($"Span ID: {activity.SpanId}");
-        Console.WriteLine($"ParentID: {activity.ParentId}");
-        Console.WriteLine($"span.kind: {activity.Kind}");
-        Console.WriteLine($"Status: {activity.Status}");
-        Console.WriteLine($"Status Desc: {activity.StatusDescription}");
-        Console.WriteLine($"Trace State String: {activity.TraceStateString}");
+        Console.WriteLine($"Activity.DisplayName: {activity.DisplayName} Stopped");
+        Console.WriteLine($"Activity.Id: {activity.Id}");
+        Console.WriteLine($"Activity.SpanId: {activity.SpanId}");
+        Console.WriteLine($"Activity.ParentId: {activity.ParentId}");
+        Console.WriteLine($"Activity.Kind: {activity.Kind}");
+        Console.WriteLine($"Activity.Status: {activity.Status}");
+        Console.WriteLine($"Activity.StatusDescription: {activity.StatusDescription}");
+        Console.WriteLine($"Activity.TraceStateString: {activity.TraceStateString}");
+        Console.WriteLine($"Activity.Source.Name: {activity.Source.Name}");
         Console.WriteLine("Tags:");
         foreach(var tag in activity.TagObjects)
         {
