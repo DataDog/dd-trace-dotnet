@@ -100,7 +100,7 @@
       error.msg: SetStatus-Error,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
-      otel.status_code: STATUS_CODE_UNSET,
+      otel.status_code: STATUS_CODE_ERROR,
       otel.trace_id: Guid_3,
       runtime-id: Guid_2,
       span.kind: internal,
@@ -127,7 +127,7 @@
       env: integration_tests,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
-      otel.status_code: STATUS_CODE_UNSET,
+      otel.status_code: STATUS_CODE_OK,
       otel.trace_id: Guid_3,
       span.kind: internal,
       version: 1.0.0
@@ -180,7 +180,6 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      otel.library.name: ,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
       span.kind: internal,
@@ -216,7 +215,6 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      otel.library.name: ,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
       span.kind: internal,
@@ -252,7 +250,6 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      otel.library.name: ,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
       span.kind: internal,
