@@ -1,10 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- NuGet -->
-    <Version>1.18.4-prerelease</Version>
+    <Version>2.24.0</Version>
     <Title>Datadog APM</Title>
-    <Description>BenchmarkDotNet exporter for Datadog APM</Description>
+    <Description>BenchmarkDotNet exporter for Datadog CI Visibility</Description>
   </PropertyGroup>
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
