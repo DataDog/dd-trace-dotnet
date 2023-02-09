@@ -58,20 +58,20 @@ internal static class BenchmarkTestTags
     /// <summary>
     /// Job description
     /// </summary>
-    public const string JobDescription = "job.description";
+    public const string JobDescription = "test.configuration.job_description";
 
     /// <summary>
     /// Job platform
     /// </summary>
-    public const string JobPlatform = "job.platform";
+    public const string JobPlatform = "test.configuration.job_platform";
 
     /// <summary>
     /// Job runtime name
     /// </summary>
-    public const string JobRuntimeName = "job.runtime_name";
+    public const string JobRuntimeName = "test.configuration.job_runtime_name";
 
     /// <summary>
     /// Job runtime name
     /// </summary>
-    public const string JobRuntimeMoniker = "job.runtime_moniker";
+    public const string JobRuntimeMoniker = "test.configuration.job_runtime_moniker";
 }

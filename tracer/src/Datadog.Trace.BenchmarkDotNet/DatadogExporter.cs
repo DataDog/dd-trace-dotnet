@@ -5,25 +5,21 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Ci.Tags;
 
 namespace Datadog.Trace.BenchmarkDotNet;
 
 /// <summary>
 /// Datadog BenchmarkDotNet Exporter
 /// </summary>
-public class DatadogExporter : IExporter
+internal class DatadogExporter : IExporter
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogExporter));
-
     /// <summary>
     /// Default DatadogExporter instance
     /// </summary>
@@ -41,6 +37,10 @@ public class DatadogExporter : IExporter
         }
     }
 
+    private string CommandLine { get; } = Environment.CommandLine;
+
+    private string WorkingDirectory { get; } = Environment.CurrentDirectory;
+
     /// <inheritdoc />
     public string Name => nameof(DatadogExporter);
 
@@ -52,42 +52,63 @@ public class DatadogExporter : IExporter
     /// <inheritdoc />
     public IEnumerable<string> ExportToFiles(Summary summary, ILogger consoleLogger)
     {
-        var startTime = DateTimeOffset.UtcNow;
-        var testSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, "BenchmarkDotNet", startTime, false);
-        var offsetTimeSpan = TimeSpan.Zero;
+        var sessionStartDate = ((DatadogDiagnoser)DatadogDiagnoser.Default).DiagnoserCreationDate;
+        var sessionEndDate = DateTime.UtcNow;
+        var testSession = TestSession.GetOrCreate(CommandLine, WorkingDirectory, "BenchmarkDotNet", sessionStartDate, false);
 
-        Dictionary<Assembly, TestModuleWithDuration> testModules = new();
-        Dictionary<Type, TestSuiteWithDuration> testSuites = new();
+        Dictionary<Assembly, TestModuleWithEndDate> testModules = new();
+        Dictionary<Type, TestSuiteWithEndDate> testSuites = new();
         Exception exception = null;
 
         try
         {
-            var json = JsonConvert.SerializeObject(summary, Formatting.Indented, new JsonSerializerSettings
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            });
-            File.WriteAllText("output.json", json);
             foreach (var report in summary.Reports)
             {
-                startTime = startTime.Add(offsetTimeSpan);
+                var benchmarkStartDate = DateTime.MinValue;
+                var benchmarkEndDate = DateTime.MinValue;
 
                 if (report?.BenchmarkCase?.Descriptor is { Type: { } type } descriptor && summary.HostEnvironmentInfo is { CpuInfo.Value: { } cpuInfo } hostEnvironmentInfo)
                 {
-                    if (!testModules.TryGetValue(type.Assembly, out var testModuleWithDuration))
+                    if (report.Metrics is { } metrics)
                     {
-                        testModuleWithDuration = new TestModuleWithDuration { Module = testSession.CreateModule(type.Assembly.GetName().Name, "BenchmarkDotNet", hostEnvironmentInfo.BenchmarkDotNetVersion, startTime), Duration = TimeSpan.Zero, };
-                        testModules[type.Assembly] = testModuleWithDuration;
+                        foreach (var metric in metrics)
+                        {
+                            if (metric.Key == "StartDate")
+                            {
+                                benchmarkStartDate = new DateTime((long)metric.Value.Value, DateTimeKind.Utc);
+                            }
+                            else if (metric.Key == "EndDate")
+                            {
+                                benchmarkEndDate = new DateTime((long)metric.Value.Value, DateTimeKind.Utc);
+                            }
+                        }
                     }
 
-                    if (!testSuites.TryGetValue(type, out var testSuiteWithDuration))
+                    if (!testModules.TryGetValue(type.Assembly, out var testModuleWithEndDate))
                     {
-                        testSuiteWithDuration = new TestSuiteWithDuration { Suite = testModuleWithDuration.Module.GetOrCreateSuite(type.FullName ?? "Suite", startTime), Duration = TimeSpan.Zero, };
-                        testSuites[type] = testSuiteWithDuration;
+                        testModuleWithEndDate = new TestModuleWithEndDate { Module = testSession.CreateModule(type.Assembly.GetName().Name, "BenchmarkDotNet", hostEnvironmentInfo.BenchmarkDotNetVersion, benchmarkStartDate), EndDate = benchmarkEndDate, };
+                        testModules[type.Assembly] = testModuleWithEndDate;
                     }
 
-                    var testMethod = testSuiteWithDuration.Suite.CreateTest(descriptor.WorkloadMethod.Name, startTime);
+                    if (!testSuites.TryGetValue(type, out var testSuiteWithEndDate))
+                    {
+                        testSuiteWithEndDate = new TestSuiteWithEndDate { Suite = testModuleWithEndDate.Module.GetOrCreateSuite(type.FullName ?? "Suite", benchmarkStartDate), EndDate = benchmarkEndDate, };
+                        testSuites[type] = testSuiteWithEndDate;
+                    }
+
+                    var testName = descriptor.WorkloadMethod.Name;
+                    if (report.BenchmarkCase.Job?.ResolvedId is { } jobId && jobId != "DefaultJob")
+                    {
+                        testName = $"{descriptor.WorkloadMethod.Name}[{jobId}]";
+                    }
+
+                    if (report.BenchmarkCase.HasParameters)
+                    {
+                        testName += report.BenchmarkCase.Parameters.DisplayInfo;
+                    }
+
+                    var testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate);
                     testMethod.SetTestMethodInfo(descriptor.WorkloadMethod);
-
                     testMethod.SetBenchmarkMetadata(
                         new BenchmarkHostInfo
                         {
@@ -103,11 +124,32 @@ public class DatadogExporter : IExporter
                         },
                         new BenchmarkJobInfo { Description = report.BenchmarkCase?.Job?.DisplayInfo, Platform = report.BenchmarkCase?.Job?.Environment?.Platform.ToString(), RuntimeName = report.BenchmarkCase?.Job?.Environment?.Runtime?.Name, RuntimeMoniker = report.BenchmarkCase?.Job?.Environment?.Runtime?.MsBuildMoniker });
 
-                    double durationInNanoseconds = 0;
+                    if (report.BenchmarkCase.HasParameters)
+                    {
+                        var testParameters = new TestParameters
+                        {
+                            Arguments = new Dictionary<string, object>(),
+                            Metadata = new Dictionary<string, object>()
+                        };
+                        foreach (var parameter in report.BenchmarkCase.Parameters.Items)
+                        {
+                            var parameterValue = ClrProfiler.AutoInstrumentation.Testing.Common.GetParametersValueData(parameter.Value);
+                            if (testParameters.Arguments.TryGetValue(parameter.Name, out var currentValue))
+                            {
+                                testParameters.Arguments[parameter.Name] += $"{currentValue}, {parameterValue}";
+                            }
+                            else
+                            {
+                                testParameters.Arguments[parameter.Name] = parameterValue;
+                            }
+                        }
+
+                        testParameters.Metadata[TestTags.MetadataTestName] = report.BenchmarkCase.DisplayInfo ?? string.Empty;
+                        testMethod.SetParameters(testParameters);
+                    }
+
                     if (report.ResultStatistics is { } statistics)
                     {
-                        durationInNanoseconds = statistics.Mean;
-
                         double p90 = 0, p95 = 0, p99 = 0;
                         if (statistics.Percentiles is { } percentiles)
                         {
@@ -164,24 +206,27 @@ public class DatadogExporter : IExporter
                             BenchmarkDiscreteStats.GetFrom(new double[] { report.GcStats.GetTotalAllocatedBytes(true) }));
                     }
 
-                    var duration = TimeSpan.FromTicks((long)(durationInNanoseconds / TimeConstants.NanoSecondsPerTick));
+                    testMethod.Close(report.Success ? TestStatus.Pass : TestStatus.Fail, benchmarkEndDate - benchmarkStartDate);
+                    if (testSuiteWithEndDate.EndDate < benchmarkEndDate)
+                    {
+                        testSuiteWithEndDate.EndDate = benchmarkEndDate;
+                    }
 
-                    testMethod.Close(report.Success ? TestStatus.Pass : TestStatus.Fail, duration);
-                    duration += TimeSpan.FromTicks(100);
-                    testSuiteWithDuration.Duration += duration;
-                    testModuleWithDuration.Duration += duration;
-                    offsetTimeSpan += duration;
+                    if (testModuleWithEndDate.EndDate < benchmarkEndDate)
+                    {
+                        testModuleWithEndDate.EndDate = benchmarkEndDate;
+                    }
                 }
             }
 
             foreach (var item in testSuites)
             {
-                item.Value.Suite.Close(item.Value.Duration);
+                item.Value.Suite.Close(item.Value.EndDate - item.Value.Suite.StartTime);
             }
 
             foreach (var item in testModules)
             {
-                item.Value.Module.Close(item.Value.Duration);
+                item.Value.Module.Close(item.Value.EndDate - item.Value.Module.StartTime);
             }
         }
         catch (Exception ex)
@@ -195,7 +240,7 @@ public class DatadogExporter : IExporter
             testSession.SetErrorInfo(exception);
         }
 
-        testSession.Close(exception is null ? TestStatus.Pass : TestStatus.Fail, offsetTimeSpan);
+        testSession.Close(exception is null ? TestStatus.Pass : TestStatus.Fail, sessionEndDate - sessionStartDate);
 
         if (exception is not null)
         {
@@ -205,17 +250,17 @@ public class DatadogExporter : IExporter
         return new[] { "Datadog Exporter ran successfully." };
     }
 
-    private class TestModuleWithDuration
+    private class TestModuleWithEndDate
     {
         public TestModule Module { get; set; }
 
-        public TimeSpan Duration { get; set; }
+        public DateTime EndDate { get; set; }
     }
 
-    private class TestSuiteWithDuration
+    private class TestSuiteWithEndDate
     {
         public TestSuite Suite { get; set; }
 
-        public TimeSpan Duration { get; set; }
+        public DateTime EndDate { get; set; }
     }
 }

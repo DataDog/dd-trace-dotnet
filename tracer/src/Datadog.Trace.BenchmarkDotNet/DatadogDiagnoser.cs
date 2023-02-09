@@ -27,10 +27,8 @@ public class DatadogDiagnoser : IDiagnoser
     /// </summary>
     public static readonly IDiagnoser Default = new DatadogDiagnoser();
 
-    private DateTimeOffset? _startSessionDateTimeOffset;
-    private DateTimeOffset? _endSessionDateTimeOffset;
-    private DateTimeOffset? _startRunDateTimeOffset;
-    private DateTimeOffset? _endRunDateTimeOffset;
+    private long? _startDateTimeOffset;
+    private long? _endDateTimeOffset;
 
     /// <inheritdoc />
     public IEnumerable<string> Ids { get; } = new[] { "Datadog" };
@@ -40,6 +38,11 @@ public class DatadogDiagnoser : IDiagnoser
 
     /// <inheritdoc />
     public IEnumerable<IAnalyser> Analysers { get; } = Array.Empty<IAnalyser>();
+
+    /// <summary>
+    /// Gets the diagnoser creation date
+    /// </summary>
+    internal DateTime DiagnoserCreationDate { get; } = DateTime.UtcNow;
 
     /// <inheritdoc />
     public RunMode GetRunMode(BenchmarkCase benchmarkCase)
@@ -58,29 +61,19 @@ public class DatadogDiagnoser : IDiagnoser
     {
         if (signal == HostSignal.BeforeProcessStart)
         {
-            _startSessionDateTimeOffset = DateTimeOffset.UtcNow;
-        }
-        else if (signal == HostSignal.BeforeActualRun)
-        {
-            _startRunDateTimeOffset = DateTimeOffset.UtcNow;
-        }
-        else if (signal == HostSignal.AfterActualRun)
-        {
-            _endRunDateTimeOffset = DateTimeOffset.UtcNow;
+            _startDateTimeOffset = DateTime.UtcNow.Ticks;
         }
         else if (signal == HostSignal.AfterProcessExit)
         {
-            _endSessionDateTimeOffset = DateTimeOffset.UtcNow;
+            _endDateTimeOffset = DateTime.UtcNow.Ticks;
         }
     }
 
     /// <inheritdoc />
     public IEnumerable<Metric> ProcessResults(DiagnoserResults results)
     {
-        yield return new Metric(new DateTimeOffSetMetricDescriptor { Id = "StartSessionDate" }, _startSessionDateTimeOffset?.Ticks * TimeConstants.NanoSecondsPerTick ?? 0d);
-        yield return new Metric(new DateTimeOffSetMetricDescriptor { Id = "StartDate" }, _startRunDateTimeOffset?.Ticks * TimeConstants.NanoSecondsPerTick ?? 0d);
-        yield return new Metric(new DateTimeOffSetMetricDescriptor { Id = "EndDate" }, _endRunDateTimeOffset?.Ticks * TimeConstants.NanoSecondsPerTick ?? 0d);
-        yield return new Metric(new DateTimeOffSetMetricDescriptor { Id = "EndSessionDate" }, _endSessionDateTimeOffset?.Ticks * TimeConstants.NanoSecondsPerTick ?? 0d);
+        yield return new Metric(new DateTimeOffSetMetricDescriptor { Id = "StartDate" }, _startDateTimeOffset ?? 0d);
+        yield return new Metric(new DateTimeOffSetMetricDescriptor { Id = "EndDate" }, _endDateTimeOffset ?? 0d);
     }
 
     /// <inheritdoc />
@@ -106,7 +99,7 @@ public class DatadogDiagnoser : IDiagnoser
 
         public UnitType UnitType => UnitType.Time;
 
-        public string Unit => "ns";
+        public string Unit => "ticks";
 
         public bool TheGreaterTheBetter => false;
 

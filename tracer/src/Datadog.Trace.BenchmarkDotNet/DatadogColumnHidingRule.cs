@@ -20,7 +20,7 @@ public class DatadogColumnHidingRule : IColumnHidingRule
     /// <inheritdoc />
     public bool NeedToHide(IColumn column)
     {
-        if (column.Id is "StartSessionDate" or "StartDate" or "EndDate" or "EndSessionDate")
+        if (column.Id is "StartDate" or "EndDate")
         {
             return true;
         }
