@@ -101,11 +101,6 @@ internal class DatadogExporter : IExporter
                     }
 
                     var testName = descriptor.WorkloadMethod.Name;
-                    if (report.BenchmarkCase.Job?.DisplayInfo is { } jobId && jobId != "DefaultJob")
-                    {
-                        testName = $"{descriptor.WorkloadMethod.Name}[{jobId}]";
-                    }
-
                     if (report.BenchmarkCase.HasParameters)
                     {
                         testName += report.BenchmarkCase.Parameters.DisplayInfo;
