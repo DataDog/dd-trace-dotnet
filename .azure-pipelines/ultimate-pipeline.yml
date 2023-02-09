@@ -1189,7 +1189,7 @@ stages:
     
     steps:
     - powershell: |
-        choco install cppcheck -y
+        choco install cppcheck -y --version 2.9
         Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};C:\Program Files\Cppcheck";
         refreshenv
       displayName: Install CppCheck
