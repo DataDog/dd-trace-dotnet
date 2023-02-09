@@ -20,6 +20,7 @@ public static class DatadogExtensions
     public static IConfig WithDatadog(this IConfig config)
     {
         return config.HideColumns(DatadogColumnHidingRule.Default)
+                     .AddLogger(DatadogLogger.Default)
                      .AddDiagnoser(DatadogDiagnoser.Default);
     }
 }

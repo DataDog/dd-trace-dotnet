@@ -39,11 +39,6 @@ public class DatadogDiagnoser : IDiagnoser
     /// <inheritdoc />
     public IEnumerable<IAnalyser> Analysers { get; } = Array.Empty<IAnalyser>();
 
-    /// <summary>
-    /// Gets the diagnoser creation date
-    /// </summary>
-    internal DateTime DiagnoserCreationDate { get; } = DateTime.UtcNow;
-
     /// <inheritdoc />
     public RunMode GetRunMode(BenchmarkCase benchmarkCase)
     {
