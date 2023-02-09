@@ -57,18 +57,13 @@ jobs:
 
     - name: Generate musl image tags
       id: generate-musl-tags
-      shell: bash
+      shell: pwsh
       run: |
-        # Update first IFS character to ',' to use as our delimiter
-        IFS=','
+        $input = "${{ steps.lib-injection-tags.outputs.tag-names }}"
+        $muslTagNames = @($input.Split(",") | ForEach-Object { $_ + "-musl" }) -join ","
 
-        # Read the csv tag-names into an array variable and append '-musl' to each tag
-        read -r -a array <<< "${{ steps.lib-injection-tags.outputs.tag-names }}"
-        array=( "${array[@]/%/-musl}" )
-        MUSL_TAG_NAMES=${array[@]}
-
-        echo "Generated musl tag names '$MUSL_TAG_NAMES'"
-        echo "musl-tag-names=$MUSL_TAG_NAMES" >> $GITHUB_OUTPUT
+        echo "Generated musl tag names '$muslTagNames'"
+        echo "::set-output name=musl-tag-names::$muslTagNames"
 
     - name: Login to Docker
       run: docker login -u publisher -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
