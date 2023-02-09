@@ -55,7 +55,7 @@ partial class Build
     readonly string CommitSha;
 
     [Parameter("The specific Azure DevOps Build ID to use", List = false)]
-    readonly string AzureDevopsBuildId;
+    readonly int? AzureDevopsBuildId;
 
     [Parameter("The git branch to use", List = false)]
     readonly string TargetBranch;
@@ -724,12 +724,10 @@ partial class Build
             // Get an Azure devops client
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-            int buildId = int.Parse(AzureDevopsBuildId);
-            BuildArtifact artifact = await DownloadArtifactsFromConsolidatedPipelineBuild(buildHttpClient, buildId, $"{FullVersion}-release-artifacts");
+            BuildArtifact artifact = await DownloadArtifactsFromConsolidatedPipelineBuild(buildHttpClient, AzureDevopsBuildId.Value, $"{FullVersion}-release-artifacts");
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
-            Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
         });
 
