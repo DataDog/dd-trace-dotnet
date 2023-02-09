@@ -114,7 +114,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                 int pos = type.LastIndexOf('.');
                 if (pos != -1)
                 {
-                    type = type.Substring(pos+1);
+                    type = type.Substring(pos + 1);
                 }
 
                 // TODO: dump real and profiled count/size
