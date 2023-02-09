@@ -105,6 +105,7 @@ namespace Samples.ExceptionGenerator
             Console.WriteLine();
         }
 
+#pragma warning disable SA1401 // Fields should be private
         internal class ExceptionStats
         {
             public string Name;
@@ -113,5 +114,6 @@ namespace Samples.ExceptionGenerator
 
             public Action Thrower;
         }
+#pragma warning restore SA1401 // Fields should be private
     }
 }
