@@ -28,7 +28,7 @@ jobs:
 
     - name: "Download build assets from Azure Pipelines"
       id: assets
-      run: ./tracer/build.sh DownloadAzurePipelineAndGitlabArtifacts
+      run: ./tracer/build.sh DownloadAzurePipelineFromBuild
       env:
         AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
 
