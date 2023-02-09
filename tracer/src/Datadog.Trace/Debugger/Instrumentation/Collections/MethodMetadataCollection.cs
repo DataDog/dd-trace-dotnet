@@ -13,7 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.Instrumentation.Registry
+namespace Datadog.Trace.Debugger.Instrumentation.Collections
 {
     /// Acts as a registry of indexed <see cref="MethodMetadataInfo"/>.
     /// Each debugger-instrumented method is given an index (hard-coded into the instrumented bytecode),

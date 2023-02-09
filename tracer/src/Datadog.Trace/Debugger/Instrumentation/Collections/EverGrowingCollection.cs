@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Debugger.Instrumentation.Registry
+namespace Datadog.Trace.Debugger.Instrumentation.Collections
 {
     /// <summary>
     /// A very fast, lock free, ordered collection to which items can be added, but never removed.

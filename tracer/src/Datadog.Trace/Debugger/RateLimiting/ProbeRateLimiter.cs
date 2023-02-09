@@ -55,6 +55,11 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public void SetRate(string probeId, int samplesPerSecond)
         {
+            if (_samplers.TryGetValue(probeId, out _))
+            {
+                return;
+            }
+
             var adaptiveSampler = CreateSampler(samplesPerSecond);
             if (!_samplers.TryAdd(probeId, adaptiveSampler))
             {
