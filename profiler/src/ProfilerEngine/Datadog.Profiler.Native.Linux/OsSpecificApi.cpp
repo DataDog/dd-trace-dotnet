@@ -99,8 +99,10 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
         return false;
     }
 
-    // TODO: can we cache sysconf(_SC_CLK_TCK)? Can this value change while the app is running ?
-    cpuTime = ((userTime + kernelTime) * 1000) / sysconf(_SC_CLK_TCK);
+    // it's safe to cache it. According to the man sysconf, this value does
+    // not change during the lifetime of the process.
+    static auto ticks_per_second = sysconf(_SC_CLK_TCK);
+    cpuTime = ((userTime + kernelTime) * 1000) / ticks_per_second;
     isRunning = (state == 'R') || (state == 'D') || (state == 'W');
     return true;
 }
