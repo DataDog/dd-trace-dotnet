@@ -13,7 +13,6 @@ using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.BenchmarkDotNet;
 
@@ -102,7 +101,7 @@ internal class DatadogExporter : IExporter
                     }
 
                     var testName = descriptor.WorkloadMethod.Name;
-                    if (report.BenchmarkCase.Job?.ResolvedId is { } jobId && jobId != "DefaultJob")
+                    if (report.BenchmarkCase.Job?.DisplayInfo is { } jobId && jobId != "DefaultJob")
                     {
                         testName = $"{descriptor.WorkloadMethod.Name}[{jobId}]";
                     }
