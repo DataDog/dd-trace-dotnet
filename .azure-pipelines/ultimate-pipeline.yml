@@ -236,7 +236,7 @@ stages:
 
     - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
-      retryCountOnTaskFailure: 5
+      retryCountOnTaskFailure: 1
 
     - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
@@ -266,7 +266,7 @@ stages:
 
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
-      retryCountOnTaskFailure: 5
+      retryCountOnTaskFailure: 1
 
     - publish: $(monitoringHome)
       displayName: Upload Windows profiler home directory
@@ -311,7 +311,7 @@ stages:
         target: builder
         baseImage: $(baseImage)
         command: "Clean CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader ExtractDebugInfoLinux"
-        retryCountForRunCommand: 2
+        retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
@@ -356,7 +356,7 @@ stages:
         target: builder
         baseImage: $(baseImage)
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
-        retryCountForRunCommand: 2
+        retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
       displayName: Uploading linux profiler output build folder
@@ -414,7 +414,7 @@ stages:
         target: builder
         baseImage: $(baseImage)
         command: "ZipMonitoringHome"
-        retryCountForRunCommand: 2
+        retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
@@ -450,7 +450,7 @@ stages:
         target: builder
         baseImage: debian
         command: "Clean CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader ExtractDebugInfoLinux"
-        retryCountForRunCommand: 2
+        retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
@@ -490,7 +490,7 @@ stages:
         target: builder
         baseImage: debian
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
-        retryCountForRunCommand: 2
+        retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
       displayName: Uploading linux profiler output build folder
@@ -542,7 +542,7 @@ stages:
         target: builder
         baseImage: debian
         command: "ZipMonitoringHome"
-        retryCountForRunCommand: 2
+        retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-arm64
       displayName: Upload arm64 packages
@@ -578,7 +578,7 @@ stages:
 
     - script: ./tracer/build.sh CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader
       displayName: Build tracer home
-      retryCountOnTaskFailure: 5
+      retryCountOnTaskFailure: 1
 
     - publish: $(monitoringHome)
       displayName: Uploading macos profiler artifact
@@ -616,7 +616,7 @@ stages:
 
       - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
-        retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 1
 
       - publish: $(artifacts)/windows-tracer-home.zip
         displayName: Publish tracer-home.zip
