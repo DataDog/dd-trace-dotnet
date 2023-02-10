@@ -224,9 +224,9 @@ namespace Datadog.Trace.Debugger.Expressions
             shouldStopCapture = false;
             try
             {
-                if (ProbeInfo.ProbeType == ProbeType.Metric)
+                if (ProbeInfo.ProbeType != ProbeType.Metric)
                 {
-                    // we always taking the duration at the evaluation time - this might be different from what we have in the snapshot
+                    // we taking the duration at the evaluation time - this might be different from what we have in the snapshot
                     snapshotCreator.SetDuration();
                 }
 

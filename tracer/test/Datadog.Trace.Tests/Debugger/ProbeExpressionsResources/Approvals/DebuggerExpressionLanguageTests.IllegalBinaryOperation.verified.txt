@@ -17,6 +17,7 @@ Expression: (
     bool $dd_el_result;
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
     var @return = (string)scopeMember.Value;
+    var @duration = (TimeSpan)scopeMember.Value;
     var @exception = exception;
     var IntLocal = (int)scopeMemberArray[0].Value;
     var DoubleLocal = (double)scopeMemberArray[1].Value;

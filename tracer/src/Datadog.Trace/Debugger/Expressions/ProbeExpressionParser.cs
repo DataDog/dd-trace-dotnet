@@ -530,11 +530,6 @@ internal partial class ProbeExpressionParser<T>
     private ParameterExpression AddParameterAndVariable(ScopeMember scopeMember, Type type, string name, List<Expression> expressions, List<ParameterExpression> scopeMembers)
     {
         var parameterExpression = Expression.Parameter(scopeMember.GetType());
-        if (type == null)
-        {
-            return parameterExpression;
-        }
-
         var variable = Expression.Variable(type, name);
         expressions.Add(Expression.Assign(variable, Expression.Convert(Expression.Field(parameterExpression, "Value"), type)));
         scopeMembers.Add(variable);
