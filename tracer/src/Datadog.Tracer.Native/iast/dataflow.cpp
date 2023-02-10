@@ -27,6 +27,7 @@ static const WSTRING _fixedAssemblyIncludeFilters[] = {
 };
 static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("System*"),
+    WStr("mscorlib"),
     WStr("Datadog.*"),
     WStr("Kudu*"),
     WStr("Microsoft*"),
