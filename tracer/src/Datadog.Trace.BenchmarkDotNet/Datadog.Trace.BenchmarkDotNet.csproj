@@ -2,8 +2,14 @@
 
   <PropertyGroup>
     <Version>2.24.0</Version>
-    <Title>Datadog APM</Title>
+    <Title>Datadog CI Visibility - BenchmarkDotNet</Title>
     <Description>BenchmarkDotNet exporter for Datadog CI Visibility</Description>
+    <PackageTags>$(PackageTags);BenchmarkDotNet</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
