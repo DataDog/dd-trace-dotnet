@@ -174,7 +174,7 @@ namespace Datadog.Profiler.IntegrationTests
         public class NamedPipeAgent : MockDatadogAgent
         {
             private readonly PipeServer _namedPipeServer;
-            private readonly Task _profilessListenerTask;
+            private readonly Task _profilesListenerTask;
             private readonly byte[] _responseBytes;
 
             private int _nbTime = 0;
@@ -218,7 +218,7 @@ namespace Datadog.Profiler.IntegrationTests
                     x => Output.WriteLine(x),
                     _readinessNotifier);
 
-                _profilessListenerTask = Task.Run(_namedPipeServer.Start);
+                _profilesListenerTask = Task.Run(_namedPipeServer.Start);
             }
 
             public string ProfilesPipeName { get; }
