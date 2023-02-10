@@ -87,9 +87,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             {
                 skipReason = (string)testMethodProperties.Get(SkipReasonKey);
 
-                var traits = new Dictionary<string, List<string>>();
-                ExtractTraits(currentTest, traits);
-                if (traits.Count > 0)
+                Dictionary<string, List<string>>? traits = null;
+                ExtractTraits(currentTest, ref traits);
+                if (traits?.Count > 0)
                 {
                     test.SetTraits(traits);
                 }
@@ -112,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             return test;
         }
 
-        private static void ExtractTraits(ITest currentTest, Dictionary<string, List<string>> traits)
+        private static void ExtractTraits(ITest currentTest, ref Dictionary<string, List<string>>? traits)
         {
             if (currentTest.Instance is null)
             {
@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             if (currentTest.Parent is { Instance: { } })
             {
-                ExtractTraits(currentTest.Parent, traits);
+                ExtractTraits(currentTest.Parent, ref traits);
             }
 
             if (currentTest.Properties is { Keys: { Count: > 0 } } properties)
@@ -136,6 +136,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     var value = properties[key];
                     if (value is not null)
                     {
+                        traits ??= new();
                         if (!traits.TryGetValue(key, out var lstValues))
                         {
                             lstValues = new List<string>();
