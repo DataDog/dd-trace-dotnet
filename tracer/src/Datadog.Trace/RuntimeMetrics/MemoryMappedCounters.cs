@@ -18,7 +18,7 @@ namespace Datadog.Trace.RuntimeMetrics
     {
         private const string GarbageCollectionMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.ContentionCount}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}";
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<PerformanceCountersListener>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<MemoryMappedCounters>();
 
         private readonly IDogStatsd _statsd;
         private readonly int _processId;

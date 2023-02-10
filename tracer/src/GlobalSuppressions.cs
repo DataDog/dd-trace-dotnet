@@ -15,5 +15,3 @@
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DDLOG005", Justification = "Will fix in a subsequent PR")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DDLOG006", Justification = "Will fix in a subsequent PR")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DDLOG007", Justification = "Will fix in a subsequent PR")]
-[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DDLOG008", Justification = "Will fix in a subsequent PR")]
-[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DDLOG009", Justification = "Will fix in a subsequent PR")]

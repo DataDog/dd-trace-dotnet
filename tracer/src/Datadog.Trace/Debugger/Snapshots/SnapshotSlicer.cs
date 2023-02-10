@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 {
     internal class SnapshotSlicer
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSink));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SnapshotSlicer));
 
         private readonly int _maxDepth;
         private readonly int _maxSnapshotSize;

@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     internal static class MethodMetadataInfoFactory
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<MethodMetadataInfo>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodMetadataInfoFactory));
 
         public static MethodMetadataInfo Create(MethodBase method, Type type)
         {

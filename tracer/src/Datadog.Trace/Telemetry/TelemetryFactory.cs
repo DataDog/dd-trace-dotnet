@@ -13,7 +13,7 @@ namespace Datadog.Trace.Telemetry
 {
     internal class TelemetryFactory
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Datadog.Trace.Telemetry.TelemetryFactory>();
 
         private static readonly ConfigurationTelemetryCollector Configuration = new();
         private static readonly DependencyTelemetryCollector Dependencies = new();

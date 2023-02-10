@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AsyncLineDebuggerInvoker
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LineDebuggerInvoker));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncLineDebuggerInvoker));
 
         private static AsyncLineDebuggerState CreateInvalidatedAsyncLineDebuggerState()
         {
