@@ -85,34 +85,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             // Get traits
             if (testMethodProperties != null)
             {
-                var traits = new Dictionary<string, List<string>>();
                 skipReason = (string)testMethodProperties.Get(SkipReasonKey);
-                foreach (var key in testMethodProperties.Keys)
-                {
-                    if (key == SkipReasonKey || key == "_JOINTYPE")
-                    {
-                        continue;
-                    }
 
-                    var value = testMethodProperties[key];
-                    if (value != null)
-                    {
-                        var lstValues = new List<string>();
-                        foreach (var valObj in value)
-                        {
-                            if (valObj is null)
-                            {
-                                continue;
-                            }
-
-                            lstValues.Add(valObj.ToString() ?? string.Empty);
-                        }
-
-                        traits[key] = lstValues;
-                    }
-                }
-
-                if (traits.Count > 0)
+                Dictionary<string, List<string>>? traits = null;
+                ExtractTraits(currentTest, ref traits);
+                if (traits?.Count > 0)
                 {
                     test.SetTraits(traits);
                 }
@@ -133,6 +110,51 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             test.ResetStartTime();
             return test;
+        }
+
+        private static void ExtractTraits(ITest currentTest, ref Dictionary<string, List<string>>? traits)
+        {
+            if (currentTest.Instance is null)
+            {
+                return;
+            }
+
+            if (currentTest.Parent is { Instance: { } })
+            {
+                ExtractTraits(currentTest.Parent, ref traits);
+            }
+
+            if (currentTest.Properties is { Keys: { Count: > 0 } } properties)
+            {
+                foreach (var key in properties.Keys)
+                {
+                    if (key is SkipReasonKey or "_APPDOMAIN" or "_JOINTYPE" or "_PID" or "_PROVIDERSTACKTRACE")
+                    {
+                        continue;
+                    }
+
+                    var value = properties[key];
+                    if (value is not null)
+                    {
+                        traits ??= new();
+                        if (!traits.TryGetValue(key, out var lstValues))
+                        {
+                            lstValues = new List<string>();
+                            traits[key] = lstValues;
+                        }
+
+                        foreach (var valObj in value)
+                        {
+                            if (valObj is null)
+                            {
+                                continue;
+                            }
+
+                            lstValues.Add(valObj.ToString() ?? string.Empty);
+                        }
+                    }
+                }
+            }
         }
 
         internal static void FinishTest(Test test, Exception? ex)
