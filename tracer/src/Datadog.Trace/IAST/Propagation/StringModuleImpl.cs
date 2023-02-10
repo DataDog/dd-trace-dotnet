@@ -228,20 +228,173 @@ internal static class StringModuleImpl
         var iastContext = IastModule.GetIastContext();
         if (iastContext == null)
         {
-            return;
+            if (!CanBeTainted(result) || (!CanBeTainted(left) && !CanBeTainted(right)))
+            {
+                return result;
+            }
+
+            var ctx = IastModule.GetIastContext();
+            if (ctx == null)
+            {
+                return result;
+            }
+
+            TaintedObjects taintedObjects = ctx.GetTaintedObjects();
+            TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_0 ? GetTainted(taintedObjects, left) : null;
+            TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_1 ? GetTainted(taintedObjects, right) : null;
+            if (taintedLeft == null && taintedRight == null)
+            {
+                return result;
+            }
+
+            Range[]? ranges;
+            if (taintedRight == null)
+            {
+                ranges = taintedLeft!.Ranges;
+            }
+            else if (taintedLeft == null)
+            {
+                ranges = new Range[taintedRight!.Ranges!.Length];
+                Ranges.CopyShift(taintedRight.Ranges, ranges, 0, left.Length);
+            }
+            else
+            {
+                ranges = Ranges.MergeRanges(left.Length, taintedLeft!.Ranges, taintedRight!.Ranges);
+            }
+
+            taintedObjects.Taint(result, ranges);
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnstringConcat");
         }
 
         var taintedObjects = iastContext.GetTaintedObjects();
         var selfTainted = taintedObjects.Get(self);
         if (selfTainted == null)
         {
-            return;
+            if (!CanBeTainted(result) || !parameters.CanBeTainted())
+            {
+                return result;
+            }
+
+            var ctx = IastModule.GetIastContext();
+            if (ctx == null)
+            {
+                return result;
+            }
+
+            TaintedObjects to = ctx.GetTaintedObjects();
+
+            Range[]? ranges = null;
+            int len = 0;
+            for (int x = 0; x < parameters.ParamCount; x++)
+            {
+                var p = parameters[x];
+                if (!CanBeTainted(p))
+                {
+                    continue;
+                }
+
+                var t = GetTainted(to, p);
+                if (t != null)
+                {
+                    if (ranges == null)
+                    {
+                        if (t != null)
+                        {
+                            if (len == 0)
+                            {
+                                ranges = t.Ranges;
+                            }
+                            else
+                            {
+                                ranges = new Range[t!.Ranges!.Length];
+                                Ranges.CopyShift(t.Ranges, ranges, 0, p!.Length);
+                            }
+                        }
+
+                        len += p!.Length;
+                        continue;
+                    }
+
+                    ranges = Ranges.MergeRanges(len, ranges, t.Ranges);
+                }
+
+                len += p!.Length;
+            }
+
+            if (ranges != null)
+            {
+                to.Taint(result, ranges);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnstringConcat");
         }
 
         var rangesSelf = selfTainted.Ranges;
         if (rangesSelf.Length == 0)
         {
-            return;
+            if (!CanBeTainted(result))
+            {
+                return result;
+            }
+
+            var ctx = IastModule.GetIastContext();
+            if (ctx == null)
+            {
+                return result;
+            }
+
+            TaintedObjects to = ctx.GetTaintedObjects();
+
+            Range[]? ranges = null;
+            int len = 0;
+            foreach (var p in parameters)
+            {
+                if (!CanBeTainted(p))
+                {
+                    continue;
+                }
+
+                var t = GetTainted(to, p);
+                if (t != null)
+                {
+                    if (ranges == null)
+                    {
+                        if (t != null)
+                        {
+                            if (len == 0)
+                            {
+                                ranges = t.Ranges;
+                            }
+                            else
+                            {
+                                ranges = new Range[t!.Ranges!.Length];
+                                Ranges.CopyShift(t.Ranges, ranges, 0, p.Length);
+                            }
+                        }
+
+                        len += p!.Length;
+                        continue;
+                    }
+
+                    ranges = Ranges.MergeRanges(len, ranges, t.Ranges);
+                }
+
+                len += p!.Length;
+            }
+
+            if (ranges != null)
+            {
+                to.Taint(result, ranges);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnstringConcat");
         }
 
         var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
