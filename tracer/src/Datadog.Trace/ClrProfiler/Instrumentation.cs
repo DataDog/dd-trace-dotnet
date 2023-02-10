@@ -196,7 +196,7 @@ namespace Datadog.Trace.ClrProfiler
                     var traceMethodsConfiguration = tracer.Settings.TraceMethods;
                     var payload = InstrumentationDefinitions.GetTraceMethodDefinitions();
                     NativeMethods.InitializeTraceMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
-                    Log.Information("TraceMethods instrumentation enabled with Assembly={AssemblyName}, Type={TypeName}, and Configuration={}.", payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
+                    Log.Information("TraceMethods instrumentation enabled with Assembly={AssemblyName}, Type={TypeName}, and Configuration={Configuration}.", payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
                 }
                 catch (Exception ex)
                 {
