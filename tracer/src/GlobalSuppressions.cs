@@ -8,7 +8,6 @@
     "SA1202:Elements must be ordered by access",
     Justification = "Allow custom ordering in integrations.")]
 
-[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DDLOG001", Justification = "Will fix in a subsequent PR")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DDLOG003", Justification = "Will fix in a subsequent PR")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DDLOG004", Justification = "Will fix in a subsequent PR")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DDLOG005", Justification = "Will fix in a subsequent PR")]
