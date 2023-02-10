@@ -67,8 +67,8 @@ public class DatadogDiagnoser : IDiagnoser
     /// <inheritdoc />
     public IEnumerable<Metric> ProcessResults(DiagnoserResults results)
     {
-        yield return new Metric(new DateTimeOffSetMetricDescriptor { Id = "StartDate" }, _startDateTimeOffset ?? 0d);
-        yield return new Metric(new DateTimeOffSetMetricDescriptor { Id = "EndDate" }, _endDateTimeOffset ?? 0d);
+        yield return new Metric(new DateTimeOffSetMetricDescriptor("StartDate"), _startDateTimeOffset ?? 0d);
+        yield return new Metric(new DateTimeOffSetMetricDescriptor("EndDate"), _endDateTimeOffset ?? 0d);
     }
 
     /// <inheritdoc />
@@ -84,7 +84,9 @@ public class DatadogDiagnoser : IDiagnoser
 
     private class DateTimeOffSetMetricDescriptor : IMetricDescriptor
     {
-        public string Id { get; set; }
+        public DateTimeOffSetMetricDescriptor(string id) => Id = id;
+
+        public string Id { get; }
 
         public string DisplayName => Id;
 

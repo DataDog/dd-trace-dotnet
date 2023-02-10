@@ -41,7 +41,11 @@ internal class DatadogExporter : IExporter
     private DatadogExporter()
     {
         TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, "BenchmarkDotNet", DateTime.UtcNow, false);
-        TestModule = TestSession.CreateModule(Assembly.GetEntryAssembly().GetName().Name, "BenchmarkDotNet", typeof(IDiagnoser).Assembly.GetName().Version.ToString());
+        var version = typeof(IDiagnoser).Assembly?.GetName().Version?.ToString() ?? "unknown";
+        TestModule = TestSession.CreateModule(
+            Assembly.GetEntryAssembly()?.GetName().Name ?? "Session",
+            "BenchmarkDotNet",
+            version);
         LifetimeManager.Instance.AddAsyncShutdownTask(
             async () =>
             {
@@ -68,7 +72,7 @@ internal class DatadogExporter : IExporter
     {
         var testSession = TestSession;
         Dictionary<Type, TestSuiteWithEndDate> testSuites = new();
-        Exception exception = null;
+        Exception? exception = null;
 
         try
         {
@@ -96,7 +100,7 @@ internal class DatadogExporter : IExporter
 
                     if (!testSuites.TryGetValue(type, out var testSuiteWithEndDate))
                     {
-                        testSuiteWithEndDate = new TestSuiteWithEndDate { Suite = TestModule.GetOrCreateSuite(type.FullName ?? "Suite", benchmarkStartDate), EndDate = benchmarkEndDate, };
+                        testSuiteWithEndDate = new TestSuiteWithEndDate(TestModule.GetOrCreateSuite(type.FullName ?? "Suite", benchmarkStartDate), benchmarkEndDate);
                         testSuites[type] = testSuiteWithEndDate;
                     }
 
@@ -121,7 +125,7 @@ internal class DatadogExporter : IExporter
                             ChronometerFrequencyHertz = hostEnvironmentInfo.ChronometerFrequency.Hertz,
                             ChronometerResolution = hostEnvironmentInfo.ChronometerResolution.Nanoseconds
                         },
-                        new BenchmarkJobInfo { Description = report.BenchmarkCase?.Job?.DisplayInfo, Platform = report.BenchmarkCase?.Job?.Environment?.Platform.ToString(), RuntimeName = report.BenchmarkCase?.Job?.Environment?.Runtime?.Name, RuntimeMoniker = report.BenchmarkCase?.Job?.Environment?.Runtime?.MsBuildMoniker });
+                        new BenchmarkJobInfo { Description = report.BenchmarkCase.Job?.DisplayInfo, Platform = report.BenchmarkCase.Job?.Environment?.Platform.ToString(), RuntimeName = report.BenchmarkCase.Job?.Environment?.Runtime?.Name, RuntimeMoniker = report.BenchmarkCase.Job?.Environment?.Runtime?.MsBuildMoniker });
 
                     if (report.BenchmarkCase.HasParameters)
                     {
@@ -239,7 +243,13 @@ internal class DatadogExporter : IExporter
 
     private class TestSuiteWithEndDate
     {
-        public TestSuite Suite { get; set; }
+        public TestSuiteWithEndDate(TestSuite suite, DateTime endDate)
+        {
+            Suite = suite;
+            EndDate = endDate;
+        }
+
+        public TestSuite Suite { get; }
 
         public DateTime EndDate { get; set; }
     }

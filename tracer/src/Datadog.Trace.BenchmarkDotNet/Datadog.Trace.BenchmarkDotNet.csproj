@@ -4,12 +4,12 @@
     <Version>2.24.0</Version>
     <Title>Datadog CI Visibility - BenchmarkDotNet</Title>
     <Description>BenchmarkDotNet exporter for Datadog CI Visibility</Description>
+    <Nullable>enable</Nullable>
     <PackageTags>$(PackageTags);BenchmarkDotNet</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
