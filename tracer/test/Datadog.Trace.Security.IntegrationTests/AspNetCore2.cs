@@ -19,7 +19,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore2TestsSecurityDisabled : AspNetCoreBase
     {
         public AspNetCore2TestsSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore2", fixture, outputHelper, "/shutdown", enableSecurity: false, testName: "AspNetCore2.SecurityDisabled")
+            : base("AspNetCore2", fixture, outputHelper, enableSecurity: false, testName: "AspNetCore2.SecurityDisabled")
         {
         }
     }
@@ -27,7 +27,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore2TestsSecurityEnabled : AspNetCoreBase
     {
         public AspNetCore2TestsSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore2", fixture, outputHelper, "/shutdown", enableSecurity: true, testName: "AspNetCore2.SecurityEnabled")
+            : base("AspNetCore2", fixture, outputHelper, enableSecurity: true, testName: "AspNetCore2.SecurityEnabled")
         {
         }
     }
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore2TestsSecurityDisabledWithDefaultExternalRulesFile : AspNetCoreSecurityDisabledWithExternalRulesFile
     {
         public AspNetCore2TestsSecurityDisabledWithDefaultExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore2", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore2.SecurityDisabled")
+            : base("AspNetCore2", fixture, outputHelper, ruleFile: DefaultRuleFile, testName: "AspNetCore2.SecurityDisabled")
         {
         }
     }
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore2TestsSecurityEnabledWithDefaultExternalRulesFile : AspNetCoreSecurityEnabledWithExternalRulesFile
     {
         public AspNetCore2TestsSecurityEnabledWithDefaultExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore2", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore2.SecurityEnabled")
+            : base("AspNetCore2", fixture, outputHelper, ruleFile: DefaultRuleFile, testName: "AspNetCore2.SecurityEnabled")
         {
         }
     }

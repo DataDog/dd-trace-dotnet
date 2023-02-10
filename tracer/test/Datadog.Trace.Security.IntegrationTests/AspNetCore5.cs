@@ -36,7 +36,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetCore5TestsWithoutExternalRulesFile : AspNetCoreBase
     {
         public AspNetCore5TestsWithoutExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
-            : base("AspNetCore5", fixture, outputHelper, "/shutdown", enableSecurity: enableSecurity, testName: testName)
+            : base("AspNetCore5", fixture, outputHelper, enableSecurity: enableSecurity, testName: testName)
         {
             SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "true");
         }
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore5TestsSecurityDisabledWithDefaultExternalRulesFile : AspNetCoreSecurityDisabledWithExternalRulesFile
     {
         public AspNetCore5TestsSecurityDisabledWithDefaultExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore5", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore5.SecurityDisabled")
+            : base("AspNetCore5", fixture, outputHelper, ruleFile: DefaultRuleFile, testName: "AspNetCore5.SecurityDisabled")
         {
         }
     }
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore5TestsSecurityEnabledWithDefaultExternalRulesFile : AspNetCoreSecurityEnabledWithExternalRulesFile
     {
         public AspNetCore5TestsSecurityEnabledWithDefaultExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore5", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore5.SecurityEnabled")
+            : base("AspNetCore5", fixture, outputHelper, ruleFile: DefaultRuleFile, testName: "AspNetCore5.SecurityEnabled")
         {
         }
     }

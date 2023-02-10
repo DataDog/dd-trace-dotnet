@@ -39,16 +39,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly string _testName;
         private readonly HttpClient _httpClient;
-        private readonly string _shutdownPath;
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
         private int _httpPort;
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string samplesDir = null, string testName = null)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
             _testName = Prefix + (testName ?? sampleName);
             _httpClient = new HttpClient();
-            _shutdownPath = shutdownPath;
 
             // adding these header so we can later assert it was collected properly
             _httpClient.DefaultRequestHeaders.Add(XffHeader, MainIp);

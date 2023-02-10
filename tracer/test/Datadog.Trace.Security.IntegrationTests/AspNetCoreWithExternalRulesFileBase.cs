@@ -17,16 +17,16 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public abstract class AspNetCoreSecurityDisabledWithExternalRulesFile : AspNetCoreWithExternalRulesFileBase
     {
-        public AspNetCoreSecurityDisabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string ruleFile = null, string testName = null)
-            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: false, ruleFile: ruleFile, testName: testName)
+        public AspNetCoreSecurityDisabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string ruleFile = null, string testName = null)
+            : base(sampleName, fixture, outputHelper, enableSecurity: false, ruleFile: ruleFile, testName: testName)
         {
         }
     }
 
     public abstract class AspNetCoreSecurityEnabledWithExternalRulesFile : AspNetCoreWithExternalRulesFileBase
     {
-        public AspNetCoreSecurityEnabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string ruleFile = null, string testName = null)
-            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: true, ruleFile: ruleFile, testName: testName)
+        public AspNetCoreSecurityEnabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string ruleFile = null, string testName = null)
+            : base(sampleName, fixture, outputHelper, enableSecurity: true, ruleFile: ruleFile, testName: testName)
         {
         }
 
@@ -54,11 +54,12 @@ namespace Datadog.Trace.Security.IntegrationTests
 
     public abstract class AspNetCoreWithExternalRulesFileBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCoreWithExternalRulesFileBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string ruleFile = null, string testName = null)
-            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName)
+        public AspNetCoreWithExternalRulesFileBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity = true, string ruleFile = null, string testName = null)
+            : base(sampleName, outputHelper, testName: testName)
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
+            Fixture.ShutdownPath = "/shutdown";
             Fixture.SetOutput(outputHelper);
             RuleFile = ruleFile;
         }

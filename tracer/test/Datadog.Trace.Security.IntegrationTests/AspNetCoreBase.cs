@@ -14,11 +14,12 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public abstract class AspNetCoreBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCoreBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string testName = null)
-            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName)
+        public AspNetCoreBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity = true, string testName = null)
+            : base(sampleName, outputHelper, testName: testName)
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
+            Fixture.ShutdownPath = "/shutdown";
             Fixture.SetOutput(outputHelper);
         }
 

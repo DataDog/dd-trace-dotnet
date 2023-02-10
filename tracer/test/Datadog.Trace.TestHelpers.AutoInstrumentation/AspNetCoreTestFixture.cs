@@ -45,6 +45,8 @@ namespace Datadog.Trace.TestHelpers
 
         public int HttpPort { get; private set; }
 
+        public string ShutdownPath { get; set; }
+
         public void SetOutput(ITestOutputHelper output)
         {
             lock (_outputLock)
@@ -139,9 +141,9 @@ namespace Datadog.Trace.TestHelpers
 
         public void Dispose()
         {
-            if (HttpPort is not 0)
+            if (HttpPort is not 0 && ShutdownPath is not null)
             {
-                var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
+                var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}{ShutdownPath}");
                 request.GetResponse().Close();
             }
 

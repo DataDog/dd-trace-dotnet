@@ -61,7 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         private readonly bool _enableIast;
 
         public AspNetMvc5IastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableIast)
-            : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
+            : base(nameof(AspNetMvc5), output, @"test\test-applications\security\aspnet")
         {
             EnableIast(enableIast);
             SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
@@ -70,6 +70,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
 
             _iisFixture = iisFixture;
             _enableIast = enableIast;
+            _iisFixture.ShutdownPath = "/home/shutdown";
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetMvc5)
                      + (classicMode ? ".Classic" : ".Integrated")
