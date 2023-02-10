@@ -794,7 +794,6 @@ jobs:
           echo "COR_ENABLE_PROFILING=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_PROFILER_PATH=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/win-${{ matrix.platform }}/Datadog.Trace.ClrProfiler.Native.dll)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "DD_DOTNET_PROFILER_HOME=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
       - name: Run Computer01 for 2min
         shell: cmd
         run: >
