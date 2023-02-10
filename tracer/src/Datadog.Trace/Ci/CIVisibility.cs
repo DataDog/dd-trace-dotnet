@@ -549,7 +549,7 @@ namespace Datadog.Trace.Ci
                     }
 
                     _skippableTestsBySuiteAndName = skippableTestsBySuiteAndName;
-                    Log.Debug<int>("ITR: SkippableTests dictionary has been built.", skippeableTests.Length);
+                    Log.Debug("ITR: SkippableTests dictionary has been built.");
                 }
                 else
                 {

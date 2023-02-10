@@ -176,7 +176,7 @@ namespace Datadog.Trace.Debugger
                             var status = lineProbeResult.Status;
                             var message = lineProbeResult.Message;
 
-                            Log.Information("Finished resolving line probe for ProbeID {ProbeID}. Result was '{Status}'. Message was: '{Message}'", probe.Id, status);
+                            Log.Information("Finished resolving line probe for ProbeID {ProbeID}. Result was '{Status}'. Message was: '{Message}'", probe.Id, status, message);
                             switch (status)
                             {
                                 case LiveProbeResolveStatus.Bound:

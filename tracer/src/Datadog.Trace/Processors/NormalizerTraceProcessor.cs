@@ -91,14 +91,14 @@ namespace Datadog.Trace.Processors
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L108-L112
             if (span.Duration < TimeSpan.Zero)
             {
-                Log.Debug("Fixing malformed trace. Duration is invalid (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
+                Log.Debug("Fixing malformed trace. Duration is invalid (reason:invalid_duration), setting span.duration=0: {span}", span);
                 span.SetDuration(TimeSpan.Zero);
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L113-L117
             if (span.Duration.ToNanoseconds() > long.MaxValue - span.StartTime.ToUnixTimeNanoseconds())
             {
-                Log.Debug("Fixing malformed trace. Duration is too large and causes overflow (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
+                Log.Debug("Fixing malformed trace. Duration is too large and causes overflow (reason:invalid_duration), setting span.duration=0: {span}", span);
                 span.SetDuration(TimeSpan.Zero);
             }
 
