@@ -5,62 +5,88 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Util;
 using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
 public class InstrumentationTestsBase
 {
-    private TraceContext traceContext;
+    private object _iastRequestContext;
+    private object _traceContext;
+    private object _taintedObjects;
+    private static readonly Type _taintedObjectsType = Type.GetType("Datadog.Trace.Iast.TaintedObjects, Datadog.Trace");
+    private static readonly Type _iastRequestContextType = Type.GetType("Datadog.Trace.Iast.IastRequestContext, Datadog.Trace");
+    private static readonly Type _scopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
+    private static readonly Type _spanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
+    private static readonly Type _arrayBuilderType = Type.GetType("Datadog.Trace.Util.ArrayBuilder`1, Datadog.Trace");
+    private static readonly Type _arrayBuilderOfSpanType = _arrayBuilderType.MakeGenericType(new Type[] { _spanType });
+    private static readonly Type _spanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
+    private static readonly Type _traceContextType = Type.GetType("Datadog.Trace.TraceContext, Datadog.Trace");
+    private static readonly Type _sourceType = Type.GetType("Datadog.Trace.Iast.Source, Datadog.Trace");
+    private static MethodInfo _spanProperty = _scopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _contextProperty = _spanType.GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _traceContextProperty = _spanContextType.GetProperty("TraceContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _iastRequestContextProperty = _traceContextType.GetProperty("IastRequestContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _operationNameProperty = _spanType.GetProperty("OperationName", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
+    private static MethodInfo _taintInputStringMethod = _taintedObjectsType.GetMethod("TaintInputString", BindingFlags.Instance | BindingFlags.Public);
+    private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
+    private static MethodInfo _getArrayMethod = _arrayBuilderOfSpanType.GetMethod("GetArray");
+    private static MethodInfo _spanGetTagMethod = _spanType.GetMethod("GetTag", BindingFlags.NonPublic | BindingFlags.Instance);
+    private static FieldInfo _taintedObjectsField = _iastRequestContextType.GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
+    private static FieldInfo _spansField = _traceContextType.GetField("_spans", BindingFlags.NonPublic | BindingFlags.Instance);
 
     public InstrumentationTestsBase()
     {
-        Tracer.Instance.StartActiveInternal("test", null, DateTime.Now.ToString());
-        traceContext = (Tracer.Instance.ActiveScope.Span as Span).Context.TraceContext;
+        SampleHelpers.CreateScope("instrumentationTests");
+        var scope = SampleHelpers.GetActiveScope();
+        var span = _spanProperty.Invoke(scope, Array.Empty<object>());
+        var context = _contextProperty.Invoke(span, Array.Empty<object>());
+        _traceContext = _traceContextProperty.Invoke(context, Array.Empty<object>());
         AssertInstrumented();
-        traceContext.EnableIastInRequest();
+        _enableIastInRequestMethod.Invoke(_traceContext, Array.Empty<object>());
+        _iastRequestContext = _iastRequestContextProperty.Invoke(_traceContext, Array.Empty<object>());
+        _taintedObjects = _taintedObjectsField.GetValue(_iastRequestContext);
     }
 
     protected void AddTainted(string tainted)
     {
-        var taintedObjects = (TaintedObjects) typeof(IastRequestContext).GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(traceContext.IastRequestContext);
-        taintedObjects.TaintInputString(tainted, new Source(SourceType.GetByte(SourceTypeName.RequestHeader), null, tainted));
+        var source = Activator.CreateInstance(_sourceType, new object[] { (byte)0, (string)null, (string)tainted });        
+        _taintInputStringMethod.Invoke(_taintedObjects, new object[] { tainted, source });
     }
 
     protected void AssertTainted(string tainted)
     {
-        traceContext.IastRequestContext.GetTainted(tainted).Should().NotBeNull();
+        GetTainted(tainted).Should().NotBeNull();
+    }
+
+    private object GetTainted(string tainted)
+    {
+        return _getTaintedObjectsMethod.Invoke(_taintedObjects, new object[] { tainted });
     }
 
     protected void AssertNotTainted(string value)
     {
-        traceContext.IastRequestContext.GetTainted(value).Should().BeNull();
+        GetTainted(value).Should().BeNull();
     }
 
     protected void AssertInstrumented()
     {
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-        var loaderAssembliesCount = assemblies.Where(x => x.GetName().Name == "Datadog.Trace.ClrProfiler.Managed.Loader").Count();
-        loaderAssembliesCount.Should().NotBe(0, GetErrorMessage(assemblies));
-        traceContext.Should().NotBeNull(GetErrorMessage(assemblies));
+        SampleHelpers.IsProfilerAttached().Should().BeTrue(because: GetErrorMessage(AppDomain.CurrentDomain.GetAssemblies()));
     }
 
     protected void AssertSpanGenerated(string operationName, int spansGenerated = 1)
     {
-        var spans = GetGeneratedSpans(traceContext);
-        spans = spans.Where(x => x.OperationName == operationName).ToList();
+        var spans = GetGeneratedSpans(_traceContext);
+        spans = spans.Where(x => (string) _operationNameProperty.Invoke(x, Array.Empty<object>()) == operationName).ToList();
         spansGenerated.Should().Be(spans.Count);
     }
 
     protected void AssertVulnerable(int vulnerabilities = 1)
     {
-        var spans = GetGeneratedSpans(traceContext);
+        var spans = GetGeneratedSpans(_traceContext);
         GetIastSpansCount(spans).Should().Be(vulnerabilities);
     }
 
@@ -88,17 +114,21 @@ public class InstrumentationTestsBase
         return variable + ": " +  (string.IsNullOrEmpty(value) ? "Empty" : value) + Environment.NewLine;
     }
 
-    private int GetIastSpansCount(List<Span> spans)
+    private int GetIastSpansCount(List<object> spans)
     {
-        return spans.Where(x => x.GetTag(Tags.IastEnabled) != null).Count();
+        return spans.Where(x => GetTag(x, "_dd.iast.enabled") != null).Count();
     }
 
-    private List<Span> GetGeneratedSpans(TraceContext context)
+    private object GetTag(object span, string tag)
     {
-        var spans = new List<Span>();
+        return _spanGetTagMethod.Invoke(span, new object[] { tag });
+    }
 
-        var spansArrayBuilder = (ArrayBuilder<Span>)typeof(TraceContext).GetField("_spans", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(context);
-        var contextSpans = spansArrayBuilder.GetArray();
+    private List<object> GetGeneratedSpans(object context)
+    {
+        var spans = new List<object>();
+        var spansArray = _spansField.GetValue(context);
+        var contextSpans = _getArrayMethod.Invoke(spansArray, Array.Empty<object>()) as IEnumerable<object>;
 
         foreach (var span in contextSpans)
         {

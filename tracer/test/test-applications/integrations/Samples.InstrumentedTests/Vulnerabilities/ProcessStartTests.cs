@@ -7,13 +7,13 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Security;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Process;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
 public class ProcessStartTests : InstrumentationTestsBase
 {
+    public static string operationName = "command_execution";
     public ProcessStartTests()
     {
         Environment.SetEnvironmentVariable("PATH", "testPath");
@@ -28,7 +28,7 @@ public class ProcessStartTests : InstrumentationTestsBase
         }
         catch (Win32Exception) { }
 
-        AssertSpanGenerated(ProcessStartCommon.OperationName);
+        AssertSpanGenerated(operationName);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class ProcessStartTests : InstrumentationTestsBase
         }
         catch (Win32Exception) { }
 
-        AssertSpanGenerated(ProcessStartCommon.OperationName);
+        AssertSpanGenerated(operationName);
     }
 
 #if NET5_0_OR_GREATER
@@ -57,7 +57,7 @@ public class ProcessStartTests : InstrumentationTestsBase
         catch (Win32Exception) { }
         catch (PlatformNotSupportedException) { return; }
 
-        AssertSpanGenerated(ProcessStartCommon.OperationName);
+        AssertSpanGenerated(operationName);
     }
 
     [Trait("Category", "LinuxUnsupported")]
@@ -73,7 +73,7 @@ public class ProcessStartTests : InstrumentationTestsBase
         catch (Win32Exception) { }
         catch (PlatformNotSupportedException) { return;  }
 
-        AssertSpanGenerated(ProcessStartCommon.OperationName);
+        AssertSpanGenerated(operationName);
     }
 
 #endif
@@ -90,6 +90,6 @@ public class ProcessStartTests : InstrumentationTestsBase
         }
         catch (Win32Exception) { }
 
-        AssertSpanGenerated(ProcessStartCommon.OperationName);
+        AssertSpanGenerated(operationName);
     }
 }
