@@ -145,13 +145,42 @@ public class LogAnalyzer : DiagnosticAnalyzer
                 }
 
                 var messageTemplateArgumentIndex = invocationArguments.IndexOf(argument);
-                arguments = invocationArguments.Skip(messageTemplateArgumentIndex + 1).Select(x =>
-                {
-                    var location = x.GetLocation().SourceSpan;
-                    return new SourceArgument(x, location.Start, location.Length);
-                }).ToList();
 
-                break;
+                // crude handling case where we pass an object[] as the single extra argument
+                var nextParameterIndex = messageTemplateArgumentIndex + 1;
+                if ((invocationArguments.Count == nextParameterIndex + 1)
+                    && method.Parameters.Length > nextParameterIndex
+                    && method.Parameters[nextParameterIndex].Type.ToString() == "object[]")
+                {
+                    // we're in the object[] version of the log message,
+                    if (invocationArguments[nextParameterIndex].Expression is ArrayCreationExpressionSyntax { Initializer: { } initializer })
+                    {
+                        // The object[] is being created inline, e.g. new object[] {"arg1", "arg2"}
+                        // so we fudge the analysis to treat these as individual arguments instead
+                        arguments = initializer.Expressions.Select(
+                            x =>
+                            {
+                                var location = x.GetLocation().SourceSpan;
+                                return new SourceArgument(x, location.Start, location.Length);
+                            }).ToList();
+                        break;
+                    }
+                    else
+                    {
+                        // The object[] comes from somewhere else, which is hard to handle properly
+                        // so just skip further processing for now
+                        return;
+                    }
+                }
+                else
+                {
+                    arguments = invocationArguments.Skip(messageTemplateArgumentIndex + 1).Select(x =>
+                    {
+                        var location = x.GetLocation().SourceSpan;
+                        return new SourceArgument(x.Expression, location.Start, location.Length);
+                    }).ToList();
+                    break;
+                }
             }
         }
 
@@ -176,7 +205,7 @@ public class LogAnalyzer : DiagnosticAnalyzer
                 for (var i = 0; i < arguments.Count; i++)
                 {
                     var argument = arguments[i];
-                    var argumentInfo = context.SemanticModel.GetTypeInfo(argument.Argument.Expression, context.CancellationToken);
+                    var argumentInfo = context.SemanticModel.GetTypeInfo(argument.Argument, context.CancellationToken);
                     if (argumentInfo.Type?.IsAnonymousType ?? false)
                     {
                         var property = properties[i];

@@ -26,14 +26,14 @@ namespace Datadog.Trace.Tools.Analyzers.LogAnalyzer.Helpers;
 
 internal class SourceArgument
 {
-    public SourceArgument(ArgumentSyntax argument, int startIndex, int length)
+    public SourceArgument(ExpressionSyntax argument, int startIndex, int length)
     {
         Argument = argument;
         StartIndex = startIndex;
         Length = length;
     }
 
-    public ArgumentSyntax Argument { get; }
+    public ExpressionSyntax Argument { get; }
     public int StartIndex { get; }
     public int Length { get; }
 }

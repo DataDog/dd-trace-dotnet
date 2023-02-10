@@ -46,6 +46,28 @@ public class PropertyDiagnosticTests
 
     [Theory]
     [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]
+    public async Task ShouldNotFlag_MatchingPropertiesAndArgsWhenUsingArray(string logMethod)
+    {
+        var src = $$"""
+        using Datadog.Trace.Logging;
+
+        {{Helpers.LoggerDefinitions}}
+
+        class TypeName
+        {
+            private static IDatadogLogger Log = null;
+            public static void Test()
+            {
+                Log.{{logMethod}}("Hello {Tester1} {Tester2}", new object[] {"tester1", "tester2"});
+            }
+        }
+        """;
+
+        await Verifier.VerifyAnalyzerAsync(src);
+    }
+
+    [Theory]
+    [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]
     public async Task ShouldNotFlag_MatchingPositionalPropertiesAndArgs(string logMethod)
     {
         var src = $$"""
@@ -249,6 +271,31 @@ public class PropertyDiagnosticTests
 
     [Theory]
     [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]
+    public async Task ShouldFlag_MoreArgsThanPropertiesArray(string logMethod)
+    {
+        var src = $$$"""
+        using Datadog.Trace.Logging;
+
+        {{{Helpers.LoggerDefinitions}}}
+
+        class TypeName
+        {
+            public static void Test()
+            {
+                Datadog.Trace.Logging.IDatadogLogger log = null;
+                log.{{{logMethod}}}("{User} did {Action}", new object[] {"tester", "knock over", {|#0:"a sack of rice"|}});
+            }
+        }
+        """;
+
+        var expected = new DiagnosticResult(PropertyBindingDiagnosticId, Severity)
+                      .WithLocation(0)
+                      .WithMessage("There is no named property that corresponds to this argument");
+        await Verifier.VerifyAnalyzerAsync(src, expected);
+    }
+
+    [Theory]
+    [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]
     public async Task ShouldFlag_MorePropertiesThanArgs(string logMethod)
     {
         var src = $$"""
@@ -269,6 +316,57 @@ public class PropertyDiagnosticTests
         var expected = new DiagnosticResult(PropertyBindingDiagnosticId, Severity)
                       .WithLocation(0)
                       .WithMessage("There is no argument that corresponds to the named property 'Subject'");
+        await Verifier.VerifyAnalyzerAsync(src, expected);
+    }
+
+    [Theory]
+    [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]
+    public async Task ShouldFlag_MorePropertiesThanArgsArray(string logMethod)
+    {
+        var src = $$"""
+        using Datadog.Trace.Logging;
+
+        {{Helpers.LoggerDefinitions}}
+
+        class TypeName
+        {
+            private static IDatadogLogger Log = null;
+            public static void Test()
+            {
+                Log.{{logMethod}}("Hello {Tester1} {|#0:{Tester2}|}", new object[] {"tester1"});
+            }
+        }
+        """;
+
+        var expected = new DiagnosticResult(PropertyBindingDiagnosticId, Severity)
+                      .WithLocation(0)
+                      .WithMessage("There is no argument that corresponds to the named property 'Tester2'");
+        await Verifier.VerifyAnalyzerAsync(src, expected);
+    }
+
+    [Theory(Skip = "We'd like to support this one, but analysis is a pain, so skipping it as it's an edge case")]
+    [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]
+    public async Task ShouldFlag_MorePropertiesThanArgsArrayWithPassedInArray(string logMethod)
+    {
+        var src = $$"""
+        using Datadog.Trace.Logging;
+
+        {{Helpers.LoggerDefinitions}}
+
+        class TypeName
+        {
+            private static IDatadogLogger Log = null;
+            public static void Test()
+            {
+                var args = new object[] {"tester1"}; 
+                Log.{{logMethod}}("Hello {Tester1} {|#0:{Tester2}|}", args);
+            }
+        }
+        """;
+
+        var expected = new DiagnosticResult(PropertyBindingDiagnosticId, Severity)
+                      .WithLocation(0)
+                      .WithMessage("There is no argument that corresponds to the named property 'Tester2'");
         await Verifier.VerifyAnalyzerAsync(src, expected);
     }
 
