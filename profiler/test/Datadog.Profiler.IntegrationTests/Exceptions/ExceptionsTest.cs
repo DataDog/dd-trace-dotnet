@@ -369,7 +369,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             return next;
         }
 
-
         private static Dictionary<string, int> GetProfiledExceptions(IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> exceptions)
         {
             var profiledExceptions = new Dictionary<string, int>();
@@ -388,7 +387,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             return profiledExceptions;
         }
-
 
         private static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> ExtractExceptionSamples(string directory)
         {
