@@ -53,7 +53,6 @@
       content: PONG,
       env: integration_tests,
       language: dotnet,
-      otel.library.name: ,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_2,
       runtime-id: Guid_1,
