@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         internal static string CreateTraceParent(ulong traceId, ulong spanId, double? samplingProprity)
         {
-            string sampling = samplingProprity >= 1.0 ? "01" : "00";
+            string sampling = samplingProprity > 0.0 ? "01" : "00";
 
             return $"{SqlCommentTraceParent}='00-{traceId.ToString("x32")}-{spanId.ToString("x16")}-{sampling}'";
         }
