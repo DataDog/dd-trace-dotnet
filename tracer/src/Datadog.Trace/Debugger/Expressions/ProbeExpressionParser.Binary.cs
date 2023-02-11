@@ -59,6 +59,8 @@ internal partial class ProbeExpressionParser<T>
                 return ReturnDefaultValueExpression();
             }
 
+            HandleDurationBinaryOperation(ref left, ref right);
+
             switch (operand)
             {
                 case ">":
@@ -81,6 +83,19 @@ internal partial class ProbeExpressionParser<T>
         {
             AddError($"{left?.ToString() ?? "N/A"} {operand} {right?.ToString() ?? "N/A"}", e.Message);
             return ReturnDefaultValueExpression();
+        }
+    }
+
+    private void HandleDurationBinaryOperation(ref Expression left, ref Expression right)
+    {
+        if (left is ParameterExpression { Name: Duration } && IsIntegralNumericType(right.Type))
+        {
+            right = CallTimeSpanConstructor(right);
+        }
+
+        if (right is ParameterExpression { Name: Duration } && IsIntegralNumericType(right.Type))
+        {
+            left = CallTimeSpanConstructor(left);
         }
     }
 }

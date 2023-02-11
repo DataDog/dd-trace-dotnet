@@ -2,12 +2,7 @@
 Segments: 
 
 {
-    "index": [
-        {
-            "ref": "DictionaryLocal"
-        },
-        "hello"
-    ]
+    "ref": "@duration"
 }
 Expressions: 
 (
@@ -33,8 +28,8 @@ Expressions:
     var StringArg = (string)scopeMemberArray[9].Value;
     var CollectionArg = (List<string>)scopeMemberArray[10].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
-    var $dd_el_result = (string)DictionaryLocal["hello"];
+    var $dd_el_result = @duration.ToString();
 
     return $dd_el_result;
 }
-Result: The result of the expression is: world
+Result: The result of the expression is: 00:00:00.0200000
