@@ -190,6 +190,12 @@ namespace Datadog.Trace.Debugger.Snapshots
             MethodScopeMembers.AddMember(new ScopeMember(name, type, value, memberKind));
         }
 
+        internal void SetDuration()
+        {
+            var duration = DateTimeOffset.UtcNow - _startTime;
+            MethodScopeMembers.Duration = new ScopeMember("duration", duration.GetType(), duration, ScopeMemberKind.Duration);
+        }
+
         internal void Initialize()
         {
             _jsonWriter.WriteStartObject();
