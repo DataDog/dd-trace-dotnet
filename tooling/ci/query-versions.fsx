@@ -32,12 +32,12 @@ module QueryVersions =
                     unknownRulesDefault
                 else
                     ruleVersion.Value.ToString()
-        File.WriteAllText("/app/SYSTEM_TESTS_APPSEC_EVENT_RULES_VERSION", ruleVersion)
+        File.WriteAllText("/binaries/APPSEC_EVENT_RULES_VERSION", ruleVersion)
 
     let writeWafVersion () =
         let buffer = Native.ddwaf_get_version()
         let version = Marshal.PtrToStringAnsi(buffer)
-        File.WriteAllText("/app/SYSTEM_TESTS_LIBDDWAF_VERSION", version)
+        File.WriteAllText("/binaries/LIBDDWAF_VERSION", version)
 
     writeRulesVersion ()
     writeWafVersion ()

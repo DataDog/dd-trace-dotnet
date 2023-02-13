@@ -103,7 +103,7 @@ tracer-base-image:
   script:
     - echo $GH_TOKEN|docker login ghcr.io/datadog -u uploader --password-stdin
     - ./tooling/ci/download-binary-dotnet.sh dev
-    - docker build -t ghcr.io/datadog/system-testst/dd-trace-dotnet:latest_snapshot -f ./tooling/ci/Dockerfile .
+    - docker build -t ghcr.io/datadog/system-tests/dd-trace-dotnet:latest_snapshot -f ./tooling/ci/Dockerfile .
     - docker push ghcr.io/datadog/system-tests/dd-trace-dotnet:latest_snapshot
     - rm -rf ./tooling/ci/binaries
     - ./tooling/ci/download-binary-dotnet.sh prod
