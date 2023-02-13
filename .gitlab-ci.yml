@@ -92,19 +92,3 @@ deploy_to_reliability_env:
     UPSTREAM_PACKAGE_JOB: build
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
     FORCE_TRIGGER: $DEPLOY_TO_REL_ENV
-
-tracer-base-image:
-  extends: .ci_authenticated_job
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-      when: always
-  stage: deploy
-  script:
-    - echo $GH_TOKEN|docker login ghcr.io/datadog -u uploader --password-stdin
-    - ./tooling/ci/download-binary-dotnet.sh dev
-    - docker build -t ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot -f ./tooling/ci/Dockerfile .
-    - docker push ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot
-    - rm -rf ./tooling/ci/binaries
-    - ./tooling/ci/download-binary-dotnet.sh prod
-    - docker build -t ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest -f ./tooling/ci/Dockerfile .
-    - docker push ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest
