@@ -8,9 +8,6 @@ namespace Samples.Probes.TestRuns.ExpressionTests
     internal class AsyncFieldArgumentEntryFullSnapshot : IAsyncRun
     {
         private int _field;
-        private const string Dsl = @"{
-  ""dsl"": ""ref _field > ref intArg and ref _field > ref local""
-}";
 
         private const string Json = @"{
 ""or"": [

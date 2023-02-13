@@ -5,10 +5,6 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 {
     public class GreaterThenDuration : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""ref @duration > 0""
-}";
-
         private const string Json = @"{
     ""gt"": [
       {""ref"": ""@duration""},

@@ -34,16 +34,8 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
     public class ConditionAndTemplateChangeTest : IRun
     {
-        private const string Phase1_TemplateDsl = @"{
-  ""dsl"": ""Result is: {ref arg}""
-}";
-
         private const string Phase1_TemplateJson = @"{
         ""ref"": ""arg""
-}";
-
-        private const string Condition_EvaluatesToTrue_Dsl = @"{
-  ""dsl"": ""local > arg""
 }";
 
         private const string Condition_EvaluatesToTrue_Json = @"{
@@ -53,16 +45,8 @@ namespace Samples.Probes.TestRuns.ExpressionTests
     ]
 }";
 
-        private const string TemplateDsl = @"{
-  ""dsl"": ""This is a new Template, the local is: {ref local}""
-}";
-
         private const string TemplateJson = @"{
         ""ref"": ""local""
-}";
-
-        private const string Condition_EvaluatesToFalse_Dsl = @"{
-  ""dsl"": ""local < arg""
 }";
 
         private const string Condition_EvaluatesToFalse_Json = @"{

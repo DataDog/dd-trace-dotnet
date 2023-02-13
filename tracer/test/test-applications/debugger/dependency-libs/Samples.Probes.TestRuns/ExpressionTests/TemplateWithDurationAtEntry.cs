@@ -5,10 +5,6 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 {
     public class TemplateWithDurationAtEntry : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""Result is {ref @duration}""
-}";
-
         private const string Json = @"{
         ""ref"": ""@duration""
 }";
