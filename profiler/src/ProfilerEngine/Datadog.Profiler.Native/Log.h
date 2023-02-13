@@ -20,7 +20,7 @@ private:
     {
         inline static const std::string file_name = "DD-DotNet-Profiler-Native";
 #ifdef _WIN32
-        inline static const shared::WSTRING folder_path = WStr(R"(Datadog-APM\logs\DotNet)");
+        inline static const shared::WSTRING folder_path = WStr(R"(Datadog .NET Tracer\logs)");
 #endif
         inline static const std::string pattern = "[%Y-%m-%d %H:%M:%S.%e | %l | PId: %P | TId: %t] %v";
         struct logging_environment

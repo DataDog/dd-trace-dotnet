@@ -655,8 +655,7 @@ partial class Build
         var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
 
         envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = baseOutputDir / "pprofs";
-        envVars["DD_PROFILING_LOG_DIR"] = baseOutputDir / "logs";
-        envVars["DD_TRACE_LOG_DIRECTORY"] = baseOutputDir / "logs"; // for the native loader log files
+        envVars["DD_TRACE_LOG_DIRECTORY"] = baseOutputDir / "logs";
 
         DotNetBuild(s => s
             .SetFramework(Framework)
