@@ -50,7 +50,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
         public bool TryCreateAsyncMethodMetadataIfNotExists<TTarget>(TTarget targetObject, int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo)
         {
-            if (IsIndexExists(index))
+            if (IndexExists(index))
             {
                 return true;
             }
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
             // Create a new one at the given index
             lock (ItemsLocker)
             {
-                if (IsIndexExists(index))
+                if (IndexExists(index))
                 {
                     return true;
                 }
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
         public bool TryCreateNonAsyncMethodMetadataIfNotExists(int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle)
         {
-            if (IsIndexExists(index))
+            if (IndexExists(index))
             {
                 return true;
             }
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
             // Create a new one at the given index
             lock (ItemsLocker)
             {
-                if (IsIndexExists(index))
+                if (IndexExists(index))
                 {
                     return true;
                 }

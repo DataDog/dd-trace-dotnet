@@ -80,7 +80,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsIndexExists(int index)
+        public bool IndexExists(int index)
         {
             // Check if there's a `payload` associated with the given index
             if (index < Items.Length)

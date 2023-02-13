@@ -49,23 +49,21 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
         public ref ProbeData TryCreateProbeDataIfNotExists(int index, string probeId)
         {
-            if (IndexExists(index, probeId))
+            ref var probeData = ref TryGetProbeDataIndex(index, probeId);
+
+            if (!probeData.IsEmpty())
             {
-                // Between the time `IndexExists` was called and the time `GetProbeDataIndex` is called there
-                // might be context switches that will invalidate the ProbeData located at `index`.
-                // So we essentially perform the ProbeId checking twice to make sure the `ProbeData` returned is indeed related
-                // to the probeId given. Of course, one tick later it could be invalidated too, but at least we will return `ProbeData` that
-                // is related to the given `probeId` and not that of another probe.
-                return ref GetProbeDataAtIndex(index, probeId);
+                return ref probeData;
             }
 
             // Create a new one at the given index
             lock (ItemsLocker)
             {
-                if (IndexExists(index, probeId))
+                probeData = ref TryGetProbeDataIndex(index, probeId);
+
+                if (!probeData.IsEmpty())
                 {
-                    // Read the comment above, of the same block of code.
-                    return ref GetProbeDataAtIndex(index, probeId);
+                    return ref probeData;
                 }
 
                 EnlargeCapacity(index);
@@ -87,7 +85,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
                 Items[index] = new ProbeData(probeId, sampler, processor);
             }
 
-            return ref GetProbeDataAtIndex(index, probeId);
+            return ref TryGetProbeDataIndex(index, probeId);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -97,12 +95,24 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         }
 
         /// <summary>
-        /// Assumes `index` exists.
-        /// <seealso cref="IndexExists"/>
+        /// In the native side we attempt to reuse indices; TryGetProbeDataIndex  a probe gets removed, its associated probe data index
+        /// will be reused when a new probe later gets add. To make sure the index embedded in the instrumentation is not stale,
+        /// we compare the ProbeId at that index with the one we were expecting.
+        ///
+        /// Between the time `IndexExists` was called and the time `GetProbeDataIndex` is called there
+        /// might be context switches that will invalidate the ProbeData located at `index`.
+        /// So we essentially perform the ProbeId checking twice to make sure the `ProbeData` returned is indeed related
+        /// to the probeId given. Of course, one tick later it could be invalidated too, but at least we will return `ProbeData` that
+        /// is related to the given `probeId` and not that of another probe.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ref ProbeData GetProbeDataAtIndex(int index, string probeId)
+        private ref ProbeData TryGetProbeDataIndex(int index, string probeId)
         {
+            if (!IndexExists(index))
+            {
+                return ref ProbeData.Empty;
+            }
+
             ref var probeData = ref Items[index];
             if (probeData.ProbeId == probeId)
             {
@@ -110,16 +120,6 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
             }
 
             return ref ProbeData.Empty;
-        }
-
-        /// <summary>
-        /// In the native side we attempt to reuse indices; when a probe gets removed, its associated probe data index
-        /// will be reused when a new probe later gets add. To make sure the index embedded in the instrumentation is not stale,
-        /// we compare the ProbeId at that index with the one we were expecting.
-        /// </summary>
-        private bool IndexExists(int index, string probeId)
-        {
-            return IsIndexExists(index) && Items[index].ProbeId == probeId;
         }
     }
 }

@@ -128,7 +128,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 // Assess if we have metadata associated with the given index
-                if (!MethodMetadataCollection.Instance.IsIndexExists(methodMetadataIndex))
+                if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
                 {
                     // State machine is null when we run in Optimized code and the original async method was generic,
                     // in which case the state machine is a generic value type.
