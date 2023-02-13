@@ -41,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
+                    // don't instrument nested methods that belong to the same stacktrace
                     // e.g. ExecuteReader() -> ExecuteReader(commandBehavior)
                     return null;
                 }
@@ -66,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     IastModule.OnSqlQuery(commandText, integrationId);
                 }
 
-                if (tracer.Settings.DbmPropagationMode != "disabled" && (integrationId == IntegrationId.MySql || integrationId == IntegrationId.Npgsql))
+                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled && (integrationId == IntegrationId.MySql || integrationId == IntegrationId.Npgsql))
                 {
                     command.CommandText = $"{DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span)} {commandText}";
                     scope.Span.SetTag(Tags.DbmDataPropagated, "true");

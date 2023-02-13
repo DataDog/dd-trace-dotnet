@@ -402,7 +402,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries
         /// </summary>
-        internal string DbmPropagationMode { get; }
+        internal DbmPropagationLevel DbmPropagationMode { get; }
 
         /// <summary>
         /// Gets the AAS settings

@@ -61,9 +61,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             span.SetTag(Tags.Version, "1.0.0");
             span.SetMetric(Tags.SamplingPriority, 0.5);
 
-            var currentServiceComment = DatabaseMonitoringPropagator.PropagateSpanData("service", "Test.Service", span);
+            var currentServiceComment = DatabaseMonitoringPropagator.PropagateSpanData(Configuration.DbmPropagationLevel.Service, "Test.Service", span);
             var currentServiceTraceParent = DatabaseMonitoringPropagator.CreateTraceParent(span.TraceId, span.SpanId, span.GetMetric(Tags.SamplingPriority));
-            var currentFullComment = DatabaseMonitoringPropagator.PropagateSpanData("full", "Test.Service", span);
+            var currentFullComment = DatabaseMonitoringPropagator.PropagateSpanData(Configuration.DbmPropagationLevel.Full, "Test.Service", span);
 
             Assert.Equal(expectedServiceComment, currentServiceComment);
             Assert.Equal(expectedTraceParent, currentServiceTraceParent);

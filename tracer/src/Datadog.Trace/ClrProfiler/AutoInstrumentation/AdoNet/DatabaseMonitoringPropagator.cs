@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     internal static class DatabaseMonitoringPropagator
@@ -14,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         private const string SqlCommentTraceParent = "traceparent";
 
-        internal static string PropagateSpanData(string propagationStyle, string configuredServiceName, Span span)
+        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, Span span)
         {
             var propgationComment =
                 $"{SqlCommentRootService}='{configuredServiceName}'," +
@@ -22,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 $"{SqlCommentVersion}='{span.GetTag(Tags.Version)}'," +
                 $"{SqlCommentEnv}='{span.GetTag(Tags.Env)}'";
 
-            if (propagationStyle == "full")
+            if (propagationStyle == DbmPropagationLevel.Full)
             {
                 return $"/*{propgationComment},{CreateTraceParent(span.TraceId, span.SpanId, span.GetMetric(Tags.SamplingPriority))}*/";
             }

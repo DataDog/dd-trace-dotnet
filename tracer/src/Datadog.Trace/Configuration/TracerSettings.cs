@@ -272,23 +272,8 @@ namespace Datadog.Trace.Configuration
             }
 
             DbmPropagationLevel dbmPropagationValue;
-            DbmPropagationMode = Enum.TryParse(source?.GetString(ConfigurationKeys.DbmPropagationMode), true, out dbmPropagationValue) ?
-                $"{dbmPropagationValue}".ToLower() : "disabled";
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the tracer should propagate service data in db queries
-        /// </summary>
-        public enum DbmPropagationLevel
-        {
-            /// <summary>Nothing should be propagated</summary>
-            Disabled,
-
-            /// <summary>Only service tags should be injected</summary>
-            Service,
-
-            /// <summary>Both service details and span traceparent should be injected</summary>
-            Full
+            Enum.TryParse(source?.GetString(ConfigurationKeys.DbmPropagationMode), true, out dbmPropagationValue);
+            DbmPropagationMode = dbmPropagationValue;
         }
 
         /// <summary>
@@ -584,7 +569,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets a value indicating whether the tracer should propagate service data in db queries
         /// </summary>
-        internal string DbmPropagationMode { get; set; }
+        internal DbmPropagationLevel DbmPropagationMode { get; set; }
 
         /// <summary>
         /// Gets or sets the AAS settings
