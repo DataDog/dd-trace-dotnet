@@ -31,7 +31,7 @@ using ::testing::Return;
 // This global variable and function are use defined/declared for the test only
 // In production, those symbols will be defined in the Wrapper library
 int dd_IsPthreadCreateCall = 0;
-extern "C" int dd_IsInPthreadCreate()
+extern "C" int dd_can_be_profiled()
 {
     return dd_IsPthreadCreateCall;
 }
