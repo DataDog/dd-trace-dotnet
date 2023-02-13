@@ -94,7 +94,7 @@ namespace Datadog.Trace.Ci.Agent
                 _buffersArray[i].SetFlushTask(tskFlush);
             }
 
-            Log.Information<int>($"CIVisibilityProtocolWriter Initialized with concurrency level of: {concurrencyLevel}", concurrencyLevel);
+            Log.Information<int>("CIVisibilityProtocolWriter Initialized with concurrency level of: {ConcurrencyLevel}", concurrencyLevel);
         }
 
         public void WriteEvent(IEvent @event)

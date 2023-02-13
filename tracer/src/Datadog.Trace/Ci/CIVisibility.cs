@@ -186,12 +186,12 @@ namespace Datadog.Trace.Ci
                 AsyncUtil.RunSync(() => FlushAsync(), cts.Token);
                 if (cts.IsCancellationRequested)
                 {
-                    Log.Error($"Timeout occurred when flushing spans.{Environment.NewLine}{Environment.StackTrace}");
+                    Log.Error("Timeout occurred when flushing spans.{NewLine}{StackTrace}", Environment.NewLine, Environment.StackTrace);
                 }
             }
             catch (TaskCanceledException)
             {
-                Log.Error($"Timeout occurred when flushing spans.{Environment.NewLine}{Environment.StackTrace}");
+                Log.Error("Timeout occurred when flushing spans.{NewLine}{StackTrace}", Environment.NewLine, Environment.StackTrace);
             }
             finally
             {
@@ -343,7 +343,7 @@ namespace Datadog.Trace.Ci
                 if (proxyHttpsUriBuilder.Scheme == "https")
                 {
                     // HTTPS proxy is not supported by .NET BCL
-                    Log.Error($"HTTPS proxy is not supported. ({proxyHttpsUriBuilder})");
+                    Log.Error("HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
                     return factory;
                 }
 
@@ -389,7 +389,7 @@ namespace Datadog.Trace.Ci
                     }
                     catch (Exception ex)
                     {
-                        Log.Warning(ex, ex.Message);
+                        Log.Warning(ex, "Error getting OS version on macOS");
                     }
                     finally
                     {
@@ -421,7 +421,7 @@ namespace Datadog.Trace.Ci
             }
             catch (Exception exception)
             {
-                Log.Warning(exception, exception.Message);
+                Log.Warning(exception, "Error getting current process name when checking CI Visibility status");
             }
 
             // By configuration
@@ -522,7 +522,7 @@ namespace Datadog.Trace.Ci
                 }
 
                 // Log code coverage status
-                Log.Information(_settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
+                Log.Information("{V}", _settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
 
                 // If the tests skipping feature is enabled we query the api for the tests we have to skip
                 if (_settings.TestsSkippingEnabled == true)

@@ -33,7 +33,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 try
                 {
                     var eventsProp = root.Value<JArray>("rules");
-                    Log.Debug($"eventspropo {eventsProp.Count}");
+                    Log.Debug<int>("eventspropo {Count}", eventsProp.Count);
                     foreach (var ev in eventsProp)
                     {
                         var emptyJValue = JValue.CreateString(string.Empty);
@@ -121,15 +121,14 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                 if (initResult.HasErrors)
                 {
-                    var sb = StringBuilderCache.Acquire(0);
-                    sb.Append($"WAF initialization failed. Some rules are invalid in rule file {rulesFile}:");
+                    var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
                     foreach (var item in initResult.Errors)
                     {
                         sb.Append($"{item.Key}: [{string.Join(", ", item.Value)}] ");
                     }
 
                     var errorMess = StringBuilderCache.GetStringAndRelease(sb);
-                    Log.Warning(errorMess);
+                    Log.Warning("WAF initialization failed. Some rules are invalid in rule file {RulesFile}: {ErroringRules}", rulesFile, errorMess);
                 }
 
                 return initResult;

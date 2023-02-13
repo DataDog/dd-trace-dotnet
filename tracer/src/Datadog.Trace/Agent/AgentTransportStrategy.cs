@@ -1,4 +1,4 @@
-﻿// <copyright file="AgentTransportStrategy.cs" company="Datadog">
+// <copyright file="AgentTransportStrategy.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -47,7 +47,9 @@ internal static class AgentTransportStrategy
         {
             case TracesTransportType.WindowsNamedPipe:
                 // intentionally using string interpolation, as this is only called once, and avoids array allocation
+#pragma warning disable DDLOG004 // Message templates should be constant
                 Log.Information($"Using {nameof(NamedPipeClientStreamFactory)} for {productName} transport, with pipe name {settings.TracesPipeName} and timeout {settings.TracesPipeTimeoutMs}ms.");
+#pragma warning restore DDLOG004 // Message templates should be constant
                 return new HttpStreamRequestFactory(
                     new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs),
                     new DatadogHttpClient(getHttpHeaderHelper()),
@@ -63,7 +65,9 @@ internal static class AgentTransportStrategy
                     getBaseEndpoint(Localhost));
 #elif NETCOREAPP3_1_OR_GREATER
                 // intentionally using string interpolation, as this is only called once, and avoids array allocation
+#pragma warning disable DDLOG004 // Message templates should be constant
                 Log.Information($"Using {nameof(UnixDomainSocketStreamFactory)} for {productName} transport, with Unix Domain Sockets path {settings.TracesUnixDomainSocketPath} and timeout {settings.TracesPipeTimeoutMs}ms.");
+#pragma warning restore DDLOG004 // Message templates should be constant
                 return new HttpStreamRequestFactory(
                     new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
                     new DatadogHttpClient(getHttpHeaderHelper()),
