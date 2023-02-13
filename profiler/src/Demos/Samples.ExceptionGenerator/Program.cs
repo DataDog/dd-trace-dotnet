@@ -18,6 +18,7 @@ namespace Samples.ExceptionGenerator
         Sampling = 3,
         GenericExceptions = 4,
         TimeItExceptions = 5,
+        MeasureExceptions = 6,
     }
 
     public class Program
@@ -82,6 +83,11 @@ namespace Samples.ExceptionGenerator
                                 case Scenario.TimeItExceptions:
                                     new ParallelExceptionsScenario().Run();
                                     Console.WriteLine(" ########### Generating exceptions in parallel...");
+                                    break;
+
+                                case Scenario.MeasureExceptions:
+                                    new MeasureExceptionsScenario().Run();
+                                    Console.WriteLine(" ########### Measuring exceptions...");
                                     break;
 
                                 default:

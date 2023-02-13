@@ -90,7 +90,6 @@ profiles:
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
           CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}/tracer-home-linux"
-          DD_DOTNET_PROFILER_HOME: "{{ linuxProfilerPath }}/tracer-home-linux/linux-x64"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_ENV: throughput-adhoc

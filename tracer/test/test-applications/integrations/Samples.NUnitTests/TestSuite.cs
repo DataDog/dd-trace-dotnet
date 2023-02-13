@@ -71,9 +71,10 @@ namespace Samples.NUnitTests
         // **********************************************************************************
 
         [Theory]
-        [TestCase(1, 1, 2)]
-        [TestCase(2, 2, 4)]
-        [TestCase(3, 3, 6)]
+        [Category("ParemeterizedTest")]
+        [TestCase(1, 1, 2, Category = "FirstCase")]
+        [TestCase(2, 2, 4, Category = "SecondCase")]
+        [TestCase(3, 3, 6, Category = "ThirdCase")]
         public void SimpleParameterizedTest(int xValue, int yValue, int expectedResult)
         {
             Assert.AreEqual(expectedResult, xValue + yValue);
