@@ -48,7 +48,7 @@ public sealed class Test
         }
 
         CurrentTest.Value = this;
-        CIVisibility.Log.Debug("######### New Test Created: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
+        CIVisibility.Log.Debug("######### New Test Created: {Name} ({Suite} | {Module})", Name, Suite.Name, Suite.Module.Name);
 
         if (startDate is null)
         {
@@ -235,7 +235,7 @@ public sealed class Test
             testCoverage.SuiteId = tags.SuiteId;
             testCoverage.SpanId = _scope.Span.SpanId;
 
-            CIVisibility.Log.Debug("Coverage data for SessionId={sessionId}, SuiteId={suiteId} and SpanId={spanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
+            CIVisibility.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
             CIVisibility.Manager?.WriteEvent(testCoverage);
         }
 
@@ -260,7 +260,7 @@ public sealed class Test
         scope.Dispose();
 
         Current = null;
-        CIVisibility.Log.Debug("######### Test Closed: {name} ({suite} | {module}) | {status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
+        CIVisibility.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
     }
 
     internal void ResetStartTime()

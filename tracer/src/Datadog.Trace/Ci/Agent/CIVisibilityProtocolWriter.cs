@@ -200,7 +200,7 @@ namespace Datadog.Trace.Ci.Agent
                             // We get the countdown event and exit this loop
                             // to flush buffers (in case there's any event)
                             watermarkCountDown = watermarkEvent.Countdown;
-                            Log.Debug<int>("CIVisibilityProtocolWriter: Watermark detected on [Buffer: {bufferIndex}]", index);
+                            Log.Debug<int>("CIVisibilityProtocolWriter: Watermark detected on [Buffer: {BufferIndex}]", index);
                             break;
                         }
 
@@ -250,9 +250,9 @@ namespace Datadog.Trace.Ci.Agent
                     if (watermarkCountDown is not null)
                     {
                         watermarkCountDown.Signal();
-                        Log.Debug<int>("CIVisibilityProtocolWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Waiting for signals from other buffers [Buffer: {BufferIndex}]", index);
                         await watermarkCountDown.WaitAsync().ConfigureAwait(false);
-                        Log.Debug<int>("CIVisibilityProtocolWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Signals received, continue processing.. [Buffer: {BufferIndex}]", index);
                     }
                 }
                 catch (ThreadAbortException ex)
@@ -269,9 +269,9 @@ namespace Datadog.Trace.Ci.Agent
                     if (watermarkCountDown is not null)
                     {
                         watermarkCountDown.Signal();
-                        Log.Debug<int>("CIVisibilityProtocolWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Waiting for signals from other buffers [Buffer: {BufferIndex}]", index);
                         await watermarkCountDown.WaitAsync().ConfigureAwait(false);
-                        Log.Debug<int>("CIVisibilityProtocolWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Signals received, continue processing.. [Buffer: {BufferIndex}]", index);
                     }
                 }
                 finally

@@ -78,7 +78,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             _statsd.Gauge(MetricsNames.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
 
-            Log.Debug("Sent the following metrics to the DD agent: {metrics}", ThreadStatsMetrics);
+            Log.Debug("Sent the following metrics to the DD agent: {Metrics}", ThreadStatsMetrics);
         }
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
@@ -109,7 +109,7 @@ namespace Datadog.Trace.RuntimeMetrics
                     if (start != null)
                     {
                         _statsd.Timer(MetricsNames.GcPauseTime, (eventData.TimeStamp - start.Value).TotalMilliseconds);
-                        Log.Debug("Sent the following metrics to the DD agent: {metrics}", MetricsNames.GcPauseTime);
+                        Log.Debug("Sent the following metrics to the DD agent: {Metrics}", MetricsNames.GcPauseTime);
                     }
                 }
                 else
@@ -123,7 +123,7 @@ namespace Datadog.Trace.RuntimeMetrics
                         _statsd.Gauge(MetricsNames.Gen2HeapSize, stats.Gen2Size);
                         _statsd.Gauge(MetricsNames.LohSize, stats.LohSize);
 
-                        Log.Debug("Sent the following metrics to the DD agent: {metrics}", GcHeapStatsMetrics);
+                        Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GcHeapStatsMetrics);
                     }
                     else if (eventData.EventId == EventContentionStop)
                     {
@@ -142,7 +142,7 @@ namespace Datadog.Trace.RuntimeMetrics
                         }
 
                         _statsd.Increment(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags);
-                        Log.Debug("Sent the following metrics to the DD agent: {metrics}", GcGlobalHeapMetrics);
+                        Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GcGlobalHeapMetrics);
                     }
                 }
             }
@@ -192,7 +192,7 @@ namespace Datadog.Trace.RuntimeMetrics
                     var value = (double)rawValue;
 
                     _statsd.Gauge(statName, value);
-                    Log.Debug("Sent the following metrics to the DD agent: {metrics}", statName);
+                    Log.Debug("Sent the following metrics to the DD agent: {Metrics}", statName);
                 }
                 else
                 {

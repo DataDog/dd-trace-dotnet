@@ -374,7 +374,7 @@ namespace Datadog.Trace
                 var namedPipeIsBound = File.Exists(namedPipe);
                 if (!namedPipeIsBound)
                 {
-                    Log.Debug("NamedPipe  [{namedPipe}] is not present.", namedPipe);
+                    Log.Debug("NamedPipe  [{NamedPipe}] is not present.", namedPipe);
                 }
 
                 return namedPipeIsBound;

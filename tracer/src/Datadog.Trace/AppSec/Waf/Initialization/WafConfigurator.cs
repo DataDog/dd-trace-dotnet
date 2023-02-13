@@ -40,7 +40,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                         var idProp = ev.Value<JValue>("id") ?? emptyJValue;
                         var nameProp = ev.Value<JValue>("name") ?? emptyJValue;
                         var addresses = ev.Value<JArray>("conditions")?.SelectMany(x => x.Value<JObject>("parameters")?.Value<JArray>("inputs"));
-                        Log.Debug("DDAS-0007-00: Loaded rule: {id} - {name} on addresses: {addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses ?? Enumerable.Empty<JToken>()));
+                        Log.Debug("DDAS-0007-00: Loaded rule: {Id} - {Name} on addresses: {Addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses ?? Enumerable.Empty<JToken>()));
                     }
                 }
                 catch (Exception ex)
@@ -86,7 +86,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         {
             if (rulesObj == null)
             {
-                Log.Error("Waf couldn't initialize properly because of an unusable rule file. If you set the environment variable {appsecrule_env}, check the path and content of the file are correct.", ConfigurationKeys.AppSec.Rules);
+                Log.Error("Waf couldn't initialize properly because of an unusable rule file. If you set the environment variable {AppsecruleEnv}, check the path and content of the file are correct.", ConfigurationKeys.AppSec.Rules);
                 return InitializationResult.FromUnusableRuleFile();
             }
 
@@ -112,11 +112,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 var initResult = InitializationResult.From(ruleSetInfo, wafHandle, _wafLibraryInvoker);
                 if (initResult.LoadedRules == 0)
                 {
-                    Log.Error("DDAS-0003-03: AppSec could not read the rule file {rulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
+                    Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
                 }
                 else
                 {
-                    Log.Information("DDAS-0015-00: AppSec loaded {loadedRules} rules from file {rulesFile}.", initResult.LoadedRules, rulesFile);
+                    Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", initResult.LoadedRules, rulesFile);
                 }
 
                 if (initResult.HasErrors)

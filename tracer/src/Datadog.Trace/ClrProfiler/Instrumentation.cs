@@ -133,7 +133,7 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
 
-                Log.Information<int>("The profiler has been initialized with {count} definitions.", payload.Definitions.Length);
+                Log.Information<int>("The profiler has been initialized with {Count} definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
@@ -155,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions();
                 NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
 
-                Log.Information<int>("The profiler has been initialized with {count} derived definitions.", payload.Definitions.Length);
+                Log.Information<int>("The profiler has been initialized with {Count} derived definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetInterfaceDefinitions();
                 NativeMethods.AddInterfaceInstrumentations(payload.DefinitionsId, payload.Definitions);
 
-                Log.Information<int>("The profiler has been initialized with {count} interface definitions.", payload.Definitions.Length);
+                Log.Information<int>("The profiler has been initialized with {Count} interface definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {

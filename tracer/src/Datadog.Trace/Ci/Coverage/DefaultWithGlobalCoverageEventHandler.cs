@@ -145,7 +145,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("Global Coverage payload: {payload}", JsonConvert.SerializeObject(globalCoverage));
+                Log.Debug("Global Coverage payload: {Payload}", JsonConvert.SerializeObject(globalCoverage));
             }
 
             // Clean coverages

@@ -430,7 +430,7 @@ namespace Datadog.Trace.Ci
                 // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
                 if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
                 {
-                    Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {cmdline}", Environment.CommandLine);
+                    Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
                     return false;
                 }
 
@@ -509,13 +509,13 @@ namespace Datadog.Trace.Ci
 
                         if (_settings.CodeCoverageEnabled == null && settings.CodeCoverage.HasValue)
                         {
-                            Log.Information("ITR: Code Coverage has been changed to {value} by settings api.", settings.CodeCoverage.Value);
+                            Log.Information("ITR: Code Coverage has been changed to {Value} by settings api.", settings.CodeCoverage.Value);
                             _settings.SetCodeCoverageEnabled(settings.CodeCoverage.Value);
                         }
 
                         if (_settings.TestsSkippingEnabled == null && settings.TestsSkipping.HasValue)
                         {
-                            Log.Information("ITR: Tests Skipping has been changed to {value} by settings api.", settings.TestsSkipping.Value);
+                            Log.Information("ITR: Tests Skipping has been changed to {Value} by settings api.", settings.TestsSkipping.Value);
                             _settings.SetTestsSkippingEnabled(settings.TestsSkipping.Value);
                         }
                     }
@@ -528,7 +528,7 @@ namespace Datadog.Trace.Ci
                 if (_settings.TestsSkippingEnabled == true)
                 {
                     var skippeableTests = await lazyItrClient.Value.GetSkippableTestsAsync().ConfigureAwait(false);
-                    Log.Information<int>("ITR: SkippableTests = {length}.", skippeableTests.Length);
+                    Log.Information<int>("ITR: SkippableTests = {Length}.", skippeableTests.Length);
 
                     var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
                     foreach (var item in skippeableTests)

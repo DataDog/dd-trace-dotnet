@@ -295,12 +295,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             funcPtr = NativeLibrary.GetExport(handle, functionName);
             if (funcPtr == IntPtr.Zero)
             {
-                _log.Error("No function of name {functionName} exists on waf object", functionName);
+                _log.Error("No function of name {FunctionName} exists on waf object", functionName);
                 ExportErrorHappened = true;
                 return null;
             }
 
-            _log.Debug("GetDelegateForNativeFunction {functionName} -  {funcPtr}: ", functionName, funcPtr);
+            _log.Debug("GetDelegateForNativeFunction {FunctionName} -  {FuncPtr}: ", functionName, funcPtr);
             return (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
         }
 
