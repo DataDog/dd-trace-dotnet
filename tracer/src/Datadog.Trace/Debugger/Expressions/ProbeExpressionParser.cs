@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq.Expressions;
 using Datadog.Trace.Debugger.Helpers;
@@ -404,13 +403,7 @@ internal partial class ProbeExpressionParser<T>
         if (typeof(T).IsNumeric()
             && typeof(IConvertible).IsAssignableFrom(finalExpr.Type))
         {
-            return Expression.Call(
-                Expression.Convert(finalExpr, typeof(IConvertible)),
-                GetMethodByReflection(
-                    typeof(IConvertible),
-                    nameof(IConvertible.ToDouble),
-                    new[] { typeof(IFormatProvider) }),
-                Expression.Constant(NumberFormatInfo.CurrentInfo));
+            return CallConvertToNumericType<T>(finalExpr);
         }
 
         if (typeof(T) != typeof(string))

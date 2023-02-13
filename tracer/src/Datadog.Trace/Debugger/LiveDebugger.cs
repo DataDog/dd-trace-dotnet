@@ -400,8 +400,7 @@ namespace Datadog.Trace.Debugger
         {
             if (_dogStats is NoOpStatsd)
             {
-                Log.Error($"Can't send metric, because {nameof(IDogStatsd)} is {nameof(NoOpStatsd)}");
-                return;
+                Log.Warning($"{nameof(SendMetrics)}: Metrics are not enabled");
             }
 
             switch (metricKind)

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -39,6 +40,33 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return false;
+    }
+
+    private static MethodCallExpression CallConvertToNumericType<TNumeric>(Expression finalExpr)
+    {
+        var convertMethodName = typeof(TNumeric) switch
+        {
+            { } @int when @int == typeof(byte) => nameof(IConvertible.ToByte),
+            { } @int when @int == typeof(sbyte) => nameof(IConvertible.ToSByte),
+            { } @int when @int == typeof(short) => nameof(IConvertible.ToInt16),
+            { } @int when @int == typeof(ushort) => nameof(IConvertible.ToUInt16),
+            { } @int when @int == typeof(int) => nameof(IConvertible.ToInt32),
+            { } @int when @int == typeof(uint) => nameof(IConvertible.ToUInt32),
+            { } @int when @int == typeof(long) => nameof(IConvertible.ToInt64),
+            { } @int when @int == typeof(ulong) => nameof(IConvertible.ToUInt64),
+            { } @int when @int == typeof(float) => nameof(IConvertible.ToSingle),
+            { } @int when @int == typeof(double) => nameof(IConvertible.ToDouble),
+            { } @int when @int == typeof(decimal) => nameof(IConvertible.ToDecimal),
+            _ => null
+        };
+
+        return convertMethodName == null
+                   ? null
+                   : Expression.Call(
+                       Expression.Convert(finalExpr, typeof(IConvertible)),
+                       ProbeExpressionParserHelper.GetMethodByReflection(
+                           typeof(IConvertible), convertMethodName, new[] { typeof(IFormatProvider) }),
+                       Expression.Constant(NumberFormatInfo.CurrentInfo));
     }
 
     private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)

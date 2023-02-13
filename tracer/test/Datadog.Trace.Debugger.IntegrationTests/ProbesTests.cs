@@ -213,10 +213,15 @@ public class ProbesTests : TestHelper
 #if NETCOREAPP3_1_OR_GREATER
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
+    [Trait("RunOnWindows", "False")]
     [MemberData(nameof(UdsMemberData))]
     public async Task MethodProbeTest_UDS(Type type)
     {
+        if (EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Can't use UDS on Windows");
+        }
+
         var testType = DebuggerTestHelper.SpecificTestDescription(type);
         EnvironmentHelper.EnableUnixDomainSockets();
         await RunMethodProbeTests(testType, true);
