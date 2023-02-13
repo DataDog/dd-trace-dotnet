@@ -1,0 +1,180 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "parameter": {
+                "fields": {
+                  "_privateField": {
+                    "type": "String",
+                    "value": "bla bla"
+                  },
+                  "Field": {
+                    "type": "String",
+                    "value": "I'm a class field"
+                  },
+                  "ShowMe": {
+                    "type": "String",
+                    "value": "Show Me!"
+                  }
+                },
+                "type": "Class",
+                "value": "Class"
+              },
+              "this": {
+                "type": "AsyncInterfaceProperties",
+                "value": "AsyncInterfaceProperties"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "parameter": {
+                "fields": {
+                  "_privateField": {
+                    "type": "String",
+                    "value": "This string should never be visible"
+                  },
+                  "Field": {
+                    "type": "String",
+                    "value": "I'm a class field"
+                  },
+                  "ShowMe": {
+                    "type": "String",
+                    "value": "Show Me!"
+                  }
+                },
+                "type": "Class",
+                "value": "Class"
+              },
+              "this": {
+                "type": "AsyncInterfaceProperties",
+                "value": "AsyncInterfaceProperties"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "Show Me!"
+              },
+              "iInterface": {
+                "isNull": "true",
+                "type": "IInterface"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncInterfaceProperties"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncInterfaceProperties",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "34": {
+              "arguments": {
+                "parameter": {
+                  "fields": {
+                    "_privateField": {
+                      "type": "String",
+                      "value": "This string should never be visible"
+                    },
+                    "Field": {
+                      "type": "String",
+                      "value": "I'm a class field"
+                    },
+                    "ShowMe": {
+                      "type": "String",
+                      "value": "Show Me!"
+                    }
+                  },
+                  "type": "Class",
+                  "value": "Class"
+                },
+                "this": {
+                  "type": "AsyncInterfaceProperties",
+                  "value": "AsyncInterfaceProperties"
+                }
+              },
+              "locals": {
+                "iInterface": {
+                  "fields": {
+                    "_privateField": {
+                      "isNull": "true",
+                      "type": "String"
+                    },
+                    "Field": {
+                      "type": "String",
+                      "value": "I'm a class field"
+                    },
+                    "ShowMe": {
+                      "type": "String",
+                      "value": ""
+                    }
+                  },
+                  "type": "Class",
+                  "value": "Class"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncInterfaceProperties.cs",
+            "lines": [
+              34
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncInterfaceProperties",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

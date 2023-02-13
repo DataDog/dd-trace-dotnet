@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Instrumentation.Registry;
 using Datadog.Trace.Debugger.Snapshots;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -24,7 +25,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         private readonly int _lineNumber;
 
         /// <summary>
-        /// Used to perform a fast lookup to grab the proper <see cref="Instrumentation.MethodMetadataInfo"/>.
+        /// Used to perform a fast lookup to grab the proper <see cref="Registry.MethodMetadataInfo"/>.
         /// This index is hard-coded into the method's instrumented bytecode.
         /// </summary>
         private readonly int _methodMetadataIndex;
@@ -40,11 +41,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="probeId">The id of the probe</param>
         /// <param name="scope">Scope instance</param>
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
-        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Instrumentation.MethodMetadataInfo"/></param>
+        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Registry.MethodMetadataInfo"/></param>
+        /// <param name="probeMetadataIndex">The unique index of the probe <see cref="ProbeData"/></param>
         /// <param name="lineNumber">The line number where the probe is located on</param>
         /// <param name="probeFilePath">The path to the file of the probe</param>
         /// <param name="invocationTarget">The instance object (or null for static methods)</param>
-        internal LineDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, int lineNumber, string probeFilePath, object invocationTarget)
+        internal LineDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, int probeMetadataIndex, int lineNumber, string probeFilePath, object invocationTarget)
         {
             _probeId = probeId;
             _scope = scope;
@@ -53,11 +55,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _lineNumber = lineNumber;
             _probeFilePath = probeFilePath;
             HasLocalsOrReturnValue = false;
-            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(probeId);
+            ProbeData = ProbeMetadataCollection.Instance.Get(probeMetadataIndex);
+            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(ProbeData.Processor);
             InvocationTarget = invocationTarget;
         }
 
-        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
+        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(_methodMetadataIndex);
+
+        internal ProbeData ProbeData { get; }
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator

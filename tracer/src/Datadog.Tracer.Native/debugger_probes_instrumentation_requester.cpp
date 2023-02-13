@@ -2,6 +2,7 @@
 
 #include "debugger_members.h"
 #include "cor_profiler.h"
+#include "dd_profiler_constants.h"
 #include "il_rewriter_wrapper.h"
 #include "logger.h"
 #include "stats.h"
@@ -270,6 +271,12 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
         {
             const DebuggerMethodProbeDefinition& current = methodProbes[i];
 
+            if (ProbeIdExists(current.probeId))
+            {
+                Logger::Debug("[AddMethodProbes] Method Probe Id: ", current.probeId, " is already processed.");
+                continue;
+            }
+
             const shared::WSTRING& probeId = shared::WSTRING(current.probeId);
             const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
             const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
@@ -305,6 +312,12 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
 
             methodProbeDefinitions.push_back(methodProbe);
             ProbesMetadataTracker::Instance()->CreateNewProbeIfNotExists(probeId);
+        }
+
+        if (methodProbeDefinitions.empty())
+        {
+            Logger::Debug("[AddMethodProbes] Early exiting, there are no new method probes to be added.");
+            return;
         }
 
         std::scoped_lock<std::mutex> moduleLock(m_corProfiler->module_ids_lock_);
@@ -352,11 +365,23 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
         {
             const DebuggerLineProbeDefinition& current = lineProbes[i];
 
+            if (ProbeIdExists(current.probeId))
+            {
+                Logger::Debug("[AddLineProbes] Method Probe Id: ", current.probeId, " is already processed.");
+                continue;
+            }
+
             const shared::WSTRING& probeId = shared::WSTRING(current.probeId);
             const shared::WSTRING& probeFilePath = shared::WSTRING(current.probeFilePath);
             const auto& lineProbe = std::make_shared<LineProbeDefinition>(LineProbeDefinition(probeId, current.bytecodeOffset, current.lineNumber, current.mvid, current.methodId, probeFilePath));
             
             lineProbeDefinitions.push_back(lineProbe);
+        }
+
+        if (lineProbeDefinitions.empty())
+        {
+            Logger::Debug("[AddLineProbes] Early exiting, there are no new line probes to be added.");
+            return;
         }
 
         std::scoped_lock<std::mutex> moduleLock(m_corProfiler->module_ids_lock_);
@@ -437,6 +462,14 @@ void DebuggerProbesInstrumentationRequester::DetermineReInstrumentProbes(std::se
             reInstrumentRequests.emplace(request);
         }
     }
+}
+
+// Assumes `m_probes_mutex` is held
+bool DebuggerProbesInstrumentationRequester::ProbeIdExists(const WCHAR* probeId)
+{
+    auto it = std::find_if(m_probes.begin(), m_probes.end(),
+                           [&](ProbeDefinition_S const& probeDef) { return probeDef->probeId == probeId; });
+    return it != m_probes.end();
 }
 
 void DebuggerProbesInstrumentationRequester::InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes,
@@ -683,7 +716,42 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
         // define a new boolean field in the state machine object to indicate whether we have already entered the
         // MoveNext method (if we have, it means we are re-entering the method as a continuation in a subsequent
         // `await` operation, and should not capture the method parameter values as we do the first time around).
-        BYTE fieldSignature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_BOOLEAN};
+
+        mdAssemblyRef managed_profiler_assemblyRef = mdAssemblyRefNil;
+        hr = assemblyEmit->DefineAssemblyRef(
+            managed_profiler_assembly_property.ppbPublicKey, managed_profiler_assembly_property.pcbPublicKey,
+            managed_profiler_assembly_property.szName.data(), &managed_profiler_assembly_property.pMetaData,
+            &managed_profiler_assembly_property.pulHashAlgId, sizeof(managed_profiler_assembly_property.pulHashAlgId),
+            managed_profiler_assembly_property.assemblyFlags, &managed_profiler_assemblyRef);
+
+        if (FAILED(hr) || managed_profiler_assemblyRef == mdAssemblyRefNil)
+        {
+            Logger::Warn("Failed to resolve assembly ref of the tracer assembly. [ModuleId=", moduleInfo.id, ", Assembly=", moduleInfo.assembly.name,
+        ", Type=", typeInfo.name, ", IsValueType=", typeInfo.valueType, "]");
+            return;
+        }
+
+        mdTypeRef asyncMethodDebuggerStateTypeRef = mdTypeRefNil;
+        hr = metadataEmit->DefineTypeRefByName(managed_profiler_assemblyRef,
+            managed_profiler_debugger_async_method_state_type.data(),
+            &asyncMethodDebuggerStateTypeRef);
+        if (FAILED(hr) || asyncMethodDebuggerStateTypeRef == mdTypeRefNil)
+        {
+            Logger::Warn("Failed to define type ref of the AsyncMethodDebuggerState. [ModuleId=", moduleInfo.id,
+                         ", Assembly=", moduleInfo.assembly.name, ", Type=", typeInfo.name,
+                         ", IsValueType=", typeInfo.valueType, "]");
+            return;
+        }
+
+        unsigned callTargetStateBuffer;
+        auto callTargetStateSize = CorSigCompressToken(asyncMethodDebuggerStateTypeRef, &callTargetStateBuffer);
+
+        COR_SIGNATURE fieldSignature[500];
+        unsigned offset = 0;
+        fieldSignature[offset++] = IMAGE_CEE_CS_CALLCONV_FIELD;
+        fieldSignature[offset++] = ELEMENT_TYPE_CLASS;
+        memcpy(&fieldSignature[offset], &callTargetStateBuffer, callTargetStateSize);
+
         mdFieldDef isFirstEntry = mdFieldDefNil;
         hr = metadataEmit->DefineField(typeDef, managed_profiler_debugger_is_first_entry_field_name.c_str(),
                                        fdPrivate | mdHideBySig | fdSpecialName,

@@ -12,7 +12,7 @@ namespace Datadog.Trace.Debugger.Expressions
     internal readonly record struct CompiledExpression<T>
     {
         internal CompiledExpression(
-            Func<ScopeMember, ScopeMember, Exception, ScopeMember[], T> @delegate,
+            Func<ScopeMember, ScopeMember, ScopeMember, Exception, ScopeMember[], T> @delegate,
             Expression parsedExpression,
             string rawExpression,
             EvaluationError[] errors)
@@ -23,7 +23,7 @@ namespace Datadog.Trace.Debugger.Expressions
             Errors = errors;
         }
 
-        internal Func<ScopeMember, ScopeMember, Exception, ScopeMember[], T> Delegate { get; }
+        internal Func<ScopeMember, ScopeMember, ScopeMember, Exception, ScopeMember[], T> Delegate { get; }
 
         internal Expression ParsedExpression { get; }
 
