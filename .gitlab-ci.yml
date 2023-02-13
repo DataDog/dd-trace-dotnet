@@ -98,7 +98,6 @@ tracer-base-image:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: always
-    - when: manual
   stage: deploy
   script:
     - echo $GH_TOKEN|docker login ghcr.io/datadog -u uploader --password-stdin
