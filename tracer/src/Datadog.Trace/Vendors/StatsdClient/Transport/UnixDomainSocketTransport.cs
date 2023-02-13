@@ -29,8 +29,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
 
             try
             {
-                _socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
-                _socket.Connect(endPoint);
+                _socket = new Socket(AddressFamily.Unix, SocketType.Dgram, ProtocolType.Unspecified);
             }
             catch (SocketException e)
             {
