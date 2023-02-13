@@ -15,4 +15,4 @@ COPY --from=dotnet_agent_debug /binaries/LIBDDWAF_VERSION /LIBDDWAF_VERSION
 COPY --from=dotnet_agent_debug /binaries/APPSEC_EVENT_RULES_VERSION /APPSEC_EVENT_RULES_VERSION
 
 FROM scratch
-COPY --from=collect /binaries/* /
+COPY --from=collect /* /
