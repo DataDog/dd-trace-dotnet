@@ -54,7 +54,7 @@
      }
  }
 
-bool debugger::ProbesMetadataTracker::IsProbeExists(const shared::WSTRING& probeId)
+bool debugger::ProbesMetadataTracker::ProbeExists(const shared::WSTRING& probeId)
 {
      return _probeMetadataMap.find(probeId) != _probeMetadataMap.end();
 }
@@ -79,7 +79,7 @@ bool debugger::ProbesMetadataTracker::TryGetNextInstrumentedProbeIndex(const sha
 {
      std::lock_guard lock(_probeMetadataMapMutex);
 
-     if (IsProbeExists(probeId))
+     if (ProbeExists(probeId))
      {
          // Try reuse existing index, if one is available
          if (!_freeProbeIndices.empty())

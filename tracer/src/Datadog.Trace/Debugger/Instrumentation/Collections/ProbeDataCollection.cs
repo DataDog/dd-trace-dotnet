@@ -49,20 +49,20 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
         public ref ProbeData TryCreateProbeDataIfNotExists(int index, string probeId)
         {
-            if (IsIndexExists(index, probeId))
+            if (IndexExists(index, probeId))
             {
-                // Between the time `IsIndexExists` was called and the time `GetProbeDataIndex` will be called there
+                // Between the time `IndexExists` was called and the time `GetProbeDataIndex` is called there
                 // might be context switches that will invalidate the ProbeData located at `index`.
                 // So we essentially perform the ProbeId checking twice to make sure the `ProbeData` returned is indeed related
-                // to the probeId given. Of course, one tick later it could be invalidated too, but at least we willreturn `ProbeData` that
-                // is related to the given `probeId` and not of another probe.
+                // to the probeId given. Of course, one tick later it could be invalidated too, but at least we will return `ProbeData` that
+                // is related to the given `probeId` and not that of another probe.
                 return ref GetProbeDataAtIndex(index, probeId);
             }
 
             // Create a new one at the given index
             lock (ItemsLocker)
             {
-                if (IsIndexExists(index, probeId))
+                if (IndexExists(index, probeId))
                 {
                     // Read the comment above, of the same block of code.
                     return ref GetProbeDataAtIndex(index, probeId);
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
 
         /// <summary>
         /// Assumes `index` exists.
-        /// <seealso cref="IsIndexExists"/>
+        /// <seealso cref="IndexExists"/>
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ref ProbeData GetProbeDataAtIndex(int index, string probeId)
@@ -113,11 +113,11 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         }
 
         /// <summary>
-        /// In the native side we are trying to reuse indices. When a probe gets removed, it's associated probe data indices
-        /// will be reused in subsequent probes instrumentation. To make sure the index embedded in the instrumentation is not reused,
-        /// we compare also the ProbeId in the location.
+        /// In the native side we attempt to reuse indices; when a probe gets removed, its associated probe data index
+        /// will be reused when a new probe later gets add. To make sure the index embedded in the instrumentation is not stale,
+        /// we compare the ProbeId at that index with the one we were expecting.
         /// </summary>
-        private bool IsIndexExists(int index, string probeId)
+        private bool IndexExists(int index, string probeId)
         {
             return IsIndexExists(index) && Items[index].ProbeId == probeId;
         }
