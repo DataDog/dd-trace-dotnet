@@ -96,16 +96,16 @@ deploy_to_reliability_env:
 tracer-base-image:
   extends: .ci_authenticated_job
   rules:
-    - if: '$CI_COMMIT_BRANCH == "robertomonteromiguel/docker_base_image_poc"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: always
     - when: manual
   stage: deploy
   script:
     - echo $GH_TOKEN|docker login ghcr.io/datadog -u uploader --password-stdin
     - ./tooling/ci/download-binary-dotnet.sh dev
-    - docker build -t ghcr.io/datadog/system-tests/dd-trace-dotnet:latest_snapshot -f ./tooling/ci/Dockerfile .
-    - docker push ghcr.io/datadog/system-tests/dd-trace-dotnet:latest_snapshot
+    - docker build -t ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot -f ./tooling/ci/Dockerfile .
+    - docker push ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot
     - rm -rf ./tooling/ci/binaries
     - ./tooling/ci/download-binary-dotnet.sh prod
-    - docker build -t ghcr.io/datadog/system-tests/dd-trace-dotnet:latest -f ./tooling/ci/Dockerfile .
-    - docker push ghcr.io/datadog/system-tests/dd-trace-dotnet:latest
+    - docker build -t ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest -f ./tooling/ci/Dockerfile .
+    - docker push ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest
