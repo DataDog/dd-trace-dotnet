@@ -95,15 +95,9 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         }
 
         /// <summary>
-        /// In the native side we attempt to reuse indices; TryGetProbeDataIndex  a probe gets removed, its associated probe data index
+        /// In the native side we attempt to reuse indices; when a probe gets removed, its associated probe data index
         /// will be reused when a new probe later gets add. To make sure the index embedded in the instrumentation is not stale,
         /// we compare the ProbeId at that index with the one we were expecting.
-        ///
-        /// Between the time `IndexExists` was called and the time `GetProbeDataIndex` is called there
-        /// might be context switches that will invalidate the ProbeData located at `index`.
-        /// So we essentially perform the ProbeId checking twice to make sure the `ProbeData` returned is indeed related
-        /// to the probeId given. Of course, one tick later it could be invalidated too, but at least we will return `ProbeData` that
-        /// is related to the given `probeId` and not that of another probe.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ref ProbeData TryGetProbeDataIndex(int index, string probeId)
