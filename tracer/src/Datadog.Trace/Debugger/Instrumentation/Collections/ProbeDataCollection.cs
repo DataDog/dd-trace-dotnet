@@ -83,9 +83,9 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
                 var sampler = ProbeRateLimiter.Instance.GerOrAddSampler(probeId);
 
                 Items[index] = new ProbeData(probeId, sampler, processor);
-            }
 
-            return ref TryGetProbeDataIndex(index, probeId);
+                return ref Items[index];
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
