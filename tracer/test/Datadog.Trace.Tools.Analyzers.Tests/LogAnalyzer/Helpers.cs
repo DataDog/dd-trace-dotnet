@@ -90,6 +90,16 @@ public static class Helpers
                 Fatal
             }
         }
+
+        namespace Datadog.Trace.Vendors.Serilog
+        {
+            using Datadog.Trace.Vendors.Serilog.Events;
+            internal interface ILogger
+            {
+                bool IsEnabled(LogEventLevel level);
+                void Debug(string messageTemplate);
+            }
+        }
         """;
 
     public static Task VerifyWithExpectedCompileError<TAnalyzer, TCodeFix>(

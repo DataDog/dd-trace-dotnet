@@ -53,6 +53,11 @@ public class Diagnostics
     /// </summary>
     public const string UseCorrectContextualLoggerDiagnosticId = "DDLOG008";
 
+    /// <summary>
+    /// The DiagnosticID for <see cref="UseDatadogLoggerRule"/>
+    /// </summary>
+    public const string UseDatadogLoggerDiagnosticId = "DDLOG009";
+
     internal static readonly DiagnosticDescriptor ExceptionRule = new(
         ExceptionDiagnosticId,
         title: "Exception not passed as first argument",
@@ -124,4 +129,13 @@ public class Diagnostics
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "Logger instances should use the current class for context");
+
+    internal static readonly DiagnosticDescriptor UseDatadogLoggerRule = new(
+        UseDatadogLoggerDiagnosticId,
+        title: "Incorrect logger type",
+        messageFormat: "Incorrect use of Serilog ILogger. Use IDatadogLogger instead",
+        category: "CodeQuality",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "You should use the IDatadogLogger wrapper for logging");
 }

@@ -28,12 +28,14 @@ public class LogAnalyzer : DiagnosticAnalyzer
 {
     private const string DatadogLoggerType = "Datadog.Trace.Logging.IDatadogLogger";
     private const string DatadogLoggingType = "Datadog.Trace.Logging.DatadogLogging";
+    private const string SerilogLoggerType = "Serilog.ILogger";
+    private const string VendoredSerilogLoggerType = "Datadog.Trace.Vendors.Serilog.ILogger";
     private const string GetLoggerFor = "GetLoggerFor";
     private const string MessageTemplateName = "messageTemplate";
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        => ImmutableArray.Create(Diagnostics.ExceptionRule, Diagnostics.TemplateRule, Diagnostics.PropertyBindingRule, Diagnostics.ConstantMessageTemplateRule, Diagnostics.UniquePropertyNameRule, Diagnostics.PascalPropertyNameRule, Diagnostics.DestructureAnonymousObjectsRule, Diagnostics.UseCorrectContextualLoggerRule);
+        => ImmutableArray.Create(Diagnostics.ExceptionRule, Diagnostics.TemplateRule, Diagnostics.PropertyBindingRule, Diagnostics.ConstantMessageTemplateRule, Diagnostics.UniquePropertyNameRule, Diagnostics.PascalPropertyNameRule, Diagnostics.DestructureAnonymousObjectsRule, Diagnostics.UseCorrectContextualLoggerRule, Diagnostics.UseDatadogLoggerRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -55,29 +57,32 @@ public class LogAnalyzer : DiagnosticAnalyzer
         }
 
         // check if GetLoggerFor<T> / GetLoggerFor(typeof(T)) calls use the containing type as T
-        string? containingType = null;
+        string? containingTypeName = null;
         if (method.Name == GetLoggerFor
          && method.ReturnType.ToString() == DatadogLoggerType
-         && (containingType = method.ContainingType.ToString()) == DatadogLoggingType)
+         && (containingTypeName = method.ContainingType.ToString()) == DatadogLoggingType)
         {
             CheckForContextCorrectness(ref context, invocation, method);
         }
 
-        // is it an ILogger logging method?
-        if (!(method.Name is "Debug" or "Information" or "Warning" or "Error"
-           && (containingType ??= method.ContainingType.ToString()) == DatadogLoggerType))
+        // is it an IDatadogLogger logging method?
+        if (method.Name is not "Debug" and not "Information" and not "Warning" and not "Error")
         {
             return;
         }
 
-        // var attributes = method.GetAttributes();
-        // var attributeData = attributes.FirstOrDefault(x => x.AttributeClass == messageTemplateAttribute);
-        // if (attributeData == null)
-        // {
-        //     return;
-        // }
+        // is it an IDatadogLogger logger _instance_?
+        containingTypeName ??= method.ContainingType.ToString();
+        if (containingTypeName != DatadogLoggerType)
+        {
+            // is it a Serilog logger _instance_ (shouldn't be using these outside of vendored code)
+            if (!context.IsGeneratedCode && containingTypeName is SerilogLoggerType or VendoredSerilogLoggerType)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Diagnostics.UseDatadogLoggerRule, invocation.GetLocation(), containingTypeName));
+            }
 
-        // string messageTemplateName = attributeData.ConstructorArguments.First().Value as string;
+            return;
+        }
 
         // check for errors in the MessageTemplate
         var arguments = default(List<SourceArgument>);
