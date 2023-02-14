@@ -66,7 +66,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
-                    Log.Debug($"{nameof(ProbeMetadataCollection)}.{nameof(TryCreateProbeMetadataIfNotExists)}: Creating a new probe metadata info for index = {index}, Items.Length = {Items.Length}");
+                    Log.Debug<int, int>(nameof(ProbeMetadataCollection) + "." + nameof(TryCreateProbeMetadataIfNotExists) + " Creating a new probe metadata info for index = {Index}, Items.Length = {Length}", index, Items.Length);
                 }
 
                 var processor = ProbeExpressionsProcessor.Instance.Get(probeId);

@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error initializing TraceAttribute instrumentation");
             }
 
             InitializeNoNativeParts();
@@ -133,11 +133,11 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
 
-                Log.Information<int>("The profiler has been initialized with {count} definitions.", payload.Definitions.Length);
+                Log.Information<int>("The profiler has been initialized with {Count} definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error sending CallTarget integration definitions to native library");
             }
 
             try
@@ -155,11 +155,11 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions();
                 NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
 
-                Log.Information<int>("The profiler has been initialized with {count} derived definitions.", payload.Definitions.Length);
+                Log.Information<int>("The profiler has been initialized with {Count} derived definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error sending CallTarget derived integration definitions to native library");
             }
 
             try
@@ -168,11 +168,11 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetInterfaceDefinitions();
                 NativeMethods.AddInterfaceInstrumentations(payload.DefinitionsId, payload.Definitions);
 
-                Log.Information<int>("The profiler has been initialized with {count} interface definitions.", payload.Definitions.Length);
+                Log.Information<int>("The profiler has been initialized with {Count} interface definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error sending CallTarget interface integration definitions to native library");
             }
 
             if (tracer is null)
@@ -196,11 +196,11 @@ namespace Datadog.Trace.ClrProfiler
                     var traceMethodsConfiguration = tracer.Settings.TraceMethods;
                     var payload = InstrumentationDefinitions.GetTraceMethodDefinitions();
                     NativeMethods.InitializeTraceMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
-                    Log.Information("TraceMethods instrumentation enabled with Assembly={AssemblyName}, Type={TypeName}, and Configuration={}.", payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
+                    Log.Information("TraceMethods instrumentation enabled with Assembly={AssemblyName}, Type={TypeName}, and Configuration={Configuration}.", payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, ex.Message);
+                    Log.Error(ex, "Error initializing TraceMethods instrumentation");
                 }
             }
 
@@ -223,11 +223,11 @@ namespace Datadog.Trace.ClrProfiler
                     NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
                     derived = payload.Definitions.Length;
 
-                    Log.Information($"{defs} IAST definitions and {derived} IAST derived definitions added to the profiler.");
+                    Log.Information<int, int>("{Defs} IAST definitions and {Derived} IAST derived definitions added to the profiler.", defs, derived);
 
                     Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
                     var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions.Aspects);
-                    Log.Information($"{aspects} IAST Callsite Dataflow Aspects added to the profiler.");
+                    Log.Information<int>("{Aspects} IAST Callsite Dataflow Aspects added to the profiler.", aspects);
                 }
                 catch (Exception ex)
                 {
@@ -275,16 +275,19 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 var asm = typeof(Instrumentation).Assembly;
+                // intentionally using string interpolation, as this is only called once, and avoids array allocation
+#pragma warning disable DDLOG004 // Message templates should be constant
 #if NET5_0_OR_GREATER
                 // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+
                 Log.Information($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
 #else
                 Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
 #endif
+#pragma warning restore DDLOG004 // Message templates should be constant
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error printing assembly metadata");
             }
 
             try
@@ -301,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error initializing CIVisibility");
             }
 
             try
@@ -311,7 +314,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error initializing Security");
             }
 
 #if !NETFRAMEWORK

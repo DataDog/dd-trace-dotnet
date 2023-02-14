@@ -41,7 +41,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             var totalEvents = eventsBuffer.Count;
             var index = Count;
             var eventInBytes = MessagePackSerializer.Serialize(new CoveragePayload(eventsBuffer), _formatterResolver);
-            CIVisibility.Log.Debug<int, int>("CICodeCoveragePayload: Serialized {count} test code coverage as a single multipart item with {size} bytes.", eventsBuffer.Count, eventInBytes.Length);
+            CIVisibility.Log.Debug<int, int>("CICodeCoveragePayload: Serialized {Count} test code coverage as a single multipart item with {Size} bytes.", eventsBuffer.Count, eventInBytes.Length);
             return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", new ArraySegment<byte>(eventInBytes));
         }
 

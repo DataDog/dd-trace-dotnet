@@ -1,4 +1,4 @@
-﻿// <copyright file="AgentTransportStrategy.cs" company="Datadog">
+// <copyright file="AgentTransportStrategy.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -46,8 +46,7 @@ internal static class AgentTransportStrategy
         switch (strategy)
         {
             case TracesTransportType.WindowsNamedPipe:
-                // intentionally using string interpolation, as this is only called once, and avoids array allocation
-                Log.Information($"Using {nameof(NamedPipeClientStreamFactory)} for {productName} transport, with pipe name {settings.TracesPipeName} and timeout {settings.TracesPipeTimeoutMs}ms.");
+                Log.Information<string, string, int>("Using " + nameof(NamedPipeClientStreamFactory) + " for {ProductName} transport, with pipe name {TracesPipeName} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesPipeName, settings.TracesPipeTimeoutMs);
                 return new HttpStreamRequestFactory(
                     new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs),
                     new DatadogHttpClient(getHttpHeaderHelper()),
@@ -55,15 +54,14 @@ internal static class AgentTransportStrategy
 
             case TracesTransportType.UnixDomainSocket:
 #if NET5_0_OR_GREATER
-                Log.Information("Using {FactoryType} for {ProductName} transport, with UDS path {Path}.", nameof(SocketHandlerRequestFactory), productName, settings.TracesUnixDomainSocketPath);
+                Log.Information("Using " + nameof(SocketHandlerRequestFactory) + " for {ProductName} transport, with UDS path {Path}.", productName, settings.TracesUnixDomainSocketPath);
                 // use http://localhost as base endpoint
                 return new SocketHandlerRequestFactory(
                     new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
                     defaultAgentHeaders,
                     getBaseEndpoint(Localhost));
 #elif NETCOREAPP3_1_OR_GREATER
-                // intentionally using string interpolation, as this is only called once, and avoids array allocation
-                Log.Information($"Using {nameof(UnixDomainSocketStreamFactory)} for {productName} transport, with Unix Domain Sockets path {settings.TracesUnixDomainSocketPath} and timeout {settings.TracesPipeTimeoutMs}ms.");
+                Log.Information<string, string, int>("Using " + nameof(UnixDomainSocketStreamFactory) + " for {ProductName} transport, with Unix Domain Sockets path {TracesUnixDomainSocketPath} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
                 return new HttpStreamRequestFactory(
                     new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
                     new DatadogHttpClient(getHttpHeaderHelper()),
@@ -75,10 +73,10 @@ internal static class AgentTransportStrategy
             case TracesTransportType.Default:
             default:
 #if NETCOREAPP
-                Log.Information("Using {FactoryType} for {ProductName} transport.", nameof(HttpClientRequestFactory), productName);
+                Log.Information("Using " + nameof(HttpClientRequestFactory) + " for {ProductName} transport.", productName);
                 return new HttpClientRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders, timeout: tcpTimeout);
 #else
-                Log.Information("Using {FactoryType} for {ProductName} transport.", nameof(ApiWebRequestFactory), productName);
+                Log.Information("Using " + nameof(ApiWebRequestFactory) + " for {ProductName} transport.", productName);
                 return new ApiWebRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders, timeout: tcpTimeout);
 #endif
         }

@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AsyncLineDebuggerInvoker
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LineDebuggerInvoker));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncLineDebuggerInvoker));
 
         private static AsyncLineDebuggerState CreateInvalidatedAsyncLineDebuggerState()
         {
@@ -137,19 +137,19 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
                     if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
                     {
-                        Log.Warning($"{nameof(BeginLine)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
+                        Log.Warning(nameof(BeginLine) + ": hoisted 'this' was not found. {KickoffParentType}.{KickoffMethod}", kickoffInfo.KickoffParentType.Name, kickoffInfo.KickoffMethod.Name);
                     }
 
                     if (!MethodMetadataCollection.Instance.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
                     {
-                        Log.Warning($"([Async]BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance.GetType().Name}, methodMetadataId = {methodMetadataIndex}, probeId = {probeId}");
+                        Log.Warning("([Async]BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadataId = {MethodMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance.GetType().Name, methodMetadataIndex, probeId);
                         return CreateInvalidatedAsyncLineDebuggerState();
                     }
                 }
 
                 if (!ProbeMetadataCollection.Instance.TryCreateProbeMetadataIfNotExists(probeMetadataIndex, probeId))
                 {
-                    Log.Warning($"[Async]BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, probeMetadataIndex = {probeMetadataIndex}, probeId = {probeId}");
+                    Log.Warning("[Async]BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId);
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
 

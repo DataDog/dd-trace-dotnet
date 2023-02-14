@@ -70,7 +70,7 @@ namespace Datadog.Trace.Ci
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, e.Message);
+                    Log.Error(e, "Error executing trace processor {TraceProcessorType}", processor?.GetType());
                 }
             }
 
