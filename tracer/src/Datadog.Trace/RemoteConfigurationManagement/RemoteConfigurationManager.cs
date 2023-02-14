@@ -34,7 +34,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly RcmClientTracer _rcmTracer;
         private readonly IDiscoveryService _discoveryService;
         private readonly IRemoteConfigurationApi _remoteConfigurationApi;
-        private readonly GitMetadataTagsProvider _gitMetadataTagsProvider;
+        private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
         private readonly TimeSpan _pollInterval;
 
         private readonly CancellationTokenSource _cancellationSource;
@@ -56,7 +56,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             string id,
             RcmClientTracer rcmTracer,
             TimeSpan pollInterval,
-            GitMetadataTagsProvider gitMetadataTagsProvider)
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
             _discoveryService = discoveryService;
             _remoteConfigurationApi = remoteConfigurationApi;
@@ -75,7 +75,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static RemoteConfigurationManager? Instance { get; private set; }
 
-        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings, GitMetadataTagsProvider gitMetadataTagsProvider)
+        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
             var tags = GetTags(settings, tracerSettings);
             lock (LockObject)
@@ -84,7 +84,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     discoveryService,
                     remoteConfigurationApi,
                     id: settings.Id,
-                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, tracerSettings.Environment, tracerSettings.ServiceVersion, tags),
+                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.Environment), tracerSettings.ServiceVersion, tags),
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider);
             }
