@@ -136,7 +136,7 @@ jobs:
     steps:
       - name: lib-injection test runner
         id: lib-injection-test-runner
-        uses: DataDog/system-tests/lib-injection/runner@1282714bfd25baae821f10cf6f1e77f990a82a89 # zach/lib-injection-dotnet
+        uses: DataDog/system-tests/lib-injection/runner@69336117276b3ef31f2594d20cbd8cd8a7d26396 # zach/lib-injection-dotnet
         with:
           docker-registry: ghcr.io
           docker-registry-username: ${{ github.repository_owner }}
