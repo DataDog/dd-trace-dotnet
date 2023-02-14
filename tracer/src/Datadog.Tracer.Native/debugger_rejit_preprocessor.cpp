@@ -4,7 +4,7 @@
 #include "debugger_method_rewriter.h"
 #include "debugger_rejit_handler_module_method.h"
 #include "logger.h"
-#include "probes_tracker.h"
+#include "debugger_probes_tracker.h"
 
 namespace debugger
 {

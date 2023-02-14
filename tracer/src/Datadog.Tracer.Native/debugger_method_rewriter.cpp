@@ -7,7 +7,7 @@
 #include "stats.h"
 #include "version.h"
 #include "environment_variables_util.h"
-#include "probes_tracker.h"
+#include "debugger_probes_tracker.h"
 
 namespace debugger
 {

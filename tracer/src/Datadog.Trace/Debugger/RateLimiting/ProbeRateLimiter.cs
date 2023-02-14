@@ -59,14 +59,14 @@ namespace Datadog.Trace.Debugger.RateLimiting
             // since the functionality in the UI is not exposed yet.
             if (_samplers.TryGetValue(probeId, out _))
             {
-                Log.Information("Adaptive sampler already exist for {probeId}", probeId);
+                Log.Information("Adaptive sampler already exist for {ProbeID}", probeId);
                 return;
             }
 
             var adaptiveSampler = CreateSampler(samplesPerSecond);
             if (!_samplers.TryAdd(probeId, adaptiveSampler))
             {
-                Log.Information("Adaptive sampler already exist for {probeId}", probeId);
+                Log.Information("Adaptive sampler already exist for {ProbeID}", probeId);
             }
         }
 

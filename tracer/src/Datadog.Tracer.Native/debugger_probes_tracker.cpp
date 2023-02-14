@@ -1,4 +1,4 @@
-#include "probes_tracker.h"
+#include "debugger_probes_tracker.h"
 
  bool debugger::ProbesMetadataTracker::TryGetMetadata(const shared::WSTRING& probeId, /* out */ std::shared_ptr<ProbeMetadata>& probeMetadata)
  {
