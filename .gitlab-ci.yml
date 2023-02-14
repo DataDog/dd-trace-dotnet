@@ -13,9 +13,6 @@ variables:
     value: "master"
     description: "Run a specific datadog-reliability-env branch downstream"
 
-include:
-  remote: https://gitlab-templates.ddbuild.io/libdatadog/include/ci_authenticated_job.yml
-
 build:
   only:
     - master
