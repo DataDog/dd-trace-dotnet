@@ -65,6 +65,7 @@ namespace Datadog.Trace.Activity.Handlers
                         Log.Information("Current ActivityMappings: {@ActivityMapping}", ActivityMappingById);
                         Log.Information("Creating a new parent for {@ActivityContext}", w3cActivity);
 
+                        // TODO issue - Activity started with default Context nested underneath previous span - I think that is expected though?
                         remoteActivityContext = true; // using this as a way to avoid ActiveSpan below for now
                         // extract parent Activity trace/span IDs TODO this is slightly duped below (but uses w3cActivity.SpanId)
                         traceId ??= Convert.ToUInt64(w3cActivity.TraceId.Substring(16), 16);
@@ -199,18 +200,6 @@ namespace Datadog.Trace.Activity.Handlers
                         CloseActivityScope(sourceName, activity, parentValue.Scope);
                         return;
                     }
-
-                    // if (ActivityMappingById.TryRemove(activity.Id, out ActivityMapping value) && value.Scope?.Span is not null)
-                    // {
-                    //     // We have the exact scope associated with the Activity
-                    //     if (Log.IsEnabled(LogEventLevel.Debug))
-                    //     {
-                    //         Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
-                    //     }
-                    //
-                    //     CloseActivityScope(sourceName, activity, value.Scope);
-                    //     return;
-                    // }
                 }
 
                 // The listener didn't send us the Activity or the scope instance was not found
