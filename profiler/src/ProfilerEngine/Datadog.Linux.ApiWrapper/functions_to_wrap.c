@@ -121,14 +121,6 @@ int dladdr(const void* addr_arg, Dl_info* info)
     return result;
 }
 
-__thread int _dd_in_pthread_create = 0;
-
-// this function is called in by the profiler
-int dd_IsInPthreadCreate()
-{
-    return _dd_in_pthread_create;
-}
-
 #ifdef DD_ALPINE
 
 /* Function pointers to hold the value of the glibc functions */

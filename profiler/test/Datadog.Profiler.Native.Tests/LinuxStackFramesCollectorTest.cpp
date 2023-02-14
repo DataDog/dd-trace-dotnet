@@ -30,10 +30,10 @@ using ::testing::Return;
 
 // This global variable and function are use defined/declared for the test only
 // In production, those symbols will be defined in the Wrapper library
-int dd_IsPthreadCreateCall = 0;
-extern "C" int dd_can_be_profiled()
+int profile_or_not = 0;
+extern "C" long long dd_can_be_profiled()
 {
-    return dd_IsPthreadCreateCall;
+    return profile_or_not;
 }
 
 #define ASSERT_DURATION_LE(secs, stmt)                                            \
@@ -153,7 +153,7 @@ public:
 
         _processId = OpSysTools::GetProcId();
         SignalHandlerForTest::_instance = std::make_unique<SignalHandlerForTest>();
-        dd_IsPthreadCreateCall = 0;
+        profile_or_not = 0;
     }
 
     void TearDown() override
@@ -165,7 +165,7 @@ public:
 
         SignalHandlerForTest::_instance.reset();
         sigaction(SIGUSR1, &_oldAction, nullptr);
-        dd_IsPthreadCreateCall = 0;
+        profile_or_not = 0;
     }
 
     void StopTest()
@@ -179,7 +179,7 @@ public:
 
     static void SimulateInPthreadCreate()
     {
-        dd_IsPthreadCreateCall = 1;
+        profile_or_not = 1; // do not profile
     }
 
     pid_t GetWorkerThreadId()
