@@ -154,20 +154,20 @@ namespace Datadog.Trace.Configuration
         /// Gets the application's git repository url.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
-        public string GitRepositoryUrl { get; }
+        internal string GitRepositoryUrl { get; }
 
         /// <summary>
         /// Gets the application's git commit hash.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
-        public string GitCommitSha { get; }
+        internal string GitCommitSha { get; }
 
         /// <summary>
         /// Gets a value indicating whether we should tag every telemetry event with git metadata.
         /// Defaul value is true (enabled).
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>
-        public bool GitMetadataEnabled { get; }
+        internal bool GitMetadataEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether tracing is enabled.

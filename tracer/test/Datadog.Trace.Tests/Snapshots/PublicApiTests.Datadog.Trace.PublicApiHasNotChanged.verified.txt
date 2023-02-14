@@ -125,8 +125,6 @@ namespace Datadog.Trace
         public const string ErrorMsg = "error.msg";
         public const string ErrorStack = "error.stack";
         public const string ErrorType = "error.type";
-        public const string GitCommitSha = "_dd.git.commit.sha";
-        public const string GitRepositoryUrl = "_dd.git.repository_url";
         public const string HttpMethod = "http.method";
         public const string HttpRequestHeadersHost = "http.request.headers.host";
         public const string HttpStatusCode = "http.status_code";
@@ -388,9 +386,6 @@ namespace Datadog.Trace.Configuration
         public string CustomSamplingRules { get; }
         public string Environment { get; }
         public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
-        public string GitCommitSha { get; }
-        public bool GitMetadataEnabled { get; }
-        public string GitRepositoryUrl { get; }
         public double? GlobalSamplingRate { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GlobalTags { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GrpcTags { get; }
@@ -458,9 +453,6 @@ namespace Datadog.Trace.Configuration
         public System.Collections.Generic.HashSet<string> DisabledIntegrationNames { get; set; }
         public string Environment { get; set; }
         public Datadog.Trace.Configuration.ExporterSettings Exporter { get; set; }
-        public string GitCommitSha { get; set; }
-        public bool GitMetadataEnabled { get; }
-        public string GitRepositoryUrl { get; set; }
         public double? GlobalSamplingRate { get; set; }
         public System.Collections.Generic.IDictionary<string, string> GlobalTags { get; set; }
         public System.Collections.Generic.IDictionary<string, string> GrpcTags { get; set; }

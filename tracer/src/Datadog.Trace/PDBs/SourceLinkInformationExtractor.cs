@@ -81,7 +81,7 @@ internal static class SourceLinkInformationExtractor
         }
         catch (Exception e)
         {
-            Log.Warning(e, "PDB file {PdbFullPath} contained SourceLink document {document}, but we failed to parse it.", pdbFullPath, sourceLinkJsonDocument);
+            Log.Warning(e, "PDB file {PdbFullPath} contained SourceLink document {Document}, but we failed to parse it.", pdbFullPath, sourceLinkJsonDocument);
             return false;
         }
     }

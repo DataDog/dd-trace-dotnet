@@ -44,20 +44,20 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
         /// </summary>
-        /// <seealso cref="TracerSettings.ServiceVersion"/>
+        /// <seealso cref="TracerSettings.GitRepositoryUrl"/>
         public const string GitRepositoryUrl = "DD_GIT_REPOSITORY_URL";
 
         /// <summary>
         /// Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
         /// </summary>
-        /// <seealso cref="TracerSettings.ServiceVersion"/>
+        /// <seealso cref="TracerSettings.GitCommitSha"/>
         public const string GitCommitSha = "DD_GIT_COMMIT_SHA";
 
         /// <summary>
         /// Configuration key for enabling the tagging of every telemetry event with git metadata.
         /// Default is value is true (enabled).
         /// </summary>
-        /// <seealso cref="TracerSettings.TraceEnabled"/>
+        /// <seealso cref="TracerSettings.GitMetadataEnabled"/>
         public const string GitMetadataEnabled = "DD_TRACE_GIT_METADATA_ENABLED";
 
         /// <summary>

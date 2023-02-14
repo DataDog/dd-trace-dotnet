@@ -29,14 +29,14 @@ namespace Datadog.Trace
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.GitCommitSha"/>.
         /// </summary>
-        public const string GitCommitSha = "_dd.git.commit.sha";
+        internal const string GitCommitSha = "_dd.git.commit.sha";
 
         /// <summary>
         /// The git repository URL of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.GitRepositoryUrl"/>.
         /// </summary>
-        public const string GitRepositoryUrl = "_dd.git.repository_url";
+        internal const string GitRepositoryUrl = "_dd.git.repository_url";
 
         /// <summary>
         /// The name of the integration that generated the span.
