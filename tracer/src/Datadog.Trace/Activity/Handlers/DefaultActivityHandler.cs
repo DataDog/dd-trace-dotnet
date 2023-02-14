@@ -174,20 +174,45 @@ namespace Datadog.Trace.Activity.Handlers
                         return;
                     }
 
-                    if (ActivityMappingById.TryRemove(activity.Id, out ActivityMapping value) && value.Scope?.Span is not null)
+                    // first we look for the normal ID, then the parent
+                    if (ActivityMappingById.TryRemove(activity.Id, out ActivityMapping someValue) && someValue.Scope?.Span is not null)
                     {
+                        Log.Information("Closing the ActivityScope! {Name}", activity.OperationName);
                         // We have the exact scope associated with the Activity
                         if (Log.IsEnabled(LogEventLevel.Debug))
                         {
                             Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
                         }
 
-                        CloseActivityScope(sourceName, activity, value.Scope);
+                        CloseActivityScope(sourceName, activity, someValue.Scope);
                         return;
                     }
+                    else if (activity.ParentId is { } parentId && ActivityMappingById.TryRemove(parentId, out ActivityMapping parentValue) && parentValue.Scope?.Span is not null)
+                    {
+                        Log.Information("Closing the PARENT ActivityScope! {Name}", activity.OperationName);
+                        // We have the exact scope associated with the Activity
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                        }
+
+                        CloseActivityScope(sourceName, activity, parentValue.Scope);
+                        return;
+                    }
+
+                    // if (ActivityMappingById.TryRemove(activity.Id, out ActivityMapping value) && value.Scope?.Span is not null)
+                    // {
+                    //     // We have the exact scope associated with the Activity
+                    //     if (Log.IsEnabled(LogEventLevel.Debug))
+                    //     {
+                    //         Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                    //     }
+                    //
+                    //     CloseActivityScope(sourceName, activity, value.Scope);
+                    //     return;
+                    // }
                 }
 
-                // TODO oops this is getting hit
                 // The listener didn't send us the Activity or the scope instance was not found
                 // In this case we are going go through the dictionary to check if we have an activity that
                 // has been closed and then close the associated scope.
