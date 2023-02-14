@@ -241,6 +241,8 @@ bool GetProcessorCount(uint32_t& processorCount)
         byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
         ptr++;
     }
+
+    return true;
 }
 
 } // namespace OsSpecificApi
