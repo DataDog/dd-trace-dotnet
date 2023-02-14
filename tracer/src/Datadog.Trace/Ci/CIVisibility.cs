@@ -491,12 +491,12 @@ namespace Datadog.Trace.Ci
         {
             try
             {
-                var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+                var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, _settings));
 
                 if (_settings.GitUploadEnabled != false)
                 {
                     // Upload the git metadata
-                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                    await lazyItrClient.Value.UploadRepositoryChangesAsync().ConfigureAwait(false);
                 }
 
                 if (!_settings.Agentless || !string.IsNullOrEmpty(_settings.ApplicationKey))
@@ -505,7 +505,7 @@ namespace Datadog.Trace.Ci
                     // We query the settings api for those
                     if (_settings.CodeCoverageEnabled == null || _settings.TestsSkippingEnabled == null)
                     {
-                        var settings = await itrClient.GetSettingsAsync().ConfigureAwait(false);
+                        var settings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
 
                         if (_settings.CodeCoverageEnabled == null && settings.CodeCoverage.HasValue)
                         {
@@ -527,7 +527,7 @@ namespace Datadog.Trace.Ci
                 // If the tests skipping feature is enabled we query the api for the tests we have to skip
                 if (_settings.TestsSkippingEnabled == true)
                 {
-                    var skippeableTests = await itrClient.GetSkippableTestsAsync().ConfigureAwait(false);
+                    var skippeableTests = await lazyItrClient.Value.GetSkippableTestsAsync().ConfigureAwait(false);
                     Log.Information<int>("ITR: SkippableTests = {length}.", skippeableTests.Length);
 
                     var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
