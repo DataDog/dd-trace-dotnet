@@ -6,7 +6,9 @@ on:
       azdo_build_id:
         description: 'The specific AzDo build from which the release artifacts will be downloaded.'
         required: true
-
+  pull_request:
+    branches:
+    - '**'
 jobs:
   build-and-publish-base-image:
     runs-on: ubuntu-latest
@@ -28,9 +30,9 @@ jobs:
 
     - name: "Download build assets from Azure Pipelines"
       id: assets
-      run: ./tracer/build.sh DownloadAzurePipelineFromBuild
+      run: ./tracer/build.sh  
       env:
-        AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
+        AzureDevopsBuildId: 128307 #"${{ github.event.inputs.azdo_build_id }}"
 
     - name: Copy tooling files to artifacts path
       shell: bash
