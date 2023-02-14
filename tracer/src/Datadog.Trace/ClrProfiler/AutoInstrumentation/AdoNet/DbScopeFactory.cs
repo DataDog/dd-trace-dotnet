@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -36,8 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     parent.GetTag(Tags.DbType) == dbType &&
-                    (parent.GetTag(Tags.DbmDataPropagated) != null ||
-                    parent.ResourceName == commandText))
+                    (parent.ResourceName == commandText || parent.GetTag(Tags.DbmDataPropagated) != null))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace

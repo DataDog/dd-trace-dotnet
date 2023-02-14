@@ -386,6 +386,11 @@ namespace Datadog.Trace.TestHelpers
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;
         }
 
+        public string GetEnvironmentVariable(string key)
+        {
+            return EnvironmentHelper.CustomEnvironmentVariables[key];
+        }
+
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
         {
             var spanLookup = new Dictionary<T, int>();
