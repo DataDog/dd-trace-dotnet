@@ -32,11 +32,12 @@ jobs:
       id: assets
       run: ./tracer/build.sh  
       env:
-        AzureDevopsBuildId: 128307 #"${{ github.event.inputs.azdo_build_id }}"
+        AzureDevopsBuildId: "128307" #"${{ github.event.inputs.azdo_build_id }}"
 
     - name: Copy tooling files to artifacts path
       shell: bash
       run: |
+        echo "OUTPUT ARTIFACT PATH: ${{steps.assets.outputs.artifacts_path}}"
         cp ./tooling/ci/* ${{steps.assets.outputs.artifacts_path}}
 
     - name: Set up QEMU
