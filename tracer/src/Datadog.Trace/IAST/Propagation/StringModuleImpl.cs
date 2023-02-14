@@ -7,14 +7,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Sinks.File;
 
 namespace Datadog.Trace.Iast.Propagation;
 
@@ -131,7 +125,7 @@ internal static class StringModuleImpl
                             else
                             {
                                 ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, currentParameter!.Length);
+                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, length);
                             }
                         }
 
@@ -202,7 +196,7 @@ internal static class StringModuleImpl
                             else
                             {
                                 ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, currentParameter.Length);
+                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, length);
                             }
                         }
 
@@ -274,7 +268,7 @@ internal static class StringModuleImpl
                             else
                             {
                                 ranges = new Range[taintedParameter!.Ranges!.Length];
-                                Ranges.CopyShift(taintedParameter.Ranges, ranges, 0, currentParameter!.Length);
+                                Ranges.CopyShift(taintedParameter.Ranges, ranges, 0, length);
                             }
                         }
 
