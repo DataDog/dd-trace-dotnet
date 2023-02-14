@@ -123,6 +123,7 @@ internal static class IastModule
         };
 
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
+        scope.Span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
         return scope;
     }
