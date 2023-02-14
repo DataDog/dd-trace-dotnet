@@ -38,6 +38,8 @@ internal class MethodScopeMembers
 
     internal ScopeMember InvocationTarget { get; set; }
 
+    internal ScopeMember Duration { get; set; }
+
     internal void AddMember(ScopeMember member)
     {
         Members[_index] = member;

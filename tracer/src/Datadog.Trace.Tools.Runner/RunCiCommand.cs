@@ -100,10 +100,10 @@ namespace Datadog.Trace.Tools.Runner
 
                 // Upload git metadata by default (unless is disabled explicitly) or if ITR is enabled (required).
                 Log.Debug("RunCiCommand: Uploading repository changes.");
-                var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
+                var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings));
                 if (ciVisibilitySettings.GitUploadEnabled != false || ciVisibilitySettings.IntelligentTestRunnerEnabled)
                 {
-                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                    await lazyItrClient.Value.UploadRepositoryChangesAsync().ConfigureAwait(false);
 
                     // Once the repository has been uploaded we switch off the git upload in children processes
                     profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled] = "0";
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tools.Runner
                         CIVisibility.Log.Debug("RunCiCommand: Calling configuration api...");
 
                         // we skip the framework info because we are interested in the target projects info not the runner one.
-                        var itrSettings = await itrClient.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+                        var itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                         codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
                         testSkippingEnabled = itrSettings.TestsSkipping == true;
                     }
@@ -155,8 +155,8 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
-            Log.Debug("RunCiCommand: CodeCoverageEnabled = {value}", codeCoverageEnabled);
-            Log.Debug("RunCiCommand: TestSkippingEnabled = {value}", testSkippingEnabled);
+            Log.Debug("RunCiCommand: CodeCoverageEnabled = {Value}", codeCoverageEnabled);
+            Log.Debug("RunCiCommand: TestSkippingEnabled = {Value}", testSkippingEnabled);
             ciVisibilitySettings.SetCodeCoverageEnabled(codeCoverageEnabled);
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
 
@@ -247,7 +247,7 @@ namespace Datadog.Trace.Tools.Runner
                     return 0;
                 }
 
-                Log.Debug("RunCiCommand: Launching: {value}", command);
+                Log.Debug("RunCiCommand: Launching: {Value}", command);
                 var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, profilerEnvironmentVariables);
                 if (!string.IsNullOrEmpty(arguments))
                 {
@@ -256,7 +256,7 @@ namespace Datadog.Trace.Tools.Runner
 
                 exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
                 session?.SetTag(TestTags.CommandExitCode, exitCode);
-                Log.Debug<int>("RunCiCommand: Finished with exit code: {value}", exitCode);
+                Log.Debug<int>("RunCiCommand: Finished with exit code: {Value}", exitCode);
                 return exitCode;
             }
             catch (Exception ex)

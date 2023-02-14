@@ -127,7 +127,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error adding CallTarget AppSec integration definitions to native library");
             }
 
             try
@@ -139,10 +139,10 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error adding CallTarget appsec derived integration definitions to native library");
             }
 
-            Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions added to the profiler.");
+            Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions added to the profiler.", defs, derived);
         }
 
         private static void RemoveAppsecSpecificInstrumentations()
@@ -157,7 +157,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error removing CallTarget AppSec integration definitions from native library");
             }
 
             try
@@ -169,10 +169,10 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error removing CallTarget appsec derived integration definitions from native library");
             }
 
-            Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions removed from the profiler.");
+            Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions removed from the profiler.", defs, derived);
         }
 
         /// <summary> Frees resources </summary>
@@ -303,7 +303,7 @@ namespace Datadog.Trace.AppSec
         {
             if (ruleStatus is { Count: > 0 } && !(_waf?.ToggleRules(ruleStatus) ?? false))
             {
-                Log.Debug($"_waf.ToggleRules returned false ({ruleStatus.Count} rule status entries)");
+                Log.Debug<int>("_waf.ToggleRules returned false ({Count} rule status entries)", ruleStatus.Count);
             }
         }
 
@@ -360,7 +360,7 @@ namespace Datadog.Trace.AppSec
 
                 _enabled = true;
 
-                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
+                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
 
@@ -374,7 +374,7 @@ namespace Datadog.Trace.AppSec
 
                 _enabled = false;
 
-                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
+                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
 

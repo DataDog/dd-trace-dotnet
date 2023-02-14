@@ -96,7 +96,7 @@ internal class ProbeExpressionEvaluator
                     }
                     else if (IsExpression(Templates[i]))
                     {
-                        resultBuilder.Append(compiledExpressions[i].Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Exception, scopeMembers.Members));
+                        resultBuilder.Append(compiledExpressions[i].Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members));
                         if (compiledExpressions[i].Errors != null)
                         {
                             (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpressions[i].Errors);
@@ -135,7 +135,7 @@ internal class ProbeExpressionEvaluator
             }
 
             compiledExpression = _compiledCondition.Value.Value;
-            var condition = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Exception, scopeMembers.Members);
+            var condition = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
             result.Condition = condition;
             if (compiledExpression.Errors != null)
             {
@@ -162,7 +162,7 @@ internal class ProbeExpressionEvaluator
             }
 
             compiledExpression = _compiledMetric.Value.Value;
-            var metric = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Exception, scopeMembers.Members);
+            var metric = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
             result.Metric = metric;
             if (compiledExpression.Errors != null)
             {

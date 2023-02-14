@@ -213,7 +213,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
             catch (Exception e)
             {
-                Log.Error(e, "Failed to process probe. Probe Id: " + ProbeInfo.ProbeId);
+                Log.Error(e, "Failed to process probe. Probe Id: {ProbeId}", ProbeInfo.ProbeId);
                 return false;
             }
         }
@@ -224,12 +224,18 @@ namespace Datadog.Trace.Debugger.Expressions
             shouldStopCapture = false;
             try
             {
+                if (ProbeInfo.ProbeType != ProbeType.Metric)
+                {
+                    // we taking the duration at the evaluation time - this might be different from what we have in the snapshot
+                    snapshotCreator.SetDuration();
+                }
+
                 evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers);
             }
             catch (Exception e)
             {
                 // if the evaluation failed stop capturing
-                Log.Error(e, "Failed to evaluate expression for probe: " + ProbeInfo.ProbeId);
+                Log.Error(e, "Failed to evaluate expression for probe: {ProbeId}", ProbeInfo.ProbeId);
                 snapshotCreator.Stop();
                 shouldStopCapture = true;
                 return evaluationResult;

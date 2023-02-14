@@ -37,7 +37,14 @@ internal readonly partial struct SecurityCoordinator
             for (var i = 0; i < results?.Length; i++)
             {
                 var match = results[i];
-                Log.Debug(blocked ? "DDAS-0012-02: Blocking current transaction (rule: {RuleId})" : "DDAS-0012-01: Detecting an attack from rule {RuleId}", match.Rule);
+                if (blocked)
+                {
+                    Log.Debug("DDAS-0012-02: Blocking current transaction (rule: {RuleId})", match.Rule);
+                }
+                else
+                {
+                    Log.Debug("DDAS-0012-01: Detecting an attack from rule {RuleId}", match.Rule);
+                }
             }
         }
     }

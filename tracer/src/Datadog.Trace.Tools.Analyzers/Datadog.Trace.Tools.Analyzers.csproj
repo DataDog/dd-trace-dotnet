@@ -18,6 +18,9 @@
     <Compile Include="..\Datadog.Trace\Util\System.Runtime.CompilerServices.Attributes.cs">
       <Link>Helpers\System.Runtime.CompilerServices.Attributes.cs</Link>
     </Compile>
+    <Compile Update="LogAnalyzer\ConstantMessageTemplateCodeFixProvider.*.cs">
+      <DependentUpon>ConstantMessageTemplateCodeFixProvider.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 </Project>

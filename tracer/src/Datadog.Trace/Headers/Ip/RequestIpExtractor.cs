@@ -26,13 +26,13 @@ namespace Datadog.Trace.Headers.Ip
                     extractedCustomIp = IpExtractor.RealIpFromValue(value, isSecureConnection);
                     if (extractedCustomIp == null)
                     {
-                        Log.Warning("A custom header for ip with value {value} was configured but no correct ip could be extracted", value);
+                        Log.Warning("A custom header for ip with value {Value} was configured but no correct ip could be extracted", value);
                     }
 
                     return extractedCustomIp;
                 }
 
-                Log.Warning("A custom header for ip {customIpHeader} was configured but there was no such header in the request", customIpHeader);
+                Log.Warning("A custom header for ip {CustomIpHeader} was configured but there was no such header in the request", customIpHeader);
             }
 
             string potentialIp = null;

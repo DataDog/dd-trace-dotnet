@@ -35,7 +35,7 @@ jobs:
 
       - name: "Download build assets from Azure Pipelines"
         id: assets
-        run: ./tracer/build.sh DownloadAzurePipelineAndGitlabArtifacts
+        run: ./tracer/build.sh DownloadReleaseArtifacts
         env:
           TargetBranch: ${{ github.event.ref }}
           CommitSha: "${{ github.event.inputs.forced_commit_id }}"

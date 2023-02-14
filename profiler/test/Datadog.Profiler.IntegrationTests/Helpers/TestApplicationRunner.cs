@@ -4,12 +4,12 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
@@ -132,6 +132,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private void RunTest(MockDatadogAgent agent)
         {
+            if (!agent.IsReady)
+            {
+                throw new XunitException("Agent was not ready to accept connection from profiler");
+            }
+
             (var executor, var arguments) = BuildTestCommandLine();
 
             using var process = new Process();
@@ -182,16 +187,16 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(standardOutput))
+            if (standardOutput.Contains("[Error]"))
             {
-                _output.WriteLine($"[TestRunner] Standard output: {standardOutput}");
-                Assert.False(standardOutput.Contains("[Error]"), "An error occured during the test. See the standard output above.");
+                _output.WriteLine($"[TestRunner] Standard output: \n{standardOutput}");
+                throw new XunitException("An error occured during the test. See the standard output above.");
             }
 
-            if (!string.IsNullOrWhiteSpace(errorOutput))
+            if (errorOutput.Contains("[Error]"))
             {
-                _output.WriteLine($"[TestRunner] Error output: {errorOutput}");
-                Assert.False(errorOutput.Contains("[Error]"), "An error occured during the test. See the error output above.");
+                _output.WriteLine($"[TestRunner] Error output: \n{errorOutput}");
+                throw new XunitException("An error occured during the test. See the error output above.");
             }
 
             Assert.True(
