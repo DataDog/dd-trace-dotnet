@@ -95,7 +95,6 @@ public class SHA1Tests : InstrumentationTestsBase
     [Fact]
     public void GivenAMACTripleDES_WhenComputeHash_VulnerabilityIsNotLogged()
     {
-
         // This is vulnerable because internally, it is using HMACSHA1
         MACTripleDES.Create().ComputeHash(new byte[] { 5, 5, 5 });
         AssertVulnerable();
