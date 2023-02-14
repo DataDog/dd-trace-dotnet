@@ -161,9 +161,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 throw new XunitException("Agent was not ready to accept connection from profiler");
             }
 
+            var startTime = DateTime.Now;
 
             using var processHelper = LaunchProcess(agent);
-
             var process = processHelper.Process;
 
             var ranToCompletion = process.WaitForExit((int)_maxTestRunDuration.TotalMilliseconds) && processHelper.Drain((int)_maxTestRunDuration.TotalMilliseconds / 2);
