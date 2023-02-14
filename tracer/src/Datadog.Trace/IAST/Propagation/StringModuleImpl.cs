@@ -310,7 +310,7 @@ internal static class StringModuleImpl
                             else
                             {
                                 ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, currentParameter!.Length);
+                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, length);
                             }
                         }
 
@@ -373,7 +373,7 @@ internal static class StringModuleImpl
                             else
                             {
                                 ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, currentParameter.Length);
+                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, length);
                             }
                         }
 
