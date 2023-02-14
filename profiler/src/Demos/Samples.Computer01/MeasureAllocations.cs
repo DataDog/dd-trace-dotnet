@@ -73,10 +73,10 @@ namespace Samples.Computer01
 
         private void AllocateRandom(int totalAllocations, List<Object0> objects, Dictionary<string, AllocStats> allocations)
         {
+            // allocate randomly among 2, 4, 8, 16, 32, 64, 128 sized classes
+            Random r = new Random(DateTime.Now.Millisecond);
             for (int i = 0; i < totalAllocations; i++)
             {
-                // allocate randomly among 2, 4, 8, 16, 32, 64, 128 sized classes
-                Random r = new Random(DateTime.Now.Millisecond);
                 int type = r.Next(7);
                 var (instance, size) = Allocate(type);
                 objects.Add(instance);

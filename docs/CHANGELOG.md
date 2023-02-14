@@ -16,6 +16,92 @@
 
 
 
+
+## [Release 2.23.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.23.0)
+
+## Summary
+
+Tracer
+
+- Resolve an issue introduced in 2.14.0 that could lead to the tracer not working after an upgrade of the tracer, if the server had been rebooted in between.
+- Added support for Confluent.Kafka 2.x.
+
+
+## Changes
+
+### Tracer
+* PRNG improvements for trace and span ids (#3651)
+* Update `TagListGenerator` to use new `ForAttributeWithMetadataName` (#3662)
+* Add an enum extensions source generator (#3700)
+* Add helper source generators for telemetry metrics (#3701)
+* Add Analyzer for checking we don't use a public API (#3704)
+* Add support for Confluent.Kafka 2.x.x (#3710)
+* [Tracing] Converting to and from hex strings (#3715)
+* Update log message with minimum datadog-agent version required for RCM (#3729)
+* Handle multiple empty `tracestate` headers in `W3CTraceContextPropagator` (#3745)
+
+### CI Visibility
+* [CI Visibility] - Fix NUnit integration (#3696)
+* [CI Visibility] Adds support for NUnit TearDown attributes (#3713)
+* [CI Visibility] - CI specs updates (#3719)
+* [CIVisibility] - Replace the datacollector logger error calls with warnings (#3723)
+* [CI Visibility] - Add retries support for IOException in the coverage collector (#3726)
+* [CI Visibility] - Ensure dd-trace uses same settings as target process (#3728)
+* [CI Visibility] - Simpler CIVisibility initialization for the dd-trace runner (#3736)
+* [CI Visibility] - Avoid sending the global code coverage tag if we have ITR enabled (#3740)
+* [CI Visibility] - Improve test source start line for CI Visibility UI (#3755)
+
+### ASM
+* [ASM] Call site instrumentation (#3453)
+* [ASM] Added parent span Id to vulnerability json. (#3684)
+* [ASM] SQL injection vulnerability detection (#3694)
+* [ASM] bola events api (#3703)
+* [ASM] Update format of vulnerabilities Json. (#3705)
+* [ASM] Fix waf library loader unit tests (#3706)
+* [ASM] Fix rcm integration tests flakiness (#3714)
+* [ASM] Fixed typo in function parameter (#3720)
+* [ASM][GIT] Fine tuned code owners (#3721)
+* [ASM] Aspects code generator tests (#3741)
+* [ASM] upgrade WAF to 1.7.0 and WAF rules to 1.5.0 (#3742)
+* [ASM] dispose context and nullchecks  framework side (#3749)
+* [ASM] Correct copy / paste error (#3760)
+* [ASM] Removed unnecesary aspects file (#3711)
+
+### Continuous Profiler
+* Move profiler CI from GitHub Actions to AzDo (#2880)
+* [Profiler] Measure profiled and real allocations count/size (#3698)
+* [Profiler] Migrate profiler windows integration tests to AzDo (#3737)
+* [Profiler] Fix integration tests not running (#3748)
+* [Profiler] New scenario: Add endpoint with dots (#3756)
+* [AAS/Profiler] Allow sending profiles if Tracer is deactivated (#3697)
+
+### Debugger
+* [Debugger] Limit snapshot size (#3709)
+* [Dynamic Instrumentation] Perf improvements + Added probe metadata payload (#3725)
+* [Dynamic Instrumentation] Display interface properties in snapshot (#3761)
+
+### Miscellaneous
+* Only Check Clsid32 Key If Tracer < 2.14 (#3549)
+* Stop using the CorProfiler singleton in rejit logic (#3670)
+* [Test Package Versions Bump] Updating package versions (#3691)
+* Clean up codebase using clang-tidy (#3716)
+* Adds the `ci crank-import` command (#3722)
+* Wrap DbCommand.Connection getter with a try/catch (#3730)
+* [Tracer] Check that the file in `DD_NATIVELOADER_CONFIGFILE` exists before using it (#3738)
+* Record the MVID of a loaded assembly in dependency telemetry (#3746)
+
+### Build / Test
+* Add comparison of execution benchmarks posting to PR (#3672)
+* Remove sync-over-async from AWS integration and fix flake (#3695)
+* Add tests that we never write general ambient env vars to the logs (#3712)
+* Force all tests to run as part of scheduled builds on `master` (#3724)
+* Fix osx folder in GetNativeLoaderPath() (#3733)
+* Add throughput tests for manual instrumentation scenarios (#3734)
+* Make the log output digestable by system tests dashboard (#3739)
+
+
+[Changes since 2.22.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.22.0...v2.23.0)
+
 ## [Release 2.22.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.22.0)
 
 ## Summary

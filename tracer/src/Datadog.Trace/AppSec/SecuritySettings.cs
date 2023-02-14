@@ -21,7 +21,7 @@ namespace Datadog.Trace.AppSec
         public SecuritySettings(IConfigurationSource source)
         {
             BlockedHtmlTemplate = source?.GetString(ConfigurationKeys.AppSec.HtmlBlockedTemplate) ?? SecurityConstants.BlockedHtmlTemplate;
-            BlockedJsonTemplate = source?.GetString(ConfigurationKeys.AppSec.HtmlBlockedTemplate) ?? SecurityConstants.BlockedJsonTemplate;
+            BlockedJsonTemplate = source?.GetString(ConfigurationKeys.AppSec.JsonBlockedTemplate) ?? SecurityConstants.BlockedJsonTemplate;
             // both should default to false
             var enabledEnvVar = source?.GetBool(ConfigurationKeys.AppSec.Enabled);
             _enabled = enabledEnvVar ?? false;
@@ -48,7 +48,7 @@ namespace Datadog.Trace.AppSec
                 var wafTimeout = ParseWafTimeout(wafTimeoutString);
                 if (wafTimeout <= 0)
                 {
-                    Log.Warning("Ignoring '{WafTimeoutKey}' of '{wafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
+                    Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
                     wafTimeout = defaultWafTimeout;
                 }
 

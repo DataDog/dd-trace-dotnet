@@ -40,15 +40,18 @@ public class ProbesTests : TestHelper
             typeof(AsyncGenericMethodWithLineProbeTest),
             typeof(AsyncGenericStruct),
             typeof(AsyncInstanceMethod),
+            typeof(AsyncInterfaceProperties),
             typeof(AsyncLineProbeWithFieldsArgsAndLocalsTest),
             typeof(AsyncMethodInsideTaskRun),
             typeof(AsyncRecursiveCall),
             typeof(AsyncStaticMethod),
             typeof(AsyncThrowException),
             typeof(AsyncTemplateLocalExitFullSnapshot),
+            typeof(AsyncTaskReturnTest),
+            typeof(AsyncTaskReturnWithExceptionTest),
+            typeof(AsyncTemplateArgExitFullSnapshot),
             typeof(AsyncVoid),
             typeof(AsyncWithGenericArgumentAndLocal),
-            typeof(AsyncTemplateArgExitFullSnapshot),
             typeof(HasLocalsAndReturnValue),
             typeof(MultipleLineProbes),
             typeof(MultiScopesWithSameLocalNameTest),
@@ -487,7 +490,11 @@ public class ProbesTests : TestHelper
                                 if (IsParentName(item, parentName: "throwable"))
                                 {
                                     // take only the first frame of the exception stacktrace
-                                    item.Value.Replace(new JArray(item.Value.Children().First()));
+                                    var firstChild = item.Value.Children().FirstOrDefault();
+                                    if (firstChild != null)
+                                    {
+                                        item.Value.Replace(new JArray(firstChild));
+                                    }
                                 }
 
                                 break;

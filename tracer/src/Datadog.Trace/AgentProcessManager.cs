@@ -66,6 +66,11 @@ namespace Datadog.Trace
                 }
 
                 var azureAppServiceSettings = new ImmutableAzureAppServiceSettings(GlobalConfigurationSource.Instance);
+                if (azureAppServiceSettings.IsUnsafeToTrace)
+                {
+                    Log.Error("The Azure Site Extension doesn't have the required parameters to work. The API_KEY is likely missing. The trace_agent and dogstatsd process will not be started. Check your app configuration and restart the app service to try again.");
+                    return;
+                }
 
                 var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
                 var automaticProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false;
@@ -344,7 +349,7 @@ namespace Datadog.Trace
                         return true;
                     }
 
-                    Log.Debug("Program [{Process}] is no longer running", ProcessPath);
+                    Log.Information("Program [{Process}] is no longer running", ProcessPath);
 
                     return false;
                 }
@@ -365,7 +370,14 @@ namespace Datadog.Trace
 
             private bool NamedPipeIsBound()
             {
-                return File.Exists($"\\\\.\\pipe\\{PipeName}");
+                var namedPipe = $"\\\\.\\pipe\\{PipeName}";
+                var namedPipeIsBound = File.Exists(namedPipe);
+                if (!namedPipeIsBound)
+                {
+                    Log.Debug("NamedPipe  [{NamedPipe}] is not present.", namedPipe);
+                }
+
+                return namedPipeIsBound;
             }
         }
     }

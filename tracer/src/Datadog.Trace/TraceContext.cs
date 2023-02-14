@@ -146,7 +146,7 @@ namespace Datadog.Trace
                 else if (ShouldTriggerPartialFlush())
                 {
                     Log.Debug<ulong, ulong, int>(
-                        "Closing span {spanId} triggered a partial flush of trace {traceId} with {spanCount} pending spans",
+                        "Closing span {SpanId} triggered a partial flush of trace {TraceId} with {SpanCount} pending spans",
                         span.SpanId,
                         span.TraceId,
                         _spans.Count);

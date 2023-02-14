@@ -35,23 +35,6 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        internal ProbeInfo? GetProbeInfo(string probeId)
-        {
-            return Get(probeId)?.ProbeInfo;
-        }
-
-        internal bool Process<T>(string probeId, ref CaptureInfo<T> info, DebuggerSnapshotCreator snapshotCreator)
-        {
-            var probeProcessor = Get(probeId);
-            if (probeProcessor == null)
-            {
-                Log.Error("Probe processor has not found. Probe Id: " + probeId);
-                return false;
-            }
-
-            return probeProcessor.Process(ref info, snapshotCreator);
-        }
-
         internal void AddProbeProcessor(ProbeDefinition probe)
         {
             try
@@ -63,7 +46,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
             catch (Exception e)
             {
-                Log.Error(e, $"Failed to create probe processor for probe: {probe.Id}");
+                Log.Error(e, "Failed to create probe processor for probe: {Id}", probe.Id);
             }
         }
 
@@ -72,7 +55,7 @@ namespace Datadog.Trace.Debugger.Expressions
             _processors.TryRemove(probeId, out _);
         }
 
-        private ProbeProcessor Get(string probeId)
+        internal ProbeProcessor Get(string probeId)
         {
             _processors.TryGetValue(probeId, out var probeProcessor);
             return probeProcessor;

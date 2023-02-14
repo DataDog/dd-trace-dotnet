@@ -100,7 +100,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
             catch (Exception e)
             {
-                Log.Error(e.ToString());
+                Log.Error(e, "Error serializing object {VariableName} Depth={CurrentDepth} FieldsOnly={FieldsOnly}", variableName, currentDepth, fieldsOnly);
             }
 
             return false;
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
             catch (Exception e)
             {
-                Log.Error(e.ToString());
+                Log.Error(e, "Error serializing object {VariableName} Depth={CurrentDepth} FieldsOnly={FieldsOnly}", variableName, currentDepth, fieldsOnly);
             }
 
             return false;
@@ -326,12 +326,12 @@ namespace Datadog.Trace.Debugger.Snapshots
             catch (InvalidOperationException e)
             {
                 // Collection was modified, enumeration operation may not execute
-                Log.Error(e.ToString());
+                Log.Error<int>(e, "Error serializing enumerable (Collection was modified) Depth={CurrentDepth}", currentDepth);
                 jsonWriter.WriteEndArray();
             }
             catch (Exception e)
             {
-                Log.Error(e.ToString());
+                Log.Error<int>(e, "Error serializing enumerable Depth={CurrentDepth}", currentDepth);
             }
         }
 
@@ -406,14 +406,14 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                     default:
                         {
-                            Log.Error($"{nameof(DebuggerSnapshotSerializer)}.{nameof(TryGetValue)}: Can't get value of {fieldOrProp.Name}. Unsupported member info {fieldOrProp.GetType()}");
+                            Log.Error(nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue) + ": Can't get value of {Name}. Unsupported member info {Type}", fieldOrProp.Name, fieldOrProp.GetType());
                             break;
                         }
                 }
             }
             catch (Exception e)
             {
-                Log.Error($"{nameof(DebuggerSnapshotSerializer)}.{nameof(TryGetValue)}: {e}");
+                Log.Error(e, nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue));
             }
 
             return false;

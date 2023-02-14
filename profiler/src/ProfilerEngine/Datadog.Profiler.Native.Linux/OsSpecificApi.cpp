@@ -6,9 +6,17 @@
 #include <fstream>
 #include <string>
 
+#ifdef LINUX
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#endif
+
 #include <sys/syscall.h>
 #include "OsSpecificApi.h"
 #include "OpSysTools.h"
+#include "ScopeFinalizer.h"
 
 #include "IConfiguration.h"
 #include "Log.h"
@@ -16,6 +24,7 @@
 #include "ProfilerSignalManager.h"
 #include "StackFramesCollectorBase.h"
 #include "shared/src/native-src/loader.h"
+
 
 namespace OsSpecificApi {
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
@@ -48,20 +57,27 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 //    pthread_getcpuclockid(pthread_self(), &clockid);
 //    if (clock_gettime(clockid, &cpu_time)) { ... }
 //
-static bool firstError = true;
 
 bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
 {
-    char statPath[64];
+    char statPath[64] = {0};
     snprintf(statPath, sizeof(statPath), "/proc/self/task/%d/stat", tid);
 
-    // load the line to be able to parse it in memory
-    std::ifstream file;
-    file.open(statPath);
-    std::string sline;
-    std::getline(file, sline);
-    file.close();
-    if (sline.empty())
+    auto fd = open(statPath, O_RDONLY);
+
+    if (fd == -1)
+    {
+        return false;
+    }
+
+    on_leave { close(fd); };
+
+    // 1023 + 1 to ensure that the last char is a null one
+    // initialize the whole array slots to 0
+    char line[1024] = { 0 };
+
+    auto length = read(fd, line, sizeof(line) - 1);
+    if (length <= 0)
     {
         return false;
     }
@@ -69,20 +85,24 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     char state = ' ';
     int32_t userTime = 0;
     int32_t kernelTime = 0;
-    bool success = OpSysTools::ParseThreadInfo(sline, state, userTime, kernelTime);
+    bool success = OpSysTools::ParseThreadInfo(line, state, userTime, kernelTime);
     if (!success)
     {
+        static bool firstError = true;
         // log the first error to be able to analyze unexpected string format
         if (firstError)
         {
             firstError = false;
-            Log::Error("Unexpected /proc/self/task/", tid, "/stat: ", sline);
+            Log::Info("Unexpected line format in ", statPath, ": ", line);
         }
 
         return false;
     }
 
-    cpuTime = ((userTime + kernelTime) * 1000) / sysconf(_SC_CLK_TCK);
+    // it's safe to cache it. According to the man sysconf, this value does
+    // not change during the lifetime of the process.
+    static auto ticks_per_second = sysconf(_SC_CLK_TCK);
+    cpuTime = ((userTime + kernelTime) * 1000) / ticks_per_second;
     isRunning = (state == 'R') || (state == 'D') || (state == 'W');
     return true;
 }

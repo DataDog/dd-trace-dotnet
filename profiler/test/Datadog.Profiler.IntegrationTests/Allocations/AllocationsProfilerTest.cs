@@ -114,7 +114,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                 int pos = type.LastIndexOf('.');
                 if (pos != -1)
                 {
-                    type = type.Substring(pos+1);
+                    type = type.Substring(pos + 1);
                 }
 
                 // TODO: dump real and profiled count/size
@@ -224,7 +224,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                         eol = next;
                     }
 
-                    // TODO: extract type, count and size
+                    // extract type, count and size
                     //   Object2=13627,27254
                     var line = output.AsSpan(pos, eol - pos);
 
