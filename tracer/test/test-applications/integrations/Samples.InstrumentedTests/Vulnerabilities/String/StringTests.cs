@@ -125,6 +125,24 @@ public class StringAspectTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void String_Concat_Lambda()
+    {
+        var values = new List<string> { TaintedString, UntaintedString };
+        string result = string.Empty;
+        values.ForEach(x => result += x);
+        Assert.Equal(":+-TaintedString-+:UntaintedString", Format(result));
+    }
+
+    [Fact]
+    public void String_Concat_Lambda2()
+    {
+        var values = new List<string> { TaintedString, UntaintedString };
+        string result = TaintedString;
+        values.ForEach(x => result += x);
+        Assert.Equal(":+-TaintedString-+::+-TaintedString-+:UntaintedString", Format(result));
+    }
+
+    [Fact]
     public void String_Concat_Basic_WithBoth_Joined()
     {
         Assert.Equal(":+-TaintedString-+:UntaintedString:+-TaintedString-+:", Format(String.Concat(String.Concat(TaintedString, UntaintedString), TaintedString)));
@@ -274,144 +292,143 @@ public class StringAspectTests : InstrumentationTestsBase
     [Fact]
     public void String_Concat_Generic_Struct()
     {
-        string str = String.Concat<S>(new List<S> { new S(UntaintedString), new S(TaintedString) });
+        string str = String.Concat<StructForStringTest>(new List<StructForStringTest> { new StructForStringTest(UntaintedString), new StructForStringTest(TaintedString) });
         Assert.Equal("UntaintedString:+-TaintedString-+:", Format(str));
     }
 
     [Fact]
     public void String_Concat_Generic_Class()
     {
-        string str = String.Concat<C>(new List<C> { new C(UntaintedString), new C(TaintedString) });
+        string str = String.Concat<ClassForStringTest>(new List<ClassForStringTest> { new ClassForStringTest(UntaintedString), new ClassForStringTest(TaintedString) });
         Assert.Equal("UntaintedString:+-TaintedString-+:", Format(str));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingConcatWith2StringParams_ResultIsTainted()
     {
-        DES.Create();
-        AssertTaintedWithOriginalCallCheck("concat:+-tainted-+:", () => String.Concat("concat", taintedValue), () => String.Concat("concat", taintedValue));
+        AssertTaintedFormatWithOriginalCallCheck("concat:+-tainted-+:", String.Concat("concat", taintedValue), () => String.Concat("concat", taintedValue));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingConcatWith3StringParams_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:", () => String.Concat(taintedValue2, "concat", taintedValue), () => String.Concat(taintedValue2, "concat", taintedValue));
+        AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:", String.Concat(taintedValue2, "concat", taintedValue), () => String.Concat(taintedValue2, "concat", taintedValue));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingConcatWith4Params_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:CONCAT2", () => String.Concat(taintedValue2, "concat", taintedValue, "CONCAT2"), () => String.Concat(taintedValue2, "concat", taintedValue, "CONCAT2"));
+        AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:CONCAT2", String.Concat(taintedValue2, "concat", taintedValue, "CONCAT2"), () => String.Concat(taintedValue2, "concat", taintedValue, "CONCAT2"));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingConcatWithStringArrayParam_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("concatCONCAT2:+-tainted-+::+-TAINTED2-+:", () => String.Concat(new string[] { "concat", "CONCAT2", taintedValue, taintedValue2 }), () => String.Concat(new string[] { "concat", "CONCAT2", taintedValue, taintedValue2 }));
+        AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-tainted-+::+-TAINTED2-+:", String.Concat(new string[] { "concat", "CONCAT2", taintedValue, taintedValue2 }), () => String.Concat(new string[] { "concat", "CONCAT2", taintedValue, taintedValue2 }));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingConcatWithObjectArrayParam_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", () => String.Concat(new object[] { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat(new object[] { "concat", "concat2", taintedValue, taintedValue2 }));
+        AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat(new object[] { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat(new object[] { "concat", "concat2", taintedValue, taintedValue2 }));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingConcatWith2ObjectParams_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("concat:+-tainted-+:", () => String.Concat((object)"concat", taintedValue), () => String.Concat((object)"concat", taintedValue));
+        AssertTaintedFormatWithOriginalCallCheck("concat:+-tainted-+:", String.Concat((object)"concat", taintedValue), () => String.Concat((object)"concat", taintedValue));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingConcatWith2ObjectParams_ResultIsTainted2()
     {
-        AssertTaintedWithOriginalCallCheck("concat:+-tainted-+:", () => String.Concat("concat", (object)taintedValue), () => String.Concat("concat", (object)taintedValue));
+        AssertTaintedFormatWithOriginalCallCheck("concat:+-tainted-+:", String.Concat("concat", (object)taintedValue), () => String.Concat("concat", (object)taintedValue));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingConcatWith3ObjectParams_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:", () => String.Concat(taintedValue2, (object)"concat", taintedValue), () => String.Concat(taintedValue2, (object)"concat", taintedValue));
+        AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:", String.Concat(taintedValue2, (object)"concat", taintedValue), () => String.Concat(taintedValue2, (object)"concat", taintedValue));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingConcatWith4ObjectParams_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:concat2", () => String.Concat(taintedValue2, (object)"concat", taintedValue, (object)"concat2"), () => String.Concat(taintedValue2, (object)"concat", taintedValue, (object)"concat2"));
+        AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:concat2", String.Concat(taintedValue2, (object)"concat", taintedValue, (object)"concat2"), () => String.Concat(taintedValue2, (object)"concat", taintedValue, (object)"concat2"));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingConcatWithStringIEnumerableStringParam_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("concatCONCAT2:+-tainted-+::+-TAINTED2-+:", () => String.Concat(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }), () => String.Concat(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }));
+        AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-tainted-+::+-TAINTED2-+:", String.Concat(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }), () => String.Concat(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingConcatWithObjectListParam_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", () => String.Concat(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }));
+        AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }));
     }
 
     [Fact]
     
     public void GivenATaintedString_WhenCallingConcatWithStringIEnumerableNullParam_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("concatCONCAT2:+-TAINTED2-+:", () => String.Concat(new List<string> { "concat", "CONCAT2", null, taintedValue2 }), () => String.Concat(new List<string> { "concat", "CONCAT2", null, taintedValue2 }));
+        AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-TAINTED2-+:", String.Concat(new List<string> { "concat", "CONCAT2", null, taintedValue2 }), () => String.Concat(new List<string> { "concat", "CONCAT2", null, taintedValue2 }));
     }
 
     [Fact]
     
     public void GivenATaintedObject_WhenCallingConcatWithGenericObjectArrayParam_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", () => String.Concat<object>(new object[] { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat<object>(new object[] { "concat", "concat2", taintedValue, taintedValue2 }));
+        AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat<object>(new object[] { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat<object>(new object[] { "concat", "concat2", taintedValue, taintedValue2 }));
     }
 
     [Fact]
     
     public void GivenATaintedObject_WhenCallingConcatWithGenericObjectListParam_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", () => String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }));
+        AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }));
     }
 
     [Fact]
     
     public void GivenATaintedString_WhenCallingConcatWithStringIEnumerableStringParam_ResultIsTainted2()
     {
-        AssertTaintedWithOriginalCallCheck("concatCONCAT2:+-tainted-+::+-TAINTED2-+:", () => String.Concat<string>(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }), () => String.Concat<string>(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }));
+        AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-tainted-+::+-TAINTED2-+:", String.Concat<string>(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }), () => String.Concat<string>(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }));
     }
 
     [Fact]
     
     public void GivenATaintedString_WhenCallingConcatWithStringArrayNullParam_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("concatCONCAT2:+-TAINTED2-+:", () => String.Concat(new string[] { "concat", "CONCAT2", null, taintedValue2 }), () => String.Concat(new string[] { "concat", "CONCAT2", null, taintedValue2 }));
+        AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-TAINTED2-+:", String.Concat(new string[] { "concat", "CONCAT2", null, taintedValue2 }), () => String.Concat(new string[] { "concat", "CONCAT2", null, taintedValue2 }));
     }
 
     [Fact]
     
     public void GivenATaintedString_WhenCallingConcatWithStringNullParam_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("concatCONCAT2:+-TAINTED2-+:", () => String.Concat("concat", "CONCAT2", null, taintedValue2), () => String.Concat("concat", "CONCAT2", null, taintedValue2));
+        AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-TAINTED2-+:", String.Concat("concat", "CONCAT2", null, taintedValue2), () => String.Concat("concat", "CONCAT2", null, taintedValue2));
     }
 
     
     [Fact]
     public void GivenATaintedStringInStrcut_WhenCallingConcat_ResultIsTainted()
     {
-        AssertTaintedWithOriginalCallCheck("UntaintedString:+-tainted-+:", () => String.Concat<StructForTest>(new List<StructForTest> { new StructForTest("UntaintedString"), new StructForTest(taintedValue) }), () => String.Concat<StructForTest>(new List<StructForTest> { new StructForTest("UntaintedString"), new StructForTest(taintedValue) }));
+        AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-tainted-+:", String.Concat<StructForTest>(new List<StructForTest> { new StructForTest("UntaintedString"), new StructForTest(taintedValue) }), () => String.Concat<StructForTest>(new List<StructForTest> { new StructForTest("UntaintedString"), new StructForTest(taintedValue) }));
     }
 
     
     [Fact]
     public void GivenATaintedStringInStrcut_WhenCallingConcat_ResultIsTainted2()
     {
-        AssertTaintedWithOriginalCallCheck("UntaintedString:+-tainted-+:", () => String.Concat<StructForTest2>(new List<StructForTest2> { new StructForTest2("UntaintedString"), new StructForTest2(taintedValue) }), () => String.Concat<StructForTest2>(new List<StructForTest2> { new StructForTest2("UntaintedString"), new StructForTest2(taintedValue) }));
+        AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-tainted-+:", String.Concat<StructForTest2>(new List<StructForTest2> { new StructForTest2("UntaintedString"), new StructForTest2(taintedValue) }), () => String.Concat<StructForTest2>(new List<StructForTest2> { new StructForTest2("UntaintedString"), new StructForTest2(taintedValue) }));
     }
 
-struct S
+    struct StructForStringTest
     {
         readonly string str;
-        public S(string str)
+        public StructForStringTest(string str)
         {
             this.str = str;
         }
@@ -421,10 +438,10 @@ struct S
         }
     }
 
-    class C
+    class ClassForStringTest
     {
         readonly string str;
-        public C(string str)
+        public ClassForStringTest(string str)
         {
             this.str = str;
         }
