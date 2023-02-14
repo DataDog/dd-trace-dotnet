@@ -3,8 +3,7 @@ ARG LINUX_PACKAGE
 
 RUN apt-get update && apt-get install dos2unix
 
-# The ADD command does more than COPY, so it can directly copy a local directory or it can copy over a `tar.gz` file and automatically extract its contents into the destination
-ADD ${LINUX_PACKAGE} /binaries/
+COPY ${LINUX_PACKAGE} /binaries/
 
 COPY ddtrace-info.sh query-versions.fsx /binaries/
 RUN mv /binaries/${LINUX_PACKAGE} /binaries/datadog-dotnet-apm.tar.gz
