@@ -118,15 +118,15 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            var ctx = IastModule.GetIastContext();
-            if (ctx == null)
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
             {
                 return result;
             }
 
-            TaintedObjects taintedObjects = ctx.GetTaintedObjects();
-            TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_0 ? GetTainted(taintedObjects, left) : null;
-            TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_1 ? GetTainted(taintedObjects, right) : null;
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+            TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_1 ? GetTainted(taintedObjects, left) : null;
+            TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_0 ? GetTainted(taintedObjects, right) : null;
             if (taintedLeft == null && taintedRight == null)
             {
                 return result;
@@ -163,55 +163,55 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            var ctx = IastModule.GetIastContext();
-            if (ctx == null)
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
             {
                 return result;
             }
 
-            TaintedObjects to = ctx.GetTaintedObjects();
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
 
             Range[]? ranges = null;
-            int len = 0;
-            for (int x = 0; x < parameters.ParamCount; x++)
+            int length = 0;
+            for (int parameterIndex = 0; parameterIndex < parameters.ParamCount; parameterIndex++)
             {
-                var p = parameters[x];
-                if (!CanBeTainted(p))
+                var currentParameter = parameters[parameterIndex];
+                if (!CanBeTainted(currentParameter))
                 {
                     continue;
                 }
 
-                var t = GetTainted(to, p);
-                if (t != null)
+                var parameterTainted = GetTainted(taintedObjects, currentParameter);
+                if (parameterTainted != null)
                 {
                     if (ranges == null)
                     {
-                        if (t != null)
+                        if (parameterTainted != null)
                         {
-                            if (len == 0)
+                            if (length == 0)
                             {
-                                ranges = t.Ranges;
+                                ranges = parameterTainted.Ranges;
                             }
                             else
                             {
-                                ranges = new Range[t!.Ranges!.Length];
-                                Ranges.CopyShift(t.Ranges, ranges, 0, p!.Length);
+                                ranges = new Range[parameterTainted!.Ranges!.Length];
+                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, currentParameter!.Length);
                             }
                         }
 
-                        len += p!.Length;
+                        length += currentParameter!.Length;
                         continue;
                     }
 
-                    ranges = Ranges.MergeRanges(len, ranges, t.Ranges);
+                    ranges = Ranges.MergeRanges(length, ranges, parameterTainted.Ranges);
                 }
 
-                len += p!.Length;
+                length += currentParameter!.Length;
             }
 
             if (ranges != null)
             {
-                to.Taint(result, ranges);
+                taintedObjects.Taint(result, ranges);
             }
         }
         catch (Exception err)
@@ -227,54 +227,54 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            var ctx = IastModule.GetIastContext();
-            if (ctx == null)
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
             {
                 return result;
             }
 
-            TaintedObjects to = ctx.GetTaintedObjects();
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
 
             Range[]? ranges = null;
-            int len = 0;
-            foreach (var p in parameters)
+            int length = 0;
+            foreach (var currentParameter in parameters)
             {
-                if (!CanBeTainted(p))
+                if (!CanBeTainted(currentParameter))
                 {
                     continue;
                 }
 
-                var t = GetTainted(to, p);
-                if (t != null)
+                var parameterTainted = GetTainted(taintedObjects, currentParameter);
+                if (parameterTainted != null)
                 {
                     if (ranges == null)
                     {
-                        if (t != null)
+                        if (parameterTainted != null)
                         {
-                            if (len == 0)
+                            if (length == 0)
                             {
-                                ranges = t.Ranges;
+                                ranges = parameterTainted.Ranges;
                             }
                             else
                             {
-                                ranges = new Range[t!.Ranges!.Length];
-                                Ranges.CopyShift(t.Ranges, ranges, 0, p.Length);
+                                ranges = new Range[parameterTainted!.Ranges!.Length];
+                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, currentParameter.Length);
                             }
                         }
 
-                        len += p!.Length;
+                        length += currentParameter!.Length;
                         continue;
                     }
 
-                    ranges = Ranges.MergeRanges(len, ranges, t.Ranges);
+                    ranges = Ranges.MergeRanges(length, ranges, parameterTainted.Ranges);
                 }
 
-                len += p!.Length;
+                length += currentParameter!.Length;
             }
 
             if (ranges != null)
             {
-                to.Taint(result, ranges);
+                taintedObjects.Taint(result, ranges);
             }
         }
         catch (Exception err)
