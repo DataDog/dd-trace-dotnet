@@ -186,12 +186,12 @@ namespace Datadog.Trace.Ci
                 AsyncUtil.RunSync(() => FlushAsync(), cts.Token);
                 if (cts.IsCancellationRequested)
                 {
-                    Log.Error($"Timeout occurred when flushing spans.{Environment.NewLine}{Environment.StackTrace}");
+                    Log.Error("Timeout occurred when flushing spans.{NewLine}{StackTrace}", Environment.NewLine, Environment.StackTrace);
                 }
             }
             catch (TaskCanceledException)
             {
-                Log.Error($"Timeout occurred when flushing spans.{Environment.NewLine}{Environment.StackTrace}");
+                Log.Error("Timeout occurred when flushing spans.{NewLine}{StackTrace}", Environment.NewLine, Environment.StackTrace);
             }
             finally
             {
@@ -343,7 +343,7 @@ namespace Datadog.Trace.Ci
                 if (proxyHttpsUriBuilder.Scheme == "https")
                 {
                     // HTTPS proxy is not supported by .NET BCL
-                    Log.Error($"HTTPS proxy is not supported. ({proxyHttpsUriBuilder})");
+                    Log.Error("HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
                     return factory;
                 }
 
@@ -389,7 +389,7 @@ namespace Datadog.Trace.Ci
                     }
                     catch (Exception ex)
                     {
-                        Log.Warning(ex, ex.Message);
+                        Log.Warning(ex, "Error getting OS version on macOS");
                     }
                     finally
                     {
@@ -421,7 +421,7 @@ namespace Datadog.Trace.Ci
             }
             catch (Exception exception)
             {
-                Log.Warning(exception, exception.Message);
+                Log.Warning(exception, "Error getting current process name when checking CI Visibility status");
             }
 
             // By configuration
@@ -430,7 +430,7 @@ namespace Datadog.Trace.Ci
                 // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
                 if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
                 {
-                    Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {cmdline}", Environment.CommandLine);
+                    Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
                     return false;
                 }
 
@@ -509,26 +509,26 @@ namespace Datadog.Trace.Ci
 
                         if (_settings.CodeCoverageEnabled == null && settings.CodeCoverage.HasValue)
                         {
-                            Log.Information("ITR: Code Coverage has been changed to {value} by settings api.", settings.CodeCoverage.Value);
+                            Log.Information("ITR: Code Coverage has been changed to {Value} by settings api.", settings.CodeCoverage.Value);
                             _settings.SetCodeCoverageEnabled(settings.CodeCoverage.Value);
                         }
 
                         if (_settings.TestsSkippingEnabled == null && settings.TestsSkipping.HasValue)
                         {
-                            Log.Information("ITR: Tests Skipping has been changed to {value} by settings api.", settings.TestsSkipping.Value);
+                            Log.Information("ITR: Tests Skipping has been changed to {Value} by settings api.", settings.TestsSkipping.Value);
                             _settings.SetTestsSkippingEnabled(settings.TestsSkipping.Value);
                         }
                     }
                 }
 
                 // Log code coverage status
-                Log.Information(_settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
+                Log.Information("{V}", _settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
 
                 // If the tests skipping feature is enabled we query the api for the tests we have to skip
                 if (_settings.TestsSkippingEnabled == true)
                 {
                     var skippeableTests = await lazyItrClient.Value.GetSkippableTestsAsync().ConfigureAwait(false);
-                    Log.Information<int>("ITR: SkippableTests = {length}.", skippeableTests.Length);
+                    Log.Information<int>("ITR: SkippableTests = {Length}.", skippeableTests.Length);
 
                     var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
                     foreach (var item in skippeableTests)
@@ -549,7 +549,7 @@ namespace Datadog.Trace.Ci
                     }
 
                     _skippableTestsBySuiteAndName = skippableTestsBySuiteAndName;
-                    Log.Debug<int>("ITR: SkippableTests dictionary has been built.", skippeableTests.Length);
+                    Log.Debug("ITR: SkippableTests dictionary has been built.");
                 }
                 else
                 {

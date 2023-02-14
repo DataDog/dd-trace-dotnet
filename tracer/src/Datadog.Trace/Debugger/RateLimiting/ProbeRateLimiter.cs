@@ -58,7 +58,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             var adaptiveSampler = CreateSampler(samplesPerSecond);
             if (!_samplers.TryAdd(probeId, adaptiveSampler))
             {
-                Log.Warning($"Failed to add sampler for probe {probeId}");
+                Log.Warning("Failed to add sampler for probe {ProbeId}", probeId);
             }
         }
 

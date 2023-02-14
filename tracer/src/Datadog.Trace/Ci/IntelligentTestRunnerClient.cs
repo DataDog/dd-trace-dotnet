@@ -218,7 +218,7 @@ internal class IntelligentTestRunnerClient
             return 0;
         }
 
-        Log.Debug<int>("ITR: Local commits = {count}", localCommits.Length);
+        Log.Debug<int>("ITR: Local commits = {Count}", localCommits.Length);
         var remoteCommitsData = await SearchCommitAsync(localCommits).ConfigureAwait(false);
         return await SendObjectsPackFileAsync(localCommits[0], remoteCommitsData).ConfigureAwait(false);
     }
@@ -264,7 +264,7 @@ internal class IntelligentTestRunnerClient
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
-        Log.Debug("ITR: JSON RQ = {json}", jsonQuery);
+        Log.Debug("ITR: JSON RQ = {Json}", jsonQuery);
 
         return await WithRetries(InternalGetSettingsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
 
@@ -275,14 +275,14 @@ internal class IntelligentTestRunnerClient
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("ITR: Getting settings from: {url}", _settingsUrl.ToString());
+                Log.Debug("ITR: Getting settings from: {Url}", _settingsUrl.ToString());
             }
 
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             CheckResponseStatusCode(response, responseContent, finalTry);
 
-            Log.Debug("ITR: JSON RS = {json}", responseContent);
+            Log.Debug("ITR: JSON RS = {Json}", responseContent);
             if (string.IsNullOrEmpty(responseContent))
             {
                 return default;
@@ -332,7 +332,7 @@ internal class IntelligentTestRunnerClient
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
-        Log.Debug("ITR: JSON RQ = {json}", jsonQuery);
+        Log.Debug("ITR: JSON RQ = {Json}", jsonQuery);
 
         return await WithRetries(InternalGetSkippableTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
 
@@ -343,14 +343,14 @@ internal class IntelligentTestRunnerClient
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("ITR: Searching skippable tests from: {url}", _skippableTestsUrl.ToString());
+                Log.Debug("ITR: Searching skippable tests from: {Url}", _skippableTestsUrl.ToString());
             }
 
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             CheckResponseStatusCode(response, responseContent, finalTry);
 
-            Log.Debug("ITR: JSON RS = {json}", responseContent);
+            Log.Debug("ITR: JSON RS = {Json}", responseContent);
             if (string.IsNullOrEmpty(responseContent))
             {
                 return Array.Empty<SkippableTest>();
@@ -394,7 +394,7 @@ internal class IntelligentTestRunnerClient
 
             if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
             {
-                Log.Debug("ITR: JSON Filtered = {json}", JsonConvert.SerializeObject(testAttributes));
+                Log.Debug("ITR: JSON Filtered = {Json}", JsonConvert.SerializeObject(testAttributes));
             }
 
             return testAttributes.ToArray();
@@ -426,7 +426,7 @@ internal class IntelligentTestRunnerClient
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository), SerializerSettings);
-        Log.Debug("ITR: JSON RQ = {json}", jsonPushedSha);
+        Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
         return await WithRetries(InternalSearchCommitAsync, jsonPushedShaBytes, MaxRetries).ConfigureAwait(false);
@@ -438,14 +438,14 @@ internal class IntelligentTestRunnerClient
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("ITR: Searching commits from: {url}", _searchCommitsUrl.ToString());
+                Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
             }
 
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             CheckResponseStatusCode(response, responseContent, finalTry);
 
-            Log.Debug("ITR: JSON RS = {json}", responseContent);
+            Log.Debug("ITR: JSON RS = {Json}", responseContent);
             if (string.IsNullOrEmpty(responseContent))
             {
                 return Array.Empty<string>();
@@ -488,14 +488,14 @@ internal class IntelligentTestRunnerClient
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
-        Log.Debug("ITR: JSON RQ = {json}", jsonPushedSha);
+        Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
         long totalUploadSize = 0;
         foreach (var packFile in packFilesObject.Files)
         {
             // Send PackFile content
-            Log.Information("ITR: Sending {packFile}", packFile);
+            Log.Information("ITR: Sending {PackFile}", packFile);
             totalUploadSize += await WithRetries(InternalSendObjectsPackFileAsync, packFile, MaxRetries).ConfigureAwait(false);
 
             // Delete temporal pack file
@@ -505,7 +505,7 @@ internal class IntelligentTestRunnerClient
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "ITR: Error deleting pack file: '{packFile}'", packFile);
+                Log.Warning(ex, "ITR: Error deleting pack file: '{PackFile}'", packFile);
             }
         }
 
@@ -518,11 +518,11 @@ internal class IntelligentTestRunnerClient
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "ITR: Error deleting temporary folder: '{temporaryFolder}'", packFilesObject.TemporaryFolder);
+                Log.Warning(ex, "ITR: Error deleting temporary folder: '{TemporaryFolder}'", packFilesObject.TemporaryFolder);
             }
         }
 
-        Log.Information("ITR: Total pack file upload: {totalUploadSize} bytes", totalUploadSize);
+        Log.Information("ITR: Total pack file upload: {TotalUploadSize} bytes", totalUploadSize);
         return totalUploadSize;
 
         async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
@@ -591,7 +591,7 @@ internal class IntelligentTestRunnerClient
 
             if (packObjectsResultCommand.ExitCode != 0)
             {
-                Log.Warning("ITR: 'git pack-objects...' command error: {stderr}", packObjectsResultCommand.Error);
+                Log.Warning("ITR: 'git pack-objects...' command error: {Stderr}", packObjectsResultCommand.Error);
             }
         }
 
@@ -610,7 +610,7 @@ internal class IntelligentTestRunnerClient
             }
             else
             {
-                Log.Warning("ITR: The file '{packFile}' doesn't exist.", file);
+                Log.Warning("ITR: The file '{PackFile}' doesn't exist.", file);
             }
         }
 

@@ -69,7 +69,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
-                    Log.Debug($"{nameof(MethodMetadataCollection)}.{nameof(TryCreateAsyncMethodMetadataIfNotExists)}: Creating a new metadata info for Async method = {method}, index = {index}, Items.Length = {Items.Length}");
+                    Log.Debug<MethodBase, int, int>(nameof(MethodMetadataCollection) + "." + nameof(TryCreateAsyncMethodMetadataIfNotExists) + ": Creating a new metadata info for Async method = {Method}, index = {Index}, Items.Length = {Length}",  method, index, Items.Length);
                 }
 
                 if (method == null)
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
-                    Log.Debug($"{nameof(MethodMetadataCollection)}.{nameof(TryCreateNonAsyncMethodMetadataIfNotExists)}: Creating a new metadata info for Non-Async method = {method}, index = {index}, Items.Length = {Items.Length}");
+                    Log.Debug<MethodBase, int, int>(nameof(MethodMetadataCollection) + "." + nameof(TryCreateNonAsyncMethodMetadataIfNotExists) + ": Creating a new metadata info for Non-Async method = {Method}, index = {Index}, Items.Length = {Length}",  method, index, Items.Length);
                 }
 
                 if (method == null)

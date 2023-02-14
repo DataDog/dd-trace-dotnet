@@ -155,8 +155,8 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
-            Log.Debug("RunCiCommand: CodeCoverageEnabled = {value}", codeCoverageEnabled);
-            Log.Debug("RunCiCommand: TestSkippingEnabled = {value}", testSkippingEnabled);
+            Log.Debug("RunCiCommand: CodeCoverageEnabled = {Value}", codeCoverageEnabled);
+            Log.Debug("RunCiCommand: TestSkippingEnabled = {Value}", testSkippingEnabled);
             ciVisibilitySettings.SetCodeCoverageEnabled(codeCoverageEnabled);
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
 
@@ -247,7 +247,7 @@ namespace Datadog.Trace.Tools.Runner
                     return 0;
                 }
 
-                Log.Debug("RunCiCommand: Launching: {value}", command);
+                Log.Debug("RunCiCommand: Launching: {Value}", command);
                 var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, profilerEnvironmentVariables);
                 if (!string.IsNullOrEmpty(arguments))
                 {
@@ -256,7 +256,7 @@ namespace Datadog.Trace.Tools.Runner
 
                 exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
                 session?.SetTag(TestTags.CommandExitCode, exitCode);
-                Log.Debug<int>("RunCiCommand: Finished with exit code: {value}", exitCode);
+                Log.Debug<int>("RunCiCommand: Finished with exit code: {Value}", exitCode);
                 return exitCode;
             }
             catch (Exception ex)

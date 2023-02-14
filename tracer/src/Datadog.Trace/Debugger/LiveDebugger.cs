@@ -163,7 +163,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                Log.Information($"Live Debugger.InstrumentProbes: Request to instrument {addedProbes.Count} probes definitions");
+                Log.Information<int>("Live Debugger.InstrumentProbes: Request to instrument {Count} probes definitions", addedProbes.Count);
 
                 var methodProbes = new List<NativeMethodProbeDefinition>();
                 var lineProbes = new List<NativeLineProbeDefinition>();
@@ -176,7 +176,7 @@ namespace Datadog.Trace.Debugger
                             var status = lineProbeResult.Status;
                             var message = lineProbeResult.Message;
 
-                            Log.Information("Finished resolving line probe for ProbeID {ProbeID}. Result was '{Status}'. Message was: '{Message}'", probe.Id, status);
+                            Log.Information("Finished resolving line probe for ProbeID {ProbeID}. Result was '{Status}'. Message was: '{Message}'", probe.Id, status, message);
                             switch (status)
                             {
                                 case LiveProbeResolveStatus.Bound:
@@ -235,7 +235,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                Log.Information($"Live Debugger.InstrumentProbes: Request to remove {removedProbesIds.Length} probes.");
+                Log.Information<int>("Live Debugger.InstrumentProbes: Request to remove {Length} probes.", removedProbesIds.Length);
 
                 RemoveUnboundProbes(removedProbesIds);
 
@@ -335,7 +335,7 @@ namespace Datadog.Trace.Debugger
                 }
                 catch (Exception exception)
                 {
-                    Log.Warning($"Failed to deserialize configuration with path {configContent.Path.Path}", exception);
+                    Log.Warning(exception, "Failed to deserialize configuration with path {Path}", configContent.Path.Path);
                 }
             }
 
