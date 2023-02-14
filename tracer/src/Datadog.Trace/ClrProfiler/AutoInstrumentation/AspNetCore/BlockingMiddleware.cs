@@ -31,9 +31,8 @@ internal class BlockingMiddleware
         _endPipeline = endPipeline;
     }
 
-    private static Task WriteResponse(string actionCode, Security security, HttpContext context, out bool endedResponse)
+    private static Task WriteResponse(BlockingAction action, HttpContext context, out bool endedResponse)
     {
-        var action = security.GetBlockingAction(actionCode, context.Request.Headers.GetCommaSeparatedValues("Accept"));
         var httpResponse = context.Response;
 
         if (!httpResponse.HasStarted)
@@ -95,7 +94,8 @@ internal class BlockingMiddleware
                 {
                     if (result.ShouldBlock)
                     {
-                        await WriteResponse(result.Actions[0], security, context, out endedResponse).ConfigureAwait(false);
+                        var action = security.GetBlockingAction(result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                        await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                         securityCoordinator.MarkBlocked();
                     }
 
@@ -118,7 +118,8 @@ internal class BlockingMiddleware
             }
             catch (BlockException e)
             {
-                await WriteResponse(e.Result.Actions[0], security, context, out endedResponse).ConfigureAwait(false);
+                var action = security.GetBlockingAction(e.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.Settings.Enabled)
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)

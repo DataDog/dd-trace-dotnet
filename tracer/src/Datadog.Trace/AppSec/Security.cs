@@ -52,10 +52,8 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
-        public Security()
-            : this(null, null)
-        {
-        }
+        public Security(SecuritySettings settings = null, IWaf waf = null, IReadOnlyDictionary<string, Action> actions = null)
+            : this(settings, waf) => _actions = actions;
 
         private Security(SecuritySettings settings = null, IWaf waf = null)
         {
@@ -90,7 +88,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public static Security Instance
         {
-            get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
+            get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new Security(null, null));
 
             set
             {
@@ -190,9 +188,9 @@ namespace Datadog.Trace.AppSec
                 }
                 else if (action.Type == BlockingAction.RedirectRequestType)
                 {
-                    if (action.Parameters.StatusCode is >= 300 and < 400)
+                    if (!string.IsNullOrEmpty(action.Parameters.Location))
                     {
-                        blockingAction.StatusCode = action.Parameters.StatusCode;
+                        blockingAction.StatusCode = action.Parameters.StatusCode is >= 300 and < 400 ? action.Parameters.StatusCode : 303;
                         blockingAction.RedirectLocation = action.Parameters.Location;
                         blockingAction.IsRedirect = true;
                     }
@@ -341,32 +339,39 @@ namespace Datadog.Trace.AppSec
             if (!_enabled) { return; }
 
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
-            var ruleStatus = new Dictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase);
-            var actions = new Dictionary<string, Action>(StringComparer.InvariantCultureIgnoreCase);
+            Dictionary<string, Action> actionsResult = null;
+            Dictionary<string, bool> ruleStatusResult = null;
 
             foreach (var asmConfig in asmConfigs)
             {
                 try
                 {
-                    var rulesStatus = asmConfig.TypedFile.RuleStatus;
-                    foreach (var data in rulesStatus)
+                    if (asmConfig.TypedFile.RuleStatus != null)
                     {
-                        if (data.Id == null || data.Enabled == null)
+                        ruleStatusResult ??= new Dictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase);
+                        foreach (var data in asmConfig.TypedFile.RuleStatus)
                         {
-                            var id = data.Id ?? "NULL";
-                            var enabled = data.Enabled?.ToString() ?? "NULL";
-                            e.Error(asmConfig.Name, $"Received Null values on message ({id}={enabled}).");
-                            continue;
-                        }
+                            if (data.Id == null || data.Enabled == null)
+                            {
+                                var id = data.Id ?? "NULL";
+                                var enabled = data.Enabled?.ToString() ?? "NULL";
+                                e.Error(asmConfig.Name, $"Received Null values on message ({id}={enabled}).");
+                                continue;
+                            }
 
-                        ruleStatus[data.Id] = data.Enabled.Value;
+                            ruleStatusResult[data.Id] = data.Enabled.Value;
+                        }
                     }
 
-                    foreach (var action in asmConfig.TypedFile.Actions)
+                    if (asmConfig.TypedFile.Actions != null)
                     {
-                        if (action.Id is not null)
+                        actionsResult ??= new Dictionary<string, Action>(StringComparer.InvariantCultureIgnoreCase);
+                        foreach (var action in asmConfig.TypedFile.Actions)
                         {
-                            actions[action.Id] = action;
+                            if (action.Id is not null)
+                            {
+                                actionsResult[action.Id] = action;
+                            }
                         }
                     }
 
@@ -379,9 +384,16 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            _actions = new ReadOnlyDictionary<string, Action>(actions);
-            _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
-            UpdateRuleStatus(_ruleStatus);
+            if (actionsResult != null)
+            {
+                _actions = new ReadOnlyDictionary<string, Action>(actionsResult);
+            }
+
+            if (ruleStatusResult != null)
+            {
+                _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatusResult);
+                UpdateRuleStatus(_ruleStatus);
+            }
         }
 
         private bool UpdateRulesData()
