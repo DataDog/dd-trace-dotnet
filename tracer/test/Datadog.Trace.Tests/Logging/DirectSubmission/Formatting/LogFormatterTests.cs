@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                 serviceName: Service,
                 env: Env,
                 version: Version,
-                new LogSettingsHelper.StubGitMetadataProvider());
+                new NullGitMetadataProvider());
 
             _sb = new StringBuilder();
             _writer = LogFormatter.GetJsonWriter(_sb);

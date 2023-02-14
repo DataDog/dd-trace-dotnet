@@ -20,7 +20,7 @@ namespace Datadog.Trace.TestHelpers
             serviceName: "MyTestService",
             env: "integration_tests",
             version: "1.0.0",
-            new StubGitMetadataProvider());
+            new NullGitMetadataProvider());
 
         public static ImmutableDirectLogSubmissionSettings GetValidSettings()
         {
@@ -33,15 +33,6 @@ namespace Datadog.Trace.TestHelpers
                 globalTags: new Dictionary<string, string>(),
                 enabledLogShippingIntegrations: ImmutableDirectLogSubmissionSettings.SupportedIntegrations.Select(x => x.ToString()).ToList(),
                 batchingOptions: new BatchingSinkOptions(1000, 100_000, TimeSpan.FromSeconds(2)));
-        }
-
-        internal class StubGitMetadataProvider : IGitMetadataTagsProvider
-        {
-            public bool TryExtractGitMetadata(out GitMetadata gitMetadata)
-            {
-                gitMetadata = null;
-                return false;
-            }
         }
     }
 }

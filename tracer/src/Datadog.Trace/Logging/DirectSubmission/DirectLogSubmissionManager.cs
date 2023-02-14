@@ -35,7 +35,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             string serviceName,
             string env,
             string serviceVersion,
-            GitMetadataTagsProvider gitMetadataTagsProvider)
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
             var formatter = new LogFormatter(settings, serviceName, env, serviceVersion, gitMetadataTagsProvider);
             if (previous is not null)

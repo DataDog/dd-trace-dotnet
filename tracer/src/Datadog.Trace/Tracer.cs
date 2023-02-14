@@ -201,7 +201,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the git metadata provider.
         /// </summary>
-        GitMetadataTagsProvider IDatadogTracer.GitMetadataTagsProvider => TracerManager.GitMetadataTagsProvider;
+        IGitMetadataTagsProvider IDatadogTracer.GitMetadataTagsProvider => TracerManager.GitMetadataTagsProvider;
 
         /// <summary>
         /// Gets this tracer's settings.

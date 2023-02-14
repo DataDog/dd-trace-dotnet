@@ -44,9 +44,16 @@ namespace Datadog.Trace.Ci
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
-            GitMetadataTagsProvider gitMetadataTagsProvider)
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
             return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+        }
+
+        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings)
+        {
+            // CI Visibility has its own approach to extract git metadata (via the <cref>CIEnvironmentValues</cref> class),
+            // so we don't need to use the <cref>GitMetadataProvider</cref>.
+            return new NullGitMetadataProvider();
         }
 
         protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)

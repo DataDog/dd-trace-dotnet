@@ -19,7 +19,7 @@ namespace Datadog.Trace
 
         ITraceSampler Sampler { get; }
 
-        GitMetadataTagsProvider GitMetadataTagsProvider { get; }
+        IGitMetadataTagsProvider GitMetadataTagsProvider { get; }
 
         ImmutableTracerSettings Settings { get; }
 

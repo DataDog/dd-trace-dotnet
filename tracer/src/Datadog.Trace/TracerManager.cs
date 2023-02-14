@@ -62,7 +62,7 @@ namespace Datadog.Trace
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
-            GitMetadataTagsProvider gitMetadataTagsProvider,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -111,7 +111,7 @@ namespace Datadog.Trace
         /// </summary>
         public string DefaultServiceName { get; }
 
-        public GitMetadataTagsProvider GitMetadataTagsProvider { get; }
+        public IGitMetadataTagsProvider GitMetadataTagsProvider { get; }
 
         /// <summary>
         /// Gets this tracer's settings.
