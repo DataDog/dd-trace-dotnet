@@ -348,15 +348,15 @@ namespace iast
 
     struct InstructionProcessInfo
     {
-        InstructionProcessInfo(ILInstr* instruction, int paramIndex, AspectBehavior vehabior)
+        InstructionProcessInfo(ILInstr* instruction, int paramIndex, AspectBehavior behavior)
         {
             this->instruction = instruction;
             this->paramIndex = paramIndex;
-            this->vehabior = vehabior;
+            this->behavior = behavior;
         }
         ILInstr* instruction;
         int paramIndex;
-        AspectBehavior vehabior;
+        AspectBehavior behavior;
     };
 
     bool DataflowAspectReference::ApplyFilters(ILInstr* instruction, ILRewriter* processor)
@@ -465,12 +465,12 @@ namespace iast
                 int spotInfoId = GetSpotInfoId(method, instructionToProcess.instruction->GetLine(), &methodRef);
 
                 if (methodRef == 0) { continue; } //Disabled Spot
-                if (instructionToProcess.vehabior == AspectBehavior::InsertBefore)
+                if (instructionToProcess.behavior == AspectBehavior::InsertBefore)
                 {
                     aspectInstruction = processor->NewILInstr(CEE_CALL, methodRef);
                     processor->InsertBefore(instructionToProcess.instruction, aspectInstruction);
                 }
-                else if (instructionToProcess.vehabior == AspectBehavior::InsertAfter)
+                else if (instructionToProcess.behavior == AspectBehavior::InsertAfter)
                 {
                     aspectInstruction = processor->NewILInstr(CEE_CALL, methodRef);
                     auto inserted = processor->InsertAfter(instructionToProcess.instruction, aspectInstruction);
