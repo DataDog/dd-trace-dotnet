@@ -4,10 +4,10 @@ ARG LINUX_PACKAGE
 RUN apt-get update && apt-get install dos2unix
 
 COPY ${LINUX_PACKAGE} /binaries/
-
-COPY ddtrace-info.sh query-versions.fsx /binaries/
+RUN ls /binaries/datadog-dotnet-apm-*.tar.gz > /binaries/LIBRARY_VERSION
 RUN mv /binaries/${LINUX_PACKAGE} /binaries/datadog-dotnet-apm.tar.gz
 
+COPY ddtrace-info.sh query-versions.fsx /binaries/
 RUN dos2unix /binaries/ddtrace-info.sh
 RUN /binaries/ddtrace-info.sh
 
