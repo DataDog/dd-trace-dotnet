@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Agent.MessagePack;
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -27,14 +29,14 @@ namespace Datadog.Trace
         /// <summary>
         /// The git commit hash of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
-        /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.GitCommitSha"/>.
+        /// This tag is added during MessagePack serialization using the value from <see cref="TraceChunkModel.GitCommitSha"/>.
         /// </summary>
         internal const string GitCommitSha = "_dd.git.commit.sha";
 
         /// <summary>
         /// The git repository URL of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
-        /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.GitRepositoryUrl"/>.
+        /// This tag is added during MessagePack serialization using the value from <see cref="TraceChunkModel.GitRepositoryUrl"/>.
         /// </summary>
         internal const string GitRepositoryUrl = "_dd.git.repository_url";
 

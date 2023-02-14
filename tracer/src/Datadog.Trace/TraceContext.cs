@@ -44,12 +44,6 @@ namespace Datadog.Trace
                 ServiceVersion = settings.ServiceVersion;
             }
 
-            if (tracer?.GitMetadataTagsProvider != null && tracer.GitMetadataTagsProvider.TryExtractGitMetadata(out var metadata) && metadata != GitMetadata.Empty)
-            {
-                GitCommitSha = metadata.CommitSha;
-                GitRepositoryUrl = metadata.RepositoryUrl;
-            }
-
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
@@ -76,10 +70,6 @@ namespace Datadog.Trace
         public string Environment { get; set; }
 
         public string ServiceVersion { get; set; }
-
-        internal string GitRepositoryUrl { get; }
-
-        internal string GitCommitSha { get; }
 
         public string Origin { get; set; }
 
