@@ -44,8 +44,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode);
             var acknowledgedId = nameof(TestBlockingAction) + Guid.NewGuid();
-            // need to reset if the process is going to be reused
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, acknowledgedId) }, AsmProduct, appliedServiceNames: new[] { acknowledgedId });
+
             var spans1 = await SendRequestsAsync(agent, url);
             acknowledgedId = nameof(TestBlockingAction) + Guid.NewGuid();
             await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = "block", Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, acknowledgedId) }, AsmProduct, appliedServiceNames: new[] { acknowledgedId });
@@ -55,6 +54,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans1);
             spans.AddRange(spans2);
             await VerifySpans(spans.ToImmutableList(), settings);
+            // need to reset if the process is going to be reused
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, acknowledgedId) }, AsmProduct, appliedServiceNames: new[] { acknowledgedId });
         }
 
         protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmActionsConfiguration);

@@ -64,7 +64,7 @@ internal readonly partial struct SecurityCoordinator
             var dynMethod = new DynamicMethod(
                 "ThrowHttpResponseExceptionDynMeth",
                 typeof(void),
-                new[] { typeof(int), typeof(string) },
+                new[] { typeof(HttpStatusCode), typeof(string), typeof(string) },
                 typeof(SecurityCoordinator).Module,
                 true);
             var il = GetBaseIlForThrowingHttpResponseException(dynMethod);
@@ -115,7 +115,7 @@ internal readonly partial struct SecurityCoordinator
             var dynMethod = new DynamicMethod(
                 "ThrowHttpResponseRedirectExceptionDynMeth",
                 typeof(void),
-                new[] { typeof(int), typeof(string) },
+                new[] { typeof(HttpStatusCode), typeof(string), typeof(string) },
                 typeof(SecurityCoordinator).Module,
                 true);
             var il = GetBaseIlForThrowingHttpResponseException(dynMethod);
