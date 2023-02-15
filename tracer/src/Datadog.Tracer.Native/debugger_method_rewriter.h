@@ -20,16 +20,6 @@ public:
     }
 
 private:
-    // Holds incremental index that is used on the managed side for grabbing an InstrumentedMethodInfo instance (per
-    // instrumented method)
-    inline static std::atomic<int> _nextInstrumentedMethodIndex{0};
-    // Holds incremental index that is used on the managed side for grabbing an InstrumentedProbeInfo instance (per
-    // instrumented probe)
-    inline static std::atomic<int> _nextInstrumentedProbeIndex{0};
-
-    static int GetNextInstrumentedMethodIndex();
-    static int GetNextInstrumentedProbeIndex();
-
     static HRESULT GetFunctionLocalSignature(const ModuleMetadata& module_metadata, ILRewriter& rewriter,
                                              FunctionLocalSignature& localSignature);
     HRESULT LoadArgument(bool isStatic, const ILRewriterWrapper& rewriterWrapper,

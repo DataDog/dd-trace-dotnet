@@ -144,16 +144,16 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 if (loaded)
                 {
                     success = true;
-                    Log.Information($"Loaded library '{libName}' from '{path}' with handle '{handle}'");
+                    Log.Information("Loaded library '{LibName}' from '{Path}' with handle '{Handle}'", libName, path, handle);
                     break;
                 }
 
-                Log.Warning($"Failed to load library '{libName}' from '{path}'");
+                Log.Warning("Failed to load library '{LibName}' from '{Path}'", libName, path);
             }
 
             if (!success)
             {
-                Log.Warning($"Failed to load library '{libName}' from any of the following '{string.Join(", ", paths)}'");
+                Log.Warning("Failed to load library '{LibName}' from any of the following '{Paths}'", libName, string.Join(", ", paths));
                 Log.Error("AppSec could not load libddwaf native library, as a result, AppSec could not start. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
 

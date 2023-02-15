@@ -13,7 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.Instrumentation.Registry
+namespace Datadog.Trace.Debugger.Instrumentation.Collections
 {
     /// Acts as a registry of indexed <see cref="MethodMetadataInfo"/>.
     /// Each debugger-instrumented method is given an index (hard-coded into the instrumented bytecode),
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
         public bool TryCreateAsyncMethodMetadataIfNotExists<TTarget>(TTarget targetObject, int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo)
         {
-            if (IsIndexExists(index))
+            if (IndexExists(index))
             {
                 return true;
             }
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
             // Create a new one at the given index
             lock (ItemsLocker)
             {
-                if (IsIndexExists(index))
+                if (IndexExists(index))
                 {
                     return true;
                 }
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
-                    Log.Debug($"{nameof(MethodMetadataCollection)}.{nameof(TryCreateAsyncMethodMetadataIfNotExists)}: Creating a new metadata info for Async method = {method}, index = {index}, Items.Length = {Items.Length}");
+                    Log.Debug<MethodBase, int, int>(nameof(MethodMetadataCollection) + "." + nameof(TryCreateAsyncMethodMetadataIfNotExists) + ": Creating a new metadata info for Async method = {Method}, index = {Index}, Items.Length = {Length}",  method, index, Items.Length);
                 }
 
                 if (method == null)
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
         public bool TryCreateNonAsyncMethodMetadataIfNotExists(int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle)
         {
-            if (IsIndexExists(index))
+            if (IndexExists(index))
             {
                 return true;
             }
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
             // Create a new one at the given index
             lock (ItemsLocker)
             {
-                if (IsIndexExists(index))
+                if (IndexExists(index))
                 {
                     return true;
                 }
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Registry
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
-                    Log.Debug($"{nameof(MethodMetadataCollection)}.{nameof(TryCreateNonAsyncMethodMetadataIfNotExists)}: Creating a new metadata info for Non-Async method = {method}, index = {index}, Items.Length = {Items.Length}");
+                    Log.Debug<MethodBase, int, int>(nameof(MethodMetadataCollection) + "." + nameof(TryCreateNonAsyncMethodMetadataIfNotExists) + ": Creating a new metadata info for Non-Async method = {Method}, index = {Index}, Items.Length = {Length}",  method, index, Items.Length);
                 }
 
                 if (method == null)

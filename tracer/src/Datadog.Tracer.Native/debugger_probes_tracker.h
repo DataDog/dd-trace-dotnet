@@ -19,6 +19,15 @@ namespace debugger
     private:
         std::recursive_mutex _probeMetadataMapMutex;
         std::unordered_map<shared::WSTRING, std::shared_ptr<ProbeMetadata>> _probeMetadataMap{};
+        // Holds incremental index that is used on the managed side for grabbing an InstrumentedMethodInfo instance (per
+        // instrumented method)
+        inline static std::atomic<int> _nextInstrumentedMethodIndex{0};
+        // Holds incremental index that is used on the managed side for grabbing a ProbeData instance (per
+        // instrumented probe)
+        inline static std::atomic<int> _nextInstrumentedProbeIndex{0};
+        // Holds indices that were previously used and freed upon probes removal.
+        // the `_probeMetadataMapMutex` is used for syncing
+        inline static std::queue<int> _freeProbeIndices{};
 
     public:
         ProbesMetadataTracker() = default;
@@ -26,10 +35,13 @@ namespace debugger
         bool TryGetMetadata(const shared::WSTRING& probeId, std::shared_ptr<ProbeMetadata>& probeMetadata);
         std::set<WSTRING> GetProbeIds(ModuleID moduleId, mdMethodDef methodId);
         void CreateNewProbeIfNotExists(const shared::WSTRING& probeId);
+        bool ProbeExists(const shared::WSTRING& probeId);
         void AddMethodToProbe(const shared::WSTRING& probeId, ModuleID moduleId, mdMethodDef methodId);
+        bool TryGetNextInstrumentedProbeIndex(const shared::WSTRING& probeId, int& probeIndex);
         bool SetProbeStatus(const shared::WSTRING& probeId, ProbeStatus newStatus);
         bool SetErrorProbeStatus(const shared::WSTRING& probeId, const shared::WSTRING& errorMessage);
         int RemoveProbes(const std::vector<shared::WSTRING>& probes);
+        static int GetNextInstrumentedMethodIndex();
     };
 
 } // namespace debugger

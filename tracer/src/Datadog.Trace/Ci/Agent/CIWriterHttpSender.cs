@@ -123,7 +123,7 @@ namespace Datadog.Trace.Ci.Agent
                 }
                 catch (MultipartApiRequestNotSupported mReqEx)
                 {
-                    Log.Error(mReqEx, "Error trying to send a multipart request to: {url}", url.ToString());
+                    Log.Error(mReqEx, "Error trying to send a multipart request to: {Url}", url.ToString());
                     return;
                 }
                 catch (Exception ex)
@@ -174,7 +174,7 @@ namespace Datadog.Trace.Ci.Agent
             var payloadArray = payload.ToArray();
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
+                Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
             }
 
             await SendPayloadAsync(
@@ -185,7 +185,7 @@ namespace Datadog.Trace.Ci.Agent
 
         private async Task SendPayloadAsync(MultipartPayload payload)
         {
-            Log.Debug<int>("Sending {count} multipart items...", payload.Count);
+            Log.Debug<int>("Sending {Count} multipart items...", payload.Count);
             await SendPayloadAsync(
                 payload,
                 static (request, payloadArray) =>

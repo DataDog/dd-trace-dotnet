@@ -131,7 +131,7 @@ namespace Datadog.Trace.Processors
             }
             catch (Exception ex)
             {
-                Log.Debug("Error obfuscating sql {}", sqlQuery, ex);
+                Log.Debug(ex, "Error obfuscating sql {Query}", sqlQuery);
             }
 
             return sqlQuery;

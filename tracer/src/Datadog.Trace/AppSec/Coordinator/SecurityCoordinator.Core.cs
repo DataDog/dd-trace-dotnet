@@ -63,7 +63,7 @@ internal readonly partial struct SecurityCoordinator
                 else
                 {
 #endif
-                    Log.Warning("Header {key} couldn't be added as argument to the waf", currentKey);
+                    Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
                 }
             }
         }

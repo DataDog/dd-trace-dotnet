@@ -55,10 +55,18 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public void SetRate(string probeId, int samplesPerSecond)
         {
+            // We currently don't support updating the probe rate limit, and that is fine
+            // since the functionality in the UI is not exposed yet.
+            if (_samplers.TryGetValue(probeId, out _))
+            {
+                Log.Information("Adaptive sampler already exist for {ProbeID}", probeId);
+                return;
+            }
+
             var adaptiveSampler = CreateSampler(samplesPerSecond);
             if (!_samplers.TryAdd(probeId, adaptiveSampler))
             {
-                Log.Warning($"Failed to add sampler for probe {probeId}");
+                Log.Information("Adaptive sampler already exist for {ProbeID}", probeId);
             }
         }
 
