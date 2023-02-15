@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-  </ItemGroup>
+  <PropertyGroup>
+    <TargetFrameworks>net462;net5.0;net6.0;net7.0</TargetFrameworks>
+  </PropertyGroup>
   
-  <ItemGroup Condition="!$(TargetFramework.StartsWith('netcoreapp3')) AND !$(TargetFramework.StartsWith('netcoreapp2'))">
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />
   </ItemGroup>
 

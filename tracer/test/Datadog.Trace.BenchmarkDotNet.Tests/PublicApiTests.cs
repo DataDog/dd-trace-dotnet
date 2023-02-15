@@ -7,8 +7,6 @@ using Datadog.Trace.Tests;
 
 namespace Datadog.Trace.BenchmarkDotNet.Tests
 {
-    // System.CodeDom 6.0.0 (imported by BenchmarkDotNet 0.13.2) cannot be used in these targets
-#if !NETCOREAPP3_1 && !NETCOREAPP3_0 && !NETCOREAPP2_1
     public class PublicApiTests : PublicApiTestsBase
     {
         public PublicApiTests()
@@ -16,5 +14,4 @@ namespace Datadog.Trace.BenchmarkDotNet.Tests
         {
         }
     }
-#endif
 }
