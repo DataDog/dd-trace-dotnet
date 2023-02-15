@@ -53,9 +53,11 @@ jobs:
       shell: bash
       run: |
         if [ "$is_snapshot" = "true" ]; then
-          echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot" >> $GITHUB_STATE
+          echo "Tag for snapshot"
+          echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot" >> $GITHUB_OUTPUT
         else
-          echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest" >> $GITHUB_STATE
+          echo "Tag for release"
+          echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest" >> $GITHUB_OUTPUT
         fi
       env:
         is_snapshot: "${{ github.event.inputs.is_snapshot}}"
