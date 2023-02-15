@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using FluentAssertions;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
@@ -297,6 +298,13 @@ public class StringAspectTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void String_Concat_intList()
+    {
+        string str = String.Concat<int>(new List<int> { 1, 2, 3});
+        str.Should().Be("123");
+    }
+
+    [Fact]
     public void String_Concat_Generic_Class()
     {
         string str = String.Concat<ClassForStringTest>(new List<ClassForStringTest> { new ClassForStringTest(UntaintedString), new ClassForStringTest(TaintedString) });
@@ -373,6 +381,7 @@ public class StringAspectTests : InstrumentationTestsBase
     
     public void GivenATaintedString_WhenCallingConcatWithStringIEnumerableNullParam_ResultIsTainted()
     {
+        string temp = taintedValue + "W";
         AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-TAINTED2-+:", String.Concat(new List<string> { "concat", "CONCAT2", null, taintedValue2 }), () => String.Concat(new List<string> { "concat", "CONCAT2", null, taintedValue2 }));
     }
 
@@ -413,14 +422,19 @@ public class StringAspectTests : InstrumentationTestsBase
 
     
     [Fact]
-    public void GivenATaintedStringInStrcut_WhenCallingConcat_ResultIsTainted()
+    public void GivenATaintedStringInStruct_WhenCallingConcat_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-tainted-+:", String.Concat<StructForTest>(new List<StructForTest> { new StructForTest("UntaintedString"), new StructForTest(taintedValue) }), () => String.Concat<StructForTest>(new List<StructForTest> { new StructForTest("UntaintedString"), new StructForTest(taintedValue) }));
     }
 
-    
     [Fact]
-    public void GivenATaintedStringInStrcut_WhenCallingConcat_ResultIsTainted2()
+    public void GivenATaintedStringInStruct_WhenCallingConcat_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-tainted-+:", String.Concat<StructForTest2>(new StructForTest2[] { new StructForTest2("UntaintedString"), new StructForTest2(taintedValue) }), () => String.Concat<StructForTest2>(new List<StructForTest2> { new StructForTest2("UntaintedString"), new StructForTest2(taintedValue) }));
+    }
+
+    [Fact]
+    public void GivenATaintedStringInStruct_WhenCallingConcat_ResultIsTainted3()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-tainted-+:", String.Concat<StructForTest2>(new List<StructForTest2> { new StructForTest2("UntaintedString"), new StructForTest2(taintedValue) }), () => String.Concat<StructForTest2>(new List<StructForTest2> { new StructForTest2("UntaintedString"), new StructForTest2(taintedValue) }));
     }
