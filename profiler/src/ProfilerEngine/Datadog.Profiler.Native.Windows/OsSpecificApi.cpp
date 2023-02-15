@@ -5,6 +5,7 @@
 
 #include "resource.h"
 
+#include <memory>
 #include "OsSpecificApi.h"
 
 #include "IConfiguration.h"
@@ -200,35 +201,30 @@ bool GetProcessorCount(uint32_t& processorCount)
         return false;
     }
 
-    // TODO: use std::unique_ptr
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer = NULL;
+    std::unique_ptr<byte[]> buffer;
     PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = NULL;
     DWORD returnLength = 0;
     DWORD byteOffset = 0;
 
-    auto result = GetLogicalProcessorInformation(buffer, &returnLength);
-    if (result == 0)
+    if (!GetLogicalProcessorInformation(ptr, &returnLength))
     {
         if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
         {
             return false;
         }
 
-        buffer = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(returnLength);
+        buffer = std::make_unique<byte[]>(returnLength);
         if (nullptr == buffer)
         {
             return false;
         }
 
-        result = GetLogicalProcessorInformation(buffer, &returnLength);
-        if (result == 0)
+        ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)buffer.get();
+        if (!GetLogicalProcessorInformation(ptr, &returnLength))
         {
-            free(buffer);
             return false;
         }
     }
-
-    ptr = buffer;
 
     while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= returnLength)
     {
