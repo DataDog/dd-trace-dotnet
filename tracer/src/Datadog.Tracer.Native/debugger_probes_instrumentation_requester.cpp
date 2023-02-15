@@ -12,7 +12,7 @@
 #include "debugger_environment_variables_util.h"
 #include "debugger_method_rewriter.h"
 #include "debugger_rejit_handler_module_method.h"
-#include "probes_tracker.h"
+#include "debugger_probes_tracker.h"
 
 namespace debugger
 {

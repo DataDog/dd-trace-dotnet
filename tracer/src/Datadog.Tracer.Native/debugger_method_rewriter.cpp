@@ -7,20 +7,10 @@
 #include "stats.h"
 #include "version.h"
 #include "environment_variables_util.h"
-#include "probes_tracker.h"
+#include "debugger_probes_tracker.h"
 
 namespace debugger
 {
-
-int DebuggerMethodRewriter::GetNextInstrumentedMethodIndex()
-{
-    return std::atomic_fetch_add(&_nextInstrumentedMethodIndex, 1);
-}
-
-int DebuggerMethodRewriter::GetNextInstrumentedProbeIndex()
-{
-    return std::atomic_fetch_add(&_nextInstrumentedProbeIndex, 1);
-}
 
 // Get function locals
 HRESULT DebuggerMethodRewriter::GetFunctionLocalSignature(const ModuleMetadata& module_metadata, ILRewriter& rewriter, FunctionLocalSignature& localSignature)
@@ -394,14 +384,22 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
 
     if (FAILED(hr))
     {
-        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() DefineUserStringFailed. MethodProbeId = ", lineProbeId,
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() DefineUserStringFailed. lineProbeId = ", lineProbeId,
                      " module_id= ", module_id, ", functon_token=", function_token);
         return hr;
     }
 
     rewriterWrapper.LoadStr(lineProbeIdToken);
-    
-    rewriterWrapper.LoadInt32(GetNextInstrumentedProbeIndex());
+
+    int probeIndex;
+    if (!ProbesMetadataTracker::Instance()->TryGetNextInstrumentedProbeIndex(lineProbeId, probeIndex))
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::CallLineProbe() TryGetNextInstrumentedProbeIndex failed with. lineProbeId = ", lineProbeId,
+                     " module_id= ", module_id, ", functon_token=", function_token);
+        return E_FAIL;
+    }
+
+    rewriterWrapper.LoadInt32(probeIndex);
 
     ILInstr* loadInstanceInstr;
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr, debuggerTokens);
@@ -540,7 +538,16 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     auto hr = LoadProbeIdIntoStack(module_id, module_metadata, function_token, methodProbeId, rewriterWrapper);
 
-    rewriterWrapper.LoadInt32(GetNextInstrumentedProbeIndex());
+    int probeIndex;
+    if (!ProbesMetadataTracker::Instance()->TryGetNextInstrumentedProbeIndex(methodProbeId, probeIndex))
+    {
+        Logger::Warn(
+            "*** DebuggerMethodRewriter::ApplyMethodProbe() TryGetNextInstrumentedProbeIndex failed with. methodProbeId = ",
+            methodProbeId, " module_id= ", module_id, ", functon_token=", function_token);
+        return E_FAIL;
+    }
+
+    rewriterWrapper.LoadInt32(probeIndex);
 
     ILInstr* loadInstanceInstr;
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr, debuggerTokens);
@@ -1037,7 +1044,16 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     hr = LoadProbeIdIntoStack(moduleId, moduleMetadata, functionToken, methodProbeId, rewriterWrapper);
     IfFailRet(hr);
 
-    rewriterWrapper.LoadInt32(GetNextInstrumentedProbeIndex());
+    int probeIndex;
+    if (!ProbesMetadataTracker::Instance()->TryGetNextInstrumentedProbeIndex(methodProbeId, probeIndex))
+    {
+        Logger::Warn(
+            "*** DebuggerMethodRewriter::ApplyAsyncMethodProbe() TryGetNextInstrumentedProbeIndex failed with. methodProbeId = ",
+                     methodProbeId, " module_id= ", moduleId, ", functon_token=", functionToken);
+        return E_FAIL;
+    }
+
+    rewriterWrapper.LoadInt32(probeIndex);
 
     ILInstr* loadInstanceInstr;
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr, debuggerTokens);
@@ -1437,7 +1453,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         return E_FAIL;
     }
 
-    const auto instrumentedMethodIndex = GetNextInstrumentedMethodIndex();
+    const auto instrumentedMethodIndex = ProbesMetadataTracker::GetNextInstrumentedMethodIndex();
     std::vector<EHClause> newClauses;
 
     // ***
