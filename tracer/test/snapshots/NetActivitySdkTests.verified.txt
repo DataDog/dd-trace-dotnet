@@ -26,13 +26,35 @@
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_4,
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: Samples.NetActivitySdk.server,
+    Resource: Ctor4,
+    Service: Samples.NetActivitySdk,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      attribute-string: str,
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      attribute-int: 1.0
+    }
+  },
+  {
+    TraceId: Id_4,
+    SpanId: Id_5,
     Name: Samples.NetActivitySdk.server,
     Resource: Ctor2,
     Service: Samples.NetActivitySdk,
     Type: web,
-    ParentId: Id_5,
+    ParentId: Id_6,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -51,35 +73,13 @@
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_6,
+    TraceId: Id_4,
+    SpanId: Id_7,
     Name: Samples.NetActivitySdk.server,
     Resource: Ctor3,
     Service: Samples.NetActivitySdk,
     Type: web,
-    ParentId: Id_4,
-    Tags: {
-      attribute-string: str,
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Samples.NetActivitySdk,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      attribute-int: 1.0
-    }
-  },
-  {
-    TraceId: Id_3,
-    SpanId: Id_7,
-    Name: Samples.NetActivitySdk.server,
-    Resource: Ctor4,
-    Service: Samples.NetActivitySdk,
-    Type: web,
-    ParentId: Id_6,
+    ParentId: Id_5,
     Tags: {
       attribute-string: str,
       env: integration_tests,
