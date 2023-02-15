@@ -175,7 +175,6 @@ public partial class StringAspects
         return StringModuleImpl.OnStringConcat(values, string.Concat(values));
     }
 
-/*
     /// <summary>
     /// String.Concat aspect
     /// </summary>
