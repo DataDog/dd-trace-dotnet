@@ -103,7 +103,7 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception e)
         {
-            Log.Warning(e, e.Message);
+            Log.Warning("An error occured while trying to write the IL for generating an HttpResponseException with message {Message}", e.Message);
             return null;
         }
     }
@@ -162,7 +162,7 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception e)
         {
-            Log.Warning(e, e.Message);
+            Log.Warning("An error occured while trying to write the IL for generating an HttpResponseException with message {Message}", e.Message);
             return null;
         }
     }

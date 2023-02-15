@@ -196,7 +196,7 @@ namespace Datadog.Trace.AppSec
                     }
                     else
                     {
-                        Log.Warning("Received a custom block action of type redirect with a status code {statusCode}, an automatic response will be set", action.Parameters.StatusCode.ToString());
+                        Log.Warning("Received a custom block action of type redirect with a status code {StatusCode}, an automatic response will be set", action.Parameters.StatusCode.ToString());
                         SetAutomaticResponseContent();
                         blockingAction.StatusCode = 403;
                     }
