@@ -14,6 +14,7 @@
 #endif
 
 #include <sys/syscall.h>
+#include <sys/sysinfo.h>
 #include "OsSpecificApi.h"
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
@@ -130,5 +131,15 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
 
     return isRunning;
 }
+
+// from https://linux.die.net/man/3/get_nprocs
+//
+bool GetProcessorCount(uint32_t& processorCount)
+{
+    processorCount = get_nprocs();
+
+    return true;
+}
+
 
 } // namespace OsSpecificApi
