@@ -9,6 +9,7 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -265,25 +266,25 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             string message,
             ulong message_len)
         {
-            var formattedMessage = $"{level}: [{function}]{file}({line}): {message}";
+            var location = $"[{function}]{file}({line})";
             switch (level)
             {
                 case DDWAF_LOG_LEVEL.DDWAF_TRACE:
                 case DDWAF_LOG_LEVEL.DDWAF_DEBUG:
-                    _log.Debug(formattedMessage);
+                    _log.Debug("{Level}: {Location}: {Message}", level, location, message);
                     break;
                 case DDWAF_LOG_LEVEL.DDWAF_INFO:
-                    _log.Information(formattedMessage);
+                    _log.Information("{Level}: {Location}: {Message}", level, location, message);
                     break;
                 case DDWAF_LOG_LEVEL.DDWAF_WARN:
-                    _log.Warning(formattedMessage);
+                    _log.Warning("{Level}: {Location}: {Message}", level, location, message);
                     break;
                 case DDWAF_LOG_LEVEL.DDWAF_ERROR:
                 case DDWAF_LOG_LEVEL.DDWAF_AFTER_LAST:
-                    _log.Error(formattedMessage);
+                    _log.Error("{Level}: {Location}: {Message}", level, location, message);
                     break;
                 default:
-                    _log.Error("[Unknown level] " + formattedMessage);
+                    _log.Error("[Unknown level] {Level}: {Location}: {Message}", level, location, message);
                     break;
             }
         }
@@ -294,12 +295,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             funcPtr = NativeLibrary.GetExport(handle, functionName);
             if (funcPtr == IntPtr.Zero)
             {
-                _log.Error("No function of name {functionName} exists on waf object", functionName);
+                _log.Error("No function of name {FunctionName} exists on waf object", functionName);
                 ExportErrorHappened = true;
                 return null;
             }
 
-            _log.Debug("GetDelegateForNativeFunction {functionName} -  {funcPtr}: ", functionName, funcPtr);
+            _log.Debug("GetDelegateForNativeFunction {FunctionName} -  {FuncPtr}: ", functionName, funcPtr);
             return (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
         }
 

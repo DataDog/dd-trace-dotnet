@@ -321,7 +321,7 @@ namespace Datadog.Trace.Agent
 
                     if (droppedSpans > 0)
                     {
-                        Log.Warning("{count} traces were dropped since the last flush operation.", droppedSpans);
+                        Log.Warning("{Count} traces were dropped since the last flush operation.", droppedSpans);
                     }
 
                     if (buffer.TraceCount > 0)
@@ -333,11 +333,11 @@ namespace Datadog.Trace.Agent
                         {
                             droppedP0Traces = Interlocked.Exchange(ref _droppedP0Traces, 0);
                             droppedP0Spans = Interlocked.Exchange(ref _droppedP0Spans, 0);
-                            Log.Debug<int, int, long, long>("Flushing {spans} spans across {traces} traces. CanComputeStats is enabled with {droppedP0Traces} droppedP0Traces and {droppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
+                            Log.Debug<int, int, long, long>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is enabled with {DroppedP0Traces} droppedP0Traces and {DroppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
                         }
                         else
                         {
-                            Log.Debug<int, int>("Flushing {spans} spans across {traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
+                            Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
                         }
 
                         var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans).ConfigureAwait(false);

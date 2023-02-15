@@ -50,9 +50,9 @@ namespace Datadog.Trace.Ci.Agent
      *         │                         │ └──────────────────────────────┬─┘   │
      *         │                         │                                │     │
      *         │                         └────────────────────────────────┘     │
-     *         │                                   2 .. N Consumers             │
+     *         │                                   1 .. N Consumers             │
      *         │                                                                │
-     *         │                                      Max N = 6                 │
+     *         │                                      Max N = 4                 │
      *         │                                                                │
      *         └────────────────────────────────────────────────────────────────┘
      */
@@ -78,9 +78,9 @@ namespace Datadog.Trace.Ci.Agent
             _eventQueue = new BlockingCollection<IEvent>(maxItemsInQueue);
             _batchInterval = batchInterval;
 
-            // Concurrency Level is a simple algorithm where we select a number between 2 and 6 depending on the number of Logical Processor Count
+            // Concurrency Level is a simple algorithm where we select a number between 1 and 4 depending on the number of Logical Processor Count
             // To scale the number of senders with a hard limit.
-            var concurrencyLevel = concurrency ?? Math.Min(Math.Max(Environment.ProcessorCount / 2, 2), 6);
+            var concurrencyLevel = concurrency ?? Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 4);
             _buffersArray = new Buffers[concurrencyLevel];
             for (var i = 0; i < _buffersArray.Length; i++)
             {
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Ci.Agent
                 _buffersArray[i].SetFlushTask(tskFlush);
             }
 
-            Log.Information<int>($"CIVisibilityProtocolWriter Initialized with concurrency level of: {concurrencyLevel}", concurrencyLevel);
+            Log.Information<int>("CIVisibilityProtocolWriter Initialized with concurrency level of: {ConcurrencyLevel}", concurrencyLevel);
         }
 
         public void WriteEvent(IEvent @event)
@@ -200,7 +200,7 @@ namespace Datadog.Trace.Ci.Agent
                             // We get the countdown event and exit this loop
                             // to flush buffers (in case there's any event)
                             watermarkCountDown = watermarkEvent.Countdown;
-                            Log.Debug<int>("CIVisibilityProtocolWriter: Watermark detected on [Buffer: {bufferIndex}]", index);
+                            Log.Debug<int>("CIVisibilityProtocolWriter: Watermark detected on [Buffer: {BufferIndex}]", index);
                             break;
                         }
 
@@ -250,9 +250,9 @@ namespace Datadog.Trace.Ci.Agent
                     if (watermarkCountDown is not null)
                     {
                         watermarkCountDown.Signal();
-                        Log.Debug<int>("CIVisibilityProtocolWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Waiting for signals from other buffers [Buffer: {BufferIndex}]", index);
                         await watermarkCountDown.WaitAsync().ConfigureAwait(false);
-                        Log.Debug<int>("CIVisibilityProtocolWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Signals received, continue processing.. [Buffer: {BufferIndex}]", index);
                     }
                 }
                 catch (ThreadAbortException ex)
@@ -269,9 +269,9 @@ namespace Datadog.Trace.Ci.Agent
                     if (watermarkCountDown is not null)
                     {
                         watermarkCountDown.Signal();
-                        Log.Debug<int>("CIVisibilityProtocolWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Waiting for signals from other buffers [Buffer: {BufferIndex}]", index);
                         await watermarkCountDown.WaitAsync().ConfigureAwait(false);
-                        Log.Debug<int>("CIVisibilityProtocolWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
+                        Log.Debug<int>("CIVisibilityProtocolWriter: Signals received, continue processing.. [Buffer: {BufferIndex}]", index);
                     }
                 }
                 finally

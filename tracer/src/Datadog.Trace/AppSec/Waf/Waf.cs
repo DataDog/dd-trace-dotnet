@@ -108,7 +108,7 @@ namespace Datadog.Trace.AppSec.Waf
             var finalRuleDatas = MergeRuleData(res);
             using var encoded = Encoder.Encode(finalRuleDatas, _wafLibraryInvoker, new List<Obj>(), false);
             var ret = _wafLibraryInvoker.UpdateRuleData(_wafHandle, encoded.RawPtr);
-            Log.Information("{number} rules have been updated and waf status is {status}", finalRuleDatas.Count, ret);
+            Log.Information("{Number} rules have been updated and waf status is {Status}", finalRuleDatas.Count, ret);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
 
@@ -132,7 +132,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             using var encoded = Encoder.Encode(ruleStatus, _wafLibraryInvoker);
             var ret = _wafLibraryInvoker.ToggleRules(_wafHandle, encoded.RawPtr);
-            Log.Information("{number} rule status have been updated and waf status is {status}", ruleStatus.Count, ret);
+            Log.Information("{Number} rule status have been updated and waf status is {Status}", ruleStatus.Count, ret);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
 
