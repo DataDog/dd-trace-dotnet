@@ -1,10 +1,14 @@
 name: "Docker base images"
 on:
   # This GitHub Action will be invoked automatically from the main Azure DevOps build
+  # This job will only be launched when we are building the main branch (a snapshot) or when we are generating a release.
   workflow_dispatch:
     inputs:
       azdo_build_id:
         description: 'The specific AzDo build from which the release artifacts will be downloaded.'
+        required: true
+      is_snapshot:
+        description: 'True when we are building main branch, false when we are building a release'
         required: true
 jobs:
   build-and-publish-base-image:
@@ -35,7 +39,7 @@ jobs:
       shell: bash
       run: |
         echo "OUTPUT ARTIFACT PATH: ${{steps.assets.outputs.artifacts_path}}"
-        cp ./tooling/ci/* ${{steps.assets.outputs.artifacts_path}}
+        cp ./tracer/build/_build/docker/reliability-env/* ${{steps.assets.outputs.artifacts_path}}
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
@@ -46,10 +50,15 @@ jobs:
 
     - name: Generate image tags
       id: docker-base-image-tags
-      uses: DataDog/system-tests/lib-injection/docker-tags@main
-      with:
-        init-image-name: 'dd-trace-dotnet'
-        main-branch-name: 'master'
+      shell: bash
+      run: |
+        if [ "$is_snapshot" = "true" ]; then
+          echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot" >> $GITHUB_STATE
+        else
+          echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest" >> $GITHUB_STATE
+        fi
+      env:
+        is_snapshot: "${{ github.event.inputs.is_snapshot}}"
 
     - name: Login to Docker
       run: docker login -u publisher -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
