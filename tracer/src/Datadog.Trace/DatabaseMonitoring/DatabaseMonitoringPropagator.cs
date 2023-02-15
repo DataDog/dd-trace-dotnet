@@ -6,6 +6,7 @@
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DatabaseMonitoring
 {
@@ -18,7 +19,8 @@ namespace Datadog.Trace.DatabaseMonitoring
 
         internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, Span span)
         {
-            var propagatorSringBuilder = new StringBuilder($"{sqlCommentRootService}='{configuredServiceName}',{sqlCommentSpanService}='{span.ServiceName}'");
+            var propagatorSringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            propagatorSringBuilder.Append($"{sqlCommentRootService}='{configuredServiceName}',{sqlCommentSpanService}='{span.ServiceName}'");
 
             if (span.GetTag(Tags.Version) != null)
             {
@@ -35,7 +37,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 propagatorSringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(span.Context)}'");
             }
 
-            return $"/*{propagatorSringBuilder}*/";
+            return $"/*{StringBuilderCache.GetStringAndRelease(propagatorSringBuilder)}*/";
         }
     }
 }
