@@ -12,6 +12,7 @@ public:
     inline static const shared::WSTRING DebugLogEnabled             = WStr("DD_TRACE_DEBUG");
     inline static const shared::WSTRING LogPath                     = WStr("DD_PROFILING_LOG_PATH");
     inline static const shared::WSTRING LogDirectory                = WStr("DD_TRACE_LOG_DIRECTORY");
+    inline static const shared::WSTRING DeprecatedLogDirectory      = WStr("DD_PROFILING_LOG_DIR");
     inline static const shared::WSTRING OperationalMetricsEnabled   = WStr("DD_INTERNAL_OPERATIONAL_METRICS_ENABLED");
     inline static const shared::WSTRING Version                     = WStr("DD_VERSION");
     inline static const shared::WSTRING ServiceName                 = WStr("DD_SERVICE");

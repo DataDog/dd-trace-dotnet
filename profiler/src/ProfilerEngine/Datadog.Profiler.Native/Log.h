@@ -27,6 +27,7 @@ private:
         {
             inline static const shared::WSTRING log_path = EnvironmentVariables::LogPath;
             inline static const shared::WSTRING log_directory = EnvironmentVariables::LogDirectory;
+            inline static const shared::WSTRING deprecated_log_directory = EnvironmentVariables::DeprecatedLogDirectory;
         };
     };
 
