@@ -20,6 +20,7 @@ public class InstrumentationTestsBase
     private object _traceContext;
     private object _taintedObjects;
     private static readonly Type _taintedObjectsType = Type.GetType("Datadog.Trace.Iast.TaintedObjects, Datadog.Trace");
+    private static readonly Type _taintedObjectType = Type.GetType("Datadog.Trace.Iast.TaintedObject, Datadog.Trace");
     private static readonly Type _iastRequestContextType = Type.GetType("Datadog.Trace.Iast.IastRequestContext, Datadog.Trace");
     private static readonly Type _scopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
     private static readonly Type _spanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
@@ -28,11 +29,15 @@ public class InstrumentationTestsBase
     private static readonly Type _spanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
     private static readonly Type _traceContextType = Type.GetType("Datadog.Trace.TraceContext, Datadog.Trace");
     private static readonly Type _sourceType = Type.GetType("Datadog.Trace.Iast.Source, Datadog.Trace");
+    private static readonly Type _rangeType = Type.GetType("Datadog.Trace.Iast.Range, Datadog.Trace");
     private static MethodInfo _spanProperty = _scopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _contextProperty = _spanType.GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _traceContextProperty = _spanContextType.GetProperty("TraceContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _iastRequestContextProperty = _traceContextType.GetProperty("IastRequestContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _operationNameProperty = _spanType.GetProperty("OperationName", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _rangesProperty = _taintedObjectType.GetProperty("Ranges", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _StartProperty = _rangeType.GetProperty("Start", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _LengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintInputStringMethod = _taintedObjectsType.GetMethod("TaintInputString", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -192,16 +197,22 @@ public class InstrumentationTestsBase
         AssertTainted(value);
         string result = value.ToString();
         var tainted = GetTainted(value);
-        var ranges = ((Datadog.Trace.Iast.TaintedObject)tainted).Ranges.ToList();
+        var ranges = _rangesProperty.Invoke(tainted, Array.Empty<object>()) as Array;
 
-        var ranges2 
+        List<object> rangesList = new List<object>();
 
-        var rangesOrdered = ranges.OrderByDescending(x => x.Start);
-
-        foreach(var range in rangesOrdered)
+        foreach(var range in ranges)
         {
-            result = result.Insert(range.Start + range.Length, "-+:");
-            result = result.Insert(range.Start, ":+-");            
+            rangesList.Add(range);
+        }
+
+        rangesList.Reverse();
+
+        foreach (var range in rangesList)
+        {
+            var start = (int) _StartProperty.Invoke(range, Array.Empty<object>());
+            result = result.Insert(start + (int) _LengthProperty.Invoke(range, Array.Empty<object>()), "-+:");
+            result = result.Insert(start, ":+-");
         }
 
         return result;
