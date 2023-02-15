@@ -18,6 +18,8 @@ namespace Samples.FileAccess
     {
         ReadWriteBinary = 1,
         ReadWriteText = 2,
+        ReadWriteFileStream = 4,
+        ReadWriteAsync = 8,
     }
 
     internal class Program
@@ -28,9 +30,10 @@ namespace Samples.FileAccess
 
             // supported scenarios:
             // --------------------
-            //  1: synchronous read and write binary data
-            //  1: synchronous read and write textual data
-            //
+            //  1: synchronous write and read binary data through Binary(reader/writer)
+            //  2: synchronous write and read textual data through Stream(reader/writer)
+            //  4: synchronous write and read to FileStream
+            //  8: asynchronous write and read
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--iterations <number of iterations to execute>] " +
             $"[--scenario <1=read/write binary 2=read/write text] " +
@@ -61,34 +64,6 @@ namespace Samples.FileAccess
             Console.WriteLine($"{Environment.NewLine} ########### Finishing run at {DateTime.UtcNow}");
         }
 
-        private static List<Task> StartScenarios(Scenario scenario, CancellationToken token)
-        {
-            List<Task> tasks = new List<Task>();
-            if ((scenario & Scenario.ReadWriteBinary) == Scenario.ReadWriteBinary)
-            {
-                tasks.Add(
-                    Task.Factory.StartNew(
-                        () =>
-                        {
-                            ReadWriteBinary(token);
-                        },
-                        TaskCreationOptions.LongRunning));
-            }
-
-            if ((scenario & Scenario.ReadWriteText) == Scenario.ReadWriteText)
-            {
-                tasks.Add(
-                    Task.Factory.StartNew(
-                        () =>
-                        {
-                            ReadWriteText(token);
-                        },
-                        TaskCreationOptions.LongRunning));
-            }
-
-            return tasks;
-        }
-
         private static void ReadWriteBinary(CancellationToken token)
         {
             var filename = Path.GetTempFileName();
@@ -115,15 +90,15 @@ namespace Samples.FileAccess
 
                 using (var stream = File.Open(filename, FileMode.OpenOrCreate))
                 {
-                    using (var writer = new BinaryReader(stream, Encoding.UTF8, false))
+                    using (var reader = new BinaryReader(stream, Encoding.UTF8, false))
                     {
-                        writer.ReadString();
+                        reader.ReadString();
                         for (int i = 0; i < 10_000; i++)
                         {
-                            writer.ReadInt32();
+                            reader.ReadInt32();
                         }
 
-                        writer.ReadString();
+                        reader.ReadString();
                     }
                 }
             }
@@ -133,6 +108,220 @@ namespace Samples.FileAccess
 
         private static void ReadWriteText(CancellationToken token)
         {
+            var filename = Path.GetTempFileName();
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    using (var stream = File.Open(filename, FileMode.OpenOrCreate))
+                    {
+                        using (var writer = new StreamWriter(stream, Encoding.UTF8))
+                        {
+                            writer.WriteLine(DateTime.Now.ToShortTimeString());
+                            for (Int32 i = 0; i < 10_000; i++)
+                            {
+                                writer.WriteLine(i);
+                            }
+
+                            writer.WriteLine("This is the end");
+                        }
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    using (var stream = File.Open(filename, FileMode.OpenOrCreate))
+                    {
+                        using (var reader = new StreamReader(stream, Encoding.UTF8))
+                        {
+                            reader.ReadLine();
+                            for (int i = 0; i < 10_000; i++)
+                            {
+                                reader.ReadLine();
+                            }
+
+                            reader.ReadLine();
+                        }
+                    }
+                }
+            }
+            catch (IOException x)
+            {
+                Console.WriteLine(x.ToString());
+            }
+
+            File.Delete(filename);
+        }
+
+        private static void ReadWriteFileStream(CancellationToken token)
+        {
+            var filename = Path.GetTempFileName();
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    using (var stream = File.Open(filename, FileMode.OpenOrCreate))
+                    {
+                        byte[] buffer = new byte[10_000];
+                        byte b = 0;
+                        for (Int32 i = 0; i < 10_000; i++)
+                        {
+                            buffer[i] = b;
+
+                            if (b == 255)
+                            {
+                                b = 0;
+                            }
+                            else
+                            {
+                                b++;
+                            }
+                        }
+
+                        for (Int32 i = 0; i < 10_000; i++)
+                        {
+                            stream.Write(buffer, i, 1);
+                        }
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    using (var stream = File.Open(filename, FileMode.OpenOrCreate))
+                    {
+                        for (int i = 0; i < 10_000; i++)
+                        {
+                            stream.ReadByte();
+                        }
+                    }
+                }
+            }
+            catch (IOException x)
+            {
+                Console.WriteLine(x.ToString());
+            }
+
+            File.Delete(filename);
+        }
+
+        private static async Task ReadWriteAsync(CancellationToken token)
+        {
+            var filename = Path.GetTempFileName();
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    using (var stream = new FileStream(
+                                                filename,
+                                                FileMode.OpenOrCreate,
+                                                System.IO.FileAccess.ReadWrite,
+                                                FileShare.ReadWrite,
+                                                4096,
+                                                true))
+                    {
+                        byte[] buffer = new byte[10_000];
+                        byte b = 0;
+                        for (Int32 i = 0; i < 10_000; i++)
+                        {
+                            buffer[i] = b;
+
+                            if (b == 255)
+                            {
+                                b = 0;
+                            }
+                            else
+                            {
+                                b++;
+                            }
+                        }
+
+                        for (Int32 i = 0; i < 10_000; i++)
+                        {
+                            await stream.WriteAsync(buffer, i, 1);
+                        }
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    using (var stream = new FileStream(
+                                                filename,
+                                                FileMode.OpenOrCreate,
+                                                System.IO.FileAccess.ReadWrite,
+                                                FileShare.ReadWrite,
+                                                4096,
+                                                true))
+                    {
+                        var buffer = new byte[1];
+                        for (int i = 0; i < 10_000; i++)
+                        {
+                            await stream.ReadAsync(buffer, 0, 1);
+                        }
+                    }
+                }
+            }
+            catch (IOException x)
+            {
+                Console.WriteLine(x.ToString());
+            }
+
+            File.Delete(filename);
+        }
+
+        private static List<Task> StartScenarios(Scenario scenario, CancellationToken token)
+        {
+            List<Task> tasks = new List<Task>();
+            if ((scenario & Scenario.ReadWriteBinary) == Scenario.ReadWriteBinary)
+            {
+                tasks.Add(
+                    Task.Factory.StartNew(
+                        () =>
+                        {
+                            ReadWriteBinary(token);
+                        },
+                        TaskCreationOptions.LongRunning));
+            }
+
+            if ((scenario & Scenario.ReadWriteText) == Scenario.ReadWriteText)
+            {
+                tasks.Add(
+                    Task.Factory.StartNew(
+                        () =>
+                        {
+                            ReadWriteText(token);
+                        },
+                        TaskCreationOptions.LongRunning));
+            }
+
+            if ((scenario & Scenario.ReadWriteFileStream) == Scenario.ReadWriteFileStream)
+            {
+                tasks.Add(
+                    Task.Factory.StartNew(
+                        () =>
+                        {
+                            ReadWriteFileStream(token);
+                        },
+                        TaskCreationOptions.LongRunning));
+            }
+
+            if ((scenario & Scenario.ReadWriteAsync) == Scenario.ReadWriteAsync)
+            {
+                tasks.Add(
+                    Task.Factory.StartNew(
+                        async () =>
+                        {
+                            await ReadWriteAsync(token);
+                        },
+                        TaskCreationOptions.LongRunning));
+            }
+
+            return tasks;
         }
 
         private static void ParseCommandLine(string[] args, out TimeSpan timeout, out bool runAsService, out Scenario scenario, out int iterations, out int nbThreads, out int parameter)
