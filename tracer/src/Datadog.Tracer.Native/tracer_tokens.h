@@ -48,6 +48,8 @@ public:
                               ILInstr** instruction);
 
     mdTypeRef GetBubbleUpExceptionTypeRef() const;
+
+    const shared::WSTRING& GetTraceAttributeType();
 };
 
 } // namespace trace
