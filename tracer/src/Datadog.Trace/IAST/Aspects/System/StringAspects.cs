@@ -3,7 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
+using System.Collections;
+using System.Collections.Generic;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
 using static Datadog.Trace.Iast.Propagation.StringModuleImpl;
@@ -170,17 +171,46 @@ public partial class StringAspects
         return StringModuleImpl.OnStringConcat(values, string.Concat(values));
     }
 
-/*
     /// <summary>
-    /// -
+    /// String.Concat aspect
     /// </summary>
-    /// <param name="values"></param>
-    /// <returns></returns>
+    /// <param name="values"> Parameters </param>
+    /// <returns> String.Concat(values) </returns>
     [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<System.String>)")]
-    [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static string Concat(object values)
+    public static string Concat(IEnumerable values)
     {
-        return (Concat_Internal(GetArrayIfEnumerable(values)));
+        var valuesConverted = values as IEnumerable<string>;
+        return StringModuleImpl.OnStringConcat(valuesConverted, string.Concat(valuesConverted));
     }
-*/
+
+    /// <summary>
+    /// String.Concat aspect
+    /// </summary>
+    /// <param name="values"> Parameters </param>
+    /// <returns> String.Concat(values) </returns>
+    [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Concat2(IEnumerable values)
+    {
+        var valuesConverted = values as IEnumerable<object>;
+        if (valuesConverted != null)
+        {
+            return StringModuleImpl.OnStringConcat(valuesConverted, string.Concat(valuesConverted));
+        }
+
+        // We have a IEnumerable of structs or basic types
+        var valuesList = GetListIfEnumerable(values);
+        return StringModuleImpl.OnStringConcat(values, string.Concat(valuesList));
+    }
+
+    private static List<string> GetListIfEnumerable(IEnumerable values)
+    {
+        var result = new List<string>();
+
+        foreach (var item in values)
+        {
+            result.Add(item.ToString());
+        }
+
+        return result;
+    }
 }

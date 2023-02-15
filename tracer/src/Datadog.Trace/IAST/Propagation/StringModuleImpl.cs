@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
@@ -156,77 +157,6 @@ internal static class StringModuleImpl
     /// <param name="parameters"> StringConcat params struct </param>
     /// <param name="result"> Result </param>
     /// <returns> result </returns>
-    public static string OnStringConcat(IEnumerable<string> parameters, string result)
-    {
-        try
-        {
-            if (!CanBeTainted(result))
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-
-            Range[]? ranges = null;
-            int length = 0;
-            foreach (var currentParameter in parameters)
-            {
-                if (!CanBeTainted(currentParameter))
-                {
-                    continue;
-                }
-
-                var parameterTainted = GetTainted(taintedObjects, currentParameter);
-                if (parameterTainted != null)
-                {
-                    if (ranges == null)
-                    {
-                        if (parameterTainted != null)
-                        {
-                            if (length == 0)
-                            {
-                                ranges = parameterTainted.Ranges;
-                            }
-                            else
-                            {
-                                ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, length);
-                            }
-                        }
-
-                        length += currentParameter!.Length;
-                        continue;
-                    }
-
-                    ranges = Ranges.MergeRanges(length, ranges, parameterTainted.Ranges);
-                }
-
-                length += currentParameter!.Length;
-            }
-
-            if (ranges != null)
-            {
-                taintedObjects.Taint(result, ranges);
-            }
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "StringModuleImpl.OnstringConcat");
-        }
-
-        return result;
-    }
-
-    /// <summary> Overload for multi params (up to 5) </summary>
-    /// <param name="parameters"> StringConcat params struct </param>
-    /// <param name="result"> Result </param>
-    /// <returns> result </returns>
     public static string OnStringConcat(IEnumerable<object> parameters, string result)
     {
         try
@@ -295,7 +225,79 @@ internal static class StringModuleImpl
         return result;
     }
 
-    public struct StringConcatParams
+    /// <summary> Overload for multi params (up to 5) </summary>
+    /// <param name="parameters"> StringConcat params struct </param>
+    /// <param name="result"> Result </param>
+    /// <returns> result </returns>
+    public static string OnStringConcat(IEnumerable parameters, string result)
+    {
+        try
+        {
+            if (!CanBeTainted(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+
+            Range[]? ranges = null;
+            int length = 0;
+            foreach (var parameterAsObject in parameters)
+            {
+                var currentParameter = parameterAsObject?.ToString();
+                if (!CanBeTainted(currentParameter))
+                {
+                    continue;
+                }
+
+                var taintedParameter = GetTainted(taintedObjects, currentParameter);
+                if (taintedParameter != null)
+                {
+                    if (ranges == null)
+                    {
+                        if (taintedParameter != null)
+                        {
+                            if (length == 0)
+                            {
+                                ranges = taintedParameter.Ranges;
+                            }
+                            else
+                            {
+                                ranges = new Range[taintedParameter!.Ranges!.Length];
+                                Ranges.CopyShift(taintedParameter.Ranges, ranges, 0, length);
+                            }
+                        }
+
+                        length += currentParameter!.Length;
+                        continue;
+                    }
+
+                    ranges = Ranges.MergeRanges(length, ranges, taintedParameter.Ranges);
+                }
+
+                length += currentParameter!.Length;
+            }
+
+            if (ranges != null)
+            {
+                taintedObjects.Taint(result, ranges);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnstringConcat");
+        }
+
+        return result;
+    }
+
+    public readonly struct StringConcatParams
     {
         public readonly string? P0;
         public readonly string? P1;
