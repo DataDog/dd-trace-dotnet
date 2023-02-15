@@ -5,8 +5,10 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
+using Datadog.Trace.Logging;
 using static Datadog.Trace.Iast.Propagation.StringModuleImpl;
 
 namespace Datadog.Trace.Iast.Aspects.System;
@@ -17,6 +19,8 @@ namespace Datadog.Trace.Iast.Aspects.System;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public partial class StringAspects
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringAspects));
+
     /// <summary>
     /// String.Concat aspect
     /// </summary>
@@ -191,26 +195,29 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static string Concat2(IEnumerable values)
     {
+        if (values is null)
+        {
+            return string.Concat(values);
+        }
+
         var valuesConverted = values as IEnumerable<object>;
         if (valuesConverted != null)
         {
             return StringModuleImpl.OnStringConcat(valuesConverted, string.Concat(valuesConverted));
         }
 
-        // We have a IEnumerable of structs or basic types
-        var valuesList = GetListIfEnumerable(values);
-        return StringModuleImpl.OnStringConcat(values, string.Concat(valuesList));
-    }
+        // We have a IEnumerable of structs or basic types. This is a corner case.
 
-    private static List<string> GetListIfEnumerable(IEnumerable values)
-    {
-        var result = new List<string>();
-
-        foreach (var item in values)
+        try
         {
-            result.Add(item.ToString());
+            var valuesList = values.Cast<object>();
+            return StringModuleImpl.OnStringConcat(values, string.Concat(valuesList));
         }
-
-        return result;
+        catch
+        {
+            // This sould never happen, but just in case, we return the concat...
+            Log.Warning("Reached the end of the aspect System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>) with parameter type " + values.GetType().FullName);
+            return string.Concat(values);
+        }
     }
 }

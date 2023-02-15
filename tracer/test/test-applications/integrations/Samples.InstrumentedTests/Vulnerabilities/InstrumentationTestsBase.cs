@@ -153,7 +153,7 @@ public class InstrumentationTestsBase
     protected void AssertTaintedFormatWithOriginalCallCheck(string expected, string instrumented, Expression<Func<Object>> notInstrumented)
     {
         AssertTainted(instrumented);
-        Format(instrumented).Should().Be(expected);
+        FormatTainted(instrumented).Should().Be(expected);
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
         instrumented.Should().Be(notInstrumentedResult.ToString());
@@ -192,7 +192,7 @@ public class InstrumentationTestsBase
         return false;
     }
 
-    protected string Format(object value)
+    protected string FormatTainted(object value)
     {
         AssertTainted(value);
         string result = value.ToString();
