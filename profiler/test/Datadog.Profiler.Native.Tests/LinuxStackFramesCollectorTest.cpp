@@ -177,7 +177,7 @@ public:
         _stopWorker = true;
     }
 
-    static void SimulateInPthreadCreate()
+    static void SimulateDeadlock()
     {
         profile_or_not = 1; // do not profile
     }
@@ -340,7 +340,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCall)
 {
-    SimulateInPthreadCreate();
+    SimulateDeadlock();
 
     auto* signalManager = ProfilerSignalManager::Get();
 

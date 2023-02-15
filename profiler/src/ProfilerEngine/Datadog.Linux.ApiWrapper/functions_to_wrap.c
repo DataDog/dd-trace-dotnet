@@ -32,7 +32,7 @@ When finished, we put back the previous block signals. (This is done by libunwin
 
 But this has a non-negligible overhead. Instead, we will incr/decr a counter per function
 each time the thread enters/exits from it.
-The profiler will just have to check if this counter is equla to 0 to profiler or not.
+The profiler will just have to check if this counter is equal to 0 to profiler or not.
 
 */
 
@@ -51,7 +51,7 @@ enum FUNCTION_ID
 // counters: one byte per function
 __thread unsigned long long functions_entered_counter = 0;
 
-// this function is called in by the profiler
+// this function is called by the profiler
 unsigned long long dd_can_be_profiled()
 {
     return functions_entered_counter;
