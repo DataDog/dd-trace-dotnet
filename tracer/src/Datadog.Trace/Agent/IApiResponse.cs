@@ -29,13 +29,15 @@ namespace Datadog.Trace.Agent
         public static async Task<string> ReadAsStringAsync(this IApiResponse apiResponse)
         {
             using var reader = await GetStreamReader(apiResponse).ConfigureAwait(false);
-            return await reader.ReadToEndAsync().ConfigureAwait(false);
+            var content = await reader.ReadToEndAsync().ConfigureAwait(false);
+            reader.BaseStream.Seek(0, SeekOrigin.Begin);
+            return content;
         }
 
         public static async Task<T> ReadAsTypeAsync<T>(this IApiResponse apiResponse)
         {
-            using var sr = await GetStreamReader(apiResponse).ConfigureAwait(false);
-            using var jsonTextReader = new JsonTextReader(sr);
+            using var reader = await GetStreamReader(apiResponse).ConfigureAwait(false);
+            using var jsonTextReader = new JsonTextReader(reader);
             return JsonSerializer.Create().Deserialize<T>(jsonTextReader);
         }
 

@@ -14,6 +14,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
@@ -78,6 +79,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 Log.Warning<int, string>("Failed to receive remote configurations {StatusCode} and message: {ResponseContent}", apiResponse.StatusCode, content);
 
                 return null;
+            }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                var content = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
+                Log.Debug<int, string>("Received the following content from RCM: StatusCode: {StatusCode} and message: {ResponseContent}", apiResponse.StatusCode, content);
             }
 
             return await apiResponse.ReadAsTypeAsync<GetRcmResponse>().ConfigureAwait(false);
