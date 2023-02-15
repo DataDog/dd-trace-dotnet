@@ -471,8 +471,8 @@ internal static class StringModuleImpl
                     continue;
                 }
 
-                var parameterTainted = GetTainted(taintedObjects, currentParameter);
-                if (parameterTainted != null)
+                var taintedParameter = GetTainted(taintedObjects, currentParameter);
+                if (taintedParameter != null)
                 {
                     if (ranges == null)
                     {
@@ -490,7 +490,7 @@ internal static class StringModuleImpl
                         continue;
                     }
 
-                    ranges = Ranges.MergeRanges(length, ranges, parameterTainted.Ranges);
+                    ranges = Ranges.MergeRanges(length, ranges, taintedParameter.Ranges);
                 }
 
                 length += currentParameter!.Length;
