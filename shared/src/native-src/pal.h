@@ -29,12 +29,12 @@ namespace shared
 {
 
 template <class T, typename = void>
-struct has_drepecated_log_folder : std::false_type
+struct has_deprecated_log_folder : std::false_type
 {
 };
 
 template <typename T>
-struct has_drepecated_log_folder<T, decltype(T::logging_environment::deprecated_log_directory, void())> : std::true_type
+struct has_deprecated_log_folder<T, decltype(T::logging_environment::deprecated_log_directory, void())> : std::true_type
 {
 };
 
@@ -45,12 +45,17 @@ inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix
 
     WSTRING directory;
 
-    if constexpr (has_drepecated_log_folder<TLoggerPolicy>::value)
+    if constexpr (has_deprecated_log_folder<TLoggerPolicy>::value)
+    {
+        // check for deprecated env var first
         directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::deprecated_log_directory);
+        if (directory.empty())
+            directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
+    }
     else
         directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
 
-    if (directory.length() > 0)
+    if (!directory.empty())
     {
         return directory +
 #ifdef _WIN32
