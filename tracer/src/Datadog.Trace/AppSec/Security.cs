@@ -129,13 +129,13 @@ namespace Datadog.Trace.AppSec
                 {
                     foreach (var value in requestAcceptHeaders)
                     {
-                        if (value.Contains(AspNet.MimeTypes.Json))
+                        if (value?.Contains(AspNet.MimeTypes.Json) ?? false)
                         {
                             SetJsonResponseContent();
                             break;
                         }
 
-                        if (value.Contains(AspNet.MimeTypes.TextHtml))
+                        if (value?.Contains(AspNet.MimeTypes.TextHtml) ?? false)
                         {
                             SetHtmlResponseContent();
                         }
