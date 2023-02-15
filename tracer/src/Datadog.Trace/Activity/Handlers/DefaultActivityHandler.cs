@@ -65,7 +65,6 @@ namespace Datadog.Trace.Activity.Handlers
                         Log.Information("Current ActivityMappings: {@ActivityMapping}", ActivityMappingById);
                         Log.Information("Creating a new parent for {@ActivityContext}", w3cActivity);
 
-                        // TODO issue - Activity started with default Context nested underneath previous span - I think that is expected though?
                         remoteActivityContext = true; // using this as a way to avoid ActiveSpan below for now
                         // extract parent Activity trace/span IDs TODO this is slightly duped below (but uses w3cActivity.SpanId)
                         traceId ??= Convert.ToUInt64(w3cActivity.TraceId.Substring(16), 16);
@@ -152,7 +151,7 @@ namespace Datadog.Trace.Activity.Handlers
                 Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
                 // TODO this is covering for creating the parent Activity scope
-                if (parent is null || activate)
+                if (parent is null && activate)
                 {
                     Log.Information("Activating Span for {SpanName}", span.OperationName);
                     return Tracer.Instance.ActivateSpan(span, false);
