@@ -240,11 +240,11 @@ namespace Datadog.Trace.Ci
         public string? Name { get; }
         public System.DateTimeOffset StartTime { get; }
         public Datadog.Trace.Ci.TestSuite Suite { get; }
-        public void AddBenchmarkData(Datadog.Trace.Ci.BenchmarkMeasureType measureType, string info, Datadog.Trace.Ci.BenchmarkDiscreteStats statistics) { }
+        public void AddBenchmarkData(Datadog.Trace.Ci.BenchmarkMeasureType measureType, string info, in Datadog.Trace.Ci.BenchmarkDiscreteStats statistics) { }
         public void Close(Datadog.Trace.Ci.TestStatus status) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration, string? skipReason) { }
-        public void SetBenchmarkMetadata(Datadog.Trace.Ci.BenchmarkHostInfo hostInfo, Datadog.Trace.Ci.BenchmarkJobInfo jobInfo) { }
+        public void SetBenchmarkMetadata(in Datadog.Trace.Ci.BenchmarkHostInfo hostInfo, in Datadog.Trace.Ci.BenchmarkJobInfo jobInfo) { }
         public void SetErrorInfo(System.Exception exception) { }
         public void SetErrorInfo(string type, string message, string? callStack) { }
         public void SetParameters(Datadog.Trace.Ci.TestParameters parameters) { }
