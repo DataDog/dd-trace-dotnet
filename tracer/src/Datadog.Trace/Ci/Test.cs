@@ -194,77 +194,41 @@ public sealed class Test
     /// </summary>
     /// <param name="hostInfo">Host info</param>
     /// <param name="jobInfo">Job info</param>
-    public void SetBenchmarkMetadata(BenchmarkHostInfo hostInfo, BenchmarkJobInfo jobInfo)
+    public void SetBenchmarkMetadata(in BenchmarkHostInfo hostInfo, in BenchmarkJobInfo jobInfo)
     {
         ((TestSpanTags)_scope.Span.Tags).Type = TestTags.TypeBenchmark;
 
         // Host info
-
-        if (hostInfo.ProcessorName is not null)
-        {
-            SetTag(BenchmarkTestTags.HostProcessorName, hostInfo.ProcessorName);
-        }
-
-        if (hostInfo.ProcessorCount is not null)
-        {
-            SetTag(BenchmarkTestTags.HostProcessorPhysicalProcessorCount, hostInfo.ProcessorCount);
-        }
-
-        if (hostInfo.PhysicalCoreCount is not null)
-        {
-            SetTag(BenchmarkTestTags.HostProcessorPhysicalCoreCount, hostInfo.PhysicalCoreCount);
-        }
-
-        if (hostInfo.LogicalCoreCount is not null)
-        {
-            SetTag(BenchmarkTestTags.HostProcessorLogicalCoreCount, hostInfo.LogicalCoreCount);
-        }
-
-        if (hostInfo.ProcessorMaxFrequencyHertz is not null)
-        {
-            SetTag(BenchmarkTestTags.HostProcessorMaxFrequencyHertz, hostInfo.ProcessorMaxFrequencyHertz);
-        }
-
-        if (hostInfo.OsVersion is not null)
-        {
-            SetTag(BenchmarkTestTags.HostOsVersion, hostInfo.OsVersion);
-        }
-
-        if (hostInfo.RuntimeVersion is not null)
-        {
-            SetTag(BenchmarkTestTags.HostRuntimeVersion, hostInfo.RuntimeVersion);
-        }
-
-        if (hostInfo.ChronometerFrequencyHertz is not null)
-        {
-            SetTag(BenchmarkTestTags.HostChronometerFrequencyHertz, hostInfo.ChronometerFrequencyHertz);
-        }
-
-        if (hostInfo.ChronometerResolution is not null)
-        {
-            SetTag(BenchmarkTestTags.HostChronometerResolution, hostInfo.ChronometerResolution);
-        }
+        SetTagIfNotNull(BenchmarkTestTags.HostProcessorName, hostInfo.ProcessorName);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostProcessorPhysicalProcessorCount, hostInfo.ProcessorCount);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostProcessorPhysicalCoreCount, hostInfo.PhysicalCoreCount);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostProcessorLogicalCoreCount, hostInfo.LogicalCoreCount);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostProcessorMaxFrequencyHertz, hostInfo.ProcessorMaxFrequencyHertz);
+        SetTagIfNotNull(BenchmarkTestTags.HostOsVersion, hostInfo.OsVersion);
+        SetTagIfNotNull(BenchmarkTestTags.HostRuntimeVersion, hostInfo.RuntimeVersion);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostChronometerFrequencyHertz, hostInfo.ChronometerFrequencyHertz);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostChronometerResolution, hostInfo.ChronometerResolution);
 
         // Job info
+        SetTagIfNotNull(BenchmarkTestTags.JobDescription, jobInfo.Description);
+        SetTagIfNotNull(BenchmarkTestTags.JobPlatform, jobInfo.Platform);
+        SetTagIfNotNull(BenchmarkTestTags.JobRuntimeName, jobInfo.RuntimeName);
+        SetTagIfNotNull(BenchmarkTestTags.JobRuntimeMoniker, jobInfo.RuntimeMoniker);
 
-        if (jobInfo.Description is not null)
+        void SetTagIfNotNull(string tag, string? value)
         {
-            SetTag(BenchmarkTestTags.JobDescription, jobInfo.Description);
+            if (value is not null)
+            {
+                SetTag(tag, value);
+            }
         }
 
-        if (jobInfo.Platform is not null)
+        void SetDoubleTagIfNotNull(string tag, double? value)
         {
-            SetTag(BenchmarkTestTags.JobPlatform, jobInfo.Platform);
-        }
-
-        if (jobInfo.RuntimeName is not null)
-        {
-            SetTag(BenchmarkTestTags.JobRuntimeName, jobInfo.RuntimeName);
-        }
-
-        if (jobInfo.RuntimeMoniker is not null)
-        {
-            SetTag(BenchmarkTestTags.JobRuntimeMoniker, jobInfo.RuntimeMoniker);
+            if (value is not null)
+            {
+                SetTag(tag, value);
+            }
         }
     }
 
@@ -274,41 +238,21 @@ public sealed class Test
     /// <param name="measureType">Measure type</param>
     /// <param name="info">Measure info</param>
     /// <param name="statistics">Statistics values</param>
-    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, BenchmarkDiscreteStats statistics)
+    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, in BenchmarkDiscreteStats statistics)
     {
-        var measureTypeAsString = string.Empty;
-        switch (measureType)
+        var measureTypeAsString = measureType switch
         {
-            case BenchmarkMeasureType.Duration:
-                measureTypeAsString = "duration";
-                break;
-            case BenchmarkMeasureType.RunTime:
-                measureTypeAsString = "run_time";
-                break;
-            case BenchmarkMeasureType.ApplicationLaunch:
-                measureTypeAsString = "application_launch";
-                break;
-            case BenchmarkMeasureType.MeanHeapAllocations:
-                measureTypeAsString = "mean_heap_allocations";
-                break;
-            case BenchmarkMeasureType.TotalHeapAllocations:
-                measureTypeAsString = "total_heap_allocations";
-                break;
-            case BenchmarkMeasureType.GarbageCollectorGen0:
-                measureTypeAsString = "gc_gen0_collections";
-                break;
-            case BenchmarkMeasureType.GarbageCollectorGen1:
-                measureTypeAsString = "gc_gen1_collections";
-                break;
-            case BenchmarkMeasureType.GarbageCollectorGen2:
-                measureTypeAsString = "gc_gen2_collections";
-                break;
-            case BenchmarkMeasureType.MemoryTotalOperations:
-                measureTypeAsString = "memory_total_operations";
-                break;
-            default:
-                return;
-        }
+            BenchmarkMeasureType.Duration => "duration",
+            BenchmarkMeasureType.RunTime => "run_time",
+            BenchmarkMeasureType.ApplicationLaunch => "application_launch",
+            BenchmarkMeasureType.MeanHeapAllocations => "mean_heap_allocations",
+            BenchmarkMeasureType.TotalHeapAllocations => "total_heap_allocations",
+            BenchmarkMeasureType.GarbageCollectorGen0 => "gc_gen0_collections",
+            BenchmarkMeasureType.GarbageCollectorGen1 => "gc_gen1_collections",
+            BenchmarkMeasureType.GarbageCollectorGen2 => "gc_gen2_collections",
+            BenchmarkMeasureType.MemoryTotalOperations => "memory_total_operations",
+            _ => string.Empty,
+        };
 
         SetTag($"benchmark.{measureTypeAsString}.run", statistics.N);
         SetTag($"benchmark.{measureTypeAsString}.mean", GetValidDoubleValue(statistics.Mean));
