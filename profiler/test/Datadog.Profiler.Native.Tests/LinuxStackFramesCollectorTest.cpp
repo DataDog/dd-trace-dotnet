@@ -30,10 +30,10 @@ using ::testing::Return;
 
 // This global variable and function are use defined/declared for the test only
 // In production, those symbols will be defined in the Wrapper library
-int profile_or_not = 0;
-extern "C" long long dd_can_be_profiled()
+unsigned long long inside_wrapped_functions = 0;
+extern "C" unsigned long long dd_inside_wrapped_functions()
 {
-    return profile_or_not;
+    return inside_wrapped_functions;
 }
 
 #define ASSERT_DURATION_LE(secs, stmt)                                            \
@@ -153,7 +153,7 @@ public:
 
         _processId = OpSysTools::GetProcId();
         SignalHandlerForTest::_instance = std::make_unique<SignalHandlerForTest>();
-        profile_or_not = 0;
+        inside_wrapped_functions = 0;
     }
 
     void TearDown() override
@@ -165,7 +165,7 @@ public:
 
         SignalHandlerForTest::_instance.reset();
         sigaction(SIGUSR1, &_oldAction, nullptr);
-        profile_or_not = 0;
+        inside_wrapped_functions = 0;
     }
 
     void StopTest()
@@ -177,9 +177,9 @@ public:
         _stopWorker = true;
     }
 
-    static void SimulateDeadlock()
+    static void SimulateInsideWrappedFunctions()
     {
-        profile_or_not = 1; // do not profile
+        inside_wrapped_functions = 1; // do not profile
     }
 
     pid_t GetWorkerThreadId()
@@ -340,7 +340,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCall)
 {
-    SimulateDeadlock();
+    SimulateInsideWrappedFunctions();
 
     auto* signalManager = ProfilerSignalManager::Get();
 

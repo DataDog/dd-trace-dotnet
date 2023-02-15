@@ -160,11 +160,11 @@ void LinuxStackFramesCollector::NotifyStackWalkCompleted(std::int32_t resultErro
 
 // This symbol is defined in the Datadog.Linux.ApiWrapper. It allows us to check if the thread to be profiled
 // contains a frame of a function that might cause a deadlock.
-extern "C" unsigned long long dd_can_be_profiled() __attribute__((weak));
+extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
 
 std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
-    if (dd_can_be_profiled != nullptr && dd_can_be_profiled() != 0)
+    if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
         return E_ABORT;
     }

@@ -52,7 +52,7 @@ enum FUNCTION_ID
 __thread unsigned long long functions_entered_counter = 0;
 
 // this function is called by the profiler
-unsigned long long dd_can_be_profiled()
+unsigned long long dd_inside_wrapped_functions()
 {
     return functions_entered_counter;
 }
