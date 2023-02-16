@@ -73,6 +73,10 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("mscorlib"),
     WStr("Xunit.*"),
     WStr("xunit.*"),
+    WStr("FluentAssertions"),
+    WStr("NUnit3.TestAdapter"),
+    WStr("nunit.*"),
+    WStr("mscorlib"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {
