@@ -32,13 +32,13 @@
     Resource: Ctor2,
     Service: Samples.NetActivitySdk,
     Type: web,
+    ParentId: Id_5,
     Tags: {
       env: integration_tests,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
-      runtime-id: Guid_2,
       span.kind: server,
       version: 1.0.0,
       _dd.p.dm: -0
@@ -46,19 +46,18 @@
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
   {
     TraceId: Id_3,
-    SpanId: Id_5,
+    SpanId: Id_6,
     Name: Samples.NetActivitySdk.server,
     Resource: Ctor3,
     Service: Samples.NetActivitySdk,
     Type: web,
-    ParentId: Id_4,
+    ParentId: Id_7,
     Tags: {
       attribute-string: str,
       env: integration_tests,
@@ -67,20 +66,25 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -0
     },
     Metrics: {
-      attribute-int: 1.0
+      attribute-int: 1.0,
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
     TraceId: Id_3,
-    SpanId: Id_6,
+    SpanId: Id_8,
     Name: Samples.NetActivitySdk.server,
     Resource: Ctor4,
     Service: Samples.NetActivitySdk,
     Type: web,
-    ParentId: Id_5,
+    ParentId: Id_6,
     Tags: {
       attribute-string: str,
       env: integration_tests,
@@ -96,8 +100,8 @@
     }
   },
   {
-    TraceId: Id_7,
-    SpanId: Id_8,
+    TraceId: Id_9,
+    SpanId: Id_10,
     Name: Samples.NetActivitySdk.internal,
     Resource: ErrorSpan,
     Service: Samples.NetActivitySdk,
@@ -124,13 +128,13 @@
     }
   },
   {
-    TraceId: Id_7,
-    SpanId: Id_9,
+    TraceId: Id_9,
+    SpanId: Id_11,
     Name: Samples.NetActivitySdk.internal,
     Resource: OkSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_8,
+    ParentId: Id_10,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -142,13 +146,13 @@
     }
   },
   {
-    TraceId: Id_7,
-    SpanId: Id_10,
+    TraceId: Id_9,
+    SpanId: Id_12,
     Name: Samples.NetActivitySdk.internal,
     Resource: UnsetStatusSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_9,
+    ParentId: Id_11,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -160,13 +164,13 @@
     }
   },
   {
-    TraceId: Id_7,
-    SpanId: Id_11,
+    TraceId: Id_9,
+    SpanId: Id_13,
     Name: Samples.NetActivitySdk.internal,
     Resource: ParentSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_10,
+    ParentId: Id_12,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -178,13 +182,13 @@
     }
   },
   {
-    TraceId: Id_7,
-    SpanId: Id_12,
+    TraceId: Id_9,
+    SpanId: Id_14,
     Name: opentelemetry.internal,
     Resource: ChildSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_11,
+    ParentId: Id_13,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -195,47 +199,12 @@
     }
   },
   {
-    TraceId: Id_7,
-    SpanId: Id_13,
+    TraceId: Id_9,
+    SpanId: Id_15,
     Name: Samples.NetActivitySdk.internal,
     Resource: W3CParentSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_11,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Samples.NetActivitySdk,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_4,
-      span.kind: internal,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_7,
-    SpanId: Id_14,
-    Name: opentelemetry.internal,
-    Resource: W3CChildSpan,
-    Service: Samples.NetActivitySdk,
-    Type: custom,
-    ParentId: Id_13,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_4,
-      span.kind: internal,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_7,
-    SpanId: Id_15,
-    Name: Samples.NetActivitySdk.internal,
-    Resource: IAmMiscSpan,
-    Service: Samples.NetActivitySdk,
-    Type: custom,
     ParentId: Id_13,
     Tags: {
       env: integration_tests,
@@ -248,7 +217,7 @@
     }
   },
   {
-    TraceId: Id_7,
+    TraceId: Id_9,
     SpanId: Id_16,
     Name: opentelemetry.internal,
     Resource: Parent-NonW3CId,
@@ -457,7 +426,7 @@
     Resource: EmptyTagsEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_26,
+    ParentId: Id_28,
     Tags: {
       env: integration_tests,
       language: dotnet,

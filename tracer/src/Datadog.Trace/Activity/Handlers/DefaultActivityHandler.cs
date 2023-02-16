@@ -43,8 +43,6 @@ namespace Datadog.Trace.Activity.Handlers
             ulong? spanId = null;
             string? rawTraceId = null;
             string? rawSpanId = null;
-            var remoteActivityContext = false;
-
             if (activity is IW3CActivity w3cActivity)
             {
                 // If the user has specified a parent context, get the parent Datadog SpanContext
@@ -57,12 +55,12 @@ namespace Datadog.Trace.Activity.Handlers
                     }
                     else
                     {
-                        // mark it as needing to be a new active span as we don't want to inherit the current TraceID
-                        remoteActivityContext = true;
+                        // create a new parent span context for the ActivityContext
+                        parent = Tracer.Instance.CreateSpanContext(SpanContext.None, rawTraceId: activity.ParentId, rawSpanId: w3cActivity.ParentSpanId);
                     }
                 }
 
-                if (parent is null && activeSpan is not null && !remoteActivityContext)
+                if (parent is null && activeSpan is not null)
                 {
                     // We ensure the activity follows the same TraceId as the span
                     // And marks the ParentId the current spanId
@@ -116,7 +114,7 @@ namespace Datadog.Trace.Activity.Handlers
                 Log.Error(ex, "Error processing the OnActivityStarted callback");
             }
 
-            static Scope CreateScopeFromActivity(T activity, ISpanContext? parent, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId, bool activate = true)
+            static Scope CreateScopeFromActivity(T activity, ISpanContext? parent, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId)
             {
                 var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
                 Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
