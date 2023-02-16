@@ -10,7 +10,7 @@ This package contains the BenchmarkDotNet exporter and instrumentation for [Data
 
 1. Add the `Datadog.Trace.BenchmarkDotNet` NuGet package to your project, using `dotnet add package Datadog.Trace.BenchmarkDotNet`, for example.
 2. Configure your project to use the Datadog.Trace.BenchmarkDotNet exporter, as [described below](#configure-the-project)
-3. [Configuring reporting method](https://docs.datadoghq.com/continuous_integration/tests/dotnet/?tab=onpremisesciproviderdatadogagent#configuring-reporting-method)
+3. Configure your CI provider to report via the Datadog Agent or agentless, [as described in the documentation](https://docs.datadoghq.com/continuous_integration/tests/dotnet/?tab=onpremisesciproviderdatadogagent#configuring-reporting-method)
 4. Run the benchmark project and check results on [Datadog CI Test Visibility](https://docs.datadoghq.com/continuous_integration/tests/).
 
 ### Configure the project
