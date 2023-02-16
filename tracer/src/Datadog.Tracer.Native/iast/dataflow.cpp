@@ -70,7 +70,9 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("MySql*"),
     WStr("Serilog*"),
     WStr("ServiceStack*"),
-    WStr("mscorlib"),    
+    WStr("mscorlib"),
+    WStr("Xunit.*"),
+    WStr("xunit.*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {
