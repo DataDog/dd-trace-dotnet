@@ -273,6 +273,7 @@ namespace Datadog.Trace.Configuration
 
             DbmPropagationLevel dbmPropagationValue;
             Enum.TryParse(source?.GetString(ConfigurationKeys.DbmPropagationMode), true, out dbmPropagationValue);
+            DbmPropagationMode = dbmPropagationValue;
         }
 
         /// <summary>
