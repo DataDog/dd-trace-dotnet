@@ -111,6 +111,7 @@ partial class Build
         Solution.GetProject(Projects.DatadogTrace),
         Solution.GetProject(Projects.DatadogTraceOpenTracing),
         Solution.GetProject(Projects.DatadogTraceAnnotations),
+        Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet),
     };
 
     Project[] ParallelIntegrationTests => new[]
