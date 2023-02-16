@@ -114,7 +114,7 @@ TEST(ConfigurationTest, CheckDefaultLogDirectoryWhenVariableIsNotSet)
     auto configuration = Configuration{};
     auto expectedValue =
 #ifdef _WINDOWS
-        WStr("C:\\ProgramData\\Datadog-APM\\logs\\DotNet");
+        WStr("C:\\ProgramData\\Datadog .NET Tracer\\logs");
 #else
         WStr("/var/log/datadog/dotnet");
 #endif

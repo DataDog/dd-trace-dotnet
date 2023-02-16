@@ -40,7 +40,7 @@ public sealed class TestSuite
 
         _span = span;
         Current = this;
-        CIVisibility.Log.Debug("###### New Test Suite Created: {name} ({module})", Name, Module.Name);
+        CIVisibility.Log.Debug("###### New Test Suite Created: {Name} ({Module})", Name, Module.Name);
 
         if (startDate is null)
         {
@@ -163,7 +163,7 @@ public sealed class TestSuite
 
         Current = null;
         Module.RemoveSuite(Name);
-        CIVisibility.Log.Debug("###### Test Suite Closed: {name} ({module}) | {status}", Name, Module.Name, Tags.Status);
+        CIVisibility.Log.Debug("###### Test Suite Closed: {Name} ({Module}) | {Status}", Name, Module.Name, Tags.Status);
     }
 
     /// <summary>

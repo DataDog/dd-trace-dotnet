@@ -62,7 +62,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             {
                 // as this method is prefixed "Try" we shouldn't throw, but experience has
                 // shown that unforseen circumstance can lead to exceptions being thrown
-                Log.Error("Error occured while trying to load library from {LibraryPath}", libraryPath, ex);
+                Log.Error(ex, "Error occured while trying to load library from {LibraryPath}", libraryPath);
             }
 
             return handle != IntPtr.Zero;

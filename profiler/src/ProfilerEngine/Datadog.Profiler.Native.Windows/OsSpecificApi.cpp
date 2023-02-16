@@ -5,6 +5,7 @@
 
 #include "resource.h"
 
+#include <memory>
 #include "OsSpecificApi.h"
 
 #include "IConfiguration.h"
@@ -91,10 +92,13 @@ typedef enum
 
 #define SYSTEMTHREADINFORMATION 40
 typedef NTSTATUS(WINAPI* NtQueryInformationThread_)(HANDLE, int, PVOID, ULONG, PULONG);
-
 NtQueryInformationThread_ NtQueryInformationThread = nullptr;
 
-bool InitializeCallback()
+typedef BOOL(WINAPI* GetLogicalProcessorInformation_)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
+GetLogicalProcessorInformation_ GetLogicalProcessorInformation = nullptr;
+
+
+bool InitializeNtQueryInformationThreadCallback()
 {
     auto hModule = GetModuleHandleA("NtDll.dll");
     if (hModule == nullptr)
@@ -130,7 +134,7 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
 {
     if (NtQueryInformationThread == nullptr)
     {
-        if (!InitializeCallback())
+        if (!InitializeNtQueryInformationThreadCallback())
         {
             return false;
         }
@@ -150,6 +154,91 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
     cpuTime = GetTotalMilliseconds(sti.UserTime) + GetTotalMilliseconds(sti.KernelTime);
 
     return IsRunning(sti.ThreadState);
+}
+
+
+bool InitializeGetLogicalProcessorInformationCallback()
+{
+    auto hModule = GetModuleHandleA("kernel32.dll");
+    if (hModule == nullptr)
+    {
+        Log::Error("Impossible to load kernel32.dll: 0x", std::hex, GetLastError());
+        return false;
+    }
+
+    GetLogicalProcessorInformation = (GetLogicalProcessorInformation_)GetProcAddress(hModule, "GetLogicalProcessorInformation");
+    if (GetLogicalProcessorInformation == nullptr)
+    {
+        Log::Error("Impossible to get GetLogicalProcessorInformation: 0x", std::hex, GetLastError());
+        return false;
+    }
+
+    return true;
+}
+
+// from https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformation
+//
+DWORD CountSetBits(ULONG_PTR bitMask)
+{
+    DWORD LSHIFT = sizeof(ULONG_PTR) * 8 - 1;
+    DWORD bitSetCount = 0;
+    ULONG_PTR bitTest = (ULONG_PTR)1 << LSHIFT;
+    DWORD i;
+
+    for (i = 0; i <= LSHIFT; ++i)
+    {
+        bitSetCount += ((bitMask & bitTest) ? 1 : 0);
+        bitTest /= 2;
+    }
+
+    return bitSetCount;
+}
+
+bool GetProcessorCount(uint32_t& processorCount)
+{
+    if (GetLogicalProcessorInformation == nullptr)
+    {
+        return false;
+    }
+
+    std::unique_ptr<byte[]> buffer;
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = NULL;
+    DWORD returnLength = 0;
+    DWORD byteOffset = 0;
+
+    if (!GetLogicalProcessorInformation(ptr, &returnLength))
+    {
+        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+        {
+            return false;
+        }
+
+        buffer = std::make_unique<byte[]>(returnLength);
+        if (nullptr == buffer)
+        {
+            return false;
+        }
+
+        ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)buffer.get();
+        if (!GetLogicalProcessorInformation(ptr, &returnLength))
+        {
+            return false;
+        }
+    }
+
+    while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= returnLength)
+    {
+        if (ptr->Relationship == RelationProcessorCore)
+        {
+            // A hyperthreaded core supplies more than one logical processor.
+            processorCount += CountSetBits(ptr->ProcessorMask);
+        }
+
+        byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+        ptr++;
+    }
+
+    return true;
 }
 
 } // namespace OsSpecificApi

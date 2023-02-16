@@ -74,7 +74,7 @@ public sealed class TestSession
         }
 
         Current = this;
-        CIVisibility.Log.Debug("### Test Session Created: {command}", command);
+        CIVisibility.Log.Debug("### Test Session Created: {Command}", command);
 
         if (startDate is null)
         {
@@ -264,7 +264,7 @@ public sealed class TestSession
     {
         if (InternalClose(status, duration))
         {
-            CIVisibility.Log.Debug("### Test Session Flushing after close: {command}", Command);
+            CIVisibility.Log.Debug("### Test Session Flushing after close: {Command}", Command);
             CIVisibility.Flush();
         }
     }
@@ -289,7 +289,7 @@ public sealed class TestSession
     {
         if (InternalClose(status, duration))
         {
-            CIVisibility.Log.Debug("### Test Session Flushing after close: {command}", Command);
+            CIVisibility.Log.Debug("### Test Session Flushing after close: {Command}", Command);
             return CIVisibility.FlushAsync();
         }
 
@@ -338,7 +338,7 @@ public sealed class TestSession
         }
 
         Current = null;
-        CIVisibility.Log.Debug("### Test Session Closed: {command} | {status}", Command, Tags.Status);
+        CIVisibility.Log.Debug("### Test Session Closed: {Command} | {Status}", Command, Tags.Status);
         return true;
     }
 

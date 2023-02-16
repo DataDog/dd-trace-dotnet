@@ -157,7 +157,7 @@ internal static class TagPropagation
             {
                 if (!IsValid(tag.Key, tag.Value))
                 {
-                    Log.Debug("Propagated tag is not valid. Key: \"{key}\", Value: \"{value}\"", tag.Key, tag.Value);
+                    Log.Debug("Propagated tag is not valid. Key: \"{Key}\", Value: \"{Value}\"", tag.Key, tag.Value);
 
                     // if tag contains invalid chars,
                     // set tag "_dd.propagation_error:encoding_error"...
