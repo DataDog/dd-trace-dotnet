@@ -258,7 +258,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.IsNull())
             {
-                Log.Error("Evaluation result should not be null. Probe: " + ProbeInfo.ProbeId);
+                Log.Error("Evaluation result should not be null. Probe: {ProbeId}", ProbeInfo.ProbeId);
                 shouldStopCapture = true;
                 return evaluationResult;
             }
