@@ -19,8 +19,7 @@ internal static class HexString
 {
 #if !NETCOREAPP3_1_OR_GREATER
     /// <summary>
-    /// Thread static buffer Used to avoid allocating a new byte array on each conversion.
-    /// Length is always 16 bytes to fit either single bytes, 8-byte UInt16 (ulong), or 16-byte TraceIds.
+    /// Thread static buffer used to avoid allocating a new byte array on each conversion.
     /// </summary>
     [ThreadStatic]
     private static byte[]? _buffer;

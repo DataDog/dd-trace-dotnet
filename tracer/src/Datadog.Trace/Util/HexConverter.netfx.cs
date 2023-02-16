@@ -17,6 +17,10 @@ using System.Runtime.CompilerServices;
 // ReSharper disable once CheckNamespace
 namespace System;
 
+/// <summary>
+/// This class is a .NET Framework version of .NET Core's internal HexConverter. It provides lower-level API
+/// for converting between bytes and hex strings. For a higher-level API, use <see cref="Datadog.Trace.Util.HexString"/>.
+/// </summary>
 internal static class HexConverter
 {
     /// <summary>
