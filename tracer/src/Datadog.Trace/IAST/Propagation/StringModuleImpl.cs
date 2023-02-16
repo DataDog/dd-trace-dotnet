@@ -37,6 +37,11 @@ internal static class StringModuleImpl
     {
         try
         {
+            if (string.IsNullOrEmpty(left) || string.IsNullOrEmpty(right))
+            {
+                return result;
+            }
+
             if (!CanBeTainted(result) || (!CanBeTainted(left) && !CanBeTainted(right)))
             {
                 return result;
