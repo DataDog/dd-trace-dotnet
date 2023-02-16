@@ -7,7 +7,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     internal class EnvironmentVariables
     {
-        public const string ProfilingLogDir = "DD_PROFILING_LOG_DIR";
+        public const string ProfilingLogDir = "DD_TRACE_LOG_DIRECTORY";
         public const string ProfilingPprofDir = "DD_INTERNAL_PROFILING_OUTPUT_DIR";
         public const string CodeHotSpotsEnable = "DD_PROFILING_CODEHOTSPOTS_ENABLED";
         public const string UseNativeLoader = "USE_NATIVE_LOADER";
