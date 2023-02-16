@@ -20,6 +20,9 @@ namespace Samples.FileAccess
         ReadWriteText = 2,
         ReadWriteFileStream = 4,
         ReadWriteAsync = 8,
+#if (!NET45)
+        ReadWriteLinesAsync = 16,
+#endif
     }
 
     internal class Program
@@ -274,6 +277,42 @@ namespace Samples.FileAccess
             File.Delete(filename);
         }
 
+
+#if (!NET45)
+        private static async Task ReadWriteLineAsync(CancellationToken token)
+        {
+            var filename = Path.GetTempFileName();
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    await File.WriteAllLinesAsync(filename, GetLines(), token);
+
+                    if (token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    await File.ReadAllLinesAsync(filename);
+                }
+            }
+            catch (IOException x)
+            {
+                Console.WriteLine(x.ToString());
+            }
+
+            File.Delete(filename);
+        }
+#endif
+
+        private static IEnumerable<string> GetLines()
+        {
+            for (int i = 0; i < 10_000; i++)
+            {
+                yield return "data";
+            }
+        }
+
         private static List<Task> StartScenarios(Scenario scenario, CancellationToken token)
         {
             List<Task> tasks = new List<Task>();
@@ -321,6 +360,18 @@ namespace Samples.FileAccess
                         TaskCreationOptions.LongRunning));
             }
 
+#if (!NET45)
+            if ((scenario & Scenario.ReadWriteLinesAsync) == Scenario.ReadWriteLinesAsync)
+            {
+                tasks.Add(
+                    Task.Factory.StartNew(
+                        async () =>
+                        {
+                            await ReadWriteLineAsync(token);
+                        },
+                        TaskCreationOptions.LongRunning));
+            }
+#endif
             return tasks;
         }
 
