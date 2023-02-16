@@ -146,19 +146,6 @@ namespace Datadog.Trace.Activity.Handlers
                         CloseActivityScope(sourceName, activity, someValue.Scope);
                         return;
                     }
-
-                    // when we have an ActivityContext provided the ID used is the ParentID
-                    if (activity.ParentId is { } parentId && ActivityMappingById.TryRemove(parentId, out ActivityMapping parentValue) && parentValue.Scope?.Span is not null)
-                    {
-                        // We have the exact scope associated with the Activity
-                        if (Log.IsEnabled(LogEventLevel.Debug))
-                        {
-                            Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
-                        }
-
-                        CloseActivityScope(sourceName, activity, parentValue.Scope);
-                        return;
-                    }
                 }
 
                 // The listener didn't send us the Activity or the scope instance was not found
