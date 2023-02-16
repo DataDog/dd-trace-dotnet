@@ -17,5 +17,5 @@ class IAllocationsRecorder : public IService
 public:
     virtual ~IAllocationsRecorder() = default;
     virtual void OnObjectAllocated(ObjectID objectID, ClassID classID) = 0;
-    virtual bool Serialize(std::string filename) = 0;
+    virtual bool Serialize(const std::string& filename) = 0;
 };

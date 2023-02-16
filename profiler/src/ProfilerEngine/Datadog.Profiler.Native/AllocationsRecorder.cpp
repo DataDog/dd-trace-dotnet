@@ -57,7 +57,7 @@ void AllocationsRecorder::OnObjectAllocated(ObjectID objectId, ClassID classId)
     }
 }
 
-bool AllocationsRecorder::Serialize(std::string filename)
+bool AllocationsRecorder::Serialize(const std::string& filename)
 {
     std::unique_ptr<std::vector<AllocInfo>> pAllocations;
 

@@ -17,6 +17,7 @@ class IFrameStore;
 
 class AllocationsRecorder : public IAllocationsRecorder
 {
+private:
     struct AllocInfo
     {
     public:
@@ -35,7 +36,7 @@ public:
     virtual bool Start() override;
     virtual bool Stop() override;
     virtual void OnObjectAllocated(ObjectID objectId, ClassID classId) override;
-    virtual bool Serialize(std::string filename) override;
+    virtual bool Serialize(const std::string& filename) override;
 
 private:
     ICorProfilerInfo5* _pCorProfilerInfo;
