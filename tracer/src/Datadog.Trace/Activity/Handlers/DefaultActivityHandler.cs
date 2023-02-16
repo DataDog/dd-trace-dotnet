@@ -43,55 +43,27 @@ namespace Datadog.Trace.Activity.Handlers
             ulong? spanId = null;
             string? rawTraceId = null;
             string? rawSpanId = null;
-            bool remoteActivityContext = false; // TODO steven cleanup
+            var remoteActivityContext = false;
 
             if (activity is IW3CActivity w3cActivity)
             {
                 // If the user has specified a parent context, get the parent Datadog SpanContext
-                var parentSpanIdExists = w3cActivity.ParentSpanId is not null;
-                var activityParentId = w3cActivity.ParentId;
-
                 if (w3cActivity.ParentSpanId is not null
-                    && w3cActivity.ParentId is string parentId)
+                 && w3cActivity.ParentId is { } parentId)
                 {
                     if (ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
                     {
-                        // we have the scope for the Activity
                         parent = mapping.Scope.Span.Context;
-                        Log.Information("Mapped {Name} to a parent of {ParentID}", w3cActivity.OperationName, mapping.Scope.Span.TraceId);
                     }
                     else
                     {
-                        Log.Information("Current ActivityMappings: {@ActivityMapping}", ActivityMappingById);
-                        Log.Information("Creating a new parent for {@ActivityContext}", w3cActivity);
-
-                        remoteActivityContext = true; // using this as a way to avoid ActiveSpan below for now
-                        // extract parent Activity trace/span IDs TODO this is slightly duped below (but uses w3cActivity.SpanId)
-                        traceId ??= Convert.ToUInt64(w3cActivity.TraceId.Substring(16), 16);
-                        spanId = Convert.ToUInt64(w3cActivity.ParentSpanId, 16);
-                        Log.Information("Created {TraceID} and {SpanID}", traceId, spanId);
-                        Log.Information("Raw IDs: Raw Parent ID: {RawTraceId} and Raw Span ID: {RawSpanId}, Root ID: {RootID}", w3cActivity.RawParentId, w3cActivity.RawId, w3cActivity.RootId);
-                        var newParentContext = Tracer.Instance.CreateSpanContext(parent: SpanContext.None, rawTraceId: w3cActivity.RootId, rawSpanId: w3cActivity.ParentSpanId);
-                        // TODO why is it that when I set the traceId and spanId in CreateSpanContext that the test hangs after running everything?
-                        // TODO maybe because we do end up changing the above traceId and spanId later on?
-                        // var newParentContext = Tracer.Instance.CreateSpanContext(parent: SpanContext.None, traceId: traceId, spanId: spanId, rawTraceId: w3cActivity.RootId, rawSpanId: w3cActivity.ParentSpanId);
-
-                        Log.Information("Created a new SpanContext {@Context}", newParentContext);
-
-                        // TODO - should we pass the "activity" here or create a new activity to represent the remote parent?
-                        // TODO - can we even create an activity?
-                        var newParentScope = CreateScopeFromActivity(activity, newParentContext, traceId: traceId, spanId: spanId, rawTraceId: w3cActivity.RawId, rawSpanId: w3cActivity.RawParentId, activate: false);
-                        Log.Information("Created a new scope for the parent activity {@Activity}", newParentScope);
-                        // TODO - should we be using the "activity.Instance" here - maybe same as above just create a new pa
-                        ActivityMappingById.GetOrAdd(parentId, _ => new(activity.Instance, newParentScope));
+                        // mark it as needing to be a new active span as we don't want to inherit the current TraceID
+                        remoteActivityContext = true;
                     }
                 }
 
                 if (parent is null && activeSpan is not null && !remoteActivityContext)
                 {
-                    // If this is the first activity (no parent) and we already have an active span
-                    // or the span was started after the parent activity so we use the span as a parent
-
                     // We ensure the activity follows the same TraceId as the span
                     // And marks the ParentId the current spanId
 
@@ -144,21 +116,11 @@ namespace Datadog.Trace.Activity.Handlers
                 Log.Error(ex, "Error processing the OnActivityStarted callback");
             }
 
-            static Scope CreateScopeFromActivity(T activity, SpanContext? parent, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId, bool activate = true)
+            static Scope CreateScopeFromActivity(T activity, ISpanContext? parent, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId, bool activate = true)
             {
-                Log.Information("StartSpan for {ActivityName}", activity.OperationName);
                 var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
                 Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-
-                // TODO this is covering for creating the parent Activity scope
-                if (parent is null && activate)
-                {
-                    Log.Information("Activating Span for {SpanName}", span.OperationName);
-                    return Tracer.Instance.ActivateSpan(span, false);
-                }
-
-                Log.Information("Returning a new scope for {SpanName}", span.OperationName);
-                return new Scope(null, span, Tracer.Instance.ScopeManager, false);
+                return Tracer.Instance.ActivateSpan(span, false);
             }
         }
 
@@ -177,7 +139,6 @@ namespace Datadog.Trace.Activity.Handlers
                     // first we look for the normal ID, then the parent
                     if (ActivityMappingById.TryRemove(activity.Id, out ActivityMapping someValue) && someValue.Scope?.Span is not null)
                     {
-                        Log.Information("Closing the ActivityScope! {Name}", activity.OperationName);
                         // We have the exact scope associated with the Activity
                         if (Log.IsEnabled(LogEventLevel.Debug))
                         {
@@ -187,9 +148,10 @@ namespace Datadog.Trace.Activity.Handlers
                         CloseActivityScope(sourceName, activity, someValue.Scope);
                         return;
                     }
-                    else if (activity.ParentId is { } parentId && ActivityMappingById.TryRemove(parentId, out ActivityMapping parentValue) && parentValue.Scope?.Span is not null)
+
+                    // when we have an ActivityContext provided the ID used is the ParentID
+                    if (activity.ParentId is { } parentId && ActivityMappingById.TryRemove(parentId, out ActivityMapping parentValue) && parentValue.Scope?.Span is not null)
                     {
-                        Log.Information("Closing the PARENT ActivityScope! {Name}", activity.OperationName);
                         // We have the exact scope associated with the Activity
                         if (Log.IsEnabled(LogEventLevel.Debug))
                         {
@@ -272,7 +234,6 @@ namespace Datadog.Trace.Activity.Handlers
                 where TInner : IActivity
             {
                 var span = scope.Span;
-
                 OtlpHelpers.UpdateSpanFromActivity(activity, scope.Span);
 
                 // OpenTelemtry SDK / OTLP Fixups
@@ -285,8 +246,8 @@ namespace Datadog.Trace.Activity.Handlers
                 // - service.name
                 // - service.namespace
                 // - service.version
-
                 span.Finish(activity.StartTimeUtc.Add(activity.Duration));
+
                 scope.Close();
             }
         }
