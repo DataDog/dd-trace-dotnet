@@ -27,6 +27,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.DataStreamsMonitoring.Utils;
 
 namespace Datadog.Trace.Util;
 
@@ -37,6 +38,13 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
 {
     [ThreadStatic]
     private static RandomIdGenerator? _shared;
+
+#if !NETCOREAPP3_1_OR_GREATER
+    /// <summary>
+    /// Buffer used to avoid allocating a new byte array each time we generate a 128-bit trace id.
+    /// </summary>
+    private static byte[]? _buffer;
+#endif
 
     // in .NET < 6, we implement Xoshiro256** instead of using System.Random,
     // so we need to keep some state. it is not safe to access from multiple threads,
@@ -94,6 +102,19 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     }
 
     public static RandomIdGenerator Shared => _shared ??= new RandomIdGenerator();
+
+#if !NETCOREAPP3_1_OR_GREATER
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static byte[] GetBuffer(int size)
+    {
+        if (_buffer == null || _buffer.Length < size)
+        {
+            _buffer = new byte[size];
+        }
+
+        return _buffer;
+    }
+#endif
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong RotateLeft(ulong x, int k) => (x << k) | (x >> (64 - k));
@@ -177,9 +198,18 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     /// Returns a random 128-bit number that is greater than zero
     /// and less than or equal to Int128.MaxValue (0xffffffffffffffffffffffffffffffff).
     /// </summary>
-    public TraceId NextTraceId()
+    public TraceId NextTraceId(bool useAllBits)
     {
-        var upper = NextUInt64(); // TODO: use a 32-bit timestamp + 32 zero bits
+        if (!useAllBits)
+        {
+            // get a value in the range (0, Int64.MaxValue]
+            return NextLegacyId();
+        }
+
+        var seconds = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        // 128 bits = <32-bit unix seconds> <32 bits of zero> <64 random bits>
+        var upper = (ulong)seconds << 32;
 
         while (true)
         {

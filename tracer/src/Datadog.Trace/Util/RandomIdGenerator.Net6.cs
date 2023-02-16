@@ -6,6 +6,7 @@
 #if NET6_0_OR_GREATER
 
 using System;
+using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Util;
 
@@ -59,20 +60,29 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     /// <inheritDoc />
     public ulong NextSpanId(bool useAllBits = false)
     {
-        if (useAllBits)
+        if (!useAllBits)
         {
-            // get a value in the range (0, UInt64.MaxValue]
-            return NextNonZeroUInt64();
+            // get a value in the range (0, Int64.MaxValue]
+            return NextLegacyId();
         }
 
-        // get a value in the range (0, Int64.MaxValue]
-        return NextLegacyId();
+        // get a value in the range (0, UInt64.MaxValue]
+        return NextNonZeroUInt64();
     }
 
     /// <inheritDoc />
-    public TraceId NextTraceId()
+    public TraceId NextTraceId(bool useAllBits)
     {
-        var upper = NextNonZeroUInt64(); // TODO: use a 32-bit timestamp + 32 zero bits
+        if (!useAllBits)
+        {
+            // get a value in the range (0, Int64.MaxValue]
+            return NextLegacyId();
+        }
+
+        var seconds = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        // 128 bits = <32-bit unix seconds> <32 bits of zero> <64 random bits>
+        var upper = (ulong)seconds << 32;
         var lower = NextNonZeroUInt64();
 
         return new TraceId(upper, lower);

@@ -12,7 +12,8 @@ namespace Datadog.Trace.Util;
 internal interface IRandomIdGenerator
 {
     /// <summary>
-    /// Returns a random number that is greater than zero. If <paramref name="useAllBits"/> is <c>false</c> (default),
+    /// Returns a random unsigned 64-bit number that is greater than zero.
+    /// If <paramref name="useAllBits"/> is <c>false</c> (default),
     /// the number is less than or equal to Int64.MaxValue (0x7fffffffffffffff). This is the default mode (aka uint63)
     /// and is used for backwards compatibility with tracers that parse ids as signed integers.
     /// Otherwise, it is less than or equal to UInt64.MaxValue (0xffffffffffffffff).
@@ -20,8 +21,11 @@ internal interface IRandomIdGenerator
     ulong NextSpanId(bool useAllBits);
 
     /// <summary>
-    /// Returns a random 128-bit number that is greater than zero
-    /// and less than or equal to Int128.MaxValue (0xffffffffffffffffffffffffffffffff).
+    /// Returns a random unsigned 64-bit number that is greater than zero.
+    /// If <paramref name="useAllBits"/> is <c>false</c> (default),
+    /// the number is less than or equal to Int64.MaxValue (0x7fffffffffffffff). This is the default mode (aka uint63)
+    /// and is used for backwards compatibility with tracers that parse ids as signed integers.
+    /// Otherwise, it is less than or equal to Int128.MaxValue (0xffffffffffffffffffffffffffffffff).
     /// </summary>
-    TraceId NextTraceId();
+    TraceId NextTraceId(bool useAllBits);
 }
