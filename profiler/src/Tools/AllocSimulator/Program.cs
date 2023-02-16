@@ -27,7 +27,22 @@ namespace AllocSimulator
         {
             try
             {
-                var provider = new FileAllocProvider(allocFile);
+                // accept either text (.alloc) or binary (.balloc) allocations set
+                IAllocProvider provider;
+                var extension = Path.GetExtension(allocFile);
+                if (extension == ".alloc")
+                {
+                    provider = new TextFileAllocProvider(allocFile);
+                }
+                else if (extension == ".balloc")
+                {
+                    provider = new BinaryFileAllocProvider(allocFile);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"{extension} file extension is not supported");
+                }
+
                 var sampler = new AllocSampler();
                 Engine engine = new Engine(provider, sampler);
                 engine.Run();
@@ -39,8 +54,8 @@ namespace AllocSimulator
                 Console.WriteLine("---------------------------------------------");
                 foreach (var realAllocation in realAllocations)
                 {
-                    var realKey = $"{realAllocation.Type}+{realAllocation.Key}";
-                    Console.WriteLine($"{realAllocation.Count,9} | {realAllocation.Size,13} - {realKey}");
+                    var realKey = $"{realAllocation.Type}+{realAllocation.Key}";              // V--- use realKey when key is used
+                    Console.WriteLine($"{realAllocation.Count,9} | {realAllocation.Size,13} - {realAllocation.Type}");
                     var sampled = sampledAllocations.FirstOrDefault(a => (realKey == $"{a.Type}+{a.Key}"));
                     if (sampled != null)
                     {
