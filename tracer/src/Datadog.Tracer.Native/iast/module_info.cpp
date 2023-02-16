@@ -744,7 +744,8 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
     AssemblyImportInfo assemblyImport{0};
     ModuleInfo* moduleInfo = nullptr;
     std::stringstream memberKeyBuilder;
-    memberKeyBuilder << shared::ToString(moduleName) << "::" << shared::ToString(typeName) << "." << shared::ToString(methodName);
+    memberKeyBuilder << shared::ToString(moduleName) << "::" << shared::ToString(typeName) << "."
+                     << shared::ToString(methodName) << shared::ToString(methodParams);
     WSTRING memberKey = ToWSTRING(memberKeyBuilder.str());
 
     auto memberValue = _mMemberImports.find(memberKey);
@@ -806,9 +807,20 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
         hr = _metadataEmit->DefineImportMember(moduleInfo->_assemblyImport, nullptr, 0, moduleInfo->_metadataImport,
                                                methodInfo->_id, _assemblyEmit, typeRef, &methodRef);
     }
-    _mMemberImports[memberKey] = methodRef;
-    auto memberRefInfo = GetMemberRefInfo(methodRef);
-    trace::Logger::Debug("DefineMemberRef : ", Hex(methodRef), " for ", memberKey, " MethodName: ", memberRefInfo->GetFullName(), " Module: ", GetModuleFullName());
-    return methodRef;
+
+    if (SUCCEEDED(hr))
+    {
+        _mMemberImports[memberKey] = methodRef;
+        auto memberRefInfo = GetMemberRefInfo(methodRef);
+        trace::Logger::Debug("DefineMemberRef : ", Hex(methodRef), " for ", memberKey,
+                             " MethodName: ", memberRefInfo->GetFullName(), " Module: ", GetModuleFullName());
+        return methodRef;
+    }
+    else
+    {
+        trace::Logger::Warn("DefineImportMember failed with code ", hr , " typeName:" , typeName ,
+                            " methodName: " , methodName);
+        return 0;
+    }
 }
 } // namespace iast
