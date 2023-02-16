@@ -156,89 +156,17 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
     return IsRunning(sti.ThreadState);
 }
 
+// https://devblogs.microsoft.com/oldnewthing/20200824-00/?p=104116
 
-bool InitializeGetLogicalProcessorInformationCallback()
+int32_t GetProcessorCount()
 {
-    auto hModule = GetModuleHandleA("kernel32.dll");
-    if (hModule == nullptr)
+    auto nbProcs = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+    if (nbProcs == 0)
     {
-        Log::Error("Impossible to load kernel32.dll: 0x", std::hex, GetLastError());
-        return false;
+        Log::Info("An error occured and we were unable to retrieve the number of processors(Error code: ", HRESULT_FROM_WIN32(GetLastError()), ")");
+        return 1;
     }
-
-    GetLogicalProcessorInformation = (GetLogicalProcessorInformation_)GetProcAddress(hModule, "GetLogicalProcessorInformation");
-    if (GetLogicalProcessorInformation == nullptr)
-    {
-        Log::Error("Impossible to get GetLogicalProcessorInformation: 0x", std::hex, GetLastError());
-        return false;
-    }
-
-    return true;
-}
-
-// from https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformation
-//
-DWORD CountSetBits(ULONG_PTR bitMask)
-{
-    DWORD LSHIFT = sizeof(ULONG_PTR) * 8 - 1;
-    DWORD bitSetCount = 0;
-    ULONG_PTR bitTest = (ULONG_PTR)1 << LSHIFT;
-    DWORD i;
-
-    for (i = 0; i <= LSHIFT; ++i)
-    {
-        bitSetCount += ((bitMask & bitTest) ? 1 : 0);
-        bitTest /= 2;
-    }
-
-    return bitSetCount;
-}
-
-bool GetProcessorCount(uint32_t& processorCount)
-{
-    if (GetLogicalProcessorInformation == nullptr)
-    {
-        return false;
-    }
-
-    std::unique_ptr<byte[]> buffer;
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = NULL;
-    DWORD returnLength = 0;
-    DWORD byteOffset = 0;
-
-    if (!GetLogicalProcessorInformation(ptr, &returnLength))
-    {
-        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-        {
-            return false;
-        }
-
-        buffer = std::make_unique<byte[]>(returnLength);
-        if (nullptr == buffer)
-        {
-            return false;
-        }
-
-        ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)buffer.get();
-        if (!GetLogicalProcessorInformation(ptr, &returnLength))
-        {
-            return false;
-        }
-    }
-
-    while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= returnLength)
-    {
-        if (ptr->Relationship == RelationProcessorCore)
-        {
-            // A hyperthreaded core supplies more than one logical processor.
-            processorCount += CountSetBits(ptr->ProcessorMask);
-        }
-
-        byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
-        ptr++;
-    }
-
-    return true;
+    return nbProcs;
 }
 
 } // namespace OsSpecificApi

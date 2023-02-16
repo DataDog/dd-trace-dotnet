@@ -70,15 +70,8 @@ StackSamplerLoop::StackSamplerLoop(
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()}
 {
-    if (!OsSpecificApi::GetProcessorCount(_nbCores))
-    {
-        _nbCores = 1;
-        Log::Info("Processor cores = 1 (as a guess because GetProcessorCount failed)");
-    }
-    else
-    {
-        Log::Info("Processor cores = ", _nbCores);
-    }
+    _nbCores = OsSpecificApi::GetProcessorCount();
+    Log::Info("Processor cores = ", _nbCores);
 
     _samplingPeriod = _pConfiguration->CpuWallTimeSamplingRate();
     Log::Info("CPU and wall time sampling period = ", _samplingPeriod.count() / 1000000, " ms");
@@ -245,18 +238,9 @@ void StackSamplerLoop::CpuProfilingIteration()
     uint32_t sampledThreads = 0;
     int32_t managedThreadsCount = _pManagedThreadList->Count();
     int32_t sampledThreadsCount = (std::min)(managedThreadsCount, _cpuThreadsThreshold);
-    static int64_t lastTime = 0;
-
-    auto firstIteration = lastTime == 0;
-
-    auto currentTimeTime = OpSysTools::GetHighPrecisionNanoseconds();
-    auto duration =  currentTimeTime - lastTime;
-    lastTime = currentTimeTime;
-    int nbThreads = 0;
 
     for (int32_t i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
     {
-        nbThreads++;
         _targetThread = _pManagedThreadList->LoopNext(_iteratorCpuTime);
         if (_targetThread != nullptr)
         {
@@ -310,11 +294,6 @@ void StackSamplerLoop::CpuProfilingIteration()
             }
             _targetThread.reset();
         }
-    }
-
-    if (!firstIteration)
-    {
-        Log::Info("CPU iteration:\n* Wait duration: ", duration, " ns\n* Nb threads: ", nbThreads, "\n* Nb sampled threads: ", sampledThreads);
     }
 }
 
