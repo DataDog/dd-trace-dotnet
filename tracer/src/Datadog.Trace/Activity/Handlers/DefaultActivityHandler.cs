@@ -43,6 +43,8 @@ namespace Datadog.Trace.Activity.Handlers
             ulong? spanId = null;
             string? rawTraceId = null;
             string? rawSpanId = null;
+            bool isRemoteContext = false;
+
             if (activity is IW3CActivity w3cActivity)
             {
                 // If the user has specified a parent context, get the parent Datadog SpanContext
@@ -56,7 +58,8 @@ namespace Datadog.Trace.Activity.Handlers
                     else
                     {
                         // create a new parent span context for the ActivityContext
-                        parent = Tracer.Instance.CreateSpanContext(SpanContext.None, rawTraceId: activity.ParentId, rawSpanId: w3cActivity.ParentSpanId);
+                        parent = Tracer.Instance.CreateSpanContext(SpanContext.None, activity.ParentId, rawSpanId: w3cActivity.ParentSpanId);
+                        isRemoteContext = true;
                     }
                 }
 
