@@ -57,9 +57,9 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     }
 
     /// <inheritDoc />
-    public ulong NextSpanId(bool useUInt64MaxValue = false)
+    public ulong NextSpanId(bool useAllBits = false)
     {
-        if (useUInt64MaxValue)
+        if (useAllBits)
         {
             // get a value in the range (0, UInt64.MaxValue]
             return NextNonZeroUInt64();

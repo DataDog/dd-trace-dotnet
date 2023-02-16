@@ -25,7 +25,7 @@ public class RandomIdGeneratorTests
     public void NextSpanId_UInt63_Are_Valid()
     {
         // even though these are ulong, they should never be larger than long.MaxValue
-        GetValues(() => RandomIdGenerator.Shared.NextSpanId(useUInt64MaxValue: false))
+        GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: false))
            .Take(NumberOfIdsToGenerate)
            .Should()
            .OnlyContain(i => i >= MinId && i <= MaxUInt63);
@@ -34,7 +34,7 @@ public class RandomIdGeneratorTests
     [Fact]
     public void NextSpanId_UInt64_Are_Valid()
     {
-        GetValues(() => RandomIdGenerator.Shared.NextSpanId(useUInt64MaxValue: true))
+        GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: true))
            .Take(NumberOfIdsToGenerate)
            .Should()
            .OnlyContain(i => i >= MinId);
@@ -52,7 +52,7 @@ public class RandomIdGeneratorTests
     [Fact]
     public void NextSpanId_UInt63_Are_Not_Duplicated()
     {
-        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useUInt64MaxValue: false)).Take(NumberOfIdsToGenerate);
+        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: false)).Take(NumberOfIdsToGenerate);
         var set = new HashSet<ulong>(values);
 
         set.Count.Should().Be(NumberOfIdsToGenerate);
@@ -61,7 +61,7 @@ public class RandomIdGeneratorTests
     [Fact]
     public void NextSpanId_UInt64_Are_Not_Duplicated()
     {
-        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useUInt64MaxValue: true)).Take(NumberOfIdsToGenerate);
+        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: true)).Take(NumberOfIdsToGenerate);
         var set = new HashSet<ulong>(values);
 
         set.Count.Should().Be(NumberOfIdsToGenerate);
@@ -80,14 +80,14 @@ public class RandomIdGeneratorTests
     [Fact]
     public void NextSpanId_UInt63_Are_Evenly_Distributed()
     {
-        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useUInt64MaxValue: false)).Take(NumberOfIdsToGenerate);
+        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: false)).Take(NumberOfIdsToGenerate);
         AssertEvenDistribution(values, MinId, MaxUInt63);
     }
 
     [Fact]
     public void NextSpanId_UInt64_Are_Evenly_Distributed()
     {
-        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useUInt64MaxValue: true)).Take(NumberOfIdsToGenerate);
+        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: true)).Take(NumberOfIdsToGenerate);
         AssertEvenDistribution(values, MinId, MaxUInt64);
     }
 
