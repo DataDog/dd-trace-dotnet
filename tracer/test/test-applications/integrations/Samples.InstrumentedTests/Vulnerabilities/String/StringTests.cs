@@ -202,6 +202,30 @@ public class StringAspectTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenATaintedString_WhenCallingConcat_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Concat(null, taintedValue), () => String.Concat(null, taintedValue));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingConcat_ResultIsTainted3()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Concat(taintedValue, null), () => String.Concat(taintedValue, null));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingConcat_ResultIsTainted4()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+::+-tainted-+:", String.Concat(taintedValue, taintedValue, null), () => String.Concat(taintedValue, taintedValue, null));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingConcat_ResultIsTainted5()
+    {
+        AssertTaintedFormatWithOriginalCallCheck($"string :+-tainted-+: and :+-tainted-+:", $"string {taintedValue} and {taintedValue}", () => $"string {taintedValue} and {taintedValue}");
+    }
+
+    [Fact]
     public void GivenANullString_WhenCallingConcat_ResultIsEmpty()
     {
         try
