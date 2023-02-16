@@ -10,6 +10,7 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
@@ -23,5 +24,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\docs\Datadog.Trace.BenchmarkDotNet\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
