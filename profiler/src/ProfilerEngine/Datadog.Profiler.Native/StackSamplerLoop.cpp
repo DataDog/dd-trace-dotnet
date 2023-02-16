@@ -245,9 +245,18 @@ void StackSamplerLoop::CpuProfilingIteration()
     uint32_t sampledThreads = 0;
     int32_t managedThreadsCount = _pManagedThreadList->Count();
     int32_t sampledThreadsCount = (std::min)(managedThreadsCount, _cpuThreadsThreshold);
+    static int64_t lastTime = 0;
+
+    auto firstIteration = lastTime == 0;
+
+    auto currentTimeTime = OpSysTools::GetHighPrecisionNanoseconds();
+    auto duration =  currentTimeTime - lastTime;
+    lastTime = currentTimeTime;
+    int nbThreads = 0;
 
     for (int32_t i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
     {
+        nbThreads++;
         _targetThread = _pManagedThreadList->LoopNext(_iteratorCpuTime);
         if (_targetThread != nullptr)
         {
@@ -301,6 +310,11 @@ void StackSamplerLoop::CpuProfilingIteration()
             }
             _targetThread.reset();
         }
+    }
+
+    if (!firstIteration)
+    {
+        Log::Info("CPU iteration:\n* Wait duration: ", duration, " ns\n* Nb threads: ", nbThreads, "\n* Nb sampled threads: ", sampledThreads);
     }
 }
 
