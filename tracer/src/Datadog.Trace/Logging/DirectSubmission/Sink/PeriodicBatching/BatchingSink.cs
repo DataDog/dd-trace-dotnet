@@ -71,7 +71,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         /// </summary>
         /// <param name="logEvent">Log event to emit.</param>
         /// <exception cref="ArgumentNullException">The event is null.</exception>
-        public void EnqueueLog(T logEvent)
+        public virtual void EnqueueLog(T logEvent)
         {
             if (logEvent == null)
             {

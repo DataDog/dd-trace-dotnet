@@ -60,6 +60,7 @@ internal class TelemetryLoggingConfiguration
         return new TelemetryLogsSink(
             batchingOptions,
             () => LogLevelSwitch.MinimumLevel = LogEventLevel.Fatal,
-            DatadogSerilogLogger.NullLogger);
+            DatadogSerilogLogger.NullLogger,
+            deDuplicationEnabled: true); // This sends only messageTemplates, so may as wel dedupe
     }
 }

@@ -6,25 +6,59 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 
 namespace Datadog.Trace.Telemetry;
 
 internal class TelemetryLogsSink : BatchingSink<LogMessageData>, ITelemetryLogsSink
 {
+    private readonly bool _deDuplicationEnabled;
+    private ConcurrentDictionary<uint, int>? _logCounts;
+    private ConcurrentDictionary<uint, int>? _logCountsReserve;
     private TelemetryConfiguration? _configuration;
     private int _currentTransport = 0;
 
     public TelemetryLogsSink(
         BatchingSinkOptions sinkOptions,
         Action disableSinkAction,
-        IDatadogLogger log)
+        IDatadogLogger log,
+        bool deDuplicationEnabled)
         : base(sinkOptions, disableSinkAction, log)
     {
+        _deDuplicationEnabled = deDuplicationEnabled;
+        if (_deDuplicationEnabled)
+        {
+            _logCounts = new();
+            _logCountsReserve = new();
+        }
+    }
+
+    /// <summary>
+    /// Enqueue the log. If the log is not new, and de-duplication is enabled, increment the count and don't enqueue the log
+    /// </summary>
+    public override void EnqueueLog(LogMessageData logEvent)
+    {
+        if (_deDuplicationEnabled)
+        {
+            var eventId = EventIdHash.Compute(logEvent.Message ?? string.Empty, logEvent.StackTrace);
+            ConcurrentDictionary<uint, int> logCounts = _logCounts!;
+
+            var newCount = logCounts.AddOrUpdate(eventId, addValue: 1, updateValueFactory: static (_, prev) => prev + 1);
+
+            if (newCount != 1)
+            {
+                // already have this log, so don't enqueue it again
+                return;
+            }
+        }
+
+        base.EnqueueLog(logEvent);
     }
 
     /// <summary>
@@ -58,6 +92,23 @@ internal class TelemetryLogsSink : BatchingSink<LogMessageData>, ITelemetryLogsS
             {
                 // We should never hit this, as we don't start emitting until we are initialized,
                 return true;
+            }
+
+            if (_deDuplicationEnabled)
+            {
+                var logCounts = Interlocked.Exchange(ref _logCounts, _logCountsReserve)!;
+                foreach (var logEvent in events)
+                {
+                    // modify the message to add the final log count
+                    var eventId = EventIdHash.Compute(logEvent.Message ?? string.Empty, logEvent.StackTrace);
+                    if (logCounts.TryGetValue(eventId, out var count))
+                    {
+                        logEvent.Message = $"{logEvent.Message}. {count - 1} additional messages skipped.";
+                    }
+                }
+
+                logCounts.Clear();
+                _logCountsReserve = logCounts;
             }
 
             var logs = new LogsPayload(events.Count);
