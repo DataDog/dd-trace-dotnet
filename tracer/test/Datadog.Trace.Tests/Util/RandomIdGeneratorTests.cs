@@ -21,82 +21,124 @@ public class RandomIdGeneratorTests
     private const int NumberOfBuckets = 20;
     private const int ExpectedCountPerBucket = NumberOfIdsToGenerate / NumberOfBuckets;
 
+    private readonly RandomIdGenerator _rng = new();
+
     [Fact]
-    public void NextSpanId_UInt63_Are_Valid()
+    public void NextSpanId_63_Is_Valid()
     {
-        // even though these are ulong, they should never be larger than long.MaxValue
-        GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: false))
-           .Take(NumberOfIdsToGenerate)
-           .Should()
-           .OnlyContain(i => i >= MinId && i <= MaxUInt63);
+        var values = GetValues(() => _rng.NextSpanId(useAllBits: false));
+
+        foreach (var value in values.Take(NumberOfIdsToGenerate))
+        {
+            // even though these are 64-bit ulong, they should never be larger than Int64.MaxValue
+            value.Should().BeGreaterOrEqualTo(MinId).And.BeLessThanOrEqualTo(MaxUInt63);
+        }
     }
 
     [Fact]
-    public void NextSpanId_UInt64_Are_Valid()
+    public void NextSpanId_64_Is_Valid()
     {
-        GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: true))
-           .Take(NumberOfIdsToGenerate)
-           .Should()
-           .OnlyContain(i => i >= MinId);
+        var values = GetValues(() => _rng.NextSpanId(useAllBits: true));
+
+        foreach (var value in values.Take(NumberOfIdsToGenerate))
+        {
+            value.Should().BeGreaterOrEqualTo(MinId);
+        }
     }
 
     [Fact]
-    public void NextTraceId_UInt128_Are_Valid()
+    public void NextTraceId_63_Is_Valid()
     {
-        GetValues(() => RandomIdGenerator.Shared.NextTraceId())
-           .Take(NumberOfIdsToGenerate)
-           .Should()
-           .OnlyContain(i => i >= MinId);
+        // even though these are 128-bit TraceId, they should never be larger than Int64.MaxValue
+        var values = GetValues(() => _rng.NextTraceId(useAllBits: false));
+
+        foreach (var value in values.Take(NumberOfIdsToGenerate))
+        {
+            value.Upper.Should().Be(0);
+            value.Lower.Should().BeGreaterOrEqualTo(MinId).And.BeLessThanOrEqualTo(MaxUInt63);
+        }
     }
 
     [Fact]
-    public void NextSpanId_UInt63_Are_Not_Duplicated()
+    public void NextTraceId_128_Is_Valid()
     {
-        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: false)).Take(NumberOfIdsToGenerate);
-        var set = new HashSet<ulong>(values);
+        // 128 bits = <32-bit unix seconds> <32 bits of zero> <64 random bits>
+        var values = GetValues(() => _rng.NextTraceId(useAllBits: true));
+
+        foreach (var value in values.Take(NumberOfIdsToGenerate))
+        {
+            const ulong timestampToleranceSeconds = 2;
+            var unixTimeSeconds = (ulong)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var lowestExpectedTimestamp = unixTimeSeconds - timestampToleranceSeconds;
+            var highestExpectedTimestamp = unixTimeSeconds + timestampToleranceSeconds;
+
+            // upper 32 bits are unix epoch seconds
+            (value.Upper >> 32).Should().BeInRange(lowestExpectedTimestamp, highestExpectedTimestamp);
+
+            // next 32 bits are always zero
+            (value.Upper << 32).Should().Be(0);
+
+            // lower 64 bits are never zero
+            value.Lower.Should().BeGreaterOrEqualTo(MinId);
+        }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void NextSpanId_Are_Not_Duplicated(bool useAllBits)
+    {
+        var values = GetValues(() => _rng.NextSpanId(useAllBits)).Take(NumberOfIdsToGenerate);
+        var set = new HashSet<ulong>();
+
+        foreach (var value in values)
+        {
+            // fail as soon as we see a duplicate
+            set.Add(value).Should().BeTrue();
+        }
 
         set.Count.Should().Be(NumberOfIdsToGenerate);
     }
 
-    [Fact]
-    public void NextSpanId_UInt64_Are_Not_Duplicated()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void NextTraceId_Are_Not_Duplicated(bool useAllBits)
     {
-        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: true)).Take(NumberOfIdsToGenerate);
-        var set = new HashSet<ulong>(values);
-
-        set.Count.Should().Be(NumberOfIdsToGenerate);
-    }
-
-    [Fact]
-    public void NextTraceId_UInt128_Are_Not_Duplicated()
-    {
+        // 128 bits = <32-bit unix seconds> <32 bits of zero> <64 random bits>
         // only the lower 64 bits are random, so use Trace.Lower and ignore TraceId.Upper
-        var values = GetValues(() => RandomIdGenerator.Shared.NextTraceId().Lower).Take(NumberOfIdsToGenerate);
-        var set = new HashSet<ulong>(values);
+        var values = GetValues(() => _rng.NextTraceId(useAllBits).Lower).Take(NumberOfIdsToGenerate);
+        var set = new HashSet<ulong>();
+
+        foreach (var value in values)
+        {
+            // fail as soon as we see a duplicate
+            set.Add(value).Should().BeTrue();
+        }
 
         set.Count.Should().Be(NumberOfIdsToGenerate);
     }
 
-    [Fact]
-    public void NextSpanId_UInt63_Are_Evenly_Distributed()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void NextSpanId_Are_Evenly_Distributed(bool useAllBits)
     {
-        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: false)).Take(NumberOfIdsToGenerate);
-        AssertEvenDistribution(values, MinId, MaxUInt63);
+        var values = GetValues(() => _rng.NextSpanId(useAllBits)).Take(NumberOfIdsToGenerate);
+
+        AssertEvenDistribution(values, MinId, useAllBits ? MaxUInt64 : MaxUInt63);
     }
 
-    [Fact]
-    public void NextSpanId_UInt64_Are_Evenly_Distributed()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void NextTraceId_Lower_Are_Evenly_Distributed(bool useAllBits)
     {
-        var values = GetValues(() => RandomIdGenerator.Shared.NextSpanId(useAllBits: true)).Take(NumberOfIdsToGenerate);
-        AssertEvenDistribution(values, MinId, MaxUInt64);
-    }
-
-    [Fact]
-    public void NextTraceId_Lower_Are_Evenly_Distributed()
-    {
+        // 128 bits = <32-bit unix seconds> <32 bits of zero> <64 random bits>
         // only the lower 64 bits are random, so use Trace.Lower and ignore TraceId.Upper
-        var values = GetValues(() => RandomIdGenerator.Shared.NextTraceId().Lower).Take(NumberOfIdsToGenerate);
-        AssertEvenDistribution(values, MinId, MaxUInt64);
+        var values = GetValues(() => _rng.NextTraceId(useAllBits).Lower).Take(NumberOfIdsToGenerate);
+
+        AssertEvenDistribution(values, MinId, useAllBits ? MaxUInt64 : MaxUInt63);
     }
 
     private static void AssertEvenDistribution(IEnumerable<ulong> values, ulong minValue, ulong maxValue)
@@ -111,7 +153,12 @@ public class RandomIdGeneratorTests
             bucketCounts[bucketIndex] += 1;
         }
 
-        bucketCounts.Should().OnlyContain(count => (double)Math.Abs(ExpectedCountPerBucket - count) / ExpectedCountPerBucket < 0.01);
+        // pre-compute expected lower and upper limits
+        const double tolerancePercent = 0.01;
+        const double lowestExpectedCount = ExpectedCountPerBucket * (1 - tolerancePercent);
+        const double highestExpectedCount = ExpectedCountPerBucket * (1 + tolerancePercent);
+
+        bucketCounts.Should().OnlyContain(count => lowestExpectedCount < count && count < highestExpectedCount);
     }
 
     private static IEnumerable<T> GetValues<T>(Func<T> factory)
