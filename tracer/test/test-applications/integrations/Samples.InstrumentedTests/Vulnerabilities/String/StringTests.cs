@@ -425,6 +425,13 @@ public class StringAspectTests : InstrumentationTestsBase
         str.Should().Be("123");
     }
 
+    [Fact]
+    public void GivenAnCharList_WhenConcat_ResultIsOk2()
+    {
+        string str = String.Concat<char?>(new List<char?> { '1', '2', null, '3' });
+        str.Should().Be("123");
+    }
+
     // Classes
 
     [Fact]
