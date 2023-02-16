@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
@@ -12,24 +11,29 @@ namespace Datadog.Trace.DatabaseMonitoring
 {
     internal static class DatabaseMonitoringPropagator
     {
-        private static string sqlCommentSpanService = "dddbs";
-        private static string sqlCommentRootService = "ddps";
-        private static string sqlCommentVersion = "ddpv";
-        private static string sqlCommentEnv = "dde";
+        private const string SqlCommentSpanService = "dddbs";
+        private const string SqlCommentRootService = "ddps";
+        private const string SqlCommentVersion = "ddpv";
+        private const string SqlCommentEnv = "dde";
 
         internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, Span span)
         {
+            if (propagationStyle == DbmPropagationLevel.Disabled)
+            {
+                return string.Empty;
+            }
+
             var propagatorSringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            propagatorSringBuilder.Append($"{sqlCommentRootService}='{configuredServiceName}',{sqlCommentSpanService}='{span.ServiceName}'");
+            propagatorSringBuilder.Append($"{SqlCommentRootService}='{configuredServiceName}',{SqlCommentSpanService}='{span.ServiceName}'");
 
             if (span.GetTag(Tags.Version) != null)
             {
-                propagatorSringBuilder.Append($",{sqlCommentVersion}='{span.GetTag(Tags.Version)}'");
+                propagatorSringBuilder.Append($",{SqlCommentVersion}='{span.GetTag(Tags.Version)}'");
             }
 
             if (span.GetTag(Tags.Env) != null)
             {
-                propagatorSringBuilder.Append($",{sqlCommentEnv}='{span.GetTag(Tags.Env)}'");
+                propagatorSringBuilder.Append($",{SqlCommentEnv}='{span.GetTag(Tags.Env)}'");
             }
 
             if (propagationStyle == DbmPropagationLevel.Full)

@@ -14,9 +14,9 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
     public class DatabaseMonitoringPropagatorTests
     {
         [Theory]
-
-        [InlineData("service", SamplingPriority.AutoReject, "/*ddps='Test.Service',dddbs='Test.Service-mysql',ddpv='1.0.0',dde='testing'*/")]
-        [InlineData("full", SamplingPriority.AutoKeep, "/*ddps='Test.Service',dddbs='Test.Service-mysql',ddpv='1.0.0',dde='testing',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/")]
+        [InlineData("disabled", SamplingPriority.UserKeep, "")]
+        [InlineData("Service", SamplingPriority.AutoReject, "/*ddps='Test.Service',dddbs='Test.Service-mysql',ddpv='1.0.0',dde='testing'*/")]
+        [InlineData("fUll", SamplingPriority.AutoKeep, "/*ddps='Test.Service',dddbs='Test.Service-mysql',ddpv='1.0.0',dde='testing',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/")]
         [InlineData("full", SamplingPriority.UserReject, "/*ddps='Test.Service',dddbs='Test.Service-mysql',ddpv='1.0.0',dde='testing',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-00'*/")]
         public void ExpectedCommentInjected(string propagationMode, SamplingPriority samplingPriority, string expectedComment)
         {

@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled && (integrationId == IntegrationId.MySql || integrationId == IntegrationId.Npgsql))
                 {
                     command.CommandText = $"{DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span)} {commandText}";
-                    scope.Span.SetTag(Tags.DbmDataPropagated, "true");
+                    tags.DbmDataPropagated = "true";
                 }
             }
             catch (Exception ex)

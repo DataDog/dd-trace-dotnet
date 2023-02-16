@@ -40,10 +40,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
+        public void SubmitDbmCommentedSpanspropagationNotSet(string packageVersion)
+        {
+            SubmitDbmCommentedSpans(packageVersion, string.Empty);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetMySql8Data))]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitDbmCommentedSpanspropagationUnsupportedValue(string packageVersion)
+        {
+            SubmitDbmCommentedSpans(packageVersion, "randomValue");
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetMySql8Data))]
+        [Trait("Category", "EndToEnd")]
         public void SubmitDbmCommentedSpanspropagationDisabled(string packageVersion)
         {
-            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", "disabled");
-            SubmitDbmCommentedSpans(packageVersion);
+            SubmitDbmCommentedSpans(packageVersion, "disabled");
         }
 
         [SkippableTheory]
@@ -51,8 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitDbmCommentedSpanspropagationService(string packageVersion)
         {
-            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", "service");
-            SubmitDbmCommentedSpans(packageVersion);
+            SubmitDbmCommentedSpans(packageVersion, "service");
         }
 
         [SkippableTheory]
@@ -60,33 +74,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitDbmCommentedSpanspropagationFull(string packageVersion)
         {
-            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", "full");
-            SubmitDbmCommentedSpans(packageVersion);
+            SubmitDbmCommentedSpans(packageVersion, "full");
         }
 
         // Check that the spans have been tagged after the comment was propagated
-        private void ValidatePresentDbmTag(IEnumerable<MockSpan> spans)
+        private void ValidatePresentDbmTag(IEnumerable<MockSpan> spans, string propagationLevel)
         {
-            var propagationLevel = GetEnvironmentVariable("DD_DBM_PROPAGATION_MODE");
-
-            if (propagationLevel == "disabled")
-            {
-                foreach (var span in spans)
-                {
-                    Assert.False(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
-                }
-            }
-            else
+            if (propagationLevel == "service" || propagationLevel == "full")
             {
                 foreach (var span in spans)
                 {
                     Assert.True(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
                 }
             }
+            else
+            {
+                foreach (var span in spans)
+                {
+                    Assert.False(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
+                }
+            }
         }
 
-        private void SubmitDbmCommentedSpans(string packageVersion)
+        private void SubmitDbmCommentedSpans(string packageVersion, string propagationLevel)
         {
+            if (propagationLevel != string.Empty)
+            {
+                SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", propagationLevel);
+            }
+
             // ALWAYS: 75 spans
             // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -114,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
-            ValidatePresentDbmTag(spans);
+            ValidatePresentDbmTag(spans, propagationLevel);
         }
     }
 }
