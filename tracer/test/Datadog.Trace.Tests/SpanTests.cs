@@ -196,7 +196,7 @@ namespace Datadog.Trace.Tests
         public void SpanIds_RemoteParentOfSpanIsNotLocalRoot()
         {
             const ulong remoteParentSpanId = 1234567890123456789;
-            SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
+            SpanContext remoteParentSpanCtx = new SpanContext(traceId: 1, spanId: remoteParentSpanId);
             var span = _tracer.StartSpan(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
             using (span)
             {
@@ -210,7 +210,7 @@ namespace Datadog.Trace.Tests
         public void SpanIds_RemoteParentOfScopeIsNotLocalRoot()
         {
             const ulong remoteParentSpanId = 1234567890123456789;
-            SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
+            SpanContext remoteParentSpanCtx = new SpanContext(traceId: 1, spanId: remoteParentSpanId);
             var spanCreationSettings = new SpanCreationSettings() { Parent = remoteParentSpanCtx };
             Scope scope = (Scope)_tracer.StartActive(operationName: "Operation Galactic Storm", spanCreationSettings);
             var span = scope.Span;
@@ -226,7 +226,7 @@ namespace Datadog.Trace.Tests
         public void SpanIds_RootOfSpanHierarchy()
         {
             const ulong remoteParentSpanId = 1234567890123456789;
-            SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
+            SpanContext remoteParentSpanCtx = new SpanContext(traceId: 1, spanId: remoteParentSpanId);
 
             using (Span span1 = _tracer.StartSpan(operationName: "Operation Root", parent: remoteParentSpanCtx))
             using (Span span2 = _tracer.StartSpan(operationName: "Operation Middle", parent: span1.Context))
@@ -271,7 +271,7 @@ namespace Datadog.Trace.Tests
         public void SpanIds_RootOfScopeSpanMixedHierarchy()
         {
             const ulong remoteParentSpanId = 1234567890123456789;
-            SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
+            SpanContext remoteParentSpanCtx = new SpanContext(traceId: 1, spanId: remoteParentSpanId);
             var spanCreationSettings = new SpanCreationSettings() { Parent = remoteParentSpanCtx };
 
             using (Scope scope1 = (Scope)_tracer.StartActive(operationName: "Operation Root", spanCreationSettings))
