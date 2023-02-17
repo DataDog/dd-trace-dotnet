@@ -86,7 +86,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
 
             runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", "/usr/bin/echo");
-            runner.Environment.SetVariable("DOTNET_DbgEnableMiniDump", "1");
+            runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
 
             using var processHelper = runner.LaunchProcess();
 
@@ -102,7 +102,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
 
             // Don't set DD_TRACE_CRASH_HANDLER. In that case, the call to createdump shouldn't be redirected
-            runner.Environment.SetVariable("DOTNET_DbgEnableMiniDump", "1");
+            runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
 
             using var processHelper = runner.LaunchProcess();
 
