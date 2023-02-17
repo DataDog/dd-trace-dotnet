@@ -619,13 +619,12 @@ namespace Datadog.Trace.Propagators
                 traceId: traceParent.TraceId,
                 spanId: traceParent.ParentId,
                 samplingPriority: samplingPriority,
-                serviceName: null,
                 origin: traceState.Origin,
                 rawTraceId: traceParent.RawTraceId,
-                rawSpanId: traceParent.RawParentId);
+                rawSpanId: traceParent.RawParentId,
+                propagatedTags: traceState.PropagatedTags,
+                additionalW3CTraceState: traceState.AdditionalValues);
 
-            spanContext.PropagatedTags = traceState.PropagatedTags;
-            spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
             return true;
         }
 

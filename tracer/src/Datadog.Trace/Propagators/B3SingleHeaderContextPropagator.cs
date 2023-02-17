@@ -94,7 +94,16 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString());
+
+                spanContext = new SpanContext(
+                    traceId: traceId,
+                    spanId: parentId,
+                    samplingPriority: samplingPriority,
+                    origin: null,
+                    rawTraceId: rawTraceId.ToString(),
+                    rawSpanId: rawSpanId.ToString(),
+                    propagatedTags: null,
+                    additionalW3CTraceState: null);
 #else
                 string? rawTraceId = null;
                 string? rawSpanId = null;
@@ -135,7 +144,16 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
+
+                spanContext = new SpanContext(
+                    traceId: traceId,
+                    spanId: parentId,
+                    samplingPriority: samplingPriority,
+                    origin: null,
+                    rawTraceId: rawTraceId,
+                    rawSpanId: rawSpanId,
+                    propagatedTags: null,
+                    additionalW3CTraceState: null);
 #endif
 
                 return true;

@@ -79,7 +79,16 @@ namespace Datadog.Trace.Propagators
                     parentId = 0;
                 }
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
+                spanContext = new SpanContext(
+                    traceId: traceId,
+                    spanId: parentId,
+                    samplingPriority: samplingPriority,
+                    origin: null,
+                    rawTraceId: rawTraceId,
+                    rawSpanId: rawSpanId,
+                    propagatedTags: null,
+                    additionalW3CTraceState: null);
+
                 return true;
             }
 

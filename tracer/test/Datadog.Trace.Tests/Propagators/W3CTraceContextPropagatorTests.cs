@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
@@ -35,7 +34,7 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData(123456789, 987654321, SamplingPriorityValues.UserKeep, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
         public void CreateTraceParentHeader(ulong traceId, ulong spanId, int? samplingPriority, string expected)
         {
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, "origin");
+            var context = new SpanContext(traceId, spanId, samplingPriority, origin: "origin");
             var traceparent = W3CTraceContextPropagator.CreateTraceParentHeader(context);
 
             traceparent.Should().Be(expected);
@@ -469,13 +468,14 @@ namespace Datadog.Trace.Tests.Propagators
                                 rawParentId: parentId));
 
             var spanContext = new SpanContext(
-                traceParent.TraceId,
-                traceParent.ParentId,
+                traceId: traceParent.TraceId,
+                spanId: traceParent.ParentId,
                 samplingPriority: SamplingPriorityValues.AutoKeep,
-                serviceName: null,
                 origin: null,
-                traceParent.RawTraceId,
-                traceParent.RawParentId);
+                rawTraceId: traceParent.RawTraceId,
+                rawSpanId: traceParent.RawParentId,
+                propagatedTags: null,
+                additionalW3CTraceState: null);
 
             W3CTraceContextPropagator.CreateTraceParentHeader(spanContext).Should().Be(traceParentHeader);
         }

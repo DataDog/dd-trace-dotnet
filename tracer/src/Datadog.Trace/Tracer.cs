@@ -376,7 +376,7 @@ namespace Datadog.Trace
                 var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
                 traceContext.SetSamplingPriority(samplingPriority);
 
-                if (traceId == null)
+                if (traceId is null or 0)
                 {
                     var activity = Activity.ActivityListener.GetCurrentActivity();
                     if (activity is Activity.DuckTypes.IW3CActivity w3CActivity)
@@ -389,7 +389,15 @@ namespace Datadog.Trace
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
-            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+
+            return new SpanContext(
+                parent: parent,
+                traceContext: traceContext,
+                serviceName: finalServiceName,
+                traceId: traceId ?? 0,
+                spanId: spanId ?? 0,
+                rawTraceId: rawTraceId,
+                rawSpanId: rawSpanId);
         }
 
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)

@@ -71,10 +71,16 @@ namespace Datadog.Trace.Propagators
             var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.PropagatedTags);
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
-                          {
-                              PropagatedTags = propagatedTraceTags
-                          };
+            spanContext = new SpanContext(
+                traceId: (ulong)traceId,
+                spanId: parentId,
+                samplingPriority: samplingPriority,
+                origin: origin,
+                rawTraceId: null,
+                rawSpanId: null,
+                propagatedTags: propagatedTraceTags,
+                additionalW3CTraceState: null);
+
             return true;
         }
     }

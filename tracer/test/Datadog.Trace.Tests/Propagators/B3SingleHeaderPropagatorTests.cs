@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Propagators
             ulong traceId = 123456789;
             ulong spanId = 987654321;
             var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var context = new SpanContext(traceId, spanId, samplingPriority);
             var headers = new Mock<IHeadersCollection>();
 
             B3Propagator.Inject(context, headers.Object);
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Propagators
             ulong traceId = 123456789;
             ulong spanId = 987654321;
             var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var context = new SpanContext(traceId, spanId, samplingPriority);
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
@@ -134,23 +134,26 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void ExtractAndInject_PreserveOriginalTraceId()
         {
-            var traceId = "0af7651916cd43dd8448eb211c80319c";
-            var spanId = "00f067aa0ba902b7";
-            var expectedTraceParent = $"{traceId}-{spanId}-1";
+            const string traceId = "0af7651916cd43dd8448eb211c80319c";
+            const string spanId = "00f067aa0ba902b7";
+            const string expectedTraceParent = $"{traceId}-{spanId}-1";
+
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
             headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { expectedTraceParent });
 
             var result = B3Propagator.Extract(headers.Object);
 
-            // 64 bits verify
-            var expectedTraceId = 9532127138774266268UL;
-            var expectedSpanId = 67667974448284343UL;
-            Assert.Equal(expectedTraceId, result.TraceId);
+            const ulong expectedTraceIdUpper = 0x0af7651916cd43ddUL;
+            const ulong expectedTraceIdLower = 0x8448eb211c80319cUL;
+            const ulong expectedSpanId = 0x00f067aa0ba902b7UL;
+
+            Assert.NotNull(result);
+            Assert.Equal(expectedTraceIdUpper, result.TraceId);
             Assert.Equal(expectedSpanId, result.SpanId);
 
             // Check truncation
-            var truncatedTraceId64 = expectedTraceId.ToString("x16");
+            var truncatedTraceId64 = expectedTraceIdLower.ToString("x16");
             Assert.Equal(truncatedTraceId64, traceId.Substring(16));
 
             // Check the injection restoring the 128 bits traceId.

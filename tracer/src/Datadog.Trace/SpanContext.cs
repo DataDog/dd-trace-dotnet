@@ -54,10 +54,20 @@ namespace Datadog.Trace
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority = null, string serviceName = null)
-            : this(traceId, serviceName)
+            : this()
         {
+            // public ctor must keep accepting legacy types:
+            // - traceId: ulong? => TraceId
+            // - samplingPriority: SamplingPriority? => int?
+
+            // keep previous behavior to avoid breaking changes:
+            // - if trace id is null or zero, generate a random id
+            // - if span id is zero, do NOT generate a random id
+
+            TraceId = traceId > 0 ? traceId.Value : RandomIdGenerator.Shared.NextSpanId();
             SpanId = spanId;
             SamplingPriority = (int?)samplingPriority;
+            ServiceName = serviceName;
         }
 
         /// <summary>
@@ -68,36 +78,30 @@ namespace Datadog.Trace
         /// <param name="traceId">The propagated trace id.</param>
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="samplingPriority">The propagated sampling priority.</param>
-        /// <param name="serviceName">The service name to propagate to child spans.</param>
-        /// <param name="origin">The propagated origin of the trace.</param>
-        internal SpanContext(ulong? traceId, ulong spanId, int? samplingPriority, string serviceName, string origin)
-            : this(traceId, serviceName)
-        {
-            SpanId = spanId;
-            SamplingPriority = samplingPriority;
-            Origin = origin;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class
-        /// from a propagated context. <see cref="Parent"/> will be null
-        /// since this is a root context locally.
-        /// </summary>
-        /// <param name="traceId">The propagated trace id.</param>
-        /// <param name="spanId">The propagated span id.</param>
-        /// <param name="samplingPriority">The propagated sampling priority.</param>
-        /// <param name="serviceName">The service name to propagate to child spans.</param>
         /// <param name="origin">The propagated origin of the trace.</param>
         /// <param name="rawTraceId">The raw propagated trace id</param>
         /// <param name="rawSpanId">The raw propagated span id</param>
-        internal SpanContext(ulong? traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId)
-            : this(traceId, serviceName)
+        /// <param name="propagatedTags">The tags propagated by the upstream service, in x-datadog-tags format.</param>
+        /// <param name="additionalW3CTraceState">Additional data left in the W3C tracestate header after removing the dd component.</param>
+        internal SpanContext(
+            ulong traceId,
+            ulong spanId,
+            int? samplingPriority,
+            string origin = null,
+            string rawTraceId = null,
+            string rawSpanId = null,
+            string propagatedTags = null,
+            string additionalW3CTraceState = null)
+            : this()
         {
+            TraceId = traceId;
             SpanId = spanId;
             SamplingPriority = samplingPriority;
             Origin = origin;
             RawTraceId = rawTraceId;
             RawSpanId = rawSpanId;
+            PropagatedTags = propagatedTags;
+            AdditionalW3CTraceState = additionalW3CTraceState;
         }
 
         /// <summary>
@@ -111,34 +115,50 @@ namespace Datadog.Trace
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
-        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
-            : this(parent?.TraceId > 0 ? parent.TraceId : traceId, serviceName)
+        internal SpanContext(
+            ISpanContext parent,
+            TraceContext traceContext,
+            string serviceName,
+            ulong traceId = 0,
+            ulong spanId = 0,
+            string rawTraceId = null,
+            string rawSpanId = null)
+            : this()
         {
-            SpanId = spanId ?? RandomIdGenerator.Shared.NextSpanId();
             Parent = parent;
             TraceContext = traceContext;
+            ServiceName = serviceName;
+            SpanId = spanId > 0 ? spanId : RandomIdGenerator.Shared.NextSpanId();
+            RawSpanId = rawSpanId;
 
             if (parent is SpanContext spanContext)
             {
-                RawTraceId = spanContext.RawTraceId ?? rawTraceId;
+                TraceId = spanContext.TraceId;
+                RawTraceId = spanContext.RawTraceId;
                 PathwayContext = spanContext.PathwayContext;
             }
-            else
+
+            if (TraceId == 0)
             {
-                RawTraceId = rawTraceId;
+                if (parent?.TraceId > 0)
+                {
+                    TraceId = parent.TraceId;
+                }
+                else if (traceId > 0)
+                {
+                    TraceId = traceId;
+                }
+                else
+                {
+                    TraceId = RandomIdGenerator.Shared.NextSpanId();
+                }
             }
 
-            RawSpanId = rawSpanId;
+            RawTraceId ??= rawTraceId;
         }
 
-        private SpanContext(ulong? traceId, string serviceName)
+        private SpanContext()
         {
-            TraceId = traceId > 0
-                          ? traceId.Value
-                          : RandomIdGenerator.Shared.NextSpanId();
-
-            ServiceName = serviceName;
-
             // Because we have a ctor as part of the public api without accepting the origin tag,
             // we need to ensure new SpanContext created by this .ctor has the CI Visibility origin
             // tag if the CI Visibility mode is running to ensure the correct propagation
