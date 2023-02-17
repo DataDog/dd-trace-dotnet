@@ -137,7 +137,7 @@ namespace Datadog.Trace.Activity.Handlers
                         return;
                     }
 
-                    // first we look for the normal ID, then the parent
+                    // first we look for the normal Activity.Id
                     if (ActivityMappingById.TryRemove(activity.Id, out ActivityMapping someValue) && someValue.Scope?.Span is not null)
                     {
                         // We have the exact scope associated with the Activity
@@ -147,6 +147,19 @@ namespace Datadog.Trace.Activity.Handlers
                         }
 
                         CloseActivityScope(sourceName, activity, someValue.Scope);
+                        return;
+                    }
+
+                    // if we didn't find the Activity.Id, it may have been from an ActivityContext, so check the ParentId
+                    if (activity.ParentId is { } parentId && ActivityMappingById.TryRemove(parentId, out ActivityMapping parentMapping) && parentMapping.Scope?.Span is not null)
+                    {
+                        // We have the exact scope associated with the Activity
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                        }
+
+                        CloseActivityScope(sourceName, activity, parentMapping.Scope);
                         return;
                     }
                 }
