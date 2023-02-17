@@ -228,7 +228,7 @@ namespace Datadog.Trace.Tests
             const ulong parentId = 7;
             const int samplingPriority = SamplingPriorityValues.UserKeep;
 
-            var parent = new SpanContext(traceId, parentId, (SamplingPriority)samplingPriority);
+            var parent = new SpanContext(traceId, parentId, samplingPriority);
             var spanCreationSettings = new SpanCreationSettings() { Parent = parent };
             var child = (Scope)_tracer.StartActive("Child", spanCreationSettings);
             var childSpan = child.Span;
