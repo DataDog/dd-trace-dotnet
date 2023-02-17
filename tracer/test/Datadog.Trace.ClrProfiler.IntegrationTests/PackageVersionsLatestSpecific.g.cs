@@ -1073,11 +1073,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.0.3" },
                 new object[] { "4.2.7" },
                 new object[] { "5.3.2" },
+                new object[] { "6.0.0" },
 #endif
 #if NET7_0
                 new object[] { "4.0.3" },
                 new object[] { "4.2.7" },
                 new object[] { "5.3.2" },
+                new object[] { "6.0.0" },
 #endif
 #endif
             };
