@@ -17,17 +17,4 @@
       <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
       <CheckEolTargetFramework>false</CheckEolTargetFramework>
     </PropertyGroup>
-
-    <Target Name="PackageReferenceCopyToOutput" AfterTargets="Build">
-      <ItemGroup>
-        <PackageReferenceFiles Condition="%(PackageReference.CopyToOutputDirectory) != '' AND %(PackageReference.FolderName) != ''"
-          Include="$(NugetPackageRoot)\%(PackageReference.FolderName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory)" />
-      </ItemGroup>
-      <Message Condition="%(PackageReference.CopyToOutputDirectory) != ''" 
-               Text="> $(NugetPackageRoot) | %(PackageReference.FolderName) | %(PackageReference.Version) | %(PackageReference.CopyToOutputDirectory) [$(NugetPackageRoot)\%(PackageReference.FileName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory) | $(OutDir)]" Importance="high"/>
-      <Message Condition="%(PackageReference.CopyToOutputDirectory) != '' AND '@(PackageReferenceFiles->'%(Identity)')' != ''"
-               Text="  Copy @(PackageReferenceFiles->'%(Identity)') to $(OutDir)"
-               Importance="high"/>
-      <Copy SourceFiles="@(PackageReferenceFiles)" DestinationFolder="$(OutDir)" />
-    </Target>
 </Project>

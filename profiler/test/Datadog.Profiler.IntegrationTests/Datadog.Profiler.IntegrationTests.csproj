@@ -45,9 +45,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="DatadogTestLogger" Version="0.0.33">
-      <CopyToOutputDirectory>lib\$(TargetFramework)\*</CopyToOutputDirectory>
-      <FolderName>datadogtestlogger</FolderName>
-    </PackageReference>
+  </ItemGroup>
+  <ItemGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
+    <PackageReference Include="DatadogTestLogger" Version="0.0.33" ExcludeAssets="compile"/>
   </ItemGroup>
 </Project>
