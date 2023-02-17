@@ -13,6 +13,38 @@ namespace Datadog.Trace.Tests
 {
     public class SpanContextTests
     {
+        [Theory]
+        [InlineData(1, 1, SamplingPriority.AutoKeep, "service1")]
+        [InlineData(long.MaxValue, 2, SamplingPriority.UserReject, "service2")]
+        [InlineData(ulong.MaxValue, 3, SamplingPriority.AutoKeep, "service3")]
+        public void PublicCtorWithTraceId(ulong traceId, ulong spanId, SamplingPriority samplingPriority, string serviceName)
+        {
+            var spanContext = new SpanContext(traceId, spanId, samplingPriority, serviceName);
+
+            spanContext.TraceId.Should().Be(traceId);
+            spanContext.SpanId.Should().Be(spanId);
+            spanContext.SamplingPriority.Should().Be((int)samplingPriority);
+            spanContext.ServiceName.Should().Be(serviceName);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData(0UL)]
+        public void PublicCtorWithoutTraceId(ulong? traceId)
+        {
+            // verify we don't break current behavior in public api
+            var spanContext = new SpanContext(traceId, 0, SamplingPriority.AutoKeep, "service1");
+
+            // trace id is randomly generated if null or zero
+            spanContext.TraceId.Should().BeGreaterThan(0);
+
+            // span id is not
+            spanContext.SpanId.Should().Be(0);
+
+            spanContext.SamplingPriority.Should().Be(SamplingPriorityValues.AutoKeep);
+            spanContext.ServiceName.Should().Be("service1");
+        }
+
         [Fact]
         public void OverrideTraceIdWithoutParent()
         {
