@@ -11,8 +11,14 @@ namespace Datadog.Trace.Util
     {
         private const ulong KnuthFactor = 1_111_111_111_111_111_111;
 
-        internal static bool SampleByRate(ulong id, double rate) =>
-            ((id * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
+        private const ulong MaxInt64 = long.MaxValue;
+
+        internal static bool SampleByRate(TraceId traceId, double rate) =>
+            // use the lower 64 bits of the trace id which are the only random part
+            ((traceId.Lower * KnuthFactor) % MaxInt64) <= (rate * MaxInt64);
+
+        internal static bool SampleByRate(ulong spanId, double rate) =>
+            ((spanId * KnuthFactor) % MaxInt64) <= (rate * MaxInt64);
 
         internal static bool IsKeptBySamplingPriority(ArraySegment<Span> trace) =>
             trace.Array![trace.Offset].Context.TraceContext?.SamplingPriority > 0;

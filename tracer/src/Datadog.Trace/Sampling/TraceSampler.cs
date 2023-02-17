@@ -11,8 +11,6 @@ namespace Datadog.Trace.Sampling
 {
     internal class TraceSampler : ITraceSampler
     {
-        private const ulong KnuthFactor = 1_111_111_111_111_111_111;
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceSampler>();
 
         private readonly IRateLimiter _limiter;
@@ -80,8 +78,7 @@ namespace Datadog.Trace.Sampling
         private SamplingDecision MakeSamplingDecision(Span span, float rate, int mechanism)
         {
             // make a sampling decision as a function of traceId and sampling rate.
-            // sampling decision uses lower 64-bits of 128-bit trace ids, truncate by using TraceId.Lower
-            var sample = SamplingHelpers.SampleByRate(span.TraceId.Lower, rate);
+            var sample = SamplingHelpers.SampleByRate(span.TraceId, rate);
 
             var priority = mechanism switch
                            {
