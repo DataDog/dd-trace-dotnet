@@ -65,12 +65,6 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext()
         return nullptr;
     }
 
-    if (S_FALSE == hr)
-    {
-        // There was no error looking up the current thread, but we are not tracking any info for this thread:
-        return nullptr;
-    }
-
     profiler->GetCodeHotspotThreadList()->RegisterThread(pCurrentThreadInfo);
 
     // Get pointers to the relevant fields within the thread info data structure.
