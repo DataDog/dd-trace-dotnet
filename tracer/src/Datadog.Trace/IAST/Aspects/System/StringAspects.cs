@@ -216,7 +216,7 @@ public partial class StringAspects
         catch
         {
             // This sould never happen, but just in case, we return the concat...
-            Log.Warning("Reached the end of the aspect System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>) with parameter type " + values.GetType().FullName);
+            Log.Warning("Reached the end of the aspect System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)");
             return string.Concat(values);
         }
     }
