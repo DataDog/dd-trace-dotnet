@@ -58,7 +58,7 @@ namespace Datadog.Trace.Activity.Handlers
                     else
                     {
                         // create a new parent span context for the ActivityContext
-                        parent = Tracer.Instance.CreateSpanContext(SpanContext.None, activity.ParentId, rawSpanId: w3cActivity.ParentSpanId);
+                        parent = Tracer.Instance.CreateSpanContext(SpanContext.None, rawTraceId: parentId, rawSpanId: w3cActivity.ParentSpanId);
                         isRemoteContext = true;
                     }
                 }
