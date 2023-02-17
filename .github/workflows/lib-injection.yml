@@ -59,40 +59,44 @@ jobs:
       run: docker login -u publisher -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
 
     - name: Build and push dd-lib-dotnet-init:<SHA>-amd64
+      id: build-image-amd64
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-amd64'
+        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}'
         platforms: 'linux/amd64' # for windows, we can run windows/amd64,windows/386,windows/arm64
         context: ${{steps.assets.outputs.artifacts_path}}
         build-args: |
           LINUX_PACKAGE=datadog-dotnet-apm-${{steps.versions.outputs.version}}.tar.gz
 
     - name: Build and push dd-lib-dotnet-init:<SHA>-arm64v8
+      id: build-image-arm64v8
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-arm64v8'
+        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}'
         platforms: 'linux/arm64/v8'
         context: ${{steps.assets.outputs.artifacts_path}}
         build-args: |
           LINUX_PACKAGE=datadog-dotnet-apm-${{steps.versions.outputs.version}}.arm64.tar.gz
 
     - name: Build and push dd-lib-dotnet-init:<SHA>-musl-amd64
+      id: build-image-musl-amd64
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl-amd64'
+        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl'
         platforms: 'linux/amd64'
         context: ${{steps.assets.outputs.artifacts_path}}
         build-args: |
           LINUX_PACKAGE=datadog-dotnet-apm-${{steps.versions.outputs.version}}-musl.tar.gz
 
     - name: Build and push dd-lib-dotnet-init:<SHA>-musl-arm64v8
+      id: build-image-musl-arm64v8
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl-arm64v8'
+        tags: 'ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl'
         platforms: 'linux/arm64/v8'
         context: ${{steps.assets.outputs.artifacts_path}}
         # When we actually produce linux-musl-arm64 binaries, use that instead of the placeholder 'linux-musl-arm' directory
@@ -105,15 +109,15 @@ jobs:
         # Create multiarch image for dd-lib-dotnet-init:<SHA>
         docker manifest create \
           ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }} \
-          --amend ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-amd64 \
-          --amend ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-arm64v8
+          --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-amd64.outputs.digest}}" \
+          --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-arm64v8.outputs.digest}}"
         docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}
 
         # Create multiarch image for dd-lib-dotnet-init:<SHA>-musl
         docker manifest create \
           ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl \
-          --amend ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl-amd64 \
-          --amend ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl-arm64v8
+          --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-musl-amd64.outputs.digest}}" \
+          --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-musl-arm64v8.outputs.digest}}"
         docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl
 
   test:
