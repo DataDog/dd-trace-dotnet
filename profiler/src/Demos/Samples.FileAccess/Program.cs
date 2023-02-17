@@ -10,6 +10,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Datadog.Demos.Util;
 
 namespace Samples.FileAccess
@@ -23,6 +24,8 @@ namespace Samples.FileAccess
 #if (!NET45)
         ReadWriteLinesAsync = 16,
 #endif
+        ReadWriteXml = 32,
+        ReadWriteXmlAsync = 64,
     }
 
     internal class Program
@@ -33,19 +36,23 @@ namespace Samples.FileAccess
 
             // supported scenarios:
             // --------------------
-            //  1: synchronous write and read binary data through Binary(reader/writer)
-            //  2: synchronous write and read textual data through Stream(reader/writer)
-            //  4: synchronous write and read to FileStream
-            //  8: asynchronous write and read
+            //  1: synchronous write/read binary data through Binary(reader/writer)
+            //  2: synchronous write/read textual data through Stream(reader/writer)
+            //  4: synchronous write/read to FileStream
+            //  8: asynchronous write/read
+            // 16: asynchronous write/read lines
+            // 32: synchronous write/read XML
+            // 64: asynchronous write/read XML
+            //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--iterations <number of iterations to execute>] " +
             $"[--scenario <1=read/write binary 2=read/write text] " +
-            $"[--param <any number to pass to the scenario - used for contention duration for example>] " +
+            $"[--param <any number to pass to the scenario>] " +
             $"[--timeout <duration in seconds>]");
             Console.WriteLine();
             EnvironmentInfo.PrintDescriptionToConsole();
 
-            ParseCommandLine(args, out TimeSpan timeout, out bool runAsService, out Scenario scenario, out int iterations, out int nbThreads, out int parameter);
+            ParseCommandLine(args, out TimeSpan timeout, out Scenario scenario, out int parameter);
 
             var cts = new CancellationTokenSource();
 
@@ -277,7 +284,6 @@ namespace Samples.FileAccess
             File.Delete(filename);
         }
 
-
 #if (!NET45)
         private static async Task ReadWriteLineAsync(CancellationToken token)
         {
@@ -303,13 +309,103 @@ namespace Samples.FileAccess
 
             File.Delete(filename);
         }
-#endif
 
         private static IEnumerable<string> GetLines()
         {
             for (int i = 0; i < 10_000; i++)
             {
                 yield return "data";
+            }
+        }
+#endif
+
+#if (NET45)
+    private static Task CompletedTask = Task.FromResult(false);
+#endif
+        private static async Task ReadWriteXml(CancellationToken token, bool asynchronous)
+        {
+            var filename = Path.GetTempFileName();
+            try
+            {
+                var writerSettings = new XmlWriterSettings()
+                {
+                    Async = asynchronous,
+                    OmitXmlDeclaration = true,
+                    Indent = true,
+                };
+
+                var readerSettings = new XmlReaderSettings()
+                {
+                    Async = asynchronous,
+                };
+
+                while (!token.IsCancellationRequested)
+                {
+                    using (var writer = XmlWriter.Create(filename, writerSettings))
+                    {
+                        if (asynchronous)
+                        {
+                            await writer.WriteStartDocumentAsync();
+                            await writer.WriteStartElementAsync(string.Empty, "data", string.Empty);
+                        }
+                        else
+                        {
+                            writer.WriteStartDocument();
+                            writer.WriteStartElement("data");
+                        }
+
+                        for (int i = 0; i < 10_000; i++)
+                        {
+                            if (asynchronous)
+                            {
+                                await writer.WriteStartElementAsync(string.Empty, "person", string.Empty);
+                                await writer.WriteElementStringAsync(string.Empty, "name", string.Empty, "john doe");
+                                await writer.WriteEndElementAsync();
+                            }
+                            else
+                            {
+                                writer.WriteStartElement("person");
+                                writer.WriteElementString("name", "john doe");
+                                writer.WriteEndElement();
+                            }
+                        }
+
+                        if (asynchronous)
+                        {
+                            await writer.WriteEndElementAsync();
+                            await writer.WriteEndDocumentAsync();
+                        }
+                        else
+                        {
+                            writer.WriteEndElement();
+                            writer.WriteEndDocument();
+                        }
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    using (var reader = XmlReader.Create(filename, readerSettings))
+                    {
+                    }
+                }
+            }
+            catch (Exception x)
+            {
+                Console.WriteLine(x.ToString());
+            }
+
+            File.Delete(filename);
+
+            if (!asynchronous)
+            {
+#if (NET45)
+                await CompletedTask;
+#else
+                await Task.CompletedTask;
+#endif
             }
         }
 
@@ -372,16 +468,36 @@ namespace Samples.FileAccess
                         TaskCreationOptions.LongRunning));
             }
 #endif
+
+            if ((scenario & Scenario.ReadWriteXml) == Scenario.ReadWriteXml)
+            {
+                tasks.Add(
+                    Task.Factory.StartNew(
+                        async () =>
+                        {
+                            await ReadWriteXml(token, asynchronous:false);
+                        },
+                        TaskCreationOptions.LongRunning));
+            }
+
+            if ((scenario & Scenario.ReadWriteXmlAsync) == Scenario.ReadWriteXmlAsync)
+            {
+                tasks.Add(
+                    Task.Factory.StartNew(
+                        async () =>
+                        {
+                            await ReadWriteXml(token, asynchronous:true);
+                        },
+                        TaskCreationOptions.LongRunning));
+            }
+
             return tasks;
         }
 
-        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out bool runAsService, out Scenario scenario, out int iterations, out int nbThreads, out int parameter)
+        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out Scenario scenario, out int parameter)
         {
             timeout = TimeSpan.MinValue;
-            runAsService = false;
             scenario = Scenario.ReadWriteBinary;
-            iterations = 0;
-            nbThreads = 1;
             parameter = int.MaxValue;
             for (int i = 0; i < args.Length; i++)
             {
