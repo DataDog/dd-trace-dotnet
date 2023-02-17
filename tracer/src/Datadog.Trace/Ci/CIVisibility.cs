@@ -88,9 +88,6 @@ namespace Datadog.Trace.Ci
 
             var tracerSettings = _settings.TracerSettings;
 
-            // We disable obfuscation of the query string (is not required by CI Visibility and allocates 16MB due the custom Regex implementation)
-            tracerSettings.ObfuscationQueryStringRegex = string.Empty;
-
             // Set the service name if empty
             Log.Debug("Setting up the service name");
             if (string.IsNullOrEmpty(tracerSettings.ServiceName))
@@ -155,9 +152,6 @@ namespace Datadog.Trace.Ci
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
-
-            // We disable obfuscation of the query string (is not required by CI Visibility and allocates 16MB due the custom Regex implementation)
-            tracerSettings.ObfuscationQueryStringRegex = string.Empty;
 
             // Set the service name if empty
             Log.Debug("Setting up the service name");
