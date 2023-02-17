@@ -71,6 +71,16 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContext"/> class.
+        /// ONLY USED IN TESTS.
+        /// </summary>
+        internal SpanContext(ulong traceId, ulong spanId)
+        {
+            TraceId = traceId;
+            SpanId = spanId;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
         /// from a propagated context. <see cref="Parent"/> will be null
         /// since this is a root context locally.
@@ -86,7 +96,7 @@ namespace Datadog.Trace
         internal SpanContext(
             ulong traceId,
             ulong spanId,
-            int? samplingPriority,
+            int? samplingPriority = null,
             string origin = null,
             string rawTraceId = null,
             string rawSpanId = null,
