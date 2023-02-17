@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
 
 namespace Datadog.Trace.Telemetry;
@@ -15,6 +16,7 @@ internal class LogMessageData
     {
         Message = message;
         Level = level;
+        TracerTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     }
 
     public string Message { get; set; }
@@ -25,4 +27,9 @@ internal class LogMessageData
     public string? Tags { get; set; }
 
     public string? StackTrace { get; set; }
+
+    /// <summary>
+    /// Gets or sets unix timestamp (in seconds) of when the message is being sent
+    /// </summary>
+    public long TracerTime { get; set; }
 }
