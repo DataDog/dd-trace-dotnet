@@ -103,17 +103,21 @@ jobs:
         build-args: |
           LINUX_PACKAGE=linux-musl-arm
 
-    - name: Publish multiarch images for <SHA> and <SHA>-musl tags
+    - name: Publish multiarch images with all platforms
       shell: bash
       run: |
-        # Create multiarch image for dd-lib-dotnet-init:<SHA>
+        # Issue: The above 'docker buildx build' commands only create an image for one platform at a time because we have different build-args for each invocation.
+        # This results in the 'dd-lib-dotnet-init:<SHA>[-musl]' tag being overwritten by the latest build command, so the result is not a multiarch image
+
+        # Fix: The following lines create and publish a new manifest to overwrite the 'dd-lib-dotnet-init:<SHA>[-musl]' tag.
+        # In the new manifest we directly reference each platform-specific image, so the tag becomes a multiarch image.
+        
         docker manifest create \
           ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }} \
           --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-amd64.outputs.digest}}" \
           --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-arm64v8.outputs.digest}}"
         docker manifest push ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}
 
-        # Create multiarch image for dd-lib-dotnet-init:<SHA>-musl
         docker manifest create \
           ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:${{ github.sha }}-musl \
           --amend "ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init@${{steps.build-image-musl-amd64.outputs.digest}}" \
