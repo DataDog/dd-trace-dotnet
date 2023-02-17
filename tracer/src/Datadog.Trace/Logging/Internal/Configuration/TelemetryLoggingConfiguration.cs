@@ -18,7 +18,7 @@ internal class TelemetryLoggingConfiguration
         BufferSize = bufferSize;
         BatchSize = batchSize;
         FlushPeriod = flushPeriod;
-        LogLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Debug);
+        LogLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Warning);
         TelemetrySink = new(CreateTelemetrySink);
     }
 
