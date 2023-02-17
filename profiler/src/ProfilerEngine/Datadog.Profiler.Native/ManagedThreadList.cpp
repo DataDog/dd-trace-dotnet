@@ -350,7 +350,7 @@ HRESULT ManagedThreadList::TryGetCurrentThreadInfo(std::shared_ptr<ManagedThread
     }
     else
     {
-        return S_FALSE;
+        return E_FAIL;
     }
 }
 
