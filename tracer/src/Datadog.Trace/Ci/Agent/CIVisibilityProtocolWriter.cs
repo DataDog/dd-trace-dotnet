@@ -207,9 +207,10 @@ namespace Datadog.Trace.Ci.Agent
                         // ***
                         // Force a flush by time (When the queue was never empty in a complete BatchInterval period)
                         // ***
-                        await Task.WhenAll(
-                            buffers.FlushCiTestCycleBufferWhenTimeElapsedAsync(batchInterval),
-                            buffers.FlushCiCodeCoverageBufferWhenTimeElapsedAsync(batchInterval)).ConfigureAwait(false);
+                        var flushWithInterval1 = buffers.FlushCiTestCycleBufferWhenTimeElapsedAsync(batchInterval);
+                        var flushWithInterval2 = buffers.FlushCiCodeCoverageBufferWhenTimeElapsedAsync(batchInterval);
+                        await flushWithInterval1.ConfigureAwait(false);
+                        await flushWithInterval2.ConfigureAwait(false);
 
                         // ***
                         // Add the item to the right buffer, and flush the buffer in case is needed.
@@ -242,9 +243,10 @@ namespace Datadog.Trace.Ci.Agent
                     }
 
                     // After removing all items from the queue, we check if buffers needs to flushed.
-                    await Task.WhenAll(
-                        buffers.FlushCiTestCycleBufferAsync(),
-                        buffers.FlushCiCodeCoverageBufferAsync()).ConfigureAwait(false);
+                    var flush1 = buffers.FlushCiTestCycleBufferAsync();
+                    var flush2 = buffers.FlushCiCodeCoverageBufferAsync();
+                    await flush1.ConfigureAwait(false);
+                    await flush2.ConfigureAwait(false);
 
                     // If there's a flush watermark we marked as resolved.
                     if (watermarkCountDown is not null)
@@ -344,9 +346,11 @@ namespace Datadog.Trace.Ci.Agent
                            FlushCiTestCycleBufferAsync() : Task.CompletedTask;
             }
 
-            public async Task FlushCiTestCycleBufferAsync()
+            public Task FlushCiTestCycleBufferAsync()
             {
-                if (CiTestCycleBuffer.HasEvents)
+                return CiTestCycleBuffer.HasEvents ? InternalFlushCiTestCycleBufferAsync() : Task.CompletedTask;
+
+                async Task InternalFlushCiTestCycleBufferAsync()
                 {
                     await _sender.SendPayloadAsync(CiTestCycleBuffer).ConfigureAwait(false);
                     CiTestCycleBuffer.Reset();
@@ -360,9 +364,11 @@ namespace Datadog.Trace.Ci.Agent
                            FlushCiCodeCoverageBufferAsync() : Task.CompletedTask;
             }
 
-            public async Task FlushCiCodeCoverageBufferAsync()
+            public Task FlushCiCodeCoverageBufferAsync()
             {
-                if (CiCodeCoverageBuffer.HasEvents)
+                return CiCodeCoverageBuffer.HasEvents ? InternalFlushCiCodeCoverageBufferAsync() : Task.CompletedTask;
+
+                async Task InternalFlushCiCodeCoverageBufferAsync()
                 {
                     await _sender.SendPayloadAsync(CiCodeCoverageBuffer).ConfigureAwait(false);
                     CiCodeCoverageBuffer.Reset();
