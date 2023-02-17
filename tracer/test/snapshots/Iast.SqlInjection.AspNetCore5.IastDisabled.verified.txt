@@ -15,7 +15,7 @@
       http.request.headers.host: localhost:00000,
       http.route: iast/sqlquery,
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27,
+      http.url: http://localhost:00000/Iast/SqlQuery?username=Vicent,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
