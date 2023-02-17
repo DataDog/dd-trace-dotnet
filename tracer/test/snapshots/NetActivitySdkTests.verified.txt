@@ -57,7 +57,7 @@
     Resource: Ctor3,
     Service: Samples.NetActivitySdk,
     Type: web,
-    ParentId: Id_4,
+    ParentId: Id_5,
     Tags: {
       attribute-string: str,
       env: integration_tests,
@@ -66,10 +66,15 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -0
     },
     Metrics: {
-      attribute-int: 1.0
+      attribute-int: 1.0,
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
