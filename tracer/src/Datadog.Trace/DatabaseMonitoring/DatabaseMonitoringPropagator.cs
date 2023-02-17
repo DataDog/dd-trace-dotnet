@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
@@ -24,24 +25,28 @@ namespace Datadog.Trace.DatabaseMonitoring
             }
 
             var propagatorSringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            propagatorSringBuilder.Append($"{SqlCommentRootService}='{configuredServiceName}',{SqlCommentSpanService}='{span.ServiceName}'");
+            propagatorSringBuilder.Append($"/*{SqlCommentRootService}='{configuredServiceName}',{SqlCommentSpanService}='{span.ServiceName}'");
 
-            if (span.GetTag(Tags.Version) != null)
+            if (span.GetTag(Tags.Version) is { } versionTag)
             {
-                propagatorSringBuilder.Append($",{SqlCommentVersion}='{span.GetTag(Tags.Version)}'");
+                propagatorSringBuilder.Append($",{SqlCommentVersion}='{versionTag}'");
             }
 
-            if (span.GetTag(Tags.Env) != null)
+            if (span.GetTag(Tags.Env) is { } envTag)
             {
-                propagatorSringBuilder.Append($",{SqlCommentEnv}='{span.GetTag(Tags.Env)}'");
+                propagatorSringBuilder.Append($",{SqlCommentEnv}='{envTag}'");
             }
 
             if (propagationStyle == DbmPropagationLevel.Full)
             {
-                propagatorSringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(span.Context)}'");
+                propagatorSringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(span.Context)}'*/");
+            }
+            else
+            {
+                propagatorSringBuilder.Append("*/");
             }
 
-            return $"/*{StringBuilderCache.GetStringAndRelease(propagatorSringBuilder)}*/";
+            return StringBuilderCache.GetStringAndRelease(propagatorSringBuilder);
         }
     }
 }

@@ -41,7 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
-                    // don't instrument nested methods that belong to the same stacktrace
                     // e.g. ExecuteReader() -> ExecuteReader(commandBehavior)
                     return null;
                 }
