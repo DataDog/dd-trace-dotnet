@@ -74,6 +74,8 @@ public class WeakHashingTests : TestHelper
     [Trait("RunOnWindows", "True")]
     [InlineData("DD_IAST_ENABLED", "false")]
     // if we define a variable as string.empty, in net462 Environment.GetEnvironmentVariable(key) returns null, which is equivalent to variable not defined.
+    // The vulnerabilities disabling will be implemented in the future. Altough setting DD_IAST_WEAK_HASH_ALGORITHMS to empty actually disables
+    // weak hashing, it is ok for testing, but it is not the recommended way to disable it for clients
     [InlineData("DD_IAST_WEAK_HASH_ALGORITHMS", " ")]
     [InlineData($"DD_TRACE_{nameof(IntegrationId.HashAlgorithm)}_ENABLED", "false")]
     public void IntegrationDisabled(string variableName, string variableValue)
