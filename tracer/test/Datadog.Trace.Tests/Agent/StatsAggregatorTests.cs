@@ -196,7 +196,8 @@ namespace Datadog.Trace.Tests.Agent
 
             try
             {
-                var parentSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var parentSpan = new Span(new SpanContext(1, 1), start);
+                parentSpan.ServiceName = "service";
                 parentSpan.OperationName = "web.request";
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
@@ -259,14 +260,17 @@ namespace Datadog.Trace.Tests.Agent
 
             try
             {
-                var simpleSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var simpleSpan = new Span(new SpanContext(1, 1), start);
+                simpleSpan.ServiceName = "service";
                 simpleSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var parentSpan = new Span(new SpanContext(2, 2, serviceName: "service"), start);
+                var parentSpan = new Span(new SpanContext(2, 2), start);
+                parentSpan.ServiceName = "service";
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(200));
 
                 // snapshotSpan shouldn't be recorded, because it has the PartialSnapshot metric (even though it is top-level)
-                var snapshotSpan = new Span(new SpanContext(5, 5, serviceName: "service"), start);
+                var snapshotSpan = new Span(new SpanContext(5, 5), start);
+                snapshotSpan.ServiceName = "service";
                 snapshotSpan.SetMetric(Tags.PartialSnapshot, 1.0);
                 snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(300));
 
@@ -329,13 +333,16 @@ namespace Datadog.Trace.Tests.Agent
 
             try
             {
-                var success1Span = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var success1Span = new Span(new SpanContext(1, 1), start);
+                success1Span.ServiceName = "service";
                 success1Span.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var success2Span = new Span(new SpanContext(2, 2, serviceName: "service"), start);
+                var success2Span = new Span(new SpanContext(2, 2), start);
+                success2Span.ServiceName = "service";
                 success2Span.SetDuration(TimeSpan.FromMilliseconds(200));
 
-                var errorSpan = new Span(new SpanContext(3, 3, serviceName: "service"), start);
+                var errorSpan = new Span(new SpanContext(3, 3), start);
+                errorSpan.ServiceName = "service";
                 errorSpan.Error = true;
                 errorSpan.SetDuration(TimeSpan.FromMilliseconds(400));
 
@@ -376,7 +383,8 @@ namespace Datadog.Trace.Tests.Agent
                 var durations = new double[sampleCount];
                 for (int i = 0; i < sampleCount; i++)
                 {
-                    var span = new Span(new SpanContext((ulong)i, (ulong)i, serviceName: "service"), start);
+                    var span = new Span(new SpanContext((ulong)i, (ulong)i), start);
+                    span.ServiceName = "server";
                     var duration = TimeSpan.FromMilliseconds(i * 100);
 
                     span.SetDuration(duration);

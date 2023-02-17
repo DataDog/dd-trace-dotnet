@@ -16,11 +16,36 @@ namespace Datadog.Trace.Tests.Sampling
     {
         // copied these from CustomSamplingRule - maybe should combine or share?
         private static readonly ulong Id = 1;
-        private static readonly Span CartCheckoutSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "checkout" };
-        private static readonly Span AddToCartSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "cart-add" };
-        private static readonly Span ShippingAuthSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize" };
-        private static readonly Span ShippingRevertSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize-revert" };
-        private static readonly Span RequestShippingSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "request-shipping"), DateTimeOffset.Now) { OperationName = "submit" };
+
+        private static readonly Span CartCheckoutSpan = new(new SpanContext(Id++, Id++), DateTimeOffset.Now)
+                                                        {
+                                                            OperationName = "checkout",
+                                                            ServiceName = "shopping-cart-service"
+                                                        };
+
+        private static readonly Span AddToCartSpan = new(new SpanContext(Id++, Id++), DateTimeOffset.Now)
+                                                     {
+                                                         OperationName = "cart-add",
+                                                         ServiceName = "shopping-cart-service"
+                                                     };
+
+        private static readonly Span ShippingAuthSpan = new(new SpanContext(Id++, Id++), DateTimeOffset.Now)
+                                                        {
+                                                            OperationName = "authorize",
+                                                            ServiceName = "shipping-auth-service"
+                                                        };
+
+        private static readonly Span ShippingRevertSpan = new(new SpanContext(Id++, Id++), DateTimeOffset.Now)
+                                                          {
+                                                              OperationName = "authorize-revert",
+                                                              ServiceName = "shipping-auth-service"
+                                                          };
+
+        private static readonly Span RequestShippingSpan = new(new SpanContext(Id++, Id++), DateTimeOffset.Now)
+                                                           {
+                                                               OperationName = "submit",
+                                                               ServiceName = "request-shipping"
+                                                           };
 
         [Theory]
         [InlineData(null)]

@@ -213,8 +213,8 @@ namespace Datadog.Trace.IntegrationTests
             var expectedMaxPerSecond = 1000.0f;
             var expectedSamplingMechanism = 8;
 
-            var spanContext = new SpanContext(4, 5, samplingPriority: null, serviceName: "serviceName");
-            var span = new Span(spanContext, DateTimeOffset.Now) { OperationName = "test" };
+            var spanContext = new SpanContext(4, 5, samplingPriority: null);
+            var span = new Span(spanContext, DateTimeOffset.Now) { OperationName = "test", ServiceName = "serviceName" };
             var spans = new Span[1];
             spans[0] = span;
             _writer.WriteTrace(new ArraySegment<Span>(spans));
