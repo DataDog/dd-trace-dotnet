@@ -1,0 +1,34 @@
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/DataDog/dd-trace-dotnet.git")]
+
+namespace Datadog.Trace.BenchmarkDotNet
+{
+    public class DatadogColumnHidingRule : BenchmarkDotNet.Columns.IColumnHidingRule
+    {
+        public DatadogColumnHidingRule() { }
+        public static BenchmarkDotNet.Columns.IColumnHidingRule Default { get; }
+        public bool NeedToHide(BenchmarkDotNet.Columns.IColumn column) { }
+    }
+    public class DatadogDiagnoser : BenchmarkDotNet.Diagnosers.IDiagnoser
+    {
+        public static readonly BenchmarkDotNet.Diagnosers.IDiagnoser Default;
+        public DatadogDiagnoser() { }
+        public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Analysers.IAnalyser> Analysers { get; }
+        public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Exporters.IExporter> Exporters { get; }
+        public System.Collections.Generic.IEnumerable<string> Ids { get; }
+        public void DisplayResults(BenchmarkDotNet.Loggers.ILogger logger) { }
+        public BenchmarkDotNet.Diagnosers.RunMode GetRunMode(BenchmarkDotNet.Running.BenchmarkCase benchmarkCase) { }
+        public void Handle(BenchmarkDotNet.Engines.HostSignal signal, BenchmarkDotNet.Diagnosers.DiagnoserActionParameters parameters) { }
+        public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Reports.Metric> ProcessResults(BenchmarkDotNet.Diagnosers.DiagnoserResults results) { }
+        public bool RequiresBlockingAcknowledgments(BenchmarkDotNet.Running.BenchmarkCase benchmarkCase) { }
+        public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Validators.ValidationError> Validate(BenchmarkDotNet.Validators.ValidationParameters validationParameters) { }
+    }
+    public class DatadogDiagnoserAttribute : System.Attribute, BenchmarkDotNet.Configs.IConfigSource
+    {
+        public DatadogDiagnoserAttribute() { }
+        public BenchmarkDotNet.Configs.IConfig Config { get; }
+    }
+    public static class DatadogExtensions
+    {
+        public static BenchmarkDotNet.Configs.IConfig WithDatadog(this BenchmarkDotNet.Configs.IConfig config) { }
+    }
+}

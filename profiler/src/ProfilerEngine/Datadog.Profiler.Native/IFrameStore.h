@@ -18,4 +18,5 @@ public:
     //  - frame text
     virtual std::tuple<bool, std::string_view, std::string_view> GetFrame(uintptr_t instructionPointer) = 0;
     virtual bool GetTypeName(ClassID classId, std::string& name) = 0;
+    virtual bool GetTypeName(ClassID classId, std::string_view& name) = 0;
 };
