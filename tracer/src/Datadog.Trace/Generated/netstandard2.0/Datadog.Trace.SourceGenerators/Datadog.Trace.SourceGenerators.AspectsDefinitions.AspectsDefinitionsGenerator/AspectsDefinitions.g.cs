@@ -11,10 +11,6 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.System.Text.StringBuilderAspects",
-"  [AspectCtorReplace(\"System.Text.StringBuilder::.ctor(System.String)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Init(System.String)",
-"  [AspectCtorReplace(\"System.Text.StringBuilder::.ctor(System.String,System.Int32)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Init(System.String,System.Int32)",
-"  [AspectMethodReplace(\"System.Object::ToString()\",\"mscorlib|System.Text.StringBuilder\",[0],[False],[None],Propagation,[])] ToString(System.Object)",
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.StringAspects",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Concat_0(System.String,System.String)",
