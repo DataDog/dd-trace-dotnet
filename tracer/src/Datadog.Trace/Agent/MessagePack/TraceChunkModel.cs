@@ -85,7 +85,7 @@ internal readonly struct TraceChunkModel
             Tags = traceContext.Tags;
             IsRunningInAzureAppService = traceContext.Tracer?.Settings?.IsRunningInAzureAppService ?? false;
             AzureAppServiceSettings = traceContext.Tracer?.Settings?.AzureAppServiceMetadata ?? null;
-            if (traceContext.Tracer?.GitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata) == true &&
+            if (traceContext.Tracer?.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
                 gitMetadata != GitMetadata.Empty)
             {
                 GitRepositoryUrl = gitMetadata.RepositoryUrl;
