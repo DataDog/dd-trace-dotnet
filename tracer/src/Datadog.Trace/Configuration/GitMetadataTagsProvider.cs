@@ -70,7 +70,7 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
         }
         catch (Exception e)
         {
-            Log.Error(e, "Error while extracting SourceLink information", e);
+            Log.Error(e, "Error while extracting SourceLink information");
             gitMetadata = GitMetadata.Empty;
             return true;
         }
@@ -98,7 +98,7 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 
         if (SourceLinkInformationExtractor.TryGetSourceLinkInfo(assembly, out var commitSha, out var repositoryUrl))
         {
-            Log.Information($"Found SourceLink information for assembly {assembly.GetName().Name}: commit {commitSha} from {repositoryUrl}");
+            Log.Information("Found SourceLink information for assembly {Name}: commit {CommitSha} from {RepositoryUrl}", assembly.GetName().Name, commitSha, repositoryUrl);
             result = new GitMetadata(commitSha, repositoryUrl);
             return true;
         }

@@ -248,7 +248,7 @@ internal readonly partial struct SecurityCoordinator
                 }
                 else
                 {
-                    Log.Warning("Header {key} couldn't be added as argument to the waf", keyForDictionary);
+                    Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
                 }
             }
         }
@@ -289,7 +289,7 @@ internal readonly partial struct SecurityCoordinator
             }
             else
             {
-                Log.Warning("Query string {key} couldn't be added as argument to the waf", originalKey);
+                Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
             }
         }
 

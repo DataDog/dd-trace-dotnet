@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 Span parent = tracer.InternalActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
-                    parent.GetTag(Tags.DbType) == dbType &&
+                    HasDbType(parent, dbType) &&
                     parent.ResourceName == command.CommandText)
                 {
                     // we are already instrumenting this,
@@ -70,6 +70,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
 
             return scope;
+
+            static bool HasDbType(Span span, string dbType)
+            {
+                if (span.Tags is SqlTags sqlTags)
+                {
+                    return sqlTags.DbType == dbType;
+                }
+
+                return span.GetTag(Tags.DbType) == dbType;
+            }
         }
 
         public static bool TryGetIntegrationDetails(

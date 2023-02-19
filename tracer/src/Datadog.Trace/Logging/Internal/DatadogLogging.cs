@@ -51,7 +51,7 @@ namespace Datadog.Trace.Logging
         public static IDatadogLogger GetLoggerFor(Type classType)
         {
             // Tells us which types are loaded, when, and how often.
-            SharedLogger.Debug($"Logger retrieved for: {classType.AssemblyQualifiedName}");
+            SharedLogger.Debug("Logger retrieved for: {AssemblyQualifiedName}", classType.AssemblyQualifiedName);
             return SharedLogger;
         }
 

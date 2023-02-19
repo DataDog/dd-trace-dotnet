@@ -213,7 +213,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
             catch (Exception e)
             {
-                Log.Error(e, "Failed to process probe. Probe Id: " + ProbeInfo.ProbeId);
+                Log.Error(e, "Failed to process probe. Probe Id: {ProbeId}", ProbeInfo.ProbeId);
                 return false;
             }
         }
@@ -235,7 +235,7 @@ namespace Datadog.Trace.Debugger.Expressions
             catch (Exception e)
             {
                 // if the evaluation failed stop capturing
-                Log.Error(e, "Failed to evaluate expression for probe: " + ProbeInfo.ProbeId);
+                Log.Error(e, "Failed to evaluate expression for probe: {ProbeId}", ProbeInfo.ProbeId);
                 snapshotCreator.Stop();
                 shouldStopCapture = true;
                 return evaluationResult;

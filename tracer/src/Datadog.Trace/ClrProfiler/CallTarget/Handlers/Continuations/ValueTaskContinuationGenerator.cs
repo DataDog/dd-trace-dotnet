@@ -38,7 +38,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug($"== TaskContinuationGenerator<{typeof(TIntegration).FullName}, {typeof(TTarget).FullName}, {typeof(TReturn).FullName}> using Resolver: {Resolver.GetType().FullName}");
+                Log.Debug(
+                    "== {TaskContinuationGenerator} using Resolver: {Resolver}",
+                    $"TaskContinuationGenerator<{typeof(TIntegration).FullName}, {typeof(TTarget).FullName}, {typeof(TReturn).FullName}>",
+                    Resolver.GetType().FullName);
             }
         }
 
@@ -87,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     }
                     catch (Exception contEx)
                     {
-                        IntegrationOptions<TIntegration, TTarget>.LogException(contEx, "Exception occurred when calling the CallTarget integration continuation.");
+                        IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
                     }
 
                     throw;
@@ -102,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 }
                 catch (Exception contEx)
                 {
-                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx, "Exception occurred when calling the CallTarget integration continuation.");
+                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
                 }
             }
         }
@@ -146,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     }
                     catch (Exception contEx)
                     {
-                        IntegrationOptions<TIntegration, TTarget>.LogException(contEx, "Exception occurred when calling the CallTarget integration continuation.");
+                        IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
                     }
 
                     throw;
@@ -161,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 }
                 catch (Exception contEx)
                 {
-                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx, "Exception occurred when calling the CallTarget integration continuation.");
+                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
                 }
             }
         }

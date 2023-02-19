@@ -34,6 +34,7 @@ public:
 public :
     std::tuple<bool, std::string_view, std::string_view> GetFrame(uintptr_t instructionPointer) override;
     bool GetTypeName(ClassID classId, std::string& name) override;
+    bool GetTypeName(ClassID classId, std::string_view& name) override;
 
 private:
     bool GetFunctionInfo(
@@ -51,7 +52,7 @@ private:
         ULONG32 genericParametersCount,
         ClassID* genericParameters
         );
-    bool GetTypeDesc(
+    bool BuildTypeDesc(
         IMetaDataImport2* pMetadataImport,
         ClassID classId,
         ModuleID moduleId,
@@ -59,8 +60,8 @@ private:
         TypeDesc& typeDesc,
         bool isEncoded
         );
-    bool GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded);
-    bool GetCachedTypeDesc(ClassID classId, TypeDesc& typeDesc);
+    bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded);
+    bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     std::pair <std::string_view, std::string_view> GetManagedFrame(FunctionID functionId);
     std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
 

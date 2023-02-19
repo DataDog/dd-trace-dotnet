@@ -70,6 +70,16 @@ StackSamplerLoop::StackSamplerLoop(
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()}
 {
+    if (!OsSpecificApi::GetProcessorCount(_nbCores))
+    {
+        _nbCores = 1;
+        Log::Info("Processor cores = 1 (as a guess because GetProcessorCount failed)");
+    }
+    else
+    {
+        Log::Info("Processor cores = ", _nbCores);
+    }
+
     _samplingPeriod = _pConfiguration->CpuWallTimeSamplingRate();
     Log::Info("CPU and wall time sampling period = ", _samplingPeriod.count() / 1000000, " ms");
     Log::Info("Wall time sampled threads = ", _walltimeThreadsThreshold);
@@ -232,8 +242,8 @@ void StackSamplerLoop::WalltimeProfilingIteration()
 
 void StackSamplerLoop::CpuProfilingIteration()
 {
+    uint32_t sampledThreads = 0;
     int32_t managedThreadsCount = _pManagedThreadList->Count();
-    // TODO: as an optimization, don't scan more threads than nb logical cores
     int32_t sampledThreadsCount = (std::min)(managedThreadsCount, _cpuThreadsThreshold);
 
     for (int32_t i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
@@ -280,6 +290,13 @@ void StackSamplerLoop::CpuProfilingIteration()
                     }
                     _targetThread->SetCpuConsumptionMilliseconds(currentConsumption, thisSampleTimestampNanosecs);
                     CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, cpuForSample, PROFILING_TYPE::CpuTime);
+
+                    // don't scan more threads than nb logical cores
+                    sampledThreads++;
+                    if (sampledThreads >= _nbCores)
+                    {
+                        break;
+                    }
                 }
             }
             _targetThread.reset();

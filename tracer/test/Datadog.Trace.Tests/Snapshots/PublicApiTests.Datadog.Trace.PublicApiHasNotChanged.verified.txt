@@ -185,37 +185,66 @@ namespace Datadog.Trace.AppSec
         public static void TrackUserLoginSuccessEvent(string userId, System.Collections.Generic.IDictionary<string, string> metadata) { }
     }
 }
-namespace Datadog.Trace.Ci.Coverage.Attributes
-{
-    public class AvoidCoverageAttribute : System.Attribute
-    {
-        public AvoidCoverageAttribute() { }
-    }
-    public class CoveredAssemblyAttribute : System.Attribute
-    {
-        public CoveredAssemblyAttribute() { }
-    }
-}
-namespace Datadog.Trace.Ci.Coverage.Metadata
-{
-    public abstract class ModuleCoverageMetadata
-    {
-        protected readonly long[] Metadata;
-        protected readonly int[] SequencePoints;
-        protected readonly long TotalInstructions;
-        protected ModuleCoverageMetadata() { }
-    }
-}
 namespace Datadog.Trace.Ci
 {
+    public readonly struct BenchmarkDiscreteStats
+    {
+        public readonly double Kurtosis;
+        public readonly double Max;
+        public readonly double Mean;
+        public readonly double Median;
+        public readonly double Min;
+        public readonly int N;
+        public readonly double P90;
+        public readonly double P95;
+        public readonly double P99;
+        public readonly double Skewness;
+        public readonly double StandardDeviation;
+        public readonly double StandardError;
+        public BenchmarkDiscreteStats(int n, double max, double min, double mean, double median, double standardDeviation, double standardError, double kurtosis, double skewness, double p99, double p95, double p90) { }
+        public static Datadog.Trace.Ci.BenchmarkDiscreteStats GetFrom(double[] values) { }
+    }
+    public struct BenchmarkHostInfo
+    {
+        public double? ChronometerFrequencyHertz;
+        public double? ChronometerResolution;
+        public int? LogicalCoreCount;
+        public string? OsVersion;
+        public int? PhysicalCoreCount;
+        public int? ProcessorCount;
+        public double? ProcessorMaxFrequencyHertz;
+        public string? ProcessorName;
+        public string? RuntimeVersion;
+    }
+    public struct BenchmarkJobInfo
+    {
+        public string? Description;
+        public string? Platform;
+        public string? RuntimeMoniker;
+        public string? RuntimeName;
+    }
+    public enum BenchmarkMeasureType
+    {
+        Duration = 0,
+        RunTime = 1,
+        MeanHeapAllocations = 2,
+        TotalHeapAllocations = 3,
+        ApplicationLaunch = 4,
+        GarbageCollectorGen0 = 5,
+        GarbageCollectorGen1 = 6,
+        GarbageCollectorGen2 = 7,
+        MemoryTotalOperations = 8,
+    }
     public sealed class Test
     {
         public string? Name { get; }
         public System.DateTimeOffset StartTime { get; }
         public Datadog.Trace.Ci.TestSuite Suite { get; }
+        public void AddBenchmarkData(Datadog.Trace.Ci.BenchmarkMeasureType measureType, string info, in Datadog.Trace.Ci.BenchmarkDiscreteStats statistics) { }
         public void Close(Datadog.Trace.Ci.TestStatus status) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration, string? skipReason) { }
+        public void SetBenchmarkMetadata(in Datadog.Trace.Ci.BenchmarkHostInfo hostInfo, in Datadog.Trace.Ci.BenchmarkJobInfo jobInfo) { }
         public void SetErrorInfo(System.Exception exception) { }
         public void SetErrorInfo(string type, string message, string? callStack) { }
         public void SetParameters(Datadog.Trace.Ci.TestParameters parameters) { }
@@ -291,6 +320,27 @@ namespace Datadog.Trace.Ci
         public void SetErrorInfo(string type, string message, string? callStack) { }
         public void SetTag(string key, double? value) { }
         public void SetTag(string key, string? value) { }
+    }
+}
+namespace Datadog.Trace.Ci.Coverage.Attributes
+{
+    public class AvoidCoverageAttribute : System.Attribute
+    {
+        public AvoidCoverageAttribute() { }
+    }
+    public class CoveredAssemblyAttribute : System.Attribute
+    {
+        public CoveredAssemblyAttribute() { }
+    }
+}
+namespace Datadog.Trace.Ci.Coverage.Metadata
+{
+    public abstract class ModuleCoverageMetadata
+    {
+        protected readonly long[] Metadata;
+        protected readonly int[] SequencePoints;
+        protected readonly long TotalInstructions;
+        protected ModuleCoverageMetadata() { }
     }
 }
 namespace Datadog.Trace.ClrProfiler

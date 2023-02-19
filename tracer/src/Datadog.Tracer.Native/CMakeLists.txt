@@ -171,7 +171,7 @@ add_library("Datadog.Tracer.Native.static" STATIC
         method_rewriter.cpp
         tracer_tokens.cpp
         debugger_environment_variables_util.cpp
-        probes_tracker.cpp
+        debugger_probes_tracker.cpp
         iast/aspect.cpp
         iast/aspect_filter.cpp
         iast/dataflow.cpp

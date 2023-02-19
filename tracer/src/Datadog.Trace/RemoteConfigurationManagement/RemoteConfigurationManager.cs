@@ -313,7 +313,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
                 catch (Exception e)
                 {
-                    Log.Warning($"Failed to apply remote configurations {e.Message}");
+                    Log.Warning(e, "Failed to apply remote configurations for product {Product}", product?.Name);
                 }
             }
 
@@ -335,7 +335,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
                 catch (Exception e)
                 {
-                    Log.Warning($"Failed to remove remote configurations {e.Message}");
+                    Log.Warning(e, "Failed to remove remote configurations");
                 }
             }
 

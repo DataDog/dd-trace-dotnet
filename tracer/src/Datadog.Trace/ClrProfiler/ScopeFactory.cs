@@ -25,18 +25,22 @@ namespace Datadog.Trace.ClrProfiler
 
         public static Scope GetActiveHttpScope(Tracer tracer)
         {
-            var scope = tracer.InternalActiveScope;
-
-            var parent = scope?.Span;
-
-            if (parent != null &&
-                parent.Type == SpanTypes.Http &&
-                parent.GetTag(Tags.InstrumentationName) != null)
+            if (tracer.InternalActiveScope is { Span: { Type: SpanTypes.Http } parent } scope && HasInstrumentationNameTag(parent))
             {
                 return scope;
             }
 
             return null;
+
+            static bool HasInstrumentationNameTag(Span span)
+            {
+                if (span.Tags is HttpTags httpTags)
+                {
+                    return httpTags.InstrumentationName != null;
+                }
+
+                return span.GetTag(Tags.InstrumentationName) != null;
+            }
         }
 
         /// <summary>
@@ -53,9 +57,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>A new pre-populated scope.</returns>
         internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationId integrationId, out HttpTags tags, ulong? traceId = null, ulong? spanId = null, DateTimeOffset? startTime = null)
         {
-            var span = CreateInactiveOutboundHttpSpan(tracer, httpMethod, requestUri, integrationId, out tags, traceId, spanId, startTime, addToTraceContext: true);
-
-            if (span != null)
+            if (CreateInactiveOutboundHttpSpan(tracer, httpMethod, requestUri, integrationId, out tags, traceId, spanId, startTime, addToTraceContext: true) is { } span)
             {
                 return tracer.ActivateSpan(span);
             }

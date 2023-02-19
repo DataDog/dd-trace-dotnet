@@ -7,7 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Instrumentation.Registry;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
@@ -153,17 +153,18 @@ namespace Datadog.Trace.Debugger.Instrumentation
             {
                 if (!MethodMetadataCollection.Instance.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
                 {
-                    Log.Warning($"BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadataId = {methodMetadataIndex}, probeId = {probeId}");
+                    Log.Warning("BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadataId = {MethodMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, probeId);
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                if (!ProbeMetadataCollection.Instance.TryCreateProbeMetadataIfNotExists(probeMetadataIndex, probeId))
+                ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
+                if (probeData.IsEmpty())
                 {
-                    Log.Warning($"BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, probeMetadataIndex = {probeMetadataIndex}, probeId = {probeId}");
+                    Log.Warning("BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId);
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                var state = new LineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, probeMetadataIndex, lineNumber, probeFilePath, instance);
+                var state = new LineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance);
 
                 if (!state.SnapshotCreator.ProbeHasCondition &&
                     !state.ProbeData.Sampler.Sample())

@@ -48,7 +48,7 @@ public sealed class Test
         }
 
         CurrentTest.Value = this;
-        CIVisibility.Log.Debug("######### New Test Created: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
+        CIVisibility.Log.Debug("######### New Test Created: {Name} ({Suite} | {Module})", Name, Suite.Name, Suite.Module.Name);
 
         if (startDate is null)
         {
@@ -190,6 +190,98 @@ public sealed class Test
     }
 
     /// <summary>
+    /// Set benchmark metadata
+    /// </summary>
+    /// <param name="hostInfo">Host info</param>
+    /// <param name="jobInfo">Job info</param>
+    public void SetBenchmarkMetadata(in BenchmarkHostInfo hostInfo, in BenchmarkJobInfo jobInfo)
+    {
+        ((TestSpanTags)_scope.Span.Tags).Type = TestTags.TypeBenchmark;
+
+        // Host info
+        SetTagIfNotNull(BenchmarkTestTags.HostProcessorName, hostInfo.ProcessorName);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostProcessorPhysicalProcessorCount, hostInfo.ProcessorCount);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostProcessorPhysicalCoreCount, hostInfo.PhysicalCoreCount);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostProcessorLogicalCoreCount, hostInfo.LogicalCoreCount);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostProcessorMaxFrequencyHertz, hostInfo.ProcessorMaxFrequencyHertz);
+        SetTagIfNotNull(BenchmarkTestTags.HostOsVersion, hostInfo.OsVersion);
+        SetTagIfNotNull(BenchmarkTestTags.HostRuntimeVersion, hostInfo.RuntimeVersion);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostChronometerFrequencyHertz, hostInfo.ChronometerFrequencyHertz);
+        SetDoubleTagIfNotNull(BenchmarkTestTags.HostChronometerResolution, hostInfo.ChronometerResolution);
+
+        // Job info
+        SetTagIfNotNull(BenchmarkTestTags.JobDescription, jobInfo.Description);
+        SetTagIfNotNull(BenchmarkTestTags.JobPlatform, jobInfo.Platform);
+        SetTagIfNotNull(BenchmarkTestTags.JobRuntimeName, jobInfo.RuntimeName);
+        SetTagIfNotNull(BenchmarkTestTags.JobRuntimeMoniker, jobInfo.RuntimeMoniker);
+
+        void SetTagIfNotNull(string tag, string? value)
+        {
+            if (value is not null)
+            {
+                SetTag(tag, value);
+            }
+        }
+
+        void SetDoubleTagIfNotNull(string tag, double? value)
+        {
+            if (value is not null)
+            {
+                SetTag(tag, value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Add benchmark data
+    /// </summary>
+    /// <param name="measureType">Measure type</param>
+    /// <param name="info">Measure info</param>
+    /// <param name="statistics">Statistics values</param>
+    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, in BenchmarkDiscreteStats statistics)
+    {
+        var measureTypeAsString = measureType switch
+        {
+            BenchmarkMeasureType.Duration => "duration",
+            BenchmarkMeasureType.RunTime => "run_time",
+            BenchmarkMeasureType.ApplicationLaunch => "application_launch",
+            BenchmarkMeasureType.MeanHeapAllocations => "mean_heap_allocations",
+            BenchmarkMeasureType.TotalHeapAllocations => "total_heap_allocations",
+            BenchmarkMeasureType.GarbageCollectorGen0 => "gc_gen0_collections",
+            BenchmarkMeasureType.GarbageCollectorGen1 => "gc_gen1_collections",
+            BenchmarkMeasureType.GarbageCollectorGen2 => "gc_gen2_collections",
+            BenchmarkMeasureType.MemoryTotalOperations => "memory_total_operations",
+            _ => string.Empty,
+        };
+
+        SetTag($"benchmark.{measureTypeAsString}.run", statistics.N);
+        SetTag($"benchmark.{measureTypeAsString}.mean", GetValidDoubleValue(statistics.Mean));
+        SetTag($"benchmark.{measureTypeAsString}.info", info);
+        SetTag($"benchmark.{measureTypeAsString}.statistics.n", statistics.N);
+        SetTag($"benchmark.{measureTypeAsString}.statistics.max", GetValidDoubleValue(statistics.Max));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.min", GetValidDoubleValue(statistics.Min));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.mean", GetValidDoubleValue(statistics.Mean));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.median", GetValidDoubleValue(statistics.Median));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.std_dev", GetValidDoubleValue(statistics.StandardDeviation));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.std_err", GetValidDoubleValue(statistics.StandardError));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.kurtosis", GetValidDoubleValue(statistics.Kurtosis));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.skewness", GetValidDoubleValue(statistics.Skewness));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.p90", GetValidDoubleValue(statistics.P90));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.p95", GetValidDoubleValue(statistics.P95));
+        SetTag($"benchmark.{measureTypeAsString}.statistics.p90", GetValidDoubleValue(statistics.P99));
+
+        static double GetValidDoubleValue(double value)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+            {
+                return 0;
+            }
+
+            return value;
+        }
+    }
+
+    /// <summary>
     /// Close test
     /// </summary>
     /// <param name="status">Test status</param>
@@ -235,7 +327,7 @@ public sealed class Test
             testCoverage.SuiteId = tags.SuiteId;
             testCoverage.SpanId = _scope.Span.SpanId;
 
-            CIVisibility.Log.Debug("Coverage data for SessionId={sessionId}, SuiteId={suiteId} and SpanId={spanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
+            CIVisibility.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
             CIVisibility.Manager?.WriteEvent(testCoverage);
         }
 
@@ -260,7 +352,7 @@ public sealed class Test
         scope.Dispose();
 
         Current = null;
-        CIVisibility.Log.Debug("######### Test Closed: {name} ({suite} | {module}) | {status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
+        CIVisibility.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
     }
 
     internal void ResetStartTime()

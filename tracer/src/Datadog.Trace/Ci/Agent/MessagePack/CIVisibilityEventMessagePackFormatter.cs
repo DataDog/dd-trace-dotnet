@@ -14,7 +14,7 @@ internal class CIVisibilityEventMessagePackFormatter<T> : EventMessagePackFormat
     {
         if (value is null)
         {
-            Log.Warning("CIVisibilityEventMessagePackFormatter<{type}>: event is null", typeof(T).Name);
+            Log.Warning("CIVisibilityEventMessagePackFormatter<{Type}>: event is null", typeof(T).Name);
             return 0;
         }
 
