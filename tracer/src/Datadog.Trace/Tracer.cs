@@ -429,6 +429,11 @@ namespace Datadog.Trace
                 spanContext.TraceContext.AddSpan(span);
             }
 
+            // Extract the Git metadata. This is done here because we may only be able to do it in the context of a request.
+            // However, to reduce memory consumption, we don't actually add the result as tags on the span, and instead
+            // write them directly to the <see cref="TraceChunkModel"/>.
+            TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
+
             return span;
         }
 
