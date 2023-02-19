@@ -69,11 +69,20 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
             if (gitMetadata != GitMetadata.Empty)
             {
-                var gitMetadataTags = $"{CommonTags.GitCommit}:{gitMetadata.CommitSha},{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl}";
+                var gitMetadataTags = $"{CommonTags.GitCommit}:{gitMetadata.CommitSha},{CommonTags.GitRepository}:{RemoveScheme(gitMetadata.RepositoryUrl)}";
                 _tags = string.IsNullOrEmpty(_tags) ? gitMetadataTags : $"{_tags},{gitMetadataTags}";
             }
 
             _gitMetadataAdded = true;
+        }
+
+        private string? RemoveScheme(string url)
+        {
+            return url switch {
+                { } when url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) => url.Substring("https://".Length),
+                { } when url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) => url.Substring("http://".Length),
+                _ => url
+            };
         }
 
         internal static bool IsSourceProperty(string? propertyName) =>
