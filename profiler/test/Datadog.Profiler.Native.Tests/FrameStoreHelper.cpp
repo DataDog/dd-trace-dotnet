@@ -40,3 +40,8 @@ bool FrameStoreHelper::GetTypeName(ClassID classId, std::string& name)
 {
     return false;
 }
+
+bool FrameStoreHelper::GetTypeName(ClassID classId, std::string_view& name)
+{
+    return false;
+}

@@ -86,7 +86,7 @@ namespace Datadog.Trace.Ci
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
-            TracerSettings tracerSettings = _settings.TracerSettings;
+            var tracerSettings = _settings.TracerSettings;
 
             // Set the service name if empty
             Log.Debug("Setting up the service name");

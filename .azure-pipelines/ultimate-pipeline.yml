@@ -1835,6 +1835,8 @@ stages:
 
     - script: tracer\build.cmd BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform)
       displayName: Run Profiler Integration tests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
