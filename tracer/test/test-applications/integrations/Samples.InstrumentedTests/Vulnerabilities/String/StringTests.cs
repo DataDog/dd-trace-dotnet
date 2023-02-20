@@ -621,31 +621,5 @@ public class StringAspectTests : InstrumentationTestsBase
     {
         AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }));
     }
-
-    struct StructForStringTest
-    {
-        readonly string str;
-        public StructForStringTest(string str)
-        {
-            this.str = str;
-        }
-        public override string ToString()
-        {
-            return str;
-        }
-    }
-
-    class ClassForStringTest
-    {
-        readonly string str;
-        public ClassForStringTest(string str)
-        {
-            this.str = str;
-        }
-        public override string ToString()
-        {
-            return str;
-        }
-    }
 }
 
