@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -19,7 +18,6 @@ using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
@@ -59,11 +57,6 @@ internal class LiveDebuggerFactory
 
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
 
-        var constantTags = new List<string>
-        {
-            $"service:{NormalizerTraceProcessor.NormalizeService(serviceName)}"
-        };
-
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
             && tracerSettings.Exporter.MetricsTransport == TransportType.UDS)
@@ -73,7 +66,12 @@ internal class LiveDebuggerFactory
         }
         else
         {
-            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, constantTags);
+            var constantTags = new List<string>
+            {
+                $"service:{NormalizerTraceProcessor.NormalizeService(serviceName)}"
+            };
+
+            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, constantTags, DebuggerSettings.DebuggerMetricPrefix);
         }
 
         return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, statsd);

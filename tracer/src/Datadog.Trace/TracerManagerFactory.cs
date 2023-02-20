@@ -212,7 +212,7 @@ namespace Datadog.Trace
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
             => DiscoveryService.Create(settings.Exporter);
 
-        internal static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, List<string> constantTags)
+        internal static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, List<string> constantTags, string prefix = null)
         {
             try
             {
@@ -236,7 +236,8 @@ namespace Datadog.Trace
                         Log.Information("Using windows named pipes for metrics transport.");
                         statsd.Configure(new StatsdConfig
                         {
-                            ConstantTags = constantTags?.ToArray()
+                            ConstantTags = constantTags?.ToArray(),
+                            Prefix = prefix
                         });
                         break;
 #if NETCOREAPP3_1_OR_GREATER
@@ -245,7 +246,8 @@ namespace Datadog.Trace
                         statsd.Configure(new StatsdConfig
                         {
                             StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.Exporter.MetricsUnixDomainSocketPath}",
-                            ConstantTags = constantTags?.ToArray()
+                            ConstantTags = constantTags?.ToArray(),
+                            Prefix = prefix
                         });
                         break;
 #endif
@@ -255,7 +257,8 @@ namespace Datadog.Trace
                         {
                             StatsdServerName = settings.Exporter.AgentUri.DnsSafeHost,
                             StatsdPort = settings.Exporter.DogStatsdPort,
-                            ConstantTags = constantTags?.ToArray()
+                            ConstantTags = constantTags?.ToArray(),
+                            Prefix = prefix
                         });
                         break;
                 }
