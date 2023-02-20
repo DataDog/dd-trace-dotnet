@@ -13,12 +13,9 @@ namespace Samples.Security.AspNetCore5.Controllers
     {
         static SQLiteConnection dbConnection = null;
 
-        static readonly string txt1 = "Text 1";
-        static readonly string txt2 = "Text 2";
-
         public IActionResult Index()
         {
-            return Content(txt1 + txt2);
+            return Content("Ok\n");
         }
 
         [HttpGet("WeakHashing")]
@@ -38,7 +35,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("SqlQuery")]
         public IActionResult SqlQuery(string username, string query)
         {
-            string aux = username + query;
             try
             {
                 if (dbConnection is null)
