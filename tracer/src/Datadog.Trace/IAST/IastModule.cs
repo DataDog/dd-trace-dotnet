@@ -49,14 +49,13 @@ internal static class IastModule
 
     public static IastRequestContext? GetIastContext()
     {
-        var tracer = Tracer.Instance;
         if (!iastSettings.Enabled)
         {
             // integration disabled, don't create a scope, skip this span
             return null;
         }
 
-        var currentSpan = (tracer.ActiveScope as Scope)?.Span;
+        var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
         return traceContext?.IastRequestContext;
     }

@@ -80,7 +80,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnstringConcat");
+            Log.Error(err, "StringModuleImpl.OnstringConcat(string,string) exception {Exception}", err.Message);
         }
 
         return result;
@@ -152,7 +152,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnstringConcat");
+            Log.Error(err, "StringModuleImpl.OnstringConcat(StringConcatParams) exception {Exception}", err.Message);
         }
 
         return result;
@@ -224,7 +224,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnstringConcat");
+            Log.Error(err, "StringModuleImpl.OnstringConcat(IEnumerable) exception {Exception}", err.Message);
         }
 
         return result;

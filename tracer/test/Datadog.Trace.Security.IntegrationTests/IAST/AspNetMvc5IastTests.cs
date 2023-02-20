@@ -64,6 +64,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             EnableIast(enableIast);
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             DisableObfuscationQueryString();
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
