@@ -7,11 +7,20 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+#if (!NET45)
+using System.Text.Json;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Demos.Util;
+
+#pragma warning disable SA1201 // Elements should appear in the correct order
+#pragma warning disable SA1306 // Field names should begin with lower-case letter
+#pragma warning disable SA1401 // Fields should be private
 
 namespace Samples.FileAccess
 {
@@ -26,6 +35,9 @@ namespace Samples.FileAccess
 #endif
         ReadWriteXml = 32,
         ReadWriteXmlAsync = 64,
+#if (!NET45)
+        ReadWriteJson = 128,
+#endif
     }
 
     internal class Program
@@ -74,6 +86,7 @@ namespace Samples.FileAccess
             Console.WriteLine($"{Environment.NewLine} ########### Finishing run at {DateTime.UtcNow}");
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ReadWriteBinary(CancellationToken token)
         {
             var filename = Path.GetTempFileName();
@@ -116,6 +129,7 @@ namespace Samples.FileAccess
             File.Delete(filename);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ReadWriteText(CancellationToken token)
         {
             var filename = Path.GetTempFileName();
@@ -165,6 +179,7 @@ namespace Samples.FileAccess
             File.Delete(filename);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ReadWriteFileStream(CancellationToken token)
         {
             var filename = Path.GetTempFileName();
@@ -218,6 +233,7 @@ namespace Samples.FileAccess
             File.Delete(filename);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static async Task ReadWriteAsync(CancellationToken token)
         {
             var filename = Path.GetTempFileName();
@@ -285,6 +301,7 @@ namespace Samples.FileAccess
         }
 
 #if (!NET45)
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static async Task ReadWriteLineAsync(CancellationToken token)
         {
             var filename = Path.GetTempFileName();
@@ -310,6 +327,7 @@ namespace Samples.FileAccess
             File.Delete(filename);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static IEnumerable<string> GetLines()
         {
             for (int i = 0; i < 10_000; i++)
@@ -320,8 +338,9 @@ namespace Samples.FileAccess
 #endif
 
 #if (NET45)
-    private static Task CompletedTask = Task.FromResult(false);
+        private static Task CompletedTask = Task.FromResult(false);
 #endif
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static async Task ReadWriteXml(CancellationToken token, bool asynchronous)
         {
             var filename = Path.GetTempFileName();
@@ -389,6 +408,31 @@ namespace Samples.FileAccess
 
                     using (var reader = XmlReader.Create(filename, readerSettings))
                     {
+                        int elementCount = 0;
+                        if (asynchronous)
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                switch (reader.NodeType)
+                                {
+                                    case XmlNodeType.Element:
+                                        elementCount++;
+                                        break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            while (reader.Read())
+                            {
+                                switch (reader.NodeType)
+                                {
+                                    case XmlNodeType.Element:
+                                        elementCount++;
+                                        break;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -409,6 +453,59 @@ namespace Samples.FileAccess
             }
         }
 
+#if (!NET45)
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static async Task ReadWriteJson(CancellationToken token, bool asynchronous)
+        {
+            var filename = Path.GetTempFileName();
+            try
+            {
+                JsonSerializerOptions options = new JsonSerializerOptions()
+                {
+                    IncludeFields = true,
+                    WriteIndented = true,
+                };
+                SerializableList list = new SerializableList();
+                for (int i = 0; i < 10_000; i++)
+                {
+                    list.Add("name");
+                }
+
+                while (!token.IsCancellationRequested)
+                {
+                    using (var stream = File.Open(filename, FileMode.OpenOrCreate))
+                    {
+                        JsonSerializer.Serialize(stream, list, options);
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    using (var stream = File.Open(filename, FileMode.OpenOrCreate))
+                    {
+                        var deserializedList = JsonSerializer.Deserialize(stream, typeof(SerializableList), options);
+                    }
+                }
+            }
+            catch (Exception x)
+            {
+                Console.WriteLine(x.ToString());
+            }
+
+            File.Delete(filename);
+
+            if (!asynchronous)
+            {
+#if (NET45)
+                await CompletedTask;
+#else
+                await Task.CompletedTask;
+#endif
+            }
+        }
+#endif
         private static List<Task> StartScenarios(Scenario scenario, CancellationToken token)
         {
             List<Task> tasks = new List<Task>();
@@ -475,7 +572,7 @@ namespace Samples.FileAccess
                     Task.Factory.StartNew(
                         async () =>
                         {
-                            await ReadWriteXml(token, asynchronous:false);
+                            await ReadWriteXml(token, asynchronous: false);
                         },
                         TaskCreationOptions.LongRunning));
             }
@@ -486,11 +583,23 @@ namespace Samples.FileAccess
                     Task.Factory.StartNew(
                         async () =>
                         {
-                            await ReadWriteXml(token, asynchronous:true);
+                            await ReadWriteXml(token, asynchronous: true);
                         },
                         TaskCreationOptions.LongRunning));
             }
 
+#if (!NET45)
+            if ((scenario & Scenario.ReadWriteJson) == Scenario.ReadWriteJson)
+            {
+                tasks.Add(
+                    Task.Factory.StartNew(
+                        async () =>
+                        {
+                            await ReadWriteJson(token, asynchronous: true);
+                        },
+                        TaskCreationOptions.LongRunning));
+            }
+#endif
             return tasks;
         }
 
@@ -531,5 +640,19 @@ namespace Samples.FileAccess
                 }
             }
         }
+
+        public class SerializableList
+        {
+            public List<string> Names = new List<string>();
+
+            public void Add(string name)
+            {
+                Names.Add(name);
+            }
+        }
     }
+
+#pragma warning restore SA1401 // Fields should be private
+#pragma warning restore SA1306 // Field names should begin with lower-case letter
+#pragma warning restore SA1201 // Elements should appear in the correct order
 }
