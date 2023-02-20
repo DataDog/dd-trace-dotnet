@@ -14,6 +14,7 @@
 #include "Windows32BitStackFramesCollector.h"
 #include "Windows64BitStackFramesCollector.h"
 #include "Log.h"
+#include "ScopeFinalizer.h"
 #include "shared/src/native-src/loader.h"
 
 namespace OsSpecificApi {
@@ -163,7 +164,20 @@ int32_t GetProcessorCount()
     auto nbProcs = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
     if (nbProcs == 0)
     {
-        Log::Info("An error occured and we were unable to retrieve the number of processors(Error code: ", HRESULT_FROM_WIN32(GetLastError()), ")");
+        DWORD errorMessageID = ::GetLastError();
+
+        LPSTR messageBuffer = nullptr;
+        // Free the Win32's string's buffer.
+        on_leave { LocalFree(messageBuffer); };
+
+        // Ask Win32 to give us the string version of that message ID.
+        // The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
+        size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                     NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+
+        // Copy the error message into a std::string.
+        std::string message(messageBuffer, size);
+        Log::Info("An error occured and we were unable to retrieve the number of processors (Error: ", message, ")");
         return 1;
     }
     return nbProcs;
