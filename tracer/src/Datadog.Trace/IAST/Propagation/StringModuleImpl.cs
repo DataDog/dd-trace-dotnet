@@ -151,7 +151,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnstringConcat");
+            Log.Error(err, "StringModuleImpl.OnstringConcat(string,string) exception {Exception}", err.Message);
         }
 
         var taintedObjects = iastContext.GetTaintedObjects();
@@ -216,7 +216,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnstringConcat");
+            Log.Error(err, "StringModuleImpl.OnstringConcat(StringConcatParams) exception {Exception}", err.Message);
         }
 
         var rangesSelf = selfTainted.Ranges;
