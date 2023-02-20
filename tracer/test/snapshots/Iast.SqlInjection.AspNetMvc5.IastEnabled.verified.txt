@@ -37,8 +37,8 @@
   "sources": [
     {
       "origin": "http.request.parameter.value",
-      "name": "query",
-      "value": "SELECT Surname from Persons where name = 'Vicent'"
+      "name": "username",
+      "value": "Vicent"
     }
   ]
 },

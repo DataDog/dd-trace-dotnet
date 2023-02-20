@@ -484,7 +484,7 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     }
     return nullptr;
 }
-ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId)
+ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos)
 {
     CSGUARD(_cs);
     for (auto iterator = _modules.begin(); iterator != _modules.end(); iterator++)
@@ -492,7 +492,8 @@ ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId)
         if (iterator->second->_name == moduleName)
         {
             auto ppModuleInfo = iterator->second;
-            if (ppModuleInfo->_appDomain.Id == appDomainId)
+
+            if ((ppModuleInfo->_appDomain.Id == appDomainId) || (lookInSharedRepos && ppModuleInfo->_appDomain.IsSharedAssemblyRepository))
             {
                 return ppModuleInfo;
             }
