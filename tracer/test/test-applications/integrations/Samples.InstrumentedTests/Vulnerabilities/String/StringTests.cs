@@ -178,6 +178,12 @@ public class StringAspectTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenATaintedString_WhenCallingConcatWith2StringParams_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:concat", String.Concat(taintedValue, "concat"), () => String.Concat(taintedValue, "concat"));
+    }
+
+    [Fact]
     public void GivenATaintedString_WhenCallingConcatWith3StringParams_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:", String.Concat(taintedValue2, "concat", taintedValue), () => String.Concat(taintedValue2, "concat", taintedValue));
@@ -249,12 +255,6 @@ public class StringAspectTests : InstrumentationTestsBase
 
     [Fact]
     public void GivenStringLiteralsOptimizations_WhenConcat_ResultIsNotTainted()
-    {
-        AssertNotTainted(String.Concat("Literal1", "TaintedString"));
-    }
-
-    [Fact]
-    public void GivenStringLiteralsOptimizations_WhenConcat2Literals_ResultIsNotTainted()
     {
         AssertNotTainted(String.Concat("Literal1", "Literal2"));
     }
