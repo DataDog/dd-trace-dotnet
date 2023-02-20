@@ -20,5 +20,5 @@ namespace OsSpecificApi
    std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* pConfiguration);
    uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo);
    bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime);
-   bool GetProcessorCount(uint32_t& processorCount);
+   int32_t GetProcessorCount();
 } // namespace OsSpecificApi
