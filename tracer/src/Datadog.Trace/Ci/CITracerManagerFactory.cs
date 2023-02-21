@@ -51,9 +51,7 @@ namespace Datadog.Trace.Ci
 
         protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings)
         {
-            // CI Visibility has its own approach to extract git metadata (via the <cref>CIEnvironmentValues</cref> class),
-            // so we don't need to use the <cref>GitMetadataProvider</cref>.
-            return new NullGitMetadataProvider();
+            return new CIGitMetadataTagsProvider();
         }
 
         protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)

@@ -309,6 +309,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             writer.WritePropertyName("message", escape: false);
             writer.WriteValue(message);
 
+            EnrichTagsStringWithGitMetadata();
+
             var env = _env ?? string.Empty;
             var ddTags = _ciVisibilityDdTags;
             if (ddTags is null)
