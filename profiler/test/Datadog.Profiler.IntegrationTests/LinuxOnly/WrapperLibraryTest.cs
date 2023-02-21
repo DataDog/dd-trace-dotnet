@@ -93,7 +93,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
             processHelper.StandardOutput.Should().MatchRegex(@"createdump \d+ --signal 6 --crashthread \d+")
-                .And.NotContain("[createdump] Dump successfully written");
+                .And.NotContain("Writing minidump with heap");
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
@@ -109,7 +109,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
             processHelper.StandardOutput.Should().NotMatchRegex(@"createdump \d+ --signal 6 --crashthread \d+")
-                .And.Contain("[createdump] Dump successfully written");
+                .And.Contain("Writing minidump with heap");
         }
     }
 }
