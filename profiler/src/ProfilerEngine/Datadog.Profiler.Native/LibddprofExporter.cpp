@@ -8,6 +8,7 @@
 #include "IApplicationStore.h"
 #include "IMetricsSender.h"
 #include "Log.h"
+#include "OsSpecificApi.h"
 #include "OpSysTools.h"
 #include "Sample.h"
 #include "dd_profiler_version.h"
@@ -509,6 +510,7 @@ bool LibddprofExporter::Export()
         additionalTags.Add("service", applicationInfo.ServiceName);
         additionalTags.Add("runtime-id", std::string(runtimeId));
         additionalTags.Add("profile_seq", std::to_string(exportsCount - 1));
+        additionalTags.Add("number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount()));
 
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         if (request != nullptr)

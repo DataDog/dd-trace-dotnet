@@ -107,6 +107,9 @@
     <ClCompile Include="MetricsRegistryTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="OSpecificAPIHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

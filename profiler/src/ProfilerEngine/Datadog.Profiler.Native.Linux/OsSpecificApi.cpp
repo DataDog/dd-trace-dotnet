@@ -169,11 +169,9 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
 
 // from https://linux.die.net/man/3/get_nprocs
 //
-bool GetProcessorCount(uint32_t& processorCount)
+int32_t GetProcessorCount()
 {
-    processorCount = get_nprocs();
-
-    return true;
+    return get_nprocs();
 }
 
 

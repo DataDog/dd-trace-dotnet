@@ -1258,7 +1258,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
     }
 
     Log::Debug("Removing thread ", std::hex, threadId, " from the main managed thread list.");
-    _pManagedThreadList->UnregisterThread(threadId, pThreadInfo);
+    if (_pManagedThreadList->UnregisterThread(threadId, pThreadInfo))
+    {
+        // The docs require that we do not allow to destroy a thread while it is being stack-walked.
+        // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
+        pThreadInfo->SetThreadDestroyed();
+    }
 
     return S_OK;
 }

@@ -237,6 +237,7 @@ partial class Build
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .CombineWith(integrationTestProjects, (s, project) => s
                                                                                         .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
+                                                                                        .WithDatadogLogger()
                                                                                         .SetProjectFile(project)),
                         degreeOfParallelism: 4);
         }

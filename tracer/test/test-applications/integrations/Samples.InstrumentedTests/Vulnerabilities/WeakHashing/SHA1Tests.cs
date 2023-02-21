@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
-
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -87,10 +85,19 @@ public class SHA1Tests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenASHA384_WhenComputeHash_VulnerabilityIsNotLogged()
+    public void GivenASHA384_WhenComputeHash_VulnerabilityIsLogged()
     {
         SHA384.Create().ComputeHash(new byte[] { 5, 5, 5 });
         AssertNotVulnerable();
     }
-}
+
+#if NETFRAMEWORK
+    [Fact]
+    public void GivenAMACTripleDES_WhenComputeHash_VulnerabilityIsNotLogged()
+    {
+        // This is vulnerable because internally, it is using HMACSHA1
+        MACTripleDES.Create().ComputeHash(new byte[] { 5, 5, 5 });
+        AssertVulnerable();
+    }
 #endif
+}

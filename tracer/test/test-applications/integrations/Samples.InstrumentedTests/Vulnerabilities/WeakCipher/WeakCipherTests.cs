@@ -6,7 +6,7 @@
 using System.Security.Cryptography;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.WeakHashing;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.WeakCipher;
 
 #if !NETFRAMEWORK
 
