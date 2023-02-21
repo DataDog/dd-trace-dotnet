@@ -4,17 +4,11 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Samples.Computer01
 {
-    public class GarbageCollections
+    public class GarbageCollections : ScenarioBase
     {
-        private ManualResetEvent _stopEvent;
-        private List<Task> _activeTasks;
-
         private int _generation;
 
         public GarbageCollections(int generation)
@@ -22,64 +16,14 @@ namespace Samples.Computer01
             _generation = generation;
         }
 
-        public void TriggerCollections()
-        {
-            GC.Collect(_generation, GCCollectionMode.Forced);
-        }
-
-        public void Start()
-        {
-            if (_stopEvent != null)
-            {
-                throw new InvalidOperationException("Already running...");
-            }
-
-            _stopEvent = new ManualResetEvent(false);
-            _activeTasks = CreateThreads();
-        }
-
-        public void Run()
+        public override void OnProcess()
         {
             TriggerCollections();
         }
 
-        public void Stop()
+        public void TriggerCollections()
         {
-            if (_stopEvent == null)
-            {
-                throw new InvalidOperationException("Not running...");
-            }
-
-            _stopEvent.Set();
-
-            Task.WhenAll(_activeTasks).Wait();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
-            _activeTasks = null;
-        }
-
-        private List<Task> CreateThreads()
-        {
-            var result = new List<Task>();
-
-            result.Add(
-                Task.Factory.StartNew(
-                    () =>
-                    {
-                        while (!IsEventSet())
-                        {
-                            TriggerCollections();
-                        }
-                    },
-                    TaskCreationOptions.LongRunning));
-
-            return result;
-        }
-
-        private bool IsEventSet()
-        {
-            return _stopEvent.WaitOne(0);
+            GC.Collect(_generation, GCCollectionMode.Forced);
         }
     }
 }

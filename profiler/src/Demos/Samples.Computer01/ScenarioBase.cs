@@ -1,3 +1,8 @@
+// <copyright file="ScenarioBase.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -5,6 +10,9 @@ using System.Threading.Tasks;
 
 namespace Samples.Computer01
 {
+    // Scenario support Run and Start/Process/Stop modes.
+    // By default, Run executes the same OnProcess code as Process.
+    // The event in charge of stopping the processing can be checked or wait for.
     public abstract class ScenarioBase
     {
         private readonly int _nbThreads;
@@ -27,12 +35,18 @@ namespace Samples.Computer01
             _activeTasks = CreateThreads();
         }
 
-        public void Run()
+        // by default, do the same thing in Run and Start/Stop
+        public virtual void Run()
         {
-            OnRun();
+            OnProcess();
         }
 
-        public abstract void OnRun();
+        public void Process()
+        {
+            OnProcess();
+        }
+
+        public abstract void OnProcess();
 
         public void Stop()
         {
@@ -52,7 +66,18 @@ namespace Samples.Computer01
 
         protected bool IsEventSet()
         {
+            // in Run situations, the event could be null
+            if (_stopEvent == null)
+            {
+                return false;
+            }
+
             return _stopEvent.WaitOne(0);
+        }
+
+        protected void WaitFor(TimeSpan duration)
+        {
+            _stopEvent.WaitOne(duration);
         }
 
         private List<Task> CreateThreads()
@@ -67,7 +92,7 @@ namespace Samples.Computer01
                         {
                             while (!IsEventSet())
                             {
-                                OnRun();
+                                Process();
                             }
                         },
                         TaskCreationOptions.LongRunning));

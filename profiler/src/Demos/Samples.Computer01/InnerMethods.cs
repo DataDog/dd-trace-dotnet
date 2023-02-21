@@ -1,3 +1,8 @@
+// <copyright file="InnerMethods.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -7,7 +12,7 @@ namespace Samples.Computer01
 {
     public class InnerMethods : ScenarioBase
     {
-        public override void OnRun()
+        public override void OnProcess()
         {
             CallInnerMethods();
         }
