@@ -358,8 +358,8 @@ namespace Datadog.Trace
 
                 if (traceContext == null)
                 {
-                    // if parent is SpanContext but its TraceContext is null, then it was extracted from
-                    // propagation headers. create a new TraceContext (this will start a new trace) and initialize
+                    // If parent is SpanContext but its TraceContext is null, then it was extracted from
+                    // propagation headers. Create a new TraceContext (this will start a new trace) and initialize
                     // it with the propagated values (sampling priority, origin, tags, W3C trace state, etc).
                     traceContext = new TraceContext(this, parentSpanContext.PropagatedTags);
 
@@ -391,6 +391,15 @@ namespace Datadog.Trace
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
+
+            if (traceId == 0)
+            {
+                // generate the trace id here using the 128-bit setting
+                // instead of letting the SpanContext generate it in its ctor
+                var useAllBits = Settings?.TraceId128BitGenerationEnabled ?? false;
+                traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
+            }
+
             return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
         }
 
