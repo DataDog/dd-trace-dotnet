@@ -172,26 +172,6 @@ public class InstrumentationTestsBase
         }
     }
 
-    private static bool AlreadyInstrumented(Expression expression)
-    {
-        if (expression is MethodCallExpression methodCallExpression)
-        {
-            if (methodCallExpression.Method.DeclaringType.FullName.Contains("Hdiv"))
-            {
-                return true;
-            }
-            foreach (var argument in methodCallExpression.Arguments)
-            {
-                if (AlreadyInstrumented(argument))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     protected string FormatTainted(object value)
     {
         AssertTainted(value);
