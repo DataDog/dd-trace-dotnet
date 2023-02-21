@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
@@ -23,6 +24,11 @@ namespace Samples.WeakHashing
             testHashAlgorithm(new SHA1CryptoServiceProvider());
             testHashAlgorithm(HMAC.Create("HMACMD5"));
             testHashAlgorithm(new CustomMD5());
+
+#if NETFRAMEWORK
+            // This is vulnerable because internally, it is using HMACSHA1
+            testHashAlgorithm(MACTripleDES.Create());
+#endif
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
 
             // not vulnerable section
@@ -40,7 +46,6 @@ namespace Samples.WeakHashing
             testHashAlgorithm(new HMACRIPEMD160(new byte[] { 4, 4 }));
             testHashAlgorithm(RIPEMD160Managed.Create());
             testHashAlgorithm(new MACTripleDES());
-            testHashAlgorithm(MACTripleDES.Create());
 #endif
         }
 
@@ -55,6 +60,7 @@ namespace Samples.WeakHashing
 #if NET5_0_OR_GREATER
             _ = algorithm.ComputeHashAsync(stream, CancellationToken.None).Result;
 #endif
+            System.Threading.Thread.Sleep(100);
         }
     }
 }
