@@ -30,6 +30,11 @@ namespace Samples.Computer01
             {
                 bool NamedInnerMethod(IEnumerable<int> seq)
                 {
+                    bool NamedInnerMethod2(bool val)
+                    {
+                        return val ? false : val;
+                    }
+
                     int count = 0;  // capture for the first lambda
                     var found = seq.Any(v =>
                     {
@@ -42,7 +47,7 @@ namespace Samples.Computer01
                             return ov == count + anotherCount;
                         });
 
-                        return greater ? false : greater;
+                        return greater ? false : NamedInnerMethod2(greater);
                     });
 
                     return found;
