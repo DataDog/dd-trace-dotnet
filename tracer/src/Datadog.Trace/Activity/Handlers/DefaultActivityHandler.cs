@@ -57,8 +57,9 @@ namespace Datadog.Trace.Activity.Handlers
                     else
                     {
                         // create a new parent span context for the ActivityContext
-                        var contextSpanId = Convert.ToUInt64(w3cActivity.ParentSpanId, 16);
-                        parent = Tracer.Instance.CreateSpanContext(SpanContext.None, traceId: null, spanId: contextSpanId);
+                        var activityTraceId = Convert.ToUInt64(w3cActivity.TraceId.Substring(16), 16);
+                        var activitySpanId = Convert.ToUInt64(w3cActivity.ParentSpanId, 16);
+                        parent = Tracer.Instance.CreateSpanContext(SpanContext.None, traceId: activityTraceId, spanId: activitySpanId);
                     }
                 }
 
