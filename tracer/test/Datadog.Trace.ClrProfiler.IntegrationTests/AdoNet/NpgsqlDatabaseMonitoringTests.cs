@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -30,6 +31,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public void SubmitDbmCommentedSpanspropagationNotSet(string packageVersion)
         {
             SubmitDbmCommentedSpans(packageVersion, string.Empty);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitDbmCommentedSpanspropagationIntValue(string packageVersion)
+        {
+            SubmitDbmCommentedSpans(packageVersion, "100");
         }
 
         [SkippableTheory]
@@ -114,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
 
-            Assert.Equal(expectedSpanCount, actualSpanCount);
+            actualSpanCount.Should().Be(expectedSpanCount);
             ValidatePresentDbmTag(spans, propagationLevel);
         }
     }
