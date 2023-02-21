@@ -57,7 +57,7 @@ public class WeakCipherTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [InlineData("DD_IAST_ENABLED", "false")]
-    [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", " ")]
+    [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "invalidAlgorithm")]
     [InlineData($"DD_TRACE_{nameof(IntegrationId.SymmetricAlgorithm)}_ENABLED", "false")]
     public void IntegrationDisabled(string variableName, string variableValue)
     {

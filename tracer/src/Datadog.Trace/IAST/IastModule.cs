@@ -159,7 +159,7 @@ internal static class IastModule
 
     private static bool InvalidCipherAlgorithm(Type type, string algorithm)
     {
-#if !NET461
+#if !NETFRAMEWORK
         if (ProviderValid(type.Name))
         {
             return false;
