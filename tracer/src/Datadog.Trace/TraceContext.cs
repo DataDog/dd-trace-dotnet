@@ -113,6 +113,13 @@ namespace Datadog.Trace
                         var samplingDecision = Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
                         SetSamplingPriority(samplingDecision);
                     }
+
+                    if (span.TraceId.Upper > 0)
+                    {
+                        // this is a 128-bit trace id, add the "_dd.p.tid" (propagated trace id) tag
+                        var upperTraceIdHex = HexString.ToHexString(span.TraceId.Upper);
+                        Tags.SetTag(Datadog.Trace.Tags.Propagated.TraceIdHigh, upperTraceIdHex);
+                    }
                 }
 
                 _openSpans++;
