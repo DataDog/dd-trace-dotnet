@@ -373,7 +373,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for setting DBM propagation mode
-        /// Default value is disabled
+        /// Default value is disabled, expected values are either: disabled, service or full
         /// </summary>
         /// <seealso cref="TracerSettings.DbmPropagationMode"/>
         public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";

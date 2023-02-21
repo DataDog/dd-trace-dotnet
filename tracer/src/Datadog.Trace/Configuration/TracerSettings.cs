@@ -271,9 +271,16 @@ namespace Datadog.Trace.Configuration
                 HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator);
             }
 
-            DbmPropagationLevel dbmPropagationValue;
-            Enum.TryParse(source?.GetString(ConfigurationKeys.DbmPropagationMode), true, out dbmPropagationValue);
-            DbmPropagationMode = dbmPropagationValue;
+            var dbmPropagationMode = source?.GetString(ConfigurationKeys.DbmPropagationMode);
+            if (int.TryParse(dbmPropagationMode, out var parsedInt))
+            {
+                DbmPropagationMode = DbmPropagationLevel.Disabled;
+            }
+            else
+            {
+                Enum.TryParse(dbmPropagationMode, true, out DbmPropagationLevel dbmPropagationValue);
+                DbmPropagationMode = dbmPropagationValue;
+            }
         }
 
         /// <summary>

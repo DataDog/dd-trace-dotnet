@@ -3,11 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.SourceGenerators;
+
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
     /// Gets or sets a value indicating whether the tracer should propagate service data in db queries
     /// </summary>
+    [EnumExtensions]
     internal enum DbmPropagationLevel
     {
         /// <summary>Nothing should be propagated</summary>

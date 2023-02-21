@@ -48,7 +48,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationUnsupportedValue(string packageVersion)
+        public void SubmitDbmCommentedSpanspropagationIntValue(string packageVersion)
+        {
+            SubmitDbmCommentedSpans(packageVersion, "082386");
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetMySql8Data))]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitDbmCommentedSpanspropagationRandomValue(string packageVersion)
         {
             SubmitDbmCommentedSpans(packageVersion, "randomValue");
         }
