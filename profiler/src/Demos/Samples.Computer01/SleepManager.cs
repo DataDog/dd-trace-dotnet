@@ -25,6 +25,11 @@ namespace Samples.Computer01
             ThreadPool.SetMinThreads(nbThreads + 10, 32);
         }
 
+        public override void Run()
+        {
+            throw new InvalidOperationException("Run is unsupported for this scenario: it would lead to an infinite wait.");
+        }
+
         public void DoSleep()
         {
             Console.WriteLine($"Starting {nameof(DoSleep)}.");
