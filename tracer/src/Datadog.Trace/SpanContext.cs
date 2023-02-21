@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -116,13 +117,13 @@ namespace Datadog.Trace
         /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
         internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
-            : this(parent?.TraceId > 0 ? parent.TraceId : traceId, serviceName)
+            : this(GetTraceId(parent, traceId), serviceName)
         {
-            // TODO: ^^^ try to get 128-bit parent.TraceId above
+            // if 128-bit trace ids are enabled, also use full uint64 for span id,
+            // otherwise keep using the legacy so-called uint63s.
+            var useAllBits = traceContext?.Tracer?.Settings?.TraceId128BitGenerationEnabled ?? false;
 
-            // if 128-bit trace ids are not enabled, use legacy span ids (so-called uint63)
-            var legacySpanId = !(traceContext?.Tracer?.Settings?.TraceId128BitGenerationEnabled ?? false);
-            SpanId = spanId == 0 ? RandomIdGenerator.Shared.NextSpanId(legacySpanId) : spanId;
+            SpanId = spanId > 0 ? spanId : RandomIdGenerator.Shared.NextSpanId(useAllBits);
             Parent = parent;
             TraceContext = traceContext;
 
@@ -141,6 +142,9 @@ namespace Datadog.Trace
 
         private SpanContext(TraceId traceId, string serviceName)
         {
+            // In this ctor we don't know if 128-bits are enabled or not, so use the default value "false".
+            // To get around this, make sure the trace id is set
+            // before getting here so this ctor doesn't need to generate it.
             TraceId128 = traceId == 0
                           ? RandomIdGenerator.Shared.NextTraceId(useAllBits: false)
                           : traceId;
@@ -365,6 +369,19 @@ namespace Datadog.Trace
                     value = null;
                     return false;
             }
+        }
+
+        private static TraceId GetTraceId(ISpanContext context, TraceId fallback)
+        {
+            return context switch
+                   {
+                       // use the 128-bit TraceId if possible
+                       SpanContext sc => sc.TraceId,
+                       // otherwise use the 64-bit ulong
+                       not null => context.TraceId,
+                       // if no context, use the specified fallback value
+                       null => fallback
+                   };
         }
 
         /// <summary>
