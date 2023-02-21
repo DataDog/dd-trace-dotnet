@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             span.SetTag(Tags.Version, "1.0.0");
             span.SetTraceSamplingPriority(samplingPriority);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", span);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", span.Context);
 
             Assert.Equal(expectedComment, returnedComment);
         }
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             span.SetTag(Tags.Version, version);
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, "Test.Service", span);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, "Test.Service", span.Context);
 
             Assert.Equal(expectedComment, returnedComment);
         }

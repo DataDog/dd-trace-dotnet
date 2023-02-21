@@ -17,7 +17,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
 
-        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, Span span)
+        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context)
         {
             if (propagationStyle == DbmPropagationLevel.Disabled)
             {
@@ -25,21 +25,21 @@ namespace Datadog.Trace.DatabaseMonitoring
             }
 
             var propagatorSringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            propagatorSringBuilder.Append($"/*{SqlCommentRootService}='{configuredServiceName}',{SqlCommentSpanService}='{span.ServiceName}'");
+            propagatorSringBuilder.Append($"/*{SqlCommentRootService}='{configuredServiceName}',{SqlCommentSpanService}='{context.ServiceName}'");
 
-            if (span.GetTag(Tags.Version) is { } versionTag)
+            if (context.TraceContext?.ServiceVersion is { } versionTag)
             {
                 propagatorSringBuilder.Append($",{SqlCommentVersion}='{versionTag}'");
             }
 
-            if (span.GetTag(Tags.Env) is { } envTag)
+            if (context.TraceContext?.Environment is { } envTag)
             {
                 propagatorSringBuilder.Append($",{SqlCommentEnv}='{envTag}'");
             }
 
             if (propagationStyle == DbmPropagationLevel.Full)
             {
-                propagatorSringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(span.Context)}'*/");
+                propagatorSringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(context)}'*/");
             }
             else
             {
