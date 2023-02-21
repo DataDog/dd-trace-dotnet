@@ -18,4 +18,6 @@ internal class Data
     public long? Expiration { get; set; }
 
     public string? Value { get; set; }
+
+    public List<KeyValuePair<string, object?>> ToKeyValuePair() => new() { new("expiration", Expiration), new("value", Value) };
 }

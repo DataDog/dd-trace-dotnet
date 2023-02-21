@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
+using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -155,7 +155,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
         }
 
-        private Obj GetConfigObj(string rulesFile, List<Obj> argCache)
+        internal Obj GetConfigObj(string rulesFile, List<Obj> argCache)
         {
             Obj configObj;
             try
@@ -187,7 +187,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return configObj;
         }
 
-        private Obj GetConfigObjFromRemoteJson(string rulesJson, List<Obj> argCache)
+        internal Obj GetConfigObjFromRemoteJson(string rulesJson, List<Obj> argCache)
         {
             Obj configObj;
             try
@@ -205,7 +205,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return configObj;
         }
 
-        private Obj GetConfigObj(TextReader reader, List<Obj> argCache)
+        internal Obj GetConfigObj(TextReader reader, List<Obj> argCache)
         {
             using var jsonReader = new JsonTextReader(reader);
             var root = JToken.ReadFrom(jsonReader);

@@ -7,11 +7,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
+using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -22,13 +24,15 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
-        private readonly IntPtr _wafHandle;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
+        private readonly WafConfigurator _wafConfigurator;
+        private IntPtr _wafHandle;
 
         internal Waf(IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker)
         {
             _wafLibraryInvoker = wafLibraryInvoker;
             _wafHandle = wafHandle;
+            _wafConfigurator = new WafConfigurator(_wafLibraryInvoker);
         }
 
         ~Waf()
@@ -67,6 +71,28 @@ namespace Datadog.Trace.AppSec.Waf
             return initializationResult;
         }
 
+        public bool UpdateRules(string rules)
+        {
+            var argCache = new List<Obj>();
+            using var rulesObj = _wafConfigurator.GetConfigObjFromRemoteJson(rules, argCache);
+            var rulesetInfo = default(DdwafRuleSetInfoStruct);
+            var result = _wafLibraryInvoker.Update(_wafHandle, rulesObj.RawPtr, ref rulesetInfo);
+            return UpdateWafHandle(result);
+        }
+
+        private bool UpdateWafHandle(IntPtr result)
+        {
+            if (result != IntPtr.Zero)
+            {
+                var oldHandle = _wafHandle;
+                _wafHandle = result;
+                _wafLibraryInvoker.Destroy(oldHandle);
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Requires a non disposed waf handle
         /// </summary>
@@ -92,7 +118,7 @@ namespace Datadog.Trace.AppSec.Waf
         }
 
         // Requires a non disposed waf handle
-        public bool UpdateRulesData(IEnumerable<RuleData> res)
+        public bool UpdateRulesData(List<RuleData> rulesData)
         {
             if (Disposed)
             {
@@ -100,16 +126,18 @@ namespace Datadog.Trace.AppSec.Waf
                 return false;
             }
 
-            if (res.Count() == 0)
+            if (rulesData.Count == 0)
             {
                 return false;
             }
 
-            var finalRuleDatas = MergeRuleData(res);
-            using var encoded = Encoder.Encode(finalRuleDatas, _wafLibraryInvoker, new List<Obj>(), false);
-            var ret = _wafLibraryInvoker.UpdateRuleData(_wafHandle, encoded.RawPtr);
-            Log.Information("{Number} rules have been updated and waf status is {Status}", finalRuleDatas.Count, ret);
-            return ret == DDWAF_RET_CODE.DDWAF_OK;
+            var mergedRuleData = MergeRuleData(rulesData);
+            using var encoded = mergedRuleData.Encode(_wafLibraryInvoker);
+            DdwafRuleSetInfoStruct ruleSetInfo = default;
+            var result = _wafLibraryInvoker.Update(_wafHandle, encoded.RawPtr, ref ruleSetInfo);
+            var updated = UpdateWafHandle(result);
+            Log.Information("{Number} rules have been updated and waf has been updated: {Updated}", mergedRuleData.Count, updated);
+            return updated;
         }
 
         /// <summary>
@@ -117,7 +145,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         /// <param name="ruleStatus">whether rules have been toggled</param>
         /// <returns>whether or not rules were toggled</returns>
-        public bool ToggleRules(IDictionary<string, bool> ruleStatus)
+        public bool UpdateRulesStatus(List<RuleOverride> ruleStatus)
         {
             if (Disposed)
             {
@@ -130,45 +158,41 @@ namespace Datadog.Trace.AppSec.Waf
                 return false;
             }
 
-            using var encoded = Encoder.Encode(ruleStatus, _wafLibraryInvoker);
-            var ret = _wafLibraryInvoker.ToggleRules(_wafHandle, encoded.RawPtr);
-            Log.Information("{Number} rule status have been updated and waf status is {Status}", ruleStatus.Count, ret);
-            return ret == DDWAF_RET_CODE.DDWAF_OK;
+            using var encoded = ruleStatus.Encode(_wafLibraryInvoker);
+            var ruleSetInfo = default(DdwafRuleSetInfoStruct);
+            var result = _wafLibraryInvoker.Update(_wafHandle, encoded.RawPtr, ref ruleSetInfo);
+            var updated = UpdateWafHandle(result);
+            Log.Information("{Number} rule status have been updated and waf has been updated: {Updated}", ruleStatus.Count, updated);
+            return updated;
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
         public DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => _wafLibraryInvoker.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
 
-        internal static List<object> MergeRuleData(IEnumerable<RuleData> res)
+        internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
         {
             if (res == null)
             {
                 throw new ArgumentNullException(nameof(res));
             }
 
-            var finalRuleDatas = new List<object>();
+            var finalRuleDatas = new List<RuleData>();
             var groups = res.GroupBy(r => r.Id + r.Type);
             foreach (var ruleDatas in groups)
             {
                 var datasByValue = ruleDatas.SelectMany(d => d.Data!).GroupBy(d => d.Value);
-                var mergedDatas = new List<object>();
+                var mergedDatas = new List<Data>();
                 foreach (var data in datasByValue)
                 {
                     var longestLastingIp = data.OrderByDescending(d => d.Expiration ?? long.MaxValue).First();
-                    var dataIp = new Dictionary<string, object>();
-                    if (longestLastingIp.Expiration.HasValue)
-                    {
-                        dataIp.Add("expiration", longestLastingIp.Expiration.Value);
-                    }
-
-                    dataIp.Add("value", longestLastingIp.Value!);
-                    mergedDatas.Add(dataIp);
+                    mergedDatas.Add(longestLastingIp);
                 }
 
                 var ruleData = ruleDatas.FirstOrDefault();
                 if (ruleData != null && !string.IsNullOrEmpty(ruleData.Type) && !string.IsNullOrEmpty(ruleData.Id))
                 {
-                    finalRuleDatas.Add(new Dictionary<string, object> { { "id", ruleData.Id! }, { "type", ruleData.Type! }, { "data", mergedDatas } });
+                    ruleData.Data = mergedDatas.ToArray();
+                    finalRuleDatas.Add(ruleData);
                 }
             }
 

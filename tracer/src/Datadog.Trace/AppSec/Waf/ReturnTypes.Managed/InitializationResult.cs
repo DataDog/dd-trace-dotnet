@@ -11,7 +11,7 @@ using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
+namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal class InitializationResult
     {
