@@ -26,7 +26,7 @@ namespace Benchmarks.Trace
             else
             {
                 var config = DefaultConfig.Instance
-                    .AddExporter(DatadogExporter.Default)
+                    .WithDatadog()
                     .AddExporter(JsonExporter.FullCompressed);
                 // config = config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
                 var agentName = Environment.GetEnvironmentVariable("AGENT_NAME");

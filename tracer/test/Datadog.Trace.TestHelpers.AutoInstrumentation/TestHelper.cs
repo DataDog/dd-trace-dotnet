@@ -373,7 +373,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void EnableIast(bool enable = true)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString().ToLower());
         }
 
         public void DisableObfuscationQueryString()
