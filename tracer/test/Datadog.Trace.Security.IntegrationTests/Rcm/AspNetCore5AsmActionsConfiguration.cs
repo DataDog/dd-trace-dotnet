@@ -55,6 +55,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans2);
             await VerifySpans(spans.ToImmutableList(), settings);
             // need to reset if the process is going to be reused
+            acknowledgedId = nameof(TestBlockingAction) + Guid.NewGuid();
             await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, acknowledgedId) }, AsmProduct, appliedServiceNames: new[] { acknowledgedId });
         }
 
