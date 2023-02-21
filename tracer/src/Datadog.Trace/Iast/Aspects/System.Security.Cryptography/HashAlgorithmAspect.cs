@@ -5,8 +5,9 @@
 
 #if NETFRAMEWORK
 
+#nullable enable
+
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
