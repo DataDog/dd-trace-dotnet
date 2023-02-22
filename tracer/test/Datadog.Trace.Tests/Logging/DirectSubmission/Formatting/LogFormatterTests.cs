@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -46,7 +47,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                 settings,
                 serviceName: Service,
                 env: Env,
-                version: Version);
+                version: Version,
+                new NullGitMetadataProvider());
 
             _sb = new StringBuilder();
             _writer = LogFormatter.GetJsonWriter(_sb);
