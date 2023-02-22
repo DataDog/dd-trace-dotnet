@@ -210,14 +210,15 @@ public partial class StringAspects
 
         try
         {
-            var valuesList = values.Cast<object>();
-            return StringModuleImpl.OnStringConcat(values, string.Concat(valuesList));
+            valuesConverted = values.Cast<object>();
         }
         catch
         {
-            // This sould never happen, but just in case, we return the concat...
-            Log.Warning("Reached the end of the aspect System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)");
+            // This sould never happen.
+            Log.Warning("Cannot process values in System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)");
             return string.Concat(values);
         }
+
+        return StringModuleImpl.OnStringConcat(values, string.Concat(valuesConverted));
     }
 }
