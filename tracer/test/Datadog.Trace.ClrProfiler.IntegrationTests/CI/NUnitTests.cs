@@ -80,6 +80,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Remove decision maker tag (not used by the backend for civisibility)
                             targetSpan.Tags.Remove(Tags.Propagated.DecisionMaker);
 
+                            // Remove git metadata added by the apm agent writer.
+                            targetSpan.Tags.Remove(Tags.GitCommitSha);
+                            targetSpan.Tags.Remove(Tags.GitRepositoryUrl);
+
                             // check the name
                             Assert.Equal("nunit.test", targetSpan.Name);
 
