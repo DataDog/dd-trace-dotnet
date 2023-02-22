@@ -348,10 +348,20 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 }
 
                 writer.WritePropertyName("dd.trace_id", escape: false);
-                writer.WriteValue($"{span.TraceId}");
+
+                if (span is Span { TraceId.Upper: > 0 } s)
+                {
+                    // 128-bit trace ids are encoded as hex
+                    writer.WriteValue(s.Context.RawTraceId);
+                }
+                else
+                {
+                    // 64-bit trace ids and span ids are encoded as decimal
+                    writer.WriteValue(span.TraceId);
+                }
 
                 writer.WritePropertyName("dd.span_id", escape: false);
-                writer.WriteValue($"{span.SpanId}");
+                writer.WriteValue(span.SpanId);
 
                 if (span.GetTag(TestTags.Suite) is { } suite)
                 {
