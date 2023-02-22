@@ -37,6 +37,9 @@ internal readonly struct TraceChunkModel
     public readonly string? Environment = null;
 
     public readonly string? ServiceVersion = null;
+    public readonly string? GitRepositoryUrl = null;
+
+    public readonly string? GitCommitSha = null;
 
     public readonly string? Origin = null;
 
@@ -82,6 +85,12 @@ internal readonly struct TraceChunkModel
             Tags = traceContext.Tags;
             IsRunningInAzureAppService = traceContext.Tracer?.Settings?.IsRunningInAzureAppService ?? false;
             AzureAppServiceSettings = traceContext.Tracer?.Settings?.AzureAppServiceMetadata ?? null;
+            if (traceContext.Tracer?.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
+                gitMetadata != GitMetadata.Empty)
+            {
+                GitRepositoryUrl = gitMetadata.RepositoryUrl;
+                GitCommitSha = gitMetadata.CommitSha;
+            }
         }
     }
 
