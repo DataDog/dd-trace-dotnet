@@ -138,6 +138,12 @@ namespace Datadog.Trace
         public const string Language = "language";
 
         /// <summary>
+        /// Pseudo-tag used to expose the complete trace id as a hex string.
+        /// The string will have length 16 for 64-bit trace ids and length 32 for 128-bit trace ids.
+        /// </summary>
+        internal const string TraceId = "trace.id";
+
+        /// <summary>
         /// The git commit hash of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitCommitSha"/>.

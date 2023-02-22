@@ -394,6 +394,8 @@ namespace Datadog.Trace
                     return Context.TraceContext?.ServiceVersion;
                 case Trace.Tags.Origin:
                     return Context.TraceContext?.Origin;
+                case Trace.Tags.TraceId:
+                    return Context.RawTraceId;
                 default:
                     return Tags.GetTag(key);
             }
