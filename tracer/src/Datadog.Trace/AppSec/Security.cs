@@ -285,10 +285,20 @@ namespace Datadog.Trace.AppSec
             if (!string.IsNullOrEmpty(asmDd.TypedFile))
             {
                 _remoteConfigurationStatus.RemoteRulesJson = asmDd.TypedFile;
-                _waf?.UpdateRules(_remoteConfigurationStatus.RemoteRulesJson);
+                var result = _waf?.UpdateRules(_remoteConfigurationStatus.RemoteRulesJson);
+                if (result ?? false)
+                {
+                    e.Acknowledge(asmDd.Name);
+                }
+                else
+                {
+                    e.Error(asmDd.Name, "An error happened updating waf rules");
+                }
             }
-
-            e.Acknowledge(asmDd.Name);
+            else
+            {
+                e.Acknowledge(asmDd.Name);
+            }
         }
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)

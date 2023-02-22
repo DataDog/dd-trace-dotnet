@@ -19,5 +19,14 @@ internal class Data
 
     public string? Value { get; set; }
 
-    public List<KeyValuePair<string, object?>> ToKeyValuePair() => new() { new("expiration", Expiration), new("value", Value) };
+    public List<KeyValuePair<string, object?>> ToKeyValuePair()
+    {
+        List<KeyValuePair<string, object?>> data = new() { new("value", Value) };
+        if (Expiration.HasValue)
+        {
+            data.Add(new("expiration", Expiration));
+        }
+
+        return data;
+    }
 }

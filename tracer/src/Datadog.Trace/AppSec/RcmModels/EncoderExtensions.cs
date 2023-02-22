@@ -22,7 +22,7 @@ internal static class EncoderExtensions
 
     internal static Obj Encode(this List<RuleOverride> ruleStatus, WafLibraryInvoker wafLibraryInvoker)
     {
-        var dictionary = new Dictionary<string, object> { { "rules_override", ruleStatus.Select(r => r.ToKeyValuePair()) } };
+        var dictionary = new Dictionary<string, object> { { "rules_override", ruleStatus.Select(r => r.ToKeyValuePair()).ToArray() } };
         return Encoder.Encode(dictionary, wafLibraryInvoker, new List<Obj>(), true);
     }
 }

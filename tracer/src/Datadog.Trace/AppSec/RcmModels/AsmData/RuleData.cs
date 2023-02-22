@@ -17,5 +17,5 @@ internal class RuleData
 
     public Data[]? Data { get; set; }
 
-    public List<KeyValuePair<string, object?>> ToKeyValuePair() => new() { new("type", Type), new("id", Id), new("data", Data?.Select(d => d.ToKeyValuePair())) };
+    public List<KeyValuePair<string, object?>> ToKeyValuePair() => new() { new("type", Type), new("id", Id), new("data", Data?.Select(d => d.ToKeyValuePair()).ToArray()) };
 }

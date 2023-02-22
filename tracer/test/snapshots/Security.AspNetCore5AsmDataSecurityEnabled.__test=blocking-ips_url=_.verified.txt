@@ -60,7 +60,7 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.event_rules.version: 1.5.0,
+      _dd.appsec.event_rules.version: 1.5.1,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"blk-001-001","name":"Block IP Addresses","tags":{"category":"security_response","type":"block_ip"}},"rule_matches":[{"operator":"ip_match","operator_value":"","parameters":[{"address":"http.client_ip","highlight":["86.242.244.246"],"key_path":[],"value":"86.242.244.246"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
