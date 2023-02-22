@@ -52,7 +52,7 @@ namespace Datadog.Trace.Configuration
             // create dictionary copy without "env", "version", "git.commit.sha" or "git.repository.url" tags
             // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
             // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
-            var globalTags = new Dictionary<string, string>();
+            var globalTags = new Dictionary<string, string>(settings.GlobalTags.Count);
             foreach (var kvp in settings.GlobalTags)
             {
                 if (kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))

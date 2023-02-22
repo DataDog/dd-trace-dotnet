@@ -99,12 +99,13 @@ namespace Datadog.Trace.Configuration
                          // backwards compatibility for names used in the past
                          source?.GetDictionary("DD_TRACE_GLOBAL_TAGS") ??
                          // default value (empty)
-                         new ConcurrentDictionary<string, string>();
+                         new Dictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespace
-            if (GlobalTags.Count > 0)
+            var globalTagsCount = GlobalTags.Count;
+            if (globalTagsCount > 0)
             {
-                var globalTags = new Dictionary<string, string>();
+                var globalTags = new Dictionary<string, string>(globalTagsCount);
                 foreach (var kvp in GlobalTags)
                 {
                     if (!string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
@@ -127,7 +128,7 @@ namespace Datadog.Trace.Configuration
             Dictionary<string, string> serviceNameMappings;
             if (source?.GetDictionary(ConfigurationKeys.ServiceNameMappings) is { Count: > 0 } tmpServiceNameMappings)
             {
-                var sNameMaps = new Dictionary<string, string>();
+                var sNameMaps = new Dictionary<string, string>(tmpServiceNameMappings.Count);
                 foreach (var kvp in tmpServiceNameMappings)
                 {
                     if (!string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))

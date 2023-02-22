@@ -125,7 +125,7 @@ namespace Datadog.Trace.AspNet
 
                 HttpRequest httpRequest = httpContext.Request;
                 SpanContext propagatedContext = null;
-                var tagsFromHeaders = (IEnumerable<KeyValuePair<string, string>>)Array.Empty<KeyValuePair<string, string>>();
+                IEnumerable<KeyValuePair<string, string>> tagsFromHeaders = Array.Empty<KeyValuePair<string, string>>();
                 if (tracer.InternalActiveScope == null)
                 {
                     try
