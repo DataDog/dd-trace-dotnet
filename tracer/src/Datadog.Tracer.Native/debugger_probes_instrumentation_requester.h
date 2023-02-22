@@ -12,6 +12,7 @@ namespace debugger
 class DebuggerProbesInstrumentationRequester
 {
 private:
+    CorProfiler* m_corProfiler;
     std::recursive_mutex m_probes_mutex;
     std::vector<ProbeDefinition_S> m_probes;
     std::unique_ptr<DebuggerRejitPreprocessor> m_debugger_rejit_preprocessor = nullptr;
@@ -29,8 +30,10 @@ private:
                        std::set<MethodIdentifier>& rejitRequests);
     void DetermineReInstrumentProbes(std::set<MethodIdentifier>& revertRequests, std::set<MethodIdentifier>& reInstrumentRequests) const;
 
+    bool ProbeIdExists(const WCHAR* probeId);
+
 public:
-    DebuggerProbesInstrumentationRequester(std::shared_ptr<trace::RejitHandler> rejit_handler,
+    DebuggerProbesInstrumentationRequester(CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
                                            std::shared_ptr<trace::RejitWorkOffloader> work_offloader);
 
     void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,

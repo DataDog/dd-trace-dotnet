@@ -58,7 +58,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 probeType,
                 location,
                 evaluateAt,
-                HasCondition());
+                HasCondition(),
+                probe.Tags);
         }
 
         internal ProbeInfo ProbeInfo { get; }
@@ -212,7 +213,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
             catch (Exception e)
             {
-                Log.Error(e, "Failed to process probe. Probe Id: " + ProbeInfo.ProbeId);
+                Log.Error(e, "Failed to process probe. Probe Id: {ProbeId}", ProbeInfo.ProbeId);
                 return false;
             }
         }
@@ -223,12 +224,18 @@ namespace Datadog.Trace.Debugger.Expressions
             shouldStopCapture = false;
             try
             {
+                if (ProbeInfo.ProbeType != ProbeType.Metric)
+                {
+                    // we taking the duration at the evaluation time - this might be different from what we have in the snapshot
+                    snapshotCreator.SetDuration();
+                }
+
                 evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers);
             }
             catch (Exception e)
             {
                 // if the evaluation failed stop capturing
-                Log.Error(e, "Failed to evaluate expression for probe: " + ProbeInfo.ProbeId);
+                Log.Error(e, "Failed to evaluate expression for probe: {ProbeId}", ProbeInfo.ProbeId);
                 snapshotCreator.Stop();
                 shouldStopCapture = true;
                 return evaluationResult;
@@ -270,7 +277,8 @@ namespace Datadog.Trace.Debugger.Expressions
                     continue;
                 }
 
-                snapshotCreator.AddScopeMember(arg.Name, arg.FieldType, arg.GetValue(asyncCaptureInfo.MoveNextInvocationTarget), ScopeMemberKind.Argument);
+                var argValue = arg.GetValue(asyncCaptureInfo.MoveNextInvocationTarget);
+                snapshotCreator.AddScopeMember(arg.Name, argValue?.GetType() ?? arg.FieldType, argValue, ScopeMemberKind.Argument);
             }
         }
 
@@ -285,7 +293,8 @@ namespace Datadog.Trace.Debugger.Expressions
                     continue;
                 }
 
-                snapshotCreator.AddScopeMember(local.SanitizedName, local.Field.FieldType, local.Field.GetValue(asyncCaptureInfo.MoveNextInvocationTarget), ScopeMemberKind.Local);
+                var localValue = local.Field.GetValue(asyncCaptureInfo.MoveNextInvocationTarget);
+                snapshotCreator.AddScopeMember(local.SanitizedName, localValue?.GetType() ?? local.Field.FieldType, localValue, ScopeMemberKind.Local);
             }
         }
 

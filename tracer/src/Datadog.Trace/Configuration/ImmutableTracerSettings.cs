@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
@@ -37,42 +38,24 @@ namespace Datadog.Trace.Configuration
         public ImmutableTracerSettings(TracerSettings settings)
         {
             // DD_ENV has precedence over DD_TAGS
-            if (!string.IsNullOrWhiteSpace(settings.Environment))
-            {
-                Environment = settings.Environment.Trim();
-            }
-            else
-            {
-                var env = settings.GlobalTags.GetValueOrDefault(Tags.Env);
-
-                if (!string.IsNullOrWhiteSpace(env))
-                {
-                    Environment = env.Trim();
-                }
-            }
+            Environment = GetExplicitSettingOrTag(settings.Environment, settings.GlobalTags, Tags.Env);
 
             // DD_VERSION has precedence over DD_TAGS
-            if (!string.IsNullOrWhiteSpace(settings.ServiceVersion))
-            {
-                ServiceVersion = settings.ServiceVersion.Trim();
-            }
-            else
-            {
-                var version = settings.GlobalTags.GetValueOrDefault(Tags.Version);
+            ServiceVersion = GetExplicitSettingOrTag(settings.ServiceVersion, settings.GlobalTags, Tags.Version);
 
-                if (!string.IsNullOrWhiteSpace(version))
-                {
-                    ServiceVersion = version.Trim();
-                }
-            }
+            // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
+            GitCommitSha = GetExplicitSettingOrTag(settings.GitCommitSha, settings.GlobalTags, CommonTags.GitCommit);
 
-            // create dictionary copy without "env" or "version",
-            // these value are used for "Environment" and "ServiceVersion"
-            // or overriden with DD_ENV and DD_VERSION
+            // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
+            GitRepositoryUrl = GetExplicitSettingOrTag(settings.GitRepositoryUrl, settings.GlobalTags, CommonTags.GitRepository);
+
+            // create dictionary copy without "env", "version", "git.commit.sha" or "git.repository.url" tags
+            // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
+            // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
             var globalTags = new Dictionary<string, string>();
             foreach (var kvp in settings.GlobalTags)
             {
-                if (kvp.Key is not (Tags.Env or Tags.Version))
+                if (kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
                 {
                     globalTags[kvp.Key] = kvp.Value;
                 }
@@ -80,6 +63,7 @@ namespace Datadog.Trace.Configuration
 
             GlobalTags = new ReadOnlyDictionary<string, string>(globalTags);
 
+            GitMetadataEnabled = settings.GitMetadataEnabled;
             ServiceName = settings.ServiceName;
             TraceEnabled = settings.TraceEnabled;
             Exporter = new ImmutableExporterSettings(settings.Exporter);
@@ -137,6 +121,19 @@ namespace Datadog.Trace.Configuration
 
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
+
+            static string GetExplicitSettingOrTag(string explicitSetting, IDictionary<string, string> globalTags, string tag)
+            {
+                if (!string.IsNullOrWhiteSpace(explicitSetting))
+                {
+                    return explicitSetting.Trim();
+                }
+                else
+                {
+                    var version = globalTags.GetValueOrDefault(tag);
+                    return string.IsNullOrWhiteSpace(version) ? null : version.Trim();
+                }
+            }
         }
 
         /// <summary>
@@ -156,6 +153,25 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
         public string ServiceVersion { get; }
+
+        /// <summary>
+        /// Gets the application's git repository url.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
+        internal string GitRepositoryUrl { get; }
+
+        /// <summary>
+        /// Gets the application's git commit hash.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
+        internal string GitCommitSha { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether we should tag every telemetry event with git metadata.
+        /// Defaul value is true (enabled).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>
+        internal bool GitMetadataEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether tracing is enabled.

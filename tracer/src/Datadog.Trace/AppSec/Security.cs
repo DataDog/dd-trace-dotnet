@@ -30,7 +30,6 @@ namespace Datadog.Trace.AppSec
         private static Security _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
-        private readonly Concurrency.ReaderWriterLock _wafLocker = new();
         private readonly SecuritySettings _settings;
         private LibraryInitializationResult _libraryInitializationResult;
         private IWaf _waf;
@@ -128,7 +127,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error adding CallTarget AppSec integration definitions to native library");
             }
 
             try
@@ -140,10 +139,10 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error adding CallTarget appsec derived integration definitions to native library");
             }
 
-            Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions added to the profiler.");
+            Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions added to the profiler.", defs, derived);
         }
 
         private static void RemoveAppsecSpecificInstrumentations()
@@ -158,7 +157,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error removing CallTarget AppSec integration definitions from native library");
             }
 
             try
@@ -170,10 +169,10 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error removing CallTarget appsec derived integration definitions from native library");
             }
 
-            Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions removed from the profiler.");
+            Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions removed from the profiler.", defs, derived);
         }
 
         /// <summary> Frees resources </summary>
@@ -304,7 +303,7 @@ namespace Datadog.Trace.AppSec
         {
             if (ruleStatus is { Count: > 0 } && !(_waf?.ToggleRules(ruleStatus) ?? false))
             {
-                Log.Debug($"_waf.ToggleRules returned false ({ruleStatus.Count} rule status entries)");
+                Log.Debug<int>("_waf.ToggleRules returned false ({Count} rule status entries)", ruleStatus.Count);
             }
         }
 
@@ -328,28 +327,17 @@ namespace Datadog.Trace.AppSec
                 _wafInitializationResult = Waf.Waf.Create(_wafLibraryInvoker, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
                 if (_wafInitializationResult.Success)
                 {
-                    if (_wafLocker.EnterWriteLock())
-                    {
-                        var oldWaf = _waf;
-                        _waf = _wafInitializationResult.Waf;
-                        oldWaf?.Dispose();
-                        _wafLocker.ExitWriteLock();
-                        Log.Debug("Disposed old waf and affected new waf");
-                        UpdateRulesData();
-                        AddInstrumentationsAndProducts(fromRemoteConfig);
-                    }
-                    else
-                    {
-                        _wafInitializationResult.Waf?.Dispose();
-                        Log.Warning("Could not replace waf because the writer lock couldn't be acquired within the specified timeout {timeout}", Concurrency.ReaderWriterLock.TimeoutInMs.ToString());
-                    }
+                    var oldWaf = _waf;
+                    _waf = _wafInitializationResult.Waf;
+                    oldWaf?.Dispose();
+                    Log.Debug("Disposed old waf and affected new waf");
+                    UpdateRulesData();
+                    AddInstrumentationsAndProducts(fromRemoteConfig);
                 }
                 else
                 {
-                    _wafLocker.EnterWriteLock();
                     _waf?.Dispose();
                     _wafInitializationResult.Waf?.Dispose();
-                    _wafLocker.ExitWriteLock();
                     _settings.Enabled = false;
                 }
             }
@@ -372,7 +360,7 @@ namespace Datadog.Trace.AppSec
 
                 _enabled = true;
 
-                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
+                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
 
@@ -386,7 +374,7 @@ namespace Datadog.Trace.AppSec
 
                 _enabled = false;
 
-                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
+                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
 
@@ -404,7 +392,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal IContext CreateAdditiveContext() => _waf?.CreateContext(_wafLocker);
+        internal IContext CreateAdditiveContext() => _waf?.CreateContext();
 
         private void RunShutdown()
         {
@@ -412,7 +400,6 @@ namespace Datadog.Trace.AppSec
             AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged -= AsmDDProductConfigChanged;
-            _wafLocker.Dispose();
             Dispose();
         }
     }

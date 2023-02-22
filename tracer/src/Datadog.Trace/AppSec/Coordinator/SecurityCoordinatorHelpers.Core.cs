@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
-internal static partial class SecurityCoordinatorHelpers
+internal static class SecurityCoordinatorHelpers
 {
     internal static void CheckAndBlock(this Security security, HttpContext context, Span span)
     {

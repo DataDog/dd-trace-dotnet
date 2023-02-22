@@ -23,6 +23,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
     public class CodeHotspotTest
     {
         private const string ScenarioCodeHotspot = "--scenario 2";
+        private const string ScenarioExceptions = "--scenario 16";
         private static readonly Regex RuntimeIdPattern = new("runtime-id:(?<runtimeId>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
         private readonly ITestOutputHelper _output;
 
@@ -130,7 +131,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckSpanContextAreAttachedForCpuProfiler(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 6");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioExceptions);
             // By default, the codehotspot feature is activated
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");

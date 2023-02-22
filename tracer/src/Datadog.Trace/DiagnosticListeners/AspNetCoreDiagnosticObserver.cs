@@ -693,7 +693,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (security.Settings.Enabled)
                 {
                     var transport = new SecurityCoordinator(security, httpContext, span);
-                    transport.Cleanup();
+                    transport.AddResponseHeadersToSpanAndCleanup();
+                }
+                else
+                {
+                    // remember security could have been disabled while a request is still executed
+                    new SecurityCoordinator.HttpTransport(httpContext).DisposeAdditiveContext();
                 }
 
                 scope.Dispose();

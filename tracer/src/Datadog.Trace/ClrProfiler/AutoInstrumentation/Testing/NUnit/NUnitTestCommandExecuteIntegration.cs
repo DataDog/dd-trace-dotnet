@@ -47,7 +47,7 @@ public static class NUnitTestCommandExecuteIntegration
         var testResult = executionContext.CurrentResult;
         if (testResult.ResultState.Status == TestStatus.Failed && executionContext.CurrentTest.TestType == NUnitIntegration.TestSuiteConst)
         {
-            CIVisibility.Log.Warning($"{typeof(TTarget).FullName} | {executionContext.CurrentTest.TestType} | {executionContext.CurrentTest.FullName} | {executionContext.CurrentResult.Message} | {executionContext.CurrentResult.ResultState.Status} | {executionContext.CurrentResult.ResultState.Site}");
+            CIVisibility.Log.Warning("{FullName} | {TestType} | {TestName} | {Message} | {Status} | {Site}", new object[] { typeof(TTarget).FullName, executionContext.CurrentTest.TestType, executionContext.CurrentTest.FullName, executionContext.CurrentResult.Message, executionContext.CurrentResult.ResultState.Status, executionContext.CurrentResult.ResultState.Site });
 
             if (NUnitIntegration.GetTestSuiteFrom(executionContext.CurrentTest) is { } suite)
             {

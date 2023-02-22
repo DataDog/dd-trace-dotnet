@@ -13,44 +13,43 @@ namespace Datadog.Trace.Ci.Processors;
 internal class TestSuiteVisibilityProcessor : ITraceProcessor
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestSuiteVisibilityProcessor>();
-    private readonly bool _isCiVisibilityProtocol = false;
 
-    public TestSuiteVisibilityProcessor(bool isCiVisibilityProtocol)
+    public TestSuiteVisibilityProcessor()
     {
-        _isCiVisibilityProtocol = isCiVisibilityProtocol;
-
         Log.Information("TestSuiteVisibilityProcessor initialized.");
     }
 
     public ArraySegment<Span> Process(ArraySegment<Span> trace)
     {
         // Check if the trace has any span or Agentless is enabled
-        if (trace.Count == 0 || _isCiVisibilityProtocol)
+        if (trace.Count == 0)
         {
             return trace;
         }
 
-        List<Span> lstSpan = new();
+        Span[] spans = null;
+        var spIdx = 0;
         for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
         {
             var span = trace.Array![i];
             if (Process(span) is { } processedSpan)
             {
-                lstSpan.Add(processedSpan);
+                spans ??= new Span[trace.Count];
+                spans[spIdx++] = processedSpan;
             }
             else
             {
-                Log.Warning("Span dropped because Test suite visibility is not supported without Agentless [Span.Type={type}]", span.Type);
+                Log.Warning("Span dropped because Test suite visibility is not supported without Agentless [Span.Type={Type}]", span.Type);
             }
         }
 
-        return new ArraySegment<Span>(lstSpan.ToArray());
+        return spans is null ? new ArraySegment<Span>(Array.Empty<Span>()) : new ArraySegment<Span>(spans, 0, spIdx);
     }
 
     public Span Process(Span span)
     {
         // If agentless is enabled we don't filter anything.
-        if (span is null || _isCiVisibilityProtocol)
+        if (span is null)
         {
             return span;
         }

@@ -36,16 +36,17 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf!.Should().NotBeNull();
             var res = waf!.UpdateRulesData(rulesData!);
             res.Should().BeTrue();
-            var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
-            using var context = waf.CreateContext(readwriteLocker);
+            using var context = waf.CreateContext();
             var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
-            result.ReturnCode.Should().Be(ReturnCode.Match);
-            result.Actions.Should().NotBeEmpty();
-            result.Actions.Should().Contain("block");
+            result.Should().NotBeNull();
+            result!.ReturnCode.Should().Be(ReturnCode.Match);
+            result!.Actions.Should().NotBeEmpty();
+            result!.Actions.Should().Contain("block");
             result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);
-            result.ReturnCode.Should().Be(ReturnCode.Ok);
+            result.Should().NotBeNull();
+            result!.ReturnCode.Should().Be(ReturnCode.Ok);
             result.Actions.Should().BeEmpty();
         }
 
@@ -78,12 +79,12 @@ namespace Datadog.Trace.Security.Unit.Tests
             var rulesData2 = js.Deserialize<RuleData[]>(jsonTextReader2);
             var res = waf!.UpdateRulesData(rulesData!.Concat(rulesData2!));
             res.Should().BeTrue();
-            using var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
-            using var context = waf.CreateContext(readwriteLocker);
+            using var context = waf.CreateContext();
             var result = context!.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);
-            result.ReturnCode.Should().Be(ReturnCode.Match);
+            result.Should().NotBeNull();
+            result!.ReturnCode.Should().Be(ReturnCode.Match);
             result.Actions.Should().NotBeEmpty();
             result.Actions.Should().Contain("block");
             result.ShouldBlock.Should().BeTrue();

@@ -26,7 +26,8 @@ namespace Datadog.Trace.TestHelpers
             (new(@"_dd.tracer_kr: \d\.\d+", RegOptions), "_dd.tracer_kr: 1.0"),
             (new(@"process_id: \d+\.0", RegOptions), "process_id: 0"),
             (new(@"http.client_ip: (.)*(?=,)", RegOptions), "http.client_ip: 127.0.0.1"),
-            (new(@"http.useragent: grpc-dotnet\/(.)*(?=,)", RegOptions), "http.useragent: grpc-dotnet/123")
+            (new(@"http.useragent: grpc-dotnet\/(.)*(?=,)", RegOptions), "http.useragent: grpc-dotnet/123"),
+            (new(@"git.commit.sha: [0-9a-f]{40}", RegOptions), "git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb")
         };
 
         private static readonly RegexOptions RegOptions = RegexOptions.IgnoreCase | RegexOptions.Compiled;

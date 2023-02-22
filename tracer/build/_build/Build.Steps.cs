@@ -58,7 +58,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.5.1";
+    const string LibDdwafVersion = "1.7.0";
 
     const string OlderLibDdwafVersion = "1.4.0";
 
@@ -88,6 +88,7 @@ partial class Build
     [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
     [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
     [LazyPathExecutable(name: "cppcheck")] readonly Lazy<Tool> CppCheck;
+    [LazyPathExecutable(name: "run-clang-tidy")] readonly Lazy<Tool> RunClangTidy;
 
     //OSX Tools
     readonly string[] OsxArchs = { "arm64", "x86_64" };
@@ -110,6 +111,7 @@ partial class Build
         Solution.GetProject(Projects.DatadogTrace),
         Solution.GetProject(Projects.DatadogTraceOpenTracing),
         Solution.GetProject(Projects.DatadogTraceAnnotations),
+        Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet),
     };
 
     Project[] ParallelIntegrationTests => new[]
@@ -155,6 +157,7 @@ partial class Build
             EnsureExistingDirectory(MonitoringHomeDirectory);
             EnsureExistingDirectory(ArtifactsDirectory);
             EnsureExistingDirectory(BuildDataDirectory);
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
             EnsureExistingDirectory(SymbolsDirectory);
         });
 
@@ -472,7 +475,8 @@ partial class Build
                         var (arch, _) = GetUnixArchitectureAndExtension();
                         var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
                         var source = MonitoringHomeDirectory / (IsOsx ? "osx" : arch);
-                        var oldVersionPath = oldVersionTempPath / "runtimes" / archWaf / "native" / $"libddwaf.{ext}";
+                        var patchedArchWaf = (IsOsx ? archWaf + "-x64" : archWaf);
+                        var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
                         foreach (var fmk in frameworks)
                         {
                             // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
@@ -2017,9 +2021,8 @@ partial class Build
     private (string Arch, string Ext) GetLibDdWafUnixArchitectureAndExtension() =>
         (IsOsx) switch
         {
-            // (true) => ($"osx-{UnixArchitectureIdentifier}", "dylib"), //LibDdWaf doesn't support osx-arm64 yet.
-            (true) => ($"osx-x64", "dylib"),
-            (false) => ($"linux-{UnixArchitectureIdentifier}", "so"), // LibDdWaf doesn't
+            (true) => ($"osx", "dylib"), // LibDdWaf is universal binary on osx
+            (false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
         };
 
     private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
@@ -2048,17 +2051,22 @@ partial class Build
 
     private void CopyDumpsToBuildData()
     {
+        CopyDumpsTo(BuildDataDirectory);
+    }
+
+    private void CopyDumpsTo(AbsolutePath root)
+    {
         if (Directory.Exists(TempDirectory))
         {
             foreach (var dump in GlobFiles(TempDirectory, "coredump*"))
             {
-                MoveFileToDirectory(dump, BuildDataDirectory / "dumps", FileExistsPolicy.Overwrite);
+                MoveFileToDirectory(dump, root / "dumps", FileExistsPolicy.Overwrite);
             }
         }
 
         foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))
         {
-            CopyFileToDirectory(file, BuildDataDirectory, FileExistsPolicy.OverwriteIfNewer);
+            CopyFileToDirectory(file, root, FileExistsPolicy.OverwriteIfNewer);
         }
     }
 

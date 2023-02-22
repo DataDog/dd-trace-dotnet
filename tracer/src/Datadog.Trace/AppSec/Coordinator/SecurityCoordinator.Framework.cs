@@ -3,18 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Web;
-using System.Web.UI.WebControls;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Headers;
@@ -27,9 +26,9 @@ internal readonly partial struct SecurityCoordinator
     private const string WebApiControllerHandlerTypeFullname = "System.Web.Http.WebHost.HttpControllerHandler";
 
     private static readonly bool? UsingIntegratedPipeline;
-    private static readonly Lazy<Action<string, string>> _throwHttpResponseException = new Lazy<Action<string, string>>(CreateThrowHttpResponseExceptionDynMeth);
+    private static readonly Lazy<Action<string, string>?> _throwHttpResponseException = new(CreateThrowHttpResponseExceptionDynMeth);
 
-    private readonly HttpContext _context = null;
+    private readonly HttpContext _context;
 
     static SecurityCoordinator()
     {
@@ -57,7 +56,7 @@ internal readonly partial struct SecurityCoordinator
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
 
-    private static Action<string, string> CreateThrowHttpResponseExceptionDynMeth()
+    private static Action<string, string>? CreateThrowHttpResponseExceptionDynMeth()
     {
         try
         {
@@ -147,7 +146,7 @@ internal readonly partial struct SecurityCoordinator
     internal void CheckAndBlock(Dictionary<string, object> args)
     {
         var result = RunWaf(args);
-        if (result.ShouldBeReported)
+        if (result?.ShouldBeReported is true)
         {
             var reporting = MakeReportingFunction(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
 
@@ -177,20 +176,20 @@ internal readonly partial struct SecurityCoordinator
 
     private ResponseDetails GetResponseDetails() => _context.Request.Headers["Accept"] switch
     {
-        MimeTypes.TextHtml => new ResponseDetails() { Body = _security.Settings.BlockedHtmlTemplate, ContentType = MimeTypes.TextHtml },
-        _ => new ResponseDetails() { Body = _security.Settings.BlockedJsonTemplate, ContentType = MimeTypes.Json },
+        MimeTypes.TextHtml => new ResponseDetails(_security.Settings.BlockedHtmlTemplate, MimeTypes.TextHtml),
+        _ => new ResponseDetails(_security.Settings.BlockedJsonTemplate, MimeTypes.Json)
     };
 
     private bool ChooseBlockingMethodAndBlock(Action<bool> reporting)
     {
-        var isWebApiRequest = _context.CurrentHandler?.GetType()?.FullName == WebApiControllerHandlerTypeFullname;
-        if (isWebApiRequest && _throwHttpResponseException.Value is Action<string, string> throwException)
+        var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
+        if (isWebApiRequest && _throwHttpResponseException.Value is { } throwException)
         {
-                var responseDetails = GetResponseDetails();
-                // in the normal case reporting will be by the caller function after we block
-                // in the webapi case we blocking with an exception, so can't report afterwards
-                reporting(true);
-                throwException(responseDetails.Body, responseDetails.ContentType);
+            var responseDetails = GetResponseDetails();
+            // in the normal case reporting will be by the caller function after we block
+            // in the webapi case we blocking with an exception, so can't report afterwards
+            reporting(true);
+            throwException(responseDetails.Body, responseDetails.ContentType);
         }
 
         // we will only hit this next line if we didn't throw
@@ -249,7 +248,7 @@ internal readonly partial struct SecurityCoordinator
                 }
                 else
                 {
-                    Log.Warning("Header {key} couldn't be added as argument to the waf", keyForDictionary);
+                    Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
                 }
             }
         }
@@ -290,7 +289,7 @@ internal readonly partial struct SecurityCoordinator
             }
             else
             {
-                Log.Warning("Query string {key} couldn't be added as argument to the waf", originalKey);
+                Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
             }
         }
 
@@ -302,9 +301,12 @@ internal readonly partial struct SecurityCoordinator
             { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestHeaderNoCookies, headersDic },
             { AddressesConstants.RequestCookies, cookiesDic },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) },
-            { AddressesConstants.UserId, _localRootSpan.Context.TraceContext.Tags.GetTag(Tags.User.Id) },
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
         };
+        if (_localRootSpan.Context.TraceContext.Tags.GetTag(Tags.User.Id) is { } userIdTag)
+        {
+            dict.Add(AddressesConstants.UserId, userIdTag);
+        }
 
         return dict;
     }
@@ -325,7 +327,7 @@ internal readonly partial struct SecurityCoordinator
 
         internal override void MarkBlocked() => _context.Items["block"] = true;
 
-        internal override IContext GetAdditiveContext() => _context.Items[WafKey] as IContext;
+        internal override IContext? GetAdditiveContext() => _context.Items[WafKey] as IContext;
 
         internal override void SetAdditiveContext(IContext additiveContext) => _context.Items[WafKey] = additiveContext;
 
@@ -358,10 +360,15 @@ internal readonly partial struct SecurityCoordinator
 
     private class ResponseDetails
     {
-#pragma warning disable SA1401
-        public string Body;
-        public string ContentType;
-#pragma warning restore SA1401
+        public ResponseDetails(string body, string contentType)
+        {
+            Body = body;
+            ContentType = contentType;
+        }
+
+        public string Body { get; }
+
+        public string ContentType { get; }
     }
 }
 #endif

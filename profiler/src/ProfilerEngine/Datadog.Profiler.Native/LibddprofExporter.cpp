@@ -8,11 +8,13 @@
 #include "IApplicationStore.h"
 #include "IMetricsSender.h"
 #include "Log.h"
+#include "OsSpecificApi.h"
 #include "OpSysTools.h"
 #include "Sample.h"
 #include "dd_profiler_version.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
+#include "IAllocationsRecorder.h"
 
 #include <cassert>
 #include <fstream>
@@ -55,18 +57,23 @@ std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
 
 std::string const LibddprofExporter::MetricsFilename = "metrics.json";
 
+std::string const LibddprofExporter::ProfileExtension = ".pprof";
+std::string const LibddprofExporter::AllocationsExtension = ".balloc";
+
 LibddprofExporter::LibddprofExporter(
     std::vector<SampleValueType>&& sampleTypeDefinitions,
     IConfiguration* configuration,
     IApplicationStore* applicationStore,
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers,
-    MetricsRegistry& metricsRegistry)
+    MetricsRegistry& metricsRegistry,
+    IAllocationsRecorder* allocationsRecorder)
     :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore},
-    _metricsRegistry{metricsRegistry}
+    _metricsRegistry{metricsRegistry},
+    _allocationsRecorder{allocationsRecorder}
 {
     _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
@@ -419,6 +426,17 @@ bool LibddprofExporter::Export()
 
     int32_t idx = 0;
 
+    if (_allocationsRecorder != nullptr)
+    {
+        const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(""));
+        auto filePath = GenerateFilePath(applicationInfo.ServiceName, idx, AllocationsExtension);
+
+        if (!_allocationsRecorder->Serialize(filePath))
+        {
+            Log::Warn("Failed to serialize allocations in ", filePath);
+        }
+    }
+
     std::vector<std::string_view> keys;
 
     {
@@ -492,6 +510,7 @@ bool LibddprofExporter::Export()
         additionalTags.Add("service", applicationInfo.ServiceName);
         additionalTags.Add("runtime-id", std::string(runtimeId));
         additionalTags.Add("profile_seq", std::to_string(exportsCount - 1));
+        additionalTags.Add("number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount()));
 
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         if (request != nullptr)
@@ -520,7 +539,7 @@ void LibddprofExporter::SaveMetricsToDisk(const std::string& content) const
     file.close();
 }
 
-std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicationName, int32_t idx) const
+std::string LibddprofExporter::GenerateFilePath(const std::string& applicationName, int32_t idx, const std::string& extension) const
 {
     auto time = std::time(nullptr);
     struct tm buf = {};
@@ -533,7 +552,7 @@ std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicat
 
     std::stringstream oss;
     oss << applicationName + "_" << ProcessId << "_" << std::put_time(&buf, "%F_%H-%M-%S") << "_" << idx
-        << ".pprof";
+        << extension;
     auto pprofFilename = oss.str();
 
     auto pprofFilePath = fs::path(_pprofOutputPath) / pprofFilename;
@@ -543,7 +562,7 @@ std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicat
 
 void LibddprofExporter::ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int32_t idx)
 {
-    auto pprofFilePath = GeneratePprofFilePath(applicationName, idx);
+    auto pprofFilePath = GenerateFilePath(applicationName, idx, ProfileExtension);
 
     std::ofstream file{pprofFilePath, std::ios::out | std::ios::binary};
 

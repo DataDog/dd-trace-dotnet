@@ -13,6 +13,34 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
+    private static Expression WideNumericType(Expression expr)
+    {
+        var type = expr.Type;
+        if (type == typeof(float))
+        {
+            return Expression.Convert(expr, typeof(double));
+        }
+
+        return IsIntegralNumericType(type) ? Expression.Convert(expr, typeof(long)) : expr;
+    }
+
+    private static bool IsIntegralNumericType(Type type)
+    {
+        if (type == typeof(byte)
+         || type == typeof(sbyte)
+         || type == typeof(short)
+         || type == typeof(ushort)
+         || type == typeof(int)
+         || type == typeof(uint)
+         || type == typeof(nint)
+         || type == typeof(nuint))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
@@ -103,8 +131,10 @@ internal partial class ProbeExpressionParser<T>
                 return parameters[0];
             case ScopeMemberKind.Return:
                 return parameters[1];
-            case ScopeMemberKind.Exception:
+            case ScopeMemberKind.Duration:
                 return parameters[2];
+            case ScopeMemberKind.Exception:
+                return parameters[3];
             default:
                 throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
         }
@@ -118,5 +148,10 @@ internal partial class ProbeExpressionParser<T>
                (@namespace is "System" or "Microsoft" ||
                 @namespace.StartsWith("System.") ||
                 @namespace.StartsWith("Microsoft."));
+    }
+
+    private Expression CallTimeSpanConstructor(Expression arg)
+    {
+        return Expression.New(typeof(TimeSpan).GetConstructor(new[] { typeof(long) }), WideNumericType(arg));
     }
 }

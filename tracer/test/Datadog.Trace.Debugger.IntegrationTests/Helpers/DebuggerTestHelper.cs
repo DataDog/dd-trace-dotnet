@@ -107,11 +107,11 @@ internal static class DebuggerTestHelper
         return snapshotMethodProbes;
     }
 
-    internal static LogProbe CreateBasicLogProbe(DeterministicGuidGenerator guidGenerator)
+    internal static LogProbe CreateBasicLogProbe(string probeId)
     {
         return new LogProbe
         {
-            Id = guidGenerator.New().ToString(),
+            Id = probeId,
             CaptureSnapshot = true,
             Language = TracerConstants.Language,
             Sampling = new Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 }
@@ -120,7 +120,7 @@ internal static class DebuggerTestHelper
 
     internal static LogProbe CreateDefaultLogProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator, MethodProbeTestDataAttribute probeTestData = null)
     {
-        return CreateBasicLogProbe(guidGenerator).WithWhere(typeName, methodName, probeTestData).WithSampling().WithDefaultTemplate().WithCapture(probeTestData?.CaptureSnapshot);
+        return CreateBasicLogProbe(probeTestData?.ProbeId ?? guidGenerator.New().ToString()).WithWhere(typeName, methodName, probeTestData).WithSampling().WithDefaultTemplate().WithCapture(probeTestData?.CaptureSnapshot);
     }
 
     internal static LogProbe WithWhere(this LogProbe snapshot, string typeName, string methodName, MethodProbeTestDataAttribute probeTestData = null)
@@ -240,7 +240,7 @@ internal static class DebuggerTestHelper
 
     private static LogProbe CreateLogLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
     {
-        return CreateBasicLogProbe(guidGenerator).WithLineProbeWhere(type, line).WithCapture(line?.CaptureSnapshot).WithTemplate(line).WithWhen(line);
+        return CreateBasicLogProbe(line?.ProbeId ?? guidGenerator.New().ToString()).WithLineProbeWhere(type, line).WithCapture(line?.CaptureSnapshot).WithTemplate(line).WithWhen(line);
     }
 
     private static LogProbe WithLineProbeWhere(this LogProbe snapshot, Type type, LineProbeTestDataAttribute line)

@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
     internal abstract class ContinuationGenerator<TTarget, TReturn>
     {
-        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContinuationGenerator<TTarget, TTarget>));
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContinuationGenerator<TTarget, TReturn>));
 
         internal delegate object ObjectContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, in CallTargetState state);
 

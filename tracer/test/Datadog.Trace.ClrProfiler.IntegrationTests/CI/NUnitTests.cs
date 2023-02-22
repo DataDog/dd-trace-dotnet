@@ -80,6 +80,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Remove decision maker tag (not used by the backend for civisibility)
                             targetSpan.Tags.Remove(Tags.Propagated.DecisionMaker);
 
+                            // Remove git metadata added by the apm agent writer.
+                            targetSpan.Tags.Remove(Tags.GitCommitSha);
+                            targetSpan.Tags.Remove(Tags.GitRepositoryUrl);
+
                             // check the name
                             Assert.Equal("nunit.test", targetSpan.Name);
 
@@ -168,6 +172,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                                 case "SimpleParameterizedTest":
                                     CheckSimpleTestSpan(targetSpan);
+                                    CheckParametrizedTraitsValues(targetSpan);
                                     AssertTargetSpanAnyOf(
                                         targetSpan,
                                         TestTags.Parameters,
@@ -349,6 +354,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             // Check the traits tag value
             AssertTargetSpanEqual(targetSpan, TestTags.Traits, "{\"Category\":[\"Category01\"],\"Compatibility\":[\"Windows\",\"Linux\"]}");
+        }
+
+        private static void CheckParametrizedTraitsValues(MockSpan targetTest)
+        {
+            // Check the traits tag value
+            AssertTargetSpanAnyOf(
+                targetTest,
+                TestTags.Traits,
+                "{\"Category\":[\"ParemeterizedTest\",\"FirstCase\"]}",
+                "{\"Category\":[\"ParemeterizedTest\",\"SecondCase\"]}",
+                "{\"Category\":[\"ParemeterizedTest\",\"ThirdCase\"]}");
         }
 
         private static void CheckOriginTag(MockSpan targetSpan)

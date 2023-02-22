@@ -14,6 +14,7 @@ namespace Datadog.Trace.Debugger.Expressions
         This,
         Return,
         Exception,
+        Duration,
         None
     }
 

@@ -37,8 +37,8 @@ protected:
     const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
                  const MethodProbeDefinition& methodProbe) final;
-    static const std::unique_ptr<RejitHandlerModuleMethod>
-    CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo) ;
+    const std::unique_ptr<RejitHandlerModuleMethod>
+    CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo) const;
     void UpdateMethod(RejitHandlerModuleMethod* methodHandler, const MethodProbeDefinition& methodProbe) override;
     static void UpdateMethod(RejitHandlerModuleMethod* methodHandler, const ProbeDefinition_S& probe);
     [[nodiscard]] std::tuple<HRESULT, mdMethodDef, FunctionInfo> PickMethodToRejit(

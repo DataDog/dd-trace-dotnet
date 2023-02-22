@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 Span parent = tracer.InternalActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
-                    parent.GetTag(Tags.DbType) == dbType &&
+                    HasDbType(parent, dbType) &&
                     parent.ResourceName == command.CommandText)
                 {
                     // we are already instrumenting this,
@@ -57,6 +58,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 scope.Span.ResourceName = command.CommandText;
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+
+                if (Iast.Iast.Instance.Settings.Enabled)
+                {
+                    IastModule.OnSqlQuery(command.CommandText, integrationId);
+                }
             }
             catch (Exception ex)
             {
@@ -64,6 +70,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
 
             return scope;
+
+            static bool HasDbType(Span span, string dbType)
+            {
+                if (span.Tags is SqlTags sqlTags)
+                {
+                    return sqlTags.DbType == dbType;
+                }
+
+                return span.GetTag(Tags.DbType) == dbType;
+            }
         }
 
         public static bool TryGetIntegrationDetails(

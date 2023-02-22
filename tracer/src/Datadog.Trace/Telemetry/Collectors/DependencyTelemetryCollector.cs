@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -25,12 +26,12 @@ namespace Datadog.Trace.Telemetry
         {
             if (!assembly.IsDynamic)
             {
-                AssemblyLoaded(assembly.GetName());
+                AssemblyLoaded(assembly.GetName(), assembly.ManifestModule.ModuleVersionId.ToString());
             }
         }
 
         // Internal for testing
-        internal void AssemblyLoaded(AssemblyName assembly)
+        internal void AssemblyLoaded(AssemblyName assembly, string moduleVersionId)
         {
             // exclude dlls we're not interested in which have a "random" component
             // ASP.NET sites generate an App_Web_*.dll with a random string for
@@ -49,7 +50,11 @@ namespace Datadog.Trace.Telemetry
                 return;
             }
 
-            var key = new DependencyTelemetryData(name: assemblyName) { Version = assembly.Version?.ToString() };
+            var key = new DependencyTelemetryData(name: assemblyName)
+            {
+                Version = assembly.Version?.ToString(),
+                Hash = moduleVersionId,
+            };
 
             if (_assemblies.TryAdd(key, false))
             {
@@ -66,7 +71,7 @@ namespace Datadog.Trace.Telemetry
         /// Get the latest data to send to the intake.
         /// </summary>
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
-        public List<DependencyTelemetryData> GetData()
+        public List<DependencyTelemetryData>? GetData()
         {
             var hasChanges = Interlocked.CompareExchange(ref _hasChangesFlag, 0, 1) == 1;
 

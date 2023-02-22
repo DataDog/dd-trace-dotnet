@@ -34,19 +34,20 @@ namespace Datadog.Trace.Security.Unit.Tests
             var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
             var res = waf.UpdateRulesData(rulesData!);
             res.Should().BeTrue();
-            var readwriteLocker = new AppSec.Concurrency.ReaderWriterLock();
-            using var context = waf.CreateContext(readwriteLocker)!;
+            using var context = waf.CreateContext()!;
             var result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.UserId, "user3" } },
                 WafTests.TimeoutMicroSeconds);
-            result.ReturnCode.Should().Be(ReturnCode.Match);
-            result.Actions.Should().NotBeEmpty();
-            result.Actions.Should().Contain("block");
+            result.Should().NotBeNull();
+            result!.ReturnCode.Should().Be(ReturnCode.Match);
+            result!.Actions.Should().NotBeEmpty();
+            result!.Actions.Should().Contain("block");
             result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.UserId, "user4" } },
                 WafTests.TimeoutMicroSeconds);
-            result.ReturnCode.Should().Be(ReturnCode.Ok);
-            result.Actions.Should().BeEmpty();
+            result.Should().NotBeNull();
+            result!.ReturnCode.Should().Be(ReturnCode.Ok);
+            result!.Actions.Should().BeEmpty();
         }
     }
 }
