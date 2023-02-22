@@ -120,16 +120,10 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateTraceParentHeader(SpanContext context)
         {
-            // always 32 chars long even when using 64-bit ids
-            var traceId = IsValidHexString(context.RawTraceId, length: 32) ? context.RawTraceId : HexString.ToHexString(context.TraceId, pad16To32: true);
-
-            // always 16 chars long even when using 64-bit ids
-            var spanId = IsValidHexString(context.RawSpanId, length: 16) ? context.RawSpanId : HexString.ToHexString(context.SpanId);
-
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority ?? SamplingPriorityValues.AutoKeep;
             var sampled = samplingPriority > 0 ? "01" : "00";
 
-            return $"00-{traceId}-{spanId}-{sampled}";
+            return $"00-{context.RawTraceId}-{context.RawSpanId}-{sampled}";
         }
 
         internal static string CreateTraceStateHeader(SpanContext context)

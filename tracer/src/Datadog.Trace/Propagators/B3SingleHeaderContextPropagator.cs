@@ -27,11 +27,10 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
-            var traceId = IsValidTraceId(context.RawTraceId) ? context.RawTraceId : HexString.ToHexString(context.TraceId, pad16To32: false);
-            var spanId = IsValidSpanId(context.RawSpanId) ? context.RawSpanId : HexString.ToHexString(context.SpanId);
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
             var sampled = samplingPriority > 0 ? "1" : "0";
-            carrierSetter.Set(carrier, B3, $"{traceId}-{spanId}-{sampled}");
+
+            carrierSetter.Set(carrier, B3, $"{context.RawTraceId}-{context.RawSpanId}-{sampled}");
         }
 
         public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)

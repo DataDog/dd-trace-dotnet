@@ -99,12 +99,10 @@ namespace Datadog.Trace.Activity.Handlers
                     // in the context propagation, and we will keep the entire trace.
 
                     // TraceId (always 32 chars long even when using 64-bit ids)
-                    w3cActivity.TraceId = string.IsNullOrWhiteSpace(span.Context.RawTraceId) ?
-                                              HexString.ToHexString(span.TraceId, pad16To32: true) : span.Context.RawTraceId;
+                    w3cActivity.TraceId = span.Context.RawTraceId;
 
                     // SpanId (always 16 chars long)
-                    w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(span.Context.RawSpanId) ?
-                                                   HexString.ToHexString(span.SpanId) : span.Context.RawSpanId;
+                    w3cActivity.ParentSpanId = span.Context.RawSpanId;
 
                     // We clear internals Id and ParentId values to force recalculation.
                     w3cActivity.RawId = null;

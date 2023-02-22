@@ -44,6 +44,8 @@ namespace Datadog.Trace
         /// </summary>
         public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: 0, spanId: 0, serviceName: null);
 
+        private string _rawTraceId;
+        private string _rawSpanId;
         private string _origin;
 
         /// <summary>
@@ -101,8 +103,8 @@ namespace Datadog.Trace
             SpanId = spanId;
             SamplingPriority = samplingPriority;
             Origin = origin;
-            RawTraceId = rawTraceId;
-            RawSpanId = rawSpanId;
+            _rawTraceId = rawTraceId;
+            _rawSpanId = rawSpanId;
         }
 
         /// <summary>
@@ -129,15 +131,15 @@ namespace Datadog.Trace
 
             if (parent is SpanContext spanContext)
             {
-                RawTraceId = spanContext.RawTraceId ?? rawTraceId;
+                _rawTraceId = spanContext.RawTraceId ?? rawTraceId;
                 PathwayContext = spanContext.PathwayContext;
             }
             else
             {
-                RawTraceId = rawTraceId;
+                _rawTraceId = rawTraceId;
             }
 
-            RawSpanId = rawSpanId;
+            _rawSpanId = rawSpanId;
         }
 
         private SpanContext(TraceId traceId, string serviceName)
@@ -236,12 +238,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the raw traceId (to support > 64bits)
         /// </summary>
-        internal string RawTraceId { get; }
+        internal string RawTraceId => _rawTraceId ??= HexString.ToHexString(TraceId);
 
         /// <summary>
         /// Gets the raw spanId
         /// </summary>
-        internal string RawSpanId { get; }
+        internal string RawSpanId => _rawSpanId ??= HexString.ToHexString(SpanId);
 
         /// <summary>
         /// Gets or sets additional key/value pairs from an upstream "tracestate" W3C header that we will propagate downstream.

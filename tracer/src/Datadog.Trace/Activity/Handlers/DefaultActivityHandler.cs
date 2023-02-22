@@ -102,14 +102,10 @@ namespace Datadog.Trace.Activity.Handlers
                     if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
                     {
                         // TraceId (always 32 chars long even when using 64-bit ids)
-                        w3cActivity.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
-                                                  HexString.ToHexString(activeSpan.TraceId, pad16To32: true) :
-                                                  activeSpan.Context.RawTraceId;
+                        w3cActivity.TraceId = activeSpan.Context.RawTraceId;
 
                         // SpanId (always 16 chars long)
-                        w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
-                                                       HexString.ToHexString(activeSpan.SpanId) :
-                                                       activeSpan.Context.RawSpanId;
+                        w3cActivity.ParentSpanId = activeSpan.Context.RawSpanId;
 
                         // We clear internals Id and ParentId values to force recalculation.
                         w3cActivity.RawId = null;
