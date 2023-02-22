@@ -27,8 +27,14 @@
       "evidence": {
         "valueParts": [
           {
+            "value": "SELECT Surname from Persons where name = '"
+          },
+          {
             "value": "Vicent",
             "source": 0
+          },
+          {
+            "value": "'"
           }
         ]
       }
