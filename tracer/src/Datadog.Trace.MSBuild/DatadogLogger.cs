@@ -16,6 +16,7 @@ using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
 
@@ -367,7 +368,7 @@ namespace Datadog.Trace.MSBuild
             {
                 _level = level;
                 _message = message;
-                _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.Context.Origin);
+                _context = span is null ? null : new Context(span.TraceId, span.Context.RawTraceId, span.SpanId, span.Context.Origin);
             }
 
             public override void Format(StringBuilder sb, LogFormatter formatter)
@@ -382,14 +383,25 @@ namespace Datadog.Trace.MSBuild
                     exception: null,
                     (JsonTextWriter writer, in Context? state) =>
                     {
-                        if (state.HasValue)
+                        if (state is { } context)
                         {
                             writer.WritePropertyName("dd.trace_id");
-                            writer.WriteValue($"{state.Value.TraceId}");
+
+                            if (context.TraceId.Upper > 0)
+                            {
+                                // 128-bit trace ids are encoded as hex
+                                writer.WriteValue(context.RawTraceId);
+                            }
+                            else
+                            {
+                                // 64-bit trace ids and span ids are encoded as decimal
+                                writer.WriteValue(context.TraceId.Lower);
+                            }
+
                             writer.WritePropertyName("dd.span_id");
-                            writer.WriteValue($"{state.Value.SpanId}");
+                            writer.WriteValue(context.SpanId);
                             writer.WritePropertyName("_dd.origin");
-                            writer.WriteValue($"{state.Value.Origin}");
+                            writer.WriteValue(context.Origin);
                         }
 
                         return default;
@@ -398,13 +410,15 @@ namespace Datadog.Trace.MSBuild
 
             private readonly struct Context
             {
-                public readonly ulong TraceId;
+                public readonly TraceId TraceId;
+                public readonly string RawTraceId;
                 public readonly ulong SpanId;
                 public readonly string Origin;
 
-                public Context(ulong traceId, ulong spanId, string origin)
+                public Context(TraceId traceId, string rawTraceId, ulong spanId, string origin)
                 {
                     TraceId = traceId;
+                    RawTraceId = rawTraceId;
                     SpanId = spanId;
                     Origin = origin;
                 }
