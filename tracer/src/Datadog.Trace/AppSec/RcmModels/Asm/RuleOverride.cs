@@ -24,5 +24,19 @@ internal class RuleOverride
         return $"{{{Id} : {Enabled}, on match actions: {string.Join(",", OnMatch ?? Array.Empty<string>())}}}";
     }
 
-    public List<KeyValuePair<string, object?>> ToKeyValuePair() => new() { new("enabled", Enabled), new("id", Id), new("on_match", OnMatch) };
+    public List<KeyValuePair<string, object?>> ToKeyValuePair()
+    {
+        List<KeyValuePair<string, object?>> data = new() { new("id", Id) };
+        if (OnMatch != null)
+        {
+            data.Add(new("on_match", OnMatch));
+        }
+
+        if (Enabled.HasValue)
+        {
+            data.Add(new("enabled", Enabled.Value));
+        }
+
+        return data;
+    }
 }

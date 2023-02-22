@@ -162,7 +162,7 @@ namespace Datadog.Trace.AppSec.Waf
             var ruleSetInfo = default(DdwafRuleSetInfoStruct);
             var result = _wafLibraryInvoker.Update(_wafHandle, encoded.RawPtr, ref ruleSetInfo);
             var updated = UpdateWafHandle(result);
-            Log.Information("{Number} rule status have been updated and waf has been updated: {Updated}", ruleStatus.Count, updated);
+            Log.Information("{Number} rule override have been updated and waf has been updated: {Updated}", ruleStatus.Count, updated);
             return updated;
         }
 
