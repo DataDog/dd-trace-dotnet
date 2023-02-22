@@ -31,7 +31,7 @@ public class HexStringTests
     public void ToHexChars(byte[] bytes, bool lowerCase, string expected)
     {
         var actual = new char[bytes.Length * 2];
-        HexString.ToHexChars(bytes, actual, lowerCase);
+        HexString.ToHexChars(new ArraySegment<byte>(bytes, offset: 0, count: bytes.Length), actual, lowerCase);
 
         actual.Should().BeEquivalentTo(expected.ToCharArray());
     }
@@ -45,15 +45,44 @@ public class HexStringTests
     }
 
     [Theory]
-    [InlineData(0x0000000000000000, /* lowerCase */ true, "0000000000000000")]
+    [InlineData(0x0000000000000000, /* lowerCase */ true,  "0000000000000000")]
     [InlineData(0x0000000000000000, /* lowerCase */ false, "0000000000000000")]
-    [InlineData(0x1234567890abcdef, /* lowerCase */ true, "1234567890abcdef")]
+    [InlineData(0x1234567890abcdef, /* lowerCase */ true,  "1234567890abcdef")]
     [InlineData(0x1234567890abcdef, /* lowerCase */ false, "1234567890ABCDEF")]
-    [InlineData(0xffffffffffffffff, /* lowerCase */ true, "ffffffffffffffff")]
+    [InlineData(0xffffffffffffffff, /* lowerCase */ true,  "ffffffffffffffff")]
     [InlineData(0xffffffffffffffff, /* lowerCase */ false, "FFFFFFFFFFFFFFFF")]
     public void ToHexString_UInt64(ulong value, bool lowerCase, string expected)
     {
         var actual = HexString.ToHexString(value, lowerCase);
+        actual.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(0x0000000000000000, 0x0000000000000000, /* lowerCase */ true,  "00000000000000000000000000000000")]
+    [InlineData(0x1234567890abcdef, 0x1122334455667788, /* lowerCase */ true,  "1234567890abcdef1122334455667788")]
+    [InlineData(0x1234567890abcdef, 0x1122334455667788, /* lowerCase */ false, "1234567890ABCDEF1122334455667788")]
+    [InlineData(0xffffffffffffffff, 0xffffffffffffffff, /* lowerCase */ true,  "ffffffffffffffffffffffffffffffff")]
+    [InlineData(0xffffffffffffffff, 0xffffffffffffffff, /* lowerCase */ false, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")]
+    public void ToHexString_TraceId128(ulong upper, ulong lower, bool lowerCase, string expected)
+    {
+        var traceId = new TraceId(upper, lower);
+        var actual = HexString.ToHexString(traceId, pad16To32: true, lowerCase);
+        actual.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(0x0000000000000000, 0x0000000000000000, /* pad16To32 */ true,  "00000000000000000000000000000000")]
+    [InlineData(0x0000000000000000, 0x0000000000000000, /* pad16To32 */ false, "0000000000000000")]
+    [InlineData(0x0000000000000000, 0x1234567890abcdef, /* pad16To32 */ true,  "00000000000000001234567890abcdef")]
+    [InlineData(0x0000000000000000, 0x1234567890abcdef, /* pad16To32 */ false, "1234567890abcdef")]
+    [InlineData(0x0000000000000000, 0xffffffffffffffff, /* pad16To32 */ true,  "0000000000000000ffffffffffffffff")]
+    [InlineData(0x0000000000000000, 0xffffffffffffffff, /* pad16To32 */ false, "ffffffffffffffff")]
+    [InlineData(0xffffffffffffffff, 0x0000000000000000, /* pad16To32 */ true,  "ffffffffffffffff0000000000000000")]
+    [InlineData(0xffffffffffffffff, 0x0000000000000000, /* pad16To32 */ false, "ffffffffffffffff0000000000000000")]
+    public void ToHexString_TraceId64(ulong upper, ulong lower, bool pad16To32, string expected)
+    {
+        var traceId = new TraceId(upper, lower);
+        var actual = HexString.ToHexString(traceId, pad16To32);
         actual.Should().Be(expected);
     }
 
@@ -126,9 +155,53 @@ public class HexStringTests
 #endif
 
     [Theory]
+    // 64-bits trace ids
+    [InlineData("0000000000000000", 0, 0x0000000000000000)]
+    [InlineData("1234567890abcdef", 0, 0x1234567890abcdef)]
+    [InlineData("1234567890ABCDEF", 0, 0x1234567890abcdef)]
+    [InlineData("ffffffffffffffff", 0, 0xffffffffffffffff)]
+    [InlineData("FFFFFFFFFFFFFFFF", 0, 0xffffffffffffffff)]
+    // 128-bits trace ids
+    [InlineData("00000000000000000000000000000000", 0x0000000000000000, 0x0000000000000000)]
+    [InlineData("1234567890abcdef1122334455667788", 0x1234567890abcdef, 0x1122334455667788)]
+    [InlineData("1234567890ABCDEF1122334455667788", 0x1234567890abcdef, 0x1122334455667788)]
+    [InlineData("ffffffffffffffffffffffffffffffff", 0xffffffffffffffff, 0xffffffffffffffff)]
+    [InlineData("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 0xffffffffffffffff, 0xffffffffffffffff)]
+    public void TryParseTraceId_Valid(string hex, ulong expectedUpper, ulong expectedLower)
+    {
+        HexString.TryParseTraceId(hex, out var actual).Should().BeTrue();
+        actual.Should().Be(new TraceId(expectedUpper, expectedLower));
+    }
+
+    [Theory]
+    // null
+    [InlineData(null)]
+    // invalid chars
+    [InlineData("0000000000000000000000000000000z")]
+    [InlineData("y0000000000000000000000000000000")]
+    [InlineData("000000000000000 0000000000000000")]
+    [InlineData("000000000000000-0000000000000000")]
+    // invalid string length (not 16 or 32)
+    [InlineData("")]                                  // length:  0
+    [InlineData("000000000000000")]                   // length: 15
+    [InlineData("00000000000000000")]                 // length: 17
+    [InlineData("0000000000000000000000000000000")]   // length: 31
+    [InlineData("000000000000000000000000000000000")] // length: 33
+    // "0x" prefix
+    [InlineData("0x00000000000000")]                   // prefix + 14 chars (valid length, but invalid chars)
+    [InlineData("0x0000000000000000")]                 // prefix + 16 chars (both invalid length and chars)
+    [InlineData("0x000000000000000000000000000000")]   // prefix + 30 chars (valid length, but invalid chars)
+    [InlineData("0x00000000000000000000000000000000")] // prefix + 32 chars (both invalid length and chars)
+    public void TryParseTraceId_Invalid(string hex)
+    {
+        HexString.TryParseTraceId(hex, out var actual).Should().BeFalse();
+        actual.Should().Be(new TraceId(0, 0));
+    }
+
+    [Theory]
     [InlineData("0000000000000000", 0x0000000000000000)]
     [InlineData("1234567890abcdef", 0x1234567890abcdef)]
-    [InlineData("1234567890ABCDEF", 0x1234567890ABCDEF)]
+    [InlineData("1234567890ABCDEF", 0x1234567890abcdef)]
     [InlineData("ffffffffffffffff", 0xffffffffffffffff)]
     [InlineData("FFFFFFFFFFFFFFFF", 0xffffffffffffffff)]
     public void TryParseUInt64_Valid(string hex, ulong expected)
@@ -141,12 +214,14 @@ public class HexStringTests
     // null
     [InlineData(null)]
     // invalid chars
-    [InlineData("gh")]
-    [InlineData("12abxy")]
-    [InlineData("12  ab")]
-    // invalid string length (odd)
-    [InlineData("0")]
-    [InlineData("12a")]
+    [InlineData("000000000000000z")]
+    [InlineData("y000000000000000")]
+    [InlineData("000000 00000000")]
+    [InlineData("0x0000000000000")]
+    // invalid string length (not 16)
+    [InlineData("")]
+    [InlineData("000000000000000")]
+    [InlineData("00000000000000000")]
     public void TryParseUInt64_Invalid(string hex)
     {
         HexString.TryParseUInt64(hex, out var actual).Should().BeFalse();
@@ -167,14 +242,14 @@ public class HexStringTests
     }
 
     [Theory]
-    // null or empty
+    // null
     [InlineData(null)]
-    [InlineData("")]
     // // invalid chars
-    [InlineData("gh")]
-    [InlineData("12abxy")]
-    [InlineData("12  ab")]
+    [InlineData("0x")]
+    [InlineData(" 0")]
+    [InlineData("0 ")]
     // invalid string length (not 2)
+    [InlineData("")]
     [InlineData("0")]
     [InlineData("12a")]
     public void TryParseByte_Invalid(string hex)

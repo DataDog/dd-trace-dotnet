@@ -50,6 +50,9 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
 
+        private readonly byte[] _gitCommitShaNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitCommitSha);
+        private readonly byte[] _gitRepositoryUrlNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitRepositoryUrl);
+
         private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
 
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
@@ -253,6 +256,22 @@ namespace Datadog.Trace.Agent.MessagePack
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, envRawBytes);
+            }
+
+            var gitCommitShaRawBytes = MessagePackStringCache.GetGitCommitShaBytes(model.TraceChunk.GitCommitSha);
+            if (gitCommitShaRawBytes is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _gitCommitShaNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, gitCommitShaRawBytes);
+            }
+
+            var gitRepositoryUrlRawBytes = MessagePackStringCache.GetGitRepositoryUrlBytes(model.TraceChunk.GitRepositoryUrl);
+            if (gitRepositoryUrlRawBytes is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _gitRepositoryUrlNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, gitRepositoryUrlRawBytes);
             }
 
             // add "language=dotnet" tag to all spans, except those that

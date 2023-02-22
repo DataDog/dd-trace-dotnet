@@ -14,7 +14,7 @@ namespace BuggyBits.Controllers
     public class NewsController : Controller
     {
 #pragma warning disable IDE0052 // Remove unread private members | this field is used to better show memory leaks
-        private readonly int[] bits = new int[10000];
+        private readonly int[] bits = new int[25000];
 #pragma warning restore IDE0052
         private IMemoryCache cache;
 
@@ -45,7 +45,6 @@ namespace BuggyBits.Controllers
 
         private void CacheRemovedCallback(object key, object value, EvictionReason reason, object state)
         {
-            throw new NotImplementedException();
         }
     }
 }

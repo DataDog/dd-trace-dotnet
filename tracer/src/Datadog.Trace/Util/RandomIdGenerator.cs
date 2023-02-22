@@ -27,16 +27,24 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.DataStreamsMonitoring.Utils;
 
 namespace Datadog.Trace.Util;
 
 /// <summary>
 /// Generates random numbers suitable for use as Datadog trace ids and span ids.
 /// </summary>
-internal sealed class RandomIdGenerator
+internal sealed class RandomIdGenerator : IRandomIdGenerator
 {
     [ThreadStatic]
     private static RandomIdGenerator? _shared;
+
+#if !NETCOREAPP3_1_OR_GREATER
+    /// <summary>
+    /// Buffer used to avoid allocating a new byte array each time we generate a 128-bit trace id.
+    /// </summary>
+    private static byte[]? _buffer;
+#endif
 
     // in .NET < 6, we implement Xoshiro256** instead of using System.Random,
     // so we need to keep some state. it is not safe to access from multiple threads,
@@ -69,9 +77,9 @@ internal sealed class RandomIdGenerator
             _s2 = int64Span[2];
             _s3 = int64Span[3];
 #else
-            // we can't use `unsafe` and pointers in code called
-            // from manual instrumentation because it could be running in partial trust.
-            // if we prove someday that nobody is using partial trust,
+            // we can't use `unsafe` pointers in this code because it can be called
+            // from manual instrumentation which could be running in partial trust.
+            // if we ever drop support for partial trust,
             // we can rewrite this to use `unsafe` instead of allocating these arrays.
             var guidBytes1 = Guid.NewGuid().ToByteArray();
             var guidBytes2 = Guid.NewGuid().ToByteArray();
@@ -94,6 +102,19 @@ internal sealed class RandomIdGenerator
     }
 
     public static RandomIdGenerator Shared => _shared ??= new RandomIdGenerator();
+
+#if !NETCOREAPP3_1_OR_GREATER
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static byte[] GetBuffer(int size)
+    {
+        if (_buffer == null || _buffer.Length < size)
+        {
+            _buffer = new byte[size];
+        }
+
+        return _buffer;
+    }
+#endif
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong RotateLeft(ulong x, int k) => (x << k) | (x >> (64 - k));
@@ -129,19 +150,74 @@ internal sealed class RandomIdGenerator
     }
 
     /// <summary>
-    /// Returns a random number that is greater than zero and less than or equal to Int64.MaxValue.
+    /// Returns a random number that is greater than zero
+    /// and less than or equal to Int64.MaxValue (0x7fffffffffffffff).
+    /// Used for backwards compatibility with tracers that parse ids as signed integers.
     /// </summary>
-    public ulong NextSpanId()
+    private ulong NextLegacyId()
     {
         while (true)
         {
-            // Get top 63 bits to get a value in the range [0, Int64.MaxValue], but try again
-            // if the value is 0 to get a value in the range (0, Int64.MaxValue].
-            var result = NextUInt64() >> 1;
+            // get a value in the range [0, UInt64.MaxValue]
+            var result = NextUInt64();
+
+            // shift bits right to get a value in the range [0, Int64.MaxValue]
+            result >>= 1;
 
             if (result > 0)
             {
+                // try again if the value is 0
                 return result;
+            }
+        }
+    }
+
+    /// <inheritDoc />
+    public ulong NextSpanId(bool useAllBits = false)
+    {
+        if (!useAllBits)
+        {
+            // get a value in the range (0, Int64.MaxValue]
+            return NextLegacyId();
+        }
+
+        while (true)
+        {
+            // get a value in the range [0, UInt64.MaxValue]
+            var result = NextUInt64();
+
+            if (result > 0)
+            {
+                // try again if the value is 0
+                return result;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns a random 128-bit number that is greater than zero
+    /// and less than or equal to Int128.MaxValue (0xffffffffffffffffffffffffffffffff).
+    /// </summary>
+    public TraceId NextTraceId(bool useAllBits)
+    {
+        if (!useAllBits)
+        {
+            // get a value in the range (0, Int64.MaxValue]
+            return NextLegacyId();
+        }
+
+        var seconds = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        // 128 bits = <32-bit unix seconds> <32 bits of zero> <64 random bits>
+        var upper = (ulong)seconds << 32;
+
+        while (true)
+        {
+            var lower = NextUInt64();
+
+            if (lower > 0)
+            {
+                return new TraceId(upper, lower);
             }
         }
     }
