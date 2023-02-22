@@ -6,20 +6,23 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Datadog.Trace.Iast;
 
 internal readonly struct Evidence
 {
     private readonly Range[]? _ranges;
+    private readonly string _value;
 
     public Evidence(string value, Range[]? ranges = null)
     {
-        this.Value = value;
+        this._value = value;
         this._ranges = ranges;
     }
 
-    public string Value { get; }
+    // We only show value in the json when there are no valueParts
+    public string? Value => _ranges?.Length > 0 ? null : _value;
 
     // This method is only used once when serializing to json (and it is also called from unit tests)
     public List<ValuePart>? ValueParts => GetValuePartsFromRanges();
@@ -32,13 +35,27 @@ internal readonly struct Evidence
         }
 
         var valueParts = new List<ValuePart>(_ranges.Length);
-
-        foreach (var range in _ranges)
+        var rangeList = _ranges.ToList();
+        rangeList.Sort();
+        int currentIndex = 0;
+        var valueLength = _value.Length;
+        foreach (var range in rangeList)
         {
-            if (!range.IsEmpty() && range.Source != null)
+            if (!range.IsEmpty() && range.Source != null && range.Start >= 0 && range.Start + range.Length <= valueLength && currentIndex <= range.Start)
             {
-                valueParts.Add(new ValuePart(Value.Substring(range.Start, range.Length), range.Source.GetInternalId()));
+                if (currentIndex != range.Start)
+                {
+                    valueParts.Add(new ValuePart(_value.Substring(currentIndex, range.Start - currentIndex), null));
+                }
+
+                valueParts.Add(new ValuePart(_value.Substring(range.Start, range.Length), range.Source.GetInternalId()));
+                currentIndex = range.Start + range.Length;
             }
+        }
+
+        if (valueParts.Count > 0 && currentIndex < _value.Length)
+        {
+            valueParts.Add(new ValuePart(_value.Substring(currentIndex), null));
         }
 
         return valueParts.Count > 0 ? valueParts : null;
@@ -51,6 +68,6 @@ internal readonly struct Evidence
 
     public override int GetHashCode()
     {
-        return IastUtils.GetHashCode(Value, _ranges);
+        return IastUtils.GetHashCode(_value, _ranges);
     }
 }
