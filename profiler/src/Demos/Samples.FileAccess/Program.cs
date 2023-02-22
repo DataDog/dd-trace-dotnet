@@ -48,23 +48,22 @@ namespace Samples.FileAccess
 
             // supported scenarios:
             // --------------------
-            //  1: synchronous write/read binary data through Binary(reader/writer)
-            //  2: synchronous write/read textual data through Stream(reader/writer)
-            //  4: synchronous write/read to FileStream
-            //  8: asynchronous write/read
-            // 16: asynchronous write/read lines
-            // 32: synchronous write/read XML
-            // 64: asynchronous write/read XML
+            //   1: synchronous write/read binary data through Binary(reader/writer)
+            //   2: synchronous write/read textual data through Stream(reader/writer)
+            //   4: synchronous write/read to FileStream
+            //   8: asynchronous write/read
+            //  16: asynchronous write/read lines
+            //  32: synchronous write/read XML
+            //  64: asynchronous write/read XML
+            // 128: synchronous write/read JSON
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
-            $"[--iterations <number of iterations to execute>] " +
-            $"[--scenario <1=read/write binary 2=read/write text] " +
-            $"[--param <any number to pass to the scenario>] " +
+            $"[--scenario <1=read/write binary 2=read/write text 4=read/write via FileStream 8=read/write async 16=read/write lines async 32=read/write XML 64=read/write async XML 128=read/write JSON] " +
             $"[--timeout <duration in seconds>]");
             Console.WriteLine();
             EnvironmentInfo.PrintDescriptionToConsole();
 
-            ParseCommandLine(args, out TimeSpan timeout, out Scenario scenario, out int parameter);
+            ParseCommandLine(args, out TimeSpan timeout, out Scenario scenario);
 
             var cts = new CancellationTokenSource();
 
@@ -603,11 +602,10 @@ namespace Samples.FileAccess
             return tasks;
         }
 
-        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out Scenario scenario, out int parameter)
+        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out Scenario scenario)
         {
             timeout = TimeSpan.MinValue;
             scenario = Scenario.ReadWriteBinary;
-            parameter = int.MaxValue;
             for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
@@ -627,15 +625,6 @@ namespace Samples.FileAccess
                     if (valueOffset < args.Length && int.TryParse(args[valueOffset], out var number))
                     {
                         scenario = (Scenario)number;
-                    }
-                }
-                else
-                if ("--param".Equals(arg, StringComparison.OrdinalIgnoreCase))
-                {
-                    int valueOffset = i + 1;
-                    if (valueOffset < args.Length && int.TryParse(args[valueOffset], out var number))
-                    {
-                        parameter = number;
                     }
                 }
             }
