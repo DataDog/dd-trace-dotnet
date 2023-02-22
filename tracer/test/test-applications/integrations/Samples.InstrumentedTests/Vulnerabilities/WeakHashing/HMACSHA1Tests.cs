@@ -9,8 +9,6 @@ using System.Security.Cryptography;
 using Moq;
 using Xunit;
 
-#if !NETFRAMEWORK
-
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.WeakHashing;
 
 #pragma warning disable SYSLIB0007 // Type or member is obsolete
@@ -94,5 +92,3 @@ public class HMACSHA1Tests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 }
-
-#endif

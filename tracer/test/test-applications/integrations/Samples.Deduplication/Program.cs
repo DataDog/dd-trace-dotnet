@@ -12,8 +12,11 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
-        int times = GetExecutionTimes(args);
+        ComputeHashNTimes(GetExecutionTimes(args));
+    }
 
+    private static void ComputeHashNTimes(int times)
+    {
         for (int i = 0; i < times; i++)
         {
 #pragma warning disable SYSLIB0021 // Type or member is obsolete

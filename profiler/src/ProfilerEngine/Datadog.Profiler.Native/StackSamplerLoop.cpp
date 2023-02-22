@@ -70,15 +70,8 @@ StackSamplerLoop::StackSamplerLoop(
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()}
 {
-    if (!OsSpecificApi::GetProcessorCount(_nbCores))
-    {
-        _nbCores = 1;
-        Log::Info("Processor cores = 1 (as a guess because GetProcessorCount failed)");
-    }
-    else
-    {
-        Log::Info("Processor cores = ", _nbCores);
-    }
+    _nbCores = OsSpecificApi::GetProcessorCount();
+    Log::Info("Processor cores = ", _nbCores);
 
     _samplingPeriod = _pConfiguration->CpuWallTimeSamplingRate();
     Log::Info("CPU and wall time sampling period = ", _samplingPeriod.count() / 1000000, " ms");
