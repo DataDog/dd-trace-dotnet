@@ -630,24 +630,6 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        private static bool IsValidHexString([NotNullWhen(true)] string? value, int length)
-        {
-            if (value?.Length != length)
-            {
-                return false;
-            }
-
-            foreach (var t in value)
-            {
-                if (t is (< '0' or > '9') and (< 'a' or > 'f'))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
         private static bool TryGetSingle(IEnumerable<string?> values, out string value)
         {
             // fast path for string[], List<string>, and others
