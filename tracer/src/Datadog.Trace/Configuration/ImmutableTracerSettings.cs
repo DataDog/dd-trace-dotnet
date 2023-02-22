@@ -130,7 +130,7 @@ namespace Datadog.Trace.Configuration
                     return string.IsNullOrWhiteSpace(version) ? null : version.Trim();
                 }
             }
-            
+
             DbmPropagationMode = settings.DbmPropagationMode;
         }
 
