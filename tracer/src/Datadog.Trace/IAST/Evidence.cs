@@ -38,10 +38,10 @@ internal readonly struct Evidence
         var rangeList = _ranges.ToList();
         rangeList.Sort();
         int currentIndex = 0;
-        var valueLenght = _value.Length;
+        var valueLength = _value.Length;
         foreach (var range in rangeList)
         {
-            if (!range.IsEmpty() && range.Source != null && range.Start >= 0 && range.Start + range.Length <= valueLenght && currentIndex <= range.Start)
+            if (!range.IsEmpty() && range.Source != null && range.Start >= 0 && range.Start + range.Length <= valueLength && currentIndex <= range.Start)
             {
                 if (currentIndex != range.Start)
                 {
