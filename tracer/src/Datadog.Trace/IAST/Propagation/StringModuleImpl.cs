@@ -140,7 +140,7 @@ internal static class StringModuleImpl
             else if (taintedLeft == null)
             {
                 ranges = new Range[taintedRight!.Ranges!.Length];
-                Ranges.CopyShift(taintedRight.Ranges, ranges, 0, left.Length);
+                Ranges.CopyShift(taintedRight!.Ranges, ranges, 0, left.Length);
             }
             else
             {
@@ -195,7 +195,7 @@ internal static class StringModuleImpl
                             else
                             {
                                 ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, length);
+                                Ranges.CopyShift(parameterTainted!.Ranges, ranges, 0, length);
                             }
                         }
 
