@@ -51,28 +51,29 @@ namespace Datadog.Trace.Propagators
             spanContext = null;
 
             var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, TraceId)?.Trim();
+
+            if (rawTraceId == null || !HexString.TryParseTraceId(rawTraceId, out var traceId) || traceId == 0)
+            {
+                return false;
+            }
+
             var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanId)?.Trim();
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Sampled);
 
-            if (IsValidTraceId(rawTraceId) && IsValidSpanId(rawSpanId))
+            ulong parentId;
+
+            if (rawSpanId == null)
             {
-                var success = HexString.TryParseTraceId(rawTraceId, out var traceId);
-
-                if (!success || traceId == 0)
-                {
-                    return false;
-                }
-
-                if (!HexString.TryParseUInt64(rawSpanId, out var parentId))
-                {
-                    parentId = 0;
-                }
-
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
-                return true;
+                parentId = 0;
+            }
+            else if (!HexString.TryParseUInt64(rawSpanId, out parentId))
+            {
+                rawSpanId = null; // ignore invalid span id
+                parentId = 0;
             }
 
-            return false;
+            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
+            return true;
         }
 
         private static bool IsValidTraceId([NotNullWhen(true)] string? traceId)
