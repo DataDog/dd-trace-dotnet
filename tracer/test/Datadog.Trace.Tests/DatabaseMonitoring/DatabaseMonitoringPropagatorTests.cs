@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             DbmPropagationLevel dbmPropagationLevel;
             Enum.TryParse(propagationMode, true, out dbmPropagationLevel);
 
-            var span = _tracer.StartSpan(operationName: "mysql.query", serviceName: "Test.Service-mysql", traceId: 7021887840877922076, spanId: 407003698947780173);
+            var span = _tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: "Test.Service-mysql", traceId: 7021887840877922076, spanId: 407003698947780173);
             span.Context.TraceContext.Environment = "testing";
             span.Context.TraceContext.ServiceVersion = "1.0.0";
             span.SetTraceSamplingPriority(samplingPriority);
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         [InlineData("/*ddps='Test.Service',dddbs='Test.Service-mysql',dde='testing'*/", "testing", null)]
         public void ExpectedTagsInjected(string expectedComment, string env = null, string version = null)
         {
-            var span = _tracer.StartSpan(operationName: "mysql.query", serviceName: "Test.Service-mysql", traceId: 7021887840877922076, spanId: 407003698947780173);
+            var span = _tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: "Test.Service-mysql", traceId: 7021887840877922076, spanId: 407003698947780173);
             span.Context.TraceContext.Environment = env;
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
