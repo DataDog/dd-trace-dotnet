@@ -19,7 +19,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 
         internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context)
         {
-            if (propagationStyle == DbmPropagationLevel.Disabled)
+            if (propagationStyle != DbmPropagationLevel.Service && propagationStyle != DbmPropagationLevel.Full)
             {
                 return string.Empty;
             }

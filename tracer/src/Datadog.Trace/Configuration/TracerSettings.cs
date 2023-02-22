@@ -744,17 +744,15 @@ namespace Datadog.Trace.Configuration
         {
             DbmPropagationLevel propagationValue;
 
-            inputValue = inputValue.ToLower();
-
-            if (inputValue.Equals("disabled", StringComparison.Ordinal))
+            if (inputValue.Equals("disabled", StringComparison.OrdinalIgnoreCase))
             {
                 propagationValue = DbmPropagationLevel.Disabled;
             }
-            else if (inputValue.Equals("service", StringComparison.Ordinal))
+            else if (inputValue.Equals("service", StringComparison.OrdinalIgnoreCase))
             {
                 propagationValue = DbmPropagationLevel.Service;
             }
-            else if (inputValue.Equals("full", StringComparison.Ordinal))
+            else if (inputValue.Equals("full", StringComparison.OrdinalIgnoreCase))
             {
                 propagationValue = DbmPropagationLevel.Full;
             }
