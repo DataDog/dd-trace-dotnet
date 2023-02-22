@@ -31,23 +31,22 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         }
 
         [Theory]
-        [InlineData("100", SamplingPriority.UserKeep, "")]
-        [InlineData("string100", SamplingPriority.UserKeep, "")]
-        [InlineData("disabled", SamplingPriority.UserKeep, "")]
-        [InlineData("Service", SamplingPriority.AutoReject, "/*ddps='Test.Service',dddbs='Test.Service-mysql',ddpv='1.0.0',dde='testing'*/")]
-        [InlineData("fUll", SamplingPriority.AutoKeep, "/*ddps='Test.Service',dddbs='Test.Service-mysql',ddpv='1.0.0',dde='testing',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/")]
-        [InlineData("full", SamplingPriority.UserReject, "/*ddps='Test.Service',dddbs='Test.Service-mysql',ddpv='1.0.0',dde='testing',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-00'*/")]
-        public void ExpectedCommentInjected(string propagationMode, SamplingPriority samplingPriority, string expectedComment)
+        [InlineData("100", SamplingPriorityValues.UserKeep, "")]
+        [InlineData("string100", SamplingPriorityValues.UserKeep, "")]
+        [InlineData("disabled", SamplingPriorityValues.UserKeep, "")]
+        [InlineData("Service", SamplingPriorityValues.AutoReject, "/*ddps='Test.Service',dddbs='Test.Service-mysql'*/")]
+        [InlineData("fUll", SamplingPriorityValues.AutoKeep, "/*ddps='Test.Service',dddbs='Test.Service-mysql',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/")]
+        [InlineData("full", SamplingPriorityValues.UserReject, "/*ddps='Test.Service',dddbs='Test.Service-mysql',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-00'*/")]
+        public void ExpectedCommentInjected(string propagationMode, int? samplingPriority, string expectedComment)
         {
             DbmPropagationLevel dbmPropagationLevel;
             Enum.TryParse(propagationMode, true, out dbmPropagationLevel);
 
-            var span = _tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: "Test.Service-mysql", traceId: 7021887840877922076, spanId: 407003698947780173);
-            span.Context.TraceContext.Environment = "testing";
-            span.Context.TraceContext.ServiceVersion = "1.0.0";
-            span.SetTraceSamplingPriority(samplingPriority);
+            var context = new SpanContext(traceId: 7021887840877922076, spanId: 407003698947780173, samplingPriority: samplingPriority, serviceName: "Test.Service-mysql", "origin");
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", span.Context);
+            context.SpanId.Should().Be(407003698947780173);
+
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", context);
 
             returnedComment.Should().Be(expectedComment);
         }
