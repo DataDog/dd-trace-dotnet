@@ -14,6 +14,7 @@
 #endif
 
 #include <sys/syscall.h>
+#include <sys/sysinfo.h>
 #include "OsSpecificApi.h"
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
@@ -58,10 +59,45 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 //    if (clock_gettime(clockid, &cpu_time)) { ... }
 //
 
+bool BuildThreadStatPath(pid_t tid, char* statPath, int capacity)
+{
+    strncpy(statPath, "/proc/self/task/", 16);
+    int base = 1000000000;
+
+    // Adjust the base
+    while (base > tid)
+    {
+        base /= 10;
+    }
+
+    int offset = 16;
+    // Write each number to the string
+    while (base > 0 && offset < 64)
+    {
+        statPath[offset++] = (tid / base) + '0';
+        tid %= base;
+        base /= 10;
+    }
+
+    // check in case of misusage
+    if (offset >= capacity || offset + 5 >= capacity)
+    {
+        return false;
+    }
+
+    strncpy(statPath + offset, "/stat", 5);
+
+    return true;
+}
+
 bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
 {
     char statPath[64] = {0};
-    snprintf(statPath, sizeof(statPath), "/proc/self/task/%d/stat", tid);
+
+    if (!BuildThreadStatPath(tid, statPath, 64))
+    {
+        return false;
+    }
 
     auto fd = open(statPath, O_RDONLY);
 
@@ -130,5 +166,13 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
 
     return isRunning;
 }
+
+// from https://linux.die.net/man/3/get_nprocs
+//
+int32_t GetProcessorCount()
+{
+    return get_nprocs();
+}
+
 
 } // namespace OsSpecificApi

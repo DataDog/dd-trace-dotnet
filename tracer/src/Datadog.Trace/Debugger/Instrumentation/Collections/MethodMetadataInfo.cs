@@ -7,7 +7,7 @@ using System;
 using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.Instrumentation.Registry
+namespace Datadog.Trace.Debugger.Instrumentation.Collections
 {
     /// <summary>
     /// Holds data needed during Debugger instrumentation execution.

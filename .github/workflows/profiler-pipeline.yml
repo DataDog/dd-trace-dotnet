@@ -269,7 +269,7 @@ jobs:
           #
           tests_output_dir="$(realpath .)/test_output"
           echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
-          echo "DD_PROFILING_LOG_DIR=$tests_output_dir/logs" >> $GITHUB_ENV
+          echo "DD_TRACE_LOG_DIRECTORY=$tests_output_dir/logs" >> $GITHUB_ENV
           echo "DD_INTERNAL_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
           echo "DD_PROFILING_ENABLED=1" >> $GITHUB_ENV
           echo "DD_PROFILING_EXCEPTION_ENABLED=1" >> $GITHUB_ENV
@@ -335,7 +335,7 @@ jobs:
           #
           tests_output_dir="$(realpath .)/test_output"
           echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
-          echo "DD_PROFILING_LOG_DIR=$tests_output_dir/logs" >> $GITHUB_ENV
+          echo "DD_TRACE_LOG_DIRECTORY=$tests_output_dir/logs" >> $GITHUB_ENV
           echo "DD_INTERNAL_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
           echo "DD_PROFILING_ENABLED=1" >> $GITHUB_ENV
           echo "DD_PROFILING_EXCEPTION_ENABLED=1" >> $GITHUB_ENV
@@ -572,8 +572,7 @@ jobs:
 
       - name: Execute PiComputation benchmark
         env:
-          DD_PROFILING_LOG_DIR: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
-          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}' # for the loader
+          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
         run: |
           cd profiler\build
           .\run.cmd  ${{ matrix.scenario }} ${{ matrix.framework }}
@@ -663,8 +662,7 @@ jobs:
 
       - name: Execute Clr Events benchmark
         env:
-          DD_PROFILING_LOG_DIR: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
-          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}' # for the loader
+          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
         run: |
           cd profiler\build
           .\run.cmd  ${{ matrix.scenario }} ${{ matrix.framework }}
@@ -784,7 +782,7 @@ jobs:
           $tests_output=$(Join-Path -Path $(Resolve-Path .) -ChildPath tests_output)
           echo "DD_TESTING_OUPUT_DIR=$tests_output" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_TRACE_DEBUG=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "DD_PROFILING_LOG_DIR=$(Join-Path -Path $tests_output -ChildPath logs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_TRACE_LOG_DIRECTORY=$(Join-Path -Path $tests_output -ChildPath logs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_INTERNAL_PROFILING_OUTPUT_DIR=$(Join-Path -Path $tests_output -ChildPath pprofs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_TRACE_ENABLED=0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_PROFILING_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
@@ -965,46 +963,3 @@ jobs:
             ${{ env.CI_ANALYSIS_RESULTS_FOLDER }}
           retention-days: 7
 
-  throughput_linux:
-    name: Throughput tests Linux
-    runs-on: [self-hosted, throughput, profiler]
-    needs: [build_windows, build_linux_release_x64]
-    steps:
-      - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v3
-         
-      - name: Download profiler artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: monitoring-home.Linux.Release.x64
-          path: monitoring-home-linux
-          
-      - name: Run throughput tests
-        shell: bash
-        run: |
-          cd profiler/build/crank
-          chmod +x ./run.sh
-          ./run.sh "linux"
-
-  throughput_windows:
-    name: Throughput tests Windows
-    runs-on: [self-hosted, throughput, profiler]
-    needs: [build_windows, build_linux_release_x64]
-    steps:
-      - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v3
-
-      - name: Download profiler artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: monitoring-home.Windows.Release
-          path: monitoring-home-windows
-                   
-      - name: Run throughput tests
-        shell: bash
-        run: |
-          cd profiler/build/crank
-          chmod +x ./run.sh
-          ./run.sh "windows"
-          
-    

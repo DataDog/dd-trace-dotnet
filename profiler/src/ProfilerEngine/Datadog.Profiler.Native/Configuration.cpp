@@ -65,6 +65,7 @@ Configuration::Configuration()
     _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
     _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, false);
     _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
+    _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -250,6 +251,12 @@ bool Configuration::UseBacktrace2() const
     return _useBacktrace2;
 }
 
+bool Configuration::IsAllocationRecorderEnabled() const
+{
+    return _isAllocationRecorderEnabled;
+}
+
+
 fs::path Configuration::GetApmBaseDirectory()
 {
 #ifdef _WINDOWS
@@ -270,7 +277,7 @@ fs::path Configuration::GetDefaultLogDirectoryPath()
 {
     auto baseDirectory = fs::path(GetApmBaseDirectory());
 #ifdef _WINDOWS
-    return baseDirectory / WStr(R"(Datadog-APM\logs\DotNet)");
+    return baseDirectory / WStr(R"(Datadog .NET Tracer\logs)");
 #else
     return baseDirectory / WStr("dotnet");
 #endif

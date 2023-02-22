@@ -5,6 +5,7 @@
 
 #include "resource.h"
 
+#include <memory>
 #include "OsSpecificApi.h"
 
 #include "IConfiguration.h"
@@ -13,6 +14,7 @@
 #include "Windows32BitStackFramesCollector.h"
 #include "Windows64BitStackFramesCollector.h"
 #include "Log.h"
+#include "ScopeFinalizer.h"
 #include "shared/src/native-src/loader.h"
 
 namespace OsSpecificApi {
@@ -91,10 +93,13 @@ typedef enum
 
 #define SYSTEMTHREADINFORMATION 40
 typedef NTSTATUS(WINAPI* NtQueryInformationThread_)(HANDLE, int, PVOID, ULONG, PULONG);
-
 NtQueryInformationThread_ NtQueryInformationThread = nullptr;
 
-bool InitializeCallback()
+typedef BOOL(WINAPI* GetLogicalProcessorInformation_)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
+GetLogicalProcessorInformation_ GetLogicalProcessorInformation = nullptr;
+
+
+bool InitializeNtQueryInformationThreadCallback()
 {
     auto hModule = GetModuleHandleA("NtDll.dll");
     if (hModule == nullptr)
@@ -130,7 +135,7 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
 {
     if (NtQueryInformationThread == nullptr)
     {
-        if (!InitializeCallback())
+        if (!InitializeNtQueryInformationThreadCallback())
         {
             return false;
         }
@@ -150,6 +155,32 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
     cpuTime = GetTotalMilliseconds(sti.UserTime) + GetTotalMilliseconds(sti.KernelTime);
 
     return IsRunning(sti.ThreadState);
+}
+
+// https://devblogs.microsoft.com/oldnewthing/20200824-00/?p=104116
+
+int32_t GetProcessorCount()
+{
+    auto nbProcs = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+    if (nbProcs == 0)
+    {
+        DWORD errorMessageID = ::GetLastError();
+
+        LPSTR messageBuffer = nullptr;
+        // Free the Win32's string's buffer.
+        on_leave { LocalFree(messageBuffer); };
+
+        // Ask Win32 to give us the string version of that message ID.
+        // The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
+        size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                     NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+
+        // Copy the error message into a std::string.
+        std::string message(messageBuffer, size);
+        Log::Info("An error occured and we were unable to retrieve the number of processors (Error: ", message, ")");
+        return 1;
+    }
+    return nbProcs;
 }
 
 } // namespace OsSpecificApi

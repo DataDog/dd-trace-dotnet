@@ -8,8 +8,6 @@ using System.Security.Cryptography;
 using Moq;
 using Xunit;
 
-#if !NETFRAMEWORK
-
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.WeakHashing;
 
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
@@ -44,4 +42,3 @@ public class MD5CryptoServiceProviderTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 }
-#endif
