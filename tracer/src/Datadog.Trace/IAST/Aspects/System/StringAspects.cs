@@ -272,4 +272,72 @@ public partial class StringAspects
     {
         return StringModuleImpl.OnStringSubSequence(target, startIndex, target.ToCharArray(startIndex, length));
     }
+
+    /// <summary>
+    /// String.ToUpper aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <returns> ToUpper result </returns>
+    [AspectMethodReplace("System.String::ToUpper()", AspectFilter.StringLiteral_0)]
+    public static string ToUpper(string target)
+    {
+        return StringModuleImpl.OnStringCaseChanged(target, target.ToUpper());
+    }
+
+    /// <summary>
+    /// String.ToUpper aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <param name="culture"> the CultureInfo parameter </param>
+    /// <returns> ToUpper result </returns>
+    [AspectMethodReplace("System.String::ToUpper(System.Globalization.CultureInfo)", AspectFilter.StringLiteral_0)]
+    public static string ToUpper(string target, global::System.Globalization.CultureInfo culture)
+    {
+        return StringModuleImpl.OnStringCaseChanged(target, target.ToUpper(culture));
+    }
+
+    /// <summary>
+    /// String.ToUpperInvariant aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <returns> ToUpperInvariant result </returns>
+    [AspectMethodReplace("System.String::ToUpperInvariant()", AspectFilter.StringLiteral_0)]
+    public static string ToUpperInvariant(string target)
+    {
+        return StringModuleImpl.OnStringCaseChanged(target, target.ToUpperInvariant());
+    }
+
+    /// <summary>
+    /// String.ToLower aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <returns> ToLower result </returns>
+    [AspectMethodReplace("System.String::ToLower()", AspectFilter.StringLiteral_0)]
+    public static string ToLower(string target)
+    {
+        return StringModuleImpl.OnStringCaseChanged(target, target.ToLower());
+    }
+
+    /// <summary>
+    /// String.ToLower aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <param name="culture"> the CultureInfo parameter </param>
+    /// <returns> ToLower result </returns>
+    [AspectMethodReplace("System.String::ToLower(System.Globalization.CultureInfo)", AspectFilter.StringLiteral_0)]
+    public static string ToLower(string target, global::System.Globalization.CultureInfo culture)
+    {
+        return StringModuleImpl.OnStringCaseChanged(target, target.ToLower(culture));
+    }
+
+    /// <summary>
+    /// String.ToLowerInvariant aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <returns> ToLowerInvariant result </returns>
+    [AspectMethodReplace("System.String::ToLowerInvariant()", AspectFilter.StringLiteral_0)]
+    public static string ToLowerInvariant(string target)
+    {
+        return StringModuleImpl.OnStringCaseChanged(target, target.ToLowerInvariant());
+    }
 }
