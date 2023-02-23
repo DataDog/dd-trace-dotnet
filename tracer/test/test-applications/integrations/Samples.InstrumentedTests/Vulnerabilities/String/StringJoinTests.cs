@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using FluentAssertions;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
 
@@ -294,7 +291,7 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void String_Join()
+    public void GivenSomeStrings_WhenJoin_ResultIsOk()
     {
         string separator = "-";
         string testString1 = (string) AddTainted("01");
@@ -306,98 +303,98 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void String_Join_Basic_With_Both()
+    public void GivenStringJoinBasicWithBoth_WhenJoin_ResultIsOk()
     {
         string[] sArr = new string[] { TaintedString, UntaintedString };
         Assert.Equal(":+-TaintedString-+:|UntaintedString", FormatTainted(String.Join("|", sArr)));
     }
 
     [Fact]
-    public void String_Join_Basic_With_Two_Tainted()
+    public void GivenStringJoinBasicWithTwoTainted_WhenJoin_ResultIsOk()
     {
         string[] sArr = new string[] { TaintedString, UntaintedString, OtherTaintedString };
         Assert.Equal(":+-TaintedString-+:|UntaintedString|:+-OtherTaintedString-+:", FormatTainted(String.Join("|", sArr)));
     }
 
     [Fact]
-    public void String_Join_Basic_With_Two_Untainted()
+    public void GivenStringJoinBasicWithTwoUntainted_WhenJoin_ResultIsOk()
     {
         string[] sArr = new string[] { UntaintedString, TaintedString, OtherUntaintedString };
         Assert.Equal("UntaintedString|:+-TaintedString-+:|OtherUntaintedString", FormatTainted(String.Join("|", sArr)));
     }
 
     [Fact]
-    public void String_Join_Basic_With_Two_Tainted_And_Two_Untainted()
+    public void GivenStringJoinBasicWithTwoTaintedAndTwoUntainted_WhenJoin_ResultIsOk()
     {
         string[] sArr = new string[] { TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString };
         Assert.Equal(":+-TaintedString-+:|UntaintedString|:+-OtherTaintedString-+:|OtherUntaintedString", FormatTainted(String.Join("|", sArr)));
     }
 
     [Fact]
-    public void String_Join_Object_With_Both()
+    public void GivenStringJoinObjectWithBoth()
     {
         object[] sArr = new object[] { TaintedObject, UntaintedObject };
         Assert.Equal(":+-TaintedObject-+:|UntaintedObject", FormatTainted(String.Join("|", sArr)));
     }
 
     [Fact]
-    public void String_Join_Object_With_Two_Tainted()
+    public void GivenStringJoinObjectWithTwoTainted_WhenJoin_ResultIsOk()
     {
         object[] sArr = new object[] { TaintedObject, UntaintedObject, OtherTaintedObject };
         Assert.Equal(":+-TaintedObject-+:|UntaintedObject|:+-OtherTaintedObject-+:", FormatTainted(String.Join("|", sArr)));
     }
 
     [Fact]
-    public void String_Join_Object_With_Two_Untainted()
+    public void GivenStringJoinObjectWithTwoUntainted_WhenJoin_ResultIsOk()
     {
         object[] sArr = new object[] { UntaintedObject, TaintedObject, OtherUntaintedObject };
         Assert.Equal("UntaintedObject|:+-TaintedObject-+:|OtherUntaintedObject", FormatTainted(String.Join("|", sArr)));
     }
 
     [Fact]
-    public void String_Join_Object_With_Two_Tainted_And_Two_Untainted()
+    public void GivenStringJoinObjectWithTwoTaintedAndTwoUntainted_WhenJoin_ResultIsOk()
     {
         object[] sArr = new object[] { TaintedObject, UntaintedObject, OtherTaintedObject, OtherUntaintedObject };
         Assert.Equal(":+-TaintedObject-+:|UntaintedObject|:+-OtherTaintedObject-+:|OtherUntaintedObject", FormatTainted(String.Join("|", sArr)));
     }
 
     [Fact]
-    public void String_Join_Index_With_Both()
+    public void GivenStringJoinIndexWithBoth()
     {
         string[] sArr = new string[] { TaintedString, UntaintedString, OtherUntaintedString };
         Assert.Equal(":+-TaintedString-+:|UntaintedString", FormatTainted(String.Join("|", sArr, 0, 2)));
     }
 
     [Fact]
-    public void String_Join_Index_With_Two_Tainted()
+    public void GivenStringJoinIndexWithTwoTainted_WhenJoin_ResultIsOk()
     {
         string[] sArr = new string[] { TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString };
         Assert.Equal(":+-TaintedString-+:|UntaintedString|:+-OtherTaintedString-+:", FormatTainted(String.Join("|", sArr, 0, 3)));
     }
 
     [Fact]
-    public void String_Join_Index_With_Two_Untainted()
+    public void GivenStringJoinIndexWithTwoUntainted_WhenJoin_ResultIsOk()
     {
         string[] sArr = new string[] { UntaintedString, TaintedString, OtherUntaintedString, OtherUntaintedString };
         Assert.Equal("UntaintedString|:+-TaintedString-+:|OtherUntaintedString", FormatTainted(String.Join("|", sArr, 0, 3)));
     }
 
     [Fact]
-    public void String_Join_Index_With_Two_Tainted_And_Two_Untainted()
+    public void GivenStringJoinIndexWithTwoTaintedAndTwoUntainted_WhenJoin_ResultIsOk()
     {
         string[] sArr = new string[] { TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString, OtherUntaintedString };
         Assert.Equal(":+-TaintedString-+:|UntaintedString|:+-OtherTaintedString-+:|OtherUntaintedString", FormatTainted(String.Join("|", sArr, 0, 4)));
     }
 
     [Fact]
-    public void String_Join_Index_With_Two_Tainted_And_Two_Untainted_Chunk()
+    public void GivenStringJoinIndexWithTwoTaintedAndTwoUntaintedChunk_WhenJoin_ResultIsOk()
     {
         string[] sArr = new string[] { TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString, OtherUntaintedString };
         Assert.Equal(":+-OtherTaintedString-+:|OtherUntaintedString", FormatTainted(String.Join("|", sArr, 2, 2)));
     }
 
     [Fact]
-    public void String_Join_List_With_Both()
+    public void GivenStringJoinListWithBoth_WhenJoin_ResultIsOk()
     {
         string.Concat("dsd", TaintedString);
         List<string> list = new List<string>() { TaintedString, UntaintedString };
@@ -405,35 +402,35 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void String_Join_List_With_Two_Tainted()
+    public void GivenStringJoinListWithTwoTainted_WhenJoin_ResultIsOk()
     {
         List<string> list = new List<string>() { TaintedString, UntaintedString, OtherTaintedString };
         Assert.Equal(":+-TaintedString-+:|UntaintedString|:+-OtherTaintedString-+:", FormatTainted(String.Join("|", list)));
     }
 
     [Fact]
-    public void String_Join_List_With_Two_Untainted()
+    public void GivenStringJoinListWithTwoUntainted_WhenJoin_ResultIsOk()
     {
         List<string> list = new List<string>() { UntaintedString, TaintedString, OtherUntaintedString };
         Assert.Equal("UntaintedString|:+-TaintedString-+:|OtherUntaintedString", FormatTainted(String.Join("|", list)));
     }
 
     [Fact]
-    public void String_Join_List_With_Two_Tainted_And_Two_Untainted()
+    public void GivenStringJoinListWithTwoTaintedAndTwoUntainted_WhenJoin_ResultIsOk()
     {
         List<string> list = new List<string>() { TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString };
         Assert.Equal(":+-TaintedString-+:|UntaintedString|:+-OtherTaintedString-+:|OtherUntaintedString", FormatTainted(String.Join("|", list)));
     }
 
     [Fact]
-    public void String_Join_T_Generic_Struct()
+    public void GivenStringJoinTGenericStruct_WhenJoin_ResultIsOk()
     {
         string str = string.Join<StructForStringTest>("|", new List<StructForStringTest> { new StructForStringTest(UntaintedString), new StructForStringTest(TaintedString) });
         Assert.Equal("UntaintedString|:+-TaintedString-+:", FormatTainted(str));
     }
 
     [Fact]
-    public void String_Join_T_Generic_Class()
+    public void GivenStringJoinTGenericClass_WhenJoin_ResultIsOk()
     {
         string str = string.Join<StructForStringTest>("|", new List<StructForStringTest> { new StructForStringTest(UntaintedString), new StructForStringTest(TaintedString) });
         Assert.Equal("UntaintedString|:+-TaintedString-+:", FormatTainted(str));
