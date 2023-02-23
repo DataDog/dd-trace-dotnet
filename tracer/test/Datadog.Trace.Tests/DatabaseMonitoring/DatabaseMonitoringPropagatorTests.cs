@@ -43,9 +43,6 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             Enum.TryParse(propagationMode, true, out dbmPropagationLevel);
 
             var context = new SpanContext(traceId: 7021887840877922076, spanId: 407003698947780173, samplingPriority: samplingPriority, serviceName: "Test.Service-mysql", "origin");
-
-            context.SpanId.Should().Be(407003698947780173);
-
             var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", context);
 
             returnedComment.Should().Be(expectedComment);
