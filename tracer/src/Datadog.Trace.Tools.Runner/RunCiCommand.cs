@@ -244,17 +244,17 @@ namespace Datadog.Trace.Tools.Runner
             {
                 AnsiConsole.WriteLine("Running: " + command);
 
-                if (Program.CallbackForTests != null)
-                {
-                    Program.CallbackForTests(program, arguments, profilerEnvironmentVariables);
-                    return 0;
-                }
-
-                if (ciVisibilitySettings.IntelligentTestRunnerEnabled)
+                if (ciVisibilitySettings.IntelligentTestRunnerEnabled || Program.CallbackForTests is not null)
                 {
                     // Awaiting git repository task before running the command if ITR is enabled.
                     Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
+                }
+
+                if (Program.CallbackForTests is { } callbackForTests)
+                {
+                    callbackForTests(program, arguments, profilerEnvironmentVariables);
+                    return 0;
                 }
 
                 Log.Debug("RunCiCommand: Launching: {Value}", command);
