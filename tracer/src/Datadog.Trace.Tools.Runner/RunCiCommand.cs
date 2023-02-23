@@ -82,6 +82,8 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
+            var uploadRepositoryChangesTask = Task.CompletedTask;
+
             // Set Agentless configuration from the command line options
             ciVisibilitySettings.SetAgentlessConfiguration(agentless, apiKey, applicationKey, ciVisibilitySettings.AgentlessUrl);
 
@@ -103,7 +105,8 @@ namespace Datadog.Trace.Tools.Runner
                 var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings));
                 if (ciVisibilitySettings.GitUploadEnabled != false || ciVisibilitySettings.IntelligentTestRunnerEnabled)
                 {
-                    await lazyItrClient.Value.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                    // If we are in git upload only then we can defer the await until the child command exits.
+                    uploadRepositoryChangesTask = Task.Run(() => lazyItrClient.Value.UploadRepositoryChangesAsync());
 
                     // Once the repository has been uploaded we switch off the git upload in children processes
                     profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled] = "0";
@@ -247,6 +250,13 @@ namespace Datadog.Trace.Tools.Runner
                     return 0;
                 }
 
+                if (ciVisibilitySettings.IntelligentTestRunnerEnabled)
+                {
+                    // Awaiting git repository task before running the command if ITR is enabled.
+                    Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
+                    await uploadRepositoryChangesTask.ConfigureAwait(false);
+                }
+
                 Log.Debug("RunCiCommand: Launching: {Value}", command);
                 var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, profilerEnvironmentVariables);
                 if (!string.IsNullOrEmpty(arguments))
@@ -257,6 +267,14 @@ namespace Datadog.Trace.Tools.Runner
                 exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
                 session?.SetTag(TestTags.CommandExitCode, exitCode);
                 Log.Debug<int>("RunCiCommand: Finished with exit code: {Value}", exitCode);
+
+                if (!ciVisibilitySettings.IntelligentTestRunnerEnabled)
+                {
+                    // Awaiting git repository task after running the command if ITR is disabled.
+                    Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
+                    await uploadRepositoryChangesTask.ConfigureAwait(false);
+                }
+
                 return exitCode;
             }
             catch (Exception ex)
