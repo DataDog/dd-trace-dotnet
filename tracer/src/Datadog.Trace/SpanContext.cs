@@ -169,11 +169,6 @@ namespace Datadog.Trace
         public ISpanContext Parent { get; }
 
         /// <summary>
-        /// Gets the lower 64-bits of the 128-bit trace id.
-        /// </summary>
-        ulong ISpanContext.TraceId => TraceId128.Lower;
-
-        /// <summary>
         /// Gets the 128-bit trace id.
         /// </summary>
         internal TraceId TraceId128 { get; }
@@ -238,7 +233,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the raw traceId (to support > 64bits)
         /// </summary>
-        internal string RawTraceId => _rawTraceId ??= HexString.ToHexString(TraceId);
+        internal string RawTraceId => _rawTraceId ??= HexString.ToHexString(TraceId128);
 
         /// <summary>
         /// Gets the raw spanId
@@ -333,6 +328,7 @@ namespace Datadog.Trace
 
                 case Keys.ParentId:
                 case HttpHeaderNames.ParentId:
+                    // returns the 64-bit span id in decimal encoding
                     value = SpanId.ToString(invariant);
                     return true;
 
@@ -349,10 +345,12 @@ namespace Datadog.Trace
                     return true;
 
                 case Keys.RawTraceId:
+                    // returns the full 128-bit trace id in hexadecimal encoding
                     value = RawTraceId;
                     return true;
 
                 case Keys.RawSpanId:
+                    // returns the 64-bit span id in hexadecimal encoding
                     value = RawSpanId;
                     return true;
 

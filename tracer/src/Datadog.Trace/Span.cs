@@ -82,7 +82,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the trace's unique 128-bit identifier.
         /// </summary>
-        internal TraceId TraceId => Context.TraceId;
+        internal TraceId TraceId => Context.TraceId128;
 
         /// <summary>
         /// Gets the span's unique 64-bit identifier.
@@ -132,7 +132,8 @@ namespace Datadog.Trace
         public override string ToString()
         {
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            sb.AppendLine($"TraceId: {Context.TraceId}");
+            sb.AppendLine($"TraceId64: {Context.TraceId}");
+            sb.AppendLine($"TraceId128: {Context.TraceId128}");
             sb.AppendLine($"ParentId: {Context.ParentId}");
             sb.AppendLine($"SpanId: {Context.SpanId}");
             sb.AppendLine($"Origin: {Context.Origin}");
