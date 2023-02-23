@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 
@@ -14,6 +15,8 @@ internal class RemoteConfigurationStatus
     internal List<RuleOverride> RulesOverrides { get; } = new();
 
     internal List<RuleData> RulesData { get; } = new();
+
+    internal IDictionary<string, Action> Actions { get; set; } = new Dictionary<string, Action>();
 
     internal string RemoteRulesJson { get; set; }
 }

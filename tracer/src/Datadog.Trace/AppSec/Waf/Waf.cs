@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
@@ -26,6 +25,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private readonly WafConfigurator _wafConfigurator;
+        private readonly Concurrency.ReaderWriterLock _wafLocker = new();
         private IntPtr _wafHandle;
 
         internal Waf(IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker)
@@ -33,11 +33,6 @@ namespace Datadog.Trace.AppSec.Waf
             _wafLibraryInvoker = wafLibraryInvoker;
             _wafHandle = wafHandle;
             _wafConfigurator = new WafConfigurator(_wafLibraryInvoker);
-        }
-
-        ~Waf()
-        {
-            Dispose(false);
         }
 
         internal bool Disposed { get; private set; }
@@ -55,37 +50,59 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="rulesFile">can be null, means use rules embedded in the manifest </param>
         /// <param name="rulesJson">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static InitializationResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? rulesFile = null, string? rulesJson = null)
+        internal static InitOrUpdateResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? rulesFile = null, string? rulesJson = null)
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
-            InitializationResult initializationResult;
+            InitOrUpdateResult initOrUpdateResult;
             if (!string.IsNullOrEmpty(rulesJson))
             {
-                initializationResult = wafConfigurator.ConfigureFromRemoteConfig(rulesJson, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                initOrUpdateResult = wafConfigurator.ConfigureFromRemoteConfig(rulesJson, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
             else
             {
-                initializationResult = wafConfigurator.Configure(rulesFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                initOrUpdateResult = wafConfigurator.Configure(rulesFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
 
-            return initializationResult;
+            return initOrUpdateResult;
         }
 
-        public bool UpdateRules(string rules)
+        public InitOrUpdateResult UpdateRules(string rules)
         {
-            var argCache = new List<Obj>();
-            using var rulesObj = _wafConfigurator.GetConfigObjFromRemoteJson(rules, argCache);
-            var rulesetInfo = default(DdwafRuleSetInfoStruct);
-            var result = _wafLibraryInvoker.Update(_wafHandle, rulesObj.RawPtr, ref rulesetInfo);
-            return UpdateWafHandle(result);
+            var rulesetInfo = new DdwafRuleSetInfo();
+            try
+            {
+                var argCache = new List<Obj>();
+                using var rulesObj = _wafConfigurator.GetConfigObjFromRemoteJson(rules, argCache);
+                var wafHandle = _wafLibraryInvoker.Update(_wafHandle, rulesObj.RawPtr, rulesetInfo);
+                var res = UpdateWafHandle(wafHandle);
+                if (res)
+                {
+                    return InitOrUpdateResult.From(rulesetInfo, wafHandle, _wafLibraryInvoker);
+                }
+            }
+            finally
+            {
+                _wafLibraryInvoker.RuleSetInfoFree(rulesetInfo);
+            }
+
+            return InitOrUpdateResult.FromFailed();
         }
 
-        private bool UpdateWafHandle(IntPtr result)
+        private bool UpdateWafHandle(IntPtr newHandle)
         {
-            if (result != IntPtr.Zero)
+            if (newHandle != IntPtr.Zero)
             {
                 var oldHandle = _wafHandle;
-                _wafHandle = result;
+                if (_wafLocker.EnterWriteLock())
+                {
+                    _wafHandle = newHandle;
+                    _wafLocker.ExitWriteLock();
+                }
+                else
+                {
+                    return false;
+                }
+
                 _wafLibraryInvoker.Destroy(oldHandle);
                 return true;
             }
@@ -106,7 +123,17 @@ namespace Datadog.Trace.AppSec.Waf
                 return null;
             }
 
-            var contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
+            IntPtr contextHandle;
+            if (_wafLocker.EnterReadLock())
+            {
+                contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
+                _wafLocker.ExitReadLock();
+            }
+            else
+            {
+                Log.Warning("Context couldn't be created as we couldnt acquire a reader lock");
+                return null;
+            }
 
             if (contextHandle == IntPtr.Zero)
             {
@@ -128,13 +155,12 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (rulesData.Count == 0)
             {
-                return false;
+                return true;
             }
 
             var mergedRuleData = MergeRuleData(rulesData);
             using var encoded = mergedRuleData.Encode(_wafLibraryInvoker);
-            DdwafRuleSetInfoStruct ruleSetInfo = default;
-            var result = _wafLibraryInvoker.Update(_wafHandle, encoded.RawPtr, ref ruleSetInfo);
+            var result = _wafLibraryInvoker.Update(_wafHandle, encoded.RawPtr, null);
             var updated = UpdateWafHandle(result);
             Log.Information("{Number} rules have been updated and waf has been updated: {Updated}", mergedRuleData.Count, updated);
             return updated;
@@ -153,14 +179,13 @@ namespace Datadog.Trace.AppSec.Waf
                 return false;
             }
 
-            if (ruleStatus is not { Count: not 0 })
+            if (ruleStatus.Count == 0)
             {
-                return false;
+                return true;
             }
 
             using var encoded = ruleStatus.Encode(_wafLibraryInvoker);
-            var ruleSetInfo = default(DdwafRuleSetInfoStruct);
-            var result = _wafLibraryInvoker.Update(_wafHandle, encoded.RawPtr, ref ruleSetInfo);
+            var result = _wafLibraryInvoker.Update(_wafHandle, encoded.RawPtr, null);
             var updated = UpdateWafHandle(result);
             Log.Information("{Number} rule override have been updated and waf has been updated: {Updated}", ruleStatus.Count, updated);
             return updated;
@@ -201,12 +226,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
             if (Disposed)
             {
                 return;
@@ -214,6 +233,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             Disposed = true;
             _wafLibraryInvoker.Destroy(_wafHandle);
+            _wafLocker.Dispose();
         }
     }
 }

@@ -9,8 +9,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.RcmModels;
-using Datadog.Trace.AppSec.RcmModels.Asm;
-using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -33,13 +31,13 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
         private readonly SecuritySettings _settings;
+        private readonly RemoteConfigurationStatus _remoteConfigurationStatus = new();
         private LibraryInitializationResult _libraryInitializationResult;
         private IWaf _waf;
         private WafLibraryInvoker _wafLibraryInvoker;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
-        private InitializationResult _wafInitializationResult;
-        private RemoteConfigurationStatus _remoteConfigurationStatus = new();
+        private InitOrUpdateResult _wafInitOrUpdateResult;
 
         static Security()
         {
@@ -48,8 +46,8 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
-        public Security(SecuritySettings settings = null, IWaf waf = null, IReadOnlyDictionary<string, RcmModels.Asm.Action> actions = null)
-            : this(settings, waf) => _actions = actions;
+        public Security(SecuritySettings settings = null, IWaf waf = null, IDictionary<string, RcmModels.Asm.Action> actions = null)
+            : this(settings, waf) => _remoteConfigurationStatus.Actions = actions;
 
         private Security(SecuritySettings settings = null, IWaf waf = null)
         {
@@ -102,9 +100,9 @@ namespace Datadog.Trace.AppSec
 
         internal bool WafExportsErrorHappened => _libraryInitializationResult?.ExportErrorHappened ?? false;
 
-        internal string WafRuleFileVersion => _wafInitializationResult?.RuleFileVersion;
+        internal string WafRuleFileVersion => _wafInitOrUpdateResult?.RuleFileVersion;
 
-        internal InitializationResult WafInitResult => _wafInitializationResult;
+        internal InitOrUpdateResult WafInitResult => _wafInitOrUpdateResult;
 
         /// <summary>
         /// Gets <see cref="SecuritySettings"/> instance
@@ -119,7 +117,7 @@ namespace Datadog.Trace.AppSec
         {
             var blockingAction = new BlockingAction();
             RcmModels.Asm.Action action = null;
-            _actions?.TryGetValue(id, out action);
+            _remoteConfigurationStatus.Actions?.TryGetValue(id, out action);
 
             void SetAutomaticResponseContent()
             {
@@ -285,8 +283,8 @@ namespace Datadog.Trace.AppSec
             if (!string.IsNullOrEmpty(asmDd.TypedFile))
             {
                 _remoteConfigurationStatus.RemoteRulesJson = asmDd.TypedFile;
-                var result = _waf?.UpdateRules(_remoteConfigurationStatus.RemoteRulesJson);
-                if (result ?? false)
+                _wafInitOrUpdateResult = _waf?.UpdateRules(_remoteConfigurationStatus.RemoteRulesJson);
+                if (_wafInitOrUpdateResult?.Success ?? false)
                 {
                     e.Acknowledge(asmDd.Name);
                 }
@@ -327,7 +325,7 @@ namespace Datadog.Trace.AppSec
                 return;
             }
 
-            var asmDataConfigs = e.GetDeserializedConfigurations<Payload>();
+            var asmDataConfigs = e.GetDeserializedConfigurations<RcmModels.AsmData.Payload>();
             foreach (var asmDataConfig in asmDataConfigs)
             {
                 if (asmDataConfig.TypedFile?.RulesData?.Length > 0)
@@ -359,40 +357,33 @@ namespace Datadog.Trace.AppSec
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
             foreach (var asmConfig in asmConfigs)
             {
-                try
+                _remoteConfigurationStatus.RulesOverrides.Clear();
+                if (asmConfig.TypedFile.RuleStatus?.Length > 0)
                 {
-                    _remoteConfigurationStatus.RulesOverrides.Clear();
-                    if (asmConfig.TypedFile.RuleStatus?.Length > 0)
-                    {
-                        _remoteConfigurationStatus.RulesOverrides.AddRange(asmConfig.TypedFile.RuleStatus);
-                    }
+                    _remoteConfigurationStatus.RulesOverrides.AddRange(asmConfig.TypedFile.RuleStatus);
                 }
-                catch (Exception err)
+
+                if (asmConfig.TypedFile.Actions != null)
                 {
-                    e.Error(asmConfig.Name, "Waf rule status data error: " + err.Message);
+                    foreach (var action in asmConfig.TypedFile.Actions)
+                    {
+                        if (action.Id is not null)
+                        {
+                            _remoteConfigurationStatus.Actions[action.Id] = action;
+                        }
+                    }
+
+                    if (asmConfig.TypedFile.Actions.Length == 0)
+                    {
+                        _remoteConfigurationStatus.Actions.Clear();
+                    }
                 }
             }
 
             if (_remoteConfigurationStatus.RulesOverrides is { Count: > 0 })
-            if (actionsResult != null)
-            {
-                _actions = new ReadOnlyDictionary<string, RcmModels.Asm.Action>(actionsResult);
-            }
-
-            if (ruleStatusResult != null)
-            {
-                _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatusResult);
-                UpdateRuleStatus(_ruleStatus);
-            }
-        }
-
-        private bool UpdateRulesData()
-        {
-            bool res = false;
-            lock (_asmDataConfigs)
             {
                 var result = _waf.UpdateRulesStatus(_remoteConfigurationStatus.RulesOverrides);
-                Log.Debug<bool, int>("_waf.Update returned {Result}, ({Count} rule status entries)", result, _remoteConfigurationStatus.RulesOverrides.Count);
+                Log.Debug<bool, int>("_waf.Update was updated: {Success}, ({Count} rule status entries)", result, _remoteConfigurationStatus.RulesOverrides.Count);
 
                 foreach (var asmConfig in asmConfigs)
                 {
@@ -433,11 +424,11 @@ namespace Datadog.Trace.AppSec
                 _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
             }
 
-            _wafInitializationResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteConfigurationStatus.RemoteRulesJson);
-            if (_wafInitializationResult.Success)
+            _wafInitOrUpdateResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteConfigurationStatus.RemoteRulesJson);
+            if (_wafInitOrUpdateResult.Success)
             {
                 var oldWaf = _waf;
-                _waf = _wafInitializationResult.Waf;
+                _waf = _wafInitOrUpdateResult.Waf;
                 oldWaf?.Dispose();
                 Log.Debug("Disposed old waf and affected new waf");
                 UpdateWafWithRulesData();
@@ -445,7 +436,7 @@ namespace Datadog.Trace.AppSec
             }
             else
             {
-                _wafInitializationResult.Waf?.Dispose();
+                _wafInitOrUpdateResult.Waf?.Dispose();
                 _settings.Enabled = false;
             }
         }

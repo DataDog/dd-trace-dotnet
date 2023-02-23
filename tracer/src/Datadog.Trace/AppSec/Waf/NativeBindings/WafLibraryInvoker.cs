@@ -9,7 +9,6 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -82,11 +81,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate void FreeResultDelegate(ref DdwafResultStruct output);
 
-        private delegate void FreeRulesetInfoDelegate(ref DdwafRuleSetInfoStruct output);
+        private delegate void FreeRulesetInfoDelegate(DdwafRuleSetInfo output);
 
-        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo);
+        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, DdwafRuleSetInfo ruleSetInfo);
 
-        private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, IntPtr wafRule, ref DdwafRuleSetInfoStruct ruleSetInfo);
+        private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, IntPtr wafRule, DdwafRuleSetInfo ruleSetInfo);
 
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
 
@@ -190,9 +189,16 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return _version;
         }
 
-        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo) => _initField(wafRule, ref config, ref ruleSetInfo);
+        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, DdwafRuleSetInfo ruleSetInfo) => _initField(wafRule, ref config, ruleSetInfo);
 
-        internal IntPtr Update(IntPtr oldWafHandle, IntPtr wafRule, ref DdwafRuleSetInfoStruct ruleSetInfo) => _updateField(oldWafHandle, wafRule, ref ruleSetInfo);
+        /// <summary>
+        /// Only give a non null ruleSetInfo when updating rules. When updating rules overrides, rules datas, the ruleSetInfo will return no error and no diagnostics, even if there are, it's misleading, so give null in this case.
+        /// </summary>
+        /// <param name="oldWafHandle">current waf handle</param>
+        /// <param name="wafData">a pointer to the new waf data (rules or overrides or other)</param>
+        /// <param name="ruleSetInfo">errors and diagnostics of the update, only for valid for new rules</param>
+        /// <returns>the new waf handle, if error, will be a nullptr</returns>
+        internal IntPtr Update(IntPtr oldWafHandle, IntPtr wafData, DdwafRuleSetInfo ruleSetInfo) => _updateField(oldWafHandle, wafData, ruleSetInfo);
 
         internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
@@ -252,7 +258,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// Only this function needs to be called on DdwafRuleSetInfoStruct, no need to dispose the Errors object inside because waf takes care of it
         /// </summary>
         /// <param name="output">the ruleset info structure</param>
-        internal void RuleSetInfoFree(ref DdwafRuleSetInfoStruct output) => _rulesetInfoFreeField(ref output);
+        internal void RuleSetInfoFree(DdwafRuleSetInfo output) => _rulesetInfoFreeField(output);
 
         private void LoggingCallback(
             DDWAF_LOG_LEVEL level,

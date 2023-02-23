@@ -1,4 +1,4 @@
-// <copyright file="InitializationResult.cs" company="Datadog">
+// <copyright file="InitOrUpdateResult.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,11 +13,11 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
-    internal class InitializationResult
+    internal class InitOrUpdateResult
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitializationResult));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitOrUpdateResult));
 
-        public InitializationResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null)
+        public InitOrUpdateResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null)
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
@@ -61,14 +61,14 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal bool Reported { get; set; }
 
-        internal static InitializationResult FromUnusableRuleFile() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), unusableRuleFile: true);
+        internal static InitOrUpdateResult FromUnusableRuleFile() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), unusableRuleFile: true);
 
-        internal static InitializationResult From(DdwafRuleSetInfoStruct ddwaRuleSetInfoStruct, IntPtr? wafHandle, WafLibraryInvoker wafLibraryInvoker)
+        internal static InitOrUpdateResult From(DdwafRuleSetInfo ddwaRuleSetInfo, IntPtr? wafHandle, WafLibraryInvoker wafLibraryInvoker)
         {
-            var ddwafObjectStruct = ddwaRuleSetInfoStruct.Errors;
+            var ddwafObjectStruct = ddwaRuleSetInfo.Errors;
             var errors = Decode(ddwafObjectStruct);
-            var ruleFileVersion = Marshal.PtrToStringAnsi(ddwaRuleSetInfoStruct.Version);
-            return new(ddwaRuleSetInfoStruct.Failed, ddwaRuleSetInfoStruct.Loaded, ruleFileVersion!, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
+            var ruleFileVersion = Marshal.PtrToStringAnsi(ddwaRuleSetInfo.Version);
+            return new(ddwaRuleSetInfo.Failed, ddwaRuleSetInfo.Loaded, ruleFileVersion!, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
         }
 
         private static IReadOnlyDictionary<string, string[]> Decode(DdwafObjectStruct ddwafObjectStruct)
@@ -109,5 +109,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
             return errorsDic;
         }
+
+        public static InitOrUpdateResult FromFailed() => new(0, 0, string.Empty, new Dictionary<string, string[]>());
     }
 }

@@ -120,7 +120,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var spans1 = await SendRequestsAsync(agent, url);
-            var acknowledgedId = nameof(TestRemoteConfigError);
+            var acknowledgedId = nameof(TestRemoteConfigError) + Guid.NewGuid();
 
             var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", acknowledgedId) }, "ASM_FEATURES", appliedServiceNames: new[] { acknowledgedId });
 

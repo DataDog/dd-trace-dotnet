@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -19,7 +20,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         internal DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 
-        bool UpdateRules(string rules);
+        /// <summary>
+        /// only this one returns a rulsetinfo from the waf
+        /// </summary>
+        /// <param name="rules">json rules</param>
+        /// <returns>returns InitOrUpdateResult</returns>
+        InitOrUpdateResult UpdateRules(string rules);
 
         bool UpdateRulesData(List<RuleData> rulesData);
 
