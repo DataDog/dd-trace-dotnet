@@ -493,10 +493,11 @@ namespace Datadog.Trace.Ci
             {
                 var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, _settings));
 
+                Task? uploadRepositoryChangesTask = null;
                 if (_settings.GitUploadEnabled != false)
                 {
                     // Upload the git metadata
-                    await lazyItrClient.Value.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                    uploadRepositoryChangesTask = Task.Run(() => lazyItrClient.Value.UploadRepositoryChangesAsync());
                 }
 
                 if (!_settings.Agentless || !string.IsNullOrEmpty(_settings.ApplicationKey))
@@ -523,6 +524,13 @@ namespace Datadog.Trace.Ci
 
                 // Log code coverage status
                 Log.Information("{V}", _settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
+
+                // For ITR we need the git metadata upload before consulting the skippable tests.
+                // If ITR is disable we just need to make sure the git upload task has completed before leaving this method.
+                if (uploadRepositoryChangesTask is not null)
+                {
+                    await uploadRepositoryChangesTask.ConfigureAwait(false);
+                }
 
                 // If the tests skipping feature is enabled we query the api for the tests we have to skip
                 if (_settings.TestsSkippingEnabled == true)
