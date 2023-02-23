@@ -41,4 +41,77 @@ internal static class Ranges
 
         return ranges;
     }
+
+    public static int[] GetIncludedRangesInterval(int offset, int length, Range[] ranges)
+    {
+        // index of the first included range
+        int start = -1;
+        // index of the first not included range
+        int end = -1;
+        for (int rangeIndex = 0; rangeIndex < ranges.Length; rangeIndex++)
+        {
+            var rangeSelf = ranges[rangeIndex];
+            if (rangeSelf.Start < offset + length && rangeSelf.Start + rangeSelf.Length > offset)
+            {
+                if (start == -1)
+                {
+                    start = rangeIndex;
+                }
+            }
+            else if (start != -1)
+            {
+                end = rangeIndex;
+                break;
+            }
+        }
+
+        return new int[] { start, end };
+    }
+
+    public static Range[]? ForSubstring(int offset, int length, Range[] ranges)
+    {
+        int[] includedRangesInterval = GetIncludedRangesInterval(offset, length, ranges);
+
+        // No ranges in the interval
+        if (includedRangesInterval[0] == -1)
+        {
+            return null;
+        }
+
+        var firstRangeIncludedIndex = includedRangesInterval[0];
+        var lastRangeIncludedIndex = includedRangesInterval[1] != -1 ? includedRangesInterval[1] : ranges.Length;
+        var newRagesSize = lastRangeIncludedIndex - firstRangeIncludedIndex;
+        Range[] newRanges = new Range[newRagesSize];
+        for (int rangeIndex = firstRangeIncludedIndex, newRangeIndex = 0; newRangeIndex < newRagesSize; rangeIndex++, newRangeIndex++)
+        {
+            Range range = ranges[rangeIndex];
+            if (offset == 0 && range.Start + range.Length <= length)
+            {
+                newRanges[newRangeIndex] = range;
+            }
+            else
+            {
+                var newStart = range.Start - offset;
+                var newLength = range.Length;
+                var newEnd = newStart + newLength;
+                if (newStart < 0)
+                {
+                    newLength = newLength + newStart;
+                    newStart = 0;
+                }
+
+                if (newEnd > length)
+                {
+                    newLength = length - newStart;
+                }
+
+                if (newLength > 0)
+                {
+                    newRanges[newRangeIndex] = new Range(newStart, newLength, range.Source);
+                }
+            }
+        }
+
+        return newRanges;
+    }
 }

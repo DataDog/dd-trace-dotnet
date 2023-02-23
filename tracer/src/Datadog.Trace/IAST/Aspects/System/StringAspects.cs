@@ -221,4 +221,29 @@ public partial class StringAspects
 
         return StringModuleImpl.OnStringConcat(values, string.Concat(valuesConverted));
     }
+
+    /// <summary>
+    /// String.Substring aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <param name="startIndex"> the starting index </param>
+    /// <returns> target.Substring(startIndex) </returns>
+    [AspectMethodReplace("System.String::Substring(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Substring(string target, int startIndex)
+    {
+        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.Length, target.Substring(startIndex));
+    }
+
+    /// <summary>
+    /// String.Substring aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <param name="startIndex"> the starting index </param>
+    /// <param name="length"> the length </param>
+    /// <returns> target.Substring(beginIndex) </returns>
+    [AspectMethodReplace("System.String::Substring(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Substring(string target, int startIndex, int length)
+    {
+        return StringModuleImpl.OnStringSubSequence(target, startIndex, startIndex + length, target.Substring(startIndex, length));
+    }
 }
