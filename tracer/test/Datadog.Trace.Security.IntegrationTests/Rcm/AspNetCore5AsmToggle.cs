@@ -59,7 +59,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         {
             var expectedState = EnableSecurity == false ? ApplyStates.UNACKNOWLEDGED : ApplyStates.ACKNOWLEDGED;
             var expectedCapabilities = RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32 | RcmCapabilitiesIndices.AsmCustomBlockingResponseUInt32;
-            if (EnableSecurity ?? false)
+            if (EnableSecurity != false)
             {
                 expectedCapabilities |= RcmCapabilitiesIndices.AsmActivationUInt32;
             }
