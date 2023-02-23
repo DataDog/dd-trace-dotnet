@@ -121,7 +121,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>Returns an enumerator that iterates through the <see cref="T:System.Collections.Generic.List`1" />.</summary>
         /// <returns>A <see cref="T:System.Collections.Generic.List`1.Enumerator" /> for the <see cref="T:System.Collections.Generic.List`1" />.</returns>
-        public List<IConfigurationSource>.Enumerator GetEnumerator()
+        internal List<IConfigurationSource>.Enumerator GetEnumerator()
         {
             return _sources.GetEnumerator();
         }
