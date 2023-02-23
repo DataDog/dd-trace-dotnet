@@ -159,11 +159,12 @@ internal static class IastModule
 
     private static bool InvalidCipherAlgorithm(Type type, string algorithm)
     {
+#if !NETFRAMEWORK
         if (ProviderValid(type.Name))
         {
             return false;
         }
-
+#endif
         foreach (var weakCipherAlgorithm in iastSettings.WeakCipherAlgorithmsArray)
         {
             if (string.Equals(algorithm, weakCipherAlgorithm, StringComparison.OrdinalIgnoreCase))

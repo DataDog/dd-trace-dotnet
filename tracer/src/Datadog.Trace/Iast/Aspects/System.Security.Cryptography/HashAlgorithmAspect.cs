@@ -5,8 +5,9 @@
 
 #if NETFRAMEWORK
 
+#nullable enable
+
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
@@ -16,7 +17,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Iast.Aspects
 {
     /// <summary> HashAlgorithm class aspects </summary>
-    [AspectClass("mscorlib,System.Security.Cryptography.Primitives,System.Security.Cryptography")]
+    [AspectClass("mscorlib")]
     [System.ComponentModel.Browsable(false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public partial class HashAlgorithmAspect
