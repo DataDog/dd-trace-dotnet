@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -58,7 +57,7 @@ public class WeakCipherTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [InlineData("DD_IAST_ENABLED", "false")]
-    [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "")]
+    [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "invalidAlgorithm")]
     [InlineData($"DD_TRACE_{nameof(IntegrationId.SymmetricAlgorithm)}_ENABLED", "false")]
     public void IntegrationDisabled(string variableName, string variableValue)
     {
@@ -72,4 +71,3 @@ public class WeakCipherTests : TestHelper
         Assert.Empty(spans.Where(s => s.Name.Equals(ExpectedOperationName)));
     }
 }
-#endif
