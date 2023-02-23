@@ -226,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Information($"{defs} IAST definitions and {derived} IAST derived definitions added to the profiler.");
 
                     Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
-                    var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions.Aspects);
+                    var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions. Aspects);
                     Log.Information($"{aspects} IAST Callsite Dataflow Aspects added to the profiler.");
                 }
                 catch (Exception ex)

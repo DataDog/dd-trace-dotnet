@@ -17,7 +17,8 @@
       http.url: http://localhost/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -28,10 +29,14 @@
     Service: sample,
     Type: web,
     Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
       http.route: api/{controller}/{id},
       http.status_code: 200,
       http.url: http://localhost/api/Health/?arg&[$slice],
@@ -40,6 +45,9 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.event_rules.version: 1.4.3,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[?\\$(?:(?:s(?:lic|iz)|wher)e|e(?:lemMatch|xists|q)|n(?:o[rt]|in?|e)|l(?:ike|te?)|t(?:ext|ype)|a(?:ll|nd)|jsonSchema|between|regex|x?or|div|mod)\\]?)\\b)","parameters":[{"address":"server.request.query","highlight":["[$slice"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
@@ -47,9 +55,11 @@
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -70,7 +80,8 @@
       http.url: http://localhost/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -81,10 +92,14 @@
     Service: sample,
     Type: web,
     Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
       http.route: api/{controller}/{id},
       http.status_code: 200,
       http.url: http://localhost/api/Health/?arg&[$slice],
@@ -93,6 +108,9 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.event_rules.version: 1.4.3,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[?\\$(?:(?:s(?:lic|iz)|wher)e|e(?:lemMatch|xists|q)|n(?:o[rt]|in?|e)|l(?:ike|te?)|t(?:ext|ype)|a(?:ll|nd)|jsonSchema|between|regex|x?or|div|mod)\\]?)\\b)","parameters":[{"address":"server.request.query","highlight":["[$slice"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
@@ -100,9 +118,11 @@
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -123,7 +143,8 @@
       http.url: http://localhost/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -134,10 +155,14 @@
     Service: sample,
     Type: web,
     Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
       http.route: api/{controller}/{id},
       http.status_code: 200,
       http.url: http://localhost/api/Health/?arg&[$slice],
@@ -146,6 +171,9 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.event_rules.version: 1.4.3,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[?\\$(?:(?:s(?:lic|iz)|wher)e|e(?:lemMatch|xists|q)|n(?:o[rt]|in?|e)|l(?:ike|te?)|t(?:ext|ype)|a(?:ll|nd)|jsonSchema|between|regex|x?or|div|mod)\\]?)\\b)","parameters":[{"address":"server.request.query","highlight":["[$slice"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
@@ -153,9 +181,11 @@
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -176,7 +206,8 @@
       http.url: http://localhost/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -187,10 +218,14 @@
     Service: sample,
     Type: web,
     Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
       http.route: api/{controller}/{id},
       http.status_code: 200,
       http.url: http://localhost/api/Health/?arg&[$slice],
@@ -199,6 +234,9 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.event_rules.version: 1.4.3,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[?\\$(?:(?:s(?:lic|iz)|wher)e|e(?:lemMatch|xists|q)|n(?:o[rt]|in?|e)|l(?:ike|te?)|t(?:ext|ype)|a(?:ll|nd)|jsonSchema|between|regex|x?or|div|mod)\\]?)\\b)","parameters":[{"address":"server.request.query","highlight":["[$slice"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
@@ -206,9 +244,11 @@
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -229,7 +269,8 @@
       http.url: http://localhost/api/Health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -240,10 +281,14 @@
     Service: sample,
     Type: web,
     Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
       http.route: api/{controller}/{id},
       http.status_code: 200,
       http.url: http://localhost/api/Health/?arg&[$slice],
@@ -252,6 +297,9 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.event_rules.version: 1.4.3,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[?\\$(?:(?:s(?:lic|iz)|wher)e|e(?:lemMatch|xists|q)|n(?:o[rt]|in?|e)|l(?:ike|te?)|t(?:ext|ype)|a(?:ll|nd)|jsonSchema|between|regex|x?or|div|mod)\\]?)\\b)","parameters":[{"address":"server.request.query","highlight":["[$slice"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
@@ -259,9 +307,11 @@
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   }
 ]
