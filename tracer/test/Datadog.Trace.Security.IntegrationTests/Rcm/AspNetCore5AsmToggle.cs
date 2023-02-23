@@ -57,10 +57,12 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityToggling()
         {
-            uint expectedState = EnableSecurity == false ? ApplyStates.UNACKNOWLEDGED : ApplyStates.ACKNOWLEDGED;
-            uint expectedCapabilities = EnableSecurity == false
-                                            ? RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32 | RcmCapabilitiesIndices.AsmCustomBlockingResponseUInt32
-                                            : RcmCapabilitiesIndices.AsmActivationUInt32 | RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32 | RcmCapabilitiesIndices.AsmCustomBlockingResponseUInt32;
+            var expectedState = EnableSecurity == false ? ApplyStates.UNACKNOWLEDGED : ApplyStates.ACKNOWLEDGED;
+            var expectedCapabilities = RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32 | RcmCapabilitiesIndices.AsmCustomBlockingResponseUInt32;
+            if (EnableSecurity ?? false)
+            {
+                expectedCapabilities |= RcmCapabilitiesIndices.AsmActivationUInt32;
+            }
 
             var url = "/Health/?[$slice]=value";
             await TryStartApp();

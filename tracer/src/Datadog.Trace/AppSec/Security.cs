@@ -7,10 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Net;
 using System.Threading;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -19,7 +16,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
-using Action = Datadog.Trace.AppSec.RcmModels.Asm.Action;
 
 namespace Datadog.Trace.AppSec
 {
@@ -39,11 +35,11 @@ namespace Datadog.Trace.AppSec
         private WafLibraryInvoker _wafLibraryInvoker;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
-        private IDictionary<string, Payload> _asmDataConfigs = new Dictionary<string, Payload>();
+        private IDictionary<string, RcmModels.AsmData.Payload> _asmDataConfigs = new Dictionary<string, RcmModels.AsmData.Payload>();
         private IDictionary<string, bool> _ruleStatus = null;
         private string _remoteRulesJson = null;
         private InitializationResult _wafInitializationResult;
-        private IReadOnlyDictionary<string, Action> _actions;
+        private IReadOnlyDictionary<string, RcmModels.Asm.Action> _actions;
 
         static Security()
         {
@@ -52,7 +48,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
-        public Security(SecuritySettings settings = null, IWaf waf = null, IReadOnlyDictionary<string, Action> actions = null)
+        public Security(SecuritySettings settings = null, IWaf waf = null, IReadOnlyDictionary<string, RcmModels.Asm.Action> actions = null)
             : this(settings, waf) => _actions = actions;
 
         private Security(SecuritySettings settings = null, IWaf waf = null)
@@ -120,7 +116,7 @@ namespace Datadog.Trace.AppSec
         internal BlockingAction GetBlockingAction(string id, string[] requestAcceptHeaders)
         {
             var blockingAction = new BlockingAction();
-            Action action = null;
+            RcmModels.Asm.Action action = null;
             _actions?.TryGetValue(id, out action);
 
             void SetAutomaticResponseContent()
@@ -312,8 +308,8 @@ namespace Datadog.Trace.AppSec
                 return;
             }
 
-            _asmDataConfigs ??= new Dictionary<string, Payload>();
-            var asmDataConfigs = e.GetDeserializedConfigurations<Payload>();
+            _asmDataConfigs ??= new Dictionary<string, RcmModels.AsmData.Payload>();
+            var asmDataConfigs = e.GetDeserializedConfigurations<RcmModels.AsmData.Payload>();
             foreach (var asmDataConfig in asmDataConfigs)
             {
                 _asmDataConfigs[asmDataConfig.Name] = asmDataConfig.TypedFile;
@@ -339,7 +335,7 @@ namespace Datadog.Trace.AppSec
             if (!_enabled) { return; }
 
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
-            Dictionary<string, Action> actionsResult = null;
+            Dictionary<string, RcmModels.Asm.Action> actionsResult = null;
             Dictionary<string, bool> ruleStatusResult = null;
 
             foreach (var asmConfig in asmConfigs)
@@ -365,7 +361,7 @@ namespace Datadog.Trace.AppSec
 
                     if (asmConfig.TypedFile.Actions != null)
                     {
-                        actionsResult ??= new Dictionary<string, Action>(StringComparer.InvariantCultureIgnoreCase);
+                        actionsResult ??= new Dictionary<string, RcmModels.Asm.Action>(StringComparer.InvariantCultureIgnoreCase);
                         foreach (var action in asmConfig.TypedFile.Actions)
                         {
                             if (action.Id is not null)
@@ -386,7 +382,7 @@ namespace Datadog.Trace.AppSec
 
             if (actionsResult != null)
             {
-                _actions = new ReadOnlyDictionary<string, Action>(actionsResult);
+                _actions = new ReadOnlyDictionary<string, RcmModels.Asm.Action>(actionsResult);
             }
 
             if (ruleStatusResult != null)
