@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests
         /// <summary>
         /// The max value of the Ids we create should be a 63 bit unsigned number
         /// </summary>
-        private const ulong MaxId = ulong.MaxValue / 2;
+        private const ulong MaxId = long.MaxValue;
 
         private const int NumberOfBuckets = 20;
         private const ulong NumberOfIdsToGenerate = 1_500_000;
