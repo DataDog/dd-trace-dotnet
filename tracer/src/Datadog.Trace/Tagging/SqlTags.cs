@@ -27,5 +27,8 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.OutHost)]
         public string OutHost { get; set; }
+
+        [Tag(Trace.Tags.DbmDataPropagated)]
+        public string DbmDataPropagated { get; set; }
     }
 }

@@ -391,6 +391,13 @@ namespace Datadog.Trace.Configuration
         public const string QueryStringReportingEnabled = "DD_HTTP_SERVER_TAG_QUERY_STRING";
 
         /// <summary>
+        /// Configuration key for setting DBM propagation mode
+        /// Default value is disabled, expected values are either: disabled, service or full
+        /// </summary>
+        /// <seealso cref="TracerSettings.DbmPropagationMode"/>
+        public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
