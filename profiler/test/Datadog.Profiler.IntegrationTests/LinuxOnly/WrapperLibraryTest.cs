@@ -85,7 +85,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
 
-            runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", "/usr/bin/echo");
+            runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", EnvironmentHelper.IsAlpine ? "/bin/echo" : "/usr/bin/echo");
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
 
             using var processHelper = runner.LaunchProcess();
