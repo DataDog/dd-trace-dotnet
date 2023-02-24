@@ -5,19 +5,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Samples.Computer01
 {
-    public class MemoryLeak
+    public class MemoryLeak : ScenarioBase
     {
         // The array will always trigger an AllocationTick event since 100KB is the threshold
         // and a few elements will also trigger the event
         private const int BufferSize = (100 * 1024) + 1;
-
-        private ManualResetEvent _stopEvent;
-        private List<Task> _activeTasks;
 
         private int _objectsToAllocateCount;
 
@@ -26,36 +21,9 @@ namespace Samples.Computer01
             _objectsToAllocateCount = parameter;
         }
 
-        public void Start()
-        {
-            if (_stopEvent != null)
-            {
-                throw new InvalidOperationException("Already running...");
-            }
-
-            _stopEvent = new ManualResetEvent(false);
-            _activeTasks = CreateThreads();
-        }
-
-        public void Run()
+        public override void OnProcess()
         {
             AllocateWithLeak();
-        }
-
-        public void Stop()
-        {
-            if (_stopEvent == null)
-            {
-                throw new InvalidOperationException("Not running...");
-            }
-
-            _stopEvent.Set();
-
-            Task.WhenAll(_activeTasks).Wait();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
-            _activeTasks = null;
         }
 
         private void AllocateWithLeak()
@@ -79,34 +47,6 @@ namespace Samples.Computer01
                     GC.Collect();
                 }
             }
-        }
-
-        private List<Task> CreateThreads()
-        {
-            var result = new List<Task>();
-
-            result.Add(
-                Task.Factory.StartNew(
-                    () =>
-                    {
-                        while (!IsEventSet())
-                        {
-                            AllocateWithLeak();
-                        }
-                    },
-                    TaskCreationOptions.LongRunning));
-
-            return result;
-        }
-
-        private bool IsEventSet()
-        {
-            if (_stopEvent == null)
-            {
-                return false;
-            }
-
-            return _stopEvent.WaitOne(0);
         }
     }
 }

@@ -4,79 +4,31 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Samples.Computer01
 {
-    internal class ContentionGenerator
+    internal class ContentionGenerator : ScenarioBase
     {
-        private readonly int _nbThreads;
         private readonly int _lockDuration;
         private readonly object _obj = new object();
-        private ManualResetEvent _stopEvent;
-        private List<Task> _activeTasks;
 
         public ContentionGenerator(int nbThreads, int lockDuration)
+            : base(nbThreads)
         {
-            _nbThreads = nbThreads;
             _lockDuration = lockDuration;
         }
 
-        public void Start()
-        {
-            if (_stopEvent != null)
-            {
-                throw new InvalidOperationException("Already running...");
-            }
-
-            _stopEvent = new ManualResetEvent(false);
-            _activeTasks = CreateThreads();
-        }
-
-        public void Run()
+        public override void Run()
         {
             Start();
             Thread.Sleep(TimeSpan.FromSeconds(1)); // to be sure that we got contention events
             Stop();
         }
 
-        public void Stop()
+        public override void OnProcess()
         {
-            if (_stopEvent == null)
-            {
-                throw new InvalidOperationException("Not running...");
-            }
-
-            _stopEvent.Set();
-
-            Task.WhenAll(_activeTasks).Wait();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
-            _activeTasks = null;
-        }
-
-        private List<Task> CreateThreads()
-        {
-            var result = new List<Task>(_nbThreads);
-
-            for (var i = 0; i < _nbThreads; i++)
-            {
-                result.Add(
-                    Task.Factory.StartNew(
-                        () =>
-                        {
-                            while (!IsEventSet())
-                            {
-                                GenerateContention();
-                            }
-                        },
-                        TaskCreationOptions.LongRunning));
-            }
-
-            return result;
+            GenerateContention();
         }
 
         private void GenerateContention()
@@ -88,11 +40,6 @@ namespace Samples.Computer01
             }
 
             Console.WriteLine($"Thread {Environment.CurrentManagedThreadId} released the lock");
-        }
-
-        private bool IsEventSet()
-        {
-            return _stopEvent.WaitOne(0);
         }
     }
 }

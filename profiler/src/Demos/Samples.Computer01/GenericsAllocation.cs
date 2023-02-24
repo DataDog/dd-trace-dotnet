@@ -23,19 +23,15 @@ namespace Samples.Computer01
         }
     }
 
-    public class GenericsAllocation
+    public class GenericsAllocation : ScenarioBase
     {
         // The array will always trigger an AllocationTick event since 100KB is the threshold
         // and a few elements will also trigger the event
         private const int BufferSize = (100 * 1024) + 1;
 
-        private readonly int _nbThreads;
-        private ManualResetEvent _stopEvent;
-        private List<Task> _activeTasks;
-
         public GenericsAllocation(int nbThreads)
+            : base(nbThreads)
         {
-            _nbThreads = nbThreads;
         }
 
         public void AllocateGeneric()
@@ -47,62 +43,9 @@ namespace Samples.Computer01
             }
         }
 
-        public void Start()
-        {
-            if (_stopEvent != null)
-            {
-                throw new InvalidOperationException("Already running...");
-            }
-
-            _stopEvent = new ManualResetEvent(false);
-            _activeTasks = CreateThreads();
-        }
-
-        public void Run()
+        public override void OnProcess()
         {
             AllocateGeneric();
-        }
-
-        public void Stop()
-        {
-            if (_stopEvent == null)
-            {
-                throw new InvalidOperationException("Not running...");
-            }
-
-            _stopEvent.Set();
-
-            Task.WhenAll(_activeTasks).Wait();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
-            _activeTasks = null;
-        }
-
-        private List<Task> CreateThreads()
-        {
-            var result = new List<Task>(_nbThreads);
-
-            for (var i = 0; i < _nbThreads; i++)
-            {
-                result.Add(
-                    Task.Factory.StartNew(
-                        () =>
-                        {
-                            while (!IsEventSet())
-                            {
-                                AllocateGeneric();
-                            }
-                        },
-                        TaskCreationOptions.LongRunning));
-            }
-
-            return result;
-        }
-
-        private bool IsEventSet()
-        {
-            return _stopEvent.WaitOne(0);
         }
     }
 }

@@ -30,19 +30,13 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        public BlockException(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool reported = false)
+        public BlockException(IResult result, bool reported = false)
         {
-            TriggerData = triggerData;
-            AggregatedTotalRuntime = aggregatedTotalRuntime;
-            AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
+            Result = result;
             Reported = reported;
         }
 
-        public string TriggerData { get; }
-
-        public ulong AggregatedTotalRuntime { get; }
-
-        public ulong AggregatedTotalRuntimeWithBindings { get; }
+        public IResult Result { get; }
 
         public bool Reported { get; }
     }

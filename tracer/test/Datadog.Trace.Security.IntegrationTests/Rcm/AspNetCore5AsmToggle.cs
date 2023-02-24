@@ -53,18 +53,16 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
 
-        // TODO adjust third parameter as the following PRs are merged:
-        // * https://github.com/DataDog/dd-trace-dotnet/pull/3120
-        // * https://github.com/DataDog/dd-trace-dotnet/pull/3171
-        // the verify file names will need adjusting too
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityToggling()
         {
-            uint expectedState = EnableSecurity == false ? ApplyStates.UNACKNOWLEDGED : ApplyStates.ACKNOWLEDGED;
-            uint expectedCapabilities = EnableSecurity == false
-                                            ? (RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32)
-                                            : (RcmCapabilitiesIndices.AsmActivationUInt32 | RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32);
+            var expectedState = EnableSecurity == false ? ApplyStates.UNACKNOWLEDGED : ApplyStates.ACKNOWLEDGED;
+            var expectedCapabilities = RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32 | RcmCapabilitiesIndices.AsmCustomBlockingResponseUInt32;
+            if (EnableSecurity != false)
+            {
+                expectedCapabilities |= RcmCapabilitiesIndices.AsmActivationUInt32;
+            }
 
             var url = "/Health/?[$slice]=value";
             await TryStartApp();

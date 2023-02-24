@@ -1,17 +1,21 @@
-// <copyright file="Payload.cs" company="Datadog">
+﻿// <copyright file="Parameter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.RcmModels.Asm;
 
-internal class Payload
+internal class Parameter
 {
-    [JsonProperty("rules_override")]
-    public RuleStatus[]? RuleStatus { get; set; }
+    [JsonProperty("status_code")]
+    public int StatusCode { get; set; }
 
-    [JsonProperty("actions")]
-    public Action[]? Actions { get; set; }
+    [JsonProperty("type")]
+    public string? Type { get; set; }
+
+    [JsonProperty("location")]
+    public string? Location { get; set; }
 }
