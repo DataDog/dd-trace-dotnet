@@ -112,3 +112,4 @@ void ContentionProvider::OnContention(double contentionDurationNs)
     _sampledLockContentionsCountMetric->Incr();
     _sampledLockContentionsDurationMetric->Add(contentionDurationNs);
 }
+

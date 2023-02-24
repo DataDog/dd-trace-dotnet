@@ -338,7 +338,9 @@ bool CorProfilerCallback::InitializeServices()
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get(),
         _metricsRegistry,
-        _pAllocationsRecorder.get()
+        _pAllocationsRecorder.get(),
+        _pContentionProvider,
+        _pExceptionsProvider
         );
 
     _pSamplesCollector = RegisterService<SamplesCollector>(

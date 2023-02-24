@@ -100,7 +100,6 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     INVOKE(_pCorProfilerInfo->GetClassFromObject(thrownObjectId, &classId))
 
     std::string name;
-
     if (!GetExceptionType(classId, name))
     {
         return false;
@@ -175,7 +174,6 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
         std::lock_guard lock(_exceptionTypesLock);
 
         const auto type = _exceptionTypes.find(classId);
-
         if (type != _exceptionTypes.end())
         {
             exceptionType = type->second;
@@ -194,6 +192,39 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
     }
 
     return true;
+}
+
+
+bool ExceptionsProvider::GetExceptions(std::vector<ExceptionInfo>& exceptions)
+{
+    std::lock_guard lock(_exceptionTypesLock);
+
+    exceptions.clear();
+
+    std::vector<std::pair<std::string, GroupSampler<std::string>::GroupInfo>> groups;
+    if (!_sampler.GetGroups(groups))
+    {
+        return false;
+    }
+
+    for (auto& bucket : groups)
+    {
+        auto count = bucket.second.Sampled;
+        if (count > 0)
+        {
+            ExceptionInfo info;
+            info.Name = bucket.first;
+            info.SampledCount = count;
+            info.RealCount = bucket.second.Real;
+            exceptions.push_back(info);
+        }
+
+        // reset exceptions count
+        bucket.second.Real = 0;
+        bucket.second.Sampled = 0;
+    }
+
+    return (exceptions.size() > 0);
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()

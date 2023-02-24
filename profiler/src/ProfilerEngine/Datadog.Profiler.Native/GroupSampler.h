@@ -22,20 +22,82 @@ public:
     {
     }
 
+public:
+    struct GroupInfo
+    {
+        uint64_t Real;
+        uint64_t Sampled;
+    };
+
+public:
     bool Sample(TGroup group)
     {
         std::unique_lock lock(_knownGroupsMutex);
 
+        // increment the real count for the given group
+        GroupInfo* pInfo;
+        AddInGroup(group, pInfo);
+
         auto [it, inserted] = _knownGroups.insert(std::move(group));
         if (inserted)
         {
+            // increment the sampled count for the given group
+            pInfo->Sampled++;
+
             // This is the first time we see this group in this time window,
-            // force the sampling decision
+            // so force the sampling decision
             return _sampler.Keep();
         }
 
         // We've already seen this group, let the sampler decide
-        return _sampler.Sample();
+        auto sampled = _sampler.Sample();
+        if (sampled)
+        {
+            // increment the sampled count for the given group
+            pInfo->Sampled++;
+        }
+
+        return sampled;
+    }
+
+    // MUST be called under the lock
+    void AddInGroup(TGroup group, GroupInfo*& groupInfo)
+    {
+        auto info = _groups.find(group);
+        if (info != _groups.end())
+        {
+            groupInfo = &(info->second);
+            info->second.Real++;
+
+            return;
+        }
+
+        // need to add the info of this new group
+        GroupInfo gi;
+        gi.Real = 1;
+        gi.Sampled = 0;
+        auto slot = _groups.insert_or_assign(group, gi);
+        groupInfo = &((*slot.first).second);
+    }
+
+    bool GetGroups(std::vector<std::pair<TGroup, GroupInfo>>& groups)
+    {
+        std::unique_lock lock(_knownGroupsMutex);
+
+        groups.clear();
+        for (auto& group : _groups)
+        {
+            if (group.second.Sampled > 0)
+            {
+                std::pair<TGroup, GroupInfo> info = std::make_pair(group.first, group.second);
+                groups.push_back(info);
+            }
+
+            group.second.Real = 0;
+            group.second.Sampled = 0;
+        }
+
+        return (groups.size() > 0);
     }
 
 protected:
@@ -46,6 +108,10 @@ protected:
     }
 
 private:
+    // _knownGroups is used to detect when a new group appear during a given window
     std::unordered_set<TGroup> _knownGroups;
+
+    // _groups keeps track of the sampled/real count per group
+    std::unordered_map<TGroup, GroupInfo> _groups;
     std::mutex _knownGroupsMutex;
 };

@@ -27,6 +27,8 @@ class IApplicationStore;
 class IRuntimeInfo;
 class IEnabledProfilers;
 class IAllocationsRecorder;
+class IContentionRecorder;
+class IExceptionsRecorder;
 
 class LibddprofExporter : public IExporter
 {
@@ -38,7 +40,10 @@ public:
         IRuntimeInfo* runtimeInfo,
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
-        IAllocationsRecorder* allocationsRecorder);
+        IAllocationsRecorder* allocationsRecorder,
+        IContentionRecorder* contentionRecorder,
+        IExceptionsRecorder* exceptionsRecorder
+        );
     ~LibddprofExporter() override;
     bool Export() override;
     void Add(std::shared_ptr<Sample> const& sample) override;
@@ -169,6 +174,8 @@ private:
     MetricsRegistry& _metricsRegistry;
     fs::path _metricsFileFolder;
     IAllocationsRecorder* _allocationsRecorder;
+    IContentionRecorder* _contentionRecorder;
+    IExceptionsRecorder* _exceptionsRecorder;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

@@ -2,9 +2,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include "CollectorBase.h"
 
+#include <atomic>
+#include "CollectorBase.h"
 #include "IContentionListener.h"
+#include "IContentionRecorder.h"
 #include "RawContentionSample.h"
 #include "GenericSampler.h"
 #include "GroupSampler.h"
@@ -20,7 +22,10 @@ class IAppDomainStore;
 class IRuntimeIdStore;
 
 
-class ContentionProvider : public CollectorBase<RawContentionSample>, public IContentionListener
+class ContentionProvider :
+    public CollectorBase<RawContentionSample>,
+    public IContentionListener,
+    public IContentionRecorder
 {
 public:
     static std::vector<SampleValueType> SampleTypeDefinitions;

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CollectorBase.h"
+#include "IExceptionsRecorder.h"
 #include "IFrameStore.h"
 #include "IManagedThreadList.h"
 #include "RawExceptionSample.h"
@@ -17,8 +18,9 @@
 
 class IConfiguration;
 
-class ExceptionsProvider
-    : public CollectorBase<RawExceptionSample>
+class ExceptionsProvider :
+    public CollectorBase<RawExceptionSample>,
+    public IExceptionsRecorder
 {
 public:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -38,9 +40,20 @@ public:
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
 
+    // Inherited via IExceptionsRecorder
+    virtual bool GetExceptions(std::vector<ExceptionInfo>& exceptions) override;
+
+private:
+    struct ExceptionBucket
+    {
+        std::string Name;
+        uint64_t Count;
+    };
+
 private:
     bool LoadExceptionMetadata();
     bool GetExceptionType(ClassID classId, std::string& exceptionType);
+
 
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;

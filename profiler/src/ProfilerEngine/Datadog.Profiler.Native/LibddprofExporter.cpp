@@ -15,6 +15,8 @@
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
 #include "IAllocationsRecorder.h"
+#include "IContentionRecorder.h"
+#include "IExceptionsRecorder.h"
 
 #include <cassert>
 #include <fstream>
@@ -67,13 +69,17 @@ LibddprofExporter::LibddprofExporter(
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
-    IAllocationsRecorder* allocationsRecorder)
+    IAllocationsRecorder* allocationsRecorder,
+    IContentionRecorder* contentionRecorder,
+    IExceptionsRecorder* exceptionsRecorder)
     :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
-    _allocationsRecorder{allocationsRecorder}
+    _allocationsRecorder{allocationsRecorder},
+    _contentionRecorder{contentionRecorder},
+    _exceptionsRecorder{exceptionsRecorder}
 {
     _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
@@ -435,6 +441,30 @@ bool LibddprofExporter::Export()
     bool exported = false;
 
     int32_t idx = 0;
+
+    // Prepare samples upscaling
+    if (_contentionRecorder != nullptr)
+    {
+        // TODO: pass the lock contention ratio to libdatadog
+    }
+
+    if (_exceptionsRecorder != nullptr)
+    {
+        // TODO: pass the per exception type count to libdatadog
+        std::vector<ExceptionInfo> exceptions;
+        if (_exceptionsRecorder->GetExceptions(exceptions))
+        {
+            std::cout << exceptions.size() << " exception buckets" << std::endl;
+            for (const auto& exception : exceptions)
+            {
+                std::cout << "  " << exception.Name << " | " << exception.SampledCount << " / " << exception.RealCount << std::endl;
+            }
+        }
+        else
+        {
+            std::cout << "No exception bucket..." << std::endl;
+        }
+    }
 
     if (_allocationsRecorder != nullptr)
     {

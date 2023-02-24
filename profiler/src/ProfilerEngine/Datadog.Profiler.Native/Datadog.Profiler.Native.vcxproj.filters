@@ -322,6 +322,12 @@
     <ClInclude Include="IAllocationsRecorder.h">
       <Filter>Allocations</Filter>
     </ClInclude>
+    <ClInclude Include="IContentionRecorder.h">
+      <Filter>Contention</Filter>
+    </ClInclude>
+    <ClInclude Include="IExceptionsRecorder.h">
+      <Filter>Exceptions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
