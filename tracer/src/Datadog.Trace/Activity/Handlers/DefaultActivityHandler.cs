@@ -44,13 +44,21 @@ namespace Datadog.Trace.Activity.Handlers
             string? rawTraceId = null;
             string? rawSpanId = null;
 
+            // for non-IW3CActivity interfaces we'll use Activity.Id as the key as they don't have a guaranteed TraceId+SpanId
+            // for IW3CActivity interfaces we'll use the Activity.TraceId + Activity.SpanId as the key
+            string? activityKey = null;
+
             if (activity is IW3CActivity w3cActivity)
             {
                 // If the user has specified a parent context, get the parent Datadog SpanContext
                 if (w3cActivity.ParentSpanId is not null
                  && w3cActivity.ParentId is { } parentId)
                 {
-                    if (ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
+                    // we know that we have a parent context, but we use TraceId+ParentSpanId for the mapping
+                    // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the
+                    // ".ParentId" matched for the Trace+Span IDs but not for the flags portion
+                    // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient
+                    if (ActivityMappingById.TryGetValue(w3cActivity.TraceId + w3cActivity.ParentSpanId, out ActivityMapping mapping))
                     {
                         parent = mapping.Scope.Span.Context;
                     }
@@ -62,6 +70,8 @@ namespace Datadog.Trace.Activity.Handlers
                         parent = Tracer.Instance.CreateSpanContext(SpanContext.None, traceId: activityTraceId, spanId: activitySpanId);
                     }
                 }
+
+                activityKey = w3cActivity.TraceId + w3cActivity.SpanId;
 
                 if (parent is null && activeSpan is not null)
                 {
@@ -110,7 +120,8 @@ namespace Datadog.Trace.Activity.Handlers
                     return;
                 }
 
-                ActivityMappingById.GetOrAdd(activity.Id, _ => new(activity.Instance!, CreateScopeFromActivity(activity, parent, traceId, spanId, rawTraceId, rawSpanId)));
+                activityKey ??= activity.Id;
+                ActivityMappingById.GetOrAdd(activityKey, _ => new(activity.Instance, CreateScopeFromActivity(activity, parent, traceId, spanId, rawTraceId, rawSpanId)));
             }
             catch (Exception ex)
             {
@@ -137,7 +148,17 @@ namespace Datadog.Trace.Activity.Handlers
                         return;
                     }
 
-                    if (ActivityMappingById.TryRemove(activity.Id, out ActivityMapping someValue) && someValue.Scope?.Span is not null)
+                    string key;
+                    if (activity is not IW3CActivity w3cActivity)
+                    {
+                        key = activity.Id;
+                    }
+                    else
+                    {
+                        key = w3cActivity.TraceId + w3cActivity.SpanId;
+                    }
+
+                    if (ActivityMappingById.TryRemove(key, out ActivityMapping someValue) && someValue.Scope?.Span is not null)
                     {
                         // We have the exact scope associated with the Activity
                         if (Log.IsEnabled(LogEventLevel.Debug))

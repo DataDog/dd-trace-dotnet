@@ -31,7 +31,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 return;
             }
 
-            if (DefaultActivityHandler.ActivityMappingById.TryGetValue(activity.Id, out var activityMapping))
+            string key;
+            if (activityData.TryDuckCast<IW3CActivity>(out var w3cActivity))
+            {
+                key = w3cActivity.TraceId + w3cActivity.SpanId;
+            }
+            else
+            {
+                key = activity.Id;
+            }
+
+            if (DefaultActivityHandler.ActivityMappingById.TryGetValue(key, out var activityMapping))
             {
                 if (baseProcessor.ParentProvider is not null)
                 {
