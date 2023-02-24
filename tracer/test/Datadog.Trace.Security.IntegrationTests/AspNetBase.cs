@@ -249,7 +249,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spans = new List<MockSpan>();
             foreach (var url in urls)
             {
-                spans.AddRange(await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, null));
+                spans.AddRange(await SendRequestsAsync(agent, url, null, 1, 1, string.Empty));
             }
 
             return spans.ToImmutableList();

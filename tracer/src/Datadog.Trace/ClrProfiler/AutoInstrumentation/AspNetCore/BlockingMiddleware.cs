@@ -6,6 +6,7 @@
 #nullable enable
 #if !NETFRAMEWORK
 using System;
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -20,6 +21,7 @@ internal class BlockingMiddleware
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BlockingMiddleware>();
 
     private readonly bool _endPipeline;
+
     // if we add support for ASP.NET Core on .NET Framework, we can't directly reference RequestDelegate, so this would need to be written
     private readonly RequestDelegate? _next;
 
@@ -29,7 +31,7 @@ internal class BlockingMiddleware
         _endPipeline = endPipeline;
     }
 
-    private static Task WriteResponse(HttpContext context, SecuritySettings settings, out bool endedResponse)
+    private static Task WriteResponse(BlockingAction action, HttpContext context, out bool endedResponse)
     {
         var httpResponse = context.Response;
 
@@ -42,31 +44,21 @@ internal class BlockingMiddleware
             }
 
             httpResponse.Headers.Clear();
-            httpResponse.StatusCode = 403;
-            var template = settings.BlockedJsonTemplate;
-            httpResponse.ContentType = "application/json";
+            httpResponse.StatusCode = action.StatusCode;
 
-            foreach (var header in context.Request.Headers)
+            if (action.IsRedirect)
             {
-                if (string.Equals(header.Key, "Accept", StringComparison.OrdinalIgnoreCase))
-                {
-                    var textHtmlContentType = MimeTypes.TextHtml;
-                    foreach (var value in header.Value)
-                    {
-                        if (value.Contains(textHtmlContentType))
-                        {
-                            httpResponse.ContentType = textHtmlContentType;
-                            template = settings.BlockedHtmlTemplate;
-                            break;
-                        }
-                    }
-
-                    break;
-                }
+                httpResponse.Redirect(action.RedirectLocation, action.IsPermanentRedirect);
+                endedResponse = true;
+            }
+            else
+            {
+                httpResponse.ContentType = action.ContentType;
+                endedResponse = true;
+                return httpResponse.WriteAsync(action.ResponseContent);
             }
 
-            endedResponse = true;
-            return httpResponse.WriteAsync(template);
+            return Task.CompletedTask;
         }
 
         try
@@ -102,7 +94,8 @@ internal class BlockingMiddleware
                 {
                     if (result.ShouldBlock)
                     {
-                        await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
+                        var action = security.GetBlockingAction(result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                        await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                         securityCoordinator.MarkBlocked();
                     }
 
@@ -125,7 +118,8 @@ internal class BlockingMiddleware
             }
             catch (BlockException e)
             {
-                await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
+                var action = security.GetBlockingAction(e.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.Settings.Enabled)
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)
@@ -133,7 +127,7 @@ internal class BlockingMiddleware
                         var securityCoordinator = new SecurityCoordinator(security, context, span);
                         if (!e.Reported)
                         {
-                            securityCoordinator.Report(e.TriggerData, e.AggregatedTotalRuntime, e.AggregatedTotalRuntimeWithBindings, endedResponse);
+                            securityCoordinator.Report(e.Result.Data, e.Result.AggregatedTotalRuntime, e.Result.AggregatedTotalRuntimeWithBindings, endedResponse);
                         }
 
                         securityCoordinator.AddResponseHeadersToSpanAndCleanup();
