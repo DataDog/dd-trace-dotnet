@@ -244,9 +244,10 @@ namespace Datadog.Trace.Tools.Runner
             {
                 AnsiConsole.WriteLine("Running: " + command);
 
-                if (ciVisibilitySettings.IntelligentTestRunnerEnabled || Program.CallbackForTests is not null)
+                if (testSkippingEnabled || Program.CallbackForTests is not null)
                 {
-                    // Awaiting git repository task before running the command if ITR is enabled.
+                    // Awaiting git repository task before running the command if ITR test skipping is enabled.
+                    // Test skipping requires the git upload metadata information before hand
                     Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
                 }
@@ -268,9 +269,9 @@ namespace Datadog.Trace.Tools.Runner
                 session?.SetTag(TestTags.CommandExitCode, exitCode);
                 Log.Debug<int>("RunCiCommand: Finished with exit code: {Value}", exitCode);
 
-                if (!ciVisibilitySettings.IntelligentTestRunnerEnabled)
+                if (!testSkippingEnabled)
                 {
-                    // Awaiting git repository task after running the command if ITR is disabled.
+                    // Awaiting git repository task after running the command if ITR test skipping is disabled.
                     Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
                 }
