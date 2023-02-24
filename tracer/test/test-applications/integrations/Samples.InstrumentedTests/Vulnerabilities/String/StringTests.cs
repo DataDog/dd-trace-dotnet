@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using FluentAssertions;
 using Xunit;
 using Xunit.Sdk;
@@ -35,140 +34,140 @@ public class StringAspectTests : InstrumentationTestsBase
     [Fact]
     public void GivenStringConcatBasicOperations_WhenPerformed_ResultIsOK()
     {
-        string testString1 = (string) AddTainted("01");
-        string testString2 = (string) AddTainted("abc");
-        string testString3 = (string) AddTainted("ABCD");
-        string testString4 = (string) AddTainted(".,;:?");
-        string testString5 = (string) AddTainted("+-*/{}");
+        var testString1 = AddTaintedString("01");
+        var testString2 = AddTaintedString("abc");
+        var testString3 = AddTaintedString("ABCD");
+        var testString4 = AddTaintedString(".,;:?");
+        var testString5 = AddTaintedString("+-*/{}");
 
-        Assert.Equal(":+-01-+::+-abc-+:", FormatTainted(String.Concat(testString1, testString2)));
-        Assert.Equal(":+-01-+::+-abc-+:", FormatTainted(String.Concat(testString1, null, testString2)));
-        Assert.Equal(":+-01-+::+-abc-+:", FormatTainted(String.Concat((object)testString1, (object)testString2)));
-        Assert.Equal(":+-01-+::+-abc-+:", FormatTainted(String.Concat((object)testString1, null, (object)testString2)));
+        FormatTainted(String.Concat(testString1, testString2)).Should().Be(":+-01-+::+-abc-+:");
+        FormatTainted(String.Concat(testString1, null, testString2)).Should().Be(":+-01-+::+-abc-+:");
+        FormatTainted(String.Concat((object)testString1, (object)testString2)).Should().Be(":+-01-+::+-abc-+:");
+        FormatTainted(String.Concat((object)testString1, null, (object)testString2)).Should().Be(":+-01-+::+-abc-+:");
 
-        Assert.Equal(":+-01-+::+-abc-+::+-ABCD-+:", FormatTainted(String.Concat(testString1, testString2, testString3)));
-        Assert.Equal(":+-01-+::+-abc-+::+-ABCD-+:", FormatTainted(String.Concat((object)testString1, (object)testString2, (object)testString3)));
+        FormatTainted(String.Concat(testString1, testString2, testString3)).Should().Be(":+-01-+::+-abc-+::+-ABCD-+:");
+        FormatTainted(String.Concat((object)testString1, (object)testString2, (object)testString3)).Should().Be(":+-01-+::+-abc-+::+-ABCD-+:");
 
-        Assert.Equal(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+:", FormatTainted(String.Concat(testString1, testString2, testString3, testString4)));
-        Assert.Equal(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+:", FormatTainted(String.Concat((object)testString1, (object)testString2, (object)testString3, (object)testString4)));
+        FormatTainted(String.Concat(testString1, testString2, testString3, testString4)).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+:");
+        FormatTainted(String.Concat((object)testString1, (object)testString2, (object)testString3, (object)testString4)).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+:");
 
-        Assert.Equal(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:", FormatTainted(String.Concat(testString1, testString2, testString3, testString4, testString5)));
-        Assert.Equal(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:", FormatTainted(String.Concat((object)testString1, (object)testString2, (object)testString3, (object)testString4, (object)testString5)));
+        FormatTainted(String.Concat(testString1, testString2, testString3, testString4, testString5)).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
+        FormatTainted(String.Concat((object)testString1, (object)testString2, (object)testString3, (object)testString4, (object)testString5)).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
 
-        Assert.Equal(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:", FormatTainted(String.Concat(new string[] { testString1, testString2, testString3, testString4, testString5 })));
-        Assert.Equal(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:", FormatTainted(String.Concat(new object[] { testString1, testString2, testString3, testString4, testString5 })));
-        Assert.Equal(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:", FormatTainted(String.Concat(new List<string> { testString1, testString2, testString3, testString4, testString5 })));
-        Assert.Equal(":+-01-+: dummy ", FormatTainted(String.Concat(testString1, " dummy ")));
-        Assert.Equal(" dummy :+-abc-+: dummy ", FormatTainted(String.Concat(" dummy ", testString2, " dummy ")));
-        Assert.Equal(" dummy :+-ABCD-+:", FormatTainted(String.Concat(" dummy ", testString3)));
-        Assert.Equal(":+-01-+: dummy :+-ABCD-+:", FormatTainted(String.Concat(testString1, " dummy ", testString3)));
+        FormatTainted(String.Concat(new string[] { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
+        FormatTainted(String.Concat(new object[] { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
+        FormatTainted(String.Concat(new List<string> { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
+        FormatTainted(String.Concat(testString1, " dummy ")).Should().Be(":+-01-+: dummy ");
+        FormatTainted(String.Concat(" dummy ", testString2, " dummy ")).Should().Be(" dummy :+-abc-+: dummy ");
+        FormatTainted(String.Concat(" dummy ", testString3)).Should().Be(" dummy :+-ABCD-+:");
+        FormatTainted(String.Concat(testString1, " dummy ", testString3)).Should().Be(":+-01-+: dummy :+-ABCD-+:");
 
-        Assert.Equal(":+-abc-+: dummy ", FormatTainted(String.Concat(null, testString2, " dummy ")));
-        Assert.Equal(":+-abc-+: dummy ", FormatTainted(String.Concat(null, testString2, (object)" dummy ")));
-        Assert.Equal(" dummy :+-abc-+: dummy ", FormatTainted(String.Concat((object)" dummy ", null, testString2, (object)" dummy ")));
+        FormatTainted(String.Concat(null, testString2, " dummy ")).Should().Be(":+-abc-+: dummy ");
+        FormatTainted(String.Concat(null, testString2, (object)" dummy ")).Should().Be(":+-abc-+: dummy ");
+        FormatTainted(String.Concat((object)" dummy ", null, testString2, (object)" dummy ")).Should().Be(" dummy :+-abc-+: dummy ");
     }
 
     [Fact]
     public void GivenAStringConcatBasicWithTainted_WhenPerformed_ResultIsOK()
     {
-        Assert.Equal("This is a tainted literal :+-TaintedString-+:", FormatTainted(String.Concat("This is a tainted literal ", TaintedString)));
+        FormatTainted(String.Concat("This is a tainted literal ", TaintedString)).Should().Be("This is a tainted literal :+-TaintedString-+:");
     }
 
     [Fact]
     public void GivenAStringConcatBasicWithBothTainted_WhenPerformed_ResultIsOK()
     {
-        Assert.Equal(":+-TaintedString-+::+-TaintedString-+:", FormatTainted(String.Concat(TaintedString, TaintedString)));
+        FormatTainted(String.Concat(TaintedString, TaintedString)).Should().Be(":+-TaintedString-+::+-TaintedString-+:");
     }
 
     [Fact]
     public void GivenAStringConcatBasicWithBoth2_WhenPerformed_ResultIsOK()
     {
-        Assert.Equal(":+-TaintedString-+:UntaintedString", FormatTainted(String.Concat(TaintedString, UntaintedString)));
+        FormatTainted(String.Concat(TaintedString, UntaintedString)).Should().Be(":+-TaintedString-+:UntaintedString");
     }
 
     [Fact]
     public void GivenAStringLiteralsOptimizationsConcat_WhenPerformed_ResultIsOK()
     {
-        Assert.Equal(":+-TaintedString-+:UntaintedString", FormatTainted(String.Concat(TaintedString, "UntaintedString")));
+        FormatTainted(String.Concat(TaintedString, "UntaintedString")).Should().Be(":+-TaintedString-+:UntaintedString");
     }
 
     [Fact]
     public void GivenAStringLiteralsOptimizationsConcat_WhenPerformed_ResultIsOK2()
     {
-        Assert.Equal("UntaintedString:+-TaintedString-+:", FormatTainted(String.Concat("UntaintedString", TaintedString)));
+        FormatTainted(String.Concat("UntaintedString", TaintedString)).Should().Be("UntaintedString:+-TaintedString-+:");
     }
 
     [Fact]
     public void GivenAStringLiteralsOptimizationsConcat_WhenPerformed_ResultIsOK3()
     {
-        Assert.Equal("UntaintedString:+-TaintedString-+:", FormatTainted("UntaintedString" + TaintedString));
+        FormatTainted("UntaintedString" + TaintedString).Should().Be("UntaintedString:+-TaintedString-+:");
     }
 
     [Fact]
     public void GivenAStringConcatBasicWithBothJoined_WhenPerformed_ResultIsOK()
     {
-        Assert.Equal(":+-TaintedString-+:UntaintedString:+-TaintedString-+:", FormatTainted(String.Concat(String.Concat(TaintedString, UntaintedString), TaintedString)));
+        FormatTainted(String.Concat(String.Concat(TaintedString, UntaintedString), TaintedString)).Should().Be(":+-TaintedString-+:UntaintedString:+-TaintedString-+:");
     }
 
     [Fact]
     public void GivenAStringConcatThreeParamsWithBoth_WhenPerformed_ResultIsOK()
     {
-        Assert.Equal(":+-TaintedString-+:UntaintedString:+-OtherTaintedString-+:", FormatTainted(String.Concat(TaintedString, UntaintedString, OtherTaintedString)));
+        FormatTainted(String.Concat(TaintedString, UntaintedString, OtherTaintedString)).Should().Be(":+-TaintedString-+:UntaintedString:+-OtherTaintedString-+:");
     }
 
     [Fact]
     public void GivenAStringConcatThreeParamsWithUntainted_WhenPerformed_ResultIsOK()
     {
-        Assert.Equal("UntaintedString:+-TaintedString-+:OtherUntaintedString", FormatTainted(String.Concat(UntaintedString, TaintedString, OtherUntaintedString)));
+        FormatTainted(String.Concat(UntaintedString, TaintedString, OtherUntaintedString)).Should().Be("UntaintedString:+-TaintedString-+:OtherUntaintedString");
     }
 
     [Fact]
     public void GivenAStringConcatThreeParamsWithBothJoined_WhenPerformed_ResultIsOK()
     {
         string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
-        Assert.Equal(":+-TaintedString-+:UntaintedString:+-OtherTaintedString-+:OtherUntaintedString", FormatTainted(String.Concat(str, OtherUntaintedString)));
+        FormatTainted(String.Concat(str, OtherUntaintedString)).Should().Be(":+-TaintedString-+:UntaintedString:+-OtherTaintedString-+:OtherUntaintedString");
     }
 
     [Fact]
     public void GivenAStringConcatFourParam_WithBoth_WhenPerformed_ResultIsOK()
     {
         string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString);
-        Assert.Equal(":+-TaintedString-+:UntaintedString:+-OtherTaintedString-+:OtherUntaintedString", FormatTainted(str));
+        FormatTainted(str).Should().Be(":+-TaintedString-+:UntaintedString:+-OtherTaintedString-+:OtherUntaintedString");
     }
 
     [Fact]
     public void GivenAStringConcatFourParamsWithUntainted_WhenPerformed_ResultIsOK()
     {
         string str = String.Concat(UntaintedString, TaintedString, OtherUntaintedString, OtherTaintedString);
-        Assert.Equal("UntaintedString:+-TaintedString-+:OtherUntaintedString:+-OtherTaintedString-+:", FormatTainted(str));
+        FormatTainted(str).Should().Be("UntaintedString:+-TaintedString-+:OtherUntaintedString:+-OtherTaintedString-+:");
     }
 
     [Fact]
     public void GivenAStringConcatFourParamsWithBothJoined_WhenPerformed_ResultIsOK()
     {
         string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString);
-        Assert.Equal(":+-TaintedString-+:UntaintedString:+-OtherTaintedString-+:OtherUntaintedString:+-TaintedString-+:", FormatTainted(String.Concat(str, TaintedString)));
+        FormatTainted(String.Concat(str, TaintedString)).Should().Be(":+-TaintedString-+:UntaintedString:+-OtherTaintedString-+:OtherUntaintedString:+-TaintedString-+:");
     }
 
     [Fact]
     public void GivenAStringConcatFourParamsWithBothJoinedInverse_WhenPerformed_ResultIsOK()
     {
         string str = String.Concat(TaintedString, UntaintedString, OtherUntaintedString, UntaintedString);
-        Assert.Equal(":+-TaintedString-+:UntaintedStringOtherUntaintedStringUntaintedString:+-OtherTaintedString-+:", FormatTainted(String.Concat(str, OtherTaintedString)));
+        FormatTainted(String.Concat(str, OtherTaintedString)).Should().Be(":+-TaintedString-+:UntaintedStringOtherUntaintedStringUntaintedString:+-OtherTaintedString-+:");
     }
 
     [Fact]
     public void GivenAStringConcatFiveParamsWithBothJoinedWhenPerformed_ResultIsOK()
     {
         string str = String.Concat(TaintedString, UntaintedString, OtherUntaintedString, OtherTaintedString, OtherTaintedString);
-        Assert.Equal(":+-TaintedString-+:UntaintedStringOtherUntaintedString:+-OtherTaintedString-+::+-OtherTaintedString-+:OtherUntaintedString", FormatTainted(String.Concat(str, OtherUntaintedString)));
+        FormatTainted(String.Concat(str, OtherUntaintedString)).Should().Be(":+-TaintedString-+:UntaintedStringOtherUntaintedString:+-OtherTaintedString-+::+-OtherTaintedString-+:OtherUntaintedString");
     }
 
     [Fact]
     public void GivenAStringConcatFiveParamsWithBothJoinedInverse_WhenPerformed_ResultIsOK()
     {
         string str = String.Concat(UntaintedString, OtherUntaintedString, TaintedString, OtherTaintedString, OtherUntaintedString);
-        Assert.Equal("UntaintedStringOtherUntaintedString:+-TaintedString-+::+-OtherTaintedString-+:OtherUntaintedStringOtherUntaintedString", FormatTainted(String.Concat(str, OtherUntaintedString)));
+        FormatTainted(String.Concat(str, OtherUntaintedString)).Should().Be("UntaintedStringOtherUntaintedString:+-TaintedString-+::+-OtherTaintedString-+:OtherUntaintedStringOtherUntaintedString");
     }
 
     [Fact]
@@ -291,7 +290,7 @@ public class StringAspectTests : InstrumentationTestsBase
         var values = new List<string> { TaintedString, UntaintedString };
         string result = string.Empty;
         values.ForEach(x => result += x);
-        Assert.Equal(":+-TaintedString-+:UntaintedString", FormatTainted(result));
+        FormatTainted(result).Should().Be(":+-TaintedString-+:UntaintedString");
     }
 
     [Fact]
@@ -300,7 +299,7 @@ public class StringAspectTests : InstrumentationTestsBase
         var values = new List<string> { TaintedString, UntaintedString };
         string result = TaintedString;
         values.ForEach(x => result += x);
-        Assert.Equal(":+-TaintedString-+::+-TaintedString-+:UntaintedString", FormatTainted(result));
+        FormatTainted(result).Should().Be(":+-TaintedString-+::+-TaintedString-+:UntaintedString");
     }
 
     // Objects
@@ -308,80 +307,80 @@ public class StringAspectTests : InstrumentationTestsBase
     [Fact]
     public void GivenStringConcatObjectWithTainted_WhenConcat_ResultISTainted()
     {
-        Assert.Equal("This is a tainted literal :+-TaintedObject-+:", FormatTainted(String.Concat("This is a tainted literal ", TaintedObject)));
+        FormatTainted(String.Concat("This is a tainted literal ", TaintedObject)).Should().Be("This is a tainted literal :+-TaintedObject-+:");
     }
 
     [Fact]
     public void GivenStringConcatObjectWithBoth_WhenConcat_ResultISTainted()
     {
-        Assert.Equal(":+-TaintedObject-+:UntaintedObject", FormatTainted(String.Concat(TaintedObject, UntaintedObject)));
+        FormatTainted(String.Concat(TaintedObject, UntaintedObject)).Should().Be(":+-TaintedObject-+:UntaintedObject");
     }
 
     [Fact]
     public void GivenStringConcatObjectWithBothJoined_WhenConcat_ResultISTainted()
     {
-        Assert.Equal(":+-TaintedObject-+:UntaintedObject:+-TaintedObject-+:", FormatTainted(String.Concat(String.Concat(TaintedObject, UntaintedObject), TaintedObject)));
+        FormatTainted(String.Concat(String.Concat(TaintedObject, UntaintedObject), TaintedObject)).Should().Be(":+-TaintedObject-+:UntaintedObject:+-TaintedObject-+:");
     }
 
     [Fact]
     public void GivenStringConcatObjectThreeParamsWithBoth_WhenConcat_ResultISTainted()
     {
-        Assert.Equal(":+-TaintedObject-+:UntaintedObject:+-OtherTaintedObject-+:", FormatTainted(String.Concat(TaintedObject, UntaintedObject, OtherTaintedObject)));
+        FormatTainted(String.Concat(TaintedObject, UntaintedObject, OtherTaintedObject)).Should().Be(":+-TaintedObject-+:UntaintedObject:+-OtherTaintedObject-+:");
     }
 
     [Fact]
     public void GivenStringConcatObjectThreeParamsWithUntainted_WhenConcat_ResultISTainted()
     {
-        Assert.Equal("UntaintedObject:+-TaintedObject-+:OtherUntaintedObject", FormatTainted(String.Concat(UntaintedObject, TaintedObject, OtherUntaintedObject)));
+        FormatTainted(String.Concat(UntaintedObject, TaintedObject, OtherUntaintedObject)).Should().Be("UntaintedObject:+-TaintedObject-+:OtherUntaintedObject");
     }
 
     [Fact]
     public void GivenStringConcatObjectThreeParamsWithBothJoined_WhenConcat_ResultIsTainted()
     {
         string str = String.Concat(TaintedObject, UntaintedObject, OtherTaintedObject);
-        Assert.Equal(":+-TaintedObject-+:UntaintedObject:+-OtherTaintedObject-+:OtherUntaintedObject", FormatTainted(String.Concat(str, OtherUntaintedObject)));
+        FormatTainted(String.Concat(str, OtherUntaintedObject)).Should().Be(":+-TaintedObject-+:UntaintedObject:+-OtherTaintedObject-+:OtherUntaintedObject");
     }
 
     [Fact]
     public void GivenStringConcatObjectFourParamsWithBoth_WhenConcat_ResultIsTainted()
     {
         string str = String.Concat(TaintedObject, UntaintedObject, OtherTaintedObject, OtherUntaintedObject);
-        Assert.Equal(":+-TaintedObject-+:UntaintedObject:+-OtherTaintedObject-+:OtherUntaintedObject", FormatTainted(str));
+        FormatTainted(str).Should().Be(":+-TaintedObject-+:UntaintedObject:+-OtherTaintedObject-+:OtherUntaintedObject");
     }
 
     [Fact]
     public void GivenStringConcatObjectFourParamsWithUntainted_WhenConcat_ResultIsTainted()
     {
         string str = String.Concat(UntaintedObject, TaintedObject, OtherUntaintedObject, OtherTaintedObject);
-        Assert.Equal("UntaintedObject:+-TaintedObject-+:OtherUntaintedObject:+-OtherTaintedObject-+:", FormatTainted(str));
+        FormatTainted(str).Should().Be("UntaintedObject:+-TaintedObject-+:OtherUntaintedObject:+-OtherTaintedObject-+:");
     }
 
     [Fact]
     public void GivenStringConcatObjectFourParamsWithBothJoined_WhenConcat_ResultIsTainted()
     {
         string str = String.Concat(TaintedObject, UntaintedObject, OtherTaintedObject, OtherUntaintedObject);
-        Assert.Equal(":+-TaintedObject-+:UntaintedObject:+-OtherTaintedObject-+:OtherUntaintedObject:+-TaintedObject-+:", FormatTainted(String.Concat(str, TaintedObject)));
+        FormatTainted(String.Concat(str, TaintedObject)).Should().Be(":+-TaintedObject-+:UntaintedObject:+-OtherTaintedObject-+:OtherUntaintedObject:+-TaintedObject-+:");
     }
 
     [Fact]
     public void GivenStringConcatObjectFourParamsWithBothJoinedInverse_WhenConcat_ResultIsTainted()
     {
         string str = String.Concat(TaintedObject, UntaintedObject, OtherUntaintedObject, UntaintedObject);
-        Assert.Equal(":+-TaintedObject-+:UntaintedObjectOtherUntaintedObjectUntaintedObject:+-OtherTaintedObject-+:", FormatTainted(String.Concat(str, OtherTaintedObject)));
+        FormatTainted(String.Concat(str, OtherTaintedObject)).Should().Be(":+-TaintedObject-+:UntaintedObjectOtherUntaintedObjectUntaintedObject:+-OtherTaintedObject-+:");
     }
 
     [Fact]
     public void GivenStringConcatObjectFiveParamsWithBothJoined_WhenConcat_ResultIsTainted()
     {
         string str = String.Concat(TaintedObject, UntaintedObject, OtherUntaintedObject, OtherTaintedObject, OtherTaintedObject);
-        Assert.Equal(":+-TaintedObject-+:UntaintedObjectOtherUntaintedObject:+-OtherTaintedObject-+::+-OtherTaintedObject-+:OtherUntaintedObject", FormatTainted(String.Concat(str, OtherUntaintedObject)));
+        FormatTainted(String.Concat(str, OtherUntaintedObject)).Should().Be(":+-TaintedObject-+:UntaintedObjectOtherUntaintedObject:+-OtherTaintedObject-+::+-OtherTaintedObject-+:OtherUntaintedObject");
     }
 
     [Fact]
     public void GivenStringConcatObjectFiveParamsWithBothJoinedInverse_WhenConcat_ResultIsTainted()
     {
         string str = String.Concat(UntaintedObject, OtherUntaintedObject, TaintedObject, OtherTaintedObject, OtherUntaintedObject);
-        Assert.Equal("UntaintedObjectOtherUntaintedObject:+-TaintedObject-+::+-OtherTaintedObject-+:OtherUntaintedObjectOtherUntaintedObject", FormatTainted(String.Concat(str, OtherUntaintedObject)));
+        FormatTainted(String.Concat(str, OtherUntaintedObject)).Should().Be("UntaintedObjectOtherUntaintedObject:+-TaintedObject-+::+-OtherTaintedObject-+:OtherUntaintedObjectOtherUntaintedObject");
     }
 
     [Fact]
@@ -420,7 +419,7 @@ public class StringAspectTests : InstrumentationTestsBase
     public void Given_StringConcatGenericStruct_WhenConcat_ResultIsTainted()
     {
         string str = String.Concat<StructForStringTest>(new List<StructForStringTest> { new StructForStringTest(UntaintedString), new StructForStringTest(TaintedString) });
-        Assert.Equal("UntaintedString:+-TaintedString-+:", FormatTainted(str));
+        FormatTainted(str).Should().Be("UntaintedString:+-TaintedString-+:");
     }
 
     [Fact]
@@ -462,7 +461,7 @@ public class StringAspectTests : InstrumentationTestsBase
     public void GivenATaintedStringInClassList_WhenCallingConcat_ResultIsTainted2()
     {
         string str = String.Concat<ClassForStringTest>(new List<ClassForStringTest> { new ClassForStringTest(UntaintedString), new ClassForStringTest(TaintedString) });
-        Assert.Equal("UntaintedString:+-TaintedString-+:", FormatTainted(str));
+        FormatTainted(str).Should().Be("UntaintedString:+-TaintedString-+:");
     }
 
     [Fact]
