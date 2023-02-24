@@ -111,6 +111,21 @@ namespace Datadog.Trace.Tests.Agent
             Assert.Throws<ArgumentException>(() => new SpanBuffer(4, SpanFormatterResolver.Instance));
         }
 
+        [Fact]
+        public void TemporaryBufferSizeLimit()
+        {
+            var buffer = new SpanBuffer(256, SpanFormatterResolver.Instance);
+            var temporaryBuffer = new byte[256];
+            var spans = CreateTraceChunk(10);
+
+            buffer.TryWrite(spans, ref temporaryBuffer).Should().BeFalse();
+            buffer.IsFull.Should().BeFalse();
+            buffer.SpanCount.Should().Be(0);
+            buffer.TraceCount.Should().Be(0);
+
+            temporaryBuffer.Length.Should().BeLessThanOrEqualTo(512, because: "the size of the temporary buffer shouldn't exceed twice the limit");
+        }
+
         private static ArraySegment<Span> CreateTraceChunk(int spanCount, ulong startingId = 1)
         {
             var spans = new Span[spanCount];

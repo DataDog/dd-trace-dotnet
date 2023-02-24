@@ -454,6 +454,13 @@ namespace Datadog.Trace.Agent
                 return;
             }
 
+            if (!buffer.IsFull)
+            {
+                // If the serialization failed even though the buffer isn't full, there's no point in trying again
+                DropTrace(spans);
+                return;
+            }
+
             // Active buffer is full, swap them
             buffer = SwapBuffers();
 
@@ -470,6 +477,11 @@ namespace Datadog.Trace.Agent
             }
 
             // All the buffers are full :( drop the trace
+            DropTrace(spans);
+        }
+
+        private void DropTrace(ArraySegment<Span> spans)
+        {
             Interlocked.Increment(ref _droppedSpans);
             _traceKeepRateCalculator.IncrementDrops(1);
 

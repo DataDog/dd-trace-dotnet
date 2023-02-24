@@ -92,11 +92,17 @@ namespace Datadog.Trace.Agent
 
                 if (_formatter is SpanMessagePackFormatter spanFormatter)
                 {
-                    size = spanFormatter.Serialize(ref temporaryBuffer, 0, in traceChunk, _formatterResolver);
+                    size = spanFormatter.Serialize(ref temporaryBuffer, 0, in traceChunk, _formatterResolver, maxSize: _maxBufferSize);
                 }
                 else
                 {
                     size = _formatter.Serialize(ref temporaryBuffer, 0, traceChunk, _formatterResolver);
+                }
+
+                if (size == 0)
+                {
+                    // Serialization failed because the trace is too big
+                    return false;
                 }
 
                 if (!EnsureCapacity(size + _offset))
