@@ -38,13 +38,15 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData(123456789, 987654321, null, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
-        [InlineData(123456789, 987654321, SamplingPriorityValues.UserReject, "00-000000000000000000000000075bcd15-000000003ade68b1-00")]
-        [InlineData(123456789, 987654321, SamplingPriorityValues.AutoReject, "00-000000000000000000000000075bcd15-000000003ade68b1-00")]
-        [InlineData(123456789, 987654321, SamplingPriorityValues.AutoKeep, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
-        [InlineData(123456789, 987654321, SamplingPriorityValues.UserKeep, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
-        public void CreateTraceParentHeader(ulong traceId, ulong spanId, int? samplingPriority, string expected)
+        [InlineData(0, 123456789, 987654321, null, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
+        [InlineData(0, 123456789, 987654321, SamplingPriorityValues.UserReject, "00-000000000000000000000000075bcd15-000000003ade68b1-00")]
+        [InlineData(0, 123456789, 987654321, SamplingPriorityValues.AutoReject, "00-000000000000000000000000075bcd15-000000003ade68b1-00")]
+        [InlineData(0, 123456789, 987654321, SamplingPriorityValues.AutoKeep, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
+        [InlineData(0, 123456789, 987654321, SamplingPriorityValues.UserKeep, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
+        [InlineData(0x0123456789ABCDEF, 0x1122334455667788, 0x000000003ade68b1, null, @"00-0123456789abcdef1122334455667788-000000003ade68b1-01")]
+        public void CreateTraceParentHeader(ulong traceIdUpper, ulong traceIdLower, ulong spanId, int? samplingPriority, string expected)
         {
+            var traceId = new TraceId(traceIdUpper, traceIdLower);
             var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, "origin");
             var traceparent = W3CTraceContextPropagator.CreateTraceParentHeader(context);
 
