@@ -163,6 +163,14 @@ namespace Datadog.Trace.Tools.Runner
             ciVisibilitySettings.SetCodeCoverageEnabled(codeCoverageEnabled);
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
 
+            if (!testSkippingEnabled)
+            {
+                // If test skipping is disabled we set this to the child process so we avoid to query the settings api again.
+                // If is not disabled we need to query the backend again in the child process with more runtime info.
+                ciVisibilitySettings.SetTestsSkippingEnabled(testSkippingEnabled);
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled] = "0";
+            }
+
             // Let's set the code coverage datacollector if the code coverage is enabled
             if (codeCoverageEnabled)
             {
@@ -244,9 +252,10 @@ namespace Datadog.Trace.Tools.Runner
             {
                 AnsiConsole.WriteLine("Running: " + command);
 
-                if (ciVisibilitySettings.IntelligentTestRunnerEnabled || Program.CallbackForTests is not null)
+                if (testSkippingEnabled || Program.CallbackForTests is not null)
                 {
-                    // Awaiting git repository task before running the command if ITR is enabled.
+                    // Awaiting git repository task before running the command if ITR test skipping is enabled.
+                    // Test skipping requires the git upload metadata information before hand
                     Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
                 }
@@ -268,9 +277,9 @@ namespace Datadog.Trace.Tools.Runner
                 session?.SetTag(TestTags.CommandExitCode, exitCode);
                 Log.Debug<int>("RunCiCommand: Finished with exit code: {Value}", exitCode);
 
-                if (!ciVisibilitySettings.IntelligentTestRunnerEnabled)
+                if (!testSkippingEnabled)
                 {
-                    // Awaiting git repository task after running the command if ITR is disabled.
+                    // Awaiting git repository task after running the command if ITR test skipping is disabled.
                     Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
                 }
