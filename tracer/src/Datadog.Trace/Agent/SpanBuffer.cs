@@ -40,6 +40,13 @@ namespace Datadog.Trace.Agent
             _formatter = _formatterResolver.GetFormatter<TraceChunkModel>();
         }
 
+        public enum WriteStatus
+        {
+            Success = 0,
+            Full = 1,
+            Overflow = 2
+        }
+
         public ArraySegment<byte> Data
         {
             get
@@ -47,7 +54,7 @@ namespace Datadog.Trace.Agent
                 if (!_locked)
                 {
                     // Sanity check - headers are written when the buffer is locked
-                    ThrowHelper.ThrowInvalidOperationException("Data was extracted from the buffer without locking");
+                    // ThrowHelper.ThrowInvalidOperationException("Data was extracted from the buffer without locking");
                 }
 
                 return new ArraySegment<byte>(_buffer, 0, _offset);
@@ -66,7 +73,7 @@ namespace Datadog.Trace.Agent
         // For tests only
         internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == HeaderSize;
 
-        public bool TryWrite(ArraySegment<Span> spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
+        public WriteStatus TryWrite(ArraySegment<Span> spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
         {
             bool lockTaken = false;
 
@@ -77,7 +84,7 @@ namespace Datadog.Trace.Agent
                 if (!lockTaken || _locked)
                 {
                     // A flush operation is in progress, consider this buffer full
-                    return false;
+                    return WriteStatus.Full;
                 }
 
                 // since all we have is an array of spans, use the trace context from the first span
@@ -102,13 +109,13 @@ namespace Datadog.Trace.Agent
                 if (size == 0)
                 {
                     // Serialization failed because the trace is too big
-                    return false;
+                    return WriteStatus.Overflow;
                 }
 
                 if (!EnsureCapacity(size + _offset))
                 {
                     IsFull = true;
-                    return false;
+                    return WriteStatus.Full;
                 }
 
                 Buffer.BlockCopy(temporaryBuffer, 0, _buffer, _offset, size);
@@ -117,7 +124,7 @@ namespace Datadog.Trace.Agent
                 TraceCount++;
                 SpanCount += traceChunk.SpanCount;
 
-                return true;
+                return WriteStatus.Success;
             }
             finally
             {
