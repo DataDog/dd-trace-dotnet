@@ -12,7 +12,7 @@ variables:
   DOWNSTREAM_BRANCH:
     value: "master"
     description: "Run a specific datadog-reliability-env branch downstream"
-    
+
 build:
   only:
     - master
