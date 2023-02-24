@@ -159,7 +159,7 @@ int execve(const char *pathname, char *const argv[], char *const envp[])
 
             // By convention, argv[0] contains the name of the executable
             // Insert createdump as the first actual argument
-            newArgv[0] = argv[0];
+            newArgv[0] = ddTracePath;
             newArgv[1] = "createdump";
 
             // Copy the remaining arguments
