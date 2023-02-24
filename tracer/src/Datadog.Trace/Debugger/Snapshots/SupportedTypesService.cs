@@ -64,11 +64,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(SecureString),
         };
 
-        internal static bool IsSafeToCallToString(Type type)
+        internal static bool IsSafeToCallToString(Type type, bool includeCollection = true)
         {
             return IsSimple(type) ||
                    AllowedTypesSafeToCallToString.Contains(type) ||
-                   IsSupportedCollection(type);
+                   (includeCollection && IsSupportedCollection(type));
         }
 
         private static bool IsSimple(Type type)

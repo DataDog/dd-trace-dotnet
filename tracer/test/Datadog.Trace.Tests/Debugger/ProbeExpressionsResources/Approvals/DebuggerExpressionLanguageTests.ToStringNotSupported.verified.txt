@@ -28,8 +28,58 @@ Expressions:
     var StringArg = (string)scopeMemberArray[9].Value;
     var CollectionArg = (List<string>)scopeMemberArray[10].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
-    var $dd_el_result = "Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+NestedObject";
+    var $dd_el_result = "Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+NestedObject" + @"
+" + var fieldsArray = this.Nested.GetType().GetFields(
+        BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+    var fieldValues = new StringBuilder();
+    var index = 0;
+    while (true)
+    {
+        if ((index < fieldsArray.Length) && (index < 5))
+        {
+            fieldValues.AppendLine(
+                ProbeExpressionParser<string>.DumpObject(
+                    fieldsArray[index].GetValue(this.Nested),
+                    fieldsArray[index].FieldType,
+                    fieldsArray[index].Name,
+                    0));
+            index++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return fieldValues.ToString();;
 
     return $dd_el_result;
 }
 Result: The result of the expression is: Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+NestedObject
+_string: I'm a string field
+_timeSpan: 00:00:00
+_dictionary: System.Collections.Generic.Dictionary`2[[System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]
+{
+	{
+		Key: one
+		Value: 1
+	}
+	{
+		Key: two
+		Value: 2
+	}
+	{
+		Key: three
+		Value: 3
+	}
+}
+
+_ienumerable: System.Collections.Generic.IEnumerable`1[[System.Int32, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]
+_readonlyList: System.Collections.Generic.IReadOnlyList`1[[System.Int32, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]
+{
+	Item 0: 1
+	Item 1: 2
+	Item 2: 3
+}
+
+
