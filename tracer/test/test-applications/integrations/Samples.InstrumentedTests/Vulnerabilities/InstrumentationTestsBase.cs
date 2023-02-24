@@ -63,6 +63,11 @@ public class InstrumentationTestsBase
         _taintedObjects.Should().NotBeNull();
     }
 
+    protected string AddTaintedString(string tainted)
+    {
+        return (string) AddTainted(tainted);
+    }
+
     protected object AddTainted(object tainted)
     {
         var source = Activator.CreateInstance(_sourceType, new object[] { (byte)0, (string)null, (string)tainted });        
