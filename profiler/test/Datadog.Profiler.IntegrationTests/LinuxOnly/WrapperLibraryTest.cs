@@ -103,6 +103,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             // Don't set DD_TRACE_CRASH_HANDLER. In that case, the call to createdump shouldn't be redirected
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
+            runner.Environment.SetVariable("COMPlus_DbgMiniDumpName ", "/dev/null");
 
             using var processHelper = runner.LaunchProcess();
 
