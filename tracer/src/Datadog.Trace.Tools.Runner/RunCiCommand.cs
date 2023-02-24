@@ -163,6 +163,14 @@ namespace Datadog.Trace.Tools.Runner
             ciVisibilitySettings.SetCodeCoverageEnabled(codeCoverageEnabled);
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
 
+            if (!testSkippingEnabled)
+            {
+                // If test skipping is disabled we set this to the child process so we avoid to query the settings api again.
+                // If is not disabled we need to query the backend again in the child process with more runtime info.
+                ciVisibilitySettings.SetTestsSkippingEnabled(testSkippingEnabled);
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled] = "0";
+            }
+
             // Let's set the code coverage datacollector if the code coverage is enabled
             if (codeCoverageEnabled)
             {
