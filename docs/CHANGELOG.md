@@ -17,6 +17,86 @@
 
 
 
+
+## [Release 2.24.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.24.0)
+
+## Summary
+
+Tracer 
+- Added support for publishing init containers that will be used for library injection in kubernetes. The feature isn't yet available though at it requires changes in the datadog agent as well, that will be released next month.
+
+Profiler
+- Reduce CPU consumption on Linux 
+- Improve performance of exceptions profiling
+
+## Changes
+
+### Tracer
+* [Tracer] Fix `otel.status_code`/`otel.library.name` from .NET Activity API (#3750)
+* [Tracer] add 128-bit `TraceId` struct (#3752)
+* [AAS] Bail out from starting processes if API_KEY isn't present (#3775)
+* [Tracer] Fix `IDatadogLogger` analyzer warnings (#3785)
+* [Tracer] APM and DBM Link Injecting SQL Comment (#3784)
+* [Tracer] Add support for Aerospike 6.0.0 (#3811)
+
+### CI Visibility
+* [CI Visibility] - BenchmarkDotNet framework support (#3774)
+* [CI Visibility] - Extract traits recursively in NUnit (#3777)
+* [CI Visibility] - Small changes to the CI Visibility processors. (#3788)
+* [CI Visibility] - Lazy initialise the ITR instance (#3789)
+* [CI Visibility] - Defer await for git upload task (#3825)
+
+### ASM
+* [ASM] Instrumented tests: basic setup (#3718)
+* [ASM] Set span type to "vulnerability" for iast spans in console apps. (#3747)
+* [ASM] Weak hashing instrumentation for net462 (#3776)
+* [ASM] Add valueparts without source in vulnerability Json (#3810)
+* [ASM] Weak cipher support for .net framework (#3818)
+
+### Continuous Profiler
+* [Profiler] Add allocations recorder (#3753)
+* [Profiler] Reduce memory allocation of the profiler (#3764)
+* [Profiler] Validate exceptions sampling (#3767)
+* [Profiler] Improve .NET exception profiler (#3770)
+* [Profiler] Fix CppCheck version when installing (#3772)
+* [Profiler] Fix flacky tests (#3778)
+* Remove all references to `DD_DOTNET_PROFILER_HOME` (#3782)
+* [Profiler] Improve building thread stat file path (#3786)
+* [Profiler] Improve Linux stackwalker deadlock detection (#3787)
+* [Profiler] Take cores count into account for CPU profiling (#3793)
+* [Profiler/CI] Remove profiler throughput tests from Github Actions (#3795)
+* [Profiler] Add I/O-bound demo application (#3797)
+* [Profiler] Add CI visibility on profiler AzDo jobs (#3799)
+* [Profiler] Change scenario for better chances to get samples (#3801)
+* [Profiler] Fix bug when retrieving number of cores (#3802)
+* [Profiler] bug fixes (#3806)
+* [Profiler] Increase leak size and fix exception (#3815)
+* [Profiler] Add view for EndpointsCount controller (#3823)
+
+### Debugger
+* [Dynamic Instrumentation] Support duration in debugger DSL (#3765)
+* [Dynamic Instrumentation] Addressed a leakage by reusing probe data indices (#3771)
+
+### Miscellaneous
+* Extract `git.commit.sha` and `git.repository_url` from SourceLink (#3652)
+* Change profiler and native loader default log dir (#3790)
+* Small performance improvements (#3809)
+
+### Build / Test
+* Add debugger team as CODEONWERS to missing directories (#3766)
+* Generate container images for Kubernetes Admission Controller library injection (#3769)
+* [Build] Add retries for build and package commands (#3780)
+* Add analyzers for `IDatadogLogger` usages (#3781)
+* [Build/Test] Limit upload_container_images build stage to individual CI (#3783)
+* [Build/Test] Publish official dd-lib-dotnet-init images on tagged commit (#3791)
+* Fix test trigger on scheduled builds (#3792)
+* [Build/Test] Add system tests for the library injection images (#3803)
+* Fix MongoDb integration tests and bump to latest (#3808)
+* Add test and sample project for .NET Activity API (#3597)
+
+
+[Changes since 2.23.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.23.0...v2.24.0)
+
 ## [Release 2.23.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.23.0)
 
 ## Summary
