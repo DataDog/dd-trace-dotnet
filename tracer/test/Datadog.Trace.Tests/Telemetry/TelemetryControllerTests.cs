@@ -9,51 +9,66 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Telemetry
 {
-    public class TelemetryControllerTests : IDisposable
+    public class TelemetryControllerTests
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryControllerTests>();
+
+        private readonly ITestOutputHelper _testOutputHelper;
         private readonly TimeSpan _refreshInterval = TimeSpan.FromMilliseconds(100);
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(60_000); // definitely should receive telemetry by now
         private readonly TestTelemetryTransport _transport;
         private readonly TelemetryTransportManager _transportManager;
-        private readonly TelemetryController _controller;
 
-        public TelemetryControllerTests()
+        public TelemetryControllerTests(ITestOutputHelper testOutputHelper)
         {
+            _testOutputHelper = testOutputHelper;
             _transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
             _transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { _transport });
-            _controller = new TelemetryController(
+        }
+
+        [Fact]
+        public async Task TelemetryControllerShouldSendTelemetry()
+        {
+            DatadogLogging.SetLogLevel(LogEventLevel.Debug);
+            var controller = new TelemetryController(
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
                 _transportManager,
                 _refreshInterval,
                 _refreshInterval);
-        }
 
-        public void Dispose() => _controller?.DisposeAsync();
-
-        [Fact]
-        public async Task TelemetryControllerShouldSendTelemetry()
-        {
-            _controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
-            _controller.Start();
+            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+            controller.Start();
+            Log.Debug("Started the controller");
 
             var data = await WaitForRequestStarted(_transport, _timeout);
+            DatadogLogging.SetLogLevel(LogEventLevel.Information);
         }
 
         [Fact]
         public async Task TelemetryControllerCanBeDisposedTwice()
         {
-            await _controller.DisposeAsync();
-            await _controller.DisposeAsync();
+            var controller = new TelemetryController(
+                new ConfigurationTelemetryCollector(),
+                new DependencyTelemetryCollector(),
+                new IntegrationTelemetryCollector(),
+                _transportManager,
+                _refreshInterval,
+                _refreshInterval);
+
+            await controller.DisposeAsync();
+            await controller.DisposeAsync();
         }
 
         [Fact]
@@ -169,14 +184,27 @@ namespace Datadog.Trace.Tests.Telemetry
             var deadline = DateTimeOffset.UtcNow.Add(timeout);
             while (DateTimeOffset.UtcNow < deadline)
             {
+                Log.Debug("Now: " + DateTimeOffset.UtcNow);
+                Log.Debug("Deadline: " + deadline);
                 var data = transport.GetData();
+                Log.Debug("Received data. Nb elements: " + data.Count);
+
+                foreach (var telemetryData in data)
+                {
+                    Log.Debug("Request type: " + telemetryData.RequestType);
+                }
+
                 if (data.Any(x => x.RequestType == TelemetryRequestTypes.AppStarted))
                 {
                     return data;
                 }
 
+                Log.Debug("Waiting");
                 await Task.Delay(_refreshInterval);
             }
+
+            Log.Debug("Giving up");
+            DatadogLogging.SetLogLevel(LogEventLevel.Information);
 
             throw new TimeoutException($"Transport did not receive required data before the timeout {timeout.TotalMilliseconds}ms");
         }
@@ -200,6 +228,8 @@ namespace Datadog.Trace.Tests.Telemetry
 
         internal class TestTelemetryTransport : ITelemetryTransport
         {
+            private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestTelemetryTransport>();
+
             private readonly ConcurrentStack<TelemetryData> _data = new();
             private readonly TelemetryPushResult _pushResult;
 
@@ -215,6 +245,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             public Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
             {
+                Log.Debug("Pushing in tests");
                 _data.Push(data);
                 return Task.FromResult(_pushResult);
             }
