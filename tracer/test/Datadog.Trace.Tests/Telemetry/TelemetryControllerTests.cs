@@ -15,7 +15,6 @@ using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Telemetry
 {
@@ -23,28 +22,21 @@ namespace Datadog.Trace.Tests.Telemetry
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryControllerTests>();
 
-        private readonly ITestOutputHelper _testOutputHelper;
         private readonly TimeSpan _refreshInterval = TimeSpan.FromMilliseconds(100);
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(60_000); // definitely should receive telemetry by now
-        private readonly TestTelemetryTransport _transport;
-        private readonly TelemetryTransportManager _transportManager;
-
-        public TelemetryControllerTests(ITestOutputHelper testOutputHelper)
-        {
-            _testOutputHelper = testOutputHelper;
-            _transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-            _transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { _transport });
-        }
 
         [Fact]
         public async Task TelemetryControllerShouldSendTelemetry()
         {
+            var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+            var transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { transport });
+
             DatadogLogging.SetLogLevel(LogEventLevel.Debug);
             var controller = new TelemetryController(
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                _transportManager,
+                transportManager,
                 _refreshInterval,
                 _refreshInterval);
 
@@ -52,18 +44,21 @@ namespace Datadog.Trace.Tests.Telemetry
             controller.Start();
             Log.Debug("Started the controller");
 
-            var data = await WaitForRequestStarted(_transport, _timeout);
+            var data = await WaitForRequestStarted(transport, _timeout);
+            await controller.DisposeAsync(false);
             DatadogLogging.SetLogLevel(LogEventLevel.Information);
         }
 
         [Fact]
         public async Task TelemetryControllerCanBeDisposedTwice()
         {
+            var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+            var transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { transport });
             var controller = new TelemetryController(
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                _transportManager,
+                transportManager,
                 _refreshInterval,
                 _refreshInterval);
 
@@ -101,6 +96,7 @@ namespace Datadog.Trace.Tests.Telemetry
             // Shouldn't receive any more data,
             await Task.Delay(3_000);
             transport.GetData().Count.Should().Be(previousDataCount.Count, "Should not send more data after disposal");
+            await controller.DisposeAsync(false);
         }
 
         [Fact]
@@ -137,11 +133,16 @@ namespace Datadog.Trace.Tests.Telemetry
                      .Where(x => x.RequestType == TelemetryRequestTypes.AppHeartbeat)
                      .Should()
                      .HaveCountGreaterOrEqualTo(requiredHeartbeats);
+
+            await controller.DisposeAsync(false);
         }
 
         [Fact]
         public async Task TelemetryControllerAddsAllAssembliesToCollector()
         {
+            var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+            var transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { transport });
+
             var currentAssemblyNames = AppDomain.CurrentDomain
                                                 .GetAssemblies()
                                                 .Where(x => !x.IsDynamic)
@@ -153,14 +154,14 @@ namespace Datadog.Trace.Tests.Telemetry
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                _transportManager,
+                transportManager,
                 _refreshInterval,
                 _refreshInterval);
 
             controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
             controller.Start();
 
-            var allData = await WaitForRequestStarted(_transport, _timeout);
+            var allData = await WaitForRequestStarted(transport, _timeout);
             var payload = allData
                          .Where(x => x.RequestType == TelemetryRequestTypes.AppStarted)
                          .OrderByDescending(x => x.SeqId)
@@ -177,6 +178,8 @@ namespace Datadog.Trace.Tests.Telemetry
                        .Should()
                        .ContainEquivalentOf(assemblyName);
             }
+
+            await controller.DisposeAsync(false);
         }
 
         private async Task<List<TelemetryData>> WaitForRequestStarted(TestTelemetryTransport transport, TimeSpan timeout)
