@@ -47,7 +47,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="isReEntryToMoveNext">If it the first entry to the state machine MoveNext method</param>
         /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static AsyncMethodDebuggerState BeginMethod<TTarget>(string probeId, int probeMetadataIndex, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, ref AsyncMethodDebuggerState isReEntryToMoveNext)
+        public static AsyncDebuggerState BeginMethod<TTarget>(string probeId, int probeMetadataIndex, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, ref AsyncDebuggerState isReEntryToMoveNext)
         {
             // State machine is null in case is a nested struct inside a generic parent.
             // This can happen if we operate in optimized code and the original async method was inside a generic class
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
             }
 
-            if (isReEntryToMoveNext != null)
+            if (isReEntryToMoveNext.State != null)
             {
                 // we are in a continuation, return the current state
                 return isReEntryToMoveNext;
@@ -113,7 +113,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.HasLocalsOrReturnValue = false;
             asyncState.HasArguments = false;
 
-            isReEntryToMoveNext = asyncState; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
+            isReEntryToMoveNext = new AsyncDebuggerState(asyncState); // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
+
             return isReEntryToMoveNext;
         }
 
@@ -123,11 +124,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <typeparam name="TLocal">Type of local.</typeparam>
         /// <param name="local">The local to be logged.</param>
         /// <param name="index">index of given argument.</param>
-        /// <param name="asyncState">Debugger asyncState</param>
+        /// <param name="state">Debugger asyncState</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogLocal<TLocal>(ref TLocal local, int index, ref AsyncMethodDebuggerState asyncState)
+        public static void LogLocal<TLocal>(ref TLocal local, int index, ref AsyncDebuggerState state)
         {
-            if (!asyncState.IsActive)
+            if (state.State is not AsyncMethodDebuggerState asyncState || !asyncState.IsActive)
             {
                 return;
             }
@@ -157,11 +158,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <typeparam name="TTarget">Target object of the method. Note that it could be typeof(object) and not a concrete type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <param name="exception">Exception value</param>
-        /// <param name="asyncState">Debugger asyncState</param>
+        /// <param name="state">Debugger asyncState</param>
         /// <returns>LiveDebugger return structure</returns>
-        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref AsyncMethodDebuggerState asyncState)
+        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref AsyncDebuggerState state)
         {
-            if (!asyncState.IsActive)
+            if (state.State is not AsyncMethodDebuggerState asyncState || !asyncState.IsActive)
             {
                 return DebuggerReturn.GetDefault();
             }
@@ -188,12 +189,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="instance">Instance value</param>
         /// <param name="returnValue">Return value</param>
         /// <param name="exception">Exception value</param>
-        /// <param name="asyncState">Debugger asyncState</param>
+        /// <param name="state">Debugger asyncState</param>
         /// <returns>LiveDebugger return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref AsyncMethodDebuggerState asyncState)
+        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref AsyncDebuggerState state)
         {
-            if (!asyncState.IsActive)
+            if (state.State is not AsyncMethodDebuggerState asyncState || !asyncState.IsActive)
             {
                 return new DebuggerReturn<TReturn>(returnValue);
             }
@@ -224,11 +225,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// End Method with Void return value invoker
         /// </summary>
-        /// <param name="asyncState">Debugger asyncState</param>
+        /// <param name="state">Debugger asyncState</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void EndMethod_EndMarker(ref AsyncMethodDebuggerState asyncState)
+        public static void EndMethod_EndMarker(ref AsyncDebuggerState state)
         {
-            if (!asyncState.IsActive)
+            if (state.State is not AsyncMethodDebuggerState asyncState || !asyncState.IsActive)
             {
                 return;
             }
@@ -249,13 +250,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Log exception
         /// </summary>
         /// <param name="exception">Exception instance</param>
-        /// <param name="asyncState">Debugger asyncState</param>
+        /// <param name="state">Debugger asyncState</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogException(Exception exception, ref AsyncMethodDebuggerState asyncState)
+        public static void LogException(Exception exception, ref AsyncDebuggerState state)
         {
             try
             {
-                if (!asyncState.IsActive)
+                if (state.State is not AsyncMethodDebuggerState asyncState || !asyncState.IsActive)
                 {
                     // Already encountered `LogException`
                     return;

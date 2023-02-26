@@ -1,4 +1,4 @@
-// <copyright file="TraceAnnotationsIntegration.cs" company="Datadog">
+// <copyright file="TraceAnnotationsIntegration2.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,55 +10,36 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
+namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
-    /// Calltarget instrumentation to generate a span for any arbitrary method
+    /// Span probe integration, available since Tracer version 2.23.0.0
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class TraceAnnotationsIntegration
+    public class TraceAnnotationsIntegration2
     {
         internal static readonly IntegrationId IntegrationId = IntegrationId.TraceAnnotations;
-        private static readonly ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo>();
 
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="methodHandle">The RuntimeMethodHandle representing the instrumented method</param>
-        /// <param name="typeHandle">The RuntimeTypeHandle representing the instrumented method's owning type</param>
-        /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle)
-        {
-            var info = InstrumentedMethodCache.GetOrAdd(
-                new RuntimeHandleTuple(methodHandle, typeHandle),
-                key => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)));
-
-            return new CallTargetState(CreateSpan(info.ResourceName, info.OperationName, IntegrationId));
-        }
-
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
         /// <param name="resourceName">The resource name</param>
         /// <param name="operationName">The operation name</param>
-        /// <param name="integrationId">The integration generating the span</param>
         /// <returns>Calltarget state value</returns>
-        internal static Scope CreateSpan(string resourceName, string operationName, IntegrationId integrationId)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string? resourceName, string? operationName)
         {
-            var tags = new TraceAnnotationTags();
-            var scope = Tracer.Instance.StartActiveInternal(operationName, tags: tags);
-            scope.Span.ResourceName = resourceName;
+            resourceName ??= "unknown-resource";
+            operationName ??= "unknown-operation";
 
-            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-
-            return scope;
+            return new CallTargetState(TraceAnnotationsIntegration.CreateSpan(resourceName, operationName, IntegrationId));
         }
 
         /// <summary>
@@ -71,8 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         /// <returns>A default CallTargetReturn to satisfy the CallTarget contract</returns>
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
-            state.Scope.DisposeWithException(exception);
-            return CallTargetReturn.GetDefault();
+            return TraceAnnotationsIntegration.OnMethodEnd(instance, exception, state);
         }
 
         /// <summary>
@@ -87,21 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            // If the return type is Task/Task<T>/ValueTask/ValueTask<TResult>, defer the scope disposal. Otherwise, dispose it now since the async callback will not be invoked
-#if NETCOREAPP3_1_OR_GREATER
-            bool closeAsync = returnValue is Task
-                              || returnValue is ValueTask
-                              || (returnValue?.GetType() is Type returnType && returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(ValueTask<>));
-#else
-            bool closeAsync = returnValue is Task;
-#endif
-
-            if (!closeAsync)
-            {
-                state.Scope.DisposeWithException(exception);
-            }
-
-            return new CallTargetReturn<TReturn>(returnValue);
+            return TraceAnnotationsIntegration.OnMethodEnd(instance, returnValue, exception, in state);
         }
 
         /// <summary>
@@ -116,8 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            state.Scope.DisposeWithException(exception);
-            return returnValue;
+            return TraceAnnotationsIntegration.OnAsyncMethodEnd(instance, returnValue, exception, in state);
         }
     }
 }

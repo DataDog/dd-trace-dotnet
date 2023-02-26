@@ -256,6 +256,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     MethodProbeDefinitions methodProbes;
     LineProbeDefinitions lineProbes;
+    SpanProbeDefinitions spanProbes;
 
     const auto& probes = debuggerMethodHandler->GetProbes();
 
@@ -280,21 +281,28 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         if (lineProbe != nullptr)
         {
             lineProbes.emplace_back(lineProbe);
+            continue;
+        }
+
+        const auto spanProbe = std::dynamic_pointer_cast<SpanProbeDefinition>(probe);
+        if (spanProbe != nullptr)
+        {
+            spanProbes.emplace_back(spanProbe);
         }
     }
 
-    if (methodProbes.empty() && lineProbes.empty())
+    if (methodProbes.empty() && lineProbes.empty() && spanProbes.empty())
     {
         // No lines probes & method probes. Should not happen unless the user requested to undo the instrumentation while the method got executed.
-        Logger::Info("There are no method probes and lines probes for methodDef", methodHandler->GetMethodDef());
+        Logger::Info("There are no method probes, lines probes and span probes for methodDef", methodHandler->GetMethodDef());
         return S_OK;
     }
     else
     {
-        Logger::Info("Applying ", methodProbes.size(), " method probes and ", lineProbes.size(),
-                     " line probes on methodDef: ", methodHandler->GetMethodDef());
+        Logger::Info("Applying ", methodProbes.size(), " method probes, ", lineProbes.size(), " line probes and ",
+                     spanProbes.size(), " span probes on methodDef: ", methodHandler->GetMethodDef());
 
-        const auto hr = Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes);
+        const auto hr = Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes, spanProbes);
     }
 
     return S_OK;
@@ -560,7 +568,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     // *** Emit BeginMethod call
     ILInstr* beginCallInstruction;
-    hr = debuggerTokens->WriteBeginMethod_StartMarker(&rewriterWrapper, &caller->type, &beginCallInstruction, debugger::NonAsyncMethodProbe);
+    hr = debuggerTokens->WriteBeginMethod_StartMarker(&rewriterWrapper, &caller->type, &beginCallInstruction, NonAsyncMethodProbe);
 
     IfFailRet(hr);
 
@@ -643,7 +651,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     }
     else
     {
-        debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type, &retFuncArg, &endMethodCallInstr,NonAsyncMethodProbe);
+        debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type, &retFuncArg, &endMethodCallInstr, NonAsyncMethodProbe);
     }
     rewriterWrapper.StLocal(callTargetReturnIndex);
 
@@ -810,8 +818,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
                 rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
                 /*debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type,methodReturnType,
                     &endMethodCallInstr, AsyncMethod);*/
-                debuggerTokens->WriteEndVoidReturnMemberRef(&rewriterWrapper, &caller->type,
-                    &endMethodCallInstr, AsyncMethodProbe);
+                debuggerTokens->WriteEndVoidReturnMemberRef(&rewriterWrapper, &caller->type, &endMethodCallInstr, AsyncMethodProbe);
             }
             else
             {
@@ -827,8 +834,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
                 rewriterWrapper.GetILRewriter()->InsertBefore(rewriterWrapper.GetCurrentILInstr(), returnInstruction);
                 rewriterWrapper.LoadNull(); // exception
                 rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
-                debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type, methodReturnType,
-                                                        &endMethodCallInstr, AsyncMethodProbe);
+                debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type, methodReturnType, &endMethodCallInstr, AsyncMethodProbe);
             }
 
             *setResultEndMethodTryStartInstr = endMethodTryStartInstr;
@@ -857,13 +863,11 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
             rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
             if (elementType != ELEMENT_TYPE_VOID)
             {
-                 debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type, methodReturnType,
-                &endMethodCallInstr, AsyncMethodProbe);
+                 debuggerTokens->WriteEndReturnMemberRef(&rewriterWrapper, &caller->type, methodReturnType, &endMethodCallInstr, AsyncMethodProbe);
             }
             else
             {
-                debuggerTokens->WriteEndVoidReturnMemberRef(&rewriterWrapper, &caller->type,
-                    &endMethodCallInstr, AsyncMethodProbe);
+                debuggerTokens->WriteEndVoidReturnMemberRef(&rewriterWrapper, &caller->type, &endMethodCallInstr, AsyncMethodProbe);
             }
         }
 
@@ -1074,8 +1078,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     rewriterWrapper.LoadFieldAddress(isReEntryFieldTok);
 
     ILInstr* beginCallInstruction;
-    hr = debuggerTokens->WriteBeginMethod_StartMarker(&rewriterWrapper, &caller->type, &beginCallInstruction,
-                                                      AsyncMethodProbe);
+    hr = debuggerTokens->WriteBeginMethod_StartMarker(&rewriterWrapper, &caller->type, &beginCallInstruction, AsyncMethodProbe);
     IfFailRet(hr);
 
     rewriterWrapper.StLocal(asyncMethodStateIndex);
@@ -1251,11 +1254,14 @@ HRESULT DebuggerMethodRewriter::GetTaskReturnType(const ILInstr* instruction, Mo
     return E_FAIL;
 }
 
-void DebuggerMethodRewriter::MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes, const WSTRING& reasoning)
+void DebuggerMethodRewriter::MarkAllProbesAsError(MethodProbeDefinitions& methodProbes,
+                                                  LineProbeDefinitions& lineProbes,
+                                                  SpanProbeDefinitions& spanProbes, const WSTRING& reasoning)
 {
     // Mark all probes as Error
     MarkAllLineProbesAsError(lineProbes, reasoning);
     MarkAllMethodProbesAsError(methodProbes, reasoning);
+    MarkAllSpanProbesAsError(spanProbes, reasoning);
 }
 
 void DebuggerMethodRewriter::MarkAllLineProbesAsError(LineProbeDefinitions& lineProbes, const WSTRING& reasoning)
@@ -1274,10 +1280,19 @@ void DebuggerMethodRewriter::MarkAllMethodProbesAsError(MethodProbeDefinitions& 
     }
 }
 
+void DebuggerMethodRewriter::MarkAllSpanProbesAsError(SpanProbeDefinitions& spanProbes, const WSTRING& reasoning)
+{
+    for (const auto& probe : spanProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probe->probeId, reasoning);
+    }
+}
+
 HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                         RejitHandlerModuleMethod* methodHandler,
                                         MethodProbeDefinitions& methodProbes,
-                                        LineProbeDefinitions& lineProbes) const
+                                        LineProbeDefinitions& lineProbes,
+                                        SpanProbeDefinitions& spanProbes) const
 {
     ModuleID module_id = moduleHandler->GetModuleId();
     ModuleMetadata& module_metadata = *moduleHandler->GetModuleMetadata();
@@ -1300,7 +1315,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         const WSTRING& reasoning = caller->name == WStr(".ctor") || caller->name == WStr(".cctor")
                                        ? invalid_probe_probe_cctor_ctor_not_supported
                                        : invalid_probe_probe_byreflike_return_not_supported;
-        MarkAllProbesAsError(methodProbes, lineProbes, reasoning);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, reasoning);
         return E_NOTIMPL;
     }
 
@@ -1311,7 +1326,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                      "not yet been loaded into AppDomain with id=",
                      module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
                      caller->name, "()");
-        MarkAllProbesAsError(methodProbes, lineProbes, profiler_assemly_is_not_loaded);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, profiler_assemly_is_not_loaded);
         return S_FALSE;
     }
 
@@ -1322,7 +1337,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Import() failed for ", module_id, " ",
                      function_token);
-        MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_failed_to_import_method_il);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, invalid_probe_failed_to_import_method_il);
         return E_FAIL;
     }
 
@@ -1342,7 +1357,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() failed to parse locals signature for ", module_id, " ",
                      function_token);
-        MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_failed_to_parse_locals);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, invalid_probe_failed_to_parse_locals);
         return E_FAIL;
     }
 
@@ -1373,7 +1388,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     if (FAILED(isAsyncMethodProbeHr))
     {
-        MarkAllProbesAsError(methodProbes, lineProbes, failed_to_determine_if_method_is_async);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, failed_to_determine_if_method_is_async);
         return isAsyncMethodProbeHr;
     }
 
@@ -1384,7 +1399,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
         if (FAILED(hr))
         {
-            MarkAllProbesAsError(methodProbes, lineProbes, failed_to_retrieve_task_return_type);
+            MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, failed_to_retrieve_task_return_type);
             return hr;
         }
         
@@ -1404,7 +1419,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     if (FAILED(hr))
     {
-        MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_failed_to_add_di_locals);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, invalid_probe_failed_to_add_di_locals);
         // Error message is already written in ModifyLocalSigAndInitialize
         return S_FALSE; // TODO https://datadoghq.atlassian.net/browse/DEBUG-706
     }
@@ -1422,7 +1437,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         }
         else if (isTypeIsByRefLike)
         {
-            MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_probe_byreflike_return_not_supported);
+            MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, invalid_probe_probe_byreflike_return_not_supported);
             return E_NOTIMPL;
         }
     }
@@ -1436,7 +1451,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
     else if (isTypeIsByRefLike)
     {
-        MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_type_is_by_ref_like);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, invalid_probe_type_is_by_ref_like);
         return E_NOTIMPL;
     }
 
@@ -1449,7 +1464,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     if (FAILED(hr))
     {
         Logger::Error("Fail to get DebuggerLocals for ", module_id, " ", function_token);
-        MarkAllProbesAsError(methodProbes, lineProbes, failed_to_get_debugger_locals);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, failed_to_get_debugger_locals);
         return E_FAIL;
     }
 
@@ -1482,7 +1497,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
         if (hr != E_NOTIMPL && FAILED(hr))
         {
-            MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_failed_to_instrument_line_probe);
+            MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, invalid_probe_failed_to_instrument_line_probe);
             // Appropriate error message is already logged in ApplyLineProbes.
             return E_FAIL;            
         }
@@ -1526,7 +1541,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
         if (hr != E_NOTIMPL && FAILED(hr))
         {
-            MarkAllProbesAsError(methodProbes, lineProbes, invalid_probe_failed_to_instrument_method_probe);
+            MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, invalid_probe_failed_to_instrument_method_probe);
             // Appropriate error message is already logged in ApplyMethodProbe / ApplyAsyncMethodProbe.
             return E_FAIL;
         }
@@ -1583,7 +1598,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Export() failed for "
                      "ModuleID=",
                      module_id, " ", function_token);
-        MarkAllProbesAsError(methodProbes, lineProbes, failed_to_export_method_il);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanProbes, failed_to_export_method_il);
         return E_FAIL;
     }
 
