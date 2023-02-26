@@ -10,7 +10,7 @@ namespace Datadog.Trace.AppSec.RcmModels.Asm;
 internal class Payload
 {
     [JsonProperty("rules_override")]
-    public RuleOverride[]? RuleStatus { get; set; }
+    public RuleOverride[]? RuleOverrides { get; set; }
 
     [JsonProperty("actions")]
     public Action[]? Actions { get; set; }

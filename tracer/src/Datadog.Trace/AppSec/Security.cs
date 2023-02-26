@@ -358,9 +358,9 @@ namespace Datadog.Trace.AppSec
             foreach (var asmConfig in asmConfigs)
             {
                 _remoteConfigurationStatus.RulesOverrides.Clear();
-                if (asmConfig.TypedFile.RuleStatus?.Length > 0)
+                if (asmConfig.TypedFile.RuleOverrides?.Length > 0)
                 {
-                    _remoteConfigurationStatus.RulesOverrides.AddRange(asmConfig.TypedFile.RuleStatus);
+                    _remoteConfigurationStatus.RulesOverrides.AddRange(asmConfig.TypedFile.RuleOverrides);
                 }
 
                 if (asmConfig.TypedFile.Actions != null)
