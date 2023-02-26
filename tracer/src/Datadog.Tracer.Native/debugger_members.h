@@ -125,6 +125,44 @@ struct LineProbeDefinition : public ProbeDefinition
 
 typedef std::vector<std::shared_ptr<LineProbeDefinition>> LineProbeDefinitions;
 
+struct SpanProbeDefinition : public ProbeDefinition
+{
+    int bytecodeOffset;
+    int lineNumber;
+    GUID mvid;
+    mdMethodDef methodId;
+    shared::WSTRING probeFilePath;
+
+    SpanProbeDefinition(shared::WSTRING probeId, int bytecodeOffset, int lineNumber, GUID mvid, mdMethodDef methodId,
+                        shared::WSTRING probeFilePath) :
+        ProbeDefinition(std::move(probeId)),
+        bytecodeOffset(bytecodeOffset),
+        lineNumber(lineNumber),
+        mvid(mvid),
+        methodId(methodId),
+        probeFilePath(std::move(probeFilePath))
+    {
+    }
+
+    SpanProbeDefinition(const SpanProbeDefinition& other) :
+        ProbeDefinition(other),
+        bytecodeOffset(other.bytecodeOffset),
+        lineNumber(other.lineNumber),
+        mvid(other.mvid),
+        methodId(other.methodId),
+        probeFilePath(other.probeFilePath)
+    {
+    }
+
+    inline bool operator==(const SpanProbeDefinition& other) const
+    {
+        return probeId == other.probeId && bytecodeOffset == other.bytecodeOffset && lineNumber == other.lineNumber &&
+               mvid == other.mvid && methodId == other.methodId && probeFilePath == other.probeFilePath;
+    }
+};
+
+typedef std::vector<std::shared_ptr<SpanProbeDefinition>> SpanProbeDefinitions;
+
 enum class ProbeStatus
 {
     RECEIVED,

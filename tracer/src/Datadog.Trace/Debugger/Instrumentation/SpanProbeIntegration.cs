@@ -18,13 +18,13 @@ using Datadog.Trace.Tagging;
 namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
-    /// Span probe integration, available since Tracer version 2.22.0.0
+    /// Span probe integration, available since Tracer version 2.24.0.0
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class SpanProbeIntegration
     {
-        internal static readonly IntegrationId IntegrationId = IntegrationId.TraceAnnotations;
+        internal static readonly IntegrationId IntegrationId = IntegrationId.SpanProbe;
 
         /// <summary>
         /// OnMethodBegin callback
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             resourceName ??= "unknown-resource";
             operationName ??= "unknown-operation";
 
-            return TraceAnnotationsIntegration.OnMethodBeginInternal(instance, resourceName, operationName);
+            return new CallTargetState(TraceAnnotationsIntegration.CreateSpan(resourceName, operationName, IntegrationId));
         }
 
         /// <summary>

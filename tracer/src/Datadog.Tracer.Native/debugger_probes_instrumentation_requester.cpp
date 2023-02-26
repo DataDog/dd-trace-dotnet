@@ -749,7 +749,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
         COR_SIGNATURE fieldSignature[500];
         unsigned offset = 0;
         fieldSignature[offset++] = IMAGE_CEE_CS_CALLCONV_FIELD;
-        fieldSignature[offset++] = ELEMENT_TYPE_CLASS;
+        fieldSignature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&fieldSignature[offset], &callTargetStateBuffer, callTargetStateSize);
 
         mdFieldDef isFirstEntry = mdFieldDefNil;

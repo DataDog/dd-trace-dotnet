@@ -105,11 +105,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <returns>Invalid live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static AsyncMethodDebuggerState CreateInvalidatedDebuggerState()
+        public static AsyncDebuggerState CreateInvalidatedDebuggerState()
         {
             var state = new AsyncMethodDebuggerState();
             state.IsActive = false;
-            return state;
+
+            return new AsyncDebuggerState(state);
         }
 
         /// <summary>

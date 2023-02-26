@@ -69,7 +69,7 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
@@ -219,6 +219,32 @@ HRESULT DebuggerTokens::EnsureBaseCalltargetTokens()
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper asyncMethodDebuggerStateTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure AsyncMethodSpanProbeDebuggerInvoker type ref
+    if (asyncMethodSpanProbeDebuggerInvokerTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef,
+                                                                 managed_profiler_debugger_span_invoker_type.data(),
+                                                                 &asyncMethodSpanProbeDebuggerInvokerTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper asyncMethodSpanProbeDebuggerInvokerTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure AsyncMethodSpanProbeDebuggerState type ref
+    if (asyncMethodSpanProbeDebuggerStateTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef,
+                                                                 managed_profiler_debugger_span_state_type.data(),
+                                                                 &asyncMethodSpanProbeDebuggerStateTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper asyncMethodSpanProbeDebuggerStateTypeRef could not be defined.");
             return hr;
         }
     }
@@ -381,7 +407,7 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     signature[offset++] = 0x01; // generic arguments count
     signature[offset++] = probeType == AsyncMethodProbe ? 0x07 : 0x06; // arguments count
 
-    signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;
 
@@ -632,7 +658,7 @@ HRESULT DebuggerTokens::CreateEndMethodStartMarkerRefSignature(ProbeType probeTy
 
     signature[offset++] = ELEMENT_TYPE_BYREF;
 
-    signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;
 
@@ -679,7 +705,7 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, ProbeType pr
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
@@ -741,7 +767,7 @@ HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = probeType == AsyncMethodProbe ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
@@ -892,6 +918,175 @@ HRESULT DebuggerTokens::WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo*
 }
 
 HRESULT DebuggerTokens::WriteEndLine(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    mdMemberRef endLineRef = GetEndMethodStartMarker(probeType, false /* isVoid, non-relevant for Line Probes */);
+
+    if (endLineRef == mdMemberRefNil)
+    {
+        mdTypeRef stateTypeRef = GetDebuggerState(probeType);
+        mdTypeRef lineTypeRef = GetDebuggerInvoker(probeType);
+
+        unsigned callTargetStateBuffer;
+        auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
+
+        unsigned long signatureLength = 4 + callTargetStateSize;
+
+        signatureLength += 1; // ByRef
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x01; // arguments count
+        signature[offset++] = ELEMENT_TYPE_VOID;
+
+        // DebuggerState
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+        offset += callTargetStateSize;
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(
+            lineTypeRef, managed_profiler_debugger_endline_name.data(), signature, signatureLength, &endLineRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper beginMethod could not be defined.");
+            return hr;
+        }
+
+        SetEndMethodStartMarker(probeType, false /* isVoid, non-relevant for Line Probes */, endLineRef);
+    }
+
+    *instruction = rewriterWrapper->CallMember(endLineRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteBeginSpan(void* rewriterWrapperPtr, const TypeInfo* currentType, ILInstr** instruction, ProbeType probeType)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    mdMemberRef beginLineRef = GetBeginMethodStartMarker(probeType);
+
+    if (beginLineRef == mdMemberRefNil)
+    {
+        mdTypeRef stateTypeRef = GetDebuggerState(probeType);
+        mdTypeRef lineTypeRef = GetDebuggerInvoker(probeType);
+
+        unsigned callTargetStateBuffer;
+        auto lineStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
+
+        unsigned runtimeMethodHandleBuffer;
+        auto runtimeMethodHandleSize = CorSigCompressToken(runtimeMethodHandleRef, &runtimeMethodHandleBuffer);
+
+        unsigned runtimeTypeHandleBuffer;
+        auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
+
+        unsigned long signatureLength = 13 + lineStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+        signature[offset++] = 0x01; // generic arguments count
+        signature[offset++] = 0x08; // arguments count
+
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &callTargetStateBuffer, lineStateSize);
+        offset += lineStateSize;
+
+        signature[offset++] = ELEMENT_TYPE_STRING;
+
+        signature[offset++] = ELEMENT_TYPE_I4; // probeMetadataIndex
+
+        signature[offset++] = ELEMENT_TYPE_MVAR;
+        signature[offset++] = 0x00;
+
+        // RuntimeMethodHandle
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &runtimeMethodHandleBuffer, runtimeMethodHandleSize);
+        offset += runtimeMethodHandleSize;
+
+        // RuntimeTypeHandle
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &runtimeTypeHandleBuffer, runtimeTypeHandleSize);
+        offset += runtimeTypeHandleSize;
+
+        signature[offset++] = ELEMENT_TYPE_I4;     // methodMetadataIndex
+        signature[offset++] = ELEMENT_TYPE_I4;     // lineNumber
+        signature[offset++] = ELEMENT_TYPE_STRING; // probeFilePath
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(
+            lineTypeRef, managed_profiler_debugger_beginline_name.data(), signature, signatureLength, &beginLineRef);
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper beginMethod could not be defined.");
+            return hr;
+        }
+
+        SetBeginMethodStartMarker(probeType, beginLineRef);
+    }
+
+    mdMethodSpec beginMethodSpec = mdMethodSpecNil;
+
+    bool isValueType = currentType->valueType;
+    mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+    if (currentTypeRef == mdTokenNil)
+    {
+        isValueType = false;
+        currentTypeRef = GetObjectTypeRef();
+    }
+
+    unsigned currentTypeBuffer;
+    ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
+
+    auto signatureLength = 3 + currentTypeSize;
+
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+    signature[offset++] = 0x01;
+
+    if (isValueType)
+    {
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    }
+    else
+    {
+        signature[offset++] = ELEMENT_TYPE_CLASS;
+    }
+    memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
+    offset += currentTypeSize;
+
+    hr = module_metadata->metadata_emit->DefineMethodSpec(beginLineRef, signature, signatureLength, &beginMethodSpec);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating begin method spec.");
+        return hr;
+    }
+
+    *instruction = rewriterWrapper->CallMember(beginMethodSpec, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteEndSpan(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))

@@ -87,7 +87,8 @@ private:
                                   ILInstr* const& beforeLineProbe, std::vector<EHClause>& newClauses) const;
 
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
-                    MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes) const;
+                    MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
+                    SpanProbeDefinitions& spanProbes) const;
     HRESULT IsTypeByRefLike(ModuleMetadata& module_metadata, const TypeSignature& typeSig,
                                    const mdAssemblyRef& corLibAssemblyRef, bool& isTypeIsByRefLike) const;
     HRESULT IsTypeTokenByRefLike(ModuleMetadata& module_metadata, mdToken typeDefOrRefOrSpecToken,
@@ -105,9 +106,11 @@ public:
     static HRESULT GetTaskReturnType(const ILInstr* instruction, ModuleMetadata& moduleMetadata,
                                      const std::vector<TypeSignature>& methodLocals, TypeSignature* returnType);
     static void MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
+                                     SpanProbeDefinitions& spanProbes,
                                      const WSTRING& reasoning);
     static void MarkAllLineProbesAsError(LineProbeDefinitions& lineProbes, const WSTRING& reasoning);
     static void MarkAllMethodProbesAsError(MethodProbeDefinitions& methodProbes, const WSTRING& reasoning);
+    static void MarkAllSpanProbesAsError(SpanProbeDefinitions& spanProbes, const WSTRING& reasoning);
 };
 
 } // namespace debugger
