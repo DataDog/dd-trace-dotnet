@@ -836,10 +836,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteValue(UnknownValue);
 
             _jsonWriter.WritePropertyName("dd.trace_id");
-            _jsonWriter.WriteValue(traceId);
+            _jsonWriter.WriteValue("TO_BE_ADDED_TRACE_ID");
 
             _jsonWriter.WritePropertyName("dd.span_id");
-            _jsonWriter.WriteValue(spanId);
+            _jsonWriter.WriteValue("TO_BE_ADDED_SPAN_ID");
 
             return this;
         }

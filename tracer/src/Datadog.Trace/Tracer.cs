@@ -5,16 +5,26 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Instrumentation;
+using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.dnlib.DotNet;
+using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -412,6 +422,8 @@ namespace Datadog.Trace
                 OperationName = operationName,
             };
 
+            SpanOriginResolution(span);
+
             // Apply any global tags
             if (Settings.GlobalTags.Count > 0)
             {
@@ -440,6 +452,124 @@ namespace Datadog.Trace
         internal Task FlushAsync()
         {
             return TracerManager.AgentWriter.FlushTracesAsync();
+        }
+
+        private static void SpanOriginResolution(Span span)
+        {
+            // Deal with pending snapshot
+            if (!string.IsNullOrEmpty(ProbeProcessor.NextSnapshot.Value))
+            {
+                var nextSnapshotToBeUploaded = ProbeProcessor.NextSnapshot.Value;
+                ProbeProcessor.NextSnapshot.Value = string.Empty;
+                nextSnapshotToBeUploaded = nextSnapshotToBeUploaded.Replace("TO_BE_ADDED_SPAN_ID", span.SpanId.ToString())
+                                                                   .Replace("TO_BE_ADDED_TRACE_ID", span.TraceId.ToString());
+                Datadog.Trace.Debugger.LiveDebugger.Instance.AddSnapshot("SpanOrigin", nextSnapshotToBeUploaded);
+            }
+
+            var stackFrames = new System.Diagnostics.StackTrace();
+
+            var encounteredUserCode = false;
+            System.Reflection.MethodBase firstNonUserCodeMethod = null;
+            System.Reflection.MethodBase firstUserCodeMethod = null;
+
+            foreach (var frame in stackFrames.GetFrames()!)
+            {
+                var method = frame.GetMethod();
+                if (method?.DeclaringType == null)
+                {
+                    continue;
+                }
+
+                static bool IsUserCode(string methodFullName) // Not Comprehensive Enough
+                {
+                    return !(methodFullName.StartsWith("Microsoft") ||
+                             methodFullName.StartsWith("System") ||
+                             methodFullName.StartsWith("Datadog.Trace") ||
+                             methodFullName.StartsWith("Serilog") ||
+                             methodFullName.StartsWith("MySql.Data"));
+                }
+
+                if (IsUserCode(method.DeclaringType.FullName))
+                {
+                    encounteredUserCode = true;
+                    firstUserCodeMethod = method;
+                    break;
+                }
+
+                if (!encounteredUserCode)
+                {
+                    firstNonUserCodeMethod = method;
+                }
+            }
+
+            if (firstNonUserCodeMethod == null || firstUserCodeMethod == null)
+            {
+                // TODO LOG
+                System.Diagnostics.Debugger.Break();
+                return;
+            }
+
+            var nonUserMethod = firstNonUserCodeMethod;
+            var userMethod = firstUserCodeMethod;
+
+            var userModule = ModuleDefMD.Load(userMethod.Module.Assembly.ManifestModule);
+            var userRid = MDToken.ToRID(userMethod.MetadataToken);
+            var userMdMethod = userModule.ResolveMethod(userRid);
+
+            if (!userMdMethod.Body.HasInstructions)
+            {
+                // TODO LOG
+                System.Diagnostics.Debugger.Break();
+                return;
+            }
+
+            var nonUserModule = ModuleDefMD.Load(nonUserMethod.Module.Assembly.ManifestModule);
+            var nonUserRid = MDToken.ToRID(nonUserMethod.MetadataToken);
+            var nonUserMdMethod = nonUserModule.ResolveMethod(nonUserRid);
+
+            // We have to assign the module context to be able to resolve memberRef to memberdef.
+            userModule.Context = ModuleDef.CreateModuleContext();
+            var nonUserMethodFullName = nonUserMdMethod.FullName;
+
+            var callsToInstrument = userMdMethod.Body.Instructions.Where(
+                                     instruction => instruction.OpCode.FlowControl == FlowControl.Call &&
+                                                    (((instruction.Operand as IMethod) != null &&
+                                                    ((instruction.Operand as IMethod)!).FullName == nonUserMethodFullName) ||
+                                                    (((IMethod)instruction.Operand).DeclaringType.FullName == nonUserMethod.DeclaringType.BaseType.FullName &&
+                                                     ((IMethod)instruction.Operand).Name == nonUserMethod.Name)));
+
+            var calls = callsToInstrument as Instruction[] ?? callsToInstrument.ToArray();
+            if (!calls.Any())
+            {
+                // TODO LOG
+                System.Diagnostics.Debugger.Break();
+                return;
+            }
+
+            var userSymbolMethod = Datadog.Trace.Pdb.DatadogPdbReader.CreatePdbReader(userMethod.Module.Assembly).ReadMethodSymbolInfo((int)(userMethod.MetadataToken));
+
+            var lineProbes = calls.Select(call => CreateLineProbe(call, userMethod, userSymbolMethod)).ToArray();
+
+            foreach (var probe in lineProbes)
+            {
+                ProbeExpressionsProcessor.Instance.AddProbeProcessor(new LogProbe { CaptureSnapshot = true, Id = "SpanOrigin", Where = new Where() });
+            }
+
+            var chosenProbe = lineProbes.First();
+            span.Tags.SetTag("source.file_path", chosenProbe.ProbeFilePath);
+            span.Tags.SetTag("source.line_number", chosenProbe.LineNumber.ToString());
+
+            // Add probes
+            DebuggerNativeMethods.InstrumentProbes(
+                Array.Empty<NativeMethodProbeDefinition>(),
+                lineProbes,
+                Array.Empty<NativeRemoveProbeRequest>());
+        }
+
+        private static NativeLineProbeDefinition CreateLineProbe(Instruction callInstruction, MethodBase userMethod, SymbolMethod userSymbolMethod)
+        {
+            var closestSequencePoint = userSymbolMethod.SequencePoints.Reverse().First(sp => sp.Offset <= callInstruction.Offset);
+            return new NativeLineProbeDefinition(Guid.NewGuid().ToString(), userMethod.Module.ModuleVersionId, userMethod.MetadataToken, (int)(closestSequencePoint.Offset), closestSequencePoint.Line, closestSequencePoint.Document.URL);
         }
     }
 }

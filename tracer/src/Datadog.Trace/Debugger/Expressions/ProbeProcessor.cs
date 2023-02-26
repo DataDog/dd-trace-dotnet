@@ -24,6 +24,11 @@ namespace Datadog.Trace.Debugger.Expressions
         private DebuggerExpression? _metric;
 
         /// <summary>
+        /// The next snapshot to be uploaded as part of the "Span Origin" feature.
+        /// </summary>
+        public static readonly AsyncLocal<string> NextSnapshot = new();
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
         /// </summary>
         /// <param name="probe">A probe that can pe log probe or metric probe</param>
@@ -436,7 +441,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ref info);
-                    LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
+                    NextSnapshot.Value = snapshot;
                     snapshotCreator.Stop();
                     break;
 
