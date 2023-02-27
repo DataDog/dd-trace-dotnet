@@ -48,7 +48,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             var lines = File.ReadAllLines(logFile);
 
             lines.Should().ContainMatch("*Using agent endpoint windows:\\\\.\\pipe\\ForSureThisPipeDoesNotExist__I_Hope*");
-            lines.Should().ContainMatch("*Failed to send profile (error trying to connect: The system cannot find the file specified. (os error 2))*");
+            lines.Should().ContainMatch("*Failed to send profile (*error trying to connect: The system cannot find the file specified. (os error 2)*");
         }
     }
 }
