@@ -435,6 +435,22 @@ internal static class StringModuleImpl
     }
 
     /// <summary> Mostly used overload </summary>
+    /// <param name="self"> Param 1 </param>
+    /// <param name="result"> Result </param>
+    public static string OnStringTrim(string self, string result, char trimChar, bool left, bool right)
+    {
+        return result;
+    }
+
+    /// <summary> Mostly used overload </summary>
+    /// <param name="self"> Param 1 </param>
+    /// <param name="result"> Result </param>
+    public static string OnStringTrim(string self, string result, char[] trimChars, bool left, bool right)
+    {
+        return result;
+    }
+
+    /// <summary> Mostly used overload </summary>
     /// <param name="left"> Param 1 </param>
     /// <param name="right"> Param 2</param>
     /// <param name="result"> Result </param>

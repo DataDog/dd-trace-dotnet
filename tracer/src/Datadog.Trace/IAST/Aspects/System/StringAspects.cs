@@ -29,58 +29,59 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Trim()", AspectFilter.StringLiteral_0)]
     public static string Trim(string target)
     {
-        return TaintTrim(target.Trim(), target);
+        return StringModuleImpl.OnStringTrim(target, target.Trim(), ' ', true, true);
     }
 
     [AspectMethodReplace("System.String::Trim(System.Char[])", AspectFilter.StringLiteral_0)]
-    public static string Trim(string target, char[] chars)
+    public static string Trim(string target, char[] trimChars)
     {
-        return TaintTrim(target.Trim(chars), target);
+        return StringModuleImpl.OnStringTrim(target, target.Trim(trimChars), trimChars, true, true);
     }
 
     [AspectMethodReplace("System.String::Trim(System.Char)", AspectFilter.StringLiteral_0)]
-    public static string Trim(string target, char charc)
+    public static string Trim(string target, char trimChar)
     {
-        return TaintTrim(target.Trim(charc), target);
+        return StringModuleImpl.OnStringTrim(target, target.Trim(trimChar), trimChar, true, true);
     }
 
     [AspectMethodReplace("System.String::TrimStart(System.Char[])", AspectFilter.StringLiteral_0)]
-    public static string TrimStart(string target, char[] chars)
+    public static string TrimStart(string target, char[] trimChars)
     {
-        return TaintTrim(target.TrimStart(chars), target);
+        return StringModuleImpl.OnStringTrim(target, target.Trim(trimChars), trimChars, true, true);
     }
 
 #if NETSTANDARD
-        [AspectMethodReplace("System.String::TrimStart(System.Char)", AspectFilter.StringLiteral_0)]
-        public static string TrimStart(string target, char chars)
-        {
-            return TaintTrim(target.TrimStart(chars), target);
-        }
+    [AspectMethodReplace("System.String::TrimStart(System.Char)", AspectFilter.StringLiteral_0)]
+    public static string TrimStart(string target, char trimChars)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimStart(), trimChars, true, false);
+    }
 
-        [AspectMethodReplace("System.String::TrimStart()", AspectFilter.StringLiteral_0)]
-        public static string TrimStart(string target)
-        {
-            return TaintTrim(target.TrimStart(), target);
-        }
+    [AspectMethodReplace("System.String::TrimStart()", AspectFilter.StringLiteral_0)]
+    public static string TrimStart(string target)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimStart(), ' ', true, false);
+    }
 #endif
+
     [AspectMethodReplace("System.String::TrimEnd(System.Char[])", AspectFilter.StringLiteral_0)]
-    public static string TrimEnd(string target, char[] chars)
+    public static string TrimEnd(string target, char[] trimChars)
     {
-        return TaintTrim(target.TrimEnd(chars), target);
+        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChars), trimChars, true, false);
     }
 
 #if NETSTANDARD
-        [AspectMethodReplace("System.String::TrimEnd(System.Char)", AspectFilter.StringLiteral_0)]
-        public static string TrimEnd(string target, char chars)
-        {
-            return TaintTrim(target.TrimEnd(chars), target);
-        }
+    [AspectMethodReplace("System.String::TrimEnd(System.Char)", AspectFilter.StringLiteral_0)]
+    public static string TrimEnd(string target, char trimChars)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChars), trimChars, true, false);
+    }
 
-        [AspectMethodReplace("System.String::TrimEnd()", AspectFilter.StringLiteral_0)]
-        public static string TrimEnd(string target)
-        {
-            return TaintTrim(target.TrimEnd(), target);
-        }
+    [AspectMethodReplace("System.String::TrimEnd()", AspectFilter.StringLiteral_0)]
+    public static string TrimEnd(string target)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(), ' ', true, false);
+    }
 #endif
 
     /// <summary>

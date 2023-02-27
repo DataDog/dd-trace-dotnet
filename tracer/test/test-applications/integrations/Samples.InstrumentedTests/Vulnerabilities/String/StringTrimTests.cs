@@ -37,6 +37,12 @@ public class StringTrimTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenATaintedString_WhenCallingTrim_ResultIsTainted4()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-trimtext-+:\t\n\r", String.Concat(TaintedString, "\t\n\r").Trim(), () => String.Concat(TaintedString, "   ").Trim());
+    }
+
+    [Fact]
     public void GivenATaintedString_WhenCallingTrim_ResultIsTainted3()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-trimtext-+:", String.Concat("   ", TaintedString).Trim(), () => String.Concat("   ", TaintedString).Trim());
@@ -58,6 +64,12 @@ public class StringTrimTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingTrimWithCharArrayParam_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-ainte-+:", taintedValue.Trim(new char[] { 't', 'd' }), () => taintedValue.Trim(new char[] { 't', 'd' }));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimWithCharArrayParam_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(string.Empty, taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 't', 'e', 'd' }), () => taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 't', 'e', 'd' }));
     }
 
     [Fact]
