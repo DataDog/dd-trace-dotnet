@@ -22,6 +22,68 @@ public partial class StringAspects
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringAspects));
 
     /// <summary>
+    /// String.Trim aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.Trim() </returns>
+    [AspectMethodReplace("System.String::Trim()", AspectFilter.StringLiteral_0)]
+    public static string Trim(string target)
+    {
+        return TaintTrim(target.Trim(), target);
+    }
+
+    [AspectMethodReplace("System.String::Trim(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string Trim(string target, char[] chars)
+    {
+        return TaintTrim(target.Trim(chars), target);
+    }
+
+    [AspectMethodReplace("System.String::Trim(System.Char)", AspectFilter.StringLiteral_0)]
+    public static string Trim(string target, char charc)
+    {
+        return TaintTrim(target.Trim(charc), target);
+    }
+
+    [AspectMethodReplace("System.String::TrimStart(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string TrimStart(string target, char[] chars)
+    {
+        return TaintTrim(target.TrimStart(chars), target);
+    }
+
+#if NETSTANDARD
+        [AspectMethodReplace("System.String::TrimStart(System.Char)", AspectFilter.StringLiteral_0)]
+        public static string TrimStart(string target, char chars)
+        {
+            return TaintTrim(target.TrimStart(chars), target);
+        }
+
+        [AspectMethodReplace("System.String::TrimStart()", AspectFilter.StringLiteral_0)]
+        public static string TrimStart(string target)
+        {
+            return TaintTrim(target.TrimStart(), target);
+        }
+#endif
+    [AspectMethodReplace("System.String::TrimEnd(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string TrimEnd(string target, char[] chars)
+    {
+        return TaintTrim(target.TrimEnd(chars), target);
+    }
+
+#if NETSTANDARD
+        [AspectMethodReplace("System.String::TrimEnd(System.Char)", AspectFilter.StringLiteral_0)]
+        public static string TrimEnd(string target, char chars)
+        {
+            return TaintTrim(target.TrimEnd(chars), target);
+        }
+
+        [AspectMethodReplace("System.String::TrimEnd()", AspectFilter.StringLiteral_0)]
+        public static string TrimEnd(string target)
+        {
+            return TaintTrim(target.TrimEnd(), target);
+        }
+#endif
+
+    /// <summary>
     /// String.Concat aspect
     /// </summary>
     /// <param name="param1"> First param </param>
