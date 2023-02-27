@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AllocSimulator": {
+      "commandName": "Project",
+      "commandLineArgs": "c:\\tmp\\Computer01-with-genericT.balloc"
+    }
+  }
+}
