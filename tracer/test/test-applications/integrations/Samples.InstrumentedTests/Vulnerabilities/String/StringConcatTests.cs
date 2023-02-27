@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using FluentAssertions;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
 
-public class StringAspectTests : InstrumentationTestsBase
+public class StringConcatTests : InstrumentationTestsBase
 {
     protected string taintedValue = "tainted";
     protected string taintedValue2 = "TAINTED2";
@@ -20,7 +18,7 @@ public class StringAspectTests : InstrumentationTestsBase
     protected object OtherTaintedObject = "OtherTaintedObject";
     protected object OtherUntaintedObject = "OtherUntaintedObject";    
 
-    public StringAspectTests()
+    public StringConcatTests()
     {
         AddTainted(taintedValue);
         AddTainted(taintedValue2);
