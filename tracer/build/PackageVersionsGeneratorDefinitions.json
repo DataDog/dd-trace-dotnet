@@ -73,12 +73,14 @@
     "SampleProjectName": "Samples.GraphQL4",
     "NugetPackageSearchName": "GraphQL",
     "MinVersion": "4.1.0",
-    "MaxVersionExclusive": "6.0.0",
+    "MaxVersionExclusive": "8.0.0",
     "SpecificVersions": [
       "4.1.*",
       "4.3.*",
       "4.*.*",
-      "5.*.*"
+      "5.*.*",
+      "6.*.*",
+      "7.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "5.0.0",
