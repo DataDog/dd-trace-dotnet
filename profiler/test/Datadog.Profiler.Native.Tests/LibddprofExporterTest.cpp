@@ -76,7 +76,9 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder);
+    IContentionRecorder* contentionRecorder = nullptr;
+    IExceptionsRecorder* exceptionsRecorder = nullptr;
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder, contentionRecorder, exceptionsRecorder);
 
     // Add samples to only one application
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
@@ -189,7 +191,9 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
 
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder);
+    IContentionRecorder* contentionRecorder = nullptr;
+    IExceptionsRecorder* exceptionsRecorder = nullptr;
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder, contentionRecorder, exceptionsRecorder);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -295,7 +299,9 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
 
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder);
+    IContentionRecorder* contentionRecorder = nullptr;
+    IExceptionsRecorder* exceptionsRecorder = nullptr;
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder, contentionRecorder, exceptionsRecorder);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -385,7 +391,9 @@ TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
 
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder);
+    IContentionRecorder* contentionRecorder = nullptr;
+    IExceptionsRecorder* exceptionsRecorder = nullptr;
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder, contentionRecorder, exceptionsRecorder);
 }
 
 TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
@@ -428,7 +436,9 @@ TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
 
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder);
+    IContentionRecorder* contentionRecorder = nullptr;
+    IExceptionsRecorder* exceptionsRecorder = nullptr;
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder, contentionRecorder, exceptionsRecorder);
 }
 
 TEST(LibddprofExporterTest, MustCreateAgentLessExporterIfAgentless)
@@ -464,7 +474,9 @@ TEST(LibddprofExporterTest, MustCreateAgentLessExporterIfAgentless)
 
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder);
+    IContentionRecorder* contentionRecorder = nullptr;
+    IExceptionsRecorder* exceptionsRecorder = nullptr;
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder, contentionRecorder, exceptionsRecorder);
 }
 
 TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
@@ -501,7 +513,9 @@ TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
 
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder);
+    IContentionRecorder* contentionRecorder = nullptr;
+    IExceptionsRecorder* exceptionsRecorder = nullptr;
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder, contentionRecorder, exceptionsRecorder);
 
     std::string runtimeId = "MyRid";
     auto callstack = CreateCallstack(2048);
