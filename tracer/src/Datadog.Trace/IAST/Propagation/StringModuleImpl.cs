@@ -114,38 +114,38 @@ internal static class StringModuleImpl
         if (iastContext == null)
         {
             if (!CanBeTainted(result) || (!CanBeTainted(left) && !CanBeTainted(right)))
-        {
+            {
                 return result;
-        }
+            }
 
             var iastContext = IastModule.GetIastContext();
             if (iastContext == null)
-        {
+            {
                 return result;
-        }
+            }
 
             TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
             TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_1 ? GetTainted(taintedObjects, left) : null;
             TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_0 ? GetTainted(taintedObjects, right) : null;
-        if (taintedLeft == null && taintedRight == null)
-        {
+            if (taintedLeft == null && taintedRight == null)
+            {
                 return result;
-        }
+            }
 
-        Range[]? ranges;
-        if (taintedRight == null)
-        {
-            ranges = taintedLeft!.Ranges;
-        }
-        else if (taintedLeft == null)
-        {
-            ranges = new Range[taintedRight!.Ranges!.Length];
+            Range[]? ranges;
+            if (taintedRight == null)
+            {
+                ranges = taintedLeft!.Ranges;
+            }
+            else if (taintedLeft == null)
+            {
+                ranges = new Range[taintedRight!.Ranges!.Length];
                 Ranges.CopyShift(taintedRight!.Ranges, ranges, 0, left.Length);
-        }
-        else
-        {
-            ranges = Ranges.MergeRanges(left.Length, taintedLeft!.Ranges, taintedRight!.Ranges);
-        }
+            }
+            else
+            {
+                ranges = Ranges.MergeRanges(left.Length, taintedLeft!.Ranges, taintedRight!.Ranges);
+            }
 
             taintedObjects.Taint(result, ranges);
         }

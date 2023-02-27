@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertAfter(\"System.Security.Cryptography.Rijndael::Create(System.String)\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
 "  [AspectMethodInsertAfter(\"System.Security.Cryptography.Aes::Create()\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
 "  [AspectMethodInsertAfter(\"System.Security.Cryptography.Aes::Create(System.String)\",\"\",[0],[False],[None],Propagation,[])] Create(System.Security.Cryptography.SymmetricAlgorithm)",
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.StringAspects",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib,System.Runtime\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.StringAspects",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Concat_0(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Concat_1(System.String,System.String)",
