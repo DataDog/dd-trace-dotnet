@@ -28,6 +28,7 @@ internal readonly partial struct SecurityCoordinator
         { "fastly-client-ip", string.Empty },
         { "cf-connecting-ip", string.Empty },
         { "cf-connecting-ipv6", string.Empty },
+        { "forwarded", string.Empty },
         { "via", string.Empty },
         { "Content-Length", string.Empty },
         { "Content-Type", string.Empty },

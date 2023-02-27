@@ -25,7 +25,7 @@ namespace Datadog.Trace.Headers.Ip
                     { "x-forwarded-for", "80.19.10.10:32" },
                     { "true-client-ip", "81.202.236.243:82" }
                 },
-                string.Empty, null, null, "80.19.14.16", 32
+                string.Empty, "80.19.10.10", 32, "80.19.14.16", 32
             },
             new object[]
             {
