@@ -22,6 +22,87 @@ internal static class StringModuleImpl
         return value == null ? null : taintedObjects.Get(value);
     }
 
+    public static object TaintIfInputIsTainted(object input, object result)
+    {
+        try
+        {
+            if (!CanBeTaintedObject(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var taintedSelf = taintedObjects.Get(input);
+
+            if (taintedSelf == null)
+            {
+                return result;
+            }
+
+            taintedObjects.Taint(result, taintedSelf.Ranges);
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.TaintIfInputIsTainted exception {Exception}", err.Message);
+        }
+
+        return result;
+    }
+
+    /// <summary> Taints a string.substring operation </summary>
+    /// <param name="self"> original string </param>
+    /// <param name="beginIndex"> start index </param>
+    /// <param name="endIndex"> end index </param>
+    /// <param name="result"> Result </param>
+    /// <returns> resiñt </returns>
+    public static char[] OnStringSubSequence(string self, int beginIndex, int endIndex, char[] result)
+    {
+        try
+        {
+            if (!CanBeTainted(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var selfTainted = taintedObjects.Get(self);
+            if (selfTainted == null)
+            {
+                return result;
+            }
+
+            var rangesSelf = selfTainted.Ranges;
+            if (rangesSelf.Length == 0)
+            {
+                return result;
+            }
+
+            var newRanges = Ranges.ForSubstring(beginIndex, result.Length, rangesSelf);
+            if (newRanges != null && newRanges.Length > 0)
+            {
+                taintedObjects.Taint(result, newRanges);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,string) exception {Exception}", err.Message);
+        }
+
+        return result;
+    }
+
     /// <summary> Taints a string.substring operation </summary>
     /// <param name="self"> original string </param>
     /// <param name="beginIndex"> start index </param>
