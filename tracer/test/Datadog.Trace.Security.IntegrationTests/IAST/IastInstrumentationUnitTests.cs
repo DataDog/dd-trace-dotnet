@@ -25,6 +25,17 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestSubstringMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>() {  };
+        var typesToExclude = new List<Type>() {  };
+
+        TestMethodOverloads("System.String", "Substring", overloadsToExclude, typesToExclude);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestConcatMethodsAspectCover()
     {
         var overloadsToExclude = new List<string>() { "System.String Concat(System.Object)" };
