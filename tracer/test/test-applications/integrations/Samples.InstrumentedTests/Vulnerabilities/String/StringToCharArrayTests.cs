@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using FluentAssertions;
 using Xunit;
@@ -12,7 +13,7 @@ public class StringToCharArrayTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenATaintedObject_WhenCallingToCharArrayWithWrongIndex_ExceptionIsThrown()
+    public void GivenATaintedObject_WhenCallingToCharArrayWithWrongIndex_IsTainted()
     {
         var result = taintedValue.ToCharArray(3, 2);
         result.Count().Should().Be(2);
@@ -22,33 +23,25 @@ public class StringToCharArrayTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingToCharArrayWithWrongIndex_ExceptionIsThrown2()
     {
-        var result = taintedValue.ToCharArray(-1, 2);
-        result.Count().Should().Be(2);
-        AssertTainted(result);
+        Assert.Throws<ArgumentOutOfRangeException>(() => taintedValue.ToCharArray(-1, 2));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingToCharArrayWithWrongIndex_ExceptionIsThrown3()
     {
-        var result = taintedValue.ToCharArray(-1, 2000);
-        result.Count().Should().Be(2);
-        AssertTainted(result);
+        Assert.Throws<ArgumentOutOfRangeException>(() => taintedValue.ToCharArray(-1, 2000));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingToCharArrayWithWrongIndex_ExceptionIsThrown4()
     {
-        var result = taintedValue.ToCharArray(1, 2000);
-        result.Count().Should().Be(2);
-        AssertTainted(result);
+        Assert.Throws<ArgumentOutOfRangeException>(() => taintedValue.ToCharArray(1, 2000));
     }
 
     [Fact]
-    public void GivenATaintedObject_WhenCallingToCharArrayWithIndex_ResultIsTainted()
+    public void GivenATaintedObject_WhenCallingToCharArrayWithWrongIndex_ExceptionIsThrown5()
     {
-        var result = taintedValue.ToCharArray(1, -2000);
-        result.Count().Should().Be(2);
-        AssertTainted(result);
+        Assert.Throws<ArgumentOutOfRangeException>(() => taintedValue.ToCharArray(1, -2000));
     }
 
     [Fact]

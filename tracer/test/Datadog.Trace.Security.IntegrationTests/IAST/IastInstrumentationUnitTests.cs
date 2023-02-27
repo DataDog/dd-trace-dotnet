@@ -25,6 +25,17 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestToCharArrayMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>() { };
+        var typesToExclude = new List<Type>() { };
+
+        TestMethodOverloads("System.String", "ToCharArray", overloadsToExclude, typesToExclude);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestSubstringMethodsAspectCover()
     {
         var overloadsToExclude = new List<string>() {  };
@@ -64,7 +75,21 @@ public class IastInstrumentationUnitTests : TestHelper
 
     private string NormalizeName(string signature)
     {
-        return signature.Replace(" ", string.Empty).Replace("::", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
+        var indexOfTwoColons = signature.IndexOf("::");
+        if (indexOfTwoColons > -1)
+        {
+            signature = signature.Substring(indexOfTwoColons + 2);
+        }
+        else
+        {
+            var indexOfFirstSpace = signature.IndexOf(" ");
+            if (indexOfFirstSpace > -1)
+            {
+                signature = signature.Substring(indexOfFirstSpace + 1);
+            }
+        }
+
+        return signature.Replace(" ", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
             .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("(Char", "(System.Char").Replace(",Int32", ",System.Int32")
             .Replace(",Char", ",System.Char").Replace("(Int32", "(System.Int32");
     }
