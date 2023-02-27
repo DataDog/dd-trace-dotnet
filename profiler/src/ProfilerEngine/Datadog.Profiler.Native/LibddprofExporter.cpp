@@ -451,21 +451,19 @@ bool LibddprofExporter::Export()
     if (_exceptionsRecorder != nullptr)
     {
         // TODO: pass the per exception type count to libdatadog
-#ifdef _DEBUG
         std::vector<ExceptionInfo> exceptions;
         if (_exceptionsRecorder->GetExceptions(exceptions))
         {
-            std::cout << exceptions.size() << " exception buckets" << std::endl;
+            Log::Debug(exceptions.size(), " exception buckets");
             for (const auto& exception : exceptions)
             {
-                std::cout << "  " << exception.Name << " | " << exception.SampledCount << " / " << exception.RealCount << std::endl;
+                Log::Debug("  ", exception.Name, " | ", exception.SampledCount, " / ", exception.RealCount);
             }
         }
         else
         {
-            std::cout << "No exception bucket..." << std::endl;
+            Log::Debug("No exception bucket...");
         }
-#endif
     }
 
     if (_allocationsRecorder != nullptr)
