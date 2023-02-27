@@ -739,4 +739,30 @@ public partial class StringAspects
         PropagateTaint(target, result);
         return result;
     }
+
+    /// <summary>
+    /// String.ToCharArray aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.ToCharArray() </returns>
+    [AspectMethodReplace("System.String::ToCharArray()", AspectFilter.StringLiteral_0)]
+    public static char[] ToCharArray(string target)
+    {
+        var result = target.ToCharArray();
+        StringModuleImpl.TaintIfInputIsTainted(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.ToCharArray aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <param name="length"> length parameter </param>
+    /// <returns> String.ToCharArray() </returns>
+    [AspectMethodReplace("System.String::ToCharArray(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
+    public static char[] ToCharArray(string target, int startIndex, int length)
+    {
+        return StringModuleImpl.OnStringSubSequence(target, startIndex, startIndex + length, target.ToCharArray(startIndex, length));
+    }
 }
