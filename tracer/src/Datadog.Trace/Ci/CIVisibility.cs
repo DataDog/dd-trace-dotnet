@@ -56,7 +56,7 @@ namespace Datadog.Trace.Ci
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
-                // Initialize() or InitializeFromRunner() was already called before
+                // Initialize() or InitializeFromRunner() or InitializeFromManualInstrumentation() was already called before
                 return;
             }
 
@@ -174,6 +174,17 @@ namespace Datadog.Trace.Ci
 
             // Initialize CIEnvironment
             _ = CIEnvironmentValues.Instance;
+        }
+
+        internal static void InitializeFromManualInstrumentation()
+        {
+            if (!IsRunning)
+            {
+                // If we are using only the Public API without auto-instrumentation (TestSession/TestModule/TestSuite/Test classes only)
+                // then we can disable both GitUpload and Intelligent Test Runner feature (only used by our integration).
+                _settings.SetDefaultManualInstrumentationSettings();
+                Initialize();
+            }
         }
 
         internal static void Flush()
