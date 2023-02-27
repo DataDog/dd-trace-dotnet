@@ -100,6 +100,11 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
+                    if (newHandle != IntPtr.Zero)
+                    {
+                        _wafLibraryInvoker.Destroy(newHandle);
+                    }
+
                     return false;
                 }
 
