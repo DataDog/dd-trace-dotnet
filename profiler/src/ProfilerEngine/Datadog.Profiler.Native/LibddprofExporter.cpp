@@ -118,7 +118,9 @@ ddog_prof_Exporter* LibddprofExporter::CreateExporter(const ddog_Vec_Tag* tags, 
     }
     else
     {
-        Log::Error("Failed to create the exporter: ", result.err.ptr);
+        auto errorMessage = ddog_Error_message(&result.err);
+        Log::Error("Failed to create the exporter: ", std::string_view(errorMessage.ptr, errorMessage.len));
+        ddog_Error_drop(&result.err);
         return nullptr;
     }
 }
@@ -410,11 +412,9 @@ void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t trace
 
     auto* profile = profileInfoScope.profileInfo.profile;
 
-    const auto traceIdStr = std::to_string(traceId);
-
     auto endpointName = FfiHelper::StringToCharSlice(endpoint);
 
-    ddog_prof_Profile_set_endpoint(profile, FfiHelper::StringToCharSlice(traceIdStr), endpointName);
+    ddog_prof_Profile_set_endpoint(profile, traceId, endpointName);
 
     // This method is called only once: when the trace closes
     ddog_prof_Profile_add_endpoint_count(profile, endpointName, 1);
@@ -651,20 +651,34 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
         files.len = 2;
     }
 
-    return ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, RequestTimeOutMs);
+    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, RequestTimeOutMs);
+    if (result.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
+    {
+        auto errorMessage = ddog_Error_message(&result.err);
+        Log::Error("Failed to build request: ", std::string_view(errorMessage.ptr, errorMessage.len));
+        ddog_Error_drop(&result.err);
+        return nullptr;
+    }
+
+    return result.ok;
 }
 
 bool LibddprofExporter::Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter)
 {
     assert(request != nullptr);
 
-    auto result = ddog_prof_Exporter_send(exporter, request, nullptr);
+    auto result = ddog_prof_Exporter_send(exporter, &request, nullptr);
 
-    on_leave { ddog_prof_Exporter_SendResult_drop(result); };
+    on_leave
+    {
+        if (result.tag == DDOG_PROF_EXPORTER_SEND_RESULT_ERR)
+            ddog_Error_drop(&result.err);
+    };
 
     if (result.tag == DDOG_PROF_EXPORTER_SEND_RESULT_ERR)
     {
-        Log::Error("Failed to send profile (", std::string(reinterpret_cast<const char*>(result.err.ptr), result.err.len), ")"); // NOLINT
+        auto errorMessage = ddog_Error_message(&result.err);
+        Log::Error("Failed to send profile (", std::string_view(errorMessage.ptr, errorMessage.len), ")"); // NOLINT
         return false;
     }
 
@@ -714,10 +728,13 @@ bool LibddprofExporter::SerializedProfile::IsValid() const
 
 LibddprofExporter::SerializedProfile::~SerializedProfile()
 {
-    ddog_prof_Profile_SerializeResult_drop(_encodedProfile);
+    if (!IsValid())
+    {
+        ddog_Error_drop(&_encodedProfile.err);
+    }
 }
 
-ddog_prof_Vec_U8 LibddprofExporter::SerializedProfile::GetBuffer() const
+ddog_Vec_U8 LibddprofExporter::SerializedProfile::GetBuffer() const
 {
     return _encodedProfile.ok.buffer;
 }
@@ -777,10 +794,10 @@ void LibddprofExporter::Tags::Add(std::string const& labelName, std::string cons
     auto pushResult = ddog_Vec_Tag_push(&_ffiTags, ffiName, ffiValue);
     if (pushResult.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
     {
-        auto err_details = pushResult.err;
-        Log::Debug(err_details.ptr);
+        auto errorMessage = ddog_Error_message(&pushResult.err);
+        Log::Debug("Failed to add tag: ", std::string_view(errorMessage.ptr, errorMessage.len));
+        ddog_Error_drop(&pushResult.err);
     }
-    ddog_Vec_Tag_PushResult_drop(pushResult);
 }
 
 const ddog_Vec_Tag* LibddprofExporter::Tags::GetFfiTags() const

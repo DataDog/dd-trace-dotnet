@@ -52,7 +52,7 @@ private:
         SerializedProfile(struct ddog_prof_Profile* profile);
         ~SerializedProfile();
 
-        ddog_prof_Vec_U8 GetBuffer() const;
+        ddog_Vec_U8 GetBuffer() const;
         ddog_Timespec GetStart() const;
         ddog_Timespec GetEnd() const;
         ddog_prof_ProfiledEndpointsStats* GetEndpointsStats() const;
