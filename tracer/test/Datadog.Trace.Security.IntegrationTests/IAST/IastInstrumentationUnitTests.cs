@@ -54,7 +54,8 @@ public class IastInstrumentationUnitTests : TestHelper
     private string NormalizeName(string signature)
     {
         return signature.Replace(" ", string.Empty).Replace("::", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
-            .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty);
+            .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("(Char", "(System.Char").Replace(",Int32", ",System.Int32")
+            .Replace(",Char", ",System.Char").Replace("(Int32", "(System.Int32");
     }
 
     private bool MethodShouldBeChecked(MethodInfo method, List<Type> typesToExclude)
