@@ -281,7 +281,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToUpper()", AspectFilter.StringLiteral_0)]
     public static string ToUpper(string target)
     {
-        return StringModuleImpl.OnStringCaseChanged(target, target.ToUpper());
+        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToUpper());
     }
 
     /// <summary>
@@ -293,7 +293,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToUpper(System.Globalization.CultureInfo)", AspectFilter.StringLiteral_0)]
     public static string ToUpper(string target, global::System.Globalization.CultureInfo culture)
     {
-        return StringModuleImpl.OnStringCaseChanged(target, target.ToUpper(culture));
+        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToUpper(culture));
     }
 
     /// <summary>
@@ -304,7 +304,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToUpperInvariant()", AspectFilter.StringLiteral_0)]
     public static string ToUpperInvariant(string target)
     {
-        return StringModuleImpl.OnStringCaseChanged(target, target.ToUpperInvariant());
+        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToUpperInvariant());
     }
 
     /// <summary>
@@ -315,7 +315,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToLower()", AspectFilter.StringLiteral_0)]
     public static string ToLower(string target)
     {
-        return StringModuleImpl.OnStringCaseChanged(target, target.ToLower());
+        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToLower());
     }
 
     /// <summary>
@@ -327,7 +327,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToLower(System.Globalization.CultureInfo)", AspectFilter.StringLiteral_0)]
     public static string ToLower(string target, global::System.Globalization.CultureInfo culture)
     {
-        return StringModuleImpl.OnStringCaseChanged(target, target.ToLower(culture));
+        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToLower(culture));
     }
 
     /// <summary>
@@ -338,6 +338,6 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToLowerInvariant()", AspectFilter.StringLiteral_0)]
     public static string ToLowerInvariant(string target)
     {
-        return StringModuleImpl.OnStringCaseChanged(target, target.ToLowerInvariant());
+        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToLowerInvariant());
     }
 }
