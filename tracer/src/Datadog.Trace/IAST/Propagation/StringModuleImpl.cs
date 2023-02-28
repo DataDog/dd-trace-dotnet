@@ -12,6 +12,7 @@ using System.Linq;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Iast.Propagation;
 
@@ -440,8 +441,40 @@ internal static class StringModuleImpl
     /// <param name="trimChar"> the trim char </param>
     /// <param name="left"> Apply left trim </param>
     /// <param name="right"> Apply right trim </param>
-    public static string OnStringTrim(string self, string result, char trimChar, bool left, bool right)
+    public static string? OnStringTrim(string self, string result, char trimChar, bool left, bool right)
     {
+        try
+        {
+            if (left && !right)
+            {
+                return OnStringSubSequence(self, self.Length - result.Length, result);
+            }
+            else if (!left && right)
+            {
+                return OnStringSubSequence(self, 0, result);
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(result))
+                {
+                    return result;
+                }
+
+                int indexLeft = 0;
+
+                while (self[indexLeft] == trimChar)
+                {
+                    indexLeft++;
+                }
+
+                return OnStringSubSequence(self, indexLeft, result);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringTrim(string,string,char,bool,bool) exception {Exception}", err.Message);
+        }
+
         return result;
     }
 
@@ -453,6 +486,49 @@ internal static class StringModuleImpl
     /// <param name="right"> Apply right trim </param>
     public static string OnStringTrim(string self, string result, char[] trimChars, bool left, bool right)
     {
+        try
+        {
+            if (left && !right)
+            {
+                return OnStringSubSequence(self, self.Length - result.Length, result);
+            }
+            else if (!left && right)
+            {
+                return OnStringSubSequence(self, 0, result);
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(result))
+                {
+                    return result;
+                }
+
+                int indexLeft = 0;
+                bool found;
+                do
+                {
+                    found = false;
+
+                    for (int i = 0; i < trimChars.Length; i++)
+                    {
+                        if (self[indexLeft] == trimChars[i])
+                        {
+                            found = true;
+                            indexLeft++;
+                            break;
+                        }
+                    }
+                }
+                while (found);
+
+                return OnStringSubSequence(self, indexLeft, result);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringTrim(string,string,char,bool,bool) exception {Exception}", err.Message);
+        }
+
         return result;
     }
 

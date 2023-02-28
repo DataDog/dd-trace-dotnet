@@ -69,7 +69,9 @@ public class StringTrimTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingTrimWithCharArrayParam_ResultIsTainted2()
     {
-        AssertTaintedFormatWithOriginalCallCheck(string.Empty, taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 't', 'e', 'd' }), () => taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 't', 'e', 'd' }));
+        var result = taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 't', 'e', 'd' });
+        AssertNotTainted(result);
+        result.Should().Be(string.Empty);
     }
 
     [Fact]
