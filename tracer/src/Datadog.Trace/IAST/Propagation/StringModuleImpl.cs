@@ -391,12 +391,12 @@ internal static class StringModuleImpl
     /// <param name="beginIndex"> start index </param>
     /// <param name="endIndex"> end index </param>
     /// <param name="result"> Result </param>
-    /// <returns> resiñt </returns>
+    /// <returns> result </returns>
     public static string OnStringSubSequence(string self, int beginIndex, int endIndex, string result)
     {
         try
         {
-            if (self == result || !CanBeTainted(result))
+            if (string.IsNullOrEmpty(result) || self == result)
             {
                 return result;
             }
