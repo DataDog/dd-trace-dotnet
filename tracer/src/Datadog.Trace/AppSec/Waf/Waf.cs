@@ -83,12 +83,7 @@ namespace Datadog.Trace.AppSec.Waf
                         return new UpdateResult(ruleSetInfo, true);
                     }
 
-                    if (newHandle != IntPtr.Zero)
-                    {
-                        _wafLibraryInvoker.Destroy(newHandle);
-                    }
-
-                    return new UpdateResult(ruleSetInfo, false);
+                    _wafLibraryInvoker.Destroy(newHandle);
                 }
             }
             catch (Exception e)
@@ -111,7 +106,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
             }
 
-            return UpdateResult.FromFailed();
+            return new UpdateResult(ruleSetInfo, false);
         }
 
         /// <summary>

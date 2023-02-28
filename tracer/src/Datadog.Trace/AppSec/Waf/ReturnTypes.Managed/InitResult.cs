@@ -70,7 +70,5 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             var ruleFileVersion = Marshal.PtrToStringAnsi(ddwaRuleSetInfo.Version);
             return new(ddwaRuleSetInfo.Failed, ddwaRuleSetInfo.Loaded, ruleFileVersion!, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
         }
-
-        public static InitResult FromFailed() => new(0, 0, string.Empty, new Dictionary<string, string[]>());
     }
 }
