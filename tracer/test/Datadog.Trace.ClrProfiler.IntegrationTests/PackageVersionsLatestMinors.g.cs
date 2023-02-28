@@ -451,6 +451,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.6.1" },
                 new object[] { "4.7.1" },
                 new object[] { "4.8.0" },
+                new object[] { "5.1.1" },
+                new object[] { "5.2.0" },
+                new object[] { "5.3.3" },
+                new object[] { "5.4.0" },
+                new object[] { "7.0.2" },
+                new object[] { "7.1.1" },
+                new object[] { "7.2.2" },
+                new object[] { "7.3.0" },
 #endif
 #if NET5_0
                 new object[] { "4.1.0" },
@@ -461,6 +469,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.6.1" },
                 new object[] { "4.7.1" },
                 new object[] { "4.8.0" },
+                new object[] { "5.1.1" },
+                new object[] { "5.2.0" },
+                new object[] { "5.3.3" },
+                new object[] { "5.4.0" },
+                new object[] { "7.0.2" },
+                new object[] { "7.1.1" },
+                new object[] { "7.2.2" },
+                new object[] { "7.3.0" },
 #endif
 #if NET6_0
                 new object[] { "4.1.0" },
@@ -471,6 +487,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.6.1" },
                 new object[] { "4.7.1" },
                 new object[] { "4.8.0" },
+                new object[] { "5.1.1" },
+                new object[] { "5.2.0" },
+                new object[] { "5.3.3" },
+                new object[] { "5.4.0" },
+                new object[] { "7.0.2" },
+                new object[] { "7.1.1" },
+                new object[] { "7.2.2" },
+                new object[] { "7.3.0" },
 #endif
 #if NET7_0
                 new object[] { "4.1.0" },
@@ -481,6 +505,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.6.1" },
                 new object[] { "4.7.1" },
                 new object[] { "4.8.0" },
+                new object[] { "5.1.1" },
+                new object[] { "5.2.0" },
+                new object[] { "5.3.3" },
+                new object[] { "5.4.0" },
+                new object[] { "7.0.2" },
+                new object[] { "7.1.1" },
+                new object[] { "7.2.2" },
+                new object[] { "7.3.0" },
 #endif
 #endif
             };

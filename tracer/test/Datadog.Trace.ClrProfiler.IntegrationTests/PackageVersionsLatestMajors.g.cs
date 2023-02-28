@@ -168,15 +168,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETCOREAPP3_1
                 new object[] { "4.8.0" },
+                new object[] { "5.4.0" },
+                new object[] { "7.3.0" },
 #endif
 #if NET5_0
                 new object[] { "4.8.0" },
+                new object[] { "5.4.0" },
+                new object[] { "7.3.0" },
 #endif
 #if NET6_0
                 new object[] { "4.8.0" },
+                new object[] { "5.4.0" },
+                new object[] { "7.3.0" },
 #endif
 #if NET7_0
                 new object[] { "4.8.0" },
+                new object[] { "5.4.0" },
+                new object[] { "7.3.0" },
 #endif
 #endif
             };
