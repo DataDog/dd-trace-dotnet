@@ -22,11 +22,11 @@ internal static class StringModuleImpl
         return value == null ? null : taintedObjects.Get(value);
     }
 
-    public static object TaintIfInputIsTainted(object input, object result)
+    public static object? TaintIfInputIsTainted(object input, object result)
     {
         try
         {
-            if (!CanBeTaintedObject(result))
+            if (result is null)
             {
                 return result;
             }
@@ -58,14 +58,13 @@ internal static class StringModuleImpl
     /// <summary> Taints a string.substring operation </summary>
     /// <param name="self"> original string </param>
     /// <param name="beginIndex"> start index </param>
-    /// <param name="endIndex"> end index </param>
     /// <param name="result"> Result </param>
     /// <returns> resiñt </returns>
-    public static char[] OnStringSubSequence(string self, int beginIndex, int endIndex, char[] result)
+    public static char[]? OnStringSubSequence(string self, int beginIndex, char[]? result)
     {
         try
         {
-            if (!CanBeTainted(result))
+            if (result is null)
             {
                 return result;
             }
@@ -106,62 +105,13 @@ internal static class StringModuleImpl
     /// <summary> Taints a string.substring operation </summary>
     /// <param name="self"> original string </param>
     /// <param name="beginIndex"> start index </param>
-    /// <param name="endIndex"> end index </param>
     /// <param name="result"> Result </param>
     /// <returns> resiñt </returns>
-    public static string OnStringSubSequence(string self, int beginIndex, int endIndex, string result)
+    public static string OnStringSubSequence(string self, int beginIndex, string result)
     {
         try
         {
-            if (self == result || !CanBeTainted(result))
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            var taintedObjects = iastContext.GetTaintedObjects();
-            var selfTainted = taintedObjects.Get(self);
-            if (selfTainted == null)
-            {
-                return result;
-            }
-
-            var rangesSelf = selfTainted.Ranges;
-            if (rangesSelf.Length == 0)
-            {
-                return result;
-            }
-
-            var newRanges = Ranges.ForSubstring(beginIndex, result.Length, rangesSelf);
-            if (newRanges != null && newRanges.Length > 0)
-            {
-                taintedObjects.Taint(result, newRanges);
-            }
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,string) exception {Exception}", err.Message);
-        }
-
-        return result;
-    }
-
-    /// <summary> Taints a string.substring operation </summary>
-    /// <param name="self"> original string </param>
-    /// <param name="beginIndex"> start index </param>
-    /// <param name="endIndex"> end index </param>
-    /// <param name="result"> Result </param>
-    /// <returns> resiñt </returns>
-    public static string OnStringSubSequence(string self, int beginIndex, int endIndex, string result)
-    {
-        try
-        {
-            if (self == result || !CanBeTainted(result))
+            if (self == result || string.IsNullOrEmpty(result))
             {
                 return result;
             }

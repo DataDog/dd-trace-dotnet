@@ -231,7 +231,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Substring(System.Int32)", AspectFilter.StringLiteral_0)]
     public static string Substring(string target, int startIndex)
     {
-        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.Length, target.Substring(startIndex));
+        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.Substring(startIndex));
     }
 
     /// <summary>
@@ -244,7 +244,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Substring(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
     public static string Substring(string target, int startIndex, int length)
     {
-        return StringModuleImpl.OnStringSubSequence(target, startIndex, startIndex + length, target.Substring(startIndex, length));
+        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.Substring(startIndex, length));
     }
 
     /// <summary>
@@ -270,6 +270,6 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToCharArray(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
     public static char[] ToCharArray(string target, int startIndex, int length)
     {
-        return StringModuleImpl.OnStringSubSequence(target, startIndex, startIndex + length, target.ToCharArray(startIndex, length));
+        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.ToCharArray(startIndex, length));
     }
 }
