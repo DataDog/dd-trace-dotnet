@@ -273,7 +273,7 @@ internal static class StringModuleImpl
         var selfTainted = taintedObjects.Get(self);
         if (selfTainted == null)
         {
-            if (!CanBeTainted(result) || !parameters.CanBeTainted())
+            if (string.IsNullOrEmpty(result) || !parameters.CanBeTainted())
             {
                 return result;
             }
@@ -291,7 +291,7 @@ internal static class StringModuleImpl
             for (int parameterIndex = 0; parameterIndex < parameters.ParamCount; parameterIndex++)
             {
                 var currentParameter = parameters[parameterIndex];
-                if (!CanBeTainted(currentParameter))
+                if (string.IsNullOrEmpty(currentParameter))
                 {
                     continue;
                 }
@@ -301,17 +301,14 @@ internal static class StringModuleImpl
                 {
                     if (ranges == null)
                     {
-                        if (parameterTainted != null)
+                        if (length == 0)
                         {
-                            if (length == 0)
-                            {
-                                ranges = parameterTainted.Ranges;
-                            }
-                            else
-                            {
-                                ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted!.Ranges, ranges, 0, length);
-                            }
+                            ranges = parameterTainted.Ranges;
+                        }
+                        else
+                        {
+                            ranges = new Range[parameterTainted!.Ranges!.Length];
+                            Ranges.CopyShift(parameterTainted!.Ranges, ranges, 0, length);
                         }
 
                         length += currentParameter!.Length;
