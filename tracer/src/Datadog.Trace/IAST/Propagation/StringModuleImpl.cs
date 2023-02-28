@@ -7,20 +7,15 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast.Propagation;
 
 internal static class StringModuleImpl
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringModuleImpl));
-
-    internal static bool CanBeTainted(string? txt)
-    {
-        return txt != null && txt.Length > 0;
-    }
 
     internal static TaintedObject? GetTainted(TaintedObjects taintedObjects, object? value)
     {
@@ -32,17 +27,12 @@ internal static class StringModuleImpl
     /// <param name="right"> Param 2</param>
     /// <param name="result"> Result </param>
     /// <param name="filter"> Literal filter </param>
-    /// <returns> resiñt </returns>
+    /// <returns> result </returns>
     public static string OnStringConcat(string left, string right, string result, AspectFilter filter = AspectFilter.None)
     {
         try
         {
-            if (string.IsNullOrEmpty(left) || string.IsNullOrEmpty(right))
-            {
-                return result;
-            }
-
-            if (!CanBeTainted(result) || (!CanBeTainted(left) && !CanBeTainted(right)))
+            if (string.IsNullOrEmpty(left) || string.IsNullOrEmpty(right) || string.IsNullOrEmpty(result))
             {
                 return result;
             }
@@ -90,11 +80,11 @@ internal static class StringModuleImpl
     /// <param name="parameters"> StringConcat params struct </param>
     /// <param name="result"> Result </param>
     /// <returns> result </returns>
-    public static string OnStringConcat(StringConcatParams parameters, string result)
+    public static string OnStringConcat(in StringConcatParams parameters, string result)
     {
         try
         {
-            if (!CanBeTainted(result) || !parameters.CanBeTainted())
+            if (string.IsNullOrEmpty(result) || !parameters.CanBeTainted())
             {
                 return result;
             }
@@ -112,7 +102,7 @@ internal static class StringModuleImpl
             for (int parameterIndex = 0; parameterIndex < parameters.ParamCount; parameterIndex++)
             {
                 var currentParameter = parameters[parameterIndex];
-                if (!CanBeTainted(currentParameter))
+                if (string.IsNullOrEmpty(currentParameter))
                 {
                     continue;
                 }
@@ -122,17 +112,14 @@ internal static class StringModuleImpl
                 {
                     if (ranges == null)
                     {
-                        if (parameterTainted != null)
+                        if (length == 0)
                         {
-                            if (length == 0)
-                            {
-                                ranges = parameterTainted.Ranges;
-                            }
-                            else
-                            {
-                                ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted!.Ranges, ranges, 0, length);
-                            }
+                            ranges = parameterTainted.Ranges;
+                        }
+                        else
+                        {
+                            ranges = new Range[parameterTainted!.Ranges!.Length];
+                            Ranges.CopyShift(parameterTainted!.Ranges, ranges, 0, length);
                         }
 
                         length += currentParameter!.Length;
@@ -166,7 +153,7 @@ internal static class StringModuleImpl
     {
         try
         {
-            if (!CanBeTainted(result))
+            if (string.IsNullOrEmpty(result))
             {
                 return result;
             }
@@ -184,7 +171,7 @@ internal static class StringModuleImpl
             foreach (var parameterAsObject in parameters)
             {
                 var currentParameter = parameterAsObject?.ToString();
-                if (!CanBeTainted(currentParameter))
+                if (string.IsNullOrEmpty(currentParameter))
                 {
                     continue;
                 }
@@ -194,17 +181,14 @@ internal static class StringModuleImpl
                 {
                     if (ranges == null)
                     {
-                        if (taintedParameter != null)
+                        if (length == 0)
                         {
-                            if (length == 0)
-                            {
-                                ranges = taintedParameter.Ranges;
-                            }
-                            else
-                            {
-                                ranges = new Range[taintedParameter!.Ranges!.Length];
-                                Ranges.CopyShift(taintedParameter!.Ranges, ranges, 0, length);
-                            }
+                            ranges = taintedParameter.Ranges;
+                        }
+                        else
+                        {
+                            ranges = new Range[taintedParameter!.Ranges!.Length];
+                            Ranges.CopyShift(taintedParameter!.Ranges, ranges, 0, length);
                         }
 
                         length += currentParameter!.Length;
@@ -230,7 +214,7 @@ internal static class StringModuleImpl
         return result;
     }
 
-    public readonly struct StringConcatParams
+    public ref struct StringConcatParams
     {
         public readonly string? P0;
         public readonly string? P1;
@@ -272,7 +256,7 @@ internal static class StringModuleImpl
             {
                 if (index < 0 || index >= ParamCount)
                 {
-                    throw new IndexOutOfRangeException();
+                    ThrowHelper.ThrowIndexOutOfRangeException("Invalid index in StringConcatParams");
                 }
 
                 return index switch
@@ -291,7 +275,7 @@ internal static class StringModuleImpl
         {
             for (int x = 0; x < ParamCount; x++)
             {
-                if (StringModuleImpl.CanBeTainted(this[x]))
+                if (!string.IsNullOrEmpty(this[x]))
                 {
                     return true;
                 }
