@@ -29,7 +29,7 @@ internal partial class ReaderWriterLock : IDisposable
     {
         if (!_readerWriterLock.TryEnterWriteLock(TimeoutInMs))
         {
-            Log.Error("Couldn't acquire writer lock in {Timeout} ms", TimeoutInMs.ToString());
+            Log.Error<int>("Couldn't acquire writer lock in {Timeout} ms", TimeoutInMs);
             return false;
         }
 
@@ -45,7 +45,7 @@ internal partial class ReaderWriterLock : IDisposable
         else
         {
             // this can happen, as Context can be created on a thread, disposed on another
-            Log.Debug("Reader lock wasn't held {Timeout}", TimeoutInMs.ToString());
+            Log.Debug<int>("Reader lock wasn't held {Timeout}", TimeoutInMs);
         }
     }
 

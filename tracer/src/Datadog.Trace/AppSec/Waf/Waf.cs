@@ -56,7 +56,7 @@ namespace Datadog.Trace.AppSec.Waf
             InitOrUpdateResult initOrUpdateResult;
             if (!string.IsNullOrEmpty(rulesJson))
             {
-                initOrUpdateResult = wafConfigurator.ConfigureFromRemoteConfig(rulesJson, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                initOrUpdateResult = wafConfigurator.ConfigureFromRemoteConfig(rulesJson!, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
             else
             {
@@ -66,50 +66,48 @@ namespace Datadog.Trace.AppSec.Waf
             return initOrUpdateResult;
         }
 
-        public InitOrUpdateResult UpdateRules(string rules)
+        private bool UpdateWafAndDisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose, DdwafRuleSetInfo? ruleSetInfo = null)
         {
-            var rulesetInfo = new DdwafRuleSetInfo();
-            try
-            {
-                var argCache = new List<Obj>();
-                using var rulesObj = _wafConfigurator.GetConfigObjFromRemoteJson(rules, argCache);
-                var wafHandle = _wafLibraryInvoker.Update(_wafHandle, rulesObj.RawPtr, rulesetInfo);
-                var res = UpdateWafHandle(wafHandle);
-                if (res)
-                {
-                    return InitOrUpdateResult.From(rulesetInfo, wafHandle, _wafLibraryInvoker);
-                }
-            }
-            finally
-            {
-                _wafLibraryInvoker.RuleSetInfoFree(rulesetInfo);
-            }
+            var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.RawPtr, ruleSetInfo);
 
-            return InitOrUpdateResult.FromFailed();
-        }
-
-        private bool UpdateWafHandle(IntPtr newHandle)
-        {
             if (newHandle != IntPtr.Zero)
             {
-                var oldHandle = _wafHandle;
-                if (_wafLocker.EnterWriteLock())
+                try
                 {
-                    _wafHandle = newHandle;
-                    _wafLocker.ExitWriteLock();
-                }
-                else
-                {
-                    if (newHandle != IntPtr.Zero)
+                    var oldHandle = _wafHandle;
+                    if (_wafLocker.EnterWriteLock())
                     {
-                        _wafLibraryInvoker.Destroy(newHandle);
+                        _wafHandle = newHandle;
+                        _wafLocker.ExitWriteLock();
+                    }
+                    else
+                    {
+                        if (newHandle != IntPtr.Zero)
+                        {
+                            _wafLibraryInvoker.Destroy(newHandle);
+                        }
+
+                        return false;
                     }
 
-                    return false;
+                    _wafLibraryInvoker.Destroy(oldHandle);
+                    return true;
                 }
+                finally
+                {
+                    if (ruleSetInfo != null)
+                    {
+                        _wafLibraryInvoker.RuleSetInfoFree(ruleSetInfo);
+                    }
 
-                _wafLibraryInvoker.Destroy(oldHandle);
-                return true;
+                    _wafLibraryInvoker.ObjectFreePtr(updateData.RawPtr);
+                    updateData.Dispose();
+
+                    foreach (var arg in argsToDispose)
+                    {
+                        arg.Dispose();
+                    }
+                }
             }
 
             return false;
@@ -149,6 +147,25 @@ namespace Datadog.Trace.AppSec.Waf
             return Context.GetContext(contextHandle, this, _wafLibraryInvoker);
         }
 
+        public InitOrUpdateResult UpdateRules(string rules)
+        {
+            var rulesetInfo = new DdwafRuleSetInfo();
+            var argsToDispose = new List<Obj>();
+            var rulesObj = _wafConfigurator.GetConfigObjFromRemoteJson(rules, argsToDispose);
+            if (rulesObj == null)
+            {
+                return InitOrUpdateResult.FromFailed();
+            }
+
+            var res = UpdateWafAndDisposeItems(rulesObj, argsToDispose, rulesetInfo);
+            if (res)
+            {
+                return InitOrUpdateResult.From(rulesetInfo, _wafHandle, _wafLibraryInvoker);
+            }
+
+            return InitOrUpdateResult.FromFailed();
+        }
+
         // Requires a non disposed waf handle
         public bool UpdateRulesData(List<RuleData> rulesData)
         {
@@ -163,10 +180,10 @@ namespace Datadog.Trace.AppSec.Waf
                 return true;
             }
 
+            var argsToDispose = new List<Obj>();
             var mergedRuleData = MergeRuleData(rulesData);
-            using var encoded = mergedRuleData.Encode(_wafLibraryInvoker);
-            var result = _wafLibraryInvoker.Update(_wafHandle, encoded.RawPtr, null);
-            var updated = UpdateWafHandle(result);
+            var rulesDataEncoded = mergedRuleData.Encode(_wafLibraryInvoker, argsToDispose);
+            var updated = UpdateWafAndDisposeItems(rulesDataEncoded, argsToDispose);
             Log.Information("{Number} rules have been updated and waf has been updated: {Updated}", mergedRuleData.Count, updated);
             return updated;
         }
@@ -189,9 +206,9 @@ namespace Datadog.Trace.AppSec.Waf
                 return true;
             }
 
-            using var encoded = ruleStatus.Encode(_wafLibraryInvoker);
-            var result = _wafLibraryInvoker.Update(_wafHandle, encoded.RawPtr, null);
-            var updated = UpdateWafHandle(result);
+            var argsToDispose = new List<Obj>();
+            var ruleStatusEncoded = ruleStatus.Encode(_wafLibraryInvoker, argsToDispose);
+            var updated = UpdateWafAndDisposeItems(ruleStatusEncoded, argsToDispose);
             Log.Information("{Number} rule override have been updated and waf has been updated: {Updated}", ruleStatus.Count, updated);
             return updated;
         }
