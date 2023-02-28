@@ -11,7 +11,7 @@ namespace Datadog.Trace.AppSec.Concurrency;
 
 internal partial class ReaderWriterLock : IDisposable
 {
-    internal const int TimeoutInMs = 4000;
+    private const int TimeoutInMs = 4000;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ReaderWriterLock>();
 #if NETFRAMEWORK
     private readonly System.Threading.ReaderWriterLock _readerWriterLock = new();
@@ -27,7 +27,7 @@ internal partial class ReaderWriterLock : IDisposable
         }
         catch (ApplicationException)
         {
-            Log.Error("Couldn't acquire reader lock in {Timeout} ms", TimeoutInMs.ToString());
+            Log.Error<int>("Couldn't acquire reader lock in {Timeout} ms", TimeoutInMs);
             return false;
         }
     }
@@ -41,7 +41,7 @@ internal partial class ReaderWriterLock : IDisposable
         }
         catch (ApplicationException)
         {
-            Log.Error("Couldn't acquire writer lock in {Timeout} ms", TimeoutInMs.ToString());
+            Log.Error<int>("Couldn't acquire writer lock in {Timeout} ms", TimeoutInMs);
             return false;
         }
     }
@@ -55,7 +55,7 @@ internal partial class ReaderWriterLock : IDisposable
         else
         {
             // this can happen, as Context can be created on a thread, disposed on another
-            Log.Debug("Read lock wasn't held in the timeout {Timeout}", TimeoutInMs.ToString());
+            Log.Debug<int>("Read lock wasn't held in the timeout {Timeout}", TimeoutInMs);
         }
     }
 

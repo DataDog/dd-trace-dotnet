@@ -18,7 +18,7 @@ internal partial class ReaderWriterLock : IDisposable
     {
         if (!_readerWriterLock.TryEnterReadLock(TimeoutInMs))
         {
-            Log.Error("Couldn't acquire reader lock in {Timeout} ms", TimeoutInMs.ToString());
+            Log.Error<int>("Couldn't acquire reader lock in {Timeout} ms", TimeoutInMs);
             return false;
         }
 
