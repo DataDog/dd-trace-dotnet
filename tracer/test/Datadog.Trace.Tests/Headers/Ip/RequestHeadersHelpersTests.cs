@@ -25,7 +25,7 @@ namespace Datadog.Trace.Headers.Ip
                     { "x-forwarded-for", "80.19.10.10:32" },
                     { "true-client-ip", "81.202.236.243:82" }
                 },
-                string.Empty, null, null, "80.19.14.16", 32
+                string.Empty, "80.19.10.10", 32, "80.19.14.16", 32
             },
             new object[]
             {
@@ -43,6 +43,8 @@ namespace Datadog.Trace.Headers.Ip
             new object[] { new Dictionary<string, string> { { "user-agent", "Mozilla firefox" }, { "referer", "https://example3.com/" }, { "header-custom-1", "93.12.13.14:81" }, { "x-forwarded-for", "192.168.1.2,81.202.236.243" } }, string.Empty, "81.202.236.243", 80, "80.19.14.16", 32 },
             new object[] { new Dictionary<string, string> { { "user-agent", "Mozilla firefox" }, { "referer", "https://example4.com/" }, { "header-custom-2", "93.12.13.14:81" }, }, "header-custom-2", "93.12.13.14", 81, "80.19.14.16", 32 },
             new object[] { new Dictionary<string, string> { { "user-agent", "Mozilla firefox" }, { "referer", "https://example5.com/" } }, string.Empty, "80.19.14.16", 32, "80.19.14.16", 32 },
+            new object[] { new Dictionary<string, string> { { "user-agent", "Mozilla firefox" }, { "referer", "https://example5.com/" }, { "x-forwarded-for", "'\\'\\\"\">><<script/src='//xf.cm2.pW/m'></script>, 144.126.148.236, 64.252.190.162" } }, string.Empty, "144.126.148.236", 80, "80.19.14.16", 32 },
+            new object[] { new Dictionary<string, string> { { "user-agent", "Mozilla firefox" }, { "referer", "https://example5.com/" }, { "x-forwarded-for", "'\\'\\\"\">><<script/src='//xf.cm2.pW/m'></script>" }, { "cf-connecting-ip", "144.126.148.236" } }, string.Empty, "144.126.148.236", 80, "80.19.14.16", 32 },
         };
 
         [Theory]

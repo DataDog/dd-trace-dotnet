@@ -102,11 +102,7 @@ public:
         auto sample = std::make_shared<Sample>(rawSample.Timestamp, runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId), rawSample.Stack.size());
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
         {
-            // TODO: libdatadog needs to be updated in order to support numeric root span id for endpoint profiling
-            // -> keep it as a string until then
-            // sample->AddNumericLabel(NumericLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
-            sample->AddLabel(Label{Sample::LocalRootSpanIdLabel, std::to_string(rawSample.LocalRootSpanId)});
-
+            sample->AddNumericLabel(NumericLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
             sample->AddNumericLabel(NumericLabel{Sample::SpanIdLabel, rawSample.SpanId});
         }
 
