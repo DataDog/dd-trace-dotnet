@@ -32,18 +32,36 @@ public partial class StringAspects
         return StringModuleImpl.OnStringTrim(target, target.Trim(), ' ', true, true);
     }
 
+    /// <summary>
+    /// String.Trim aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChars"> chars to trim </param>
+    /// <returns> String.Trim() </returns>
     [AspectMethodReplace("System.String::Trim(System.Char[])", AspectFilter.StringLiteral_0)]
     public static string Trim(string target, char[] trimChars)
     {
         return StringModuleImpl.OnStringTrim(target, target.Trim(trimChars), trimChars, true, true);
     }
 
+    /// <summary>
+    /// String.Trim aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChar"> char to trim </param>
+    /// <returns> String.Trim() </returns>
     [AspectMethodReplace("System.String::Trim(System.Char)", AspectFilter.StringLiteral_0)]
     public static string Trim(string target, char trimChar)
     {
         return StringModuleImpl.OnStringTrim(target, target.Trim(trimChar), trimChar, true, true);
     }
 
+    /// <summary>
+    /// String.TrimStart aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChars"> chars to trim </param>
+    /// <returns> String.TrimStart() </returns>
     [AspectMethodReplace("System.String::TrimStart(System.Char[])", AspectFilter.StringLiteral_0)]
     public static string TrimStart(string target, char[] trimChars)
     {
@@ -51,12 +69,23 @@ public partial class StringAspects
     }
 
 #if NETSTANDARD
+    /// <summary>
+    /// String.TrimStart aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChar"> char to trim </param>
+    /// <returns> String.TrimStart() </returns>
     [AspectMethodReplace("System.String::TrimStart(System.Char)", AspectFilter.StringLiteral_0)]
-    public static string TrimStart(string target, char trimChars)
+    public static string TrimStart(string target, char trimChar)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimStart(), trimChars, true, false);
+        return StringModuleImpl.OnStringTrim(target, target.TrimStart(), trimChar, true, false);
     }
 
+    /// <summary>
+    /// String.TrimStart aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.TrimStart() </returns>
     [AspectMethodReplace("System.String::TrimStart()", AspectFilter.StringLiteral_0)]
     public static string TrimStart(string target)
     {
@@ -64,6 +93,12 @@ public partial class StringAspects
     }
 #endif
 
+    /// <summary>
+    /// String.TrimEnd aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChars"> chars to trim </param>
+    /// <returns> String.TrimEnd() </returns>
     [AspectMethodReplace("System.String::TrimEnd(System.Char[])", AspectFilter.StringLiteral_0)]
     public static string TrimEnd(string target, char[] trimChars)
     {
@@ -71,12 +106,23 @@ public partial class StringAspects
     }
 
 #if NETSTANDARD
+    /// <summary>
+    /// String.TrimEnd aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChar"> char to trim </param>
+    /// <returns> String.TrimEnd() </returns>
     [AspectMethodReplace("System.String::TrimEnd(System.Char)", AspectFilter.StringLiteral_0)]
-    public static string TrimEnd(string target, char trimChars)
+    public static string TrimEnd(string target, char trimChar)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChars), trimChars, true, false);
+        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChar), trimChar, true, false);
     }
 
+    /// <summary>
+    /// String.TrimEnd aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.TrimEnd() </returns>
     [AspectMethodReplace("System.String::TrimEnd()", AspectFilter.StringLiteral_0)]
     public static string TrimEnd(string target)
     {
