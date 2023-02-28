@@ -269,7 +269,7 @@ internal static class StringModuleImpl
     /// <param name="beginIndex"> start index </param>
     /// <param name="endIndex"> end index </param>
     /// <param name="result"> Result </param>
-    /// <returns> resiÃ±t </returns>
+    /// <returns> resiñt </returns>
     public static string OnStringSubSequence(string self, int beginIndex, int endIndex, string result)
     {
         try
