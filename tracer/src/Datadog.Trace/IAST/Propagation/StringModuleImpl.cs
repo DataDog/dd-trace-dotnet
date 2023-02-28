@@ -59,12 +59,12 @@ internal static class StringModuleImpl
     /// <param name="self"> original string </param>
     /// <param name="beginIndex"> start index </param>
     /// <param name="result"> Result </param>
-    /// <returns> resiñt </returns>
+    /// <returns> result </returns>
     public static char[]? OnStringSubSequence(string self, int beginIndex, char[]? result)
     {
         try
         {
-            if (result is null)
+            if (result is null || result.Length == 0)
             {
                 return result;
             }
@@ -106,12 +106,12 @@ internal static class StringModuleImpl
     /// <param name="self"> original string </param>
     /// <param name="beginIndex"> start index </param>
     /// <param name="result"> Result </param>
-    /// <returns> resiñt </returns>
+    /// <returns> result </returns>
     public static string OnStringSubSequence(string self, int beginIndex, string result)
     {
         try
         {
-            if (self == result || string.IsNullOrEmpty(result))
+            if (string.IsNullOrEmpty(result) || self == result)
             {
                 return result;
             }
