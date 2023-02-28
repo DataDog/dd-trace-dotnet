@@ -9,13 +9,15 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
+using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
+
+#nullable enable
 
 namespace Datadog.Trace.AppSec.Waf.Initialization
 {
@@ -33,13 +35,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 try
                 {
                     var eventsProp = root.Value<JArray>("rules");
-                    Log.Debug<int>("eventspropo {Count}", eventsProp.Count);
+                    Log.Debug<int>("eventspropo {Count}", eventsProp!.Count);
                     foreach (var ev in eventsProp)
                     {
                         var emptyJValue = JValue.CreateString(string.Empty);
                         var idProp = ev.Value<JValue>("id") ?? emptyJValue;
                         var nameProp = ev.Value<JValue>("name") ?? emptyJValue;
-                        var addresses = ev.Value<JArray>("conditions")?.SelectMany(x => x.Value<JObject>("parameters")?.Value<JArray>("inputs"));
+                        var addresses = ev.Value<JArray>("conditions")?.SelectMany(x => x.Value<JObject>("parameters")?.Value<JArray>("inputs")!);
                         Log.Debug("DDAS-0007-00: Loaded rule: {Id} - {Name} on addresses: {Addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses ?? Enumerable.Empty<JToken>()));
                     }
                 }
@@ -50,15 +52,15 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
         }
 
-        private static Stream GetRulesStream(string rulesFile) => string.IsNullOrWhiteSpace(rulesFile) ? GetRulesManifestStream() : GetRulesFileStream(rulesFile);
+        private static Stream? GetRulesStream(string? rulesFile) => string.IsNullOrWhiteSpace(rulesFile) ? GetRulesManifestStream() : GetRulesFileStream(rulesFile!);
 
-        private static Stream GetRulesManifestStream()
+        private static Stream? GetRulesManifestStream()
         {
             var assembly = typeof(Waf).Assembly;
             return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.rule-set.json");
         }
 
-        private static Stream GetRulesFileStream(string rulesFile)
+        private static Stream? GetRulesFileStream(string rulesFile)
         {
             if (!File.Exists(rulesFile))
             {
@@ -69,28 +71,28 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return File.OpenRead(rulesFile);
         }
 
-        internal InitializationResult Configure(string rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal InitResult Configure(string? rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
-            var argCache = new List<Obj>();
-            var rulesObj = GetConfigObj(rulesFile, argCache);
-            return Configure(rulesObj, rulesFile, argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            var argsToDispose = new List<Obj>();
+            var rulesObj = GetConfigObj(rulesFile, argsToDispose);
+            return ConfigureAndDispose(rulesObj, rulesFile, argsToDispose, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
-        internal InitializationResult ConfigureFromRemoteConfig(string rulesJson, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal InitResult ConfigureFromRemoteConfig(string rulesJson, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             var argCache = new List<Obj>();
-            return Configure(GetConfigObjFromRemoteJson(rulesJson, argCache), "RemoteConfig", argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            return ConfigureAndDispose(GetConfigObjFromRemoteJson(rulesJson, argCache), "RemoteConfig", argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
-        private InitializationResult Configure(Obj rulesObj, string rulesFile, List<Obj> argCache, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        private InitResult ConfigureAndDispose(Obj? rulesObj, string? rulesFile, List<Obj> argsToDispose, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             if (rulesObj == null)
             {
                 Log.Error("Waf couldn't initialize properly because of an unusable rule file. If you set the environment variable {AppsecruleEnv}, check the path and content of the file are correct.", ConfigurationKeys.AppSec.Rules);
-                return InitializationResult.FromUnusableRuleFile();
+                return InitResult.FromUnusableRuleFile();
             }
 
-            DdwafRuleSetInfoStruct ruleSetInfo = default;
+            var ruleSetInfo = new DdwafRuleSetInfo();
             var keyRegex = IntPtr.Zero;
             var valueRegex = IntPtr.Zero;
 
@@ -103,13 +105,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 args.ValueRegex = valueRegex;
                 args.FreeWafFunction = _wafLibraryInvoker.ObjectFreeFuncPtr;
 
-                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, ref ruleSetInfo);
+                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, ruleSetInfo);
                 if (wafHandle == IntPtr.Zero)
                 {
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
                 }
 
-                var initResult = InitializationResult.From(ruleSetInfo, wafHandle, _wafLibraryInvoker);
+                var initResult = InitResult.From(ruleSetInfo, wafHandle, _wafLibraryInvoker);
                 if (initResult.LoadedRules == 0)
                 {
                     Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
@@ -145,17 +147,17 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                _wafLibraryInvoker.RuleSetInfoFree(ref ruleSetInfo);
+                _wafLibraryInvoker.RuleSetInfoFree(ruleSetInfo);
                 _wafLibraryInvoker.ObjectFreePtr(rulesObj.RawPtr);
                 rulesObj.Dispose();
-                foreach (var arg in argCache)
+                foreach (var arg in argsToDispose)
                 {
                     arg.Dispose();
                 }
             }
         }
 
-        private Obj GetConfigObj(string rulesFile, List<Obj> argCache)
+        private Obj? GetConfigObj(string? rulesFile, List<Obj> argCache)
         {
             Obj configObj;
             try
@@ -187,7 +189,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return configObj;
         }
 
-        private Obj GetConfigObjFromRemoteJson(string rulesJson, List<Obj> argCache)
+        internal Obj? GetConfigObjFromRemoteJson(string rulesJson, List<Obj>? argCache)
         {
             Obj configObj;
             try
@@ -198,14 +200,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             catch (Exception ex)
             {
                 Log.Error(ex, "DDAS-0003-02: AppSec could not read the rule file sent by remote config. Reason: Invalid file format. AppSec will not run any protections in this application.");
-
                 return null;
             }
 
             return configObj;
         }
 
-        private Obj GetConfigObj(TextReader reader, List<Obj> argCache)
+        private Obj GetConfigObj(TextReader reader, List<Obj>? argCache)
         {
             using var jsonReader = new JsonTextReader(reader);
             var root = JToken.ReadFrom(jsonReader);
