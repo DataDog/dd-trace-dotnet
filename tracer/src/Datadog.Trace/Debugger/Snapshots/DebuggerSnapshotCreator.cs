@@ -642,6 +642,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         info.LineCaptureInfo.LineNumber,
                         info.LineCaptureInfo.ProbeFilePath)
                    .FinalizeSnapshot(
+                        probeId,
                         methodName,
                         typeFullName,
                         _startTime,
@@ -669,6 +670,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         methodName,
                         typeFullName)
                    .FinalizeSnapshot(
+                        probeId,
                         methodName,
                         typeFullName,
                         _startTime,
@@ -679,11 +681,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal void FinalizeSnapshot(string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath)
+        internal void FinalizeSnapshot(string probeId, string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath)
         {
+            var isSpanOrigin = probeId.StartsWith("SpanOrigin_ExitSpan");
+
             var activeScope = Tracer.Instance.InternalActiveScope;
-            var traceId = activeScope?.Span?.TraceId.ToString();
-            var spanId = activeScope?.Span?.SpanId.ToString();
+            var traceId = isSpanOrigin ? "TO_BE_ADDED_TRACE_ID" : activeScope?.Span?.TraceId.ToString();
+            var spanId = isSpanOrigin ? "TO_BE_ADDED_SPAN_ID" : activeScope?.Span?.SpanId.ToString();
 
             AddStackInfo()
             .EndSnapshot(startTime)
@@ -836,10 +840,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteValue(UnknownValue);
 
             _jsonWriter.WritePropertyName("dd.trace_id");
-            _jsonWriter.WriteValue("TO_BE_ADDED_TRACE_ID");
+            _jsonWriter.WriteValue(traceId);
 
             _jsonWriter.WritePropertyName("dd.span_id");
-            _jsonWriter.WriteValue("TO_BE_ADDED_SPAN_ID");
+            _jsonWriter.WriteValue(spanId);
 
             return this;
         }

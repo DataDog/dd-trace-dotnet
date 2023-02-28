@@ -1291,7 +1291,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     std::vector<TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     int numArgs = caller->method_signature.NumberOfArguments();
 
-    if (retTypeFlags & TypeFlagByRef || caller->name == WStr(".ctor") || caller->name == WStr(".cctor"))
+    if (retTypeFlags & TypeFlagByRef)
     {
         // Internal Jira ticket: DEBUG-1063, DEBUG-1065.
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Placing probes on a method with ref return/constructor is not supported for now. token=",

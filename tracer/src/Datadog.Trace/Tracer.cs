@@ -45,6 +45,7 @@ namespace Datadog.Trace
 
         private static Tracer _instance;
         private static volatile bool _globalInstanceInitialized;
+        private static BoundedConcurrentQueue<string> _toBeUploadedSnapshots = new();
 
         private readonly TracerManager _tracerManager;
 
@@ -422,7 +423,14 @@ namespace Datadog.Trace
                 OperationName = operationName,
             };
 
-            SpanOriginResolution(span);
+            try
+            {
+                SpanOriginResolution(span);
+            }
+            catch
+            {
+                // Ignored
+            }
 
             // Apply any global tags
             if (Settings.GlobalTags.Count > 0)
@@ -463,7 +471,19 @@ namespace Datadog.Trace
                 ProbeProcessor.NextSnapshot.Value = string.Empty;
                 nextSnapshotToBeUploaded = nextSnapshotToBeUploaded.Replace("TO_BE_ADDED_SPAN_ID", span.SpanId.ToString())
                                                                    .Replace("TO_BE_ADDED_TRACE_ID", span.TraceId.ToString());
-                Datadog.Trace.Debugger.LiveDebugger.Instance.AddSnapshot("SpanOrigin", nextSnapshotToBeUploaded);
+                if (Debugger.LiveDebugger.Instance == null)
+                {
+                    _toBeUploadedSnapshots.TryEnqueue(nextSnapshotToBeUploaded);
+                }
+                else
+                {
+                    while (_toBeUploadedSnapshots.TryDequeue(out var snapshot))
+                    {
+                        Debugger.LiveDebugger.Instance.AddSnapshot("SpanOrigin", snapshot);
+                    }
+
+                    Debugger.LiveDebugger.Instance.AddSnapshot("SpanOrigin", nextSnapshotToBeUploaded);
+                }
             }
 
             var stackFrames = new System.Diagnostics.StackTrace();
@@ -505,7 +525,6 @@ namespace Datadog.Trace
             if (firstNonUserCodeMethod == null || firstUserCodeMethod == null)
             {
                 // TODO LOG
-                System.Diagnostics.Debugger.Break();
                 return;
             }
 
@@ -519,7 +538,6 @@ namespace Datadog.Trace
             if (!userMdMethod.Body.HasInstructions)
             {
                 // TODO LOG
-                System.Diagnostics.Debugger.Break();
                 return;
             }
 
@@ -542,7 +560,6 @@ namespace Datadog.Trace
             if (!calls.Any())
             {
                 // TODO LOG
-                System.Diagnostics.Debugger.Break();
                 return;
             }
 
@@ -552,7 +569,14 @@ namespace Datadog.Trace
 
             foreach (var probe in lineProbes)
             {
-                ProbeExpressionsProcessor.Instance.AddProbeProcessor(new LogProbe { CaptureSnapshot = true, Id = "SpanOrigin", Where = new Where() });
+                var templateStr = $"Exit Span : {span.OperationName}";
+                var template = templateStr + "{1}";
+                var json = @"{
+    ""Ignore"": ""1""
+}";
+                var segments = new SnapshotSegment[] { new(null, null, templateStr), new("1", json, null) };
+
+                ProbeExpressionsProcessor.Instance.AddProbeProcessor(new LogProbe { CaptureSnapshot = true, Id = probe.ProbeId, Where = new Where(), Template = template, Segments = segments });
             }
 
             var chosenProbe = lineProbes.First();
@@ -569,7 +593,7 @@ namespace Datadog.Trace
         private static NativeLineProbeDefinition CreateLineProbe(Instruction callInstruction, MethodBase userMethod, SymbolMethod userSymbolMethod)
         {
             var closestSequencePoint = userSymbolMethod.SequencePoints.Reverse().First(sp => sp.Offset <= callInstruction.Offset);
-            return new NativeLineProbeDefinition(Guid.NewGuid().ToString(), userMethod.Module.ModuleVersionId, userMethod.MetadataToken, (int)(closestSequencePoint.Offset), closestSequencePoint.Line, closestSequencePoint.Document.URL);
+            return new NativeLineProbeDefinition($"SpanOrigin_ExitSpan_{closestSequencePoint.Document.URL}_{closestSequencePoint.Line}", userMethod.Module.ModuleVersionId, userMethod.MetadataToken, (int)(closestSequencePoint.Offset), closestSequencePoint.Line, closestSequencePoint.Document.URL);
         }
     }
 }
