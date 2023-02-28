@@ -12,7 +12,21 @@ namespace Datadog.Trace.Headers.Ip
 {
     internal static class RequestIpExtractor
     {
-        private static readonly IReadOnlyList<string> IpHeaders = new[] { "x-forwarded-for", "x-real-ip", "client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
+        private static readonly IReadOnlyList<string> IpHeaders =
+            new[]
+            {
+                "x-forwarded-for",
+                "x-real-ip",
+                "true-client-ip",
+                "x-client-ip",
+                "x-forwarded",
+                "forwarded-for",
+                "x-cluster-client-ip",
+                "fastly-client-ip",
+                "cf-connecting-ip",
+                "cf-connecting-ipv6",
+            };
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestIpExtractor));
 
         internal static IpInfo ExtractIpAndPort(Func<string, string> getHeader, string customIpHeader, bool isSecureConnection, IpInfo peerIpFallback)
@@ -35,24 +49,20 @@ namespace Datadog.Trace.Headers.Ip
                 Log.Warning("A custom header for ip {CustomIpHeader} was configured but there was no such header in the request", customIpHeader);
             }
 
-            string potentialIp = null;
             foreach (var headerIp in IpHeaders)
             {
-                var headerValue = getHeader(headerIp);
-                if (!string.IsNullOrEmpty(headerValue))
+                var potentialIp = getHeader(headerIp);
+                if (!string.IsNullOrEmpty(potentialIp))
                 {
-                    if (!string.IsNullOrEmpty(potentialIp) || !string.IsNullOrEmpty(customIpHeader))
+                    var ipInfo = IpExtractor.RealIpFromValue(potentialIp, isSecureConnection);
+                    if (ipInfo != null)
                     {
-                        // dont log more than debug level. some proxies have several ip headers and we end up with millions of logs.
-                        Log.Debug("Multiple ip headers have been found, none will be reported");
-                        return null;
+                        return ipInfo;
                     }
-
-                    potentialIp = headerValue;
                 }
             }
 
-            return extractedCustomIp ?? (!string.IsNullOrEmpty(potentialIp) ? IpExtractor.RealIpFromValue(potentialIp, isSecureConnection) : peerIpFallback);
+            return peerIpFallback;
         }
 
         internal static void AddIpToTags(string peerIpAddress, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTags tags)
