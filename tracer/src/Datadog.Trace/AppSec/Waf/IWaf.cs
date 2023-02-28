@@ -25,7 +25,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         /// <param name="rules">json rules</param>
         /// <returns>returns InitOrUpdateResult</returns>
-        InitOrUpdateResult UpdateRules(string rules);
+        UpdateResult UpdateRules(string rules);
 
         bool UpdateRulesData(List<RuleData> rulesData);
 

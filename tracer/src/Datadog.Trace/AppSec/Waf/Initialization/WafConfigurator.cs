@@ -71,25 +71,25 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return File.OpenRead(rulesFile);
         }
 
-        internal InitOrUpdateResult Configure(string? rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal InitResult Configure(string? rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             var argsToDispose = new List<Obj>();
             var rulesObj = GetConfigObj(rulesFile, argsToDispose);
             return ConfigureAndDispose(rulesObj, rulesFile, argsToDispose, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
-        internal InitOrUpdateResult ConfigureFromRemoteConfig(string rulesJson, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal InitResult ConfigureFromRemoteConfig(string rulesJson, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             var argCache = new List<Obj>();
             return ConfigureAndDispose(GetConfigObjFromRemoteJson(rulesJson, argCache), "RemoteConfig", argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
         }
 
-        private InitOrUpdateResult ConfigureAndDispose(Obj? rulesObj, string? rulesFile, List<Obj> argsToDispose, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        private InitResult ConfigureAndDispose(Obj? rulesObj, string? rulesFile, List<Obj> argsToDispose, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             if (rulesObj == null)
             {
                 Log.Error("Waf couldn't initialize properly because of an unusable rule file. If you set the environment variable {AppsecruleEnv}, check the path and content of the file are correct.", ConfigurationKeys.AppSec.Rules);
-                return InitOrUpdateResult.FromUnusableRuleFile();
+                return InitResult.FromUnusableRuleFile();
             }
 
             var ruleSetInfo = new DdwafRuleSetInfo();
@@ -111,7 +111,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
                 }
 
-                var initResult = InitOrUpdateResult.From(ruleSetInfo, wafHandle, _wafLibraryInvoker);
+                var initResult = InitResult.From(ruleSetInfo, wafHandle, _wafLibraryInvoker);
                 if (initResult.LoadedRules == 0)
                 {
                     Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);

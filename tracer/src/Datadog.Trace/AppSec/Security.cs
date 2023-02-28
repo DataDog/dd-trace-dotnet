@@ -37,7 +37,7 @@ namespace Datadog.Trace.AppSec
         private WafLibraryInvoker _wafLibraryInvoker;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
-        private InitOrUpdateResult _wafInitOrUpdateResult;
+        private InitResult _wafInitResult;
 
         static Security()
         {
@@ -100,9 +100,9 @@ namespace Datadog.Trace.AppSec
 
         internal bool WafExportsErrorHappened => _libraryInitializationResult?.ExportErrorHappened ?? false;
 
-        internal string WafRuleFileVersion => _wafInitOrUpdateResult?.RuleFileVersion;
+        internal string WafRuleFileVersion { get; private set; }
 
-        internal InitOrUpdateResult WafInitResult => _wafInitOrUpdateResult;
+        internal InitResult WafInitResult => _wafInitResult;
 
         /// <summary>
         /// Gets <see cref="SecuritySettings"/> instance
@@ -283,8 +283,9 @@ namespace Datadog.Trace.AppSec
             if (!string.IsNullOrEmpty(asmDd.TypedFile))
             {
                 _remoteConfigurationStatus.RemoteRulesJson = asmDd.TypedFile;
-                _wafInitOrUpdateResult = _waf?.UpdateRules(_remoteConfigurationStatus.RemoteRulesJson);
-                if (_wafInitOrUpdateResult?.Success ?? false)
+                var result = _waf?.UpdateRules(_remoteConfigurationStatus.RemoteRulesJson);
+                WafRuleFileVersion = result?.RuleFileVersion;
+                if (_wafInitResult?.Success ?? false)
                 {
                     e.Acknowledge(asmDd.Name);
                 }
@@ -424,11 +425,12 @@ namespace Datadog.Trace.AppSec
                 _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
             }
 
-            _wafInitOrUpdateResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteConfigurationStatus.RemoteRulesJson);
-            if (_wafInitOrUpdateResult.Success)
+            _wafInitResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteConfigurationStatus.RemoteRulesJson);
+            if (_wafInitResult.Success)
             {
+                WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                 var oldWaf = _waf;
-                _waf = _wafInitOrUpdateResult.Waf;
+                _waf = _wafInitResult.Waf;
                 oldWaf?.Dispose();
                 Log.Debug("Disposed old waf and affected new waf");
                 UpdateWafWithRulesData();
@@ -436,7 +438,7 @@ namespace Datadog.Trace.AppSec
             }
             else
             {
-                _wafInitOrUpdateResult.Waf?.Dispose();
+                _wafInitResult.Waf?.Dispose();
                 _settings.Enabled = false;
             }
         }
