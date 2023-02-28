@@ -763,6 +763,6 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToCharArray(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
     public static char[] ToCharArray(string target, int startIndex, int length)
     {
-        return StringModuleImpl.OnStringSubSequence(target, startIndex, startIndex + length, target.ToCharArray(startIndex, length));
+        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.ToCharArray(startIndex, length));
     }
 }
