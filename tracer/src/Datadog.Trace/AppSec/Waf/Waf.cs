@@ -68,11 +68,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         private bool UpdateWafAndDisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose, DdwafRuleSetInfo? ruleSetInfo = null)
         {
-            var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.RawPtr, ruleSetInfo);
-
-            if (newHandle != IntPtr.Zero)
+            try
             {
-                try
+                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.RawPtr, ruleSetInfo);
+
+                if (newHandle != IntPtr.Zero)
                 {
                     var oldHandle = _wafHandle;
                     if (_wafLocker.EnterWriteLock())
@@ -93,20 +93,24 @@ namespace Datadog.Trace.AppSec.Waf
                     _wafLibraryInvoker.Destroy(oldHandle);
                     return true;
                 }
-                finally
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "An exception occurred while trying to update waf with new data");
+            }
+            finally
+            {
+                if (ruleSetInfo != null)
                 {
-                    if (ruleSetInfo != null)
-                    {
-                        _wafLibraryInvoker.RuleSetInfoFree(ruleSetInfo);
-                    }
+                    _wafLibraryInvoker.RuleSetInfoFree(ruleSetInfo);
+                }
 
-                    _wafLibraryInvoker.ObjectFreePtr(updateData.RawPtr);
-                    updateData.Dispose();
+                _wafLibraryInvoker.ObjectFreePtr(updateData.RawPtr);
+                updateData.Dispose();
 
-                    foreach (var arg in argsToDispose)
-                    {
-                        arg.Dispose();
-                    }
+                foreach (var arg in argsToDispose)
+                {
+                    arg.Dispose();
                 }
             }
 
