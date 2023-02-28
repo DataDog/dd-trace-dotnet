@@ -54,7 +54,7 @@
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
     <!-- Latest package https://www.nuget.org/packages/GraphQL/7.2.2 -->
-    <PackageReference Include="GraphQL" Version="5.4.0" />
+    <PackageReference Include="GraphQL" Version="7.3.0" />
 
     <!-- Integration: GraphQL.SystemReactive -->
     <!-- Assembly: GraphQL.SystemReactive -->
