@@ -19,14 +19,14 @@
     <PackageReference Include="System.Reactive.Linq" Version="4.4.1" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(ApiVersion) &gt;= 5.0.0 And $(ApiVersion) &lt; 7.0.0">
-    <PackageReference Include="GraphQL.SystemReactive" Version="$(ApiVersion)" />
+  <ItemGroup Condition="$(ApiVersion) &lt; 5.0.0">
+    <PackageReference Include="GraphQL.SystemReactive"  Version="$(ApiVersion)" />
     <PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="5.0.2" />
     <PackageReference Include="GraphQL.Server.Transports.AspNetCore.NewtonsoftJson" Version="5.0.2" />
     <PackageReference Include="GraphQL.Server.Ui.Playground" Version="5.0.2" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(ApiVersion) &gt;= 5.0.0">
+  <ItemGroup Condition="$(ApiVersion) &gt;= 5.0.0 And $(ApiVersion) &lt; 7.0.0">
     <PackageReference Include="GraphQL.Server.All" Version="6.0.0" />
     <PackageReference Include="GraphQL.NewtonsoftJson" Version="5.0.0" />
   </ItemGroup>
