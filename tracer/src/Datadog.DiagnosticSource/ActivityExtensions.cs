@@ -82,71 +82,6 @@ namespace Datadog.DiagnosticSource
             {
                 throw new ArgumentException(nameof(id) + " must be set to a value other than null or the empty string", nameof(id));
             }
-
-            // TODO hacky at first to get Tags
-            // GetActivitySetTagAction needs to call the TraceContext.SetTag if it is set
-            var setTagAction = GetActivitySetTagAction(activity, out var hasTraceContext);
-
-            if (propagateId)
-            {
-                var base64UserId = Convert.ToBase64String(Encoding.UTF8.GetBytes(id));
-                const string propagatedUserIdTag = "_dd.p." + "usr.id";
-                setTagAction(propagatedUserIdTag, base64UserId);
-            }
-            else
-            {
-                setTagAction("usr.id", id);
-            }
-
-            if (email is not null)
-            {
-                setTagAction("usr.email", email);
-            }
-
-            if (name is not null)
-            {
-                setTagAction("usr.name", name);
-            }
-
-            if (sessionId is not null)
-            {
-                setTagAction("usr.session_id", sessionId);
-            }
-
-            if (role is not null)
-            {
-                setTagAction("usr.role", role);
-            }
-
-            if (scope is not null)
-            {
-                setTagAction("usr.scope", scope);
-            }
-
-            if (hasTraceContext)
-            {
-                RunBlockingCheck(activity, id);
-            }
-        }
-
-        // TODO no clue what to do with the "out" here - changing it from signature of GetSpanSetter
-        private static Action<string, object?> GetActivitySetTagAction(Activity activity, out bool hasTraceContext)
-        {
-            // TODO this should return the TraceContext.Tags.SetTag() function
-            // TODO if there is no TraceContext it should return the activity?
-            // TODO hack for now to just return the Activity
-            hasTraceContext = false;
-            // TODO if we have a TraceContext, hasTraceContext to true
-            // then we need to use the action to set the TraceContext.Tags.SetTag() function
-            // Hmm Tags.SetTag(string, string?) whereas Activity.SetTag(string, object?)
-            Action<string, object?> setTag = (name, value) => activity.SetTag(name, value);
-            return setTag;
-        }
-
-        private static void RunBlockingCheck(Activity span, string userId)
-        {
-            // TODO ex https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Trace/SpanExtensions.Framework.cs
-            // TODO would need to rejit this to be able to access the ASM types
         }
 
         /// <summary>
@@ -156,11 +91,7 @@ namespace Datadog.DiagnosticSource
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
         public static void SetTraceSamplingPriority(this Activity activity, SamplingPriority samplingPriority)
         {
-            // TODO can/should stubs have code?
-            if (activity == null) { throw new ArgumentNullException(nameof(activity)); }
-
-            // TODO we need to get the TraceContext related to this Activity (if it exists)
-            // then do a traceContext.SetSamplingPriority((int)samplingPriority, SamplingMechanism.Manual);
+            activity.AddTag("_sampling_priority_v1", samplingPriority);
         }
 
         /// <summary>
@@ -193,17 +124,6 @@ namespace Datadog.DiagnosticSource
                 activity.SetTag("error.stack", exception.ToString());
                 activity.SetTag("error.type", exception.GetType().ToString());
             }
-        }
-
-        /// <summary>
-        /// Gets the currently active Span as an <see cref="Activity"/>.
-        /// </summary>
-        /// <returns>The currently active Span as an <see cref="Activity"/>; otherwise, <see langword="null"/>.</returns>
-        /// <remarks>This isn't the same as the currently active <see cref="Activity"/> as this would allow exposure to
-        /// the automatic instrumentation-generated Spans.</remarks>
-        public static Activity? GetCurrentlyActiveActivity()
-        {
-            return null;
         }
     }
 }
