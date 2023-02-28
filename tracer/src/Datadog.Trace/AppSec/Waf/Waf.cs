@@ -75,25 +75,20 @@ namespace Datadog.Trace.AppSec.Waf
                 if (newHandle != IntPtr.Zero)
                 {
                     var oldHandle = _wafHandle;
-                    UpdateResult result;
                     if (_wafLocker.EnterWriteLock())
                     {
                         _wafHandle = newHandle;
                         _wafLocker.ExitWriteLock();
-                        result = new UpdateResult(ruleSetInfo, true);
+                        _wafLibraryInvoker.Destroy(oldHandle);
+                        return new UpdateResult(ruleSetInfo, true);
                     }
-                    else
+
+                    if (newHandle != IntPtr.Zero)
                     {
-                        if (newHandle != IntPtr.Zero)
-                        {
-                            _wafLibraryInvoker.Destroy(newHandle);
-                        }
-
-                        result = new UpdateResult(ruleSetInfo, false);
+                        _wafLibraryInvoker.Destroy(newHandle);
                     }
 
-                    _wafLibraryInvoker.Destroy(oldHandle);
-                    return result;
+                    return new UpdateResult(ruleSetInfo, false);
                 }
             }
             catch (Exception e)
