@@ -25,16 +25,18 @@ namespace Datadog.Trace.DatabaseMonitoring
             }
 
             var propagatorSringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            propagatorSringBuilder.Append($"/*{SqlCommentRootService}='{configuredServiceName}',{SqlCommentSpanService}='{context.ServiceName}'");
-
-            if (context.TraceContext?.ServiceVersion is { } versionTag)
-            {
-                propagatorSringBuilder.Append($",{SqlCommentVersion}='{versionTag}'");
-            }
+            propagatorSringBuilder.Append($"/*{SqlCommentSpanService}='{Uri.EscapeDataString(context.ServiceName)}'");
 
             if (context.TraceContext?.Environment is { } envTag)
             {
-                propagatorSringBuilder.Append($",{SqlCommentEnv}='{envTag}'");
+                propagatorSringBuilder.Append($",{SqlCommentEnv}='{Uri.EscapeDataString(envTag)}'");
+            }
+
+            propagatorSringBuilder.Append($",{SqlCommentRootService}='{Uri.EscapeDataString(configuredServiceName)}'");
+
+            if (context.TraceContext?.ServiceVersion is { } versionTag)
+            {
+                propagatorSringBuilder.Append($",{SqlCommentVersion}='{Uri.EscapeDataString(versionTag)}'");
             }
 
             if (propagationStyle == DbmPropagationLevel.Full)
