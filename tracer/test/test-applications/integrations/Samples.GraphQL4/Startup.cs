@@ -29,7 +29,7 @@ namespace Samples.GraphQL4
     {
         public void ConfigureServices(IServiceCollection services)
         {
-#if !GRAPHQL_5_0
+#if !GRAPHQL_5_0 && !GRAPHQL_7_0
             // Not required in GraphQL 5.0
             services.AddSingleton<IDocumentExecuter, SubscriptionDocumentExecuter>();
 #endif
@@ -49,10 +49,12 @@ namespace Samples.GraphQL4
 
             services.AddLogging(builder => builder.AddConsole());
 
-#if GRAPHQL_5_0
+#if GRAPHQL_5_0 || GRAPHQL_7_0
             services.AddGraphQL(
                 _ => _
+#if GRAPHQL_5_0
                     .AddHttpMiddleware<ISchema>()
+#endif
                     .AddNewtonsoftJson()
                     .AddUserContextBuilder(httpContext => new Dictionary<string, object>()));
 #else
