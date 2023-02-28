@@ -26,9 +26,13 @@ namespace Datadog.Trace.Iast
 
         public void Taint(object objectToTaint, Range[] ranges)
         {
-            if (objectToTaint is not null && (objectToTaint is not string || objectToTaint as string != string.Empty))
+            if (objectToTaint is not null)
             {
-                _map.Put(new TaintedObject(objectToTaint, ranges));
+                var objectAsString = objectToTaint as string;
+                if (objectAsString is null || objectAsString != string.Empty)
+                {
+                    _map.Put(new TaintedObject(objectToTaint, ranges));
+                }
             }
         }
 
