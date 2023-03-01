@@ -165,7 +165,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                             },
                             EvaluateAt = EvaluateAt.Entry,
                             Template = template,
-                            Segments = segments
+                            Segments = segments,
+                            Sampling = new Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 }
                         };
                         ProbeExpressionsProcessor.Instance.AddProbeProcessor(methodProbeDef);
                     });

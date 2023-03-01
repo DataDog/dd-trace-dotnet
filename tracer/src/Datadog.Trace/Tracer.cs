@@ -581,6 +581,8 @@ namespace Datadog.Trace
             var chosenProbe = lineProbes.First();
             span.Tags.SetTag("source.file_path", chosenProbe.ProbeFilePath);
             span.Tags.SetTag("source.line_number", chosenProbe.LineNumber.ToString());
+            span.Tags.SetTag("source.method_begin_line_number", userSymbolMethod.SequencePoints.First().Line.ToString());
+            span.Tags.SetTag("source.method_end_line_number", userSymbolMethod.SequencePoints.Last().Line.ToString());
 
             // Add probes
             DebuggerNativeMethods.InstrumentProbes(
