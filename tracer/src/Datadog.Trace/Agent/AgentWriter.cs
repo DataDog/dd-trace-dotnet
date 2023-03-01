@@ -489,7 +489,7 @@ namespace Datadog.Trace.Agent
                     Span_id = cur.SpanId,
                     Parent_id = cur.Context.ParentId ?? 0,
                     Start = cur.StartTime.ToUnixTimeMilliseconds(),
-                    Duration = cur.Duration.Milliseconds,
+                    Duration = cur.Duration.Nanoseconds,
                     Error = 0
                 };
                 arrList.Add(sm);
