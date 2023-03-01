@@ -138,6 +138,11 @@ namespace Datadog.Trace
         public const string Language = "language";
 
         /// <summary>
+        /// Indicates whether debugger information was captured.
+        /// </summary>
+        internal const string HasDebugInfo = "has-debug-info";
+
+        /// <summary>
         /// The git commit hash of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitCommitSha"/>.
