@@ -8,11 +8,11 @@ using GraphQL.Resolvers;
 using GraphQL.Subscription;
 #endif
 using GraphQL.Types;
-using Human = Samples.GraphQL4.StarWars.Types.Human;
-using HumanType = Samples.GraphQL4.StarWars.Types.HumanType;
-using StarWarsData = Samples.GraphQL4.StarWars.StarWarsData;
+using Human = Samples.GraphQL7.StarWars.Types.Human;
+using HumanType = Samples.GraphQL7.StarWars.Types.HumanType;
+using StarWarsData = Samples.GraphQL7.StarWars.StarWarsData;
 
-namespace Samples.GraphQL4.StarWarsExtensions
+namespace Samples.GraphQL7.StarWarsExtensions
 {
     /// <example>
     /// This is an example JSON request for a subscription
