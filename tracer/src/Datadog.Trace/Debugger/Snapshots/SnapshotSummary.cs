@@ -38,6 +38,8 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static void AddVariablesToSpanAsTags(Snapshot snapshot)
         {
+            Tracer.Instance.ActiveScope.Span.SetTag(Tags.HasDebugInfo, bool.TrueString);
+
             var variables = GetArguments(snapshot).Concat(GetLocals(snapshot));
             foreach (var argument in variables)
             {
