@@ -29,7 +29,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Trim()", AspectFilter.StringLiteral_0)]
     public static string Trim(string target)
     {
-        return StringModuleImpl.OnStringTrim(target, target.Trim(), ' ', true, true);
+        return StringModuleImpl.OnStringTrim(target, target.Trim(), null, true, true);
     }
 
     /// <summary>
@@ -41,7 +41,14 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Trim(System.Char[])", AspectFilter.StringLiteral_0)]
     public static string Trim(string target, char[] trimChars)
     {
-        return StringModuleImpl.OnStringTrim(target, target.Trim(trimChars), trimChars, true, true);
+        if (trimChars != null && trimChars.Length > 0)
+        {
+            return StringModuleImpl.OnStringTrimArray(target, target.Trim(trimChars), trimChars, true, true);
+        }
+        else
+        {
+            return StringModuleImpl.OnStringTrim(target, target.Trim(trimChars), null, true, true);
+        }
     }
 
     /// <summary>
@@ -65,10 +72,17 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::TrimStart(System.Char[])", AspectFilter.StringLiteral_0)]
     public static string TrimStart(string target, char[] trimChars)
     {
-        return StringModuleImpl.OnStringTrim(target, target.Trim(trimChars), trimChars, true, true);
+        if (trimChars != null && trimChars.Length > 0)
+        {
+            return StringModuleImpl.OnStringTrimArray(target, target.TrimStart(trimChars), trimChars, true, false);
+        }
+        else
+        {
+            return StringModuleImpl.OnStringTrim(target, target.TrimStart(trimChars), null, true, false);
+        }
     }
 
-#if NETSTANDARD
+#if !NETFRAMEWORK
     /// <summary>
     /// String.TrimStart aspect
     /// </summary>
@@ -89,7 +103,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::TrimStart()", AspectFilter.StringLiteral_0)]
     public static string TrimStart(string target)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimStart(), ' ', true, false);
+        return StringModuleImpl.OnStringTrim(target, target.TrimStart(), null, true, false);
     }
 #endif
 
@@ -102,10 +116,17 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::TrimEnd(System.Char[])", AspectFilter.StringLiteral_0)]
     public static string TrimEnd(string target, char[] trimChars)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChars), trimChars, true, false);
+        if (trimChars != null && trimChars.Length > 0)
+        {
+            return StringModuleImpl.OnStringTrimArray(target, target.TrimEnd(trimChars), trimChars, false, true);
+        }
+        else
+        {
+            return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChars), null, false, true);
+        }
     }
 
-#if NETSTANDARD
+#if !NETFRAMEWORK
     /// <summary>
     /// String.TrimEnd aspect
     /// </summary>
@@ -115,7 +136,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::TrimEnd(System.Char)", AspectFilter.StringLiteral_0)]
     public static string TrimEnd(string target, char trimChar)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChar), trimChar, true, false);
+        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChar), trimChar, false, true);
     }
 
     /// <summary>
@@ -126,7 +147,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::TrimEnd()", AspectFilter.StringLiteral_0)]
     public static string TrimEnd(string target)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(), ' ', true, false);
+        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(), null, false, true);
     }
 #endif
 

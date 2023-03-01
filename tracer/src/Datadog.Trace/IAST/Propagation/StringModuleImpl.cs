@@ -12,7 +12,6 @@ using System.Linq;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Iast.Propagation;
 
@@ -438,10 +437,10 @@ internal static class StringModuleImpl
     /// <summary> Mostly used overload </summary>
     /// <param name="self"> Param 1 </param>
     /// <param name="result"> Result </param>
-    /// <param name="trimChar"> the trim char </param>
+    /// <param name="trimChar"> the trim char, null for char.IsWhiteSpace(self[indexLeft]) </param>
     /// <param name="left"> Apply left trim </param>
     /// <param name="right"> Apply right trim </param>
-    public static string? OnStringTrim(string self, string result, char trimChar, bool left, bool right)
+    public static string? OnStringTrim(string self, string result, char? trimChar, bool left, bool right)
     {
         try
         {
@@ -462,7 +461,7 @@ internal static class StringModuleImpl
 
                 int indexLeft = 0;
 
-                while (self[indexLeft] == trimChar)
+                while (trimChar is null ? char.IsWhiteSpace(self[indexLeft]) : self[indexLeft] == trimChar)
                 {
                     indexLeft++;
                 }
@@ -484,7 +483,7 @@ internal static class StringModuleImpl
     /// <param name="trimChars"> the trim chars </param>
     /// <param name="left"> Apply left trim </param>
     /// <param name="right"> Apply right trim </param>
-    public static string OnStringTrim(string self, string result, char[] trimChars, bool left, bool right)
+    public static string OnStringTrimArray(string self, string result, char[] trimChars, bool left, bool right)
     {
         try
         {
