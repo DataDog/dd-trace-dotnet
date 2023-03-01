@@ -91,10 +91,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestTrimStartMethodsAspectCover()
     {
-        var overloadsToExclude = new List<string>() { };
-        var typesToExclude = new List<Type>() { };
-
-        TestMethodOverloads("System.String", "TrimStart", overloadsToExclude, typesToExclude);
+        TestMethodOverloads("System.String", "TrimStart", null, null);
     }
 
     [SkippableFact]
@@ -102,10 +99,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestTrimEndMethodsAspectCover()
     {
-        var overloadsToExclude = new List<string>() { };
-        var typesToExclude = new List<Type>() { };
-
-        TestMethodOverloads("System.String", "TrimEnd", overloadsToExclude, typesToExclude);
+        TestMethodOverloads("System.String", "TrimEnd", null, null);
     }
 
     [SkippableFact]
@@ -113,10 +107,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestTrimMethodsAspectCover()
     {
-        var overloadsToExclude = new List<string>() { };
-        var typesToExclude = new List<Type>() { };
-
-        TestMethodOverloads("System.String", "Trim", overloadsToExclude, typesToExclude);
+        TestMethodOverloads("System.String", "Trim", null, null);
     }
 
     [SkippableFact]
