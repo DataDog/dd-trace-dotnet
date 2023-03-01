@@ -73,20 +73,33 @@
     "SampleProjectName": "Samples.GraphQL4",
     "NugetPackageSearchName": "GraphQL",
     "MinVersion": "4.1.0",
-    "MaxVersionExclusive": "8.0.0",
+    "MaxVersionExclusive": "6.0.0",
     "SpecificVersions": [
       "4.1.*",
       "4.3.*",
       "4.*.*",
-      "5.*.*",
-      "7.*.*"
+      "5.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "5.0.0",
       "MaxVersionExclusive": "5.1.1",
       "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
     },{
-      "MaxVersionExclusive": "8.0.0",
+      "MaxVersionExclusive": "6.0.0",
+      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
+    }]
+  },
+  {
+    "IntegrationName": "GraphQL7",
+    "SampleProjectName": "Samples.GraphQL7",
+    "NugetPackageSearchName": "GraphQL",
+    "MinVersion": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
+    "SpecificVersions": [
+      "7.*.*"
+    ],
+    "VersionConditions": [{
+      "MaxVersionExclusive": "6.0.0",
       "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
     }]
   },
