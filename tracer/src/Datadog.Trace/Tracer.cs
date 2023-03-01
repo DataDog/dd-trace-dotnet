@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -15,9 +16,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Instrumentation;
 using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -35,6 +34,7 @@ namespace Datadog.Trace
     public class Tracer : ITracer, IDatadogTracer, IDatadogOpenTracingTracer
     {
         private static readonly object GlobalInstanceLock = new();
+        private static readonly Random Random = new(Seed: 666);
 
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
@@ -386,7 +386,9 @@ namespace Datadog.Trace
                 // if parent is not a SpanContext, it must be either a ReadOnlySpanContext or
                 // a user-defined ISpanContext implementation. we don't have a TraceContext,
                 // so create a new one (this will start a new trace).
-                traceContext = new TraceContext(this, tags: null);
+                var traceTagCollection = new TraceTagCollection(outgoingHeaderMaxLength: 20);
+                traceTagCollection.SetTag(Tags.HasDebugInfo, FlipACoin().ToString(CultureInfo.InvariantCulture));
+                traceContext = new TraceContext(this, traceTagCollection);
 
                 // in a version-mismatch scenario, try to get the sampling priority from the "other" tracer
                 var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
@@ -406,6 +408,11 @@ namespace Datadog.Trace
 
             var finalServiceName = serviceName ?? DefaultServiceName;
             return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+        }
+
+        internal bool FlipACoin()
+        {
+            return Random.Next(maxValue: 2) == 0;
         }
 
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)

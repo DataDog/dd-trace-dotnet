@@ -15,6 +15,7 @@ namespace Datadog.Trace.Debugger.Snapshots
     {
         public static string FormatMessage(Snapshot snapshot)
         {
+            AddVariablesToSpanAsTags(snapshot);
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
             sb.Append(FormatMethod(snapshot.Debugger.Snapshot.Stack, snapshot.Debugger.Snapshot.Probe.Location));
             sb.Append('(')
@@ -33,6 +34,30 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static void AddVariablesToSpanAsTags(Snapshot snapshot)
+        {
+            var variables = GetArguments(snapshot).Concat(GetLocals(snapshot));
+            foreach (var argument in variables)
+            {
+                AddVariableToSpan("debug.", argument);
+            }
+        }
+
+        private static void AddVariableToSpan(string prefix, CapturedValue argument)
+        {
+            if (argument.Fields != null)
+            {
+                foreach (var field in argument.Fields)
+                {
+                    AddVariableToSpan(prefix + argument.Name + ".", field);
+                }
+            }
+            else
+            {
+                Tracer.Instance.ActiveScope.Span.SetTag(prefix + argument.Name, argument.Value);
+            }
         }
 
         private static string FormatMethod(IReadOnlyList<StackInfo> frames, ProbeLocation probeLocation)
@@ -115,18 +140,18 @@ namespace Datadog.Trace.Debugger.Snapshots
             return results;
         }
 
-        private static CapturedValue[] GetArguments(Snapshot snapshot)
+        internal static CapturedValue[] GetArguments(Snapshot snapshot)
         {
             return snapshot.Debugger.Snapshot.Captures.Entry?.Arguments ??
                    snapshot.Debugger.Snapshot.Captures.Lines?.Captured?.Arguments;
         }
 
-        private static string GetReturnValue(Snapshot snapshot)
+        internal static string GetReturnValue(Snapshot snapshot)
         {
             return snapshot.Debugger.Snapshot.Captures.Return?.Locals?.FirstOrDefault(local => local.Name == "@return")?.Value;
         }
 
-        private static CapturedValue[] GetLocals(Snapshot snapshot)
+        internal static CapturedValue[] GetLocals(Snapshot snapshot)
         {
             return GetLastCapture(snapshot)?.Locals;
         }

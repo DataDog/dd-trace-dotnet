@@ -104,14 +104,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         internal bool Sample()
         {
-            _countsRef.AddTest();
-
-            if (NextDouble() < _probability)
-            {
-                return _countsRef.AddSample(_samplesBudget);
-            }
-
-            return false;
+            return Tracer.Instance.ActiveScope.Span.Context is SpanContext context && context.TraceContext?.Tags.GetTag(Tags.HasDebugInfo) == bool.TrueString;
         }
 
         internal bool Keep()

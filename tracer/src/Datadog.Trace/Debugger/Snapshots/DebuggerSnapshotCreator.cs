@@ -850,7 +850,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public DebuggerSnapshotCreator AddMessage()
         {
-            _message ??= GenerateDefaultMessage();
+            var fff = GenerateDefaultMessage();
             _jsonWriter.WritePropertyName("message");
             _jsonWriter.WriteValue(_message);
             return this;
