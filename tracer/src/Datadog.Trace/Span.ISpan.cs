@@ -60,6 +60,9 @@ namespace Datadog.Trace
         ISpanContext ISpan.Context => Context;
 
         /// <inheritdoc />
+        object ISpan.Activity => Activity;
+
+        /// <inheritdoc />
         ISpan ISpan.SetTag(string key, string value) => SetTag(key, value);
 
         /// <inheritdoc />

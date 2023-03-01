@@ -91,6 +91,11 @@ namespace Datadog.Trace
         internal ulong SpanId => Context.SpanId;
 
         /// <summary>
+        /// Gets or sets the span's Activity (if available)
+        /// </summary>
+        internal object Activity { get; set; }
+
+        /// <summary>
         /// Gets <i>local root span id</i>, i.e. the <c>SpanId</c> of the span that is the root of the local, non-reentrant
         /// sub-operation of the distributed operation that is represented by the trace that contains this span.
         /// </summary>

@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Diagnostics;
+using Datadog.Trace;
 
 namespace Datadog.DiagnosticSource
 {
@@ -14,9 +15,22 @@ namespace Datadog.DiagnosticSource
     public static class Tracer
     {
         /// <summary>
+        /// Gets the current IDatadogActivity
+        /// </summary>
+        public static IDatadogActivity? ActiveScope => CreateDatadogActivity(CurrentDatadogActivity);
+
+        /// <summary>
         /// Gets the current Activity.
         /// When automatic instrumentation is enabled, this may be an Activity coming from the automatic instrumentation.
         /// </summary>
-        public static Activity? ActiveScope => Activity.Current;
+        internal static object? CurrentDatadogActivity => Activity.Current;
+
+        internal static IDatadogActivity? CreateDatadogActivity(object? input) =>
+            input switch
+            {
+                Activity activity => new DatadogActivityWrapper(activity),
+                ISpan span => new SpanActivity(span),
+                _ => null
+            };
     }
 }

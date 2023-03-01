@@ -9,7 +9,7 @@ namespace Samples.Datadog.DiagnosticSource // Note: actual namespace depends on 
     {
         private static ActivitySource _source;
 
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             _source = new ActivitySource("Samples.Datadog.DiagnosticSource");
 
@@ -41,18 +41,22 @@ namespace Samples.Datadog.DiagnosticSource // Note: actual namespace depends on 
                 setUserActivity.SetUser("12345");
             }
 
-
-
             // Set an exception on the Activity (no-rejit needed)
             using (var exceptionActivity = _source.StartActivity("ExceptionActivity"))
             {
                 exceptionActivity.SetException(new ArgumentNullException("parameterName"));
+                var innerSpan = Tracer.ActiveScope;
+                innerSpan.SetTag("some-key", "some-value");
             }
 
+            // Start a Datadog Span as if it was created with automatic instrumentation
+            using var scope = SampleHelpers.CreateScope("ExampleAutomaticSpan");
 
             // Get the currently active Span as an Activity - needs rejit to convert Span to Activity
-            var activeSpan = ActivityExtensions.GetCurrentlyActiveActivity();
-
+            var activeSpan = Tracer.ActiveScope;
+            activeSpan?.Start();
+            activeSpan?.Stop();
+            activeSpan?.SetTag("some-value", "some-object");
         }
 
         private static void PrintActivityStoppedInfo(Activity activity)
