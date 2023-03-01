@@ -1,5 +1,5 @@
 # We used a fixed, older version of debian for linking reasons
-FROM mcr.microsoft.com/dotnet/runtime-deps:5.0-buster-slim as base
+FROM mcr.microsoft.com/dotnet/runtime-deps:7.0.3-bullseye-slim-amd64 as base
 ARG DOTNETSDK_VERSION
 
 # Based on https://github.com/dotnet/dotnet-docker/blob/34c81d5f9c8d56b36cc89da61702ccecbf00f249/src/sdk/6.0/bullseye-slim/amd64/Dockerfile

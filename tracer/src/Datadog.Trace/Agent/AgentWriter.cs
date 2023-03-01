@@ -4,8 +4,13 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
@@ -13,6 +18,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
@@ -111,6 +117,9 @@ namespace Datadog.Trace.Agent
         internal SpanBuffer BackBuffer => _backBuffer;
 
         public bool CanComputeStats => _statsAggregator?.CanComputeStats == true;
+
+        [DllImport("libserverless.so", EntryPoint="send_trace")]
+        private static extern void SendTrace(string string_field);
 
         public Task<bool> Ping()
         {
@@ -452,6 +461,48 @@ namespace Datadog.Trace.Agent
                     rootSpan.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
                 }
             }
+
+            // pub struct Span {
+            //     service: Option<String>,
+            //     name: String,
+            //     resource: String,
+            //     trace_id: u64,
+            //     span_id: u64,
+            //     parent_id: Option<u64>,
+            //     start: i64,
+            //     duration: i64,
+            //     error: i32,
+            // }
+
+            var arrList = new ArrayList();
+
+            for (var i = 0; i < spans.Count; i++)
+            {
+                var index = i + spans.Offset;
+                var cur = spans.Array![index];
+                SpanMutated sm = new SpanMutated
+                {
+                    Service = cur.Context.ServiceName,
+                    Name = cur.OperationName,
+                    Resource = cur.ResourceName,
+                    Trace_id = cur.TraceId,
+                    Span_id = cur.SpanId,
+                    Parent_id = cur.Context.ParentId ?? 0,
+                    Start = cur.StartTime.ToUnixTimeMilliseconds(),
+                    Duration = cur.Duration.Milliseconds,
+                    Error = 0
+                };
+                arrList.Add(sm);
+            }
+
+            var data = JsonConvert.SerializeObject(arrList);
+            Console.WriteLine("json converted arrlist of SpanMutated");
+            Console.WriteLine(data);
+
+            Console.WriteLine("what directory are we in?");
+            Console.WriteLine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+
+            SendTrace(data.ToLower());
 
             // We use a double-buffering mechanism
             // This allows the serialization thread to keep doing its job while a buffer is being flushed

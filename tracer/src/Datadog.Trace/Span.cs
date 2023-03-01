@@ -11,6 +11,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace
@@ -52,11 +53,13 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets operation name
         /// </summary>
+        [JsonProperty]
         internal string OperationName { get; set; }
 
         /// <summary>
         /// Gets or sets the resource name
         /// </summary>
+        [JsonProperty]
         internal string ResourceName { get; set; }
 
         /// <summary>
@@ -64,6 +67,7 @@ namespace Datadog.Trace
         /// Not to be confused with span kind.
         /// </summary>
         /// <seealso cref="SpanTypes"/>
+        [JsonProperty]
         internal string Type { get; set; }
 
         /// <summary>
@@ -74,6 +78,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets the service name.
         /// </summary>
+        [JsonProperty]
         internal string ServiceName
         {
             get => Context.ServiceName;
@@ -83,11 +88,13 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the trace's unique identifier.
         /// </summary>
+        [JsonProperty]
         internal ulong TraceId => Context.TraceId;
 
         /// <summary>
         /// Gets the span's unique identifier.
         /// </summary>
+        [JsonProperty]
         internal ulong SpanId => Context.SpanId;
 
         /// <summary>
@@ -99,14 +106,18 @@ namespace Datadog.Trace
         /// <para>A distributed operation represented by a trace may be re-entrant (e.g. service-A calls service-B, which calls service-A again).
         /// In such cases, the local process may be concurrently executing multiple local root spans.
         /// This API returns the id of the root span of the non-reentrant trace sub-set.</para></remarks>
+        [JsonProperty]
         internal ulong RootSpanId => Context.TraceContext?.RootSpan?.SpanId ?? SpanId;
 
+        [JsonProperty]
         internal ITags Tags { get; set; }
 
         internal SpanContext Context { get; }
 
+        [JsonProperty]
         internal DateTimeOffset StartTime { get; private set; }
 
+        [JsonProperty]
         internal TimeSpan Duration { get; private set; }
 
         internal bool IsFinished { get; private set; }
