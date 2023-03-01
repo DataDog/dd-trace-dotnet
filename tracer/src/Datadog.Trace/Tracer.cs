@@ -68,10 +68,9 @@ namespace Datadog.Trace
         /// A <see cref="TracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources. This is used to configure global settings
         /// </param>
-        [Obsolete(
-            "This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
-            "If you were using this API to configure the global Tracer.Instance in code, use the static "
-          + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
+        [Obsolete("This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
+                  "If you were using this API to configure the global Tracer.Instance in code, use the static "
+                + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
         public Tracer(TracerSettings settings)
         {
             // TODO: Switch to immutable settings
@@ -88,7 +87,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null))
         {
         }
 
@@ -153,9 +152,8 @@ namespace Datadog.Trace
             }
 
             // TODO: Make this API internal
-            [Obsolete(
-                "Use " + nameof(Tracer) + "." + nameof(Configure) + " to configure the global Tracer" +
-                " instance in code.")]
+            [Obsolete("Use " + nameof(Tracer) + "." + nameof(Configure) + " to configure the global Tracer" +
+                      " instance in code.")]
             set
             {
                 if (value is null)
@@ -183,7 +181,13 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        public IScope ActiveScope => DistributedTracer.Instance.GetActiveScope() ?? InternalActiveScope;
+        public IScope ActiveScope
+        {
+            get
+            {
+                return DistributedTracer.Instance.GetActiveScope() ?? InternalActiveScope;
+            }
+        }
 
         /// <summary>
         /// Gets the active span context dictionary by consulting DistributedTracer.Instance
@@ -264,16 +268,10 @@ namespace Datadog.Trace
         }
 
         /// <inheritdoc cref="ITracer" />
-        IScope ITracer.StartActive(string operationName)
-        {
-            return StartActive(operationName);
-        }
+        IScope ITracer.StartActive(string operationName) => StartActive(operationName);
 
         /// <inheritdoc cref="ITracer" />
-        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings)
-        {
-            return StartActive(operationName, settings);
-        }
+        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings) => StartActive(operationName, settings);
 
         /// <summary>
         /// This creates a new span with the given parameters and makes it active.
@@ -331,10 +329,7 @@ namespace Datadog.Trace
         /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
         /// </summary>
         /// <returns>Task used to track the async flush operation</returns>
-        public Task ForceFlushAsync()
-        {
-            return FlushAsync();
-        }
+        public Task ForceFlushAsync() => FlushAsync();
 
         /// <summary>
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
@@ -406,13 +401,13 @@ namespace Datadog.Trace
                     {
                         // If there's an existing activity we use the same traceId (converted).
                         rawTraceId = w3CActivity.TraceId;
-                        traceId = Convert.ToUInt64(w3CActivity.TraceId.Substring(startIndex: 16), fromBase: 16);
+                        traceId = Convert.ToUInt64(w3CActivity.TraceId.Substring(16), 16);
                     }
                 }
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
-            return new SpanContext(parent, traceContext, finalServiceName, traceId, spanId, rawTraceId, rawSpanId);
+            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
         }
 
         internal bool FlipACoin()
@@ -430,7 +425,10 @@ namespace Datadog.Trace
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 
-            var span = new Span(spanContext, startTime, tags) { OperationName = operationName };
+            var span = new Span(spanContext, startTime, tags)
+            {
+                OperationName = operationName,
+            };
 
             try
             {
@@ -498,8 +496,8 @@ namespace Datadog.Trace
             var stackFrames = new System.Diagnostics.StackTrace();
 
             var encounteredUserCode = false;
-            MethodBase firstNonUserCodeMethod = null;
-            MethodBase firstUserCodeMethod = null;
+            System.Reflection.MethodBase firstNonUserCodeMethod = null;
+            System.Reflection.MethodBase firstUserCodeMethod = null;
 
             foreach (var frame in stackFrames.GetFrames()!)
             {
@@ -559,11 +557,11 @@ namespace Datadog.Trace
             var nonUserMethodFullName = nonUserMdMethod.FullName;
 
             var callsToInstrument = userMdMethod.Body.Instructions.Where(
-                instruction => instruction.OpCode.FlowControl == FlowControl.Call &&
-                               ((instruction.Operand as IMethod != null &&
-                                 (instruction.Operand as IMethod)!.FullName == nonUserMethodFullName) ||
-                                (((IMethod)instruction.Operand).DeclaringType.FullName == nonUserMethod.DeclaringType.BaseType.FullName &&
-                                 ((IMethod)instruction.Operand).Name == nonUserMethod.Name)));
+                                     instruction => instruction.OpCode.FlowControl == FlowControl.Call &&
+                                                    (((instruction.Operand as IMethod) != null &&
+                                                    ((instruction.Operand as IMethod)!).FullName == nonUserMethodFullName) ||
+                                                    (((IMethod)instruction.Operand).DeclaringType.FullName == nonUserMethod.DeclaringType.BaseType.FullName &&
+                                                     ((IMethod)instruction.Operand).Name == nonUserMethod.Name)));
 
             var calls = callsToInstrument as Instruction[] ?? callsToInstrument.ToArray();
             if (!calls.Any())
@@ -572,7 +570,7 @@ namespace Datadog.Trace
                 return;
             }
 
-            var userSymbolMethod = Pdb.DatadogPdbReader.CreatePdbReader(userMethod.Module.Assembly).ReadMethodSymbolInfo((int)userMethod.MetadataToken);
+            var userSymbolMethod = Datadog.Trace.Pdb.DatadogPdbReader.CreatePdbReader(userMethod.Module.Assembly).ReadMethodSymbolInfo((int)(userMethod.MetadataToken));
 
             var lineProbes = calls.Select(call => CreateLineProbe(call, userMethod, userSymbolMethod)).ToArray();
 
@@ -583,17 +581,9 @@ namespace Datadog.Trace
                 var json = @"{
     ""Ignore"": ""1""
 }";
-                var segments = new SnapshotSegment[] { new(dsl: null, json: null, templateStr), new("1", json, str: null) };
+                var segments = new SnapshotSegment[] { new(null, null, templateStr), new("1", json, null) };
 
-                ProbeExpressionsProcessor.Instance.AddProbeProcessor(
-                    new LogProbe
-                    {
-                        CaptureSnapshot = true,
-                        Id = probe.ProbeId,
-                        Where = new Where(),
-                        Template = template,
-                        Segments = segments
-                    });
+                ProbeExpressionsProcessor.Instance.AddProbeProcessor(new LogProbe { CaptureSnapshot = true, Id = probe.ProbeId, Where = new Where(), Template = template, Segments = segments });
             }
 
             var chosenProbe = lineProbes.First();
@@ -610,7 +600,7 @@ namespace Datadog.Trace
         private static NativeLineProbeDefinition CreateLineProbe(Instruction callInstruction, MethodBase userMethod, SymbolMethod userSymbolMethod)
         {
             var closestSequencePoint = userSymbolMethod.SequencePoints.Reverse().First(sp => sp.Offset <= callInstruction.Offset);
-            return new NativeLineProbeDefinition($"SpanOrigin_ExitSpan_{closestSequencePoint.Document.URL}_{closestSequencePoint.Line}", userMethod.Module.ModuleVersionId, userMethod.MetadataToken, (int)closestSequencePoint.Offset, closestSequencePoint.Line, closestSequencePoint.Document.URL);
+            return new NativeLineProbeDefinition($"SpanOrigin_ExitSpan_{closestSequencePoint.Document.URL}_{closestSequencePoint.Line}", userMethod.Module.ModuleVersionId, userMethod.MetadataToken, (int)(closestSequencePoint.Offset), closestSequencePoint.Line, closestSequencePoint.Document.URL);
         }
     }
 }
