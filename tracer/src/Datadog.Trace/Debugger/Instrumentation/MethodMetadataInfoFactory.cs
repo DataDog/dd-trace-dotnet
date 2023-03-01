@@ -55,9 +55,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             if (userSymbolMethod != null && userSymbolMethod.SequencePoints != null && userSymbolMethod.SequencePoints.Any())
             {
-                filePath = userSymbolMethod.SequencePoints.First().Document.URL;
-                methodBeginLineNumber = userSymbolMethod.SequencePoints.First().Line.ToString();
-                methodEndLineNumber = userSymbolMethod.SequencePoints.Last().Line.ToString();
+                const int hiddenSequencePoint = 0x00feefee;
+                filePath = userSymbolMethod.SequencePoints.First(sp => sp.Line != hiddenSequencePoint).Document.URL;
+                methodBeginLineNumber = userSymbolMethod.SequencePoints.First(sp => sp.Line != hiddenSequencePoint).Line.ToString();
+                methodEndLineNumber = userSymbolMethod.SequencePoints.Last(sp => sp.Line != hiddenSequencePoint).Line.ToString();
             }
 
             return Tuple.Create(filePath, methodBeginLineNumber, methodEndLineNumber);

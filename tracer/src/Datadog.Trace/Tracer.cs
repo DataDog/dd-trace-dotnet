@@ -585,11 +585,12 @@ namespace Datadog.Trace
                 ProbeExpressionsProcessor.Instance.AddProbeProcessor(new LogProbe { CaptureSnapshot = true, Id = probe.ProbeId, Where = new Where(), Template = template, Segments = segments, Sampling = new Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 } });
             }
 
+            const int hiddenSequencePoint = 0x00feefee;
             var chosenProbe = lineProbes.First();
             span.Tags.SetTag("source.file_path", chosenProbe.ProbeFilePath);
             span.Tags.SetTag("source.line_number", chosenProbe.LineNumber.ToString());
-            span.Tags.SetTag("source.method_begin_line_number", userSymbolMethod.SequencePoints.First().Line.ToString());
-            span.Tags.SetTag("source.method_end_line_number", userSymbolMethod.SequencePoints.Last().Line.ToString());
+            span.Tags.SetTag("source.method_begin_line_number", userSymbolMethod.SequencePoints.First(sp => sp.Line != hiddenSequencePoint).Line.ToString());
+            span.Tags.SetTag("source.method_end_line_number", userSymbolMethod.SequencePoints.Last(sp => sp.Line != hiddenSequencePoint).Line.ToString());
 
             // Add probes
             DebuggerNativeMethods.InstrumentProbes(
