@@ -32,7 +32,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var waf = initResult.Waf;
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
-            var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
+            var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
             waf!.Should().NotBeNull();
             var res = waf!.UpdateRulesData(rulesData!);
             res.Should().BeTrue();
@@ -54,13 +54,25 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestMergeWithoutWaf()
         {
             var result = Waf.MergeRuleData(
-                new RuleData[] { new() { Id = "id1", Type = "type1", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id3", Type = "type3", Data = new[] { new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 30, Value = "1" }, new Data { Expiration = 30, Value = "2" }, new Data { Expiration = 30, Value = "3" } } } });
+                new RuleData[]
+                {
+                    new() { Id = "id1", Type = "type1", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" } } },
+                    new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 10, Value = "3" } } },
+                    new() { Id = "id3", Type = "type3", Data = new[] { new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" } } },
+                    new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 30, Value = "1" }, new Data { Expiration = 30, Value = "2" }, new Data { Expiration = 30, Value = "3" } } }
+                });
 
             result.Should().NotBeEmpty();
-            result.Should().ContainItemsAssignableTo<IDictionary<string, object>>();
+            result.Should().ContainItemsAssignableTo<RuleData>();
             result.Should().HaveCount(3);
 
-            var expectedResult = new List<object> { new Dictionary<string, object> { { "id", "id1" }, { "type", "type1" }, { "data", new List<object> { new Dictionary<string, object> { { "expiration", 10L }, { "value", "1" } }, new Dictionary<string, object> { { "expiration", 10L }, { "value", "2" } }, new Dictionary<string, object> { { "expiration", 10L }, { "value", "3" } }, } } }, new Dictionary<string, object> { { "id", "id2" }, { "type", "type2" }, { "data", new List<object> { new Dictionary<string, object> { { "expiration", 30L }, { "value", "1" } }, new Dictionary<string, object?> { { "value", "2" } }, new Dictionary<string, object> { { "expiration", 30L }, { "value", "3" } }, } } }, new Dictionary<string, object> { { "id", "id3" }, { "type", "type3" }, { "data", new List<object> { new Dictionary<string, object> { { "expiration", 55L }, { "value", "1" } }, new Dictionary<string, object> { { "expiration", 55L }, { "value", "2" } }, new Dictionary<string, object> { { "expiration", 10L }, { "value", "3" } }, } } } };
+            var expectedResult = new RuleData[]
+            {
+                new() { Id = "id1", Type = "type1", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" } } },
+                new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 30, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 30, Value = "3" } } },
+                new() { Id = "id3", Type = "type3", Data = new[] { new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }
+            };
+
             result.Should().BeEquivalentTo(expectedResult);
         }
 
@@ -75,9 +87,9 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var sr2 = new StreamReader("rule-data2.json");
             using var jsonTextReader = new JsonTextReader(sr);
             using var jsonTextReader2 = new JsonTextReader(sr2);
-            var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
-            var rulesData2 = js.Deserialize<RuleData[]>(jsonTextReader2);
-            var res = waf!.UpdateRulesData(rulesData!.Concat(rulesData2!));
+            var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
+            var rulesData2 = js.Deserialize<List<RuleData>>(jsonTextReader2);
+            var res = waf!.UpdateRulesData(rulesData!.Concat(rulesData2!).ToList());
             res.Should().BeTrue();
             using var context = waf.CreateContext();
             var result = context!.Run(

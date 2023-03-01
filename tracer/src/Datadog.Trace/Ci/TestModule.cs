@@ -42,7 +42,7 @@ public sealed class TestModule
     internal TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate, TestSessionSpanTags? sessionSpanTags)
     {
         // First we make sure that CI Visibility is initialized.
-        CIVisibility.Initialize();
+        CIVisibility.InitializeFromManualInstrumentation();
 
         var environment = CIEnvironmentValues.Instance;
         var frameworkDescription = FrameworkDescription.Instance;

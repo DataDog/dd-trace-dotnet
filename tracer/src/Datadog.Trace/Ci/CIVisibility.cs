@@ -25,19 +25,24 @@ namespace Datadog.Trace.Ci
 {
     internal class CIVisibility
     {
-        private static readonly Lazy<bool> _enabledLazy = new(InternalEnabled, true);
-        private static CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
+        private static readonly Lazy<bool> EnabledLazy = new(InternalEnabled, true);
+
+        private static CIVisibilitySettings? _settings;
         private static int _firstInitialization = 1;
         private static Task? _skippableTestsTask;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
-        public static bool Enabled => _enabledLazy.Value;
+        public static bool Enabled => EnabledLazy.Value;
 
         public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
 
-        public static CIVisibilitySettings Settings => _settings;
+        public static CIVisibilitySettings Settings
+        {
+            get => LazyInitializer.EnsureInitialized(ref _settings, () => CIVisibilitySettings.FromDefaultSources())!;
+            private set => _settings = value;
+        }
 
         public static CITracerManager? Manager
         {
@@ -56,21 +61,22 @@ namespace Datadog.Trace.Ci
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
-                // Initialize() or InitializeFromRunner() was already called before
+                // Initialize() or InitializeFromRunner() or InitializeFromManualInstrumentation() was already called before
                 return;
             }
 
             Log.Information("Initializing CI Visibility");
+            var settings = Settings;
 
             // In case we are running using the agent, check if the event platform proxy is supported.
             IDiscoveryService discoveryService = NullDiscoveryService.Instance;
             var eventPlatformProxyEnabled = false;
-            if (!_settings.Agentless)
+            if (!settings.Agentless)
             {
-                if (!_settings.ForceAgentsEvpProxy)
+                if (!settings.ForceAgentsEvpProxy)
                 {
                     discoveryService = DiscoveryService.Create(
-                        new ImmutableExporterSettings(_settings.TracerSettings.Exporter),
+                        new ImmutableExporterSettings(settings.TracerSettings.Exporter),
                         tcpTimeout: TimeSpan.FromSeconds(5),
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
@@ -81,74 +87,9 @@ namespace Datadog.Trace.Ci
                     Log.Information("Using the Event platform proxy through the agent.");
                 }
 
-                eventPlatformProxyEnabled = _settings.ForceAgentsEvpProxy || IsEventPlatformProxySupportedByAgent(discoveryService);
+                eventPlatformProxyEnabled = settings.ForceAgentsEvpProxy || IsEventPlatformProxySupportedByAgent(discoveryService);
             }
 
-            LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
-
-            var tracerSettings = _settings.TracerSettings;
-
-            // Set the service name if empty
-            Log.Debug("Setting up the service name");
-            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-            }
-
-            // Normalize the service name
-            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
-
-            // Initialize Tracer
-            Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings, discoveryService, eventPlatformProxyEnabled));
-            _ = Tracer.Instance;
-
-            // Initialize FrameworkDescription
-            _ = FrameworkDescription.Instance;
-
-            // Initialize CIEnvironment
-            _ = CIEnvironmentValues.Instance;
-
-            // If we are running in agentless mode or the agent support the event platform proxy endpoint.
-            // We can use the intelligent test runner
-            if (_settings.Agentless || eventPlatformProxyEnabled)
-            {
-                // Intelligent Test Runner or GitUploadEnabled
-                if (_settings.IntelligentTestRunnerEnabled)
-                {
-                    Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
-                    _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
-                    LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
-                }
-                else if (_settings.GitUploadEnabled != false)
-                {
-                    // Update and upload git tree metadata.
-                    Log.Information("ITR: Update and uploading git tree metadata.");
-                    var tskItrUpdate = UploadGitMetadataAsync();
-                    LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
-                }
-            }
-            else if (_settings.IntelligentTestRunnerEnabled)
-            {
-                Log.Warning("ITR: Intelligent test runner cannot be activated. Agent doesn't support the event platform proxy endpoint.");
-            }
-            else if (_settings.GitUploadEnabled != false)
-            {
-                Log.Warning("ITR: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
-            }
-        }
-
-        internal static void InitializeFromRunner(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled)
-        {
-            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
-            {
-                // Initialize() or InitializeFromRunner() was already called before
-                return;
-            }
-
-            Log.Information("Initializing CI Visibility from dd-trace / runner");
-            _settings = settings;
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
@@ -166,7 +107,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings, discoveryService, eventPlatformProxyEnabled));
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -174,6 +115,82 @@ namespace Datadog.Trace.Ci
 
             // Initialize CIEnvironment
             _ = CIEnvironmentValues.Instance;
+
+            // If we are running in agentless mode or the agent support the event platform proxy endpoint.
+            // We can use the intelligent test runner
+            if (settings.Agentless || eventPlatformProxyEnabled)
+            {
+                // Intelligent Test Runner or GitUploadEnabled
+                if (settings.IntelligentTestRunnerEnabled)
+                {
+                    Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
+                    _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
+                    LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
+                }
+                else if (settings.GitUploadEnabled != false)
+                {
+                    // Update and upload git tree metadata.
+                    Log.Information("ITR: Update and uploading git tree metadata.");
+                    var tskItrUpdate = UploadGitMetadataAsync();
+                    LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+                }
+            }
+            else if (settings.IntelligentTestRunnerEnabled)
+            {
+                Log.Warning("ITR: Intelligent test runner cannot be activated. Agent doesn't support the event platform proxy endpoint.");
+            }
+            else if (settings.GitUploadEnabled != false)
+            {
+                Log.Warning("ITR: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
+            }
+        }
+
+        internal static void InitializeFromRunner(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled)
+        {
+            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
+            {
+                // Initialize() or InitializeFromRunner() was already called before
+                return;
+            }
+
+            Log.Information("Initializing CI Visibility from dd-trace / runner");
+            Settings = settings;
+            LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
+
+            var tracerSettings = settings.TracerSettings;
+
+            // Set the service name if empty
+            Log.Debug("Setting up the service name");
+            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
+            {
+                // Extract repository name from the git url and use it as a default service name.
+                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+            }
+
+            // Normalize the service name
+            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
+
+            // Initialize Tracer
+            Log.Information("Initialize Test Tracer instance");
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled));
+            _ = Tracer.Instance;
+
+            // Initialize FrameworkDescription
+            _ = FrameworkDescription.Instance;
+
+            // Initialize CIEnvironment
+            _ = CIEnvironmentValues.Instance;
+        }
+
+        internal static void InitializeFromManualInstrumentation()
+        {
+            if (!IsRunning)
+            {
+                // If we are using only the Public API without auto-instrumentation (TestSession/TestModule/TestSuite/Test classes only)
+                // then we can disable both GitUpload and Intelligent Test Runner feature (only used by our integration).
+                Settings.SetDefaultManualInstrumentationSettings();
+                Initialize();
+            }
         }
 
         internal static void Flush()
@@ -208,7 +225,7 @@ namespace Datadog.Trace.Ci
                 // So the last spans in buffer aren't send to the agent.
                 Log.Debug("Integration flushing spans.");
 
-                if (_settings.Logs)
+                if (Settings.Logs)
                 {
                     await Task.WhenAll(
                         Tracer.Instance.FlushAsync(),
@@ -318,21 +335,22 @@ namespace Datadog.Trace.Ci
             return GetRequestFactory(settings, TimeSpan.FromSeconds(15));
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings, TimeSpan timeout)
+        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings tracerSettings, TimeSpan timeout)
         {
             IApiRequestFactory? factory = null;
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            factory = new HttpClientRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+            factory = new HttpClientRequestFactory(tracerSettings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #else
             Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+            factory = new ApiWebRequestFactory(tracerSettings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #endif
 
-            if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
+            var settings = Settings;
+            if (!string.IsNullOrWhiteSpace(settings.ProxyHttps))
             {
-                var proxyHttpsUriBuilder = new UriBuilder(_settings.ProxyHttps);
+                var proxyHttpsUriBuilder = new UriBuilder(settings.ProxyHttps);
 
                 var userName = proxyHttpsUriBuilder.UserName;
                 var password = proxyHttpsUriBuilder.Password;
@@ -354,7 +372,7 @@ namespace Datadog.Trace.Ci
                 }
 
                 Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
-                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, _settings.ProxyNoProxy, credential), credential);
+                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, settings.ProxyNoProxy, credential), credential);
             }
 
             return factory;
@@ -425,7 +443,7 @@ namespace Datadog.Trace.Ci
             }
 
             // By configuration
-            if (_settings.Enabled)
+            if (Settings.Enabled)
             {
                 // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
                 if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
@@ -478,7 +496,7 @@ namespace Datadog.Trace.Ci
         {
             try
             {
-                var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+                var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, Settings);
                 await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -491,39 +509,40 @@ namespace Datadog.Trace.Ci
         {
             try
             {
-                var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, _settings));
+                var settings = Settings;
+                var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, settings));
 
                 Task? uploadRepositoryChangesTask = null;
-                if (_settings.GitUploadEnabled != false)
+                if (settings.GitUploadEnabled != false)
                 {
                     // Upload the git metadata
                     uploadRepositoryChangesTask = Task.Run(() => lazyItrClient.Value.UploadRepositoryChangesAsync());
                 }
 
-                if (!_settings.Agentless || !string.IsNullOrEmpty(_settings.ApplicationKey))
+                if (!settings.Agentless || !string.IsNullOrEmpty(settings.ApplicationKey))
                 {
                     // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
                     // We query the settings api for those
-                    if (_settings.CodeCoverageEnabled == null || _settings.TestsSkippingEnabled == null)
+                    if (settings.CodeCoverageEnabled == null || settings.TestsSkippingEnabled == null)
                     {
-                        var settings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
+                        var itrSettings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
 
-                        if (_settings.CodeCoverageEnabled == null && settings.CodeCoverage.HasValue)
+                        if (settings.CodeCoverageEnabled == null && itrSettings.CodeCoverage.HasValue)
                         {
-                            Log.Information("ITR: Code Coverage has been changed to {Value} by settings api.", settings.CodeCoverage.Value);
-                            _settings.SetCodeCoverageEnabled(settings.CodeCoverage.Value);
+                            Log.Information("ITR: Code Coverage has been changed to {Value} by settings api.", itrSettings.CodeCoverage.Value);
+                            settings.SetCodeCoverageEnabled(itrSettings.CodeCoverage.Value);
                         }
 
-                        if (_settings.TestsSkippingEnabled == null && settings.TestsSkipping.HasValue)
+                        if (settings.TestsSkippingEnabled == null && itrSettings.TestsSkipping.HasValue)
                         {
-                            Log.Information("ITR: Tests Skipping has been changed to {Value} by settings api.", settings.TestsSkipping.Value);
-                            _settings.SetTestsSkippingEnabled(settings.TestsSkipping.Value);
+                            Log.Information("ITR: Tests Skipping has been changed to {Value} by settings api.", itrSettings.TestsSkipping.Value);
+                            settings.SetTestsSkippingEnabled(itrSettings.TestsSkipping.Value);
                         }
                     }
                 }
 
                 // Log code coverage status
-                Log.Information("{V}", _settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
+                Log.Information("{V}", settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
 
                 // For ITR we need the git metadata upload before consulting the skippable tests.
                 // If ITR is disable we just need to make sure the git upload task has completed before leaving this method.
@@ -533,7 +552,7 @@ namespace Datadog.Trace.Ci
                 }
 
                 // If the tests skipping feature is enabled we query the api for the tests we have to skip
-                if (_settings.TestsSkippingEnabled == true)
+                if (settings.TestsSkippingEnabled == true)
                 {
                     var skippeableTests = await lazyItrClient.Value.GetSkippableTestsAsync().ConfigureAwait(false);
                     Log.Information<int>("ITR: SkippableTests = {Length}.", skippeableTests.Length);

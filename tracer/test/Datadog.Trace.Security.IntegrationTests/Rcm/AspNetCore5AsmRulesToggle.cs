@@ -37,21 +37,26 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var settings = VerifyHelper.GetSpanVerifierSettings();
             var ruleId = "crs-942-290";
 
-            var spans1 = await SendRequestsAsync(agent, url);
+            var spans0 = await SendRequestsAsync(agent, url);
             var acknowledgedId = nameof(TestRulesToggling);
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload() { RuleStatus = new[] { new RuleStatus { Id = ruleId, Enabled = false } } }, acknowledgedId) }, ASMProduct, appliedServiceNames: new[] { acknowledgedId });
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = false } } }, acknowledgedId) }, ASMProduct, appliedServiceNames: new[] { acknowledgedId });
             CheckAckState(request1, ASMProduct, ApplyStates.ACKNOWLEDGED, null, "First RCM call");
 
-            var spans2 = await SendRequestsAsync(agent, url);
+            var spans1 = await SendRequestsAsync(agent, url);
+
             var acknowledgedId2 = nameof(TestRulesToggling) + 2;
-
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload() { RuleStatus = new[] { new RuleStatus { Id = ruleId, Enabled = true } } }, acknowledgedId2) }, ASMProduct, appliedServiceNames: new[] { acknowledgedId2 });
+            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, acknowledgedId2) }, ASMProduct, appliedServiceNames: new[] { acknowledgedId2 });
             CheckAckState(request2, ASMProduct, ApplyStates.ACKNOWLEDGED, null, "Second RCM call");
+            var spans2 = await SendRequestsAsync(agent, url);
 
+            var acknowledgedId3 = nameof(TestRulesToggling) + 3;
+            var request3 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true, OnMatch = new[] { "block" } } } }, acknowledgedId3) }, ASMProduct, appliedServiceNames: new[] { acknowledgedId3 });
+            CheckAckState(request3, ASMProduct, ApplyStates.ACKNOWLEDGED, null, "Third RCM call");
             var spans3 = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();
+            spans.AddRange(spans0);
             spans.AddRange(spans1);
             spans.AddRange(spans2);
             spans.AddRange(spans3);

@@ -4,6 +4,9 @@
 // </copyright>
 
 #nullable enable
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Datadog.Trace.AppSec.RcmModels.AsmData;
 
 internal class RuleData
@@ -13,4 +16,6 @@ internal class RuleData
     public string? Id { get; set; }
 
     public Data[]? Data { get; set; }
+
+    public List<KeyValuePair<string, object?>> ToKeyValuePair() => new() { new("type", Type), new("id", Id), new("data", Data?.Select(d => d.ToKeyValuePair()).ToArray()) };
 }

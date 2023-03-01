@@ -37,7 +37,7 @@
       "parent_id": 1,
       "type": "web",
       "meta": {
-        "_dd.appsec.waf.version": "1.7.0",
+        "_dd.appsec.waf.version": "1.8.2",
         "_dd.runtime_family": "dotnet",
         "aspnet_core.route": "api/values",
         "component": "aspnet_core",
