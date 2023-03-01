@@ -23,14 +23,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
         public static MethodMetadataInfo Create(MethodBase method, Type type)
         {
-            var (filePath, methodBeginLineNumber, methodEndLineNumber) = ExtractFilePathAndLineNumbersFromPdb(method);
+            var pdbData = ExtractFilePathAndLineNumbersFromPdb(method);
 
-            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type, method, filePath, methodBeginLineNumber, methodEndLineNumber);
+            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type, method, pdbData.Item1, pdbData.Item2, pdbData.Item3);
         }
 
         public static MethodMetadataInfo Create(MethodBase method, Type type, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo)
         {
-            var (filePath, methodBeginLineNumber, methodEndLineNumber) = ExtractFilePathAndLineNumbersFromPdb(method);
+            var pdbData = ExtractFilePathAndLineNumbersFromPdb(method);
 
             return new MethodMetadataInfo(
                 GetParameterNames(method),
@@ -41,9 +41,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 method,
                 asyncKickOffInfo.KickoffParentType,
                 asyncKickOffInfo.KickoffMethod,
-                filePath,
-                methodBeginLineNumber,
-                methodEndLineNumber);
+                pdbData.Item1,
+                pdbData.Item2,
+                pdbData.Item3);
         }
 
         private static Tuple<string, string, string> ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
