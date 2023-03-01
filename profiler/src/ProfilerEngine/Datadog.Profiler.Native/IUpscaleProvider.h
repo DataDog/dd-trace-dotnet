@@ -3,7 +3,11 @@
 
 #pragma once
 
-struct ExceptionInfo
+#include <cstdint>
+#include <string>
+#include <vector>
+
+struct UpscaleGroupInfo
 {
 public:
     std::string Name;
@@ -11,10 +15,10 @@ public:
     uint64_t SampledCount;
 };
 
-class IExceptionsRecorder
+class IUpscaleProvider
 {
 public:
-    virtual ~IExceptionsRecorder() = default;
+    virtual ~IUpscaleProvider() = default;
 
-    virtual bool GetExceptions(std::vector<ExceptionInfo>& exceptions) = 0;
+    virtual bool GetGroups(std::vector<UpscaleGroupInfo>& groups) = 0;
 };

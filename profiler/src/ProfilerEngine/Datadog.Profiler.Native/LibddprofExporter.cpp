@@ -15,8 +15,9 @@
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
 #include "IAllocationsRecorder.h"
-#include "IContentionRecorder.h"
-#include "IExceptionsRecorder.h"
+#include "IContentionUpscaleProvider.h"
+#include "IExceptionsUpscaleProvider.h"
+#include "IUpscaleProvider.h"
 
 #include <cassert>
 #include <fstream>
@@ -70,16 +71,16 @@ LibddprofExporter::LibddprofExporter(
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
     IAllocationsRecorder* allocationsRecorder,
-    IContentionRecorder* contentionRecorder,
-    IExceptionsRecorder* exceptionsRecorder)
+    IContentionUpscaleProvider* contentionUpscaleProvider,
+    IExceptionsUpscaleProvider* exceptionsUpscaleProvider)
     :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
     _allocationsRecorder{allocationsRecorder},
-    _contentionRecorder{contentionRecorder},
-    _exceptionsRecorder{exceptionsRecorder}
+    _contentionUpscaleProvider{contentionUpscaleProvider},
+    _exceptionsUpscaleProvider{exceptionsUpscaleProvider}
 {
     _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
@@ -443,19 +444,32 @@ bool LibddprofExporter::Export()
     int32_t idx = 0;
 
     // Prepare samples upscaling
-    if (_contentionRecorder != nullptr)
+    if (_contentionUpscaleProvider != nullptr)
     {
         // TODO: pass the lock contention ratio to libdatadog
+        std::vector<UpscaleGroupInfo> contentionBuckets;
+        if (_contentionUpscaleProvider->GetGroups(contentionBuckets))
+        {
+            Log::Debug(contentionBuckets.size(), " contention buckets");
+            for (const auto& exception : contentionBuckets)
+            {
+                Log::Debug("  ", exception.Name, " | ", exception.SampledCount, " / ", exception.RealCount);
+            }
+        }
+        else
+        {
+            Log::Debug("No contention bucket...");
+        }
     }
 
-    if (_exceptionsRecorder != nullptr)
+    if (_exceptionsUpscaleProvider != nullptr)
     {
         // TODO: pass the per exception type count to libdatadog
-        std::vector<ExceptionInfo> exceptions;
-        if (_exceptionsRecorder->GetExceptions(exceptions))
+        std::vector<UpscaleGroupInfo> exceptionGroups;
+        if (_exceptionsUpscaleProvider->GetGroups(exceptionGroups))
         {
-            Log::Debug(exceptions.size(), " exception buckets");
-            for (const auto& exception : exceptions)
+            Log::Debug(exceptionGroups.size(), " exception buckets");
+            for (const auto& exception : exceptionGroups)
             {
                 Log::Debug("  ", exception.Name, " | ", exception.SampledCount, " / ", exception.RealCount);
             }

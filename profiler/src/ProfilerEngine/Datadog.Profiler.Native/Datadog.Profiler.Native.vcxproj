@@ -244,9 +244,11 @@
     <ClInclude Include="IBatchedSamplesProvider.h" />
     <ClInclude Include="IDebugInfoStore.h" />
     <ClInclude Include="IExceptionsRecorder.h" />
+    <ClInclude Include="IExceptionsUpscaleProvider.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
-    <ClInclude Include="IContentionRecorder.h" />
+    <ClInclude Include="IContentionUpscaleProvider.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
+    <ClInclude Include="IUpscaleProvider.h" />
     <ClInclude Include="LiveObjectInfo.h" />
     <ClInclude Include="LiveObjectsProvider.h" />
     <ClInclude Include="MeanMaxMetric.h" />
@@ -327,6 +329,7 @@
     <ClInclude Include="ThreadsCpuManager.h" />
     <ClInclude Include="CollectorBase.h" />
     <ClInclude Include="Timer.h" />
+    <ClInclude Include="UpscaleProviderHelper.h" />
     <ClInclude Include="WallTimeProvider.h" />
     <ClInclude Include="RawWallTimeSample.h" />
     <ClInclude Include="dd_profiler_version.h" />
@@ -387,6 +390,7 @@
     <ClCompile Include="ThreadsCpuManager.cpp" />
     <ClCompile Include="Timer.Linux.cpp" />
     <ClCompile Include="Timer.Windows.cpp" />
+    <ClCompile Include="UpscaleProviderHelper.cpp" />
     <ClCompile Include="WallTimeProvider.cpp" />
   </ItemGroup>
   <ItemGroup>

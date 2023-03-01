@@ -3,12 +3,10 @@
 
 #pragma once
 
-#include <cstdint>
+#include "IUpscaleProvider.h"
 
-class IContentionRecorder
+class IExceptionsUpscaleProvider : public IUpscaleProvider
 {
 public:
-    virtual ~IContentionRecorder() = default;
-
-    // TODO: return the ratio per bucket
+    virtual ~IExceptionsUpscaleProvider() = default;
 };

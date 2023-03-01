@@ -6,7 +6,7 @@
 #include <atomic>
 #include "CollectorBase.h"
 #include "IContentionListener.h"
-#include "IContentionRecorder.h"
+#include "IContentionUpscaleProvider.h"
 #include "RawContentionSample.h"
 #include "GenericSampler.h"
 #include "GroupSampler.h"
@@ -25,7 +25,7 @@ class IRuntimeIdStore;
 class ContentionProvider :
     public CollectorBase<RawContentionSample>,
     public IContentionListener,
-    public IContentionRecorder
+    public IContentionUpscaleProvider
 {
 public:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -44,6 +44,9 @@ public:
 
     void OnContention(double contentionDurationNs) override;
 
+    // Inherited via IContentionUpscaleProvider
+    virtual bool GetGroups(std::vector<UpscaleGroupInfo>& groups) override;
+
 private:
     static std::string GetBucket(double contentionDurationNs);
 
@@ -57,4 +60,5 @@ private:
     std::shared_ptr<MeanMaxMetric> _lockContentionsDurationMetric;
     std::shared_ptr<CounterMetric> _sampledLockContentionsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledLockContentionsDurationMetric;
+    std::mutex _contentionsLock;
 };

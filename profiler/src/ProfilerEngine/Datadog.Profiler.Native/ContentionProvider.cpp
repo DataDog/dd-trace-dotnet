@@ -11,6 +11,7 @@
 #include "IThreadsCpuManager.h"
 #include "OsSpecificApi.h"
 #include "Sample.h"
+#include "UpscaleProviderHelper.h"
 
 
 std::vector<SampleValueType> ContentionProvider::SampleTypeDefinitions(
@@ -34,7 +35,7 @@ ContentionProvider::ContentionProvider(
     CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
-    _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval()),
+    _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval(), false),
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
     _sampleLimit{pConfiguration->ContentionSampleLimit()},
     _pConfiguration{pConfiguration}
@@ -77,9 +78,13 @@ void ContentionProvider::OnContention(double contentionDurationNs)
 
     auto bucket = GetBucket(contentionDurationNs);
 
-    if (!_sampler.Sample(bucket))
     {
-        return;
+        std::lock_guard lock(_contentionsLock);
+
+        if (!_sampler.Sample(bucket))
+        {
+            return;
+        }
     }
 
     std::shared_ptr<ManagedThreadInfo> threadInfo;
@@ -113,3 +118,10 @@ void ContentionProvider::OnContention(double contentionDurationNs)
     _sampledLockContentionsDurationMetric->Add(contentionDurationNs);
 }
 
+bool ContentionProvider::GetGroups(std::vector<UpscaleGroupInfo>& groups)
+{
+    // a lock is required because GetGroups is updating the sampler outside of the sampler lock itself
+    std::lock_guard lock(_contentionsLock);
+
+    return UpscaleProviderHelper::GetGroups(_sampler, groups);
+}

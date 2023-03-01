@@ -322,10 +322,10 @@
     <ClInclude Include="IAllocationsRecorder.h">
       <Filter>Allocations</Filter>
     </ClInclude>
-    <ClInclude Include="IContentionRecorder.h">
+    <ClInclude Include="IContentionUpscaleProvider.h">
       <Filter>Contention</Filter>
     </ClInclude>
-    <ClInclude Include="IExceptionsRecorder.h">
+    <ClInclude Include="IExceptionsUpscaleProvider.h">
       <Filter>Exceptions</Filter>
     </ClInclude>
   </ItemGroup>

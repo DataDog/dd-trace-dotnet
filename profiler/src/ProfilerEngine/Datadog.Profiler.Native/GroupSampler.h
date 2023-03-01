@@ -16,9 +16,10 @@ template <class TGroup>
 class GroupSampler : public GenericSampler
 {
 public:
-    GroupSampler<TGroup>(int32_t samplesLimit, std::chrono::seconds uploadInterval)
+    GroupSampler<TGroup>(int32_t samplesLimit, std::chrono::seconds uploadInterval, bool keepAtLeastOne = true)
         :
-        GenericSampler(samplesLimit, uploadInterval)
+        GenericSampler(samplesLimit, uploadInterval),
+        _keepAtLeastOne{keepAtLeastOne}
     {
     }
 
@@ -32,14 +33,14 @@ public:
 public:
     bool Sample(TGroup group)
     {
-        std::unique_lock lock(_knownGroupsMutex);
+        std::unique_lock lock(_groupsMutex);
 
         // increment the real count for the given group
         GroupInfo* pInfo;
         AddInGroup(group, pInfo);
 
         auto [it, inserted] = _knownGroups.insert(std::move(group));
-        if (inserted)
+        if (inserted && _keepAtLeastOne)
         {
             // increment the sampled count for the given group
             pInfo->Sampled++;
@@ -49,7 +50,6 @@ public:
             return _sampler.Keep();
         }
 
-        // We've already seen this group, let the sampler decide
         auto sampled = _sampler.Sample();
         if (sampled)
         {
@@ -82,7 +82,7 @@ public:
 
     bool GetGroups(std::vector<std::pair<TGroup, GroupInfo>>& groups)
     {
-        std::unique_lock lock(_knownGroupsMutex);
+        std::unique_lock lock(_groupsMutex);
 
         groups.clear();
         for (auto& group : _groups)
@@ -103,7 +103,7 @@ public:
 protected:
     void OnRollWindow() override
     {
-        std::unique_lock lock(_knownGroupsMutex);
+        std::unique_lock lock(_groupsMutex);
         _knownGroups.clear();
     }
 
@@ -113,5 +113,7 @@ private:
 
     // _groups keeps track of the sampled/real count per group
     std::unordered_map<TGroup, GroupInfo> _groups;
-    std::mutex _knownGroupsMutex;
+    bool _keepAtLeastOne;
+
+    std::mutex _groupsMutex;
 };

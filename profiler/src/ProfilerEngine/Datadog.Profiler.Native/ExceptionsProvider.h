@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CollectorBase.h"
-#include "IExceptionsRecorder.h"
+#include "IExceptionsUpscaleProvider.h"
 #include "IFrameStore.h"
 #include "IManagedThreadList.h"
 #include "RawExceptionSample.h"
@@ -15,12 +15,13 @@
 #include "StackSnapshotResultBuffer.h"
 #include "MetricsRegistry.h"
 #include "CounterMetric.h"
+#include "IUpscaleProvider.h"
 
 class IConfiguration;
 
 class ExceptionsProvider :
     public CollectorBase<RawExceptionSample>,
-    public IExceptionsRecorder
+    public IExceptionsUpscaleProvider
 {
 public:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -40,8 +41,8 @@ public:
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
 
-    // Inherited via IExceptionsRecorder
-    virtual bool GetExceptions(std::vector<ExceptionInfo>& exceptions) override;
+    // Inherited via IExceptionsUpscaleProvider
+    virtual bool GetGroups(std::vector<UpscaleGroupInfo>& groups) override;
 
 private:
     struct ExceptionBucket

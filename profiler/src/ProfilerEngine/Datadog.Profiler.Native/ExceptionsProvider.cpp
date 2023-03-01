@@ -10,6 +10,7 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "ScopeFinalizer.h"
+#include "UpscaleProviderHelper.h"
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
@@ -40,7 +41,7 @@ ExceptionsProvider::ExceptionsProvider(
     _mscorlibModuleId(0),
     _exceptionClassId(0),
     _loggedMscorlibError(false),
-    _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval()),
+    _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval(), true),
     _pConfiguration(pConfiguration)
 {
     _exceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_exceptions");
@@ -194,37 +195,12 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
     return true;
 }
 
-
-bool ExceptionsProvider::GetExceptions(std::vector<ExceptionInfo>& exceptions)
+bool ExceptionsProvider::GetGroups(std::vector<UpscaleGroupInfo>& groups)
 {
+    // must run under the lock
     std::lock_guard lock(_exceptionTypesLock);
 
-    exceptions.clear();
-
-    std::vector<std::pair<std::string, GroupSampler<std::string>::GroupInfo>> groups;
-    if (!_sampler.GetGroups(groups))
-    {
-        return false;
-    }
-
-    for (auto& bucket : groups)
-    {
-        auto count = bucket.second.Sampled;
-        if (count > 0)
-        {
-            ExceptionInfo info;
-            info.Name = bucket.first;
-            info.SampledCount = count;
-            info.RealCount = bucket.second.Real;
-            exceptions.push_back(info);
-        }
-
-        // reset exceptions count
-        bucket.second.Real = 0;
-        bucket.second.Sampled = 0;
-    }
-
-    return (exceptions.size() > 0);
+    return UpscaleProviderHelper::GetGroups(_sampler, groups);
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()
