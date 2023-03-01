@@ -191,7 +191,7 @@ public class IastInstrumentationUnitTests : TestHelper
     private void TestMethodOverloads(string typeToCheck, string methodToCheck, List<string> overloadsToExclude, List<Type> typesToExclude)
     {
         var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
-        var aspects = ClrProfiler.AspectDefinitions.Aspects.ToList();
+        var aspects = Datadog.Trace.ClrProfiler.AspectDefinitions.Aspects.ToList();
         var type = Type.GetType(typeToCheck);
         type.Should().NotBeNull();
         var typeMethods = type?.GetMethods().Where(x => x.Name == methodToCheck);
