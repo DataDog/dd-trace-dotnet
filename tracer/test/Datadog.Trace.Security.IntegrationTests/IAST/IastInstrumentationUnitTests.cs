@@ -27,10 +27,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToCharArrayMethodsAspectCover()
     {
-        var overloadsToExclude = new List<string>() { };
-        var typesToExclude = new List<Type>() { };
-
-        TestMethodOverloads("System.String", "ToCharArray", overloadsToExclude, typesToExclude);
+        TestMethodOverloads("System.String", "ToCharArray", null, null);
     }
 
     [SkippableFact]
@@ -38,10 +35,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestSubstringMethodsAspectCover()
     {
-        var overloadsToExclude = new List<string>() {  };
-        var typesToExclude = new List<Type>() {  };
-
-        TestMethodOverloads("System.String", "Substring", overloadsToExclude, typesToExclude);
+        TestMethodOverloads("System.String", "Substring", null, null);
     }
 
     [SkippableFact]
@@ -105,7 +99,7 @@ public class IastInstrumentationUnitTests : TestHelper
 
         foreach (var parameter in parameters)
         {
-            if (!typesToExclude.Contains(parameter.ParameterType))
+            if (typesToExclude?.Contains(parameter.ParameterType) != true)
             {
                 return true;
             }
@@ -116,15 +110,17 @@ public class IastInstrumentationUnitTests : TestHelper
 
     private void TestMethodOverloads(string typeToCheck, string methodToCheck, List<string> overloadsToExclude, List<Type> typesToExclude)
     {
-        var overloadsToExcludeNormalized = overloadsToExclude.Select(NormalizeName).ToList();
+        var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
         var aspects = Datadog.Trace.ClrProfiler.AspectDefinitions.Aspects.ToList();
-        Type type = Type.GetType(typeToCheck);
-        var typeMethods = type.GetMethods().Where(x => x.Name == methodToCheck);
+        var type = Type.GetType(typeToCheck);
+        type.Should().NotBeNull();
+        var typeMethods = type?.GetMethods().Where(x => x.Name == methodToCheck);
+        typeMethods.Should().NotBeNull();
 
         foreach (var method in typeMethods)
         {
             var methodSignature = NormalizeName(method.ToString());
-            if (MethodShouldBeChecked(method, typesToExclude) && !overloadsToExcludeNormalized.Contains(methodSignature))
+            if (MethodShouldBeChecked(method, typesToExclude) && overloadsToExcludeNormalized?.Contains(methodSignature) != true)
             {
                 var isCovered = aspects.Any(x => NormalizeName(x).Contains(methodSignature));
                 isCovered.Should().BeTrue(method.ToString() + " is not covered");
