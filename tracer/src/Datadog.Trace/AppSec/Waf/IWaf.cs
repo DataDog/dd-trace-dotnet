@@ -9,6 +9,7 @@ using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -29,6 +30,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         bool UpdateRulesData(List<RuleData> rulesData);
 
-        bool UpdateRulesStatus(List<RuleOverride> res);
+        bool UpdateRulesStatus(List<RuleOverride> res, List<JToken> exclusions);
     }
 }

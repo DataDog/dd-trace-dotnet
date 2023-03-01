@@ -270,15 +270,21 @@ namespace Datadog.Trace.AppSec
             RemoteConfigurationManager.CallbackWithInitializedInstance(
                 rcm =>
                 {
+                    var noLocalRules = _settings.Rules == null;
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _settings.Rules == null);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, true);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _settings.Rules == null);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, noLocalRules);
                 });
         }
 
         private void AsmDDProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
+            if (!_enabled) { return; }
+
             var asmDd = e.GetConfigurationAsString().FirstOrDefault();
             if (!string.IsNullOrEmpty(asmDd.TypedFile))
             {
@@ -356,12 +362,20 @@ namespace Datadog.Trace.AppSec
             if (!_enabled) { return; }
 
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
+
+            _remoteConfigurationStatus.RulesOverrides.Clear();
+            _remoteConfigurationStatus.Exclusions.Clear();
+
             foreach (var asmConfig in asmConfigs)
             {
-                _remoteConfigurationStatus.RulesOverrides.Clear();
                 if (asmConfig.TypedFile.RuleOverrides?.Length > 0)
                 {
                     _remoteConfigurationStatus.RulesOverrides.AddRange(asmConfig.TypedFile.RuleOverrides);
+                }
+
+                if (asmConfig.TypedFile.Exclusions?.Count > 0)
+                {
+                    _remoteConfigurationStatus.Exclusions.AddRange(asmConfig.TypedFile.Exclusions);
                 }
 
                 if (asmConfig.TypedFile.Actions != null)
@@ -383,7 +397,8 @@ namespace Datadog.Trace.AppSec
 
             if (_remoteConfigurationStatus.RulesOverrides is { Count: > 0 })
             {
-                var result = _waf.UpdateRulesStatus(_remoteConfigurationStatus.RulesOverrides);
+                var result = _waf.UpdateRulesStatus(_remoteConfigurationStatus.RulesOverrides, _remoteConfigurationStatus.Exclusions);
+                Log.Debug("_remoteConfigurationStatus.RulesOverrides: {RulesOverrides}", string.Join(", ", _remoteConfigurationStatus.RulesOverrides));
                 Log.Debug<bool, int>("_waf.Update was updated: {Success}, ({Count} rule status entries)", result, _remoteConfigurationStatus.RulesOverrides.Count);
 
                 foreach (var asmConfig in asmConfigs)
