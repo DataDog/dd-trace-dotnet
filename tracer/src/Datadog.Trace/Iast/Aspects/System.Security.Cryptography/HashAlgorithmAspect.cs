@@ -18,8 +18,8 @@ namespace Datadog.Trace.Iast.Aspects
 {
     /// <summary> HashAlgorithm class aspects </summary>
     [AspectClass("mscorlib")]
-    [System.ComponentModel.Browsable(false)]
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [global::System.ComponentModel.Browsable(false)]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     public partial class HashAlgorithmAspect
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmAspect));

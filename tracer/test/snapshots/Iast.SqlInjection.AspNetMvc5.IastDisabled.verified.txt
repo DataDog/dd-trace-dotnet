@@ -12,7 +12,7 @@
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: http://localhost/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27,
+      http.url: http://localhost/Iast/SqlQuery?username=Vicent,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
@@ -43,7 +43,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27,
+      http.url: http://localhost/Iast/SqlQuery?username=Vicent,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
