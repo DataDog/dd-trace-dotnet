@@ -475,7 +475,6 @@ namespace Datadog.Trace
             if (!string.IsNullOrEmpty(ProbeProcessor.NextSnapshot.Value))
             {
                 var nextSnapshotToBeUploaded = ProbeProcessor.NextSnapshot.Value;
-                ProbeProcessor.NextSnapshot.Value = string.Empty;
                 nextSnapshotToBeUploaded = nextSnapshotToBeUploaded.Replace("TO_BE_ADDED_SPAN_ID", span.SpanId.ToString())
                                                                    .Replace("TO_BE_ADDED_TRACE_ID", span.TraceId.ToString());
                 if (Debugger.LiveDebugger.Instance == null)
@@ -583,7 +582,7 @@ namespace Datadog.Trace
 }";
                 var segments = new SnapshotSegment[] { new(null, null, templateStr), new("1", json, null) };
 
-                ProbeExpressionsProcessor.Instance.AddProbeProcessor(new LogProbe { CaptureSnapshot = true, Id = probe.ProbeId, Where = new Where(), Template = template, Segments = segments });
+                ProbeExpressionsProcessor.Instance.AddProbeProcessor(new LogProbe { CaptureSnapshot = true, Id = probe.ProbeId, Where = new Where(), Template = template, Segments = segments, Sampling = new Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 } });
             }
 
             var chosenProbe = lineProbes.First();
