@@ -14,6 +14,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Castle.Core.Internal;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
@@ -35,6 +36,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentTools.IsWindows()
                 ? new[] { new object[] { string.Empty } }
                 : PackageVersions.GraphQL;
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces(string packageVersion)
+            => await RunSubmitsTraces(packageVersion);
+    }
+
+    public class GraphQL7Tests : GraphQLTests
+    {
+        public GraphQL7Tests(ITestOutputHelper output)
+            : base("GraphQL7", output, nameof(GraphQL7Tests))
+        {
+        }
+
+        // Can't currently run multi-api on Windows
+        public static IEnumerable<object[]> TestData =>
+            EnvironmentTools.IsWindows()
+                ? new[] { new object[] { string.Empty } }
+                : PackageVersions.GraphQL7;
 
         [SkippableTheory]
         [MemberData(nameof(TestData))]
