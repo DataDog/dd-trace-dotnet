@@ -17,6 +17,8 @@ public class StringToCharArrayTests : InstrumentationTestsBase
     {
         var result = taintedValue.ToCharArray(3, 2);
         result.Count().Should().Be(2);
+        result[0].Should().Be('n');
+        result[1].Should().Be('t');
         AssertTainted(result);
     }
 

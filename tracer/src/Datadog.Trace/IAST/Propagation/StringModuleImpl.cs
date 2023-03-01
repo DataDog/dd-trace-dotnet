@@ -161,13 +161,13 @@ internal static class StringModuleImpl
         {
             if (string.IsNullOrEmpty(left) || string.IsNullOrEmpty(right) || string.IsNullOrEmpty(result))
             {
-                    return result;
+                return result;
             }
 
             var iastContext = IastModule.GetIastContext();
             if (iastContext == null)
             {
-                    return result;
+                return result;
             }
 
             TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
@@ -175,7 +175,7 @@ internal static class StringModuleImpl
             TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_0 ? GetTainted(taintedObjects, right) : null;
             if (taintedLeft == null && taintedRight == null)
             {
-                    return result;
+                return result;
             }
 
             Range[]? ranges;
@@ -330,9 +330,9 @@ internal static class StringModuleImpl
 
             if (ranges != null)
             {
-        taintedObjects.Taint(result, ranges);
-    }
-}
+                taintedObjects.Taint(result, ranges);
+            }
+        }
         catch (Exception err)
         {
             Log.Error(err, "StringModuleImpl.OnstringConcat(IEnumerable) exception {Exception}", err.Message);
