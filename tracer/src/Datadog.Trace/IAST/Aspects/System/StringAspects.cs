@@ -345,7 +345,7 @@ public partial class StringAspects
             valuesConverted = values.Cast<object>();
         }
         catch
-    {
+        {
             // This sould never happen.
             Log.Warning("Cannot process values in System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)");
             return string.Concat(values);
