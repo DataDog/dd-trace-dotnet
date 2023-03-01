@@ -140,7 +140,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Indicates whether debugger information was captured.
         /// </summary>
-        internal const string HasDebugInfo = "has-debug-info";
+        internal const string HasDebugInfo = "has_debug_info";
 
         /// <summary>
         /// The git commit hash of the instrumented service. Its value is usually constant for the lifetime of a process,

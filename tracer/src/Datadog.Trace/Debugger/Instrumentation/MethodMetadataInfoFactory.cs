@@ -23,11 +23,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
         public static MethodMetadataInfo Create(MethodBase method, Type type)
         {
-            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type, method);
+            var (filePath, methodBeginLineNumber, methodEndLineNumber) = ExtractFilePathAndLineNumbersFromPdb(method);
+
+            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type, method, filePath, methodBeginLineNumber, methodEndLineNumber);
         }
 
         public static MethodMetadataInfo Create(MethodBase method, Type type, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo)
         {
+            var (filePath, methodBeginLineNumber, methodEndLineNumber) = ExtractFilePathAndLineNumbersFromPdb(method);
+
             return new MethodMetadataInfo(
                 GetParameterNames(method),
                 GetLocalVariableNames(method),
@@ -36,7 +40,27 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 type,
                 method,
                 asyncKickOffInfo.KickoffParentType,
-                asyncKickOffInfo.KickoffMethod);
+                asyncKickOffInfo.KickoffMethod,
+                filePath,
+                methodBeginLineNumber,
+                methodEndLineNumber);
+        }
+
+        private static Tuple<string, string, string> ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
+        {
+            var userSymbolMethod = Pdb.DatadogPdbReader.CreatePdbReader(method.Module.Assembly).ReadMethodSymbolInfo((int)(method.MetadataToken));
+            var filePath = string.Empty;
+            var methodBeginLineNumber = string.Empty;
+            var methodEndLineNumber = string.Empty;
+
+            if (userSymbolMethod != null && userSymbolMethod.SequencePoints != null && userSymbolMethod.SequencePoints.Any())
+            {
+                filePath = userSymbolMethod.SequencePoints.First().Document.URL;
+                methodBeginLineNumber = userSymbolMethod.SequencePoints.First().Line.ToString();
+                methodEndLineNumber = userSymbolMethod.SequencePoints.First().Line.ToString();
+            }
+
+            return Tuple.Create(filePath, methodBeginLineNumber, methodEndLineNumber);
         }
 
         private static string[] GetParameterNames(MethodBase method)

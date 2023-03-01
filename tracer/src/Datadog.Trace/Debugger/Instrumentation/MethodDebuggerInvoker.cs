@@ -52,6 +52,17 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             var state = new MethodDebuggerState(probeId/* probeIds[i] */, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, ref probeData, instance);
 
+            var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
+
+            if (activeSpan != null)
+            {
+                ref var methodMetadataInfo = ref state.MethodMetadataInfo;
+
+                activeSpan.Tags.SetTag("source.file_path", methodMetadataInfo.FilePath);
+                activeSpan.Tags.SetTag("source.method_begin_line_number", methodMetadataInfo.MethodBeginLineNumber);
+                activeSpan.Tags.SetTag("source.method_end_line_number", methodMetadataInfo.MethodEndLineNumber);
+            }
+
             if (!state.SnapshotCreator.ProbeHasCondition &&
                 !state.ProbeData.Sampler.Sample())
             {

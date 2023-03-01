@@ -14,12 +14,12 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
     /// </summary>
     internal readonly record struct MethodMetadataInfo
     {
-        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method)
-            : this(parameterNames, localVariableNames, null, null, type, method, null, null)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method, string filePath, string methodBeginLineNumber, string methodEndLineNumber)
+            : this(parameterNames, localVariableNames, null, null, type, method, null, null, filePath, methodBeginLineNumber, methodEndLineNumber)
         {
         }
 
-        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, FieldInfo[] asyncMethodHoistedArguments, Type type, MethodBase method, Type kickoffType, MethodBase kickoffMethod)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, FieldInfo[] asyncMethodHoistedArguments, Type type, MethodBase method, Type kickoffType, MethodBase kickoffMethod, string filePath, string methodBeginLineNumber, string methodEndLineNumber)
         {
             ParameterNames = parameterNames;
             LocalVariableNames = localVariableNames;
@@ -29,6 +29,9 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
             Method = method;
             KickoffInvocationTargetType = kickoffType;
             KickoffMethod = kickoffMethod;
+            FilePath = filePath;
+            MethodBeginLineNumber = methodBeginLineNumber;
+            MethodEndLineNumber = methodEndLineNumber;
         }
 
         public string[] ParameterNames { get; }
@@ -69,5 +72,20 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// Gets the type that represents the kickoff method of the state machine MoveNext (i.e. original method)
         /// </summary>
         public MethodBase KickoffMethod { get; }
+
+        /// <summary>
+        /// Gets the path to the file where the method resides
+        /// </summary>
+        public string FilePath { get; }
+
+        /// <summary>
+        /// Gets the line number of the first line of code inside the method
+        /// </summary>
+        public string MethodBeginLineNumber { get; }
+
+        /// <summary>
+        /// Gets the line number of the last line of code inside the method
+        /// </summary>
+        public string MethodEndLineNumber { get; }
     }
 }

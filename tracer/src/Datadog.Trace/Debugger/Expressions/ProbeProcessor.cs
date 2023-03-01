@@ -398,19 +398,6 @@ namespace Datadog.Trace.Debugger.Expressions
 
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
                         LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
-
-                        var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
-
-                        if (activeSpan != null)
-                        {
-                            var userSymbolMethod = Pdb.DatadogPdbReader.CreatePdbReader(info.Method.Module.Assembly).ReadMethodSymbolInfo((int)(info.Method.MetadataToken));
-
-                            activeSpan.Tags.SetTag("source.file_path", userSymbolMethod.SequencePoints.First().Document.URL);
-                            activeSpan.Tags.SetTag("source.line_number", userSymbolMethod.SequencePoints.First().Line.ToString());
-                            activeSpan.Tags.SetTag("source.method_begin_line_number", userSymbolMethod.SequencePoints.First().Line.ToString());
-                            activeSpan.Tags.SetTag("source.method_end_line_number", userSymbolMethod.SequencePoints.Last().Line.ToString());
-                        }
-
                         snapshotCreator.Stop();
                         break;
                     }

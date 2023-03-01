@@ -92,6 +92,17 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 MoveNextInvocationTarget = instance
             };
 
+            var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
+
+            if (activeSpan != null)
+            {
+                ref var methodMetadataInfo = ref asyncState.MethodMetadataInfo;
+
+                activeSpan.Tags.SetTag("source.file_path", methodMetadataInfo.FilePath);
+                activeSpan.Tags.SetTag("source.method_begin_line_number", methodMetadataInfo.MethodBeginLineNumber);
+                activeSpan.Tags.SetTag("source.method_end_line_number", methodMetadataInfo.MethodEndLineNumber);
+            }
+
             if (!asyncState.SnapshotCreator.ProbeHasCondition &&
                 !asyncState.ProbeData.Sampler.Sample())
             {
