@@ -474,6 +474,7 @@ namespace Datadog.Trace
             // Deal with pending snapshot
             if (!string.IsNullOrEmpty(ProbeProcessor.NextSnapshot.Value))
             {
+                span.SetTag(Tags.HasDebugInfo, bool.TrueString);
                 var nextSnapshotToBeUploaded = ProbeProcessor.NextSnapshot.Value;
                 nextSnapshotToBeUploaded = nextSnapshotToBeUploaded.Replace("TO_BE_ADDED_SPAN_ID", span.SpanId.ToString())
                                                                    .Replace("TO_BE_ADDED_TRACE_ID", span.TraceId.ToString());
