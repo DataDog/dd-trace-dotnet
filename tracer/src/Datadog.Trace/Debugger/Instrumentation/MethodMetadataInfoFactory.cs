@@ -57,7 +57,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             {
                 filePath = userSymbolMethod.SequencePoints.First().Document.URL;
                 methodBeginLineNumber = userSymbolMethod.SequencePoints.First().Line.ToString();
-                methodEndLineNumber = userSymbolMethod.SequencePoints.First().Line.ToString();
+                methodEndLineNumber = userSymbolMethod.SequencePoints.Last().Line.ToString();
             }
 
             return Tuple.Create(filePath, methodBeginLineNumber, methodEndLineNumber);
