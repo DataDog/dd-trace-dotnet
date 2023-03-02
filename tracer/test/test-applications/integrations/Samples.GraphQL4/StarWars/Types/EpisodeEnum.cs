@@ -12,7 +12,7 @@ namespace Samples.GraphQL4.StarWars.Types
             AddValue("EMPIRE", "Released in 1980.", 5);
             AddValue("JEDI", "Released in 1983.", 6);
         }
-#if GRAPHQL_5_0 || GRAPHQL_7_0
+#if GRAPHQL_5_0
 
         void AddValue(string name, string description, object value)
         {

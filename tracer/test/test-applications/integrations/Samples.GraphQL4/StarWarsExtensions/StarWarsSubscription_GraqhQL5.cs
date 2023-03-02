@@ -1,11 +1,10 @@
-#if !GRAPHQL_5_0
+#if GRAPHQL_5_0
 using System;
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using GraphQL;
 using GraphQL.Resolvers;
-using GraphQL.Subscription;
 using GraphQL.Types;
 using Human = Samples.GraphQL4.StarWars.Types.Human;
 using HumanType = Samples.GraphQL4.StarWars.Types.HumanType;
@@ -30,19 +29,19 @@ namespace Samples.GraphQL4.StarWarsExtensions
             Name = "Subscription";
             _starWarsData = data;
 
-            AddField(new EventStreamFieldType
+            AddField(new FieldType
             {
                 Name = "humanAdded",
                 Type = typeof(HumanType),
                 Resolver = new FuncFieldResolver<Human>(ResolveMessage),
-                Subscriber = new EventStreamResolver<Human>(Subscribe)
+                StreamResolver = new SourceStreamResolver<Human>(Subscribe)
             });
-            AddField(new EventStreamFieldType
+            AddField(new FieldType
             {
                 Name = "throwNotImplementedException",
                 Type = typeof(HumanType),
                 Resolver = new FuncFieldResolver<Human>(ResolveMessage),
-                Subscriber = new EventStreamResolver<Human>(ThrowNotImplementedException)
+                StreamResolver = new SourceStreamResolver<Human>(ThrowNotImplementedException)
             });
         }
 
@@ -51,7 +50,7 @@ namespace Samples.GraphQL4.StarWarsExtensions
             return context.Source as Human;
         }
 
-        private IObservable<Human> Subscribe(IResolveEventStreamContext context)
+        private IObservable<Human> Subscribe(IResolveFieldContext context)
         {
             List<Human> listOfHumans = new List<Human>();
 
@@ -74,7 +73,7 @@ namespace Samples.GraphQL4.StarWarsExtensions
             return listOfHumans.ToObservable();
         }
 
-        private IObservable<Human> ThrowNotImplementedException(IResolveEventStreamContext context)
+        private IObservable<Human> ThrowNotImplementedException(IResolveFieldContext context)
         {
             throw new NotImplementedException("This API purposely throws a NotImplementedException");
         }
