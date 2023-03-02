@@ -328,6 +328,9 @@
     <ClInclude Include="IExceptionsUpscaleProvider.h">
       <Filter>Exceptions</Filter>
     </ClInclude>
+    <ClInclude Include="IUpscaleProvider.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">

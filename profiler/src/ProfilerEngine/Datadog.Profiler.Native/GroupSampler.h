@@ -8,10 +8,19 @@
 
 #include "GenericSampler.h"
 #include "IConfiguration.h"
+#include "IUpscaleProvider.h"
 
+template <class TGroup>
+struct UpscaleGroupInfo
+{
+public:
+    TGroup Group;
+    uint64_t RealCount;
+    uint64_t SampledCount;
+};
 
 // Template class that support "sampling by group".
-// At least one element in the group will ALWAYS be sampled
+// At least one element in the group will ALWAYS be sampled if keepAtleastOne is true
 template <class TGroup>
 class GroupSampler : public GenericSampler
 {
@@ -80,24 +89,30 @@ public:
         groupInfo = &((*slot.first).second);
     }
 
-    bool GetGroups(std::vector<std::pair<TGroup, GroupInfo>>& groups)
+    bool GetGroups(std::vector<UpscaleGroupInfo<TGroup>>& upscaleGroups)
     {
         std::unique_lock lock(_groupsMutex);
 
-        groups.clear();
-        for (auto& group : _groups)
+        upscaleGroups.clear();
+
+        for (auto& bucket : _groups)
         {
-            if (group.second.Sampled > 0)
+            auto count = bucket.second.Sampled;
+            if (count > 0)
             {
-                std::pair<TGroup, GroupInfo> info = std::make_pair(group.first, group.second);
-                groups.push_back(info);
+                UpscaleGroupInfo<TGroup> info;
+                info.Group = bucket.first;
+                info.SampledCount = count;
+                info.RealCount = bucket.second.Real;
+                upscaleGroups.push_back(info);
             }
 
-            group.second.Real = 0;
-            group.second.Sampled = 0;
+            // reset groups count
+            bucket.second.Real = 0;
+            bucket.second.Sampled = 0;
         }
 
-        return (groups.size() > 0);
+        return (upscaleGroups.size() > 0);
     }
 
 protected:

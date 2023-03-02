@@ -329,7 +329,6 @@
     <ClInclude Include="ThreadsCpuManager.h" />
     <ClInclude Include="CollectorBase.h" />
     <ClInclude Include="Timer.h" />
-    <ClInclude Include="UpscaleProviderHelper.h" />
     <ClInclude Include="WallTimeProvider.h" />
     <ClInclude Include="RawWallTimeSample.h" />
     <ClInclude Include="dd_profiler_version.h" />
@@ -390,7 +389,6 @@
     <ClCompile Include="ThreadsCpuManager.cpp" />
     <ClCompile Include="Timer.Linux.cpp" />
     <ClCompile Include="Timer.Windows.cpp" />
-    <ClCompile Include="UpscaleProviderHelper.cpp" />
     <ClCompile Include="WallTimeProvider.cpp" />
   </ItemGroup>
   <ItemGroup>

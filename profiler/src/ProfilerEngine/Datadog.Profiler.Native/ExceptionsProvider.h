@@ -42,7 +42,7 @@ public:
     bool OnExceptionThrown(ObjectID thrownObjectId);
 
     // Inherited via IExceptionsUpscaleProvider
-    virtual bool GetGroups(std::vector<UpscaleGroupInfo>& groups) override;
+    virtual bool GetGroups(std::vector<UpscaleStringGroup>& groups) override;
 
 private:
     struct ExceptionBucket

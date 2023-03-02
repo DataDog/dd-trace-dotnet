@@ -446,38 +446,40 @@ bool LibddprofExporter::Export()
     // Prepare samples upscaling
     if (_contentionUpscaleProvider != nullptr)
     {
-        // TODO: pass the lock contention ratio to libdatadog
-        std::vector<UpscaleGroupInfo> contentionBuckets;
-        if (_contentionUpscaleProvider->GetGroups(contentionBuckets))
+        std::vector<UpscaleStringGroup> contentionGroups;
+        if (_contentionUpscaleProvider->GetGroups(contentionGroups))
         {
-            Log::Debug(contentionBuckets.size(), " contention buckets");
-            for (const auto& exception : contentionBuckets)
+            Log::Debug(contentionGroups.size(), " contention groups");
+            for (const auto& contention : contentionGroups)
             {
-                Log::Debug("  ", exception.Name, " | ", exception.SampledCount, " / ", exception.RealCount);
+                Log::Debug("  ", contention.Group, " | ", contention.SampledCount, " / ", contention.RealCount);
             }
         }
         else
         {
             Log::Debug("No contention bucket...");
         }
+
+        // TODO: pass the lock contention ratio to libdatadog
     }
 
     if (_exceptionsUpscaleProvider != nullptr)
     {
-        // TODO: pass the per exception type count to libdatadog
-        std::vector<UpscaleGroupInfo> exceptionGroups;
+        std::vector<UpscaleStringGroup> exceptionGroups;
         if (_exceptionsUpscaleProvider->GetGroups(exceptionGroups))
         {
-            Log::Debug(exceptionGroups.size(), " exception buckets");
+            Log::Debug(exceptionGroups.size(), " exception groups");
             for (const auto& exception : exceptionGroups)
             {
-                Log::Debug("  ", exception.Name, " | ", exception.SampledCount, " / ", exception.RealCount);
+                Log::Debug("  ", exception.Group, " | ", exception.SampledCount, " / ", exception.RealCount);
             }
         }
         else
         {
             Log::Debug("No exception bucket...");
         }
+
+        // TODO: pass the per exception type count to libdatadog
     }
 
     if (_allocationsRecorder != nullptr)

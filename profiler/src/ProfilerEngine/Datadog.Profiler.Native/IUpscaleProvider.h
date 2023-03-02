@@ -7,18 +7,14 @@
 #include <string>
 #include <vector>
 
-struct UpscaleGroupInfo
-{
-public:
-    std::string Name;
-    uint64_t RealCount;
-    uint64_t SampledCount;
-};
+#include "GroupSampler.h"
+
+using UpscaleStringGroup = UpscaleGroupInfo<std::string>;
 
 class IUpscaleProvider
 {
 public:
     virtual ~IUpscaleProvider() = default;
 
-    virtual bool GetGroups(std::vector<UpscaleGroupInfo>& groups) = 0;
+    virtual bool GetGroups(std::vector<UpscaleStringGroup>& groups) = 0;
 };

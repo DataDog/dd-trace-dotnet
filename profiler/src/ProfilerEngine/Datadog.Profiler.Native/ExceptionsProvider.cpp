@@ -10,7 +10,6 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "ScopeFinalizer.h"
-#include "UpscaleProviderHelper.h"
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
@@ -195,12 +194,9 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
     return true;
 }
 
-bool ExceptionsProvider::GetGroups(std::vector<UpscaleGroupInfo>& groups)
+bool ExceptionsProvider::GetGroups(std::vector<UpscaleStringGroup>& groups)
 {
-    // must run under the lock
-    std::lock_guard lock(_exceptionTypesLock);
-
-    return UpscaleProviderHelper::GetGroups(_sampler, groups);
+    return _sampler.GetGroups(groups);
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()

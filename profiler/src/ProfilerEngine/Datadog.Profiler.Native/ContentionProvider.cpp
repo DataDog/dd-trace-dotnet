@@ -11,7 +11,6 @@
 #include "IThreadsCpuManager.h"
 #include "OsSpecificApi.h"
 #include "Sample.h"
-#include "UpscaleProviderHelper.h"
 
 
 std::vector<SampleValueType> ContentionProvider::SampleTypeDefinitions(
@@ -118,10 +117,7 @@ void ContentionProvider::OnContention(double contentionDurationNs)
     _sampledLockContentionsDurationMetric->Add(contentionDurationNs);
 }
 
-bool ContentionProvider::GetGroups(std::vector<UpscaleGroupInfo>& groups)
+bool ContentionProvider::GetGroups(std::vector<UpscaleStringGroup>& groups)
 {
-    // a lock is required because GetGroups is updating the sampler outside of the sampler lock itself
-    std::lock_guard lock(_contentionsLock);
-
-    return UpscaleProviderHelper::GetGroups(_sampler, groups);
+    return _sampler.GetGroups(groups);
 }
