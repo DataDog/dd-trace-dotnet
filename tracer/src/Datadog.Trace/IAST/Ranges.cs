@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry;
 
 namespace Datadog.Trace.Iast;
 internal static class Ranges
@@ -42,12 +43,12 @@ internal static class Ranges
         return ranges;
     }
 
-    public static int[] GetIncludedRangesInterval(int offset, int length, Range[] ranges)
+    public static void GetIncludedRangesInterval(int offset, int length, Range[] ranges, out int start, out int end)
     {
         // index of the first included range
-        int start = -1;
+        start = -1;
         // index of the first not included range
-        int end = -1;
+        end = -1;
         for (int rangeIndex = 0; rangeIndex < ranges.Length; rangeIndex++)
         {
             var rangeSelf = ranges[rangeIndex];
@@ -64,25 +65,27 @@ internal static class Ranges
                 break;
             }
         }
-
-        return new int[] { start, end };
     }
 
     public static Range[]? ForSubstring(int offset, int length, Range[] ranges)
     {
-        int[] includedRangesInterval = GetIncludedRangesInterval(offset, length, ranges);
+        int lastRangeExcludedIndex, firstRangeIncludedIndex;
+        GetIncludedRangesInterval(offset, length, ranges, out firstRangeIncludedIndex, out lastRangeExcludedIndex);
 
         // No ranges in the interval
-        if (includedRangesInterval[0] == -1)
+        if (firstRangeIncludedIndex == -1)
         {
             return null;
         }
 
-        var firstRangeIncludedIndex = includedRangesInterval[0];
-        var lastRangeIncludedIndex = includedRangesInterval[1] != -1 ? includedRangesInterval[1] : ranges.Length;
-        var newRagesSize = lastRangeIncludedIndex - firstRangeIncludedIndex;
-        Range[] newRanges = new Range[newRagesSize];
-        for (int rangeIndex = firstRangeIncludedIndex, newRangeIndex = 0; newRangeIndex < newRagesSize; rangeIndex++, newRangeIndex++)
+        if (lastRangeExcludedIndex == -1)
+        {
+            lastRangeExcludedIndex = ranges.Length;
+        }
+
+        var newRangesSize = lastRangeExcludedIndex - firstRangeIncludedIndex;
+        Range[] newRanges = new Range[newRangesSize];
+        for (int rangeIndex = firstRangeIncludedIndex, newRangeIndex = 0; newRangeIndex < newRangesSize; rangeIndex++, newRangeIndex++)
         {
             Range range = ranges[rangeIndex];
             if (offset == 0 && range.Start + range.Length <= length)

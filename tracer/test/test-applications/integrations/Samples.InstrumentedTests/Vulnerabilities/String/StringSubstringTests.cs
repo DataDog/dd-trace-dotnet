@@ -58,10 +58,35 @@ public class StringSubstringTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenATaintedString_WhenSubstringIndexWithTainted_ThenResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", TaintedString.Substring(0), () => TaintedString.Substring(0));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenSubstringIndexWithTainted_ThenResultIsTainted3()
+    {
+        TaintedString.Substring(13).Should().Be(string.Empty);
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenSubstringIndexWithTainted_ThenResultIsTainted4()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-Tai-+:", TaintedString.Substring(0, 3), () => TaintedString.Substring(0, 3));
+    }
+
+    [Fact]
     public void GivenATaintedString_WhenSubstringIndexWithBoth_ThenResultIsTainted()
     {
         string str = String.Concat(TaintedString, UntaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-intedString-+:UntaintedString", str.Substring(2), () => str.Substring(2));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenSubstringIndexWithBoth_ThenResultIsTainted2()
+    {
+        string str = String.Concat(TaintedString, UntaintedString);
+        AssertTaintedFormatWithOriginalCallCheck(":+-intedString-+:Un", str.Substring(2, 13), () => str.Substring(2, 13));
     }
 
     [Fact]
