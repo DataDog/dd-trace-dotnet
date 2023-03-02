@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.RcmModels.Asm;
 
@@ -14,4 +15,7 @@ internal class Payload
 
     [JsonProperty("actions")]
     public Action[]? Actions { get; set; }
+
+    [JsonProperty("exclusions")]
+    public JArray? Exclusions { get; set; }
 }

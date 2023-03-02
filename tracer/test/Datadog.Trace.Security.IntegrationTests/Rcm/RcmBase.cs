@@ -60,14 +60,4 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         state.ApplyState.Should().Be(expectedState, message);
         state.ApplyError.Should().Be(expectedError, message);
     }
-
-    internal static void CheckCapabilities(GetRcmRequest request, uint expectedState, string message)
-    {
-#if !NETCOREAPP
-        var capabilities = new BigInteger(request?.Client?.Capabilities);
-#else
-        var capabilities = new BigInteger(request?.Client?.Capabilities, true, true);
-#endif
-        capabilities.Should().Be(expectedState, message);
-    }
 }

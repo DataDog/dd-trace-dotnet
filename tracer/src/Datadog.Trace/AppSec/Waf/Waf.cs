@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -183,8 +184,9 @@ namespace Datadog.Trace.AppSec.Waf
         /// Requires a non disposed waf handle
         /// </summary>
         /// <param name="ruleStatus">whether rules have been toggled</param>
+        /// <param name="exclusions">exclusions</param>
         /// <returns>whether or not rules were toggled</returns>
-        public bool UpdateRulesStatus(List<RuleOverride> ruleStatus)
+        public bool UpdateRulesStatus(List<RuleOverride> ruleStatus, List<JToken> exclusions)
         {
             if (Disposed)
             {
@@ -198,7 +200,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             var argsToDispose = new List<Obj>();
-            var ruleStatusEncoded = ruleStatus.Encode(_wafLibraryInvoker, argsToDispose);
+            var ruleStatusEncoded = EncoderExtensions.Encode(ruleStatus, exclusions, _wafLibraryInvoker, argsToDispose);
             var updated = UpdateWafAndDisposeItems(ruleStatusEncoded, argsToDispose);
             Log.Information("{Number} rule override have been updated and waf has been updated: {Updated}", ruleStatus.Count, updated);
             return updated.Success;

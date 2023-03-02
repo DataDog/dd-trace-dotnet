@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
 
@@ -61,27 +62,27 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             var ruleOverride = new RuleOverride { Enabled = false, Id = attackParts1[2] };
             ruleStatuses.Add(ruleOverride);
-            var result = waf.UpdateRulesStatus(ruleStatuses);
+            var result = waf.UpdateRulesStatus(ruleStatuses, new List<JToken>());
             result.Should().BeTrue();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
             ruleStatuses.Add(new RuleOverride { Enabled = false, Id = attackParts2[2] });
-            result = waf.UpdateRulesStatus(ruleStatuses);
+            result = waf.UpdateRulesStatus(ruleStatuses, new List<JToken>());
             result.Should().BeTrue();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, false);
 
             ruleStatuses.RemoveAt(1);
             ruleStatuses.Add(new RuleOverride { Enabled = true, Id = attackParts2[2] });
-            result = waf.UpdateRulesStatus(ruleStatuses);
+            result = waf.UpdateRulesStatus(ruleStatuses, new List<JToken>());
             result.Should().BeTrue();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
             ruleStatuses.RemoveAt(0);
             ruleStatuses.Add(new RuleOverride { Enabled = true, Id = attackParts1[2] });
-            result = waf.UpdateRulesStatus(ruleStatuses);
+            result = waf.UpdateRulesStatus(ruleStatuses, new List<JToken>());
             result.Should().BeTrue();
             Execute(waf, attackParts1, true);
             Execute(waf, attackParts2, true);
@@ -107,7 +108,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
                 var ruleOverride = new RuleOverride { OnMatch = new[] { "block" }, Id = attackParts1[2] };
                 ruleStatuses.Add(ruleOverride);
-                var result = waf.UpdateRulesStatus(ruleStatuses);
+                var result = waf.UpdateRulesStatus(ruleStatuses, new List<JToken>());
                 result.Should().BeTrue();
                 Execute(waf, attackParts1, true, "block");
                 Execute(waf, attackParts2, true, null);

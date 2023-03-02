@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.RcmModels;
 
@@ -15,6 +16,8 @@ internal class RemoteConfigurationStatus
     internal List<RuleOverride> RulesOverrides { get; } = new();
 
     internal List<RuleData> RulesData { get; } = new();
+
+    internal List<JToken> Exclusions { get; } = new();
 
     internal IDictionary<string, Action> Actions { get; set; } = new Dictionary<string, Action>();
 
