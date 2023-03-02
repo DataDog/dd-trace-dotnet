@@ -21,30 +21,30 @@
     <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/6.0.0 -->
     <PackageReference Include="Aerospike.Client" Version="6.0.0" />
 
+    <!-- Integration: System.Web.Mvc -->
+    <!-- Assembly: System.Web.Mvc -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.2.9 -->
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
+
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.105.10 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.105.10" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.103.24 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.103.24" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.100.81 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.100.81" />
-
-    <!-- Integration: Microsoft.Azure.WebJobs.Host -->
-    <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.36 -->
-    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.36" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.100.62 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.100.62" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.32.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.32.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.31.2 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.31.2" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.4.3 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.4.3" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.4.2 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.4.2" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
@@ -61,25 +61,15 @@
     <!-- Latest package https://www.nuget.org/packages/GraphQL.SystemReactive/4.8.0 -->
     <PackageReference Include="GraphQL.SystemReactive" Version="4.8.0" />
 
-    <!-- Integration: Grpc.AspNetCore.Server -->
-    <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.51.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.51.0" />
-
     <!-- Integration: Grpc.Core -->
     <!-- Assembly: Grpc.Core -->
     <!-- Latest package https://www.nuget.org/packages/Grpc/2.46.6 -->
     <PackageReference Include="Grpc" Version="2.46.6" />
 
-    <!-- Integration: Grpc.Net.Client -->
-    <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.51.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.51.0" />
-
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.0.5 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="12.18.0" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/12.16.0 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="12.16.0" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -143,13 +133,13 @@
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/5.1.2 -->
-    <PackageReference Include="NLog" Version="5.1.2" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/5.1.1 -->
+    <PackageReference Include="NLog" Version="5.1.1" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
-    <!-- Latest package https://www.nuget.org/packages/Npgsql/7.0.2 -->
-    <PackageReference Include="Npgsql" Version="7.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/Npgsql/7.0.1 -->
+    <PackageReference Include="Npgsql" Version="7.0.1" />
 
     <!-- Integration: nunit.framework -->
     <!-- Assembly: nunit.framework -->
@@ -158,13 +148,13 @@
 
     <!-- Integration: OpenTelemetry -->
     <!-- Assembly: OpenTelemetry -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.4.0 -->
-    <PackageReference Include="OpenTelemetry" Version="1.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.3.2 -->
+    <PackageReference Include="OpenTelemetry" Version="1.3.2" />
 
     <!-- Integration: OpenTelemetry.Api -->
     <!-- Assembly: OpenTelemetry.Api -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.4.0 -->
-    <PackageReference Include="OpenTelemetry.Api" Version="1.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.3.2 -->
+    <PackageReference Include="OpenTelemetry.Api" Version="1.3.2" />
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
@@ -183,8 +173,8 @@
 
     <!-- Integration: ServiceStack.Redis -->
     <!-- Assembly: ServiceStack.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.6.0 -->
-    <PackageReference Include="ServiceStack.Redis" Version="6.6.0" />
+    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.5.0 -->
+    <PackageReference Include="ServiceStack.Redis" Version="6.5.0" />
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!-- Assembly: Microsoft.Data.SqlClient -->
@@ -198,8 +188,8 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/7.0.3 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.3" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/7.0.2 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.2" />
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
@@ -208,13 +198,18 @@
 
     <!-- Integration: StackExchange.Redis -->
     <!-- Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.6.96 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.6.96" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.6.90 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.6.90" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!-- Assembly: StackExchange.Redis.StrongName -->
     <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis.StrongName/1.2.6 -->
     <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
+
+    <!-- Integration: System.ServiceModel -->
+    <!-- Assembly: System.ServiceModel -->
+    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/4.10.0 -->
+    <PackageReference Include="System.ServiceModel.Http" Version="4.10.0" />
 
     <!-- Integration: System.Net.Requests -->
     <!-- Assembly: System.Net.Requests -->
@@ -230,6 +225,21 @@
     <!-- Assembly: xunit.execution.dotnet -->
     <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.4.2 -->
     <PackageReference Include="xunit.extensibility.execution" Version="2.4.2" />
+
+    <!-- Integration: Microsoft.Azure.WebJobs.Host -->
+    <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.33 -->
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.33" />
+
+    <!-- Integration: Grpc.AspNetCore.Server -->
+    <!-- Assembly: Grpc.AspNetCore.Server -->
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.51.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.51.0" />
+
+    <!-- Integration: Grpc.Net.Client -->
+    <!-- Assembly: Grpc.Net.Client -->
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.51.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.51.0" />
 
     <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
     <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
