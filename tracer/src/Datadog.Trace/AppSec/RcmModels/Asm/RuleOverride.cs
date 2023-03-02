@@ -13,14 +13,16 @@ namespace Datadog.Trace.AppSec.RcmModels.Asm;
 
 internal class RuleOverride
 {
+    [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
     public string? Id { get; set; }
 
+    [JsonProperty("enabled", NullValueHandling = NullValueHandling.Ignore)]
     public bool? Enabled { get; set; }
 
-    [JsonProperty("on_match")]
+    [JsonProperty("on_match", NullValueHandling = NullValueHandling.Ignore)]
     public string[]? OnMatch { get; set; }
 
-    [JsonProperty("rules_target")]
+    [JsonProperty("rules_target", NullValueHandling = NullValueHandling.Ignore)]
     public JToken? RulesTarget { get; set; }
 
     public override string ToString()
