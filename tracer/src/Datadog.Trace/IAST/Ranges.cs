@@ -69,8 +69,7 @@ internal static class Ranges
 
     public static Range[]? ForSubstring(int offset, int length, Range[] ranges)
     {
-        int lastRangeExcludedIndex, firstRangeIncludedIndex;
-        GetIncludedRangesInterval(offset, length, ranges, out firstRangeIncludedIndex, out lastRangeExcludedIndex);
+        GetIncludedRangesInterval(offset, length, ranges, out int firstRangeIncludedIndex, out int lastRangeExcludedIndex);
 
         // No ranges in the interval
         if (firstRangeIncludedIndex == -1)
@@ -84,7 +83,7 @@ internal static class Ranges
         }
 
         var newRangesSize = lastRangeExcludedIndex - firstRangeIncludedIndex;
-        Range[] newRanges = new Range[newRangesSize];
+        var newRanges = new Range[newRangesSize];
         for (int rangeIndex = firstRangeIncludedIndex, newRangeIndex = 0; newRangeIndex < newRangesSize; rangeIndex++, newRangeIndex++)
         {
             Range range = ranges[rangeIndex];
