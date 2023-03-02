@@ -285,31 +285,24 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            var taintedObjects = iastContext.GetTaintedObjects();
-            var selfTainted = taintedObjects.Get(self);
-            if (selfTainted == null)
-            {
-                return result;
-            }
-
-            var rangesSelf = selfTainted.Ranges;
-            if (rangesSelf.Length == 0)
-            {
-                return result;
-            }
-
-            var newRanges = Ranges.ForSubstring(beginIndex, result.Length, rangesSelf);
-            if (newRanges != null && newRanges.Length > 0)
-            {
-                taintedObjects.Taint(result, newRanges);
-            }
-        }
-        catch (Exception err)
+        var taintedObjects = iastContext.GetTaintedObjects();
+        var selfTainted = taintedObjects.Get(self);
+        if (selfTainted == null)
         {
-            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,string) exception {Exception}", err.Message);
+            return;
         }
 
-        return result;
+        var rangesSelf = selfTainted.Ranges;
+        if (rangesSelf.Length == 0)
+        {
+            return;
+        }
+
+        var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
+        if (newRanges != null && newRanges.Length > 0)
+        {
+            taintedObjects.Taint(result, newRanges);
+        }
     }
 
     /// <summary> Mostly used overload </summary>
