@@ -398,7 +398,6 @@ namespace Datadog.Trace.AppSec
             if (_remoteConfigurationStatus.RulesOverrides is { Count: > 0 })
             {
                 var result = _waf.UpdateRulesStatus(_remoteConfigurationStatus.RulesOverrides, _remoteConfigurationStatus.Exclusions);
-                Log.Debug("_remoteConfigurationStatus.RulesOverrides: {RulesOverrides}", string.Join(", ", _remoteConfigurationStatus.RulesOverrides));
                 Log.Debug<bool, int>("_waf.Update was updated: {Success}, ({Count} rule status entries)", result, _remoteConfigurationStatus.RulesOverrides.Count);
 
                 foreach (var asmConfig in asmConfigs)

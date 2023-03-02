@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -13,16 +14,16 @@ namespace Datadog.Trace.AppSec.RcmModels.Asm;
 
 internal class RuleOverride
 {
-    [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("id")]
     public string? Id { get; set; }
 
-    [JsonProperty("enabled", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("enabled")]
     public bool? Enabled { get; set; }
 
-    [JsonProperty("on_match", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("on_match")]
     public string[]? OnMatch { get; set; }
 
-    [JsonProperty("rules_target", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("rules_target")]
     public JToken? RulesTarget { get; set; }
 
     public override string ToString()
@@ -43,7 +44,7 @@ internal class RuleOverride
             data.Add(new("enabled", Enabled.Value));
         }
 
-        if (RulesTarget != null)
+        if (RulesTarget is { HasValues: true })
         {
             data.Add(new("rules_target", RulesTarget));
         }
