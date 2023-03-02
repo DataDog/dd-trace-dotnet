@@ -69,34 +69,11 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            var taintedObjects = iastContext.GetTaintedObjects();
-            var selfTainted = taintedObjects.Get(self);
-            if (selfTainted == null)
-            {
-                return result;
-            }
-
-            var rangesSelf = selfTainted.Ranges;
-            if (rangesSelf.Length == 0)
-            {
-                return result;
-            }
-
-            var newRanges = Ranges.ForSubstring(beginIndex, result.Length, rangesSelf);
-            if (newRanges != null && newRanges.Length > 0)
-            {
-                taintedObjects.Taint(result, newRanges);
-            }
+            OnStringSubSequence(self, beginIndex, result, result.Length);
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,string) exception {Exception}", err.Message);
+            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,int,char[]) exception {Exception}", err.Message);
         }
 
         return result;
@@ -116,37 +93,47 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            var taintedObjects = iastContext.GetTaintedObjects();
-            var selfTainted = taintedObjects.Get(self);
-            if (selfTainted == null)
-            {
-                return result;
-            }
-
-            var rangesSelf = selfTainted.Ranges;
-            if (rangesSelf.Length == 0)
-            {
-                return result;
-            }
-
-            var newRanges = Ranges.ForSubstring(beginIndex, result.Length, rangesSelf);
-            if (newRanges != null && newRanges.Length > 0)
-            {
-                taintedObjects.Taint(result, newRanges);
-            }
+            OnStringSubSequence(self, beginIndex, result, result.Length);
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,string) exception {Exception}", err.Message);
+            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,int,string) exception {Exception}", err.Message);
         }
 
         return result;
+    }
+
+    /// <summary> Taints a string.substring operation </summary>
+    /// <param name="self"> original string </param>
+    /// <param name="beginIndex"> start index </param>
+    /// <param name="result"> the substring result </param>
+    /// <param name="resultLength"> Result's length </param>
+    private static void OnStringSubSequence(string self, int beginIndex, object result, int resultLength)
+    {
+        var iastContext = IastModule.GetIastContext();
+        if (iastContext == null)
+        {
+            return;
+        }
+
+        var taintedObjects = iastContext.GetTaintedObjects();
+        var selfTainted = taintedObjects.Get(self);
+        if (selfTainted == null)
+        {
+            return;
+        }
+
+        var rangesSelf = selfTainted.Ranges;
+        if (rangesSelf.Length == 0)
+        {
+            return;
+        }
+
+        var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
+        if (newRanges != null && newRanges.Length > 0)
+        {
+            taintedObjects.Taint(result, newRanges);
+        }
     }
 
     /// <summary> Mostly used overload </summary>
