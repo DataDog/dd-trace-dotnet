@@ -47,7 +47,18 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            taintedObjects.Taint(result, taintedSelf.Ranges);
+            Range[] newRanges;
+            if (offset != 0)
+            {
+                newRanges = new Range[taintedSelf.Ranges.Length];
+                Ranges.CopyShift(taintedSelf.Ranges, newRanges, 0, offset);
+            }
+            else
+            {
+                newRanges = taintedSelf.Ranges;
+            }
+
+            taintedObjects.Taint(result, newRanges);
         }
         catch (Exception err)
         {

@@ -6,6 +6,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Logging;
@@ -574,5 +575,63 @@ public partial class StringAspects
     public static char[] ToCharArray(string target, int startIndex, int length)
     {
         return StringModuleImpl.OnStringSubSequence(target, startIndex, target.ToCharArray(startIndex, length));
+    }
+
+    /// <summary>
+    /// String.PadLeft aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <returns> String.PadLeft() </returns>
+    [AspectMethodReplace("System.String::PadLeft(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string PadLeft(string target, int totalWidth)
+    {
+        var result = target.PadLeft(totalWidth);
+        TaintIfInputIsTainted(target, result, (result?.Length - target?.Length) ?? 0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadLeft aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <param name="paddingChar"> paddingChar parameter </param>
+    /// <returns> String.PadLeft() </returns>
+    [AspectMethodReplace("System.String::PadLeft(System.Int32,System.Char)", AspectFilter.StringLiteral_0)]
+    public static string PadLeft(string target, int totalWidth, char paddingChar)
+    {
+        var result = target.PadLeft(totalWidth, paddingChar);
+        TaintIfInputIsTainted(target, result, (result?.Length - target?.Length) ?? 0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadRight aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <returns> String.PadRight() </returns>
+    [AspectMethodReplace("System.String::PadRight(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string PadRight(string target, int totalWidth)
+    {
+        var result = target.PadRight(totalWidth);
+        TaintIfInputIsTainted(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadRight aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <param name="paddingChar"> paddingChar parameter </param>
+    /// <returns> String.PadRight() </returns>
+    [AspectMethodReplace("System.String::PadRight(System.Int32,System.Char)", AspectFilter.StringLiteral_0)]
+    public static string PadRight(string target, int totalWidth, char paddingChar)
+    {
+        var result = target.PadRight(totalWidth, paddingChar);
+        TaintIfInputIsTainted(target, result);
+        return result;
     }
 }
