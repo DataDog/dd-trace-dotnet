@@ -4,9 +4,6 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using GraphQL;
 using GraphQL.Resolvers;
-#if !GRAPHQL_5_0 && !GRAPHQL_7_0
-using GraphQL.Subscription;
-#endif
 using GraphQL.Types;
 using Human = Samples.GraphQL7.StarWars.Types.Human;
 using HumanType = Samples.GraphQL7.StarWars.Types.HumanType;
@@ -31,37 +28,19 @@ namespace Samples.GraphQL7.StarWarsExtensions
             Name = "Subscription";
             _starWarsData = data;
 
-            AddField(
-#if GRAPHQL_5_0 || GRAPHQL_7_0
-                new FieldType
-#else
-                new EventStreamFieldType
-#endif
+            AddField(new FieldType
             {
                 Name = "humanAdded",
                 Type = typeof(HumanType),
                 Resolver = new FuncFieldResolver<Human>(ResolveMessage),
-#if GRAPHQL_5_0 || GRAPHQL_7_0
                 StreamResolver = new SourceStreamResolver<Human>(Subscribe)
-#else
-                Subscriber = new EventStreamResolver<Human>(Subscribe)
-#endif
             });
-            AddField(
-#if GRAPHQL_5_0 || GRAPHQL_7_0
-                new FieldType
-#else
-                new EventStreamFieldType
-#endif
+            AddField(new FieldType
             {
                 Name = "throwNotImplementedException",
                 Type = typeof(HumanType),
                 Resolver = new FuncFieldResolver<Human>(ResolveMessage),
-#if GRAPHQL_5_0 || GRAPHQL_7_0
                 StreamResolver = new SourceStreamResolver<Human>(ThrowNotImplementedException)
-#else
-                Subscriber = new EventStreamResolver<Human>(ThrowNotImplementedException)
-#endif
             });
         }
 
@@ -70,13 +49,7 @@ namespace Samples.GraphQL7.StarWarsExtensions
             return context.Source as Human;
         }
 
-        private IObservable<Human> Subscribe(
-#if GRAPHQL_5_0 || GRAPHQL_7_0
-            IResolveFieldContext context
-#else
-            IResolveEventStreamContext context
-#endif
-            )
+        private IObservable<Human> Subscribe(IResolveFieldContext context)
         {
             List<Human> listOfHumans = new List<Human>();
 
@@ -99,13 +72,7 @@ namespace Samples.GraphQL7.StarWarsExtensions
             return listOfHumans.ToObservable();
         }
 
-        private IObservable<Human> ThrowNotImplementedException(
-#if GRAPHQL_5_0 || GRAPHQL_7_0
-            IResolveFieldContext context
-#else
-            IResolveEventStreamContext context
-#endif
-            )
+        private IObservable<Human> ThrowNotImplementedException(IResolveFieldContext context)
         {
             throw new NotImplementedException("This API purposely throws a NotImplementedException");
         }

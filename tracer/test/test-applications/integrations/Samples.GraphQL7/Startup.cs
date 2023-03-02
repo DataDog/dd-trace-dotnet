@@ -1,12 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GraphQL;
-#if GRAPHQL_5_0 || GRAPHQL_7_0
-using GraphQL.MicrosoftDI;
-using GraphQL.NewtonsoftJson;
-#endif
-using GraphQL.Server;
-using GraphQL.Server.Ui.Playground;
 using GraphQL.Types;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -29,11 +23,6 @@ namespace Samples.GraphQL7
     {
         public void ConfigureServices(IServiceCollection services)
         {
-#if !GRAPHQL_5_0 && !GRAPHQL_7_0
-            // Not required in GraphQL 5.0
-            services.AddSingleton<IDocumentExecuter, SubscriptionDocumentExecuter>();
-#endif
-
             services.AddSingleton<StarWarsData>();
             services.AddSingleton<StarWarsQuery>();
             services.AddSingleton<StarWarsMutation>();
@@ -49,23 +38,10 @@ namespace Samples.GraphQL7
 
             services.AddLogging(builder => builder.AddConsole());
 
-#if GRAPHQL_5_0 || GRAPHQL_7_0
             services.AddGraphQL(
                 _ => _
-#if GRAPHQL_5_0
-                    .AddHttpMiddleware<ISchema>()
-#endif
                     .AddNewtonsoftJson()
                     .AddUserContextBuilder(httpContext => new Dictionary<string, object>()));
-#else
-            services.AddGraphQL(_ =>
-            {
-                _.EnableMetrics = true;
-                // _.ExposeExceptions = true;
-            })
-            .AddNewtonsoftJson(_ => { }, _ => { })
-            .AddUserContextBuilder(httpContext => new Dictionary<string, object>());
-#endif
         }
 
         public void Configure(IApplicationBuilder app)
