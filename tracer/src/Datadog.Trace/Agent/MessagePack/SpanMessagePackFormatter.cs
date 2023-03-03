@@ -92,8 +92,7 @@ namespace Datadog.Trace.Agent.MessagePack
             int originalOffset = offset;
 
             // start writing span[]
-            // offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, traceChunk.SpanCount);
-            offset += MessagePackBinary.WriteArrayHeaderForceArray32Block(ref bytes, offset, (uint)traceChunk.SpanCount);
+            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, traceChunk.SpanCount);
             // serialize each span
             for (var i = 0; i < traceChunk.SpanCount; i++)
             {
