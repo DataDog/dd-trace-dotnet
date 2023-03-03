@@ -23,7 +23,7 @@ namespace Datadog.Trace.Agent
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
 
-        private static ArraySegment<byte> _emptyPayload;
+        private static readonly ArraySegment<byte> EmptyPayload = new(new byte[] { 0x90 });
 
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
         private readonly IDogStatsd _statsd;
@@ -106,16 +106,7 @@ namespace Datadog.Trace.Agent
 
         public bool CanComputeStats => _statsAggregator?.CanComputeStats == true;
 
-        public Task<bool> Ping()
-        {
-            if (_emptyPayload.Array == null)
-            {
-                var data = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[]>());
-                _emptyPayload = new ArraySegment<byte>(data);
-            }
-
-            return _api.SendTracesAsync(_emptyPayload, 0, false, 0, 0);
-        }
+        public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
