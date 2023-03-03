@@ -6,7 +6,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Logging;
