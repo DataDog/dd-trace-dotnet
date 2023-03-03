@@ -167,11 +167,6 @@ namespace Datadog.Trace.AppSec.Waf
                 return false;
             }
 
-            if (rulesData.Count == 0)
-            {
-                return true;
-            }
-
             var argsToDispose = new List<Obj>();
             var mergedRuleData = MergeRuleData(rulesData);
             var rulesDataEncoded = mergedRuleData.Encode(_wafLibraryInvoker, argsToDispose);
@@ -192,11 +187,6 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 Log.Warning("Waf instance has been disposed when trying to toggle rules");
                 return false;
-            }
-
-            if (ruleStatus.Count == 0)
-            {
-                return true;
             }
 
             var argsToDispose = new List<Obj>();

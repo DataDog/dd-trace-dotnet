@@ -395,28 +395,22 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            if (_remoteConfigurationStatus.RulesOverrides is { Count: > 0 })
-            {
-                var result = _waf.UpdateRulesStatus(_remoteConfigurationStatus.RulesOverrides, _remoteConfigurationStatus.Exclusions);
-                Log.Debug<bool, int>("_waf.Update was updated: {Success}, ({Count} rule status entries)", result, _remoteConfigurationStatus.RulesOverrides.Count);
+            var result = _waf.UpdateRulesStatus(_remoteConfigurationStatus.RulesOverrides, _remoteConfigurationStatus.Exclusions);
+            Log.Debug<bool, int, int>(
+                "_waf.Update was updated: {Success}, ({RulesOverridesCount} rule status entries), ({ExclusionsCount} exclusion filters)",
+                result,
+                _remoteConfigurationStatus.RulesOverrides.Count,
+                _remoteConfigurationStatus.Exclusions.Count);
 
-                foreach (var asmConfig in asmConfigs)
-                {
-                    if (result)
-                    {
-                        e.Acknowledge(asmConfig.Name);
-                    }
-                    else
-                    {
-                        e.Error(asmConfig.Name, "waf couldn't be updated with rule overrides");
-                    }
-                }
-            }
-            else
+            foreach (var asmConfig in asmConfigs)
             {
-                foreach (var asmConfig in asmConfigs)
+                if (result)
                 {
                     e.Acknowledge(asmConfig.Name);
+                }
+                else
+                {
+                    e.Error(asmConfig.Name, "waf couldn't be updated with rule overrides");
                 }
             }
         }
