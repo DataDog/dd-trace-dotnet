@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -125,6 +126,12 @@ internal static class TagPropagation
             cachedHeader = null;
         }
 
+        var hasDebugInfo = traceTags.FirstOrDefault(kvp => kvp.Key == Tags.HasDebugInfoPropagationTag);
+        if (hasDebugInfo.Value == "True")
+        {
+            traceTags.Add(new(Tags.HasDebugInfo, bool.TrueString));
+        }
+
         return traceTags.Count > 0 ? new TraceTagCollection(outgoingHeaderMaxLength, traceTags, cachedHeader) : new TraceTagCollection(outgoingHeaderMaxLength);
     }
 
@@ -153,7 +160,8 @@ internal static class TagPropagation
         {
             if (!string.IsNullOrEmpty(tag.Key) &&
                 !string.IsNullOrEmpty(tag.Value) &&
-                tag.Key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
+                (tag.Key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal) ||
+                tag.Key == Tags.HasDebugInfo))
             {
                 if (!IsValid(tag.Key, tag.Value))
                 {

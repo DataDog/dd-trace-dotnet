@@ -387,7 +387,9 @@ namespace Datadog.Trace
                 // a user-defined ISpanContext implementation. we don't have a TraceContext,
                 // so create a new one (this will start a new trace).
                 var traceTagCollection = new TraceTagCollection(outgoingHeaderMaxLength: 20);
-                traceTagCollection.SetTag(Tags.HasDebugInfo, FlipACoin().ToString(CultureInfo.InvariantCulture));
+                var hasDebugInfo = FlipACoin().ToString(CultureInfo.InvariantCulture);
+                traceTagCollection.SetTag(Tags.HasDebugInfo, hasDebugInfo);
+                traceTagCollection.SetTag(Tags.HasDebugInfoPropagationTag, hasDebugInfo);
                 traceContext = new TraceContext(this, traceTagCollection);
 
                 // in a version-mismatch scenario, try to get the sampling priority from the "other" tracer
