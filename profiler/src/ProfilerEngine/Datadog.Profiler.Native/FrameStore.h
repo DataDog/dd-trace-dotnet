@@ -61,7 +61,7 @@ private:
         bool isEncoded
         );
     bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded);
-    bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc);
+    bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded);
     std::pair <std::string_view, std::string_view> GetManagedFrame(FunctionID functionId);
     std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
 
@@ -97,11 +97,14 @@ private:
     ICorProfilerInfo4* _pCorProfilerInfo;
 
     std::mutex _methodsLock;
-    std::mutex _typesLock;
     std::mutex _nativeLock;
+
     // caches functions                      V-- module    V-- full frame
     std::unordered_map<FunctionID, std::pair<std::string, std::string>> _methods;
-    std::unordered_map<ClassID, TypeDesc> _types;
+    std::mutex _typesLock;
+    std::unordered_map<ClassID, TypeDesc> _types;  // for allocations/exceptions
+    std::mutex _encodedTypesLock;
+    std::unordered_map<ClassID, TypeDesc> _encodedTypes;  // for frames
     std::unordered_map<std::string, std::string> _framePerNativeModule;
 
     bool _resolveNativeFrames;

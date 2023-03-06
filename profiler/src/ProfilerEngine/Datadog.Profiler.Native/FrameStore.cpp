@@ -126,13 +126,13 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
     // look into the cache first
     TypeDesc* pTypeDesc = nullptr;  // if already in the cache
     TypeDesc typeDesc; // if needed to be built from a given classId
-    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc);
+    bool isEncoded = true;
+    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc, isEncoded);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
 
     if (!typeInCache)
     {
         // try to get the type description
-        bool isEncoded = true;
         if (!BuildTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc, isEncoded))
         {
             // This should never happen but in case it happens, we cache the module/frame value.
@@ -145,9 +145,9 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
 
         if (classId != 0)
         {
-            std::lock_guard<std::mutex> lock(_typesLock);
+            std::lock_guard<std::mutex> lock(_encodedTypesLock);
             pTypeDesc = &typeDesc;
-            _types[classId] = typeDesc;
+            _encodedTypes[classId] = typeDesc;
         }
         else
         {
@@ -217,7 +217,7 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
         return false;
     }
 
-    if (!GetCachedTypeDesc(classId, pTypeDesc))
+    if (!GetCachedTypeDesc(classId, pTypeDesc, isEncoded))
     {
         return false;
     }
@@ -229,17 +229,31 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
 }
 
 
-bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc)
+bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded)
 {
     if (classId != 0)
     {
-        std::lock_guard<std::mutex> lock(_typesLock);
-
-        auto typeEntry = _types.find(classId);
-        if (typeEntry != _types.end())
+        if (isEncoded)
         {
-            typeDesc = &(_types.at(classId));
-            return true;
+            std::lock_guard<std::mutex> lock(_encodedTypesLock);
+
+            auto typeEntry = _encodedTypes.find(classId);
+            if (typeEntry != _encodedTypes.end())
+            {
+                typeDesc = &(_encodedTypes.at(classId));
+                return true;
+            }
+        }
+        else
+        {
+            std::lock_guard<std::mutex> lock(_typesLock);
+
+            auto typeEntry = _types.find(classId);
+            if (typeEntry != _types.end())
+            {
+                typeDesc = &(_types.at(classId));
+                return true;
+            }
         }
     }
 
@@ -250,7 +264,7 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncod
 {
     // get type related description (assembly, namespace and type name)
     // look into the cache first
-    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc);
+    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc, isEncoded);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
 
     if (!typeInCache)
@@ -277,10 +291,20 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncod
 
         if (classId != 0)
         {
-            std::lock_guard<std::mutex> lock(_typesLock);
+            if (isEncoded)
+            {
+                std::lock_guard<std::mutex> lock(_encodedTypesLock);
 
-            _types[classId] = typeDesc;
-            pTypeDesc = &(_types.at(classId));
+                _encodedTypes[classId] = typeDesc;
+                pTypeDesc = &(_encodedTypes.at(classId));
+            }
+            else
+            {
+                std::lock_guard<std::mutex> lock(_typesLock);
+
+                _types[classId] = typeDesc;
+                pTypeDesc = &(_types.at(classId));
+            }
         }
         else
         {
