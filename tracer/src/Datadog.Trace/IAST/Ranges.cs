@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry;
 
 namespace Datadog.Trace.Iast;
@@ -115,5 +116,47 @@ internal static class Ranges
         }
 
         return newRanges;
+    }
+
+    internal static Range[] ForRemove(int beginIndex, int endIndex, Range[] ranges)
+    {
+        var newRanges = new List<Range>();
+
+        for (var i = 0; i < ranges.Length; i++)
+        {
+            var startBeforeRemoveArea = ranges[i].Start < beginIndex;
+            var endAfterRemoveArea = ranges[i].Start + ranges[i].Length > endIndex;
+            var endBeforeRemoveArea = ranges[i].Start + ranges[i].Length < beginIndex;
+            var starAfterRemoveArea = ranges[i].Start > endIndex;
+            int newStart, newEnd;
+
+            if (!startBeforeRemoveArea && !starAfterRemoveArea && !endAfterRemoveArea)
+            {
+                continue;
+            }
+
+            if (startBeforeRemoveArea)
+            {
+                newStart = ranges[i].Start;
+            }
+            else
+            {
+                newStart = starAfterRemoveArea ? ranges[i].Start - (endIndex - beginIndex) : beginIndex;
+            }
+
+            if (endBeforeRemoveArea)
+            {
+                newEnd = ranges[i].Start + ranges[i].Length;
+            }
+            else
+            {
+                newEnd = endAfterRemoveArea ? ranges[i].Start + ranges[i].Length - (endIndex - beginIndex) : beginIndex;
+            }
+
+            var newRange = new Range(newStart, newEnd - newStart, ranges[i].Source);
+            newRanges.Add(newRange);
+        }
+
+        return newRanges.ToArray();
     }
 }

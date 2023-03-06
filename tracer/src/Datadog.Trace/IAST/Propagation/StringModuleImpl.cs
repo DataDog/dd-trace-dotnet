@@ -57,6 +57,48 @@ internal static class StringModuleImpl
         return result;
     }
 
+    /// <summary> Taints a string.Remove operation </summary>
+    /// <param name="self"> original string </param>
+    /// <param name="result"> Result </param>
+    /// <param name="beginIndex"> start index </param>
+    /// <param name="endIndex"> end index </param>
+    /// <returns> result </returns>
+    public static string OnStringRemove(string self, string result, int beginIndex, int endIndex)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(self) || string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+            TaintedObject? tainted = GetTainted(taintedObjects, self);
+            if (tainted == null)
+            {
+                return result;
+            }
+
+            Range[] newRanges = Ranges.ForRemove(beginIndex, endIndex, tainted.Ranges);
+            if (newRanges != null && newRanges.Length > 0)
+            {
+                taintedObjects.Taint(result, newRanges);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringRemove exception {Exception}", err.Message);
+        }
+
+        return result;
+    }
+
     /// <summary> Taints a string.substring operation </summary>
     /// <param name="self"> original string </param>
     /// <param name="beginIndex"> start index </param>

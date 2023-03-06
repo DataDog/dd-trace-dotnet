@@ -505,4 +505,33 @@ public partial class StringAspects
         StringModuleImpl.PropagateTaint(target, result);
         return result;
     }
+
+    /// <summary>
+    /// String.ToCharArray aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <returns> String.Remove() </returns>
+    [AspectMethodReplace("System.String::Remove(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Remove(string target, int startIndex)
+    {
+        string result = target.Remove(startIndex);
+        OnStringRemove(target, result, startIndex, target.Length);
+        return result;
+    }
+
+    /// <summary>
+    /// String.ToCharArray aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <param name="count"> count parameter </param>
+    /// <returns> String.Remove() </returns>
+    [AspectMethodReplace("System.String::Remove(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Remove(string target, int startIndex, int count)
+    {
+        string result = target.Remove(startIndex, count);
+        OnStringRemove(target, result, startIndex, startIndex + count);
+        return result;
+    }
 }
