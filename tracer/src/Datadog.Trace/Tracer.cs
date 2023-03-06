@@ -17,6 +17,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -33,6 +34,7 @@ namespace Datadog.Trace
     /// </summary>
     public class Tracer : ITracer, IDatadogTracer, IDatadogOpenTracingTracer
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Tracer));
         private static readonly object GlobalInstanceLock = new();
         private static readonly Random Random = new(Seed: 666);
 
@@ -532,6 +534,7 @@ namespace Datadog.Trace
                              methodFullName.StartsWith("System") ||
                              methodFullName.StartsWith("Datadog.Trace") ||
                              methodFullName.StartsWith("Serilog") ||
+                             methodFullName.StartsWith("Swashbuckle") ||
                              methodFullName.StartsWith("MySql.Data"));
                 }
 
@@ -569,7 +572,7 @@ namespace Datadog.Trace
 
             if (!userMdMethod.Body.HasInstructions)
             {
-                // TODO LOG
+                Log.Warning("Method {0} has no instructions", userMdMethod.FullName);
                 return;
             }
 
@@ -591,11 +594,18 @@ namespace Datadog.Trace
             var calls = callsToInstrument as Instruction[] ?? callsToInstrument.ToArray();
             if (!calls.Any())
             {
-                // TODO LOG
+                Log.Warning("No calls to {0} found in {1}", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
                 return;
             }
 
-            var userSymbolMethod = Datadog.Trace.Pdb.DatadogPdbReader.CreatePdbReader(userMethod.Module.Assembly).ReadMethodSymbolInfo((int)(userMethod.MetadataToken));
+            var datadogPdbReader = Datadog.Trace.Pdb.DatadogPdbReader.CreatePdbReader(userMethod.Module.Assembly);
+            if (datadogPdbReader == null)
+            {
+                Log.Warning("No PDB found for {0}", userMethod.Module.Assembly.FullName);
+                return;
+            }
+
+            var userSymbolMethod = datadogPdbReader.ReadMethodSymbolInfo((int)(userMethod.MetadataToken));
 
             var lineProbes = calls.Select(call => CreateLineProbe(call, userMethod, userSymbolMethod)).ToArray();
 

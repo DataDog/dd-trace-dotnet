@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                 while (endpointDataSourcesEnumerator.MoveNext())
                 {
                     var endpointDataSource = endpointDataSourcesEnumerator.Current;
-                    var endpoints = endpointDataSource.GetType().GetProperty("Endpoints", BindingFlags.Instance | BindingFlags.Public).GetValue(endpointDataSource);
+                    var endpoints = GetProperty(endpointDataSource, "Endpoints").GetValue(endpointDataSource);
 
                     if (endpoints == null)
                     {
@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                     while (endpointsEnumerator.MoveNext())
                     {
                         var endpoint = endpointsEnumerator.Current;
-                        var metadata = endpoint.GetType().GetProperty("Metadata", BindingFlags.Instance | BindingFlags.Public).GetValue(endpoint);
+                        var metadata = GetProperty(endpoint, "Metadata").GetValue(endpoint);
                         Type controllerActionDescriptorType = Type.GetType("Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor, Microsoft.AspNetCore.Mvc.Core");
 
                         if (controllerActionDescriptorType == null)
@@ -124,9 +124,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                             continue;
                         }
 
-                        MethodInfo method = (MethodInfo)controllerActionDescriptor.GetType().GetProperty("MethodInfo", BindingFlags.Instance | BindingFlags.Public).GetValue(controllerActionDescriptor);
+                        MethodInfo method = (MethodInfo)GetProperty(controllerActionDescriptor, "MethodInfo").GetValue(controllerActionDescriptor);
 
-                        string displayName = (string)controllerActionDescriptor.GetType().GetProperty("DisplayName", BindingFlags.Instance | BindingFlags.Public).GetValue(controllerActionDescriptor);
+                        string displayName = (string)GetProperty(controllerActionDescriptor, "DisplayName").GetValue(controllerActionDescriptor);
 
                         if (method == null || string.IsNullOrEmpty(displayName))
                         {
@@ -182,6 +182,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             instance.Components.Add(rd => new BlockingMiddleware(rd, endPipeline: true).Invoke);
 
             return default;
+        }
+
+        private static PropertyInfo GetProperty(object obj, string propertyName)
+        {
+            return obj.GetType().GetProperties().FirstOrDefault(p => p.Name == propertyName);
         }
     }
 }
