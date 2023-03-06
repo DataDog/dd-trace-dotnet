@@ -5,17 +5,11 @@
 
 using System;
 
-namespace Datadog.Trace
+namespace Datadog.Trace;
+
+internal partial class Span : ISpan
 {
-    /// <summary>
-    /// A Span represents a logical unit of work in the system. It may be
-    /// related to other spans by parent/children relationships. The span
-    /// tracks the duration of an operation as well as associated metadata in
-    /// the form of a resource name, a service name, and user defined tags.
-    /// </summary>
-    internal partial class Span : ISpan
-    {
-        /// <inheritdoc />
+       /// <inheritdoc />
         string ISpan.OperationName
         {
             get => OperationName;
@@ -73,5 +67,4 @@ namespace Datadog.Trace
 
         /// <inheritdoc />
         string ISpan.GetTag(string key) => GetTag(key);
-    }
 }

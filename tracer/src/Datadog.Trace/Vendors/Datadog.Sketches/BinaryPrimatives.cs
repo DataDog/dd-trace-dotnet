@@ -8,7 +8,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-#if NETSTANDARD2_0
+// #if NETSTANDARD2_0
+
+#if false
 
 using System.Runtime.CompilerServices;
 

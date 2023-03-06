@@ -3,21 +3,30 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace
+using System;
+
+namespace Datadog.Trace;
+
+internal class ReadOnlySpanContext : ISpanContext
 {
-    internal class ReadOnlySpanContext : ISpanContext
+    private readonly System.Diagnostics.Activity _activity;
+
+    public ReadOnlySpanContext(System.Diagnostics.Activity activity, string serviceName)
     {
-        public ReadOnlySpanContext(ulong traceId, ulong spanId, string serviceName)
-        {
-            TraceId = traceId;
-            SpanId = spanId;
-            ServiceName = serviceName;
-        }
-
-        public ulong TraceId { get; }
-
-        public ulong SpanId { get; }
-
-        public string ServiceName { get; }
+        _activity = activity;
+        ServiceName = serviceName;
     }
+
+    public ReadOnlySpanContext(ulong traceId, ulong spanId, string serviceName)
+    {
+        TraceId = traceId;
+        SpanId = spanId;
+        ServiceName = serviceName;
+    }
+
+    public ulong TraceId { get; }
+
+    public ulong SpanId { get; }
+
+    public string ServiceName { get; }
 }

@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <!-- NuGet -->
     <Version>2.25.0</Version>
@@ -36,6 +35,11 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('netcore'))">
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
@@ -44,7 +48,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.0.0" PrivateAssets="All" />
 
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
+    <!--TODO commenting this out and just going to use the latest verison for all-->
+    <!-- <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.1" /> -->
   </ItemGroup>
 
   <ItemGroup>
@@ -59,6 +64,7 @@
     <!--DuckTyping-->
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>

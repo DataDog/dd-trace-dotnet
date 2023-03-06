@@ -5,158 +5,149 @@
 
 using System;
 using System.Globalization;
-using System.Security.Cryptography;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
+using ActivityStatusCode = System.Diagnostics.ActivityStatusCode;
 
-namespace Datadog.Trace
+namespace Datadog.Trace;
+
+/// <summary>
+///     Represents a span that is based on an <see cref="Activity"/>.
+/// </summary>
+internal partial class Span : ISpan
 {
-    /// <summary>
-    /// A Span represents a logical unit of work in the system. It may be
-    /// related to other spans by parent/children relationships. The span
-    /// tracks the duration of an operation as well as associated metadata in
-    /// the form of a resource name, a service name, and user defined tags.
-    /// </summary>
-    internal partial class Span : ISpan
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
+    private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
+    private readonly object _lock = new object();
+    private System.Diagnostics.Activity _activity;
+
+    internal Span(System.Diagnostics.Activity activity, ITags tags)
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
-        private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
+        _activity = activity;
+        // TODO tags I'm just having for the time being
+        Tags = tags ?? new CommonTags();
+    }
 
-        private readonly object _lock = new object();
+    internal SpanContext Context { get; set; }
 
-        internal Span(SpanContext context, DateTimeOffset? start)
-            : this(context, start, null)
+    public string OperationName
+    {
+        get
         {
+            return _activity.OperationName;
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
+        set
         {
-            Tags = tags ?? new CommonTags();
-            Context = context;
-            StartTime = start ?? Context.TraceContext.UtcNow;
+            // TODO no setter for OperationName we could custom property this as well or rejit
+        }
+    }
 
-            if (IsLogLevelDebugEnabled)
+    public string ResourceName
+    {
+        get
+        {
+            return _activity.DisplayName;
+        }
+
+        set
+        {
+            _activity.DisplayName = value;
+        }
+    }
+
+    // TODO
+    public string Type
+    {
+        get;
+        set;
+    }
+
+    public bool Error
+    {
+        get => _activity.Status == ActivityStatusCode.Error;
+        set
+        {
+            if (value)
             {
-                var tagsType = Tags.GetType();
-
-                Log.Debug(
-                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
-                    new object[] { SpanId, Context.ParentId, TraceId, Tags, tagsType });
+                _activity.SetStatus(ActivityStatusCode.Error);
+            }
+            else
+            {
+                _activity.SetStatus(ActivityStatusCode.Ok); // TODO assuming "false" is Ok and not Unset
             }
         }
+    }
 
-        /// <summary>
-        /// Gets or sets operation name
-        /// </summary>
-        internal string OperationName { get; set; }
+    internal bool IsFinished { get; private set; }
 
-        /// <summary>
-        /// Gets or sets the resource name
-        /// </summary>
-        internal string ResourceName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type of request this span represents (ex: web, db).
-        /// Not to be confused with span kind.
-        /// </summary>
-        /// <seealso cref="SpanTypes"/>
-        internal string Type { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this span represents an error
-        /// </summary>
-        internal bool Error { get; set; }
-
-        /// <summary>
-        /// Gets or sets the service name.
-        /// </summary>
-        internal string ServiceName
+    public string ServiceName
+    {
+        get
         {
-            get => Context.ServiceName;
-            set => Context.ServiceName = value;
+            return _activity.GetCustomProperty("ActivitySpanServiceName").ToString();
         }
 
-        /// <summary>
-        /// Gets the trace's unique identifier.
-        /// </summary>
-        internal ulong TraceId => Context.TraceId;
-
-        /// <summary>
-        /// Gets the span's unique identifier.
-        /// </summary>
-        internal ulong SpanId => Context.SpanId;
-
-        /// <summary>
-        /// Gets <i>local root span id</i>, i.e. the <c>SpanId</c> of the span that is the root of the local, non-reentrant
-        /// sub-operation of the distributed operation that is represented by the trace that contains this span.
-        /// </summary>
-        /// <remarks>
-        /// <para>If the trace has been propagated from a remote service, the <i>remote global root</i> is not relevant for this API.</para>
-        /// <para>A distributed operation represented by a trace may be re-entrant (e.g. service-A calls service-B, which calls service-A again).
-        /// In such cases, the local process may be concurrently executing multiple local root spans.
-        /// This API returns the id of the root span of the non-reentrant trace sub-set.</para></remarks>
-        internal ulong RootSpanId => Context.TraceContext?.RootSpan?.SpanId ?? SpanId;
-
-        internal ITags Tags { get; set; }
-
-        internal SpanContext Context { get; }
-
-        internal DateTimeOffset StartTime { get; private set; }
-
-        internal TimeSpan Duration { get; private set; }
-
-        internal bool IsFinished { get; private set; }
-
-        internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
-
-        internal bool IsTopLevel => Context.Parent == null || Context.Parent.SpanId == 0 || Context.Parent.ServiceName != ServiceName;
-
-        /// <summary>
-        /// Record the end time of the span and flushes it to the backend.
-        /// After the span has been finished all modifications will be ignored.
-        /// </summary>
-        public void Dispose()
+        set
         {
-            Finish();
+            _activity.SetCustomProperty("ActivitySpanServiceName", value);
+        }
+    }
+
+    // HACK TO SUPPORT TAGS - ideally we'd defer everything to Activity Tags
+    internal ITags Tags
+    {
+        get
+        {
+            return (ITags)_activity.GetCustomProperty(nameof(Tags));
         }
 
-        /// <summary>
-        /// Returns a <see cref="string" /> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="string" /> that represents this instance.
-        /// </returns>
-        public override string ToString()
+        set
         {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            sb.AppendLine($"TraceId: {Context.TraceId}");
-            sb.AppendLine($"ParentId: {Context.ParentId}");
-            sb.AppendLine($"SpanId: {Context.SpanId}");
-            sb.AppendLine($"Origin: {Context.Origin}");
-            sb.AppendLine($"ServiceName: {ServiceName}");
-            sb.AppendLine($"OperationName: {OperationName}");
-            sb.AppendLine($"Resource: {ResourceName}");
-            sb.AppendLine($"Type: {Type}");
-            sb.AppendLine($"Start: {StartTime}");
-            sb.AppendLine($"Duration: {Duration}");
-            sb.AppendLine($"Error: {Error}");
-            sb.AppendLine($"Meta: {Tags}");
+            _activity.SetCustomProperty(nameof(Tags), value);
+        }
+    }
 
-            return StringBuilderCache.GetStringAndRelease(sb);
+    public ulong TraceId => Convert.ToUInt64(_activity.TraceId.ToHexString().Substring(16), 16);
+
+    public ulong SpanId => Convert.ToUInt64(_activity.SpanId.ToHexString(), 16);
+
+    internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
+
+    /// <summary>
+    /// Gets <i>local root span id</i>, i.e. the <c>SpanId</c> of the span that is the root of the local, non-reentrant
+    /// sub-operation of the distributed operation that is represented by the trace that contains this span.
+    /// </summary>
+    /// <remarks>
+    /// <para>If the trace has been propagated from a remote service, the <i>remote global root</i> is not relevant for this API.</para>
+    /// <para>A distributed operation represented by a trace may be re-entrant (e.g. service-A calls service-B, which calls service-A again).
+    /// In such cases, the local process may be concurrently executing multiple local root spans.
+    /// This API returns the id of the root span of the non-reentrant trace sub-set.</para></remarks>
+    internal ulong RootSpanId => Context.TraceContext?.RootSpan?.SpanId ?? SpanId;
+
+    internal DateTimeOffset StartTime
+    {
+        get
+        {
+            return _activity.StartTimeUtc;
         }
 
-        /// <summary>
-        /// Add a the specified tag to this span.
-        /// </summary>
-        /// <param name="key">The tag's key.</param>
-        /// <param name="value">The tag's value.</param>
-        /// <returns>This span to allow method chaining.</returns>
-        internal ISpan SetTag(string key, string value)
+        // TODO StartTimeUtc is private
+        set
         {
+            // do nothing for now
+        }
+    }
+
+    internal TimeSpan Duration { get; private set; }
+
+    internal bool IsTopLevel => Context.Parent == null || Context.Parent.SpanId == 0 || Context.Parent.ServiceName != ServiceName;
+
+    public ISpan SetTag(string key, string value)
+    {
             if (IsFinished)
             {
                 Log.Warning("SetTag should not be called after the span was closed");
@@ -326,138 +317,131 @@ namespace Datadog.Trace
 
                     break;
                 default:
-                    Tags.SetTag(key, value);
+                    _activity.SetTag(key, value);
                     break;
             }
 
             return this;
-        }
+    }
 
-        /// <summary>
-        /// Record the end time of the span and flushes it to the backend.
-        /// After the span has been finished all modifications will be ignored.
-        /// </summary>
-        internal void Finish()
+    internal Span SetMetric(string key, double? value)
+    {
+        // TODO this should be within the "metrics" - unsure what the best way of doing that is for this
+        _activity.SetTag(key, value);
+        return this;
+    }
+
+    internal double? GetMetric(string key)
+    {
+        return (double?)_activity.GetTagItem(key);
+    }
+
+    public void Finish()
+    {
+        Finish(Context.TraceContext.ElapsedSince(StartTime));
+    }
+
+    public void Finish(DateTimeOffset finishTimestamp)
+    {
+        Finish(finishTimestamp - StartTime);
+    }
+
+    /// <summary>
+    /// Gets the value of the specified tag.
+    /// </summary>
+    /// <param name="key">The tag's key</param>
+    /// <returns>The value for the tag with the specified key, or <c>null</c> if the tag does not exist.</returns>
+    internal string GetTag(string key)
+    {
+        // since we don't expose a public API for getting trace-level attributes yet,
+        // allow retrieval through any span in the trace
+        switch (key)
         {
-            Finish(Context.TraceContext.ElapsedSince(StartTime));
+            case Trace.Tags.SamplingPriority:
+                return Context.TraceContext?.SamplingPriority?.ToString();
+            case Trace.Tags.Env:
+                return Context.TraceContext?.Environment;
+            case Trace.Tags.Version:
+                return Context.TraceContext?.ServiceVersion;
+            case Trace.Tags.Origin:
+                return Context.TraceContext?.Origin;
+            default:
+                var item = _activity.GetTagItem(key);
+                return item?.ToString(); // TODO would this work consistently as Activity tags are string/object pairs
         }
+    }
 
-        /// <summary>
-        /// Explicitly set the end time of the span and flushes it to the backend.
-        /// After the span has been finished all modifications will be ignored.
-        /// </summary>
-        /// <param name="finishTimestamp">Explicit value for the end time of the Span</param>
-        internal void Finish(DateTimeOffset finishTimestamp)
+    internal void Finish(TimeSpan duration)
+    {
+        var shouldCloseSpan = false;
+        lock (_lock)
         {
-            Finish(finishTimestamp - StartTime);
-        }
+            ResourceName ??= OperationName;
 
-        /// <summary>
-        /// Add the StackTrace and other exception metadata to the span
-        /// </summary>
-        /// <param name="exception">The exception.</param>
-        internal void SetException(Exception exception)
-        {
-            Error = true;
-
-            if (exception != null)
+            if (!IsFinished)
             {
-                // for AggregateException, use the first inner exception until we can support multiple errors.
-                // there will be only one error in most cases, and even if there are more and we lose
-                // the other ones, it's still better than the generic "one or more errors occurred" message.
-                if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+                Duration = duration;
+                if (Duration < TimeSpan.Zero)
                 {
-                    exception = aggregateException.InnerExceptions[0];
+                    Duration = TimeSpan.Zero;
                 }
 
-                SetTag(Trace.Tags.ErrorMsg, exception.Message);
-                SetTag(Trace.Tags.ErrorStack, exception.ToString());
-                SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+                IsFinished = true;
+                shouldCloseSpan = true;
             }
         }
 
-        /// <summary>
-        /// Gets the value of the specified tag.
-        /// </summary>
-        /// <param name="key">The tag's key</param>
-        /// <returns>The value for the tag with the specified key, or <c>null</c> if the tag does not exist.</returns>
-        internal string GetTag(string key)
+        if (shouldCloseSpan)
         {
-            // since we don't expose a public API for getting trace-level attributes yet,
-            // allow retrieval through any span in the trace
-            switch (key)
+            Context.TraceContext.CloseSpan(this);
+
+            // TODO
+            if (IsLogLevelDebugEnabled)
             {
-                case Trace.Tags.SamplingPriority:
-                    return Context.TraceContext?.SamplingPriority?.ToString();
-                case Trace.Tags.Env:
-                    return Context.TraceContext?.Environment;
-                case Trace.Tags.Version:
-                    return Context.TraceContext?.ServiceVersion;
-                case Trace.Tags.Origin:
-                    return Context.TraceContext?.Origin;
-                default:
-                    return Tags.GetTag(key);
+                Log.Debug(
+                    "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
+                    new object[] { SpanId, Context.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
             }
         }
+    }
 
-        internal void Finish(TimeSpan duration)
+    public void SetException(Exception exception)
+    {
+        Error = true;
+
+        if (exception != null)
         {
-            var shouldCloseSpan = false;
-            lock (_lock)
+            // for AggregateException, use the first inner exception until we can support multiple errors.
+            // there will be only one error in most cases, and even if there are more and we lose
+            // the other ones, it's still better than the generic "one or more errors occurred" message.
+            if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
             {
-                ResourceName ??= OperationName;
-
-                if (!IsFinished)
-                {
-                    Duration = duration;
-                    if (Duration < TimeSpan.Zero)
-                    {
-                        Duration = TimeSpan.Zero;
-                    }
-
-                    IsFinished = true;
-                    shouldCloseSpan = true;
-                }
+                exception = aggregateException.InnerExceptions[0];
             }
 
-            if (shouldCloseSpan)
-            {
-                Context.TraceContext.CloseSpan(this);
-
-                if (IsLogLevelDebugEnabled)
-                {
-                    Log.Debug(
-                        "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        new object[] { SpanId, Context.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
-                }
-            }
+            SetTag(Trace.Tags.ErrorMsg, exception.Message);
+            SetTag(Trace.Tags.ErrorStack, exception.ToString());
+            SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
         }
+    }
 
-        internal double? GetMetric(string key)
-        {
-            return Tags.GetMetric(key);
-        }
+    internal void ResetStartTime()
+    {
+        StartTime = Context.TraceContext.UtcNow;
+    }
 
-        internal Span SetMetric(string key, double? value)
-        {
-            Tags.SetMetric(key, value);
+    internal void SetStartTime(DateTimeOffset startTime)
+    {
+        StartTime = startTime;
+    }
 
-            return this;
-        }
+    internal void SetDuration(TimeSpan duration)
+    {
+        Duration = duration;
+    }
 
-        internal void ResetStartTime()
-        {
-            StartTime = Context.TraceContext.UtcNow;
-        }
-
-        internal void SetStartTime(DateTimeOffset startTime)
-        {
-            StartTime = startTime;
-        }
-
-        internal void SetDuration(TimeSpan duration)
-        {
-            Duration = duration;
-        }
+    public void Dispose()
+    {
+        Finish();
     }
 }

@@ -406,11 +406,8 @@ namespace Datadog.Trace
         internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
-
-            var span = new Span(spanContext, startTime, tags)
-            {
-                OperationName = operationName,
-            };
+            var activity = new System.Diagnostics.Activity(operationName);
+            var span = new Span(activity, tags);
 
             // Apply any global tags
             if (Settings.GlobalTags.Count > 0)
@@ -433,7 +430,7 @@ namespace Datadog.Trace
             // However, to reduce memory consumption, we don't actually add the result as tags on the span, and instead
             // write them directly to the <see cref="TraceChunkModel"/>.
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
-
+            activity.Start(); // TODO do we wan't to start  it here?
             return span;
         }
 
