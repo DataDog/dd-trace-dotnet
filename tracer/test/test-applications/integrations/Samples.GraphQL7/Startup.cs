@@ -57,6 +57,7 @@ namespace Samples.GraphQL7
             starWarsSchema.Subscription = starWarsSubscription;
             app.UseDeveloperExceptionPage();
             app.UseWelcomePage("/alive-check");
+            app.UseWebSockets();
 
             app.Map("/shutdown", builder =>
             {

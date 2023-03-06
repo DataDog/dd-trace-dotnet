@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -233,6 +234,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // FAILURE: query fails 'execute' step
             SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
 
+            // SUCCESS: query using Websocket
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query HeroQuery{hero {name appearsIn}}"",""variables"": {},}}", false, true);
+
+            // SUCCESS: mutation using Websocket
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"": {""human"":{""name"": ""Boba Fett""}},}}", false, true);
+
+            // FAILURE: query fails 'validate' step using Websocket
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query HumanError{human(id:1){name apearsIn}}"",""variables"": {},}}", true, true);
+
+            // FAILURE: query fails 'execute' step using Websocket
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException {name}}"",""variables"": {},}}", false, true);
+
             // TODO: When parse is implemented, add a test that fails 'resolve' step
 
             return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount;
@@ -241,7 +254,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 string url,
                 string httpMethod,
                 string graphQlRequestBody,
-                bool failsValidation = false)
+                bool failsValidation = false,
+                bool isWebsocket = false)
             {
                 expectedGraphQlValidateSpanCount++;
 
@@ -250,9 +264,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     expectedGraphQlExecuteSpanCount++;
                 }
 
-                SubmitRequest(
-                    aspNetCorePort,
-                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
+                var requestInfo =
+                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, };
+
+                if (isWebsocket)
+                {
+                    SubmitWebsocketRequest(aspNetCorePort, requestInfo);
+                }
+                else
+                {
+                    SubmitRequest(aspNetCorePort, requestInfo);
+                }
             }
         }
 
@@ -309,6 +331,52 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
                     }
                 }
+            }
+        }
+
+        private void SubmitWebsocketRequest(int aspNetCorePort, RequestInfo requestInfo)
+        {
+            var uri = new Uri($"ws://localhost:{aspNetCorePort}{requestInfo.Url}");
+            var webSocket = new ClientWebSocket();
+            webSocket.Options.AddSubProtocol("graphql-ws");
+
+            var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(5)); // 5 seconds timeout
+
+            try
+            {
+                webSocket.ConnectAsync(uri, cancellationTokenSource.Token).Wait();
+                Output.WriteLine("[websocket] WebSocket connection established");
+
+                // GraphQL First packet initialization
+                const string initPayload = @"{
+                    ""type"": ""connection_init"",
+                    ""payload"": {""payload"": {""Accept"":""application/json""}}
+                }";
+                var initBuffer = System.Text.Encoding.UTF8.GetBytes(initPayload);
+                var initSegment = new ArraySegment<byte>(initBuffer);
+                webSocket.SendAsync(initSegment, WebSocketMessageType.Text, true, cancellationTokenSource.Token).Wait();
+                Output.WriteLine("[websocket] Connection initialized");
+
+                // Send test request
+                var buffer = System.Text.Encoding.UTF8.GetBytes(requestInfo.RequestBody);
+                var segment = new ArraySegment<byte>(buffer);
+                webSocket.SendAsync(segment, WebSocketMessageType.Text, true, cancellationTokenSource.Token).Wait();
+                Output.WriteLine("[websocket] Request sent");
+            }
+            catch (Exception ex)
+            {
+                Output.WriteLine($"[websocket] WebSocket connection error: {ex.Message}");
+            }
+            finally
+            {
+                if (webSocket.State == WebSocketState.Open)
+                {
+                    webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, cancellationTokenSource.Token).Wait();
+                    Output.WriteLine("[websocket] WebSocket connection closed");
+                }
+
+                webSocket.Dispose();
             }
         }
 
