@@ -23,27 +23,6 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
 #if NETCOREAPP3_1_OR_GREATER
-    public class GraphQL4Tests : GraphQLTests
-    {
-        public GraphQL4Tests(ITestOutputHelper output)
-            : base("GraphQL4", output, nameof(GraphQL4Tests))
-        {
-        }
-
-        // Can't currently run multi-api on Windows
-        public static IEnumerable<object[]> TestData =>
-            EnvironmentTools.IsWindows()
-                ? new[] { new object[] { string.Empty } }
-                : PackageVersions.GraphQL;
-
-        [SkippableTheory]
-        [MemberData(nameof(TestData))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces(string packageVersion)
-            => await RunSubmitsTraces(packageVersion);
-    }
-
     public class GraphQL7Tests : GraphQLTests
     {
         public GraphQL7Tests(ITestOutputHelper output)
@@ -63,6 +42,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(string packageVersion)
             => await RunSubmitsTraces(packageVersion, true);
+    }
+
+    public class GraphQL4Tests : GraphQLTests
+    {
+        public GraphQL4Tests(ITestOutputHelper output)
+            : base("GraphQL4", output, nameof(GraphQL4Tests))
+        {
+        }
+
+        // Can't currently run multi-api on Windows
+        public static IEnumerable<object[]> TestData =>
+            EnvironmentTools.IsWindows()
+                ? new[] { new object[] { string.Empty } }
+                : PackageVersions.GraphQL;
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces(string packageVersion)
+            => await RunSubmitsTraces(packageVersion);
     }
 #endif
 
