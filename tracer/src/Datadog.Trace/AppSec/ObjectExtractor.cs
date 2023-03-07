@@ -92,7 +92,17 @@ namespace Datadog.Trace.AppSec
                             true);
                         var ilGen = dynMethod.GetILGenerator();
                         ilGen.Emit(OpCodes.Ldarg_0);
+                        if (bodyType.IsValueType)
+                        {
+                            ilGen.Emit(OpCodes.Unbox_Any, bodyType);
+                        }
+
                         ilGen.Emit(OpCodes.Ldfld, field);
+                        if (field.FieldType.IsValueType)
+                        {
+                            ilGen.Emit(OpCodes.Box, field.FieldType);
+                        }
+
                         ilGen.Emit(OpCodes.Ret);
                         var func = (Func<object, object>)dynMethod.CreateDelegate(typeof(Func<object, object>));
 
