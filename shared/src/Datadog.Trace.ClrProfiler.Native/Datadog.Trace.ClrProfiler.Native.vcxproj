@@ -33,7 +33,7 @@
     <SHARED-LIB-BINARIES Condition="'$(Configuration)'=='Release'">$(SHARED-LIB-PATH)fmt_$(SHARED-LIB-PLATFORM)-windows-static\lib\fmt.lib</SHARED-LIB-BINARIES>
     <SHARED-LIB-BINARIES Condition="'$(Configuration)'=='Debug'">$(SHARED-LIB-PATH)fmt_$(SHARED-LIB-PLATFORM)-windows-static\debug\lib\fmtd.lib</SHARED-LIB-BINARIES>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" Condition=" '$(OS)' == 'Windows_NT' " />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -76,7 +76,7 @@
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" Condition=" '$(OS)' == 'Windows_NT' " />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
@@ -262,7 +262,8 @@
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" Condition=" '$(OS)' == 'Windows_NT' " />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="Build" Condition=" '$(OS)' != 'Windows_NT' "></Target>
 </Project>
