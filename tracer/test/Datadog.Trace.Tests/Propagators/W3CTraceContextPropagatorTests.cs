@@ -55,6 +55,7 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData(-5, null, null, null, "dd=s:-5")]
         // origin only
         [InlineData(null, "abc", null, null, "dd=o:abc")]
+        [InlineData(null, "synthetics~;,=web", null, null, "dd=o:synthetics___~web")]
         // propagated tags only
         [InlineData(null, null, "_dd.p.a=1", null, "dd=t.a:1")]
         [InlineData(null, null, "_dd.p.a=1,_dd.p.b=2", null, "dd=t.a:1;t.b:2")]

@@ -53,7 +53,8 @@ namespace Datadog.Trace.Propagators
         {
             new(',', '_'),
             new(';', '_'),
-            new('=', '_'),
+            new('~', '_'),
+            new('=', '~'), // note '=' is encoded as '~' when injecting
         };
 
         private static readonly KeyValuePair<char, char>[] InjectPropagatedTagKeyReplacements =
