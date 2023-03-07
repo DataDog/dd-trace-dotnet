@@ -183,6 +183,8 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("xz-000000000000000000000000075bcd1z-000000003ade68b1-00")]      // bad version value (xz)
         [InlineData("00-000000000000000000000000075bcd1z-000000003ade68b1-00")]      // bad trace id value ("z" in hex)
         [InlineData("00-000000000000000000000000075bcd15-000000003ade68bx-00")]      // bad parent id value ("x" in hex)
+        [InlineData("00-12345678901234567890123456789012-1234567890123456-.0")]      // bad value in the first trace flags character
+        [InlineData("00-12345678901234567890123456789012-1234567890123456-0.")]      // bad value in the second trace flags character
         [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-00-1234")] // do NOT allow more data after trace-flags if the version is "00"
         public void TryParseTraceParent_Invalid(string header)
         {

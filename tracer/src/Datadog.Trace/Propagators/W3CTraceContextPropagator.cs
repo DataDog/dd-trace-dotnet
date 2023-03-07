@@ -278,7 +278,7 @@ namespace Datadog.Trace.Propagators
             }
             else
             {
-                sampled = false;
+                return false;
             }
 #else
             rawTraceId = header.Substring(startIndex: 3, length: 32);
@@ -302,7 +302,7 @@ namespace Datadog.Trace.Propagators
             }
             else
             {
-                sampled = false;
+                return false;
             }
 #endif
 
