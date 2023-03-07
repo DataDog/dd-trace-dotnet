@@ -42,6 +42,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         public void UdpSubmitsMetrics()
         {
+            if (EnvironmentTools.IsOsx())
+            {
+                throw new SkipException("Can't use UDS on OSX");
+            }
+
             EnvironmentHelper.EnableDefaultTransport();
             RunTest();
         }
@@ -52,6 +57,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "False")]
         public void UdsSubmitsMetrics()
         {
+            if (EnvironmentTools.IsOsx())
+            {
+                throw new SkipException("Can't use UDS on OSX");
+            }
+
             EnvironmentHelper.EnableUnixDomainSockets();
             RunTest();
         }

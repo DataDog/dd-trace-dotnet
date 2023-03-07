@@ -1362,6 +1362,11 @@ partial class Build
                 "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
             };
 
+            if (IsOsx)
+            {
+                projectsToSkip = projectsToSkip.Concat("Samples.GrpcDotNet").ToArray();
+            }
+
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
             // so no point building them now
             var multiPackageProjects = new List<string>();
