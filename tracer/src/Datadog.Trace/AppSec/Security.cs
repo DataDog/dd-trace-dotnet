@@ -528,8 +528,8 @@ namespace Datadog.Trace.AppSec
             {
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
                 AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged += AsmProductConfigChanged;
-                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved -= AsmDataProductConfigRemoved;
-                AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved -= AsmProductConfigRemoved;
+                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved += AsmDataProductConfigRemoved;
+                AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved += AsmProductConfigRemoved;
                 AddAppsecSpecificInstrumentations();
 
                 _rateLimiter ??= new AppSecRateLimiter(_settings.TraceRateLimit);

@@ -69,17 +69,17 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, acknowledgedId) }, "ASM_FEATURES", "first", new[] { acknowledgedId });
 
-            RcmBase.CheckAckState(request1, "ASM_FEATURES", expectedState, null, "First RCM call");
+            RcmBase.CheckAckState(request1, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
             request1.Client.State.BackendClientState.Should().Be("first");
 
-            RcmBase.CheckAckState(request1, "ASM_FEATURES", expectedState, null, "First RCM call");
+            RcmBase.CheckAckState(request1, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
 
             var spans2 = await SendRequestsAsync(agent, url);
             var acknowledgedId2 = nameof(TestSecurityToggling) + Guid.NewGuid();
 
             var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, acknowledgedId2) }, "ASM_FEATURES", "second", new[] { acknowledgedId2 });
 
-            RcmBase.CheckAckState(request2, "ASM_FEATURES", expectedState, null, "Second RCM call");
+            RcmBase.CheckAckState(request2, "ASM_FEATURES", 1, expectedState, null, "Second RCM call");
 
             var request3 = await agent.WaitRcmRequestAndReturnLast(appliedServiceNames: new[] { acknowledgedId2 });
             request3.Client.State.BackendClientState.Should().Be("second");
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", acknowledgedId) }, "ASM_FEATURES", appliedServiceNames: new[] { acknowledgedId });
 
-            RcmBase.CheckAckState(request, "ASM_FEATURES", ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
+            RcmBase.CheckAckState(request, "ASM_FEATURES", 1, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 
             await VerifySpans(spans1.ToImmutableList(), settings);
         }
