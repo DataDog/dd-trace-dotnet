@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.RcmModels;
+using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -341,7 +342,9 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            var updated = UpdateWafWithRulesData();
+            var ruleData = _remoteConfigurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
+            var updated = UpdateWafWithRulesData(ruleData);
+
             foreach (var asmDataConfig in asmDataConfigs)
             {
                 if (!updated)
@@ -367,11 +370,13 @@ namespace Datadog.Trace.AppSec
             {
                 if (asmDataConfig.TypedFile?.RulesData?.Length > 0)
                 {
-                    _remoteConfigurationStatus.RulesDataByFile[asmDataConfig.Name] = asmDataConfig.TypedFile.RulesData.ToList();
+                    _remoteConfigurationStatus.RulesDataByFile[asmDataConfig.Name] = asmDataConfig.TypedFile.RulesData;
                 }
             }
 
-            var updated = UpdateWafWithRulesData();
+            var ruleData = _remoteConfigurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
+            var updated = UpdateWafWithRulesData(ruleData);
+
             foreach (var asmDataConfig in asmDataConfigs)
             {
                 if (!updated)
@@ -404,12 +409,15 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            var result = _waf.UpdateRulesStatus(_remoteConfigurationStatus.RulesOverrides, _remoteConfigurationStatus.Exclusions);
+            var overrides = _remoteConfigurationStatus.RulesOverridesByFile.SelectMany(x => x.Value).ToList();
+            var exclusions = _remoteConfigurationStatus.ExclusionsByFile.SelectMany(x => x.Value).ToList();
+
+            var result = _waf.UpdateRulesStatus(overrides, exclusions);
             Log.Debug<bool, int, int>(
                 "_waf.Update was updated: {Success}, ({RulesOverridesCount} rule status entries), ({ExclusionsCount} exclusion filters)",
                 result,
-                _remoteConfigurationStatus.RulesOverrides.Count,
-                _remoteConfigurationStatus.Exclusions.Count);
+                overrides.Count,
+                exclusions.Count);
 
             foreach (var asmConfig in asmConfigs)
             {
@@ -434,12 +442,12 @@ namespace Datadog.Trace.AppSec
             {
                 if (asmConfig.TypedFile.RuleOverrides?.Length > 0)
                 {
-                    _remoteConfigurationStatus.RulesOverridesByFile[asmConfig.Name] = asmConfig.TypedFile.RuleOverrides.ToList();
+                    _remoteConfigurationStatus.RulesOverridesByFile[asmConfig.Name] = asmConfig.TypedFile.RuleOverrides;
                 }
 
                 if (asmConfig.TypedFile.Exclusions?.Count > 0)
                 {
-                    _remoteConfigurationStatus.ExclusionsByFile[asmConfig.Name] = asmConfig.TypedFile.Exclusions.ToList();
+                    _remoteConfigurationStatus.ExclusionsByFile[asmConfig.Name] = asmConfig.TypedFile.Exclusions;
                 }
 
                 if (asmConfig.TypedFile.Actions != null)
@@ -459,12 +467,15 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            var result = _waf.UpdateRulesStatus(_remoteConfigurationStatus.RulesOverrides, _remoteConfigurationStatus.Exclusions);
+            var overrides = _remoteConfigurationStatus.RulesOverridesByFile.SelectMany(x => x.Value).ToList();
+            var exclusions = _remoteConfigurationStatus.ExclusionsByFile.SelectMany(x => x.Value).ToList();
+
+            var result = _waf.UpdateRulesStatus(overrides, exclusions);
             Log.Debug<bool, int, int>(
                 "_waf.Update was updated: {Success}, ({RulesOverridesCount} rule status entries), ({ExclusionsCount} exclusion filters)",
                 result,
-                _remoteConfigurationStatus.RulesOverrides.Count,
-                _remoteConfigurationStatus.Exclusions.Count);
+                overrides.Count,
+                exclusions.Count);
 
             foreach (var asmConfig in asmConfigs)
             {
@@ -479,7 +490,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private bool UpdateWafWithRulesData() => _waf?.UpdateRulesData(_remoteConfigurationStatus.RulesData) ?? false;
+        private bool UpdateWafWithRulesData(List<RuleData> ruleData) => _waf?.UpdateRulesData(ruleData) ?? false;
 
         private void InitWafAndInstrumentations(bool fromRemoteConfig = false)
         {
@@ -505,7 +516,8 @@ namespace Datadog.Trace.AppSec
                 _waf = _wafInitResult.Waf;
                 oldWaf?.Dispose();
                 Log.Debug("Disposed old waf and affected new waf");
-                UpdateWafWithRulesData();
+                var ruleData = _remoteConfigurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
+                UpdateWafWithRulesData(ruleData);
                 AddInstrumentationsAndProducts(fromRemoteConfig);
             }
             else

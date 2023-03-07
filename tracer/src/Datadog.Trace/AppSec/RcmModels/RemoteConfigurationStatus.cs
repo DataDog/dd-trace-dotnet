@@ -14,26 +14,11 @@ namespace Datadog.Trace.AppSec.RcmModels;
 
 internal class RemoteConfigurationStatus
 {
-    internal Dictionary<string, List<RuleOverride>> RulesOverridesByFile { get; } = new();
+    internal Dictionary<string, RuleOverride[]> RulesOverridesByFile { get; } = new();
 
-    internal List<RuleOverride> RulesOverrides
-    {
-        get { return RulesOverridesByFile.SelectMany(x => x.Value).ToList(); }
-    }
+    internal Dictionary<string, RuleData[]> RulesDataByFile { get; } = new();
 
-    internal Dictionary<string, List<RuleData>> RulesDataByFile { get; } = new();
-
-    internal List<RuleData> RulesData
-    {
-        get { return RulesDataByFile.SelectMany(x => x.Value).ToList(); }
-    }
-
-    internal Dictionary<string, List<JToken>> ExclusionsByFile { get; } = new();
-
-    internal List<JToken> Exclusions
-    {
-        get { return ExclusionsByFile.SelectMany(x => x.Value).ToList(); }
-    }
+    internal Dictionary<string, JArray> ExclusionsByFile { get; } = new();
 
     internal IDictionary<string, Action> Actions { get; set; } = new Dictionary<string, Action>();
 
