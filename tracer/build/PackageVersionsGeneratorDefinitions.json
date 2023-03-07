@@ -99,7 +99,7 @@
       "7.*.*"
     ],
     "VersionConditions": [{
-      "MaxVersionExclusive": "6.0.0",
+      "MaxVersionExclusive": "8.0.0",
       "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
     }]
   },
