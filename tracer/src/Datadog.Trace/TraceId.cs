@@ -18,9 +18,9 @@ internal readonly record struct TraceId(ulong Upper, ulong Lower) : IComparable<
     public readonly ulong Upper = Upper;
     public readonly ulong Lower = Lower;
 
-    public static implicit operator TraceId(ulong lower) => new(0, lower);
+    public static explicit operator TraceId(ulong lower) => new(0, lower);
 
-    public static implicit operator TraceId(int lower) => new(0, (ulong)lower);
+    public static explicit operator TraceId(int lower) => new(0, (ulong)lower);
 
     public static bool operator <(TraceId left, TraceId right)
     {
