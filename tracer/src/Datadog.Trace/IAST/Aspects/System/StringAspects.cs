@@ -256,7 +256,7 @@ public partial class StringAspects
     public static char[] ToCharArray(string target)
     {
         var result = target.ToCharArray();
-        StringModuleImpl.PropagateTaint (target, result);
+        StringModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
