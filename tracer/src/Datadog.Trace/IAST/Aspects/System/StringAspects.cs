@@ -534,4 +534,19 @@ public partial class StringAspects
         OnStringRemove(target, result, startIndex, startIndex + count);
         return result;
     }
+
+    /// <summary>
+    /// String.Insert aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <param name="value"> value to insert </param>
+    /// <returns> String.Insert() </returns>
+    [AspectMethodReplace("System.String::Insert(System.Int32,System.String)", AspectFilter.StringOptimization)]
+    public static string Insert(string target, int startIndex, string value)
+    {
+        string result = target.Insert(startIndex, value);
+        OnStringInsert(target, startIndex, value, result);
+        return result;
+    }
 }

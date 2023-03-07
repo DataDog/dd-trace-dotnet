@@ -57,6 +57,76 @@ internal static class StringModuleImpl
         return result;
     }
 
+    /// <summary> Taints a string.Insert operation </summary>
+    /// <param name="target"> original string </param>
+    /// <param name="index"> start index </param>
+    /// <param name="value"> value to insert </param>
+    /// <param name="result"> Result </param>
+    /// <returns> result </returns>
+    public static string OnStringInsert(string target, int index, string value, string result)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result) || (result == target && object.ReferenceEquals(result, target)))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+            TaintedObject? taintedTarget = GetTainted(taintedObjects, target);
+            TaintedObject? taintedValue = GetTainted(taintedObjects, value);
+            if (taintedValue == null && taintedTarget == null)
+            {
+                return result;
+            }
+
+            // if we have the same target and result but not the same reference, that means that
+            // we have called insert() with empty insert string and the method has created a new string
+            // with the same value but different reference (which actually happens in .net462)
+            if (result == target)
+            {
+                taintedObjects.Taint(result, taintedTarget!.Ranges);
+                return result;
+            }
+
+            var newRanges1 = taintedTarget != null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
+            var newRanges2 = taintedValue?.Ranges;
+            var newRanges3 = taintedTarget != null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
+
+            var rangesTotal = (newRanges1?.Length ?? 0) + (newRanges2?.Length ?? 0) + (newRanges3?.Length ?? 0);
+            var rangesResult = new Range[rangesTotal];
+
+            if (newRanges1 != null)
+            {
+                Ranges.CopyShift(newRanges1, rangesResult, 0, 0);
+            }
+
+            if (newRanges2 != null)
+            {
+                Ranges.CopyShift(newRanges2, rangesResult, (newRanges1?.Length ?? 0), index);
+            }
+
+            if (newRanges3 != null)
+            {
+                Ranges.CopyShift(newRanges3, rangesResult, (newRanges1?.Length ?? 0) + (newRanges2?.Length ?? 0), index + value.Length);
+            }
+
+            taintedObjects.Taint(result, rangesResult);
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringInsert exception {Exception}", err.Message);
+        }
+
+        return result;
+    }
+
     /// <summary> Taints a string.Remove operation </summary>
     /// <param name="self"> original string </param>
     /// <param name="result"> Result </param>

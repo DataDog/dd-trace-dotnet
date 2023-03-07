@@ -144,7 +144,7 @@ public class StringSubstringTests : InstrumentationTestsBase
     }
 
     [Fact]
-     public void GivenATaintedString_WhenCallingSubstringWithTwoWrongParameter_ThenArgumentOutOfRangeExceptionIsThrown2()
+    public void GivenATaintedString_WhenCallingSubstringWithTwoWrongParameter_ThenArgumentOutOfRangeExceptionIsThrown2()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => taintedValue.Substring(2200, 1));
     }
