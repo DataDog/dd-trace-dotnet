@@ -22,7 +22,7 @@ internal static class StringModuleImpl
         return value == null ? null : taintedObjects.Get(value);
     }
 
-    public static object? TaintIfInputIsTainted(object input, object result)
+    public static object? PropagateTaint(object input, object result)
     {
         try
         {
