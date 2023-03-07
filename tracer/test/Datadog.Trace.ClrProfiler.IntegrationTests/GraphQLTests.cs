@@ -282,7 +282,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (isWebsocket)
                 {
-                    SubmitWebsocketRequest(aspNetCorePort, requestInfo);
+                    SubmitWebsocketRequest(aspNetCorePort, requestInfo).Wait();
                 }
                 else
                 {
@@ -347,7 +347,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private void SubmitWebsocketRequest(int aspNetCorePort, RequestInfo requestInfo)
+        private async Task SubmitWebsocketRequest(int aspNetCorePort, RequestInfo requestInfo)
         {
             var uri = new Uri($"ws://localhost:{aspNetCorePort}{requestInfo.Url}");
             var webSocket = new ClientWebSocket();
@@ -358,7 +358,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             try
             {
-                webSocket.ConnectAsync(uri, cancellationTokenSource.Token).Wait();
+                await webSocket.ConnectAsync(uri, cancellationTokenSource.Token);
                 Output.WriteLine("[websocket] WebSocket connection established");
 
                 // GraphQL First packet initialization
@@ -368,13 +368,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }";
                 var initBuffer = System.Text.Encoding.UTF8.GetBytes(initPayload);
                 var initSegment = new ArraySegment<byte>(initBuffer);
-                webSocket.SendAsync(initSegment, WebSocketMessageType.Text, true, cancellationTokenSource.Token).Wait();
+                await webSocket.SendAsync(initSegment, WebSocketMessageType.Text, true, cancellationTokenSource.Token);
                 Output.WriteLine("[websocket] Connection initialized");
 
                 // Send test request
                 var buffer = System.Text.Encoding.UTF8.GetBytes(requestInfo.RequestBody);
                 var segment = new ArraySegment<byte>(buffer);
-                webSocket.SendAsync(segment, WebSocketMessageType.Text, true, cancellationTokenSource.Token).Wait();
+                await webSocket.SendAsync(segment, WebSocketMessageType.Text, true, cancellationTokenSource.Token);
                 Output.WriteLine("[websocket] Request sent");
             }
             catch (Exception ex)
@@ -385,7 +385,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 if (webSocket.State == WebSocketState.Open)
                 {
-                    webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, cancellationTokenSource.Token).Wait();
+                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, cancellationTokenSource.Token);
                     Output.WriteLine("[websocket] WebSocket connection closed");
                 }
 
