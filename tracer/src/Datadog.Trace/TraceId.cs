@@ -15,6 +15,8 @@ internal readonly record struct TraceId(ulong Upper, ulong Lower) : IComparable<
 {
     public const int Size = sizeof(ulong) * 2;
 
+    public static readonly TraceId Zero = new(0, 0);
+
     public readonly ulong Upper = Upper;
     public readonly ulong Lower = Lower;
 
