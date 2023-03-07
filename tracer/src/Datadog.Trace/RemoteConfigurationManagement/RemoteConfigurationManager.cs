@@ -322,6 +322,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 try
                 {
                     var removedConfigurations = GetRemovedConfigurations(product);
+
                     if (removedConfigurations is null)
                     {
                         continue;
