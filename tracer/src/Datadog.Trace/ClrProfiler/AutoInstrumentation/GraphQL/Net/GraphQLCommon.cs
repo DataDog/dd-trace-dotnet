@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             return scope;
         }
 
-        internal static Scope CreateScopeFromExecuteAsyncV5OrGreater(Tracer tracer, IExecutionContextV5OrGreater executionContext)
+        internal static Scope CreateScopeFromExecuteAsyncV5AndV7(Tracer tracer, IExecutionContextV5AndV7 executionContext)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
