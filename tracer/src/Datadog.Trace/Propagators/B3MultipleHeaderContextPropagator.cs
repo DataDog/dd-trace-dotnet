@@ -57,20 +57,13 @@ namespace Datadog.Trace.Propagators
             }
 
             var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanId)?.Trim();
+
+            if (rawSpanId == null || !HexString.TryParseUInt64(rawSpanId, out var parentId))
+            {
+                return false;
+            }
+
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Sampled);
-
-            ulong parentId;
-
-            if (rawSpanId == null)
-            {
-                parentId = 0;
-            }
-            else if (!HexString.TryParseUInt64(rawSpanId, out parentId))
-            {
-                rawSpanId = null; // ignore invalid span id
-                parentId = 0;
-            }
-
             spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
             return true;
         }
