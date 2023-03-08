@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec
 {
@@ -55,7 +56,10 @@ namespace Datadog.Trace.AppSec
 
             visited.Add(body);
 
-            Log.Debug("ExtractProperties - body: {Body}", body);
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("ExtractProperties - body: {Body}", body);
+            }
 
             var bodyType = body.GetType();
 
@@ -128,7 +132,10 @@ namespace Datadog.Trace.AppSec
                 if (fieldExtractor != null)
                 {
                     var value = fieldExtractor.Accessor.Invoke(body);
-                    Log.Debug("ExtractProperties - property: {Name} {Value}", fieldExtractor.Name, value);
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug("ExtractProperties - property: {Name} {Value}", fieldExtractor.Name, value);
+                    }
 
                     var item =
                         value == null ?
