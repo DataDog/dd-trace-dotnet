@@ -7,6 +7,7 @@
   
   <ItemGroup>
     <PackageReference Include="System.Net.Http.WinHttpHandler" Version="5.0.0" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="5.0.1" />
   </ItemGroup>
   
 </Project>
