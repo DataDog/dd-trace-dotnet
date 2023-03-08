@@ -156,7 +156,8 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = TraceId,
+                           TraceId128 = TraceId,
+                           TraceId = TraceId.Lower,
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
@@ -177,7 +178,8 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = TraceId,
+                           TraceId128 = TraceId,
+                           TraceId = TraceId.Lower,
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
@@ -197,7 +199,8 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = TraceId,
+                           TraceId128 = TraceId,
+                           TraceId = TraceId.Lower,
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
@@ -225,8 +228,8 @@ namespace Datadog.Trace.Tests.Propagators
 
             result.Should().BeEquivalentTo(new SpanContextMock
                                            {
-                                               TraceId = TraceId,
-                                               PropagatedTags = EmptyPropagatedTags,
+                                               TraceId128 = TraceId,
+                                               TraceId = TraceId.Lower
                                            });
         }
 
@@ -284,7 +287,8 @@ namespace Datadog.Trace.Tests.Propagators
                        new SpanContextMock
                        {
                            // SpanId has default value
-                           TraceId = TraceId,
+                           TraceId128 = TraceId,
+                           TraceId = TraceId.Lower,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,
@@ -314,7 +318,8 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = TraceId,
+                           TraceId128 = TraceId,
+                           TraceId = TraceId.Lower,
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = expectedSamplingPriority,

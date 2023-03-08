@@ -82,7 +82,8 @@ public class DistributedPropagatorTests
               .BeEquivalentTo(
                    new SpanContextMock
                    {
-                       TraceId = TraceId,
+                       TraceId128 = TraceId,
+                       TraceId = TraceId.Lower,
                        SpanId = SpanId,
                        RawTraceId = RawTraceId,
                        RawSpanId = RawSpanId,
@@ -119,6 +120,7 @@ public class DistributedPropagatorTests
 
         result.Should().BeEquivalentTo(new SpanContextMock
                                        {
+                                           TraceId128 = TraceId,
                                            TraceId = TraceId,
                                            PropagatedTags = EmptyPropagatedTags,
                                        });
@@ -193,7 +195,8 @@ public class DistributedPropagatorTests
                    new SpanContextMock
                    {
                        // SpanId has default value
-                       TraceId = TraceId,
+                       TraceId128 = TraceId,
+                       TraceId = TraceId.Lower,
                        Origin = Origin,
                        RawTraceId = RawTraceId,
                        RawSpanId = RawSpanId,
@@ -229,7 +232,8 @@ public class DistributedPropagatorTests
               .BeEquivalentTo(
                    new SpanContextMock
                    {
-                       TraceId = TraceId,
+                       TraceId128 = TraceId,
+                       TraceId = TraceId.Lower,
                        SpanId = SpanId,
                        RawTraceId = RawTraceId,
                        RawSpanId = RawSpanId,

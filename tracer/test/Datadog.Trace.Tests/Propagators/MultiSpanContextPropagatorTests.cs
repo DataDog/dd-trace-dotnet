@@ -136,7 +136,8 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = (TraceId)123456789,
+                           TraceId128 = (TraceId)123456789,
+                           TraceId = 123456789,
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
@@ -160,7 +161,8 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = (TraceId)123456789,
+                           TraceId128 = (TraceId)123456789,
+                           TraceId = 123456789,
                            SpanId = 987654321,
                            RawTraceId = "00000000075bcd15",
                            RawSpanId = "000000003ade68b1",
@@ -188,7 +190,8 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = (TraceId)123456789,
+                           TraceId128 = (TraceId)123456789,
+                           TraceId = 123456789,
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
@@ -221,7 +224,8 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = (TraceId)123456789,
+                           TraceId128 = (TraceId)123456789,
+                           TraceId = 123456789,
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
@@ -263,7 +267,8 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = (TraceId)123456789,
+                           TraceId128 = (TraceId)123456789,
+                           TraceId = 123456789,
                            SpanId = 987654321,
                            Origin = "rum",
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
