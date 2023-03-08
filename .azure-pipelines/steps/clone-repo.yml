@@ -25,8 +25,8 @@ steps:
       git config --get-regexp .*extraheader
       git config --get-all http.proxy
       git config http.version HTTP/1.1
-      echo "Force fetching $targetBranch and $prBranch ..."
-      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/$targetBranch:refs/remotes/origin/$targetBranch +refs/heads/$prBranch:refs/remotes/origin/$prBranch
+      echo "Force fetching ${{ parameters.targetBranch }} and $prBranch ..."
+      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/$prBranch:refs/remotes/origin/$prBranch
       echo "Checking out $prBranch..."
       git checkout --force $prBranch
       echo "Resetting $prBranch to origin/$prBranch ..."
@@ -70,7 +70,7 @@ steps:
 
       $localPath=$env:BUILD_REPOSITORY_LOCALPATH
       echo "Initializing repository at $localPath ..."
-      git init --initial-branch=$targetBranch "$localPath"
+      git init --initial-branch=${{ parameters.targetBranch }} "$localPath"
 
       cd $localPath
 
@@ -85,9 +85,9 @@ steps:
       git config --get-all http.proxy
       git config http.version HTTP/1.1
 
-      echo "Force fetching $targetBranch and $prBranch ..."
-      echo "git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${targetBranch}:refs/remotes/origin/${targetBranch} +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}"
-      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${targetBranch}:refs/remotes/origin/${targetBranch} +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}
+      echo "Force fetching ${{ parameters.targetBranch }} and $prBranch ..."
+      echo "git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}"
+      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}
 
       echo "Checking out $prBranch..."
       git checkout --force $prBranch
