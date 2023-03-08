@@ -175,7 +175,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             // TODO: 128-bit
             // 64 bits verify
-            var expectedTraceId = 9532127138774266268UL;
+            var expectedTraceId = (TraceId)9532127138774266268UL;
             var expectedSpanId = 67667974448284343UL;
             Assert.Equal(expectedTraceId, result.TraceId128);
             Assert.Equal(expectedSpanId, result.SpanId);

@@ -378,7 +378,7 @@ namespace Datadog.Trace
                        // use the 128-bit TraceId if possible
                        SpanContext sc => sc.TraceId128,
                        // otherwise use the 64-bit ulong
-                       not null => context.TraceId,
+                       not null => (TraceId)context.TraceId,
                        // if no context, use the specified fallback value
                        null => fallback
                    };

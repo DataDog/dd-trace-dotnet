@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tests.Propagators
             var result = B3Propagator.Extract(headers.Object);
 
             // 64 bits verify
-            var expectedTraceId = 9532127138774266268UL;
+            var expectedTraceId = (TraceId)9532127138774266268UL;
             var expectedSpanId = 67667974448284343UL;
             Assert.Equal(expectedTraceId, result.TraceId128);
             Assert.Equal(expectedSpanId, result.SpanId);
