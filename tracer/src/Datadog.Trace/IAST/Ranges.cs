@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry;
 
 namespace Datadog.Trace.Iast;
 internal static class Ranges
