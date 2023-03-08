@@ -73,7 +73,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,int,char[]) exception {Exception}", err.Message);
+            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,int,char[]) exception");
         }
 
         return result;
