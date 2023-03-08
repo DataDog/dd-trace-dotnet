@@ -26,6 +26,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_IHeadersCollection()
         {
+            // TODO: 0123456789abcdef1122334455667788
             ulong traceId = 123456789;
             ulong spanId = 987654321;
             var samplingPriority = SamplingPriorityValues.UserKeep;
@@ -172,14 +173,15 @@ namespace Datadog.Trace.Tests.Propagators
                    .Returns(new[] { "1" });
             var result = B3Propagator.Extract(headers.Object);
 
+            // TODO: 128-bit
             // 64 bits verify
             var expectedTraceId = 9532127138774266268UL;
             var expectedSpanId = 67667974448284343UL;
-            Assert.Equal(expectedTraceId, result.TraceId);
+            Assert.Equal(expectedTraceId, result.TraceId128);
             Assert.Equal(expectedSpanId, result.SpanId);
 
             // Check truncation
-            var truncatedTraceId64 = expectedTraceId.ToString("x16");
+            var truncatedTraceId64 = expectedTraceId.Lower.ToString("x16");
             Assert.Equal(truncatedTraceId64, traceId.Substring(16));
 
             // Check the injection restoring the 128 bits traceId.
