@@ -1335,7 +1335,7 @@ partial class Build
             }
         });
 
-    Target CompileSamplesLinux => _ => _
+    Target CompileSamplesLinuxOrOsx => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
@@ -1463,7 +1463,7 @@ partial class Build
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
-        .After(CompileSamplesLinux)
+        .After(CompileSamplesLinuxOrOsx)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1497,13 +1497,13 @@ partial class Build
             }
         });
 
-    Target CompileLinuxIntegrationTests => _ => _
+    Target CompileLinuxOrOsxIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
-        .After(CompileSamplesLinux)
+        .After(CompileSamplesLinuxOrOsx)
         .After(CompileMultiApiPackageVersionSamples)
         .After(BuildRunnerTool)
         .Requires(() => MonitoringHomeDirectory != null)
@@ -1518,12 +1518,12 @@ partial class Build
 
             DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false);
 
-            IntegrationTestLinuxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
-            IntegrationTestLinuxProfilerDirFudge(Projects.AppSecIntegrationTests);
+            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
+            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
         });
 
     Target RunLinuxIntegrationTests => _ => _
-        .After(CompileLinuxIntegrationTests)
+        .After(CompileLinuxOrOsxIntegrationTests)
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
         .Requires(() => !IsWin)
@@ -1657,7 +1657,7 @@ partial class Build
     Target CopyServerlessArtifacts => _ => _
        .Description("Copies monitoring-home into the serverless artifacts directory")
        .Unlisted()
-       .After(CompileSamplesLinux, CompileMultiApiPackageVersionSamples)
+       .After(CompileSamplesLinuxOrOsx, CompileMultiApiPackageVersionSamples)
        .Executes(() =>
         {
 
@@ -2046,7 +2046,7 @@ partial class Build
         };
 
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
-    private void IntegrationTestLinuxProfilerDirFudge(string project)
+    private void IntegrationTestLinuxOrOsxProfilerDirFudge(string project)
     {
         // Not sure if/why this is necessary, and we can't just point to the correct output location
         var src = MonitoringHomeDirectory;
@@ -2055,9 +2055,19 @@ partial class Build
         CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
         // not sure exactly where this is supposed to go, may need to change the original build
-        foreach (var linuxDir in MonitoringHomeDirectory.GlobDirectories("linux-*"))
+        if (IsLinux)
         {
-            CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            foreach (var linuxDir in MonitoringHomeDirectory.GlobDirectories("linux-*"))
+            {
+                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            }
+        }
+        else if (IsOsx)
+        {
+            foreach (var linuxDir in MonitoringHomeDirectory.GlobDirectories("osx"))
+            {
+                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            }
         }
     }
 
