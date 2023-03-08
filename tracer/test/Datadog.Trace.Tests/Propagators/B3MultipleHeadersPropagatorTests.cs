@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tests.Propagators
         public void Inject_IHeadersCollection()
         {
             // TODO: 0123456789abcdef1122334455667788
-            ulong traceId = 123456789;
+            var traceId = (TraceId)123456789;
             ulong spanId = 987654321;
             var samplingPriority = SamplingPriorityValues.UserKeep;
             var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.VerifyNoOtherCalls();
 
             // Extract sampling from trace context
-            var newContext = new SpanContext(null, new TraceContext(null), null, traceId, spanId);
+            var newContext = new SpanContext(parent: null, new TraceContext(null), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
             newHeaders.Verify(h => h.Set("x-b3-traceid", "00000000075bcd15"), Times.Once());
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_CarrierAndDelegate()
         {
-            ulong traceId = 123456789;
+            var traceId = (TraceId)123456789;
             ulong spanId = 987654321;
             var samplingPriority = SamplingPriorityValues.UserKeep;
             var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.VerifyNoOtherCalls();
 
             // Extract sampling from trace context
-            var newContext = new SpanContext(null, new TraceContext(null), null, traceId, spanId);
+            var newContext = new SpanContext(parent: null, new TraceContext(null), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
             newHeaders.Verify(h => h.Set("x-b3-traceid", "00000000075bcd15"), Times.Once());
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = 123456789,
+                           TraceId = (TraceId)123456789,
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = 123456789,
+                           TraceId = (TraceId)123456789,
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",

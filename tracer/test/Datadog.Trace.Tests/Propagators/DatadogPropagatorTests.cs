@@ -19,11 +19,11 @@ namespace Datadog.Trace.Tests.Propagators
 {
     public class DatadogPropagatorTests
     {
-        private const ulong TraceId = 1;
         private const ulong SpanId = 2;
         private const int SamplingPriority = SamplingPriorityValues.UserReject;
         private const string Origin = "origin";
         private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
+        private static readonly TraceId TraceId = (TraceId)1;
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.Propagators
 
         private static readonly KeyValuePair<string, string>[] DefaultHeaderValues =
         {
-            new("x-datadog-trace-id", TraceId.ToString(InvariantCulture)),
+            new("x-datadog-trace-id", TraceId.Lower.ToString(InvariantCulture)),
             new("x-datadog-parent-id", SpanId.ToString(InvariantCulture)),
             new("x-datadog-sampling-priority", SamplingPriority.ToString(InvariantCulture)),
             new("x-datadog-origin", Origin),
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests.Propagators
         {
             KeyValuePair<string, string>[] expectedHeaders =
                 {
-                    new("x-datadog-trace-id", TraceId.ToString(InvariantCulture)),
+                    new("x-datadog-trace-id", TraceId.Lower.ToString(InvariantCulture)),
                     new("x-datadog-parent-id", SpanId.ToString(InvariantCulture)),
                     new("x-datadog-sampling-priority", SamplingPriority.ToString(InvariantCulture)),
                     new("x-datadog-origin", Origin),
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Tests.Propagators
             Propagator.Inject(context, headers.Object);
 
             // null values are not set, so only traceId and spanId (the first two in the list) should be set
-            headers.Verify(h => h.Set("x-datadog-trace-id", TraceId.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-trace-id", TraceId.Lower.ToString(InvariantCulture)), Times.Once());
             headers.Verify(h => h.Set("x-datadog-parent-id", SpanId.ToString(InvariantCulture)), Times.Once());
             headers.VerifyNoOtherCalls();
         }
@@ -138,7 +138,7 @@ namespace Datadog.Trace.Tests.Propagators
             Propagator.Inject(context, headers.Object);
 
             // null values are not set, so only traceId and spanId (the first two in the list) should be set
-            headers.Verify(h => h.Set("x-datadog-trace-id", TraceId.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set("x-datadog-trace-id", TraceId.Lower.ToString(InvariantCulture)), Times.Once());
             headers.Verify(h => h.Set("x-datadog-parent-id", SpanId.ToString(InvariantCulture)), Times.Once());
             headers.Verify(h => h.Set("x-datadog-sampling-priority", "12"), Times.Once());
             headers.VerifyNoOtherCalls();
@@ -220,7 +220,7 @@ namespace Datadog.Trace.Tests.Propagators
             var headers = new Mock<IHeadersCollection>();
 
             // only setup TraceId, other properties remain null/empty
-            headers.Setup(h => h.GetValues("x-datadog-trace-id")).Returns(new[] { TraceId.ToString(InvariantCulture) });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id")).Returns(new[] { TraceId.Lower.ToString(InvariantCulture) });
             var result = Propagator.Extract(headers.Object);
 
             result.Should().BeEquivalentTo(new SpanContextMock

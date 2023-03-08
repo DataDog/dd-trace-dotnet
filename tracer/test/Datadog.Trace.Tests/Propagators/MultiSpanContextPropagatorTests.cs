@@ -52,7 +52,13 @@ namespace Datadog.Trace.Tests.Propagators
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
-            var context = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, 123456789, 987654321);
+            var context = new SpanContext(
+                parent: SpanContext.None,
+                traceContext,
+                serviceName: null,
+                (TraceId)123456789,
+                spanId: 987654321);
+
             var headers = new Mock<IHeadersCollection>();
 
             Propagator.Inject(context, headers.Object);
@@ -83,7 +89,7 @@ namespace Datadog.Trace.Tests.Propagators
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
-            var context = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, 123456789, 987654321);
+            var context = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, (TraceId)123456789, 987654321);
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
@@ -130,7 +136,7 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = 123456789,
+                           TraceId = (TraceId)123456789,
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
@@ -154,7 +160,7 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = 123456789,
+                           TraceId = (TraceId)123456789,
                            SpanId = 987654321,
                            RawTraceId = "00000000075bcd15",
                            RawSpanId = "000000003ade68b1",
@@ -182,7 +188,7 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = 123456789,
+                           TraceId = (TraceId)123456789,
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
@@ -215,7 +221,7 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = 123456789,
+                           TraceId = (TraceId)123456789,
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
@@ -257,7 +263,7 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId = 123456789,
+                           TraceId = (TraceId)123456789,
                            SpanId = 987654321,
                            Origin = "rum",
                            SamplingPriority = SamplingPriorityValues.AutoKeep,

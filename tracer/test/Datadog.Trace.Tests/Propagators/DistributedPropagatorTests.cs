@@ -15,7 +15,6 @@ namespace Datadog.Trace.Tests.Propagators;
 
 public class DistributedPropagatorTests
 {
-    private const ulong TraceId = 1;
     private const ulong SpanId = 2;
     private const int SamplingPriority = SamplingPriorityValues.UserReject;
     private const string Origin = "origin";
@@ -23,6 +22,7 @@ public class DistributedPropagatorTests
     private const string RawSpanId = "2b";
     private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
     private const string AdditionalW3CTraceState = "key3=value3,key4=value4";
+    private static readonly TraceId TraceId = (TraceId)1;
 
     private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -30,7 +30,7 @@ public class DistributedPropagatorTests
 
     private static readonly KeyValuePair<string, string>[] DefaultHeaderValues =
     {
-        new("__DistributedKey-TraceId", TraceId.ToString(InvariantCulture)),
+        new("__DistributedKey-TraceId", TraceId.Lower.ToString(InvariantCulture)),
         new("__DistributedKey-ParentId", SpanId.ToString(InvariantCulture)),
         new("__DistributedKey-SamplingPriority", SamplingPriority.ToString(InvariantCulture)),
         new("__DistributedKey-Origin", Origin),
@@ -108,7 +108,7 @@ public class DistributedPropagatorTests
     [Fact]
     public void Extract_TraceIdOnly()
     {
-        var value = TraceId.ToString(InvariantCulture);
+        var value = TraceId.Lower.ToString(InvariantCulture);
 
         // only setup TraceId, other properties remain null/empty
         var headers = new Mock<IReadOnlyDictionary<string, string>>();
