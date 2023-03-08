@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GraphQL;
-#if GRAPHQL_5_0
+#if GRAPHQL_5_0 || GRAPHQL_7_0
 using GraphQL.MicrosoftDI;
 using GraphQL.NewtonsoftJson;
 #endif
@@ -29,7 +29,7 @@ namespace Samples.GraphQL4
     {
         public void ConfigureServices(IServiceCollection services)
         {
-#if !GRAPHQL_5_0
+#if !GRAPHQL_5_0 && !GRAPHQL_7_0
             // Not required in GraphQL 5.0
             services.AddSingleton<IDocumentExecuter, SubscriptionDocumentExecuter>();
 #endif
@@ -49,10 +49,12 @@ namespace Samples.GraphQL4
 
             services.AddLogging(builder => builder.AddConsole());
 
-#if GRAPHQL_5_0
+#if GRAPHQL_5_0 || GRAPHQL_7_0
             services.AddGraphQL(
                 _ => _
+#if GRAPHQL_5_0
                     .AddHttpMiddleware<ISchema>()
+#endif
                     .AddNewtonsoftJson()
                     .AddUserContextBuilder(httpContext => new Dictionary<string, object>()));
 #else
@@ -79,6 +81,9 @@ namespace Samples.GraphQL4
             starWarsSchema.Subscription = starWarsSubscription;
             app.UseDeveloperExceptionPage();
             app.UseWelcomePage("/alive-check");
+#if GRAPHQL_7_0
+            app.UseWebSockets();
+#endif
 
             app.Map("/shutdown", builder =>
             {
