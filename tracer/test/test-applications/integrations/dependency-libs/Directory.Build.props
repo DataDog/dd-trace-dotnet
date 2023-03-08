@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <!-- Needed because some of these projects target net20, and the .NET SDK doesn't include them by default   -->
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
 
   </ItemGroup>
 </Project>
