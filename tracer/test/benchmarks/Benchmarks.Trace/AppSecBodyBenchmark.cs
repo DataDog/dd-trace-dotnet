@@ -8,6 +8,7 @@ using Datadog.Trace;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
 using SecurityCoordinator = Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
@@ -92,7 +93,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void ObjectExtractorMoreComplexBody() => ObjectExtractor.Extract(_complexModel);
 
-        // NOTE: these next five benchmarks are useful to help understand how the size of an
+        // NOTE: these next eight benchmarks are useful to help understand how the size of an
         // object (graph) affects the ObjectExtractor, but are fail slow, so not worth running
         // in the CI
 
@@ -105,6 +106,15 @@ namespace Benchmarks.Trace
         public void ObjectExtractorProps10x3() => ObjectExtractor.Extract(_props10x3);
 
         public void ObjectExtractorProps10x6() => ObjectExtractor.Extract(_props10x6);
+
+        public void ObjectExtractorProps10x1000Concurrent() =>
+            Parallel.For(0, 999, _ => ObjectExtractor.Extract(_props10));
+
+        public void ObjectExtractorProps100x1000Concurrent() =>
+            Parallel.For(0, 999, _ => ObjectExtractor.Extract(_props100));
+
+        public void ObjectExtractorProps1000x1000Concurrent() =>
+            Parallel.For(0, 999, _ => ObjectExtractor.Extract(_props1000));
     }
 
     public class ComplexModel

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -21,8 +22,7 @@ namespace Datadog.Trace.AppSec
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ObjectExtractor));
         private static readonly IReadOnlyDictionary<string, object> EmptyDictionary = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>(0));
 
-        private static readonly object Sync = new();
-        private static readonly Dictionary<Type, FieldExtractor[]> TypeToExtractorMap = new();
+        private static readonly ConcurrentDictionary<Type, FieldExtractor[]> TypeToExtractorMap = new();
 
         private static readonly HashSet<Type> AdditionalPrimitives = new()
         {
@@ -66,55 +66,53 @@ namespace Datadog.Trace.AppSec
             depth++;
 
             FieldExtractor[] fieldExtractors = null;
-            lock (Sync)
+            if (!TypeToExtractorMap.TryGetValue(bodyType, out fieldExtractors))
             {
-                if (!TypeToExtractorMap.TryGetValue(bodyType, out fieldExtractors))
+                var fields =
+                    bodyType
+                       .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+                       .Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField"))
+                       .ToArray();
+
+                fieldExtractors = new FieldExtractor[fields.Length];
+                for (var i = 0; i < fields.Length; i++)
                 {
-                    var fields =
-                        bodyType
-                           .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-                           .Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField"))
-                           .ToArray();
+                    var field = fields[i];
 
-                    fieldExtractors = new FieldExtractor[fields.Length];
-                    for (var i = 0; i < fields.Length; i++)
+                    var propertyName = GetPropertyName(field.Name);
+                    if (string.IsNullOrEmpty(propertyName))
                     {
-                        var field = fields[i];
-
-                        var propertyName = GetPropertyName(field.Name);
-                        if (string.IsNullOrEmpty(propertyName))
-                        {
-                            Log.Warning("ExtractProperties - couldn't extract property name from: {FieldName}", field.Name);
-                            continue;
-                        }
-
-                        var dynMethod = new DynamicMethod(
-                            bodyType + "_get_" + propertyName,
-                            typeof(object),
-                            new[] { typeof(object) },
-                            typeof(ObjectExtractor).Module,
-                            true);
-                        var ilGen = dynMethod.GetILGenerator();
-                        ilGen.Emit(OpCodes.Ldarg_0);
-                        if (bodyType.IsValueType)
-                        {
-                            ilGen.Emit(OpCodes.Unbox_Any, bodyType);
-                        }
-
-                        ilGen.Emit(OpCodes.Ldfld, field);
-                        if (field.FieldType.IsValueType)
-                        {
-                            ilGen.Emit(OpCodes.Box, field.FieldType);
-                        }
-
-                        ilGen.Emit(OpCodes.Ret);
-                        var func = (Func<object, object>)dynMethod.CreateDelegate(typeof(Func<object, object>));
-
-                        fieldExtractors[i] = new FieldExtractor() { Name = propertyName, Type = field.FieldType, Accessor = func };
+                        Log.Warning("ExtractProperties - couldn't extract property name from: {FieldName}", field.Name);
+                        continue;
                     }
 
-                    TypeToExtractorMap.Add(bodyType, fieldExtractors);
+                    var dynMethod = new DynamicMethod(
+                        bodyType + "_get_" + propertyName,
+                        typeof(object),
+                        new[] { typeof(object) },
+                        typeof(ObjectExtractor).Module,
+                        true);
+                    var ilGen = dynMethod.GetILGenerator();
+                    ilGen.Emit(OpCodes.Ldarg_0);
+                    if (bodyType.IsValueType)
+                    {
+                        ilGen.Emit(OpCodes.Unbox_Any, bodyType);
+                    }
+
+                    ilGen.Emit(OpCodes.Ldfld, field);
+                    if (field.FieldType.IsValueType)
+                    {
+                        ilGen.Emit(OpCodes.Box, field.FieldType);
+                    }
+
+                    ilGen.Emit(OpCodes.Ret);
+                    var func = (Func<object, object>)dynMethod.CreateDelegate(typeof(Func<object, object>));
+
+                    fieldExtractors[i] = new FieldExtractor() { Name = propertyName, Type = field.FieldType, Accessor = func };
                 }
+
+                // this would be expect to fail sometimes, when several threads attempt process the same body
+                TypeToExtractorMap.TryAdd(bodyType, fieldExtractors);
             }
 
             var dictSize = Math.Min(WafConstants.MaxContainerSize, fieldExtractors.Length);
@@ -134,7 +132,7 @@ namespace Datadog.Trace.AppSec
                     var value = fieldExtractor.Accessor.Invoke(body);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
-                        Log.Debug("ExtractProperties - property: {Name} {Value}", fieldExtractor.Name, value);
+                        Log.Debug("ExtractProperties - property: {BodyType}.{Name} {Value}", bodyType.FullName, fieldExtractor.Name, value);
                     }
 
                     var item =
@@ -246,11 +244,11 @@ namespace Datadog.Trace.AppSec
 
         private class FieldExtractor
         {
-#pragma warning disable CS0649, SA1401
-            public string Name;
-            public Type Type;
-            public Func<object, object> Accessor;
-#pragma warning restore CS0649, SA1401
+            public string Name { get; set; }
+
+            public Type Type { get; set; }
+
+            public Func<object, object> Accessor { get; set; }
         }
     }
 }
