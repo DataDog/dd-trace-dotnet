@@ -49,7 +49,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.TaintIfInputIsTainted exception {Exception}", err.Message);
+            Log.Error(err, "StringModuleImpl.TaintIfInputIsTainted exception");
         }
 
         return result;
