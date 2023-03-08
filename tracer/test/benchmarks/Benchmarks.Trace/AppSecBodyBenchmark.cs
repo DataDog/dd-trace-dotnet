@@ -92,19 +92,18 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void ObjectExtractorMoreComplexBody() => ObjectExtractor.Extract(_complexModel);
 
-        [Benchmark]
+        // NOTE: these next five benchmarks are useful to help understand how the size of an
+        // object (graph) affects the ObjectExtractor, but are fail slow, so not worth running
+        // in the CI
+
         public void ObjectExtractorProps10() => ObjectExtractor.Extract(_props10);
 
-        [Benchmark]
         public void ObjectExtractorProps100() => ObjectExtractor.Extract(_props100);
 
-        [Benchmark]
         public void ObjectExtractorProps1000() => ObjectExtractor.Extract(_props1000);
 
-        [Benchmark]
         public void ObjectExtractorProps10x3() => ObjectExtractor.Extract(_props10x3);
 
-        [Benchmark]
         public void ObjectExtractorProps10x6() => ObjectExtractor.Extract(_props10x6);
     }
 
