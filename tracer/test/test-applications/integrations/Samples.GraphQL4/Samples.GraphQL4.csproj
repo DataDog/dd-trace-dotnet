@@ -30,11 +30,6 @@
     <PackageReference Include="GraphQL.NewtonsoftJson" Version="5.0.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(ApiVersion) &gt;= 7.0.0">
-    <PackageReference Include="GraphQL.Server.All" Version="$(ApiVersion)" />
-    <PackageReference Include="GraphQL.NewtonsoftJson" Version="$(ApiVersion)" />
-  </ItemGroup>
-
   <ItemGroup>
     <Folder Include="StarWars\" />
   </ItemGroup>

@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(string packageVersion)
-            => await RunSubmitsTraces(packageVersion);
+            => await RunSubmitsTraces(packageVersion, true);
     }
 #endif
 
@@ -363,7 +363,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             webSocket.Options.AddSubProtocol("graphql-ws");
 
             var cancellationTokenSource = new CancellationTokenSource();
-            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10)); // 10 seconds timeout
+            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(60)); // 60 seconds timeout
 
             try
             {

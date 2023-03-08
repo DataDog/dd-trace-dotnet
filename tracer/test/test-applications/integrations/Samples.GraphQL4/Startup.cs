@@ -54,6 +54,8 @@ namespace Samples.GraphQL4
                 _ => _
 #if GRAPHQL_5_0
                     .AddHttpMiddleware<ISchema>()
+                    .AddWebSockets()
+                    .AddWebSocketsHttpMiddleware<ISchema>()
 #endif
                     .AddNewtonsoftJson()
                     .AddUserContextBuilder(httpContext => new Dictionary<string, object>()));
@@ -81,9 +83,6 @@ namespace Samples.GraphQL4
             starWarsSchema.Subscription = starWarsSubscription;
             app.UseDeveloperExceptionPage();
             app.UseWelcomePage("/alive-check");
-#if GRAPHQL_7_0
-            app.UseWebSockets();
-#endif
 
             app.Map("/shutdown", builder =>
             {
@@ -98,6 +97,13 @@ namespace Samples.GraphQL4
             });
 
             // add http for Schema at default url /graphql
+#if GRAPHQL_5_0 || GRAPHQL_7_0
+            app.UseWebSockets();
+#endif
+
+#if GRAPHQL_5_0
+            app.UseGraphQLWebSockets<ISchema>("/graphql");
+#endif
             app.UseGraphQL<ISchema>("/graphql");
 
             // use graphql-playground at default url /ui/playground
