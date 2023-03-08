@@ -44,6 +44,13 @@ internal readonly record struct TraceId(ulong Upper, ulong Lower) : IComparable<
         return left.CompareTo(right) >= 0;
     }
 
+    public bool IsZero()
+    {
+        // upper will be zero in most cases until we enable 128-bit trace ids by default,
+        // so check the lower bits first
+        return Lower == 0 && Upper == 0;
+    }
+
     [Pure]
     public bool Equals(TraceId value) => Lower == value.Lower && Upper == value.Upper;
 
