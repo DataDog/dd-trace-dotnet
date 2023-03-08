@@ -93,19 +93,19 @@ You can use Rider and CLion to develop on macOS. Building and testing can be don
 
 ```bash
 # Clean and build the main tracer project
-.\build.sh Clean BuildTracerHome
+./build.sh Clean BuildTracerHome
 
 # Build and run managed and native unit tests. Requires BuildTracerHome to have previously been run
-.\build.sh BuildAndRunManagedUnitTests BuildAndRunNativeUnitTests
+./build.sh BuildAndRunManagedUnitTests BuildAndRunNativeUnitTests
 
 # Build NuGet packages and MSIs. Requires BuildTracerHome to have previously been run
-.\build.sh PackageTracerHome
+./build.sh PackageTracerHome
 
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
-.\build.sh BuildAndRunLinuxIntegrationTests
+./build.sh BuildAndRunLinuxIntegrationTests
 
 # Build and run integration tests filtering on one framework, one set of tests and a sample app.
-.\build.sh BuildAndRunLinuxIntegrationTests --framework "net6.0" --filter "rabbit" --SampleName "Samples.Rabbit"
+./build.sh BuildAndRunLinuxIntegrationTests --framework "net6.0" --filter "rabbit" --SampleName "Samples.Rabbit"
 ```
 
 ## Additional Technical Documentation

@@ -42,6 +42,7 @@ partial class Build
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
+    AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
@@ -655,7 +656,8 @@ partial class Build
 
     Target ZipMonitoringHome => _ => _
        .DependsOn(ZipMonitoringHomeWindows)
-       .DependsOn(ZipMonitoringHomeLinux);
+       .DependsOn(ZipMonitoringHomeLinux)
+       .DependsOn(ZipMonitoringHomeOsx);
 
     Target ZipMonitoringHomeWindows => _ => _
         .Unlisted()
@@ -769,6 +771,16 @@ partial class Build
                 workingDirectory / versionedName);
         });
 
+    Target ZipMonitoringHomeOsx => _ => _
+        .Unlisted()
+        .After(BuildTracerHome, BuildNativeLoader)
+        .OnlyWhenStatic(() => IsOsx)
+        .Requires(() => Version)
+        .Executes(() =>
+        {
+            // As a naive approach let's do the same as windows, create a zip folder
+            CompressZip(MonitoringHomeDirectory, OsxTracerHomeZip, fileMode: FileMode.Create);
+        });
 
     Target CompileInstrumentationVerificationLibrary => _ => _
         .Unlisted()
