@@ -42,7 +42,7 @@ namespace Datadog.Trace
         /// <see cref="SpanCreationSettings.Parent"/> in <see cref="Tracer.StartActive(string, SpanCreationSettings)"/>
         /// to specify that the new span should not inherit the currently active scope as its parent.
         /// </summary>
-        public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: 0, spanId: 0, serviceName: null);
+        public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: Trace.TraceId.Zero, spanId: 0, serviceName: null);
 
         private string _rawTraceId;
         private string _rawSpanId;
@@ -58,7 +58,7 @@ namespace Datadog.Trace
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority = null, string serviceName = null)
-            : this(traceId ?? 0, serviceName)
+            : this((TraceId)(traceId ?? 0), serviceName)
         {
             // public ctor must keep accepting legacy types:
             // - traceId: ulong? => TraceId
@@ -147,7 +147,7 @@ namespace Datadog.Trace
             // In this ctor we don't know if 128-bits are enabled or not, so use the default value "false".
             // To get around this, make sure the trace id is set
             // before getting here so this ctor doesn't need to generate it.
-            TraceId128 = traceId == 0
+            TraceId128 = traceId.IsZero()
                           ? RandomIdGenerator.Shared.NextTraceId(useAllBits: false)
                           : traceId;
 
@@ -376,7 +376,7 @@ namespace Datadog.Trace
             return context switch
                    {
                        // use the 128-bit TraceId if possible
-                       SpanContext sc => sc.TraceId,
+                       SpanContext sc => sc.TraceId128,
                        // otherwise use the 64-bit ulong
                        not null => context.TraceId,
                        // if no context, use the specified fallback value

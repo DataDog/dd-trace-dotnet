@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 // grab the temporary values we stored in the metadata
                 ExtractTemporaryHeaders(
                     requestMetadata,
-                    existingSpanContext?.TraceId ?? 0,
+                    existingSpanContext?.TraceId128 ?? default,
                     out var methodKind,
                     out var methodName,
                     out var grpcService,
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     parent: parentContext,
                     tags: tags,
                     spanId: existingSpanContext?.SpanId ?? 0,
-                    traceId: existingSpanContext?.TraceId ?? 0,
+                    traceId: existingSpanContext?.TraceId128 ?? default,
                     serviceName: serviceName,
                     startTime: startTime);
 
@@ -188,7 +188,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
             parentContext = null;
 
-            if (traceId != 0)
+            if (!traceId.IsZero())
             {
                 var parentIdString = metadata.Get(TemporaryHeaders.ParentId)?.DuckCast<MetadataEntryStruct>().Value;
                 var parentService = metadata.Get(TemporaryHeaders.ParentService)?.DuckCast<MetadataEntryStruct>().Value;

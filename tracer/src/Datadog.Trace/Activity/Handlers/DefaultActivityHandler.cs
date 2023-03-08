@@ -40,7 +40,7 @@ namespace Datadog.Trace.Activity.Handlers
 
             // Propagate Trace and Parent Span ids
             SpanContext? parent = null;
-            TraceId traceId = 0;
+            TraceId traceId = default;
             ulong spanId = 0;
             string? rawTraceId = null;
             string? rawSpanId = null;
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Activity.Handlers
                 // but if Activity.IdFormat is not ActivityIdFormat.W3C, they may be null or unparsable
                 if (w3cActivity is { TraceId: { } activityTraceId, SpanId: { } activitySpanId })
                 {
-                    if (traceId == 0)
+                    if (traceId.IsZero())
                     {
                         _ = HexString.TryParseTraceId(activityTraceId, out traceId);
                     }

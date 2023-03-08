@@ -77,7 +77,7 @@ namespace Datadog.Trace.Propagators
 
                 var success = HexString.TryParseTraceId(rawTraceId, out var traceId);
 
-                if (!success || traceId == 0)
+                if (!success || traceId.IsZero())
                 {
                     return false;
                 }
@@ -115,7 +115,7 @@ namespace Datadog.Trace.Propagators
 
                 var success = HexString.TryParseTraceId(rawTraceId, out var traceId);
 
-                if (!success || traceId == 0)
+                if (!success || traceId.IsZero())
                 {
                     return false;
                 }

@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         request.RequestUri,
                         IntegrationId,
                         out _,
-                        spanContext?.TraceId ?? 0,
+                        spanContext?.TraceId128 ?? TraceId.Zero,
                         spanContext?.SpanId ?? 0);
 
                     if (scope != null)

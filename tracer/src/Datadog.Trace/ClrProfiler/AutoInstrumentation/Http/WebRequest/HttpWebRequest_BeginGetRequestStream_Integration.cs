@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         request.RequestUri,
                         WebRequestCommon.IntegrationId,
                         out _,
-                        traceId: 0,
+                        traceId: TraceId.Zero,
                         spanId: 0,
                         startTime: null,
                         addToTraceContext: false);

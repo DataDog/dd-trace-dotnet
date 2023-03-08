@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         request.RequestUri,
                         WebRequestCommon.IntegrationId,
                         out _,
-                        traceId: existingSpanContext?.TraceId ?? 0,
+                        traceId: existingSpanContext?.TraceId128 ?? TraceId.Zero,
                         spanId: existingSpanContext?.SpanId ?? 0,
                         startTime);
 
