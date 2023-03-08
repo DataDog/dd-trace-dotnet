@@ -29,8 +29,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
         /// This is used in the heartbeat metrics to estimate the number of
-        /// "live" Tracers that could potentially be sending traces to the Agent.
-        /// </summary>
+        /// "live" Tracers that could potentially be sending traces to the Agent.</summary>
         private static int _liveTracerCount;
 
         private static Tracer _instance;
