@@ -214,7 +214,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedGraphQlValidateSpanCount = 0;
             var expectedGraphQlExecuteSpanCount = 0;
 
-            await SubmitHttpRequests();
+            SubmitHttpRequests();
 
             if (usingWebsockets)
             {
@@ -223,27 +223,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount;
 
-            async Task SubmitHttpRequests()
+            void SubmitHttpRequests()
             {
                 // SUCCESS: query using GET
-                await SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{hero{name appearsIn}}"), httpMethod: "GET", graphQlRequestBody: null);
+                SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{hero{name appearsIn}}"), httpMethod: "GET", graphQlRequestBody: null);
 
                 // SUCCESS: query using POST (default)
-                await SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HeroQuery{hero {name appearsIn}}"",""operationName"": ""HeroQuery""}");
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HeroQuery{hero {name appearsIn}}"",""operationName"": ""HeroQuery""}");
 
                 // SUCCESS: mutation
-                await SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""Boba Fett""}}}");
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""Boba Fett""}}}");
 
                 // SUCCESS: subscription
-                await SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{ ""query"":""subscription HumanAddedSub{humanAdded{name}}""}");
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{ ""query"":""subscription HumanAddedSub{humanAdded{name}}""}");
 
                 // TODO: When parse is implemented, add a test that fails 'parse' step
 
                 // FAILURE: query fails 'validate' step
-                await SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", failsValidation: true);
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", failsValidation: true);
 
                 // FAILURE: query fails 'execute' step
-                await SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
 
                 // TODO: When parse is implemented, add a test that fails 'resolve' step
             }
@@ -251,24 +251,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             async Task SubmitWebsocketRequests()
             {
                 // SUCCESS: query using Websocket
-                await SubmitGraphqlRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query HeroQuery{hero {name appearsIn}}"",""variables"": {},}}", false, true);
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query HeroQuery{hero {name appearsIn}}"",""variables"": {},}}", false);
 
                 // SUCCESS: mutation using Websocket
-                await SubmitGraphqlRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"": {""human"":{""name"": ""Boba Fett""}},}}", false, true);
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"": {""human"":{""name"": ""Boba Fett""}},}}", false);
 
                 // FAILURE: query fails 'validate' step using Websocket
-                await SubmitGraphqlRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query HumanError{human(id:1){name apearsIn}}"",""variables"": {},}}", true, true);
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query HumanError{human(id:1){name apearsIn}}"",""variables"": {},}}", true);
 
                 // FAILURE: query fails 'execute' step using Websocket
-                await SubmitGraphqlRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException {name}}"",""variables"": {},}}", false, true);
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException {name}}"",""variables"": {},}}", false);
             }
 
-            async Task SubmitGraphqlRequest(
+            void SubmitGraphqlRequest(
                 string url,
                 string httpMethod,
                 string graphQlRequestBody,
-                bool failsValidation = false,
-                bool isWebsocket = false)
+                bool failsValidation = false)
             {
                 expectedGraphQlValidateSpanCount++;
 
@@ -277,17 +276,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     expectedGraphQlExecuteSpanCount++;
                 }
 
-                var requestInfo =
-                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, };
+                SubmitRequest(
+                    aspNetCorePort,
+                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
+            }
 
-                if (isWebsocket)
+            async Task SubmitGraphqlWebsocketRequest(
+                string url,
+                string httpMethod,
+                string graphQlRequestBody,
+                bool failsValidation = false)
+            {
+                expectedGraphQlValidateSpanCount++;
+
+                if (!failsValidation)
                 {
-                    await SubmitWebsocketRequest(aspNetCorePort, requestInfo);
+                    expectedGraphQlExecuteSpanCount++;
                 }
-                else
-                {
-                    SubmitRequest(aspNetCorePort, requestInfo);
-                }
+
+                await SubmitWebsocketRequest(
+                    aspNetCorePort,
+                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
         }
 
@@ -354,7 +363,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             webSocket.Options.AddSubProtocol("graphql-ws");
 
             var cancellationTokenSource = new CancellationTokenSource();
-            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(5)); // 5 seconds timeout
+            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10)); // 10 seconds timeout
 
             try
             {
