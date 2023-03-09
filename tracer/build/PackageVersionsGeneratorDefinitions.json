@@ -108,13 +108,14 @@
     "SampleProjectName": "Samples.HotChocolate",
     "NugetPackageSearchName": "HotChocolate.AspNetCore",
     "MinVersion": "11.0.0",
-    "MaxVersionExclusive": "13.0.0",
+    "MaxVersionExclusive": "14.0.0",
     "SpecificVersions": [
       "11.*.*",
-      "12.*.*"
+      "12.*.*",
+      "13.*.*"
     ],
     "VersionConditions": [{
-      "MaxVersionExclusive": "13.0.0",
+      "MaxVersionExclusive": "14.0.0",
       "ExcludeTargetFrameworks": [ "net461", "netcoreapp2.1", "netcoreapp3.0" ]
     }]
   },

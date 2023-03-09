@@ -232,18 +232,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP3_1
                 new object[] { "11.3.8" },
                 new object[] { "12.18.0" },
+                new object[] { "13.0.5" },
 #endif
 #if NET5_0
                 new object[] { "11.3.8" },
                 new object[] { "12.18.0" },
+                new object[] { "13.0.5" },
 #endif
 #if NET6_0
                 new object[] { "11.3.8" },
                 new object[] { "12.18.0" },
+                new object[] { "13.0.5" },
 #endif
 #if NET7_0
                 new object[] { "11.3.8" },
                 new object[] { "12.18.0" },
+                new object[] { "13.0.5" },
 #endif
 #endif
             };
