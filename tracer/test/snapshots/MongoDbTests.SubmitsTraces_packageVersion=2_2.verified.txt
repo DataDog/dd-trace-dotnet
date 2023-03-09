@@ -82,7 +82,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       out.host: mongo,
@@ -104,7 +104,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       out.host: mongo,
@@ -126,7 +126,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "count" : "employees", "query" : { } },
@@ -149,7 +149,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },
@@ -192,7 +192,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       out.host: mongo,
@@ -214,7 +214,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       out.host: mongo,
@@ -236,7 +236,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "count" : "employees", "query" : { } },
@@ -259,7 +259,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },

@@ -14,7 +14,7 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Type, "sql"))
             .Tags(s => s
-                .IsOptional("db.name")
+                .IsOptional("db.instance")
                 .IsPresent("db.system")
                 .Matches("component", "AdoNet")
                 .Matches("span.kind", "client"));
@@ -149,7 +149,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsOptional("cosmosdb.container")
-                .IsOptional("db.name")
+                .IsOptional("db.instance")
                 .Matches("db.system", "cosmosdb")
                 .IsPresent("out.host")
                 .Matches("component", "CosmosDb")
@@ -245,7 +245,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "mongodb.query")
                 .Matches(Type, "mongodb"))
             .Tags(s => s
-                .IsOptional("db.name")
+                .IsOptional("db.instance")
                 .IsOptional("mongodb.collection")
                 .IsOptional("mongodb.query")
                 .IsPresent("out.host")
@@ -270,7 +270,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "mysql.query")
                 .Matches(Type, "sql"))
             .Tags(s => s
-                .IsPresent("db.name")
+                .IsPresent("db.instance")
                 .IsPresent("db.user")
                 .IsPresent("out.host")
                 .Matches("db.system", "mysql")
@@ -282,7 +282,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "postgres.query")
                 .Matches(Type, "sql"))
             .Tags(s => s
-                .IsPresent("db.name")
+                .IsPresent("db.instance")
                 .IsPresent("out.host")
                 .Matches("db.system", "postgres")
                 .Matches("component", "Npgsql")
@@ -306,7 +306,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "oracle.query")
                 .Matches(Type, "sql"))
             .Tags(s => s
-                .IsPresent("db.name")
+                .IsPresent("db.instance")
                 .Matches("db.system", "oracle")
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
@@ -377,7 +377,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "sqlite.query")
                 .Matches(Type, "sql"))
             .Tags(s => s
-                .IsOptional("db.name")
+                .IsOptional("db.instance")
                 .IsPresent("out.host")
                 .Matches("db.system", "sqlite")
                 .Matches("component", "Sqlite")
@@ -388,7 +388,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "sql-server.query")
                 .Matches(Type, "sql"))
             .Tags(s => s
-                .IsOptional("db.name")
+                .IsOptional("db.instance")
                 .IsPresent("out.host")
                 .Matches("db.system", "sql-server")
                 .Matches("component", "SqlClient")

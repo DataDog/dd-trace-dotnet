@@ -82,7 +82,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true, "deletes" : [{ "q" : { }, "limit" : 0 }] },
@@ -105,7 +105,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "insert" : "employees", "ordered" : true, "documents" : [{ "_id" : ObjectId("ABC123"), "name" : "MongoDB", "type" : "Database", "count" : 1, "info" : { "x" : 203, "y" : 102 } }] },
@@ -128,7 +128,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "count" : "employees", "query" : { } },
@@ -151,7 +151,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },
@@ -194,7 +194,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true, "deletes" : [{ "q" : { }, "limit" : 0 }] },
@@ -217,7 +217,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "insert" : "employees", "ordered" : true, "documents" : [{ "_id" : ObjectId("ABC123"), "name" : "MongoDB", "type" : "Database", "count" : 1, "info" : { "x" : 203, "y" : 102 } }] },
@@ -240,7 +240,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "count" : "employees", "query" : { } },
@@ -263,7 +263,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },

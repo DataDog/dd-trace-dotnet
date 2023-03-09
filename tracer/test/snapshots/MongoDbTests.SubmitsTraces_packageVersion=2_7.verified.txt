@@ -82,7 +82,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true },
@@ -105,7 +105,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "insert" : "employees", "ordered" : true },
@@ -128,7 +128,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
@@ -151,7 +151,7 @@
     ParentId: Id_3,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },
@@ -194,7 +194,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true },
@@ -217,7 +217,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "insert" : "employees", "ordered" : true },
@@ -240,7 +240,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
@@ -263,7 +263,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },

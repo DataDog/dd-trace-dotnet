@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     adminSpan.Tags.Should().IntersectWith(new Dictionary<string, string>
                     {
-                        { "db.name", "admin" },
+                        { "db.instance", "admin" },
                         { "env", "integration_tests" },
                         { "mongodb.collection", "1" },
                     });

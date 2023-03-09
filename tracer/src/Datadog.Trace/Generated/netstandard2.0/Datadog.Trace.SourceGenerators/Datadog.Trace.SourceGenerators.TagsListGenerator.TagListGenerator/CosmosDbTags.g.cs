@@ -16,8 +16,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 115, 121, 115, 116, 101, 109 };
         // ContainerIdBytes = System.Text.Encoding.UTF8.GetBytes("cosmosdb.container");
         private static readonly byte[] ContainerIdBytes = new byte[] { 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
-        // DatabaseIdBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
-        private static readonly byte[] DatabaseIdBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
+        // DatabaseIdBytes = System.Text.Encoding.UTF8.GetBytes("db.instance");
+        private static readonly byte[] DatabaseIdBytes = new byte[] { 100, 98, 46, 105, 110, 115, 116, 97, 110, 99, 101 };
         // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
         private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
 
@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tagging
                 "component" => InstrumentationName,
                 "db.system" => DbType,
                 "cosmosdb.container" => ContainerId,
-                "db.name" => DatabaseId,
+                "db.instance" => DatabaseId,
                 "out.host" => Host,
                 _ => base.GetTag(key),
             };
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tagging
                 case "cosmosdb.container": 
                     ContainerId = value;
                     break;
-                case "db.name": 
+                case "db.instance": 
                     DatabaseId = value;
                     break;
                 case "out.host": 
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tagging
 
             if (DatabaseId is not null)
             {
-                processor.Process(new TagItem<string>("db.name", DatabaseId, DatabaseIdBytes));
+                processor.Process(new TagItem<string>("db.instance", DatabaseId, DatabaseIdBytes));
             }
 
             if (Host is not null)
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Tagging
 
             if (DatabaseId is not null)
             {
-                sb.Append("db.name (tag):")
+                sb.Append("db.instance (tag):")
                   .Append(DatabaseId)
                   .Append(',');
             }

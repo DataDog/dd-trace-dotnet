@@ -12,8 +12,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // DbNameBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
-        private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
+        // DbNameBytes = System.Text.Encoding.UTF8.GetBytes("db.instance");
+        private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 105, 110, 115, 116, 97, 110, 99, 101 };
         // QueryBytes = System.Text.Encoding.UTF8.GetBytes("mongodb.query");
         private static readonly byte[] QueryBytes = new byte[] { 109, 111, 110, 103, 111, 100, 98, 46, 113, 117, 101, 114, 121 };
         // CollectionBytes = System.Text.Encoding.UTF8.GetBytes("mongodb.collection");
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
-                "db.name" => DbName,
+                "db.instance" => DbName,
                 "mongodb.query" => Query,
                 "mongodb.collection" => Collection,
                 "out.host" => Host,
@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         {
             switch(key)
             {
-                case "db.name": 
+                case "db.instance": 
                     DbName = value;
                     break;
                 case "mongodb.query": 
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             if (DbName is not null)
             {
-                processor.Process(new TagItem<string>("db.name", DbName, DbNameBytes));
+                processor.Process(new TagItem<string>("db.instance", DbName, DbNameBytes));
             }
 
             if (Query is not null)
@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             if (DbName is not null)
             {
-                sb.Append("db.name (tag):")
+                sb.Append("db.instance (tag):")
                   .Append(DbName)
                   .Append(',');
             }

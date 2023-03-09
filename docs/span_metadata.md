@@ -12,7 +12,7 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `AdoNet`
-db.name | No
+db.instance | No
 db.system | Yes
 span.kind | `client`
 
@@ -166,7 +166,7 @@ Name | Required |
 ---------|----------------|
 component | `CosmosDb`
 cosmosdb.container | No
-db.name | No
+db.instance | No
 db.system | `cosmosdb`
 out.host | Yes
 span.kind | `client`
@@ -294,7 +294,7 @@ Type | `mongodb`
 Name | Required |
 ---------|----------------|
 component | `MongoDb`
-db.name | No
+db.instance | No
 mongodb.collection | No
 mongodb.query | No
 out.host | Yes
@@ -327,7 +327,7 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `MySql`
-db.name | Yes
+db.instance | Yes
 db.system | `mysql`
 db.user | Yes
 out.host | Yes
@@ -343,7 +343,7 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `Npgsql`
-db.name | Yes
+db.instance | Yes
 db.system | `postgres`
 out.host | Yes
 span.kind | `client`
@@ -373,7 +373,7 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `Oracle`
-db.name | Yes
+db.instance | Yes
 db.system | `oracle`
 span.kind | `client`
 
@@ -468,7 +468,7 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `Sqlite`
-db.name | No
+db.instance | No
 db.system | `sqlite`
 out.host | Yes
 span.kind | `client`
@@ -483,7 +483,7 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `SqlClient`
-db.name | No
+db.instance | No
 db.system | `sql-server`
 out.host | Yes
 span.kind | `client`

@@ -51,7 +51,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       out.host: mongo,
@@ -73,7 +73,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       out.host: mongo,
@@ -95,7 +95,7 @@
     ParentId: Id_4,
     Tags: {
       component: MongoDb,
-      db.name: test-db,
+      db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "count" : "employees", "query" : { } },

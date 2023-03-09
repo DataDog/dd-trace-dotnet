@@ -14,8 +14,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 115, 121, 115, 116, 101, 109 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // DbNameBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
-        private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
+        // DbNameBytes = System.Text.Encoding.UTF8.GetBytes("db.instance");
+        private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 105, 110, 115, 116, 97, 110, 99, 101 };
         // DbUserBytes = System.Text.Encoding.UTF8.GetBytes("db.user");
         private static readonly byte[] DbUserBytes = new byte[] { 100, 98, 46, 117, 115, 101, 114 };
         // OutHostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tagging
                 "span.kind" => SpanKind,
                 "db.system" => DbType,
                 "component" => InstrumentationName,
-                "db.name" => DbName,
+                "db.instance" => DbName,
                 "db.user" => DbUser,
                 "out.host" => OutHost,
                 "_dd.dbm_trace_injected" => DbmDataPropagated,
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tagging
                 case "component": 
                     InstrumentationName = value;
                     break;
-                case "db.name": 
+                case "db.instance": 
                     DbName = value;
                     break;
                 case "db.user": 
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tagging
 
             if (DbName is not null)
             {
-                processor.Process(new TagItem<string>("db.name", DbName, DbNameBytes));
+                processor.Process(new TagItem<string>("db.instance", DbName, DbNameBytes));
             }
 
             if (DbUser is not null)
@@ -134,7 +134,7 @@ namespace Datadog.Trace.Tagging
 
             if (DbName is not null)
             {
-                sb.Append("db.name (tag):")
+                sb.Append("db.instance (tag):")
                   .Append(DbName)
                   .Append(',');
             }
