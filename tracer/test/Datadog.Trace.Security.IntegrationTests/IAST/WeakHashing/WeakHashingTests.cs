@@ -57,9 +57,6 @@ public class WeakHashingTests : TestHelper
         using var process = RunSampleAndWaitForExit(agent);
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 
-        using var s = new AssertionScope();
-        spans.Should().HaveCount(expectedSpanCount);
-
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spans, settings)
