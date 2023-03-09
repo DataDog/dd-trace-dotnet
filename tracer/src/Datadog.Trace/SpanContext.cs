@@ -231,12 +231,14 @@ namespace Datadog.Trace
         internal int? SamplingPriority { get; }
 
         /// <summary>
-        /// Gets the raw traceId (to support > 64bits)
+        /// Gets the trace id as a hexadecimal string of length 32,
+        /// padded with zeros to the left.
         /// </summary>
         internal string RawTraceId => _rawTraceId ??= HexString.ToHexString(TraceId128);
 
         /// <summary>
-        /// Gets the raw spanId
+        /// Gets the span id as a hexadecimal string of length 16,
+        /// padded with zeros to the left.
         /// </summary>
         internal string RawSpanId => _rawSpanId ??= HexString.ToHexString(SpanId);
 
