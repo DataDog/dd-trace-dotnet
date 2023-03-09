@@ -22,8 +22,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] RoutingKeyBytes = new byte[] { 97, 109, 113, 112, 46, 114, 111, 117, 116, 105, 110, 103, 95, 107, 101, 121 };
         // MessageSizeBytes = System.Text.Encoding.UTF8.GetBytes("message.size");
         private static readonly byte[] MessageSizeBytes = new byte[] { 109, 101, 115, 115, 97, 103, 101, 46, 115, 105, 122, 101 };
-        // QueueBytes = System.Text.Encoding.UTF8.GetBytes("amqp.queue");
-        private static readonly byte[] QueueBytes = new byte[] { 97, 109, 113, 112, 46, 113, 117, 101, 117, 101 };
+        // QueueBytes = System.Text.Encoding.UTF8.GetBytes("messaging.destination");
+        private static readonly byte[] QueueBytes = new byte[] { 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110 };
 
         public override string? GetTag(string key)
         {
@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tagging
                 "amqp.exchange" => Exchange,
                 "amqp.routing_key" => RoutingKey,
                 "message.size" => MessageSize,
-                "amqp.queue" => Queue,
+                "messaging.destination" => Queue,
                 _ => base.GetTag(key),
             };
         }
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Tagging
                 case "message.size": 
                     MessageSize = value;
                     break;
-                case "amqp.queue": 
+                case "messaging.destination": 
                     Queue = value;
                     break;
                 case "span.kind": 
@@ -114,7 +114,7 @@ namespace Datadog.Trace.Tagging
 
             if (Queue is not null)
             {
-                processor.Process(new TagItem<string>("amqp.queue", Queue, QueueBytes));
+                processor.Process(new TagItem<string>("messaging.destination", Queue, QueueBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -173,7 +173,7 @@ namespace Datadog.Trace.Tagging
 
             if (Queue is not null)
             {
-                sb.Append("amqp.queue (tag):")
+                sb.Append("messaging.destination (tag):")
                   .Append(Queue)
                   .Append(',');
             }

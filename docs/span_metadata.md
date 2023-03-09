@@ -311,9 +311,9 @@ Type | `queue`
 Name | Required |
 ---------|----------------|
 component | `msmq`
+messaging.destination | Yes
 msmq.command | Yes
 msmq.message.transactional | No
-msmq.queue.path | Yes
 msmq.queue.transactional | No
 span.kind | `client`; `producer`; `consumer`
 
@@ -401,10 +401,10 @@ Name | Required |
 amqp.command | Yes
 amqp.delivery_mode | No
 amqp.exchange | No
-amqp.queue | No
 amqp.routing_key | No
 component | `RabbitMQ`
 message.size | No
+messaging.destination | No
 span.kind | Yes
 
 ## ServiceRemoting

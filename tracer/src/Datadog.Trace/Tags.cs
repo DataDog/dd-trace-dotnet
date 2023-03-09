@@ -269,7 +269,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The name of the queue for the AMQP message.
         /// </summary>
-        internal const string AmqpQueue = "amqp.queue";
+        internal const string AmqpQueue = "messaging.destination";
 
         /// <summary>
         /// The delivery mode of the AMQP message.
@@ -448,7 +448,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The name of the Msmq queue the message was published to, containing host name and path.
         /// </summary>
-        internal const string MsmqQueuePath = "msmq.queue.path";
+        internal const string MsmqQueuePath = "messaging.destination";
 
         /// <summary>
         /// A boolean indicating if it's part of a transaction.

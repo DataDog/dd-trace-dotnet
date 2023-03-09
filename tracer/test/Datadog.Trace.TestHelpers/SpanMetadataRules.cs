@@ -260,7 +260,7 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsPresent("msmq.command")
                 .IsOptional("msmq.message.transactional")
-                .IsPresent("msmq.queue.path")
+                .IsPresent("messaging.destination")
                 .IsOptional("msmq.queue.transactional")
                 .Matches("component", "msmq")
                 .MatchesOneOf("span.kind", "client", "producer", "consumer"));
@@ -328,7 +328,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("amqp.delivery_mode")
                 .IsOptional("amqp.exchange")
                 .IsOptional("amqp.routing_key")
-                .IsOptional("amqp.queue")
+                .IsOptional("messaging.destination")
                 .IsOptional("message.size")
                 .Matches("component", "RabbitMQ")
                 .IsPresent("span.kind"));
