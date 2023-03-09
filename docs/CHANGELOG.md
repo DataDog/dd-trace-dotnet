@@ -18,6 +18,48 @@
 
 
 
+
+## [Release 2.26.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.26.0)
+
+## Summary
+
+Adjustments on some previous tracer features, improve CI test skipping scenarios.
+Profiler side, handle anonymous and inner named methods.
+ASM side, suspicious request blocking is implemented through a consequent waf update.
+
+## Changes
+
+### Tracer
+* Sorted and encoded tags and added new tests (#3851)
+
+### CI Visibility
+* [CI Visibility] Await git upload metadata before child command start only on test skipping scenarios. (#3827)
+* [CI Visibility] - Improve manual api initialisation. (#3843)
+
+### ASM
+* [ASM] Waf block actions configurable via Remote configuration (#3794)
+* [ASM] String concat propagation (#3805)
+* [ASM] Waf update to 1.8.2 (#3822)
+* [ASM] Update IP collection algorithm (#3831)
+* [ASM] Add missing capabilities and other minor corrections (#3855)
+
+### Continuous Profiler
+* [Profiler] Add named/anonymous methods scenario (#3817)
+* [Profiler] Bucketize contention events by duration (#3824)
+* [Profiler] Bump libdatadog version to 2.0.0 (#3839)
+
+### Build / Test
+* Proposal for standardized storage of installable artifacts (#3762)
+* Bump DatadogTestLogger version (#3833)
+* [CI] Fix the flakiness of `TelemetryControllerTests`, but not the source of the issue (#3834)
+* [Tracer] Container init job to run for hotfixes (#3844)
+
+### Miscellaneous
+* Enable rollforward on minor versions in global.json (#3841)
+
+
+[Changes since 2.24.1](https://github.com/DataDog/dd-trace-dotnet/compare/v2.24.1...v2.25.0)
+
 ## [Release 2.24.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.24.0)
 
 ## Summary
