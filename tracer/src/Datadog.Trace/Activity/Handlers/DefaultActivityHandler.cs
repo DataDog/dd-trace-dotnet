@@ -83,12 +83,12 @@ namespace Datadog.Trace.Activity.Handlers
 
                 // We convert the activity traceId and spanId to use it in the
                 // Datadog span creation.
-                if (w3cActivity.TraceId is not null)
+                if (w3cActivity.TraceId is { } w3cTraceId)
                 {
                     // If the Activity has an ActivityIdFormat.Hierarchical instead of W3C it's TraceId & SpanId will be null
-                    traceId ??= Convert.ToUInt64(w3cActivity.TraceId.Substring(16), 16);
+                    traceId ??= Convert.ToUInt64(w3cTraceId.Substring(16), 16);
                     spanId = Convert.ToUInt64(w3cActivity.SpanId, 16);
-                    rawTraceId = w3cActivity.TraceId;
+                    rawTraceId = w3cTraceId;
                     rawSpanId = w3cActivity.SpanId;
                 }
             }
