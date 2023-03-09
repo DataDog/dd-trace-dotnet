@@ -59,6 +59,7 @@ private:
         mdTypeDef mdTokenType,
         TypeDesc& typeDesc,
         bool isArray,
+        const char* arraySuffix,
         bool isEncoded
         );
     bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded);
@@ -72,7 +73,12 @@ public:   // global helpers
 private:  // global helpers
     static void FixTrailingGeneric(WCHAR* name);
     static std::string GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
-    static std::pair<std::string, std::string> GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isArray);
+    static std::pair<std::string, std::string> GetTypeWithNamespace(
+        IMetaDataImport2* pMetadata,
+        mdTypeDef mdTokenType,
+        bool isArray,
+        const char* arraySuffix
+        );
     static std::string FormatGenericTypeParameters(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isEncoded);
     static std::string FormatGenericParameters(
         ICorProfilerInfo4* pInfo,
@@ -86,6 +92,7 @@ private:  // global helpers
         ClassID classId,
         mdTypeDef mdTokenType,
         bool isArray,
+        const char* arraySuffix,
         bool isEncoded
         );
     static std::pair<std::string, mdTypeDef> GetMethodNameFromMetadata(
