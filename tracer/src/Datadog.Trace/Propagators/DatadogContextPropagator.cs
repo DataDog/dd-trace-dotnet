@@ -63,9 +63,9 @@ namespace Datadog.Trace.Propagators
         {
             spanContext = null;
 
-            var traceId = ParseUtility.ParseUInt64(carrier, carrierGetter, HttpHeaderNames.TraceId);
+            var traceIdLower = ParseUtility.ParseUInt64(carrier, carrierGetter, HttpHeaderNames.TraceId);
 
-            if (traceId is null or 0)
+            if (traceIdLower is null or 0)
             {
                 // a valid traceId is required to use distributed tracing
                 return false;
@@ -76,14 +76,36 @@ namespace Datadog.Trace.Propagators
             var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.PropagatedTags);
 
-            var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
+            // HACK: fix this so we don't parse "x-datadog-tags" twice
+            var traceTags = TagPropagation.ParseHeader(propagatedTraceTags, TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+            var traceId = GetFullTraceId((ulong)traceIdLower, traceTags);
 
-            spanContext = new SpanContext((TraceId)traceId, parentId, samplingPriority, serviceName: null, origin)
+            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
                           {
                               PropagatedTags = traceTags
                           };
 
             return true;
+        }
+
+        // combine the lower 64 bits from "x-datadog-trace-id" with the
+        // upper 64 bits from "_dd.p.tid" into a 128-bit trace id
+        private TraceId GetFullTraceId(ulong lower, TraceTagCollection tags)
+        {
+            if (lower == 0)
+            {
+                return TraceId.Zero;
+            }
+
+            var upperHex = tags.GetTag(Tags.Propagated.TraceIdUpper);
+
+            if (!string.IsNullOrEmpty(upperHex) &&
+                ulong.TryParse(upperHex, NumberStyles.AllowHexSpecifier, provider: null, out var upper))
+            {
+                return new TraceId(upper, lower);
+            }
+
+            return (TraceId)lower;
         }
     }
 }
