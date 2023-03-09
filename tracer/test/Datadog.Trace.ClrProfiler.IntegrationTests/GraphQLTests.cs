@@ -363,7 +363,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             webSocket.Options.AddSubProtocol("graphql-ws");
 
             var cancellationTokenSource = new CancellationTokenSource();
-            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(60)); // 60 seconds timeout
+            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(120)); // 120 seconds timeout
 
             try
             {

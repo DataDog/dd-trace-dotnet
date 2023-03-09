@@ -65,6 +65,7 @@ namespace Samples.GraphQL4
                 _.EnableMetrics = true;
                 // _.ExposeExceptions = true;
             })
+            .AddWebSockets()
             .AddNewtonsoftJson(_ => { }, _ => { })
             .AddUserContextBuilder(httpContext => new Dictionary<string, object>());
 #endif
@@ -97,17 +98,16 @@ namespace Samples.GraphQL4
             });
 
             // add http for Schema at default url /graphql
-#if GRAPHQL_5_0 || GRAPHQL_7_0
             app.UseWebSockets();
-#endif
-
-#if GRAPHQL_5_0
+#if !GRAPHQL_7_0
             app.UseGraphQLWebSockets<ISchema>("/graphql");
 #endif
+            
             app.UseGraphQL<ISchema>("/graphql");
 
             // use graphql-playground at default url /ui/playground
             app.UseGraphQLPlayground("/ui/playground");
+
         }
     }
 }

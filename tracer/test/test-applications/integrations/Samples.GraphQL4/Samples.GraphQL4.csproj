@@ -22,6 +22,7 @@
     <PackageReference Include="GraphQL.SystemReactive"  Version="$(ApiVersion)" />
     <PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="5.0.2" />
     <PackageReference Include="GraphQL.Server.Transports.AspNetCore.NewtonsoftJson" Version="5.0.2" />
+    <PackageReference Include="GraphQL.Server.Transports.Subscriptions.WebSockets" Version="5.0.2" />
     <PackageReference Include="GraphQL.Server.Ui.Playground" Version="5.0.2" />
   </ItemGroup>
 
