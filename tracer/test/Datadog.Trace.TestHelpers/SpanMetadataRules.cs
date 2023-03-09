@@ -246,7 +246,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "mongodb"))
             .Tags(s => s
                 .IsOptional("db.instance")
-                .IsOptional("mongodb.collection")
+                .IsOptional("db.mongodb.collection")
                 .IsOptional("db.statement")
                 .IsPresent("out.host")
                 .IsPresent("out.port")

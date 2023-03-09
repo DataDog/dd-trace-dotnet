@@ -16,8 +16,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 105, 110, 115, 116, 97, 110, 99, 101 };
         // QueryBytes = System.Text.Encoding.UTF8.GetBytes("db.statement");
         private static readonly byte[] QueryBytes = new byte[] { 100, 98, 46, 115, 116, 97, 116, 101, 109, 101, 110, 116 };
-        // CollectionBytes = System.Text.Encoding.UTF8.GetBytes("mongodb.collection");
-        private static readonly byte[] CollectionBytes = new byte[] { 109, 111, 110, 103, 111, 100, 98, 46, 99, 111, 108, 108, 101, 99, 116, 105, 111, 110 };
+        // CollectionBytes = System.Text.Encoding.UTF8.GetBytes("db.mongodb.collection");
+        private static readonly byte[] CollectionBytes = new byte[] { 100, 98, 46, 109, 111, 110, 103, 111, 100, 98, 46, 99, 111, 108, 108, 101, 99, 116, 105, 111, 110 };
         // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
         private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
         // PortBytes = System.Text.Encoding.UTF8.GetBytes("out.port");
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 "component" => InstrumentationName,
                 "db.instance" => DbName,
                 "db.statement" => Query,
-                "mongodb.collection" => Collection,
+                "db.mongodb.collection" => Collection,
                 "out.host" => Host,
                 "out.port" => Port,
                 _ => base.GetTag(key),
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 case "db.statement": 
                     Query = value;
                     break;
-                case "mongodb.collection": 
+                case "db.mongodb.collection": 
                     Collection = value;
                     break;
                 case "out.host": 
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             if (Collection is not null)
             {
-                processor.Process(new TagItem<string>("mongodb.collection", Collection, CollectionBytes));
+                processor.Process(new TagItem<string>("db.mongodb.collection", Collection, CollectionBytes));
             }
 
             if (Host is not null)
@@ -139,7 +139,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             if (Collection is not null)
             {
-                sb.Append("mongodb.collection (tag):")
+                sb.Append("db.mongodb.collection (tag):")
                   .Append(Collection)
                   .Append(',');
             }

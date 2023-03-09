@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         { "db.instance", "admin" },
                         { "env", "integration_tests" },
-                        { "mongodb.collection", "1" },
+                        { "db.mongodb.collection", "1" },
                     });
 
                     if (adminSpan.Resource == "buildInfo admin")

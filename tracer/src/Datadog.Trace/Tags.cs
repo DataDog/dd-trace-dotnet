@@ -234,7 +234,7 @@ namespace Datadog.Trace
         /// <summary>
         /// A MongoDB collection name.
         /// </summary>
-        internal const string MongoDbCollection = "mongodb.collection";
+        internal const string MongoDbCollection = "db.mongodb.collection";
 
         /// <summary>
         /// The operation name of the GraphQL request.
