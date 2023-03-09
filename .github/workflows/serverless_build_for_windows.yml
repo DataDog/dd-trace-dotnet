@@ -11,9 +11,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '7.0.101'
       - run: ./build.cmd Clean BuildTracerHome
         shell: bash
-        working-directory: ./tracer
+        working-directory: tracer
       - uses: actions/upload-artifact@v2
         with:
           name: artifacts
