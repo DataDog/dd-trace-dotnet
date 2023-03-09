@@ -228,10 +228,10 @@ Type | `grpc`
 Name | Required |
 ---------|----------------|
 component | `Grpc`
-grpc.status.code | Yes
 rpc.grpc.kind | Yes
 rpc.grpc.package | Yes
 rpc.grpc.path | Yes
+rpc.grpc.status_code | Yes
 rpc.method | Yes
 rpc.service | Yes
 span.kind | `client`; `server`

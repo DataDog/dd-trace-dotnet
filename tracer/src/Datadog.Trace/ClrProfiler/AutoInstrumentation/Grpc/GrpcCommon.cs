@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
         public static void RecordFinalStatus(Span span, int grpcStatusCode, string errorMessage, Exception? ex)
         {
             var tags = (GrpcTags)span.Tags;
-            tags.StatusCode = grpcStatusCode.ToString();
+            tags.StatusCode = grpcStatusCode;
 
             if (grpcStatusCode != 0)
             {

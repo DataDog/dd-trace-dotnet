@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             {
                 // The status code will only change during this method if the response
                 // was originally "success" (due to serialization errors)
-                if (exception is not null || tags.StatusCode == "0")
+                if (exception is not null || tags.StatusCode == 0)
                 {
                     // can't use constraints as in a generic type
                     var asyncCall = instance.DuckCast<AsyncCallStruct>();

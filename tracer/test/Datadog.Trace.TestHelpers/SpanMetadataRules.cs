@@ -200,9 +200,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("rpc.grpc.package")
                 .IsPresent("rpc.grpc.path")
                 .IsPresent("rpc.service")
-                // TODO: this one needs to be moved to metrics.
-                // So I'm not renaming it to avoid breaking the remapper backend side
-                .IsPresent("grpc.status.code")
+                .IsPresent("rpc.grpc.status_code")
                 .Matches("component", "Grpc")
                 .MatchesOneOf("span.kind", "client", "server"));
 

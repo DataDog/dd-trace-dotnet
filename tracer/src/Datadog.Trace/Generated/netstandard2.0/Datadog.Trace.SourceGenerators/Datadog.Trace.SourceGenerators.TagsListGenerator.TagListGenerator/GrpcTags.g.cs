@@ -8,6 +8,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class GrpcTags
     {
+        // StatusCodeBytes = System.Text.Encoding.UTF8.GetBytes("rpc.grpc.status_code");
+        private static readonly byte[] StatusCodeBytes = new byte[] { 114, 112, 99, 46, 103, 114, 112, 99, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
@@ -22,8 +24,6 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] MethodPackageBytes = new byte[] { 114, 112, 99, 46, 103, 114, 112, 99, 46, 112, 97, 99, 107, 97, 103, 101 };
         // MethodServiceBytes = System.Text.Encoding.UTF8.GetBytes("rpc.service");
         private static readonly byte[] MethodServiceBytes = new byte[] { 114, 112, 99, 46, 115, 101, 114, 118, 105, 99, 101 };
-        // StatusCodeBytes = System.Text.Encoding.UTF8.GetBytes("grpc.status.code");
-        private static readonly byte[] StatusCodeBytes = new byte[] { 103, 114, 112, 99, 46, 115, 116, 97, 116, 117, 115, 46, 99, 111, 100, 101 };
 
         public override string? GetTag(string key)
         {
@@ -36,7 +36,6 @@ namespace Datadog.Trace.Tagging
                 "rpc.grpc.path" => MethodPath,
                 "rpc.grpc.package" => MethodPackage,
                 "rpc.service" => MethodService,
-                "grpc.status.code" => StatusCode,
                 _ => base.GetTag(key),
             };
         }
@@ -59,9 +58,6 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "rpc.service": 
                     MethodService = value;
-                    break;
-                case "grpc.status.code": 
-                    StatusCode = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -108,11 +104,6 @@ namespace Datadog.Trace.Tagging
             if (MethodService is not null)
             {
                 processor.Process(new TagItem<string>("rpc.service", MethodService, MethodServiceBytes));
-            }
-
-            if (StatusCode is not null)
-            {
-                processor.Process(new TagItem<string>("grpc.status.code", StatusCode, StatusCodeBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -169,14 +160,50 @@ namespace Datadog.Trace.Tagging
                   .Append(',');
             }
 
+            base.WriteAdditionalTags(sb);
+        }
+        public override double? GetMetric(string key)
+        {
+            return key switch
+            {
+                "rpc.grpc.status_code" => StatusCode,
+                _ => base.GetMetric(key),
+            };
+        }
+
+        public override void SetMetric(string key, double? value)
+        {
+            switch(key)
+            {
+                case "rpc.grpc.status_code": 
+                    StatusCode = value;
+                    break;
+                default: 
+                    base.SetMetric(key, value);
+                    break;
+            }
+        }
+
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
+        {
             if (StatusCode is not null)
             {
-                sb.Append("grpc.status.code (tag):")
-                  .Append(StatusCode)
+                processor.Process(new TagItem<double>("rpc.grpc.status_code", StatusCode.Value, StatusCodeBytes));
+            }
+
+            base.EnumerateMetrics(ref processor);
+        }
+
+        protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
+        {
+            if (StatusCode is not null)
+            {
+                sb.Append("rpc.grpc.status_code (metric):")
+                  .Append(StatusCode.Value)
                   .Append(',');
             }
 
-            base.WriteAdditionalTags(sb);
+            base.WriteAdditionalMetrics(sb);
         }
     }
 }

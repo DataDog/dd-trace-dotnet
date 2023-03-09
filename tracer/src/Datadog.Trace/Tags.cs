@@ -537,9 +537,7 @@ namespace Datadog.Trace
         internal const string GrpcMethodPackage = "rpc.grpc.package";
         internal const string GrpcMethodService = "rpc.service";
         internal const string GrpcMethodName = "rpc.method";
-        // TODO: this one needs to be moved to metrics.
-        // So I'm not renaming it to avoid breaking the remapper backend side
-        internal const string GrpcStatusCode = "grpc.status.code";
+        internal const string GrpcStatusCode = "rpc.grpc.status_code";
 
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
 

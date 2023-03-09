@@ -347,7 +347,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             span.Tags["error.msg"] = "Deadline Exceeded";
                             span.Tags.Remove("error.stack");
                             span.Tags.Remove("error.type");
-                            span.Tags["grpc.status.code"] = "4";
+                            span.Metrics["rpc.grpc.status_code"] = 4;
                         }
 
                         var verySlowAspNetCoreServerSpans = spans
