@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.Propagators
             newHeaders.VerifyNoOtherCalls();
 
             var traceContextSamplingField = typeof(TraceContext).GetField("_samplingPriority", BindingFlags.Instance | BindingFlags.NonPublic);
-            traceContextSamplingField.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
+            traceContextSamplingField!.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
             newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
             newHeaders.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-1"), Times.Once());
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests.Propagators
             newHeaders.VerifyNoOtherCalls();
 
             var traceContextSamplingField = typeof(TraceContext).GetField("_samplingPriority", BindingFlags.Instance | BindingFlags.NonPublic);
-            traceContextSamplingField.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
+            traceContextSamplingField!.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
             newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
             newHeaders.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-1"), Times.Once());
@@ -148,7 +148,9 @@ namespace Datadog.Trace.Tests.Propagators
             // 64 bits verify
             var expectedTraceId = (TraceId)9532127138774266268UL;
             var expectedSpanId = 67667974448284343UL;
-            result.TraceId128.Should().Be(expectedTraceId);
+
+            result.Should().NotBeNull();
+            result!.TraceId128.Should().Be(expectedTraceId);
             result.SpanId.Should().Be(expectedSpanId);
 
             // Check truncation

@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests.Propagators
             newHeaders.VerifyNoOtherCalls();
 
             var traceContextSamplingField = typeof(TraceContext).GetField("_samplingPriority", BindingFlags.Instance | BindingFlags.NonPublic);
-            traceContextSamplingField.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
+            traceContextSamplingField!.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
             newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
             newHeaders.Verify(h => h.Set("x-b3-traceid", "0123456789abcdef1122334455667788"), Times.Once());
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tests.Propagators
             newHeaders.VerifyNoOtherCalls();
 
             var traceContextSamplingField = typeof(TraceContext).GetField("_samplingPriority", BindingFlags.Instance | BindingFlags.NonPublic);
-            traceContextSamplingField.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
+            traceContextSamplingField!.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
             newHeaders = new Mock<IHeadersCollection>();
 
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
