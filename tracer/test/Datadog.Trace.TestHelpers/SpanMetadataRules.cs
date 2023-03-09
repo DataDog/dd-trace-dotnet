@@ -195,11 +195,13 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "grpc.request")
                 .Matches(Type, "grpc"))
             .Tags(s => s
-                .IsPresent("grpc.method.kind")
-                .IsPresent("grpc.method.name")
-                .IsPresent("grpc.method.package")
-                .IsPresent("grpc.method.path")
-                .IsPresent("grpc.method.service")
+                .IsPresent("rpc.grpc.kind")
+                .IsPresent("rpc.method")
+                .IsPresent("rpc.grpc.package")
+                .IsPresent("rpc.grpc.path")
+                .IsPresent("rpc.service")
+                // TODO: this one needs to be moved to metrics.
+                // So I'm not renaming it to avoid breaking the remapper backend side
                 .IsPresent("grpc.status.code")
                 .Matches("component", "Grpc")
                 .MatchesOneOf("span.kind", "client", "server"));

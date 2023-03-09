@@ -532,11 +532,13 @@ namespace Datadog.Trace
         internal const string CouchbaseOperationBucket = "couchbase.operation.bucket";
         internal const string CouchbaseOperationKey = "couchbase.operation.key";
 
-        internal const string GrpcMethodKind = "grpc.method.kind";
-        internal const string GrpcMethodPath = "grpc.method.path";
-        internal const string GrpcMethodPackage = "grpc.method.package";
-        internal const string GrpcMethodService = "grpc.method.service";
-        internal const string GrpcMethodName = "grpc.method.name";
+        internal const string GrpcMethodKind = "rpc.grpc.kind";
+        internal const string GrpcMethodPath = "rpc.grpc.path";
+        internal const string GrpcMethodPackage = "rpc.grpc.package";
+        internal const string GrpcMethodService = "rpc.service";
+        internal const string GrpcMethodName = "rpc.method";
+        // TODO: this one needs to be moved to metrics.
+        // So I'm not renaming it to avoid breaking the remapper backend side
         internal const string GrpcStatusCode = "grpc.status.code";
 
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";

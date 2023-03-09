@@ -12,16 +12,16 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // MethodKindBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.kind");
-        private static readonly byte[] MethodKindBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 107, 105, 110, 100 };
-        // MethodNameBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.name");
-        private static readonly byte[] MethodNameBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 110, 97, 109, 101 };
-        // MethodPathBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.path");
-        private static readonly byte[] MethodPathBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 112, 97, 116, 104 };
-        // MethodPackageBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.package");
-        private static readonly byte[] MethodPackageBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 112, 97, 99, 107, 97, 103, 101 };
-        // MethodServiceBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.service");
-        private static readonly byte[] MethodServiceBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 115, 101, 114, 118, 105, 99, 101 };
+        // MethodKindBytes = System.Text.Encoding.UTF8.GetBytes("rpc.grpc.kind");
+        private static readonly byte[] MethodKindBytes = new byte[] { 114, 112, 99, 46, 103, 114, 112, 99, 46, 107, 105, 110, 100 };
+        // MethodNameBytes = System.Text.Encoding.UTF8.GetBytes("rpc.method");
+        private static readonly byte[] MethodNameBytes = new byte[] { 114, 112, 99, 46, 109, 101, 116, 104, 111, 100 };
+        // MethodPathBytes = System.Text.Encoding.UTF8.GetBytes("rpc.grpc.path");
+        private static readonly byte[] MethodPathBytes = new byte[] { 114, 112, 99, 46, 103, 114, 112, 99, 46, 112, 97, 116, 104 };
+        // MethodPackageBytes = System.Text.Encoding.UTF8.GetBytes("rpc.grpc.package");
+        private static readonly byte[] MethodPackageBytes = new byte[] { 114, 112, 99, 46, 103, 114, 112, 99, 46, 112, 97, 99, 107, 97, 103, 101 };
+        // MethodServiceBytes = System.Text.Encoding.UTF8.GetBytes("rpc.service");
+        private static readonly byte[] MethodServiceBytes = new byte[] { 114, 112, 99, 46, 115, 101, 114, 118, 105, 99, 101 };
         // StatusCodeBytes = System.Text.Encoding.UTF8.GetBytes("grpc.status.code");
         private static readonly byte[] StatusCodeBytes = new byte[] { 103, 114, 112, 99, 46, 115, 116, 97, 116, 117, 115, 46, 99, 111, 100, 101 };
 
@@ -31,11 +31,11 @@ namespace Datadog.Trace.Tagging
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
-                "grpc.method.kind" => MethodKind,
-                "grpc.method.name" => MethodName,
-                "grpc.method.path" => MethodPath,
-                "grpc.method.package" => MethodPackage,
-                "grpc.method.service" => MethodService,
+                "rpc.grpc.kind" => MethodKind,
+                "rpc.method" => MethodName,
+                "rpc.grpc.path" => MethodPath,
+                "rpc.grpc.package" => MethodPackage,
+                "rpc.service" => MethodService,
                 "grpc.status.code" => StatusCode,
                 _ => base.GetTag(key),
             };
@@ -45,19 +45,19 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "grpc.method.kind": 
+                case "rpc.grpc.kind": 
                     MethodKind = value;
                     break;
-                case "grpc.method.name": 
+                case "rpc.method": 
                     MethodName = value;
                     break;
-                case "grpc.method.path": 
+                case "rpc.grpc.path": 
                     MethodPath = value;
                     break;
-                case "grpc.method.package": 
+                case "rpc.grpc.package": 
                     MethodPackage = value;
                     break;
-                case "grpc.method.service": 
+                case "rpc.service": 
                     MethodService = value;
                     break;
                 case "grpc.status.code": 
@@ -87,27 +87,27 @@ namespace Datadog.Trace.Tagging
 
             if (MethodKind is not null)
             {
-                processor.Process(new TagItem<string>("grpc.method.kind", MethodKind, MethodKindBytes));
+                processor.Process(new TagItem<string>("rpc.grpc.kind", MethodKind, MethodKindBytes));
             }
 
             if (MethodName is not null)
             {
-                processor.Process(new TagItem<string>("grpc.method.name", MethodName, MethodNameBytes));
+                processor.Process(new TagItem<string>("rpc.method", MethodName, MethodNameBytes));
             }
 
             if (MethodPath is not null)
             {
-                processor.Process(new TagItem<string>("grpc.method.path", MethodPath, MethodPathBytes));
+                processor.Process(new TagItem<string>("rpc.grpc.path", MethodPath, MethodPathBytes));
             }
 
             if (MethodPackage is not null)
             {
-                processor.Process(new TagItem<string>("grpc.method.package", MethodPackage, MethodPackageBytes));
+                processor.Process(new TagItem<string>("rpc.grpc.package", MethodPackage, MethodPackageBytes));
             }
 
             if (MethodService is not null)
             {
-                processor.Process(new TagItem<string>("grpc.method.service", MethodService, MethodServiceBytes));
+                processor.Process(new TagItem<string>("rpc.service", MethodService, MethodServiceBytes));
             }
 
             if (StatusCode is not null)
@@ -136,35 +136,35 @@ namespace Datadog.Trace.Tagging
 
             if (MethodKind is not null)
             {
-                sb.Append("grpc.method.kind (tag):")
+                sb.Append("rpc.grpc.kind (tag):")
                   .Append(MethodKind)
                   .Append(',');
             }
 
             if (MethodName is not null)
             {
-                sb.Append("grpc.method.name (tag):")
+                sb.Append("rpc.method (tag):")
                   .Append(MethodName)
                   .Append(',');
             }
 
             if (MethodPath is not null)
             {
-                sb.Append("grpc.method.path (tag):")
+                sb.Append("rpc.grpc.path (tag):")
                   .Append(MethodPath)
                   .Append(',');
             }
 
             if (MethodPackage is not null)
             {
-                sb.Append("grpc.method.package (tag):")
+                sb.Append("rpc.grpc.package (tag):")
                   .Append(MethodPackage)
                   .Append(',');
             }
 
             if (MethodService is not null)
             {
-                sb.Append("grpc.method.service (tag):")
+                sb.Append("rpc.service (tag):")
                   .Append(MethodService)
                   .Append(',');
             }

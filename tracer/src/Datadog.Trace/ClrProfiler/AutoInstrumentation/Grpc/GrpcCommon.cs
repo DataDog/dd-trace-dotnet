@@ -15,6 +15,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
     {
         public const string OperationName = "grpc.request";
         public const string ServiceName = "grpc-client";
+        // TODO, need to check with the backend if their remapping remaps only prefixes because they do:
+        // new TagMapping("grpc.request.metadata", "meta.rpc.grpc.request.metadata"),
+        // new TagMapping("grpc.response.metadata", "meta.rpc.grpc.response.metadata"),
+        // But I'm not sure it would work for grpc.request.metadata.*
         public const string RequestMetadataTagPrefix = "grpc.request.metadata";
         public const string ResponseMetadataTagPrefix = "grpc.response.metadata";
 
