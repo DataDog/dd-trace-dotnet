@@ -74,8 +74,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.UseFileName($"{nameof(StackExchangeRedisTests)}.{calculatedVersion}");
                 settings.DisableRequireUniquePrefix();
                 settings.AddSimpleScrubber($" {TestPrefix}StackExchange.Redis.", " StackExchange.Redis.");
-                settings.AddSimpleScrubber($"out.host: {host}", "out.host: stackexchangeredis");
-                settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
+                if (EnvironmentTools.IsOsx())
+                {
+                    settings.AddSimpleScrubber("out.host: localhost", "out.host: stackexchangeredis");
+                    settings.AddSimpleScrubber("out.host: 127.0.0.1", "out.host: stackexchangeredis-replica");
+                    settings.AddSimpleScrubber("out.port: 6390", "out.port: 6379");
+                    settings.AddSimpleScrubber("out.port: 6391", "out.port: 6379");
+                    settings.AddSimpleScrubber("out.port: 6392", "out.port: 6379");
+                }
+                else
+                {
+                    settings.AddSimpleScrubber($"out.host: {host}", "out.host: stackexchangeredis");
+                    settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
+                }
 
                 await VerifyHelper.VerifySpans(
                     spans,

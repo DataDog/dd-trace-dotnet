@@ -42,6 +42,7 @@ partial class Build
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
+    AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
@@ -655,7 +656,8 @@ partial class Build
 
     Target ZipMonitoringHome => _ => _
        .DependsOn(ZipMonitoringHomeWindows)
-       .DependsOn(ZipMonitoringHomeLinux);
+       .DependsOn(ZipMonitoringHomeLinux)
+       .DependsOn(ZipMonitoringHomeOsx);
 
     Target ZipMonitoringHomeWindows => _ => _
         .Unlisted()
@@ -769,6 +771,15 @@ partial class Build
                 workingDirectory / versionedName);
         });
 
+    Target ZipMonitoringHomeOsx => _ => _
+        .Unlisted()
+        .After(BuildTracerHome, BuildNativeLoader)
+        .OnlyWhenStatic(() => IsOsx)
+        .Executes(() =>
+        {
+            // As a naive approach let's do the same as windows, create a zip folder
+            CompressZip(MonitoringHomeDirectory, OsxTracerHomeZip, fileMode: FileMode.Create);
+        });
 
     Target CompileInstrumentationVerificationLibrary => _ => _
         .Unlisted()
@@ -1323,7 +1334,7 @@ partial class Build
             }
         });
 
-    Target CompileSamplesLinux => _ => _
+    Target CompileSamplesLinuxOrOsx => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
@@ -1451,7 +1462,7 @@ partial class Build
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
-        .After(CompileSamplesLinux)
+        .After(CompileSamplesLinuxOrOsx)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1485,13 +1496,13 @@ partial class Build
             }
         });
 
-    Target CompileLinuxIntegrationTests => _ => _
+    Target CompileLinuxOrOsxIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
-        .After(CompileSamplesLinux)
+        .After(CompileSamplesLinuxOrOsx)
         .After(CompileMultiApiPackageVersionSamples)
         .After(BuildRunnerTool)
         .Requires(() => MonitoringHomeDirectory != null)
@@ -1506,12 +1517,12 @@ partial class Build
 
             DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false);
 
-            IntegrationTestLinuxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
-            IntegrationTestLinuxProfilerDirFudge(Projects.AppSecIntegrationTests);
+            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
+            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
         });
 
     Target RunLinuxIntegrationTests => _ => _
-        .After(CompileLinuxIntegrationTests)
+        .After(CompileLinuxOrOsxIntegrationTests)
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
         .Requires(() => !IsWin)
@@ -1589,6 +1600,89 @@ partial class Build
             }
         });
 
+    Target RunOsxIntegrationTests => _ => _
+        .After(CompileLinuxOrOsxIntegrationTests)
+        .Description("Runs the osx integration tests")
+        .Requires(() => Framework)
+        .Requires(() => IsOsx)
+        .Triggers(PrintSnapshotsDiff)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(TestLogsDirectory);
+            ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
+            ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
+
+            var dockerFilter = IncludeTestsRequiringDocker switch
+            {
+                true => "&(RequiresDockerDependency=true)",
+                false => "&(RequiresDockerDependency!=true)",
+                null => string.Empty,
+            };
+
+            var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
+
+            var filter = string.IsNullOrEmpty(Filter) switch
+            {
+                false => Filter,
+                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
+            };
+
+            var targetPlatform = IsArm64 ? (MSBuildTargetPlatform) "arm64" : TargetPlatform;
+
+            try
+            {
+                // Run these ones in parallel
+                DotNetTest(config => config
+                        .SetConfiguration(BuildConfiguration)
+                        .EnableNoRestore()
+                        .EnableNoBuild()
+                        .SetFramework(Framework)
+                        //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                        .EnableCrashDumps()
+                        .SetFilter(filter)
+                        .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                        .SetLocalOsxEnvironmentVariables()
+                        .SetTestTargetPlatform(targetPlatform)
+                        .SetLogsDirectory(TestLogsDirectory)
+                        .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                        .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                        .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
+                        .When(CodeCoverage, ConfigureCodeCoverage)
+                        .CombineWith(ParallelIntegrationTests, (s, project) => s
+                            .EnableTrxLogOutput(GetResultsDirectory(project))
+                            .WithDatadogLogger()
+                            .SetProjectFile(project)),
+                    degreeOfParallelism: 2);
+
+                // Run this one separately so we can tail output
+                DotNetTest(config => config
+                    .SetConfiguration(BuildConfiguration)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetFramework(Framework)
+                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                    .EnableCrashDumps()
+                    .SetFilter(filter)
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetLocalOsxEnvironmentVariables()
+                    .SetTestTargetPlatform(targetPlatform)
+                    .SetLogsDirectory(TestLogsDirectory)
+                    .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                    .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
+                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
+                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithDatadogLogger()
+                        .SetProjectFile(project))
+                );
+            }
+            finally
+            {
+                CopyDumpsToBuildData();
+            }
+        });
+
     Target InstallDdTraceTool => _ => _
          .Description("Installs the dd-trace tool")
          .OnlyWhenDynamic(() => (ToolSource != null))
@@ -1645,7 +1739,7 @@ partial class Build
     Target CopyServerlessArtifacts => _ => _
        .Description("Copies monitoring-home into the serverless artifacts directory")
        .Unlisted()
-       .After(CompileSamplesLinux, CompileMultiApiPackageVersionSamples)
+       .After(CompileSamplesLinuxOrOsx, CompileMultiApiPackageVersionSamples)
        .Executes(() =>
         {
 
@@ -2034,7 +2128,7 @@ partial class Build
         };
 
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
-    private void IntegrationTestLinuxProfilerDirFudge(string project)
+    private void IntegrationTestLinuxOrOsxProfilerDirFudge(string project)
     {
         // Not sure if/why this is necessary, and we can't just point to the correct output location
         var src = MonitoringHomeDirectory;
@@ -2043,9 +2137,19 @@ partial class Build
         CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
         // not sure exactly where this is supposed to go, may need to change the original build
-        foreach (var linuxDir in MonitoringHomeDirectory.GlobDirectories("linux-*"))
+        if (IsLinux)
         {
-            CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            foreach (var linuxDir in MonitoringHomeDirectory.GlobDirectories("linux-*"))
+            {
+                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            }
+        }
+        else if (IsOsx)
+        {
+            foreach (var osxDir in MonitoringHomeDirectory.GlobDirectories("osx"))
+            {
+                CopyDirectoryRecursively(osxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            }
         }
     }
 
