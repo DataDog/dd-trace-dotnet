@@ -597,7 +597,7 @@ namespace Datadog.Trace
             /// Tag used to propagate the higher-order 64 bits of a 128-bit trace id encoded as a
             /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
             /// </summary>
-            internal const string TraceIdHigh = "_dd.p.tid";
+            internal const string TraceIdUpper = "_dd.p.tid";
         }
     }
 }
