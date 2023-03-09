@@ -775,7 +775,6 @@ partial class Build
         .Unlisted()
         .After(BuildTracerHome, BuildNativeLoader)
         .OnlyWhenStatic(() => IsOsx)
-        .Requires(() => Version)
         .Executes(() =>
         {
             // As a naive approach let's do the same as windows, create a zip folder
@@ -1601,6 +1600,89 @@ partial class Build
             }
         });
 
+    Target RunOsxIntegrationTests => _ => _
+        .After(CompileLinuxOrOsxIntegrationTests)
+        .Description("Runs the osx integration tests")
+        .Requires(() => Framework)
+        .Requires(() => IsOsx)
+        .Triggers(PrintSnapshotsDiff)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(TestLogsDirectory);
+            ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
+            ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
+
+            var dockerFilter = IncludeTestsRequiringDocker switch
+            {
+                true => "&(RequiresDockerDependency=true)",
+                false => "&(RequiresDockerDependency!=true)",
+                null => string.Empty,
+            };
+
+            var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
+
+            var filter = string.IsNullOrEmpty(Filter) switch
+            {
+                false => Filter,
+                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
+            };
+
+            var targetPlatform = IsArm64 ? (MSBuildTargetPlatform) "arm64" : TargetPlatform;
+
+            try
+            {
+                // Run these ones in parallel
+                DotNetTest(config => config
+                        .SetConfiguration(BuildConfiguration)
+                        .EnableNoRestore()
+                        .EnableNoBuild()
+                        .SetFramework(Framework)
+                        //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                        .EnableCrashDumps()
+                        .SetFilter(filter)
+                        .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                        .SetLocalOsxEnvironmentVariables()
+                        .SetTestTargetPlatform(targetPlatform)
+                        .SetLogsDirectory(TestLogsDirectory)
+                        .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                        .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                        .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
+                        .When(CodeCoverage, ConfigureCodeCoverage)
+                        .CombineWith(ParallelIntegrationTests, (s, project) => s
+                            .EnableTrxLogOutput(GetResultsDirectory(project))
+                            .WithDatadogLogger()
+                            .SetProjectFile(project)),
+                    degreeOfParallelism: 2);
+
+                // Run this one separately so we can tail output
+                DotNetTest(config => config
+                    .SetConfiguration(BuildConfiguration)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetFramework(Framework)
+                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                    .EnableCrashDumps()
+                    .SetFilter(filter)
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetLocalOsxEnvironmentVariables()
+                    .SetTestTargetPlatform(targetPlatform)
+                    .SetLogsDirectory(TestLogsDirectory)
+                    .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                    .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
+                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
+                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithDatadogLogger()
+                        .SetProjectFile(project))
+                );
+            }
+            finally
+            {
+                CopyDumpsToBuildData();
+            }
+        });
+
     Target InstallDdTraceTool => _ => _
          .Description("Installs the dd-trace tool")
          .OnlyWhenDynamic(() => (ToolSource != null))
@@ -2064,9 +2146,9 @@ partial class Build
         }
         else if (IsOsx)
         {
-            foreach (var linuxDir in MonitoringHomeDirectory.GlobDirectories("osx"))
+            foreach (var osxDir in MonitoringHomeDirectory.GlobDirectories("osx"))
             {
-                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                CopyDirectoryRecursively(osxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
             }
         }
     }

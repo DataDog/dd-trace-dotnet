@@ -27,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         public void MetricsDisabled()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "0");
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
 
@@ -42,11 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         public void UdpSubmitsMetrics()
         {
-            if (EnvironmentTools.IsOsx())
-            {
-                throw new SkipException("Can't use UDS on OSX");
-            }
-
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             EnvironmentHelper.EnableDefaultTransport();
             RunTest();
         }
@@ -57,11 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "False")]
         public void UdsSubmitsMetrics()
         {
-            if (EnvironmentTools.IsOsx())
-            {
-                throw new SkipException("Can't use UDS on OSX");
-            }
-
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             EnvironmentHelper.EnableUnixDomainSockets();
             RunTest();
         }

@@ -277,7 +277,7 @@ partial class Build : NukeBuild
         .Requires(() => IsOsx)
         .Description("Builds and runs the osx integration tests. Requires docker-compose dependencies")
         .DependsOn(BuildOsxIntegrationTests)
-        .DependsOn(RunLinuxIntegrationTests);
+        .DependsOn(RunOsxIntegrationTests);
     
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")

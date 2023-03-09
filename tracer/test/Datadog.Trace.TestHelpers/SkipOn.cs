@@ -16,7 +16,7 @@ public static class SkipOn
     /// <summary>
     /// Platform enum
     /// </summary>
-    public enum Platform
+    public enum PlatformValue
     {
         /// <summary>
         /// Windows platform
@@ -37,7 +37,7 @@ public static class SkipOn
     /// <summary>
     /// Architecture enum
     /// </summary>
-    public enum Architecture
+    public enum ArchitectureValue
     {
         /// <summary>
         /// X86 arch
@@ -55,19 +55,31 @@ public static class SkipOn
         ARM64
     }
 
-    public static void PlatformAndArchitecture(Platform platform, Architecture architecture)
+    public static void PlatformAndArchitecture(PlatformValue platform, ArchitectureValue architecture)
     {
 #if NETCOREAPP
-        if ((platform == Platform.Linux && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ||
-            (platform == Platform.Windows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) ||
-            (platform == Platform.MacOs && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)))
+        if ((platform == PlatformValue.Linux && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ||
+            (platform == PlatformValue.Windows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) ||
+            (platform == PlatformValue.MacOs && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)))
         {
-            if ((architecture == Architecture.X64 && RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.X64) ||
-                (architecture == Architecture.X86 && RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.X86) ||
-                (architecture == Architecture.ARM64 && RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64))
+            if ((architecture == ArchitectureValue.X64 && RuntimeInformation.OSArchitecture == Architecture.X64) ||
+                (architecture == ArchitectureValue.X86 && RuntimeInformation.OSArchitecture == Architecture.X86) ||
+                (architecture == ArchitectureValue.ARM64 && RuntimeInformation.OSArchitecture == Architecture.Arm64))
             {
-                throw new SkipException($"Platform {platform} with Architecture {architecture} is not supported by this test.");
+                throw new SkipException($"Platform '{platform}' with Architecture '{architecture}' is not supported by this test.");
             }
+        }
+#endif
+    }
+
+    public static void Platform(PlatformValue platform)
+    {
+#if NETCOREAPP
+        if ((platform == PlatformValue.Linux && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ||
+            (platform == PlatformValue.Windows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) ||
+            (platform == PlatformValue.MacOs && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)))
+        {
+            throw new SkipException($"Platform '{platform}' is not supported by this test.");
         }
 #endif
     }

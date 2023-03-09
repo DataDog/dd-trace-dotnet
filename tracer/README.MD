@@ -101,11 +101,17 @@ You can use Rider and CLion to develop on macOS. Building and testing can be don
 # Build NuGet packages and MSIs. Requires BuildTracerHome to have previously been run
 ./build.sh PackageTracerHome
 
+# Start IntegrationTests dependencies.
+docker-compose up StartDependencies.OSXARM64
+
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
 ./build.sh BuildAndRunOsxIntegrationTests
 
 # Build and run integration tests filtering on one framework, one set of tests and a sample app.
 ./build.sh BuildAndRunOsxIntegrationTests --framework "net6.0" --filter "rabbit" --SampleName "Samples.Rabbit"
+
+# Stop IntegrationTests dependencies.
+docker-compose down
 ```
 
 ## Additional Technical Documentation

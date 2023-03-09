@@ -51,11 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
         public void SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType)
         {
-            if (EnvironmentTools.IsOsx())
-            {
-                throw new SkipException("This test is not supported on macOS");
-            }
-
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
             {
                 throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
@@ -79,8 +75,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(StackRegex, string.Empty);
             settings.AddRegexScrubber(ErrorMsgRegex, string.Empty);
-            var filename = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ?
-                               "ProcessStartTests.SubmitsTracesLinux" : "ProcessStartTests.SubmitsTraces";
+            var filename = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ?
+                "ProcessStartTests.SubmitsTracesLinux" :
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ?
+                    "ProcessStartTests.SubmitsTracesOsx" :
+                    "ProcessStartTests.SubmitsTraces";
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
