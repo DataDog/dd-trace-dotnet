@@ -620,6 +620,11 @@ namespace Datadog.Trace.Propagators
                 false => SamplingPriorityValues.AutoReject,
             };
 
+            var maxLength = Tracer.Instance?.Settings?.OutgoingTagPropagationHeaderMaxLength ??
+                            TagPropagation.OutgoingTagPropagationHeaderMaxLength;
+
+            var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags, maxLength);
+
             spanContext = new SpanContext(
                 traceId: traceParent.TraceId,
                 spanId: traceParent.ParentId,
@@ -629,7 +634,7 @@ namespace Datadog.Trace.Propagators
                 rawTraceId: traceParent.RawTraceId,
                 rawSpanId: traceParent.RawParentId);
 
-            spanContext.PropagatedTags = traceState.PropagatedTags;
+            spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
             return true;
         }
