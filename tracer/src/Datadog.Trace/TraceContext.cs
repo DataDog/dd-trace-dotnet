@@ -7,7 +7,6 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -116,8 +115,10 @@ namespace Datadog.Trace
 
                     if (span.TraceId.Upper > 0)
                     {
-                        // this is a 128-bit trace id, add the "_dd.p.tid" (propagated trace id) tag
-                        var upperTraceIdHex = HexString.ToHexString(span.TraceId.Upper);
+                        // this is a 128-bit trace id, so add the "_dd.p.tid" ((P)ropagated (T)race (ID)) trace tag.
+                        // NOTE: we can't use the optimized HexString.ToHexString(span.TraceId.Upper)
+                        // because this tag CANNOT be zero-padded.
+                        var upperTraceIdHex = span.TraceId.Upper.ToString("x");
                         Tags.SetTag(Datadog.Trace.Tags.Propagated.TraceIdUpper, upperTraceIdHex);
                     }
                 }
