@@ -98,7 +98,7 @@
       db.instance: test-db,
       env: integration_tests,
       mongodb.collection: employees,
-      mongodb.query: { "count" : "employees", "query" : { } },
+      db.statement: { "count" : "employees", "query" : { } },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_1,

@@ -14,8 +14,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // DbNameBytes = System.Text.Encoding.UTF8.GetBytes("db.instance");
         private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 105, 110, 115, 116, 97, 110, 99, 101 };
-        // QueryBytes = System.Text.Encoding.UTF8.GetBytes("mongodb.query");
-        private static readonly byte[] QueryBytes = new byte[] { 109, 111, 110, 103, 111, 100, 98, 46, 113, 117, 101, 114, 121 };
+        // QueryBytes = System.Text.Encoding.UTF8.GetBytes("db.statement");
+        private static readonly byte[] QueryBytes = new byte[] { 100, 98, 46, 115, 116, 97, 116, 101, 109, 101, 110, 116 };
         // CollectionBytes = System.Text.Encoding.UTF8.GetBytes("mongodb.collection");
         private static readonly byte[] CollectionBytes = new byte[] { 109, 111, 110, 103, 111, 100, 98, 46, 99, 111, 108, 108, 101, 99, 116, 105, 111, 110 };
         // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
                 "db.instance" => DbName,
-                "mongodb.query" => Query,
+                "db.statement" => Query,
                 "mongodb.collection" => Collection,
                 "out.host" => Host,
                 "out.port" => Port,
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 case "db.instance": 
                     DbName = value;
                     break;
-                case "mongodb.query": 
+                case "db.statement": 
                     Query = value;
                     break;
                 case "mongodb.collection": 
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             if (Query is not null)
             {
-                processor.Process(new TagItem<string>("mongodb.query", Query, QueryBytes));
+                processor.Process(new TagItem<string>("db.statement", Query, QueryBytes));
             }
 
             if (Collection is not null)
@@ -132,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             if (Query is not null)
             {
-                sb.Append("mongodb.query (tag):")
+                sb.Append("db.statement (tag):")
                   .Append(Query)
                   .Append(',');
             }

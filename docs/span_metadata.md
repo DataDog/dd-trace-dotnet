@@ -295,8 +295,8 @@ Name | Required |
 ---------|----------------|
 component | `MongoDb`
 db.instance | No
+db.statement | No
 mongodb.collection | No
-mongodb.query | No
 out.host | Yes
 out.port | Yes
 span.kind | `client`

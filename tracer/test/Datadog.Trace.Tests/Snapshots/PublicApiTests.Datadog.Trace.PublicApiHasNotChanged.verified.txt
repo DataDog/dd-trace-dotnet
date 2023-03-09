@@ -139,7 +139,7 @@ namespace Datadog.Trace
         public const string OutPort = "out.port";
         public const string SamplingPriority = "sampling.priority";
         public const string SpanKind = "span.kind";
-        public const string SqlQuery = "sql.query";
+        public const string SqlQuery = "db.statement";
         public const string SqlRows = "sql.rows";
         public const string Version = "version";
     }

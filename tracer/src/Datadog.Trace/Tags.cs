@@ -94,7 +94,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The query text
         /// </summary>
-        public const string SqlQuery = "sql.query";
+        public const string SqlQuery = "db.statement";
 
         /// <summary>
         /// The number of rows returned by a query
@@ -229,7 +229,7 @@ namespace Datadog.Trace
         /// <summary>
         /// A MongoDB query.
         /// </summary>
-        internal const string MongoDbQuery = "mongodb.query";
+        internal const string MongoDbQuery = "db.statement";
 
         /// <summary>
         /// A MongoDB collection name.
