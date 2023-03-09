@@ -57,6 +57,7 @@ public:
     bool IsHeapProfilingEnabled() const override;
     bool UseBacktrace2() const override;
     bool IsAllocationRecorderEnabled() const override;
+    bool IsRootReferenceEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -125,6 +126,7 @@ private:
     int32_t _codeHotspotsThreadsThreshold;
     bool _useBacktrace2;
     bool _isAllocationRecorderEnabled;
+    bool _isRootReferenceEnabled;
 
     double _minimumCores;
     std::string _namedPipeName;

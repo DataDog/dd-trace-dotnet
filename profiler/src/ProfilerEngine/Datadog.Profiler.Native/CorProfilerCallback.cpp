@@ -46,6 +46,8 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #include "AllocationsRecorder.h"
+#include "RootReferenceManager.h"
+
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
@@ -124,6 +126,11 @@ bool CorProfilerCallback::InitializeServices()
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
+    if (_pConfiguration->IsRootReferenceEnabled())
+    {
+        _pRootReferenceManager = std::make_unique<RootReferenceManager>(_pCorProfilerInfo, _pFrameStore.get());
+    }
+
     // Each sample contains a vector of values.
     // The list of a provider value definitions is available statically.
     // Based on previous providers list, an offset in the values vector is computed and passed to the provider constructor.
@@ -183,7 +190,8 @@ bool CorProfilerCallback::InitializeServices()
                     _pAppDomainStore.get(),
                     pRuntimeIdStore,
                     _pConfiguration.get(),
-                    _metricsRegistry);
+                    _metricsRegistry,
+                    _pRootReferenceManager.get());
                 valuesOffset += static_cast<uint32_t>(valueTypes.size());
 
                 valueTypes = AllocationsProvider::SampleTypeDefinitions;
@@ -955,6 +963,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_OBJECT_ALLOCATED | COR_PRF_ENABLE_OBJECT_ALLOCATED;
     }
 
+    if (_pConfiguration->IsRootReferenceEnabled())
+    {
+        // !! WARNING !!
+        // This disables concurrent GC
+        // !! WARNING !!
+        eventMask |= COR_PRF_MONITOR_GC;
+    }
+
     if (_pCorProfilerInfoEvents != nullptr)
     {
         // listen to CLR events via ICorProfilerCallback
@@ -1454,6 +1470,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ObjectsAllocatedByClass(ULONG cCl
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ObjectReferences(ObjectID objectId, ClassID classId, ULONG cObjectRefs, ObjectID objectRefIds[])
 {
+    if (_pRootReferenceManager != nullptr)
+    {
+        return _pRootReferenceManager->OnObjectReferences(objectId, classId, cObjectRefs, objectRefIds);
+    }
+
     return S_OK;
 }
 
@@ -1575,6 +1596,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::SurvivingReferences(ULONG cSurviv
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionFinished()
 {
+    // TODO: check with LiveObjectsProvider where to notify the end of GC
+    //if (_pRootReferenceManager != nullptr)
+    //{
+    //    _pRootReferenceManager->OnGarbageCollectionFinished();
+    //}
+
     return S_OK;
 }
 
@@ -1585,6 +1612,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::FinalizeableObjectQueued(DWORD fi
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences2(ULONG cRootRefs, ObjectID rootRefIds[], COR_PRF_GC_ROOT_KIND rootKinds[], COR_PRF_GC_ROOT_FLAGS rootFlags[], UINT_PTR rootIds[])
 {
+    if (_pRootReferenceManager != nullptr)
+    {
+        return _pRootReferenceManager->OnRootReferences2(cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds);
+    }
+
     return S_OK;
 }
 

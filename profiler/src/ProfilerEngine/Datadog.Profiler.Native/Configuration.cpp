@@ -66,6 +66,7 @@ Configuration::Configuration()
     _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, false);
     _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
+    _isRootReferenceEnabled = GetEnvironmentValue(EnvironmentVariables::RootReferenceEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -254,6 +255,11 @@ bool Configuration::UseBacktrace2() const
 bool Configuration::IsAllocationRecorderEnabled() const
 {
     return _isAllocationRecorderEnabled;
+}
+
+bool Configuration::IsRootReferenceEnabled() const
+{
+    return _isRootReferenceEnabled;
 }
 
 
