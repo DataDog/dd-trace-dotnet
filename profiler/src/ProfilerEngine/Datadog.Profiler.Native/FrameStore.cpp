@@ -133,7 +133,7 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
     if (!typeInCache)
     {
         // try to get the type description
-        if (!BuildTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc, isEncoded))
+        if (!BuildTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc, false, nullptr, isEncoded))
         {
             // This should never happen but in case it happens, we cache the module/frame value.
             // It's safe to cache, because there is no reason that the next calls to
@@ -260,6 +260,26 @@ bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool is
     return false;
 }
 
+void AppendArrayRank(std::string& arrayBuilder, ULONG rank)
+{
+    if (rank == 1)
+    {
+        arrayBuilder = "[]" + arrayBuilder;
+    }
+    else
+    {
+        std::stringstream builder;
+        builder << "[";
+        for (size_t i = 0; i < rank - 1; i++)
+        {
+            builder << ",";
+        }
+        builder << "]";
+
+        arrayBuilder = builder.str() + arrayBuilder;
+    }
+}
+
 bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncoded)
 {
     // get type related description (assembly, namespace and type name)
@@ -269,11 +289,44 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncod
 
     if (!typeInCache)
     {
+        ClassID originalClassId = classId;
+
+        // deal with class[]/[,...,]
+        // read https://learn.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo-isarrayclass-method for more details
+        bool isArray = false;
+        std::string arrayBuilder;
+
+        CorElementType baseElementType;
+        ClassID itemClassId;
+        ULONG rank = 0;
+        if (_pCorProfilerInfo->IsArrayClass(classId, &baseElementType, &itemClassId, &rank) == S_OK)
+        {
+            classId = itemClassId;
+            isArray = true;
+            AppendArrayRank(arrayBuilder, rank);
+
+            // in case of matrices, it is needed to look for the last "good" item class ID
+            // because all others might be array of array of ...
+            for (size_t i = 0; i < rank; i++)
+            {
+                HRESULT hr = _pCorProfilerInfo->IsArrayClass(classId, &baseElementType, &itemClassId, &rank);
+                if ((hr == S_FALSE) || FAILED(hr))
+                {
+                    itemClassId = classId;
+
+                    break;
+                }
+
+                AppendArrayRank(arrayBuilder, rank);
+                classId = itemClassId;
+            }
+        }
+
         ModuleID moduleId;
         mdTypeDef typeDefToken;
         INVOKE(_pCorProfilerInfo->GetClassIDInfo(classId, &moduleId, &typeDefToken));
 
-        // for some types, it is not possible to find the moduleId ???
+        // for some types, it is not possible to find the moduleId ???  --> could be arrays...
         if (moduleId == 0)
         {
             INVOKE(_pCorProfilerInfo->GetClassIDInfo2(classId, &moduleId, &typeDefToken, nullptr, 0, nullptr, nullptr));
@@ -284,26 +337,26 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncod
 
         // try to get the type description
         TypeDesc typeDesc;
-        if (!BuildTypeDesc(metadataImport.Get(), classId, moduleId, typeDefToken, typeDesc, isEncoded))
+        if (!BuildTypeDesc(metadataImport.Get(), classId, moduleId, typeDefToken, typeDesc, isArray, arrayBuilder.c_str(), isEncoded))
         {
             return false;
         }
 
-        if (classId != 0)
+        if (originalClassId != 0)
         {
             if (isEncoded)
             {
                 std::lock_guard<std::mutex> lock(_encodedTypesLock);
 
-                _encodedTypes[classId] = typeDesc;
-                pTypeDesc = &(_encodedTypes.at(classId));
+                _encodedTypes[originalClassId] = typeDesc;
+                pTypeDesc = &(_encodedTypes.at(originalClassId));
             }
             else
             {
                 std::lock_guard<std::mutex> lock(_typesLock);
 
-                _types[classId] = typeDesc;
-                pTypeDesc = &(_types.at(classId));
+                _types[originalClassId] = typeDesc;
+                pTypeDesc = &(_types.at(originalClassId));
             }
         }
         else
@@ -324,6 +377,8 @@ bool FrameStore::BuildTypeDesc(
     ModuleID moduleId,
     mdTypeDef mdTokenType,
     TypeDesc& typeDesc,
+    bool isArray,
+    const char* arraySuffix,
     bool isEncoded)
 {
     // 1. Get the assembly from the module
@@ -333,7 +388,7 @@ bool FrameStore::BuildTypeDesc(
     }
 
     // 2. Look for the type name including namespace (need to take into account nested types and generic types)
-    auto [ns, ct] = GetManagedTypeName(_pCorProfilerInfo, pMetadataImport, moduleId, classId, mdTokenType, isEncoded);
+    auto [ns, ct] = GetManagedTypeName(_pCorProfilerInfo, pMetadataImport, moduleId, classId, mdTokenType, isArray, arraySuffix, isEncoded);
     typeDesc.Namespace = ns;
     typeDesc.Type = ct;
 
@@ -547,7 +602,7 @@ std::string FrameStore::GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdT
     return shared::ToString(shared::WSTRING(pBuffer));
 }
 
-std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType)
+std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isArray, const char* arraySuffix)
 {
     mdTypeDef mdEnclosingType = 0;
     HRESULT hr = pMetadata->GetNestedClassProps(mdTokenType, &mdEnclosingType);
@@ -557,7 +612,7 @@ std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataIm
     std::string ns;
     if (isNested)
     {
-        std::tie(ns, enclosingType) = GetTypeWithNamespace(pMetadata, mdEnclosingType);
+        std::tie(ns, enclosingType) = GetTypeWithNamespace(pMetadata, mdEnclosingType, false, nullptr);
     }
 
     // Get type name
@@ -567,6 +622,11 @@ std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataIm
     {
         // TODO: check if this is what we really want
         typeName = "?";
+    }
+
+    if (isArray)
+    {
+        typeName += arraySuffix;
     }
 
     if (isNested)
@@ -695,7 +755,7 @@ std::string FrameStore::FormatGenericParameters(
                 }
                 else
                 {
-                    auto [ns, ct] = GetManagedTypeName(pInfo, pMetadata.Get(), argModuleId, argClassId, mdType, isEncoded);
+                    auto [ns, ct] = GetManagedTypeName(pInfo, pMetadata.Get(), argModuleId, argClassId, mdType, false, nullptr, isEncoded);
                     if (isEncoded)
                     {
                         builder << "|ns:" << ns << " |ct:" << ct;
@@ -736,9 +796,11 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     ModuleID moduleId,
     ClassID classId,
     mdTypeDef mdTokenType,
+    bool isArray,
+    const char* arraySuffix,
     bool isEncoded)
 {
-    auto [ns, typeName] = GetTypeWithNamespace(pMetadata, mdTokenType);
+    auto [ns, typeName] = GetTypeWithNamespace(pMetadata, mdTokenType, isArray, arraySuffix);
     // we have everything we need if not a generic type
 
     // if classId == 0 (i.e. one generic parameter is a reference type), no way to get the exact generic parameters
