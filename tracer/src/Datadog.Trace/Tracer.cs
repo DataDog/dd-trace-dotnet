@@ -386,9 +386,13 @@ namespace Datadog.Trace
                     var activity = Activity.ActivityListener.GetCurrentActivity();
                     if (activity is Activity.DuckTypes.IW3CActivity w3CActivity)
                     {
-                        // If there's an existing activity we use the same traceId (converted).
-                        rawTraceId = w3CActivity.TraceId;
-                        traceId = Convert.ToUInt64(w3CActivity.TraceId.Substring(16), 16);
+                        // If the Activity has an ActivityIdFormat.Hierarchical instead of W3C it's TraceId & SpanId will be null
+                        if (w3CActivity.TraceId is not null)
+                        {
+                            // If there's an existing activity we use the same traceId (converted).
+                            rawTraceId = w3CActivity.TraceId;
+                            traceId = Convert.ToUInt64(w3CActivity.TraceId.Substring(16), 16);
+                        }
                     }
                 }
             }
