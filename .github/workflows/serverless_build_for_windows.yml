@@ -13,6 +13,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: .\build.cmd Clean BuildTracerHome
         shell: bash
+        working-directory: ./tracer
       - uses: actions/upload-artifact@v2
         with:
           name: artifacts
