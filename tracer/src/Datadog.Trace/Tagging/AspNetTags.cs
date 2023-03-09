@@ -9,7 +9,7 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class AspNetTags : WebTags
     {
-        [Tag(Trace.Tags.AspNetRoute)]
+        [Tag(Trace.Tags.HttpRoute)]
         public string AspNetRoute { get; set; }
 
         [Tag(Trace.Tags.AspNetController)]

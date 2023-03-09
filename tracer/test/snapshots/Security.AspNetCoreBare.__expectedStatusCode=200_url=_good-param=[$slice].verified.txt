@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -10,7 +10,6 @@
       actor.ip: 86.242.244.246,
       appsec.event: true,
       aspnet_core.endpoint: Samples.Security.AspNetCoreBare.Controllers.GoodController.Get (Samples.Security.AspNetCoreBare),
-      aspnet_core.route: good,
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
@@ -56,7 +55,6 @@
       actor.ip: 86.242.244.246,
       appsec.event: true,
       aspnet_core.endpoint: Samples.Security.AspNetCoreBare.Controllers.GoodController.Get (Samples.Security.AspNetCoreBare),
-      aspnet_core.route: good,
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
@@ -102,7 +100,6 @@
       actor.ip: 86.242.244.246,
       appsec.event: true,
       aspnet_core.endpoint: Samples.Security.AspNetCoreBare.Controllers.GoodController.Get (Samples.Security.AspNetCoreBare),
-      aspnet_core.route: good,
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
@@ -148,7 +145,6 @@
       actor.ip: 86.242.244.246,
       appsec.event: true,
       aspnet_core.endpoint: Samples.Security.AspNetCoreBare.Controllers.GoodController.Get (Samples.Security.AspNetCoreBare),
-      aspnet_core.route: good,
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
@@ -194,7 +190,6 @@
       actor.ip: 86.242.244.246,
       appsec.event: true,
       aspnet_core.endpoint: Samples.Security.AspNetCoreBare.Controllers.GoodController.Get (Samples.Security.AspNetCoreBare),
-      aspnet_core.route: good,
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,

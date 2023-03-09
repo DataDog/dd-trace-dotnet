@@ -8,7 +8,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.IastController.Index (Samples.Security.AspNetCore5),
-      aspnet_core.route: iast,
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -42,9 +41,9 @@
     Tags: {
       aspnet_core.action: index,
       aspnet_core.controller: iast,
-      aspnet_core.route: iast,
       component: aspnet_core,
       env: integration_tests,
+      http.route: iast,
       language: dotnet,
       span.kind: server
     }

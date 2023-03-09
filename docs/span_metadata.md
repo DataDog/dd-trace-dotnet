@@ -63,9 +63,9 @@ Name | Required |
 aspnet.action | Yes
 aspnet.area | No
 aspnet.controller | Yes
-aspnet.route | Yes
 http.method | Yes
 http.request.headers.host | Yes
+http.route | Yes
 http.status_code | Yes
 http.url | Yes
 http.useragent | Yes
@@ -82,10 +82,10 @@ Name | Required |
 ---------|----------------|
 aspnet.action | No
 aspnet.controller | No
-aspnet.route | Yes
 http.client_ip | No
 http.method | Yes
 http.request.headers.host | Yes
+http.route | Yes
 http.route | No
 http.status_code | No
 http.url | Yes
@@ -103,11 +103,11 @@ Type | `web`
 Name | Required |
 ---------|----------------|
 aspnet_core.endpoint | No
-aspnet_core.route | No
 component | `aspnet_core`
 http.client_ip | No
 http.method | Yes
 http.request.headers.host | Yes
+http.route | No
 http.route | No
 http.status_code | Yes
 http.url | Yes
@@ -129,8 +129,8 @@ aspnet_core.action | Yes
 aspnet_core.area | No
 aspnet_core.controller | Yes
 aspnet_core.page | No
-aspnet_core.route | Yes
 component | `aspnet_core`
+http.route | Yes
 span.kind | `server`
 
 ## AwsSqs

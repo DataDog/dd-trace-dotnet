@@ -10,10 +10,10 @@
     Tags: {
       aspnet.action: statuscode,
       aspnet.controller: home,
-      aspnet.route: statuscode/{value},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: statuscode/{value},
       http.status_code: 201,
       http.url: http://localhost/my-app/statuscode/201,
       http.useragent: testhelper,

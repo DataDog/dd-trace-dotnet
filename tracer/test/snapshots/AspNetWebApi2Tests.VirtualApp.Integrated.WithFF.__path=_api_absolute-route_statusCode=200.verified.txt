@@ -8,10 +8,10 @@
     Type: web,
     ParentId: Id_3,
     Tags: {
-      aspnet.route: api/absolute-route,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: api/absolute-route,
       http.status_code: 200,
       http.url: http://localhost/my-app/api/absolute-route,
       http.useragent: testhelper,

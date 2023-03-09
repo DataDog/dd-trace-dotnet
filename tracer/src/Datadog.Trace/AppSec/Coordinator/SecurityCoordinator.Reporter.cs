@@ -122,7 +122,7 @@ internal readonly partial struct SecurityCoordinator
 
     private void TryAddEndPoint()
     {
-        var route = _localRootSpan.GetTag(Tags.AspNetCoreRoute) ?? _localRootSpan.GetTag(Tags.AspNetRoute);
+        var route = _localRootSpan.GetTag(Tags.HttpRoute);
         if (route != null)
         {
             _localRootSpan.SetTag(Tags.HttpEndpoint, route);

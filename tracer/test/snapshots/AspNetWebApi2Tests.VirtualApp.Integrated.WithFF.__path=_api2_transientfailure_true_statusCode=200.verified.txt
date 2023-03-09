@@ -10,10 +10,10 @@
     Tags: {
       aspnet.action: transientfailure,
       aspnet.controller: conventions,
-      aspnet.route: api2/{action}/{value},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: api2/{action}/{value},
       http.status_code: 200,
       http.url: http://localhost/my-app/api2/transientfailure/true,
       http.useragent: testhelper,

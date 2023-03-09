@@ -100,7 +100,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary EmptyTags() => new()
         {
-            { Tags.AspNetCoreRoute, null },
+            { Tags.HttpRoute, null },
             { Tags.AspNetCoreController, null },
             { Tags.AspNetCoreAction, null },
             { Tags.AspNetCoreArea, null },
@@ -110,7 +110,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary ConventionalParentTags(string page, string route = null) => new()
         {
-            { Tags.AspNetCoreRoute, (route ?? page).ToLowerInvariant() },
+            { Tags.HttpRoute, (route ?? page).ToLowerInvariant() },
             { Tags.AspNetCoreController, null },
             { Tags.AspNetCoreAction, null },
             { Tags.AspNetCorePage, null },
@@ -122,7 +122,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary ConventionalChildTags(string page, string route = null) => new()
         {
-            { Tags.AspNetCoreRoute, (route ?? page).ToLowerInvariant() },
+            { Tags.HttpRoute, (route ?? page).ToLowerInvariant() },
             { Tags.AspNetCoreController, null },
             { Tags.AspNetCoreAction, null },
             { Tags.AspNetCorePage, $"/{page.ToLowerInvariant()}" },

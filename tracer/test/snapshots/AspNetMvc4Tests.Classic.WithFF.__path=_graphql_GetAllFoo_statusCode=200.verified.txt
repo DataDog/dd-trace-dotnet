@@ -10,10 +10,10 @@
     Tags: {
       aspnet.action: query,
       aspnet.controller: graphql,
-      aspnet.route: graphql/{*slug},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: graphql/{*slug},
       http.status_code: 200,
       http.url: http://localhost/graphql/GetAllFoo,
       http.useragent: testhelper,

@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; } = ComponentName;
 
-        [Tag(Trace.Tags.AspNetCoreRoute)]
+        [Tag(Trace.Tags.HttpRoute)]
         public string AspNetCoreRoute { get; set; }
     }
 }

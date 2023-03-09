@@ -8,7 +8,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.HealthController.Index (Samples.Security.AspNetCore5),
-      aspnet_core.route: health,
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,

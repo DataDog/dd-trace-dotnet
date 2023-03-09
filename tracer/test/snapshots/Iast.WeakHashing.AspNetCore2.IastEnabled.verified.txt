@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -7,7 +7,6 @@
     Service: Samples.Security.AspNetCore2,
     Type: web,
     Tags: {
-      aspnet_core.route: iast/weakhashing,
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -60,9 +59,9 @@
     Tags: {
       aspnet_core.action: weakhashing,
       aspnet_core.controller: iast,
-      aspnet_core.route: iast/weakhashing,
       component: aspnet_core,
       env: integration_tests,
+      http.route: iast/weakhashing,
       language: dotnet,
       span.kind: server
     }

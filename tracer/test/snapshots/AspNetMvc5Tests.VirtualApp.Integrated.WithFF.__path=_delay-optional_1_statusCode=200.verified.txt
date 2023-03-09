@@ -10,10 +10,10 @@
     Tags: {
       aspnet.action: optional,
       aspnet.controller: home,
-      aspnet.route: delay-optional/{seconds},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: delay-optional/{seconds},
       http.status_code: 200,
       http.url: http://localhost/my-app/delay-optional/1,
       http.useragent: testhelper,

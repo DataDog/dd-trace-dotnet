@@ -10,7 +10,7 @@
     Tags: {
       aspnet_core.action: statuscodeteststring,
       aspnet_core.controller: home,
-      aspnet_core.route: status-code-string/{statuscode},
+      http.route: status-code-string/{statuscode},
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
@@ -28,7 +28,7 @@
     Error: 1,
     Tags: {
       aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString (Samples.AspNetCoreMvc30),
-      aspnet_core.route: status-code-string/{statuscode},
+      http.route: status-code-string/{statuscode},
       component: aspnet_core,
       datadog-header-tag: asp-net-core,
       env: integration_tests,

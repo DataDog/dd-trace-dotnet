@@ -158,6 +158,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Only when span.kind: server. The matched route(path template).
+        /// The ASP.NET routing template.
         /// </summary>
         internal const string HttpRoute = "http.route";
 
@@ -170,11 +171,6 @@ namespace Datadog.Trace
         /// The IP address of the original client behind all proxies, if known (e.g. from X-Forwarded-For).
         /// </summary>
         internal const string HttpClientIp = "http.client_ip";
-
-        /// <summary>
-        /// The ASP.NET routing template.
-        /// </summary>
-        internal const string AspNetRoute = "aspnet.route";
 
         /// <summary>
         /// The MVC or Web API controller name.
@@ -190,11 +186,6 @@ namespace Datadog.Trace
         /// The MVC or Web API area name.
         /// </summary>
         internal const string AspNetArea = "aspnet.area";
-
-        /// <summary>
-        /// The ASP.NET routing template.
-        /// </summary>
-        internal const string AspNetCoreRoute = "aspnet_core.route";
 
         /// <summary>
         /// The MVC or Web API controller name.

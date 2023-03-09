@@ -10,9 +10,9 @@
     Tags: {
       aspnet_core.action: delay,
       aspnet_core.controller: home,
-      aspnet_core.route: delay/{seconds},
       component: aspnet_core,
       env: integration_tests,
+      http.route: delay/{seconds},
       language: dotnet,
       span.kind: server,
       version: 1.0.0
@@ -27,7 +27,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.Delay (Samples.AspNetCoreMinimalApis),
-      aspnet_core.route: delay/{seconds},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,

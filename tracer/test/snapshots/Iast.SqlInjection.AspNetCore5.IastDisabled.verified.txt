@@ -8,7 +8,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.IastController.SqlQuery (Samples.Security.AspNetCore5),
-      aspnet_core.route: iast/sqlquery,
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -41,9 +40,9 @@
     Tags: {
       aspnet_core.action: sqlquery,
       aspnet_core.controller: iast,
-      aspnet_core.route: iast/sqlquery,
       component: aspnet_core,
       env: integration_tests,
+      http.route: iast/sqlquery,
       language: dotnet,
       span.kind: server
     }

@@ -8,8 +8,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetTags
     {
-        // AspNetRouteBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.route");
-        private static readonly byte[] AspNetRouteBytes = new byte[] { 97, 115, 112, 110, 101, 116, 46, 114, 111, 117, 116, 101 };
+        // AspNetRouteBytes = System.Text.Encoding.UTF8.GetBytes("http.route");
+        private static readonly byte[] AspNetRouteBytes = new byte[] { 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
         // AspNetControllerBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.controller");
         private static readonly byte[] AspNetControllerBytes = new byte[] { 97, 115, 112, 110, 101, 116, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
         // AspNetActionBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.action");
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "aspnet.route" => AspNetRoute,
+                "http.route" => AspNetRoute,
                 "aspnet.controller" => AspNetController,
                 "aspnet.action" => AspNetAction,
                 "aspnet.area" => AspNetArea,
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "aspnet.route": 
+                case "http.route": 
                     AspNetRoute = value;
                     break;
                 case "aspnet.controller": 
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tagging
         {
             if (AspNetRoute is not null)
             {
-                processor.Process(new TagItem<string>("aspnet.route", AspNetRoute, AspNetRouteBytes));
+                processor.Process(new TagItem<string>("http.route", AspNetRoute, AspNetRouteBytes));
             }
 
             if (AspNetController is not null)
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tagging
         {
             if (AspNetRoute is not null)
             {
-                sb.Append("aspnet.route (tag):")
+                sb.Append("http.route (tag):")
                   .Append(AspNetRoute)
                   .Append(',');
             }

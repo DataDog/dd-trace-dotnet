@@ -10,9 +10,9 @@
     Tags: {
       aspnet_core.action: index,
       aspnet_core.controller: home,
-      aspnet_core.route: {controller=home}/{action=index}/{id?},
       component: aspnet_core,
       env: integration_tests,
+      http.route: {controller=home}/{action=index}/{id?},
       language: dotnet,
       span.kind: server,
       version: 1.0.0,
@@ -29,7 +29,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.Index (Samples.AspNetCoreMvc31),
-      aspnet_core.route: {controller=home}/{action=index}/{id?},
       component: aspnet_core,
       datadog-header-tag: asp-net-core,
       env: integration_tests,

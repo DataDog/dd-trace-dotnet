@@ -8,10 +8,10 @@
     Type: web,
     ParentId: Id_3,
     Tags: {
-      aspnet.route: api/statuscode/{value},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: api/statuscode/{value},
       http.status_code: 201,
       http.url: http://localhost/api/statuscode/201,
       http.useragent: testhelper,

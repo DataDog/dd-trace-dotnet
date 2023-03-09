@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -8,7 +8,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
-      aspnet_core.route: /graphql/{**slug},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -96,7 +95,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
-      aspnet_core.route: /graphql/{**slug},
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -127,7 +125,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
-      aspnet_core.route: /graphql/{**slug},
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -158,7 +155,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
-      aspnet_core.route: /graphql/{**slug},
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -190,7 +186,6 @@
     Error: 1,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
-      aspnet_core.route: /graphql/{**slug},
       component: aspnet_core,
       env: integration_tests,
       error.msg: The HTTP response has status code 500.,

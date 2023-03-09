@@ -56,7 +56,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("aspnet.action")
                 .IsOptional("aspnet.area")
                 .IsPresent("aspnet.controller")
-                .IsPresent("aspnet.route")
+                .IsPresent("http.route")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
                 .IsPresent("http.status_code")
@@ -73,7 +73,7 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("aspnet.action")
                 .IsOptional("aspnet.controller")
-                .IsPresent("aspnet.route")
+                .IsPresent("http.route")
                 .IsOptional("http.client_ip")
                 .IsOptional("network.client.ip")
                 .IsPresent("http.method")
@@ -99,7 +99,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "web"))
             .Tags(s => s
                 .IsOptional("aspnet_core.endpoint")
-                .IsOptional("aspnet_core.route")
+                .IsOptional("http.route")
                 .IsOptional("http.client_ip")
                 .IsOptional("network.client.ip")
                 .IsPresent("http.method")
@@ -121,7 +121,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aspnet_core.area")
                 .IsPresent("aspnet_core.controller")
                 .IsOptional("aspnet_core.page")
-                .IsPresent("aspnet_core.route")
+                .IsPresent("http.route")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 

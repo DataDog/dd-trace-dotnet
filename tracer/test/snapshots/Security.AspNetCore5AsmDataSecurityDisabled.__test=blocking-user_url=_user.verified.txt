@@ -8,7 +8,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.UserController.Index (Samples.Security.AspNetCore5),
-      aspnet_core.route: {controller=home}/{action=index}/{id?},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -40,7 +39,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.UserController.Index (Samples.Security.AspNetCore5),
-      aspnet_core.route: {controller=home}/{action=index}/{id?},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,

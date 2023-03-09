@@ -46,7 +46,6 @@ at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTrans
     ParentId: Id_2,
     Error: 1,
     Tags: {
-      aspnet.route: api/TransferRequest/{statuscode},
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 401,
       error.stack:
@@ -55,6 +54,7 @@ at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTrans
       error.type: System.Exception,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: api/TransferRequest/{statuscode},
       http.status_code: 500,
       http.url: http://localhost/api/TransferRequest/401,
       http.useragent: testhelper,

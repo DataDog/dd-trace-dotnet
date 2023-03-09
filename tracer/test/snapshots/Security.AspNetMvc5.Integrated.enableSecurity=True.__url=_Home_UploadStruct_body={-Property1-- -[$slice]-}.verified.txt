@@ -10,7 +10,7 @@
     Tags: {
       aspnet.action: uploadstruct,
       aspnet.controller: home,
-      aspnet.route: {controller}/{action}/{id},
+      http.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -69,7 +69,7 @@
     Tags: {
       aspnet.action: uploadstruct,
       aspnet.controller: home,
-      aspnet.route: {controller}/{action}/{id},
+      http.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -128,7 +128,7 @@
     Tags: {
       aspnet.action: uploadstruct,
       aspnet.controller: home,
-      aspnet.route: {controller}/{action}/{id},
+      http.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -187,7 +187,7 @@
     Tags: {
       aspnet.action: uploadstruct,
       aspnet.controller: home,
-      aspnet.route: {controller}/{action}/{id},
+      http.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -246,7 +246,7 @@
     Tags: {
       aspnet.action: uploadstruct,
       aspnet.controller: home,
-      aspnet.route: {controller}/{action}/{id},
+      http.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
