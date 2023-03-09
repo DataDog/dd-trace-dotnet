@@ -624,11 +624,6 @@ std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataIm
         typeName = "?";
     }
 
-    if (isArray)
-    {
-        typeName += arraySuffix;
-    }
-
     if (isNested)
     {
         return std::make_pair(std::move(ns), enclosingType + "." + typeName);
@@ -809,7 +804,15 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     {
         // concat the generic parameter types from metadata based on mdTokenType
         auto genericParameters = FormatGenericTypeParameters(pMetadata, mdTokenType, isEncoded);
-        return std::make_pair(std::move(ns), typeName + genericParameters);
+
+        if (isArray)
+        {
+            return std::make_pair(std::move(ns), typeName + genericParameters + arraySuffix);
+        }
+        else
+        {
+            return std::make_pair(std::move(ns), typeName + genericParameters);
+        }
     }
 
     // figure out the instanciated generic parameters if any
@@ -821,12 +824,22 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     if (FAILED(hr))
     {
         // this happens when the given classId is 0 so should not occur
+        if (isArray)
+        {
+            typeName += arraySuffix;
+        }
+
         return std::make_pair(std::move(ns), std::move(typeName));
     }
 
     // nothing else to do if not a generic
     if (FAILED(hr) || (numGenericTypeArgs == 0))
     {
+        if (isArray)
+        {
+            typeName += arraySuffix;
+        }
+
         return std::make_pair(std::move(ns), std::move(typeName));
     }
 
@@ -837,12 +850,26 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     {
         // why would it fail?
         assert(SUCCEEDED(hr));
+
+        if (isArray)
+        {
+            typeName += arraySuffix;
+        }
+
         return std::make_pair(std::move(ns), std::move(typeName));
     }
 
     // concat the generic parameter types
     auto genericParameters = FormatGenericParameters(pInfo, numGenericTypeArgs, genericTypeArgs.get(), isEncoded);
-    return std::make_pair(std::move(ns), std::move(typeName + genericParameters));
+
+    if (isArray)
+    {
+        return std::make_pair(std::move(ns), std::move(typeName + genericParameters + arraySuffix));
+    }
+    else
+    {
+        return std::make_pair(std::move(ns), std::move(typeName + genericParameters));
+    }
 }
 
 std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)
