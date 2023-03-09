@@ -148,12 +148,12 @@ namespace Datadog.Trace.Tests.Propagators
             // 64 bits verify
             var expectedTraceId = (TraceId)9532127138774266268UL;
             var expectedSpanId = 67667974448284343UL;
-            Assert.Equal(expectedTraceId, result.TraceId128);
-            Assert.Equal(expectedSpanId, result.SpanId);
+            result.TraceId128.Should().Be(expectedTraceId);
+            result.SpanId.Should().Be(expectedSpanId);
 
             // Check truncation
             var truncatedTraceId64 = expectedTraceId.Lower.ToString("x16");
-            Assert.Equal(truncatedTraceId64, traceId.Substring(16));
+            traceId.Substring(16).Should().Be(truncatedTraceId64);
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
