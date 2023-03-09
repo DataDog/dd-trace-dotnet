@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Logging;
@@ -35,7 +36,11 @@ namespace Datadog.Trace
             {
                 var runtimeIdPtr = GetRuntimeId();
                 runtimeId = Marshal.PtrToStringAnsi(runtimeIdPtr);
-                return !string.IsNullOrWhiteSpace(runtimeId);
+                var res = !string.IsNullOrWhiteSpace(runtimeId);
+                Log.Information("returning whether or not runtimeId is null or whitespace: {Res}", res.ToString());
+                Log.Information("Stack Trace:");
+                Log.Information("{StackTrace}", (new System.Diagnostics.StackTrace(true)).ToString());
+                return res;
             }
             catch (Exception e)
             {

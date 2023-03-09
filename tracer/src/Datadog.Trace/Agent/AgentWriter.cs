@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -118,7 +119,7 @@ namespace Datadog.Trace.Agent
 
         public bool CanComputeStats => _statsAggregator?.CanComputeStats == true;
 
-        [DllImport("libserverless.so", EntryPoint="send_trace")]
+        [DllImport("libserverless", EntryPoint="send_trace")]
         private static extern void SendTrace(string string_field);
 
         public Task<bool> Ping()
@@ -496,13 +497,32 @@ namespace Datadog.Trace.Agent
             }
 
             var data = JsonConvert.SerializeObject(arrList);
-            Console.WriteLine("json converted arrlist of SpanMutated");
-            Console.WriteLine(data);
+            Log.Warning("json converted arrlist of SpanMutated");
+            Log.Warning("{Data}", data);
 
-            Console.WriteLine("what directory are we in?");
-            Console.WriteLine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            Log.Warning("what directory are we in?");
+            Log.Warning("{CurPath}", Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
 
-            SendTrace(data.ToLower());
+            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+            {
+                string key = entry.Key.ToString();
+                string val = entry.Value.ToString();
+                Log.Warning("{Key}: {Val}", key, val);
+                // Environment.SetEnvironmentVariable(key, val);
+            }
+
+            Log.Warning("current process: {Val}", Process.GetCurrentProcess().Id.ToString());
+
+            try
+            {
+                Log.Warning("sending trace WITHOUT api key passed in as parameter");
+                SendTrace(data.ToLower());
+                return;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "An error occurred trying to send trace agentless!");
+            }
 
             // We use a double-buffering mechanism
             // This allows the serialization thread to keep doing its job while a buffer is being flushed
