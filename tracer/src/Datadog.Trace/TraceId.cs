@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
 
 #nullable enable
@@ -48,6 +49,7 @@ internal readonly record struct TraceId(ulong Upper, ulong Lower) : IComparable<
         return left.CompareTo(right) >= 0;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsZero()
     {
         // upper will be zero in most cases until we enable 128-bit trace ids by default,
@@ -94,6 +96,8 @@ internal readonly record struct TraceId(ulong Upper, ulong Lower) : IComparable<
     [Pure]
     public override string ToString()
     {
-        return HexString.ToHexString(this, pad16To32: true, lowerCase: true);
+        return IsZero() ?
+                   "00000000000000000000000000000000" :
+                   HexString.ToHexString(this, pad16To32: true, lowerCase: true);
     }
 }
