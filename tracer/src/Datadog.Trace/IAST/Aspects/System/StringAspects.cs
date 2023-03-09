@@ -266,7 +266,7 @@ public partial class StringAspects
     /// <param name="target"> string base instance </param>
     /// <param name="startIndex"> startIndex parameter </param>
     /// <param name="length"> length parameter </param>
-    /// <returns> String.ToCharArray() </returns>
+    /// <returns> String.ToCharArray(System.Int32,System.Int32) </returns>
     [AspectMethodReplace("System.String::ToCharArray(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
     public static char[] ToCharArray(string target, int startIndex, int length)
     {
