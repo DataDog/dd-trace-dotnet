@@ -29,8 +29,8 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: CreateQueue,
-      aws.queue.name: MyAsyncSQSQueue,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.destination: MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -56,8 +56,8 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: CreateQueue,
-      aws.queue.name: MyAsyncSQSQueue2,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.destination: MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -188,7 +188,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -214,7 +214,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -240,7 +240,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -266,7 +266,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -292,7 +292,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -318,7 +318,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -344,7 +344,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -370,7 +370,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -396,7 +396,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -422,7 +422,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -448,7 +448,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -474,7 +474,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -500,7 +500,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -526,7 +526,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -552,7 +552,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -578,7 +578,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -604,7 +604,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -630,7 +630,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -656,7 +656,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -682,7 +682,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -708,7 +708,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -734,7 +734,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -760,7 +760,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -786,7 +786,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -812,7 +812,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteQueue,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -838,7 +838,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteQueue,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -883,8 +883,8 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: CreateQueue,
-      aws.queue.name: MySyncSQSQueue,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.destination: MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -910,8 +910,8 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: CreateQueue,
-      aws.queue.name: MySyncSQSQueue2,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.destination: MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1042,7 +1042,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1068,7 +1068,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1094,7 +1094,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1120,7 +1120,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1146,7 +1146,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1172,7 +1172,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1198,7 +1198,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1224,7 +1224,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1250,7 +1250,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1276,7 +1276,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1302,7 +1302,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1328,7 +1328,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1354,7 +1354,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1380,7 +1380,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1406,7 +1406,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1432,7 +1432,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1458,7 +1458,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1484,7 +1484,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1510,7 +1510,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1536,7 +1536,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1562,7 +1562,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1588,7 +1588,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1614,7 +1614,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1640,7 +1640,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1666,7 +1666,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteQueue,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -1692,7 +1692,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteQueue,
-      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,

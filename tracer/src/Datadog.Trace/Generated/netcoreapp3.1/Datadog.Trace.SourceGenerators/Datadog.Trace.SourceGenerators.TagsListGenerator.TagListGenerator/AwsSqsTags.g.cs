@@ -8,10 +8,10 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSqsTags
     {
-        // QueueNameBytes = System.Text.Encoding.UTF8.GetBytes("aws.queue.name");
-        private static readonly byte[] QueueNameBytes = new byte[] { 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
-        // QueueUrlBytes = System.Text.Encoding.UTF8.GetBytes("aws.queue.url");
-        private static readonly byte[] QueueUrlBytes = new byte[] { 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108 };
+        // QueueNameBytes = System.Text.Encoding.UTF8.GetBytes("messaging.destination");
+        private static readonly byte[] QueueNameBytes = new byte[] { 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110 };
+        // QueueUrlBytes = System.Text.Encoding.UTF8.GetBytes("messaging.url");
+        private static readonly byte[] QueueUrlBytes = new byte[] { 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 117, 114, 108 };
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
 
@@ -19,8 +19,8 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "aws.queue.name" => QueueName,
-                "aws.queue.url" => QueueUrl,
+                "messaging.destination" => QueueName,
+                "messaging.url" => QueueUrl,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
@@ -30,10 +30,10 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "aws.queue.name": 
+                case "messaging.destination": 
                     QueueName = value;
                     break;
-                case "aws.queue.url": 
+                case "messaging.url": 
                     QueueUrl = value;
                     break;
                 case "span.kind": 
@@ -49,12 +49,12 @@ namespace Datadog.Trace.Tagging
         {
             if (QueueName is not null)
             {
-                processor.Process(new TagItem<string>("aws.queue.name", QueueName, QueueNameBytes));
+                processor.Process(new TagItem<string>("messaging.destination", QueueName, QueueNameBytes));
             }
 
             if (QueueUrl is not null)
             {
-                processor.Process(new TagItem<string>("aws.queue.url", QueueUrl, QueueUrlBytes));
+                processor.Process(new TagItem<string>("messaging.url", QueueUrl, QueueUrlBytes));
             }
 
             if (SpanKind is not null)
@@ -69,14 +69,14 @@ namespace Datadog.Trace.Tagging
         {
             if (QueueName is not null)
             {
-                sb.Append("aws.queue.name (tag):")
+                sb.Append("messaging.destination (tag):")
                   .Append(QueueName)
                   .Append(',');
             }
 
             if (QueueUrl is not null)
             {
-                sb.Append("aws.queue.url (tag):")
+                sb.Append("messaging.url (tag):")
                   .Append(QueueUrl)
                   .Append(',');
             }

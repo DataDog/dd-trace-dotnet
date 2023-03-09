@@ -254,17 +254,17 @@ namespace Datadog.Trace
         /// <summary>
         /// The AMQP method.
         /// </summary>
-        internal const string AmqpCommand = "amqp.command";
+        internal const string AmqpCommand = "messaging.operation";
 
         /// <summary>
         /// The name of the AMQP exchange the message was originally published to.
         /// </summary>
-        internal const string AmqpExchange = "amqp.exchange";
+        internal const string AmqpExchange = "messaging.rabbitmq.exchange";
 
         /// <summary>
         /// The routing key for the AMQP message.
         /// </summary>
-        internal const string AmqpRoutingKey = "amqp.routing_key";
+        internal const string AmqpRoutingKey = "messaging.rabbitmq.routing_key";
 
         /// <summary>
         /// The name of the queue for the AMQP message.
@@ -274,7 +274,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The delivery mode of the AMQP message.
         /// </summary>
-        internal const string AmqpDeliveryMode = "amqp.delivery_mode";
+        internal const string AmqpDeliveryMode = "messaging.rabbitmq.delivery_mode";
 
         /// <summary>
         /// The partition associated with a record
@@ -324,12 +324,12 @@ namespace Datadog.Trace
         /// <summary>
         /// The queue name associated with the AWS SDK span.
         /// </summary>
-        internal const string AwsQueueName = "aws.queue.name";
+        internal const string AwsQueueName = "messaging.destination";
 
         /// <summary>
         /// The queue URL associated with the AWS SDK span.
         /// </summary>
-        internal const string AwsQueueUrl = "aws.queue.url";
+        internal const string AwsQueueUrl = "messaging.url";
 
         /// <summary>
         /// Configures Trace Analytics.

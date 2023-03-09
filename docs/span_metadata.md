@@ -144,8 +144,6 @@ Name | Required |
 ---------|----------------|
 aws.agent | `dotnet-aws-sdk`
 aws.operation | Yes
-aws.queue.name | No
-aws.queue.url | No
 aws.region | No
 aws.requestId | Yes
 aws.service | `SQS`
@@ -153,6 +151,8 @@ component | `aws-sdk`
 http.method | Yes
 http.status_code | Yes
 http.url | Yes
+messaging.destination | No
+messaging.url | No
 span.kind | `client`
 
 ## CosmosDb
@@ -398,13 +398,13 @@ Type | `queue`
 ### Tags
 Name | Required |
 ---------|----------------|
-amqp.command | Yes
-amqp.delivery_mode | No
-amqp.exchange | No
-amqp.routing_key | No
 component | `RabbitMQ`
 message.size | No
 messaging.destination | No
+messaging.operation | Yes
+messaging.rabbitmq.delivery_mode | No
+messaging.rabbitmq.exchange | No
+messaging.rabbitmq.routing_key | No
 span.kind | Yes
 
 ## ServiceRemoting
