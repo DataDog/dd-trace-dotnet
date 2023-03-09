@@ -1,0 +1,19 @@
+name: serverless_build_for_windows.yml
+
+on:
+  push:
+      branches:
+        - david.lee/serverless-agentless-poc
+
+jobs:
+  windows-x64:
+    name: Windows x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: .\build.cmd Clean BuildTracerHome
+        shell: bash
+      - uses: actions/upload-artifact@v2
+        with:
+          name: artifacts
+          path: shared/bin/**/*
