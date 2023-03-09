@@ -471,15 +471,13 @@ namespace Datadog.Trace.Tests.Propagators
             const string parentId = "00f067aa0ba902b7";
             const string traceParentHeader = $"00-{traceId}-{parentId}-01";
 
-            W3CTraceContextPropagator.TryParseTraceParent(traceParentHeader, out var traceParent).Should().BeTrue();
+            W3CTraceContextPropagator.TryParseTraceParent(traceParentHeader, out var traceParent)
+                                     .Should().BeTrue();
 
-            // 64 bits verify
-            var expectedTraceId = (TraceId)9532127138774266268UL;
-            const ulong expectedParentId = 67667974448284343UL;
+            var expectedTraceId = new TraceId(0x0af7651916cd43dd, 0x8448eb211c80319c);
+            const ulong expectedParentId = 0x00f067aa0ba902b7;
 
             traceParent.Should()
-                       .NotBeNull()
-                       .And
                        .BeEquivalentTo(
                             new W3CTraceParent(
                                 expectedTraceId,
@@ -497,7 +495,8 @@ namespace Datadog.Trace.Tests.Propagators
                 traceParent.RawTraceId,
                 traceParent.RawParentId);
 
-            W3CTraceContextPropagator.CreateTraceParentHeader(spanContext).Should().Be(traceParentHeader);
+            W3CTraceContextPropagator.CreateTraceParentHeader(spanContext)
+                                     .Should().Be(traceParentHeader);
         }
 
         [Theory]

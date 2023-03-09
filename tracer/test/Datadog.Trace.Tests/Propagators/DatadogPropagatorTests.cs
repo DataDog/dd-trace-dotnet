@@ -19,11 +19,13 @@ namespace Datadog.Trace.Tests.Propagators
 {
     public class DatadogPropagatorTests
     {
-        private const ulong SpanId = 2;
         private const int SamplingPriority = SamplingPriorityValues.UserReject;
         private const string Origin = "origin";
         private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
-        private static readonly TraceId TraceId = (TraceId)1;
+        private const ulong SpanId = 0x1122334455667788;                       // 1234605616436508552
+        private const string RawSpanId = "1122334455667788";                   // 1234605616436508552
+        private const string RawTraceId = "00000000000000001234567890abcdef";  // 1311768467294899695
+        private static readonly TraceId TraceId = (TraceId)0x1234567890abcdef; // 1311768467294899695
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -158,7 +160,9 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId128 = TraceId,
                            TraceId = TraceId.Lower,
+                           RawTraceId = RawTraceId,
                            SpanId = SpanId,
+                           RawSpanId = RawSpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,
@@ -180,7 +184,9 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId128 = TraceId,
                            TraceId = TraceId.Lower,
+                           RawTraceId = RawTraceId,
                            SpanId = SpanId,
+                           RawSpanId = RawSpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,
@@ -201,7 +207,9 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId128 = TraceId,
                            TraceId = TraceId.Lower,
+                           RawTraceId = RawTraceId,
                            SpanId = SpanId,
+                           RawSpanId = RawSpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,
@@ -226,11 +234,15 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("x-datadog-trace-id")).Returns(new[] { TraceId.Lower.ToString(InvariantCulture) });
             var result = Propagator.Extract(headers.Object);
 
-            result.Should().BeEquivalentTo(new SpanContextMock
-                                           {
-                                               TraceId128 = TraceId,
-                                               TraceId = TraceId.Lower
-                                           });
+            result.Should()
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId128 = TraceId,
+                           TraceId = TraceId.Lower,
+                           RawTraceId = RawTraceId,
+                           RawSpanId = "0000000000000000",
+                       });
         }
 
         [Fact]
@@ -289,6 +301,8 @@ namespace Datadog.Trace.Tests.Propagators
                            // SpanId has default value
                            TraceId128 = TraceId,
                            TraceId = TraceId.Lower,
+                           RawTraceId = RawTraceId,
+                           RawSpanId = "0000000000000000",
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,
@@ -320,7 +334,9 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId128 = TraceId,
                            TraceId = TraceId.Lower,
+                           RawTraceId = RawTraceId,
                            SpanId = SpanId,
+                           RawSpanId = RawSpanId,
                            Origin = Origin,
                            SamplingPriority = expectedSamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,

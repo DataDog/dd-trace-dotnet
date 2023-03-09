@@ -69,11 +69,11 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("x-datadog-origin", "rum"), Times.Once());
             headers.Verify(h => h.Set("x-datadog-tags", PropagatedTagsString), Times.Once());
 
-            headers.Verify(h => h.Set("x-b3-traceid", "00000000075bcd15"), Times.Once());
+            headers.Verify(h => h.Set("x-b3-traceid", "000000000000000000000000075bcd15"), Times.Once());
             headers.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
             headers.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
 
-            headers.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-1"), Times.Once());
+            headers.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
 
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
             headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.key1:value1;t.key2:value2"), Times.Once());
@@ -89,7 +89,12 @@ namespace Datadog.Trace.Tests.Propagators
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
-            var context = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, (TraceId)123456789, 987654321);
+            var context = new SpanContext(
+                parent: SpanContext.None,
+                traceContext,
+                serviceName: null,
+                (TraceId)123456789,
+                987654321);
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
@@ -102,11 +107,11 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("x-datadog-origin", "rum"), Times.Once());
             headers.Verify(h => h.Set("x-datadog-tags", PropagatedTagsString), Times.Once());
 
-            headers.Verify(h => h.Set("x-b3-traceid", "00000000075bcd15"), Times.Once());
+            headers.Verify(h => h.Set("x-b3-traceid", "000000000000000000000000075bcd15"), Times.Once());
             headers.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
             headers.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
 
-            headers.Verify(h => h.Set("b3", "00000000075bcd15-000000003ade68b1-1"), Times.Once());
+            headers.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
 
             headers.Verify(h => h.Set("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
             headers.Verify(h => h.Set("tracestate", "dd=s:2;o:rum;t.key1:value1;t.key2:value2"), Times.Once());
@@ -262,14 +267,14 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues("x-datadog-tags"), Times.Once());
 
             result.Should()
-                  .NotBeNull()
-                  .And
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
                            TraceId128 = (TraceId)123456789,
                            TraceId = 123456789,
+                           RawTraceId = "000000000000000000000000075bcd15",
                            SpanId = 987654321,
+                           RawSpanId = "000000003ade68b1",
                            Origin = "rum",
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                            PropagatedTags = PropagatedTagsCollection,

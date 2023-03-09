@@ -15,14 +15,14 @@ namespace Datadog.Trace.Tests.Propagators;
 
 public class DistributedPropagatorTests
 {
-    private const ulong SpanId = 2;
     private const int SamplingPriority = SamplingPriorityValues.UserReject;
     private const string Origin = "origin";
-    private const string RawTraceId = "1a";
-    private const string RawSpanId = "2b";
-    private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
+    private const string PropagatedTags = "_dd.p.key1=value1,_dd.p.key2=value2";
     private const string AdditionalW3CTraceState = "key3=value3,key4=value4";
-    private static readonly TraceId TraceId = (TraceId)1;
+    private const ulong SpanId = 0x1122334455667788;                       // 1234605616436508552
+    private const string RawSpanId = "1122334455667788";                   // 1234605616436508552
+    private const string RawTraceId = "00000000000000001234567890abcdef";  // 1311768467294899695
+    private static readonly TraceId TraceId = (TraceId)0x1234567890abcdef; // 1311768467294899695
 
     private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -118,12 +118,15 @@ public class DistributedPropagatorTests
         // extract SpanContext
         var result = Propagator.Extract(headers.Object);
 
-        result.Should().BeEquivalentTo(new SpanContextMock
-                                       {
-                                           TraceId128 = TraceId,
-                                           TraceId = TraceId,
-                                           PropagatedTags = EmptyPropagatedTags,
-                                       });
+        result.Should().BeEquivalentTo(
+            new SpanContextMock
+            {
+                TraceId128 = TraceId,
+                TraceId = TraceId.Lower,
+                RawTraceId = RawTraceId,
+                RawSpanId = "0000000000000000",
+                PropagatedTags = EmptyPropagatedTags,
+            });
     }
 
     [Fact]
