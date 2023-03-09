@@ -394,7 +394,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 if (webSocket.State == WebSocketState.Open)
                 {
-                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, cancellationTokenSource.Token);
+                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
                     Output.WriteLine("[websocket] WebSocket connection closed");
                 }
 
