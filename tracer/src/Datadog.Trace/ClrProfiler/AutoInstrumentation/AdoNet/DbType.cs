@@ -6,7 +6,7 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     /// <summary>
-    /// Values for the "db.type" span tag.
+    /// Values for the "db.system" span tag.
     /// </summary>
     /// <seealso cref="Tags.DbType"/>
     internal static class DbType

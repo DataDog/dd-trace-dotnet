@@ -10,8 +10,8 @@ namespace Datadog.Trace.Tagging
     {
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // DbTypeBytes = System.Text.Encoding.UTF8.GetBytes("db.type");
-        private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 116, 121, 112, 101 };
+        // DbTypeBytes = System.Text.Encoding.UTF8.GetBytes("db.system");
+        private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 115, 121, 115, 116, 101, 109 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // DbNameBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "span.kind" => SpanKind,
-                "db.type" => DbType,
+                "db.system" => DbType,
                 "component" => InstrumentationName,
                 "db.name" => DbName,
                 "db.user" => DbUser,
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "db.type": 
+                case "db.system": 
                     DbType = value;
                     break;
                 case "component": 
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tagging
 
             if (DbType is not null)
             {
-                processor.Process(new TagItem<string>("db.type", DbType, DbTypeBytes));
+                processor.Process(new TagItem<string>("db.system", DbType, DbTypeBytes));
             }
 
             if (InstrumentationName is not null)
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tagging
 
             if (DbType is not null)
             {
-                sb.Append("db.type (tag):")
+                sb.Append("db.system (tag):")
                   .Append(DbType)
                   .Append(',');
             }

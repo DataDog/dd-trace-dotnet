@@ -13,7 +13,7 @@ Name | Required |
 ---------|----------------|
 component | `AdoNet`
 db.name | No
-db.type | Yes
+db.system | Yes
 span.kind | `client`
 
 ## Aerospike
@@ -167,7 +167,7 @@ Name | Required |
 component | `CosmosDb`
 cosmosdb.container | No
 db.name | No
-db.type | `cosmosdb`
+db.system | `cosmosdb`
 out.host | Yes
 span.kind | `client`
 
@@ -328,7 +328,7 @@ Name | Required |
 ---------|----------------|
 component | `MySql`
 db.name | Yes
-db.type | `mysql`
+db.system | `mysql`
 db.user | Yes
 out.host | Yes
 span.kind | `client`
@@ -344,7 +344,7 @@ Name | Required |
 ---------|----------------|
 component | `Npgsql`
 db.name | Yes
-db.type | `postgres`
+db.system | `postgres`
 out.host | Yes
 span.kind | `client`
 
@@ -374,7 +374,7 @@ Name | Required |
 ---------|----------------|
 component | `Oracle`
 db.name | Yes
-db.type | `oracle`
+db.system | `oracle`
 span.kind | `client`
 
 ## Process
@@ -469,7 +469,7 @@ Name | Required |
 ---------|----------------|
 component | `Sqlite`
 db.name | No
-db.type | `sqlite`
+db.system | `sqlite`
 out.host | Yes
 span.kind | `client`
 
@@ -484,7 +484,7 @@ Name | Required |
 ---------|----------------|
 component | `SqlClient`
 db.name | No
-db.type | `sql-server`
+db.system | `sql-server`
 out.host | Yes
 span.kind | `client`
 

@@ -12,8 +12,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // DbTypeBytes = System.Text.Encoding.UTF8.GetBytes("db.type");
-        private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 116, 121, 112, 101 };
+        // DbTypeBytes = System.Text.Encoding.UTF8.GetBytes("db.system");
+        private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 115, 121, 115, 116, 101, 109 };
         // ContainerIdBytes = System.Text.Encoding.UTF8.GetBytes("cosmosdb.container");
         private static readonly byte[] ContainerIdBytes = new byte[] { 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
         // DatabaseIdBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tagging
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
-                "db.type" => DbType,
+                "db.system" => DbType,
                 "cosmosdb.container" => ContainerId,
                 "db.name" => DatabaseId,
                 "out.host" => Host,
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "span.kind": 
                 case "component": 
-                case "db.type": 
+                case "db.system": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(CosmosDbTags));
                     break;
                 default: 
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tagging
 
             if (DbType is not null)
             {
-                processor.Process(new TagItem<string>("db.type", DbType, DbTypeBytes));
+                processor.Process(new TagItem<string>("db.system", DbType, DbTypeBytes));
             }
 
             if (ContainerId is not null)
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Tagging
 
             if (DbType is not null)
             {
-                sb.Append("db.type (tag):")
+                sb.Append("db.system (tag):")
                   .Append(DbType)
                   .Append(',');
             }

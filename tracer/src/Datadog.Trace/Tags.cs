@@ -79,7 +79,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The type of database (e.g. "sql-server", "mysql", "postgres", "sqlite", "oracle")
         /// </summary>
-        public const string DbType = "db.type";
+        public const string DbType = "db.system";
 
         /// <summary>
         /// The user used to sign into a database

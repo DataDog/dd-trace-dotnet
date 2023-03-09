@@ -119,7 +119,7 @@ namespace Datadog.Trace
     public static class Tags
     {
         public const string DbName = "db.name";
-        public const string DbType = "db.type";
+        public const string DbType = "db.system";
         public const string DbUser = "db.user";
         public const string Env = "env";
         public const string ErrorMsg = "error.msg";
