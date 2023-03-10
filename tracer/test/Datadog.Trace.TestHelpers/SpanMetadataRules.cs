@@ -355,7 +355,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "redis.command")
                 .Matches(Type, "redis"))
             .Tags(s => s
-                .IsPresent("meta.db.statement")
+                .IsPresent("db.statement")
                 .IsPresent("out.host")
                 .IsPresent("out.port")
                 .Matches("component", "ServiceStackRedis")
@@ -366,7 +366,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "redis.command")
                 .Matches(Type, "redis"))
             .Tags(s => s
-                .IsPresent("meta.db.statement")
+                .IsPresent("db.statement")
                 .IsPresent("out.host")
                 .IsPresent("out.port")
                 .Matches("component", "StackExchangeRedis")

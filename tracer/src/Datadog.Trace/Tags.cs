@@ -224,7 +224,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The raw command sent to Redis.
         /// </summary>
-        internal const string RedisRawCommand = "meta.db.statement";
+        internal const string RedisRawCommand = "db.statement";
 
         /// <summary>
         /// A MongoDB query.

@@ -438,7 +438,7 @@ Type | `redis`
 Name | Required |
 ---------|----------------|
 component | `ServiceStackRedis`
-meta.db.statement | Yes
+db.statement | Yes
 out.host | Yes
 out.port | Yes
 span.kind | `client`
@@ -453,7 +453,7 @@ Type | `redis`
 Name | Required |
 ---------|----------------|
 component | `StackExchangeRedis`
-meta.db.statement | Yes
+db.statement | Yes
 out.host | Yes
 out.port | Yes
 span.kind | `client`
@@ -518,4 +518,3 @@ http.method | Yes
 http.status_code | Yes
 http.url | Yes
 span.kind | `client`
-

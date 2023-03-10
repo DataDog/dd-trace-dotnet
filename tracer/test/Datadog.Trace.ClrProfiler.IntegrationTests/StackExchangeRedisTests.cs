@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     o => o
                         .OrderBy(x => VerifyHelper.GetRootSpanName(x, o))
                         .ThenBy(x => VerifyHelper.GetSpanDepth(x, o))
-                        .ThenBy(x => x.Tags.TryGetValue("meta.db.statement", out var value) ? value.Replace(TestPrefix, string.Empty) : null)
+                        .ThenBy(x => x.Tags.TryGetValue("db.statement", out var value) ? value.Replace(TestPrefix, string.Empty) : null)
                         .ThenBy(x => x.Start)
                         .ThenBy(x => x.Duration));
             }
