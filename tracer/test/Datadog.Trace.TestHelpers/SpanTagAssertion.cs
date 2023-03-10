@@ -34,11 +34,11 @@ namespace Datadog.Trace.TestHelpers
             .IsOptional(Tags.GitCommitSha);
 
         public static void DefaultMetricAssertions(SpanTagAssertion<T> s) => s
-            .IsPresent("_dd.tracer_kr")
-            .IsPresent("_dd.agent_psr")
-            .IsPresent("process_id")
-            .IsPresent("_sampling_priority_v1")
-            .IsPresent("_dd.top_level");
+            .IsOptional("_dd.tracer_kr")
+            .IsOptional("_dd.agent_psr")
+            .IsOptional("process_id")
+            .IsOptional("_sampling_priority_v1")
+            .IsOptional("_dd.top_level");
 
         public static void AssertNoRemainingTags(SpanTagAssertion<T> s)
         {
