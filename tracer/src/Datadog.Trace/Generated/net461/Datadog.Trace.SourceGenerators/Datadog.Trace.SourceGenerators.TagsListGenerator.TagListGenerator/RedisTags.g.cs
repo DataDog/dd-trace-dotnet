@@ -12,8 +12,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // RawCommandBytes = System.Text.Encoding.UTF8.GetBytes("redis.raw_command");
-        private static readonly byte[] RawCommandBytes = new byte[] { 114, 101, 100, 105, 115, 46, 114, 97, 119, 95, 99, 111, 109, 109, 97, 110, 100 };
+        // RawCommandBytes = System.Text.Encoding.UTF8.GetBytes("meta.db.statement");
+        private static readonly byte[] RawCommandBytes = new byte[] { 109, 101, 116, 97, 46, 100, 98, 46, 115, 116, 97, 116, 101, 109, 101, 110, 116 };
         // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
         private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
         // PortBytes = System.Text.Encoding.UTF8.GetBytes("out.port");
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
-                "redis.raw_command" => RawCommand,
+                "meta.db.statement" => RawCommand,
                 "out.host" => Host,
                 "out.port" => Port,
                 _ => base.GetTag(key),
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 case "component": 
                     InstrumentationName = value;
                     break;
-                case "redis.raw_command": 
+                case "meta.db.statement": 
                     RawCommand = value;
                     break;
                 case "out.host": 
@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
             if (RawCommand is not null)
             {
-                processor.Process(new TagItem<string>("redis.raw_command", RawCommand, RawCommandBytes));
+                processor.Process(new TagItem<string>("meta.db.statement", RawCommand, RawCommandBytes));
             }
 
             if (Host is not null)
@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
             if (RawCommand is not null)
             {
-                sb.Append("redis.raw_command (tag):")
+                sb.Append("meta.db.statement (tag):")
                   .Append(RawCommand)
                   .Append(',');
             }

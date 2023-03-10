@@ -23,7 +23,7 @@ namespace Datadog.Trace.Processors
             if (_redisObfuscationEnabled && key == Trace.Tags.RedisRawCommand)
             {
                 value = RedisObfuscationUtil.Obfuscate(value);
-                Log.Debug("span.obfuscate: obfuscating `redis.raw_command` value");
+                Log.Debug("span.obfuscate: obfuscating {RawCommandTag} value", Trace.Tags.RedisRawCommand);
             }
         }
 

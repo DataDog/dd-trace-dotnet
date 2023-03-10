@@ -438,9 +438,9 @@ Type | `redis`
 Name | Required |
 ---------|----------------|
 component | `ServiceStackRedis`
+meta.db.statement | Yes
 out.host | Yes
 out.port | Yes
-redis.raw_command | Yes
 span.kind | `client`
 
 ## StackExchangeRedis
@@ -453,9 +453,9 @@ Type | `redis`
 Name | Required |
 ---------|----------------|
 component | `StackExchangeRedis`
+meta.db.statement | Yes
 out.host | Yes
 out.port | Yes
-redis.raw_command | Yes
 span.kind | `client`
 
 ## Sqlite
