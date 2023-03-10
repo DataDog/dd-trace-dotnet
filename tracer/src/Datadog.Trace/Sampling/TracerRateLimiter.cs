@@ -18,7 +18,7 @@ namespace Datadog.Trace.Sampling
 
         public override void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval)
         {
-            Log.Warning<TraceId, int, int>("Dropping trace id {TraceId} with count of {Count} for last {Interval}ms.", span.TraceId, count, intervalMs);
+            Log.Warning<string, int, int>("Dropping trace id {TraceId} with count of {Count} for last {Interval}ms.", span.Context.RawTraceId, count, intervalMs);
         }
 
         public override void OnFinally(Span span)

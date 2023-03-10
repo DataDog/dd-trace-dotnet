@@ -349,7 +349,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
                 writer.WritePropertyName("dd.trace_id", escape: false);
 
-                if (span is Span { TraceId.Upper: > 0 } s)
+                if (span is Span { TraceId128.Upper: > 0 } s)
                 {
                     // 128-bit trace ids are encoded as hex
                     writer.WriteValue(s.Context.RawTraceId);

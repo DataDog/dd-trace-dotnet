@@ -112,7 +112,7 @@ namespace Datadog.Trace.Activity.Handlers
                         w3cActivity.RawParentId = null;
 
                         // Avoid recalculation of the traceId.
-                        traceId = activeSpan.TraceId;
+                        traceId = activeSpan.TraceId128;
                     }
                 }
 

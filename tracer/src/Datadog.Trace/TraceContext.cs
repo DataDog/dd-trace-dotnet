@@ -113,12 +113,12 @@ namespace Datadog.Trace
                         SetSamplingPriority(samplingDecision);
                     }
 
-                    if (span.TraceId.Upper > 0)
+                    if (span.TraceId128.Upper > 0)
                     {
                         // this is a 128-bit trace id, so add the "_dd.p.tid" ((P)ropagated (T)race (ID)) trace tag.
                         // NOTE: we can't use the optimized HexString.ToHexString(span.TraceId.Upper)
                         // because this tag CANNOT be zero-padded.
-                        var upperTraceIdHex = span.TraceId.Upper.ToString("x");
+                        var upperTraceIdHex = span.TraceId128.Upper.ToString("x");
                         Tags.SetTag(Datadog.Trace.Tags.Propagated.TraceIdUpper, upperTraceIdHex);
                     }
                 }
@@ -157,10 +157,10 @@ namespace Datadog.Trace
                 }
                 else if (ShouldTriggerPartialFlush())
                 {
-                    Log.Debug<ulong, TraceId, int>(
+                    Log.Debug<ulong, string, int>(
                         "Closing span {SpanId} triggered a partial flush of trace {TraceId} with {SpanCount} pending spans",
                         span.SpanId,
-                        span.TraceId,
+                        span.Context.RawTraceId,
                         _spans.Count);
 
                     spansToWrite = _spans.GetArray();

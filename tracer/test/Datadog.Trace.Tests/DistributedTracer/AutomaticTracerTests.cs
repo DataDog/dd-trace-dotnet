@@ -92,8 +92,8 @@ namespace Datadog.Trace.Tests.DistributedTracer
                 var spanContext = SpanContextPropagator.Instance.Extract(automaticTracer.GetDistributedTrace());
 
                 spanContext.Should().NotBeNull();
-                spanContext.TraceId128.Should().Be(((Scope)scope).Span.TraceId);
-                spanContext.TraceId.Should().Be(scope.Span.TraceId);
+                spanContext.TraceId128.Should().Be(((Scope)scope).Span.TraceId128);
+                spanContext.TraceId.Should().Be(scope.Span.TraceId); // ISpan only has the ulong TraceId
                 spanContext.SpanId.Should().Be(scope.Span.SpanId);
             }
 
