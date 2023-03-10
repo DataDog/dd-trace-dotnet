@@ -82,7 +82,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the trace's unique 128-bit identifier.
         /// </summary>
-        internal TraceId TraceId => Context.TraceId128;
+        internal TraceId TraceId128 => Context.TraceId128;
+
+        /// <summary>
+        /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.
+        /// </summary>
+        internal ulong TraceId => Context.TraceId128.Lower;
 
         /// <summary>
         /// Gets the span's unique 64-bit identifier.
