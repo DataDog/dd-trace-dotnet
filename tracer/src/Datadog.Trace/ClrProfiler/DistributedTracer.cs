@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -28,6 +29,15 @@ namespace Datadog.Trace.ClrProfiler
                 if (parent == null)
                 {
                     Log.Information("Building automatic tracer");
+                    Log.Information("Printing env vars available when building automatic tracer");
+                    foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+                    {
+                        string key = entry.Key.ToString();
+                        string val = entry.Value.ToString();
+                        Log.Warning("{Key}: {Val}", key, val);
+                    }
+
+                    Log.Information("DONE----------");
                     Instance = new AutomaticTracer();
                 }
                 else
