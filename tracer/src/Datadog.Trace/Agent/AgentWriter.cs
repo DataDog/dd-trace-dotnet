@@ -61,7 +61,7 @@ namespace Datadog.Trace.Agent
         private long _droppedP0Traces;
         private long _droppedP0Spans;
 
-        private long _droppedSpans;
+        private long _droppedTraces;
 
         public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, ISpanSampler spanSampler, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
         : this(api, statsAggregator, statsd, spanSampler, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval)
@@ -308,11 +308,11 @@ namespace Datadog.Trace.Agent
                         _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
                     }
 
-                    var droppedSpans = Interlocked.Exchange(ref _droppedSpans, 0);
+                    var droppedTraces = Interlocked.Exchange(ref _droppedTraces, 0);
 
-                    if (droppedSpans > 0)
+                    if (droppedTraces > 0)
                     {
-                        Log.Warning("{Count} traces were dropped since the last flush operation.", droppedSpans);
+                        Log.Warning("{Count} traces were dropped since the last flush operation.", droppedTraces);
                     }
 
                     if (buffer.TraceCount > 0)
@@ -484,7 +484,7 @@ namespace Datadog.Trace.Agent
 
         private void DropTrace(ArraySegment<Span> spans)
         {
-            Interlocked.Increment(ref _droppedSpans);
+            Interlocked.Increment(ref _droppedTraces);
             _traceKeepRateCalculator.IncrementDrops(1);
 
             if (_statsd != null)
