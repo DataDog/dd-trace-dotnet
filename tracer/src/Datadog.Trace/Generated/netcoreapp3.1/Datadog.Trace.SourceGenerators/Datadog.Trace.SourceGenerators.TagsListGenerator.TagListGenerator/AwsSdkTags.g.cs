@@ -9,59 +9,59 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSdkTags
     {
-        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 #else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 #endif
-        // AgentNameBytes = System.Text.Encoding.UTF8.GetBytes("aws.agent");
+        // AgentNameBytes = MessagePack.Serialize("aws.agent");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> AgentNameBytes => new byte[] { 97, 119, 115, 46, 97, 103, 101, 110, 116 };
+        private static ReadOnlySpan<byte> AgentNameBytes => new byte[] { 169, 97, 119, 115, 46, 97, 103, 101, 110, 116 };
 #else
-        private static readonly byte[] AgentNameBytes = new byte[] { 97, 119, 115, 46, 97, 103, 101, 110, 116 };
+        private static readonly byte[] AgentNameBytes = new byte[] { 169, 97, 119, 115, 46, 97, 103, 101, 110, 116 };
 #endif
-        // OperationBytes = System.Text.Encoding.UTF8.GetBytes("aws.operation");
+        // OperationBytes = MessagePack.Serialize("aws.operation");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> OperationBytes => new byte[] { 97, 119, 115, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
+        private static ReadOnlySpan<byte> OperationBytes => new byte[] { 173, 97, 119, 115, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
 #else
-        private static readonly byte[] OperationBytes = new byte[] { 97, 119, 115, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
+        private static readonly byte[] OperationBytes = new byte[] { 173, 97, 119, 115, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
 #endif
-        // RegionBytes = System.Text.Encoding.UTF8.GetBytes("aws.region");
+        // RegionBytes = MessagePack.Serialize("aws.region");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> RegionBytes => new byte[] { 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
+        private static ReadOnlySpan<byte> RegionBytes => new byte[] { 170, 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
 #else
-        private static readonly byte[] RegionBytes = new byte[] { 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
+        private static readonly byte[] RegionBytes = new byte[] { 170, 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
 #endif
-        // RequestIdBytes = System.Text.Encoding.UTF8.GetBytes("aws.requestId");
+        // RequestIdBytes = MessagePack.Serialize("aws.requestId");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> RequestIdBytes => new byte[] { 97, 119, 115, 46, 114, 101, 113, 117, 101, 115, 116, 73, 100 };
+        private static ReadOnlySpan<byte> RequestIdBytes => new byte[] { 173, 97, 119, 115, 46, 114, 101, 113, 117, 101, 115, 116, 73, 100 };
 #else
-        private static readonly byte[] RequestIdBytes = new byte[] { 97, 119, 115, 46, 114, 101, 113, 117, 101, 115, 116, 73, 100 };
+        private static readonly byte[] RequestIdBytes = new byte[] { 173, 97, 119, 115, 46, 114, 101, 113, 117, 101, 115, 116, 73, 100 };
 #endif
-        // ServiceBytes = System.Text.Encoding.UTF8.GetBytes("aws.service");
+        // ServiceBytes = MessagePack.Serialize("aws.service");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> ServiceBytes => new byte[] { 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
+        private static ReadOnlySpan<byte> ServiceBytes => new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
 #else
-        private static readonly byte[] ServiceBytes = new byte[] { 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
+        private static readonly byte[] ServiceBytes = new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
 #endif
-        // HttpMethodBytes = System.Text.Encoding.UTF8.GetBytes("http.method");
+        // HttpMethodBytes = MessagePack.Serialize("http.method");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> HttpMethodBytes => new byte[] { 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
+        private static ReadOnlySpan<byte> HttpMethodBytes => new byte[] { 171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
 #else
-        private static readonly byte[] HttpMethodBytes = new byte[] { 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
+        private static readonly byte[] HttpMethodBytes = new byte[] { 171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
 #endif
-        // HttpUrlBytes = System.Text.Encoding.UTF8.GetBytes("http.url");
+        // HttpUrlBytes = MessagePack.Serialize("http.url");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> HttpUrlBytes => new byte[] { 104, 116, 116, 112, 46, 117, 114, 108 };
+        private static ReadOnlySpan<byte> HttpUrlBytes => new byte[] { 168, 104, 116, 116, 112, 46, 117, 114, 108 };
 #else
-        private static readonly byte[] HttpUrlBytes = new byte[] { 104, 116, 116, 112, 46, 117, 114, 108 };
+        private static readonly byte[] HttpUrlBytes = new byte[] { 168, 104, 116, 116, 112, 46, 117, 114, 108 };
 #endif
-        // HttpStatusCodeBytes = System.Text.Encoding.UTF8.GetBytes("http.status_code");
+        // HttpStatusCodeBytes = MessagePack.Serialize("http.status_code");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> HttpStatusCodeBytes => new byte[] { 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
+        private static ReadOnlySpan<byte> HttpStatusCodeBytes => new byte[] { 176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
 #else
-        private static readonly byte[] HttpStatusCodeBytes = new byte[] { 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
+        private static readonly byte[] HttpStatusCodeBytes = new byte[] { 176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
 #endif
 
         public override string? GetTag(string key)

@@ -9,17 +9,17 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreTags
     {
-        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 #else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 #endif
-        // AspNetCoreRouteBytes = System.Text.Encoding.UTF8.GetBytes("aspnet_core.route");
+        // AspNetCoreRouteBytes = MessagePack.Serialize("aspnet_core.route");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreRouteBytes => new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
+        private static ReadOnlySpan<byte> AspNetCoreRouteBytes => new byte[] { 177, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
 #else
-        private static readonly byte[] AspNetCoreRouteBytes = new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
+        private static readonly byte[] AspNetCoreRouteBytes = new byte[] { 177, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
 #endif
 
         public override string? GetTag(string key)

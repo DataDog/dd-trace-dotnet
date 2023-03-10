@@ -9,23 +9,23 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSqsTags
     {
-        // QueueNameBytes = System.Text.Encoding.UTF8.GetBytes("aws.queue.name");
+        // QueueNameBytes = MessagePack.Serialize("aws.queue.name");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> QueueNameBytes => new byte[] { 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
+        private static ReadOnlySpan<byte> QueueNameBytes => new byte[] { 174, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
 #else
-        private static readonly byte[] QueueNameBytes = new byte[] { 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
+        private static readonly byte[] QueueNameBytes = new byte[] { 174, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
 #endif
-        // QueueUrlBytes = System.Text.Encoding.UTF8.GetBytes("aws.queue.url");
+        // QueueUrlBytes = MessagePack.Serialize("aws.queue.url");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> QueueUrlBytes => new byte[] { 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108 };
+        private static ReadOnlySpan<byte> QueueUrlBytes => new byte[] { 173, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108 };
 #else
-        private static readonly byte[] QueueUrlBytes = new byte[] { 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108 };
+        private static readonly byte[] QueueUrlBytes = new byte[] { 173, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108 };
 #endif
-        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+        // SpanKindBytes = MessagePack.Serialize("span.kind");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
 #else
-        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
 #endif
 
         public override string? GetTag(string key)

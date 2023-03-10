@@ -9,35 +9,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     partial class GraphQLTags
     {
-        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+        // SpanKindBytes = MessagePack.Serialize("span.kind");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
 #else
-        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
 #endif
-        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 #else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 #endif
-        // SourceBytes = System.Text.Encoding.UTF8.GetBytes("graphql.source");
+        // SourceBytes = MessagePack.Serialize("graphql.source");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> SourceBytes => new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 115, 111, 117, 114, 99, 101 };
+        private static ReadOnlySpan<byte> SourceBytes => new byte[] { 174, 103, 114, 97, 112, 104, 113, 108, 46, 115, 111, 117, 114, 99, 101 };
 #else
-        private static readonly byte[] SourceBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 115, 111, 117, 114, 99, 101 };
+        private static readonly byte[] SourceBytes = new byte[] { 174, 103, 114, 97, 112, 104, 113, 108, 46, 115, 111, 117, 114, 99, 101 };
 #endif
-        // OperationNameBytes = System.Text.Encoding.UTF8.GetBytes("graphql.operation.name");
+        // OperationNameBytes = MessagePack.Serialize("graphql.operation.name");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> OperationNameBytes => new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+        private static ReadOnlySpan<byte> OperationNameBytes => new byte[] { 182, 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
 #else
-        private static readonly byte[] OperationNameBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+        private static readonly byte[] OperationNameBytes = new byte[] { 182, 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
 #endif
-        // OperationTypeBytes = System.Text.Encoding.UTF8.GetBytes("graphql.operation.type");
+        // OperationTypeBytes = MessagePack.Serialize("graphql.operation.type");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> OperationTypeBytes => new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 116, 121, 112, 101 };
+        private static ReadOnlySpan<byte> OperationTypeBytes => new byte[] { 182, 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 116, 121, 112, 101 };
 #else
-        private static readonly byte[] OperationTypeBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 116, 121, 112, 101 };
+        private static readonly byte[] OperationTypeBytes = new byte[] { 182, 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 116, 121, 112, 101 };
 #endif
 
         public override string? GetTag(string key)

@@ -9,29 +9,29 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreMvcTags
     {
-        // AspNetCoreControllerBytes = System.Text.Encoding.UTF8.GetBytes("aspnet_core.controller");
+        // AspNetCoreControllerBytes = MessagePack.Serialize("aspnet_core.controller");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreControllerBytes => new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
+        private static ReadOnlySpan<byte> AspNetCoreControllerBytes => new byte[] { 182, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
 #else
-        private static readonly byte[] AspNetCoreControllerBytes = new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
+        private static readonly byte[] AspNetCoreControllerBytes = new byte[] { 182, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
 #endif
-        // AspNetCoreActionBytes = System.Text.Encoding.UTF8.GetBytes("aspnet_core.action");
+        // AspNetCoreActionBytes = MessagePack.Serialize("aspnet_core.action");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreActionBytes => new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 99, 116, 105, 111, 110 };
+        private static ReadOnlySpan<byte> AspNetCoreActionBytes => new byte[] { 178, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 99, 116, 105, 111, 110 };
 #else
-        private static readonly byte[] AspNetCoreActionBytes = new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 99, 116, 105, 111, 110 };
+        private static readonly byte[] AspNetCoreActionBytes = new byte[] { 178, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 99, 116, 105, 111, 110 };
 #endif
-        // AspNetCoreAreaBytes = System.Text.Encoding.UTF8.GetBytes("aspnet_core.area");
+        // AspNetCoreAreaBytes = MessagePack.Serialize("aspnet_core.area");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreAreaBytes => new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 114, 101, 97 };
+        private static ReadOnlySpan<byte> AspNetCoreAreaBytes => new byte[] { 176, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 114, 101, 97 };
 #else
-        private static readonly byte[] AspNetCoreAreaBytes = new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 114, 101, 97 };
+        private static readonly byte[] AspNetCoreAreaBytes = new byte[] { 176, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 114, 101, 97 };
 #endif
-        // AspNetCorePageBytes = System.Text.Encoding.UTF8.GetBytes("aspnet_core.page");
+        // AspNetCorePageBytes = MessagePack.Serialize("aspnet_core.page");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCorePageBytes => new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 112, 97, 103, 101 };
+        private static ReadOnlySpan<byte> AspNetCorePageBytes => new byte[] { 176, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 112, 97, 103, 101 };
 #else
-        private static readonly byte[] AspNetCorePageBytes = new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 112, 97, 103, 101 };
+        private static readonly byte[] AspNetCorePageBytes = new byte[] { 176, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 112, 97, 103, 101 };
 #endif
 
         public override string? GetTag(string key)
