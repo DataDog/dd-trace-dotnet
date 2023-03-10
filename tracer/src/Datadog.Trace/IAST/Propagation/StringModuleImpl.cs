@@ -376,47 +376,6 @@ internal static class StringModuleImpl
         return pos;
     }
 
-    /// <summary> Taints a string.substring operation </summary>
-    /// <param name="self"> original string </param>
-    /// <param name="beginIndex"> start index </param>
-    /// <param name="endIndex"> end index </param>
-    /// <param name="result"> Result </param>
-    /// <returns> resiñt </returns>
-    public static string OnStringSubSequence(string self, int beginIndex, int endIndex, string result)
-    {
-        try
-        {
-            if (self == result || !CanBeTainted(result))
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-        var taintedObjects = iastContext.GetTaintedObjects();
-        var selfTainted = taintedObjects.Get(self);
-        if (selfTainted == null)
-        {
-            return;
-        }
-
-        var rangesSelf = selfTainted.Ranges;
-        if (rangesSelf.Length == 0)
-        {
-            return;
-        }
-
-        var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
-        if (newRanges != null && newRanges.Length > 0)
-        {
-            taintedObjects.Taint(result, newRanges);
-        }
-    }
-
     /// <summary> Mostly used overload </summary>
     /// <param name="left"> Param 1 </param>
     /// <param name="right"> Param 2</param>
