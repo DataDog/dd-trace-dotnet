@@ -67,7 +67,7 @@ internal static class StringModuleImpl
     {
         try
         {
-            if (string.IsNullOrEmpty(result) || (result == target && object.ReferenceEquals(result, target)))
+            if (string.IsNullOrEmpty(result) || object.ReferenceEquals(result, target))
             {
                 return result;
             }
@@ -78,20 +78,21 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-            TaintedObject? taintedTarget = GetTainted(taintedObjects, target);
-            TaintedObject? taintedValue = GetTainted(taintedObjects, value);
-            if (taintedValue == null && taintedTarget == null)
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var taintedTarget = GetTainted(taintedObjects, target);
+
+            // if we have the same target and result but not the same reference, that means that
+            // we have called insert() with an empty insert string and the method has created a new string
+            // with the same value but different reference (which actually happens in .net462)
+            if (result == target && taintedTarget != null)
             {
+                taintedObjects.Taint(result, taintedTarget!.Ranges);
                 return result;
             }
 
-            // if we have the same target and result but not the same reference, that means that
-            // we have called insert() with empty insert string and the method has created a new string
-            // with the same value but different reference (which actually happens in .net462)
-            if (result == target)
+            var taintedValue = GetTainted(taintedObjects, value);
+            if (taintedValue == null && taintedTarget == null)
             {
-                taintedObjects.Taint(result, taintedTarget!.Ranges);
                 return result;
             }
 
@@ -148,14 +149,14 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-            TaintedObject? tainted = GetTainted(taintedObjects, self);
-            if (tainted == null)
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var taintedSelf = GetTainted(taintedObjects, self);
+            if (taintedSelf == null)
             {
                 return result;
             }
 
-            Range[] newRanges = Ranges.ForRemove(beginIndex, endIndex, tainted.Ranges);
+            var newRanges = Ranges.ForRemove(beginIndex, endIndex, taintedSelf.Ranges);
             if (newRanges != null && newRanges.Length > 0)
             {
                 taintedObjects.Taint(result, newRanges);

@@ -126,10 +126,10 @@ internal static class Ranges
         {
             var startBeforeRemoveArea = ranges[i].Start < beginIndex;
             var endAfterRemoveArea = ranges[i].Start + ranges[i].Length > endIndex;
-            var endBeforeRemoveArea = ranges[i].Start + ranges[i].Length < beginIndex;
             var starAfterRemoveArea = ranges[i].Start > endIndex;
             int newStart, newEnd;
 
+            // range is inside the removed area
             if (!startBeforeRemoveArea && !starAfterRemoveArea && !endAfterRemoveArea)
             {
                 continue;
@@ -144,7 +144,8 @@ internal static class Ranges
                 newStart = starAfterRemoveArea ? ranges[i].Start - (endIndex - beginIndex) : beginIndex;
             }
 
-            if (endBeforeRemoveArea)
+            // endBeforeRemoveArea
+            if (ranges[i].Start + ranges[i].Length < beginIndex)
             {
                 newEnd = ranges[i].Start + ranges[i].Length;
             }
