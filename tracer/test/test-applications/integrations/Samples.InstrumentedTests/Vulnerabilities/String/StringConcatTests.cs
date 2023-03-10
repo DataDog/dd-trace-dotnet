@@ -623,13 +623,13 @@ public class StringConcatTests : InstrumentationTestsBase
     [Fact]
     public void GivenAListOfObjects_WhenCallingConcat_ThenNoExceptionIsThrown()
     {
-        String.Concat("str1", 4, null, "str2").Should().Be("str14str2");
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:4str2", String.Concat(taintedValue, 4, null, "str2"), () => String.Concat(taintedValue, 4, null, "str2"));
     }
 
     [Fact]
     public void GivenAListOfStrings_WhenCallingConcat_ThenNoExceptionIsThrown()
     {
-        String.Concat("str1", null, "str2").Should().Be("str1str2");
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:str2", String.Concat(taintedValue, null, "str2"), () => String.Concat(taintedValue, null, "str2"));
     }
 
     [Fact]
