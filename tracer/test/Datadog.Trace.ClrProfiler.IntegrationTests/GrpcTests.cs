@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public GrpcLegacyTests(ITestOutputHelper output)
             : base("GrpcLegacy", output, usesAspNetCore: false)
         {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -201,7 +202,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             _usesAspNetCore = usesAspNetCore;
             SetEnvironmentVariable(ConfigurationKeys.GrpcTags, MetadataHeaders);
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         /// <summary>
