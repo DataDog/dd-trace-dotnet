@@ -6,15 +6,8 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Sinks.File;
 
 namespace Datadog.Trace.Iast.Propagation;
 
@@ -22,34 +15,82 @@ internal static class StringBuilderModuleImpl
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringBuilderModuleImpl));
 
-    public static string OnStringBuilderToString(object? instance, string result)
+    public static StringBuilder OnStringBuilderAppend(StringBuilder builder, int initialBuilderLength, object? appendValue, int appendValueLength, int startIndex, int count)
     {
         try
         {
-            if (instance is StringBuilder target)
+            if (appendValue == null)
             {
-                var ctx = IastModule.GetIastContext();
-                if (ctx == null)
-                {
-                    return result;
-                }
+                return builder;
+            }
 
-                TaintedObjects to = ctx.GetTaintedObjects();
-                if (to == null)
-                {
-                    return result;
-                }
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return builder;
+            }
 
-                var o = to?.Get(target);
-                if (o != null)
-                {
-                    to!.Taint(result, o.Ranges);
-                }
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var paramTainted = taintedObjects.Get(appendValue);
+
+            if (paramTainted == null)
+            {
+                return builder;
+            }
+
+            bool appendWholeParameter = appendValueLength == count && startIndex == 0;
+
+            Range[]? paramRanges;
+            if (appendWholeParameter)
+            {
+                paramRanges = paramTainted.Ranges;
+            }
+            else
+            {
+                paramRanges = Ranges.ForSubstring(startIndex, count, paramTainted.Ranges);
+            }
+
+            if (paramRanges == null)
+            {
+                return builder;
+            }
+
+            var builderTainted = taintedObjects.Get(builder);
+
+            if (builderTainted == null)
+            {
+                var ranges = new Range[paramRanges.Length];
+                Ranges.CopyShift(paramRanges, ranges, 0, initialBuilderLength);
+                taintedObjects.Taint(builder, ranges);
+            }
+            else
+            {
+                var builderRanges = builderTainted.Ranges;
+                builderTainted.Ranges = Ranges.MergeRanges(initialBuilderLength, builderRanges, paramRanges);
             }
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnStringBuilderInit");
+            Log.Error(err, "StringModuleImpl.onStringBuilderAppend(StringBuilder,string) exception");
+        }
+
+        return builder;
+    }
+
+    public static StringBuilder? OnStringBuilderSubSequence(string originalString, int beginIndex, int length, StringBuilder result)
+    {
+        try
+        {
+            if (result == null || string.IsNullOrEmpty(originalString))
+            {
+                return result;
+            }
+
+            PropagationModuleImpl.OnStringSubSequence(originalString, beginIndex, result, length);
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringBuilderSubSequence(string,int,int,string) exception");
         }
 
         return result;

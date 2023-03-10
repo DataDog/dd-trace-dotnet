@@ -193,7 +193,7 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            OnStringSubSequence(self, beginIndex, result, result.Length);
+            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length);
         }
         catch (Exception err)
         {
@@ -217,7 +217,7 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            OnStringSubSequence(self, beginIndex, result, result.Length);
+            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length);
         }
         catch (Exception err)
         {
@@ -505,8 +505,8 @@ internal static class StringModuleImpl
             }
 
             TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-            TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_1 ? GetTainted(taintedObjects, left) : null;
-            TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_0 ? GetTainted(taintedObjects, right) : null;
+            TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_1 ? PropagationModuleImpl.GetTainted(taintedObjects, left) : null;
+            TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_0 ? PropagationModuleImpl.GetTainted(taintedObjects, right) : null;
             if (taintedLeft == null && taintedRight == null)
             {
                 return result;
@@ -568,7 +568,7 @@ internal static class StringModuleImpl
                     continue;
                 }
 
-                var parameterTainted = GetTainted(taintedObjects, currentParameter);
+                var parameterTainted = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
                 if (parameterTainted != null)
                 {
                     if (ranges == null)
@@ -637,7 +637,7 @@ internal static class StringModuleImpl
                     continue;
                 }
 
-                var taintedParameter = GetTainted(taintedObjects, currentParameter);
+                var taintedParameter = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
                 if (taintedParameter != null)
                 {
                     if (ranges == null)
