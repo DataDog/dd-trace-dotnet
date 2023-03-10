@@ -194,13 +194,14 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "grpc.request")
                 .Matches(Type, "grpc"))
+            .Metrics(m => m
+                .IsPresent("rpc.grpc.status_code"))
             .Tags(s => s
                 .IsPresent("rpc.grpc.kind")
                 .IsPresent("rpc.method")
                 .IsPresent("rpc.grpc.package")
                 .IsPresent("rpc.grpc.path")
                 .IsPresent("rpc.service")
-                .IsPresent("rpc.grpc.status_code")
                 .Matches("component", "Grpc")
                 .MatchesOneOf("span.kind", "client", "server"));
 
