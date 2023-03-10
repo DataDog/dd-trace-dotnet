@@ -202,6 +202,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("rpc.grpc.package")
                 .IsPresent("rpc.grpc.path")
                 .IsPresent("rpc.service")
+                .Matches("rpc.system", "grpc")
                 .Matches("component", "Grpc")
                 .MatchesOneOf("span.kind", "client", "server"));
 

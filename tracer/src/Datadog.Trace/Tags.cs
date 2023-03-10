@@ -538,6 +538,7 @@ namespace Datadog.Trace
         internal const string GrpcMethodService = "rpc.service";
         internal const string GrpcMethodName = "rpc.method";
         internal const string GrpcStatusCode = "rpc.grpc.status_code";
+        internal const string RpcSystem = "rpc.system";
 
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
 

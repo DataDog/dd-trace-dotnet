@@ -233,6 +233,7 @@ rpc.grpc.package | Yes
 rpc.grpc.path | Yes
 rpc.method | Yes
 rpc.service | Yes
+rpc.system | `grpc`
 span.kind | `client`; `server`
 ### Metrics
 Name | Required |

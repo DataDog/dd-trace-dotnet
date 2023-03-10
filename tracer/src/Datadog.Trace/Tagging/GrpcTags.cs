@@ -39,6 +39,9 @@ namespace Datadog.Trace.Tagging
 
         [Metric(Trace.Tags.GrpcStatusCode)]
         public double? StatusCode { get; set; }
+
+        [Tag(Trace.Tags.RpcSystem)]
+        public string RpcSystem => "grpc";
     }
 
     internal partial class GrpcClientTags : GrpcTags

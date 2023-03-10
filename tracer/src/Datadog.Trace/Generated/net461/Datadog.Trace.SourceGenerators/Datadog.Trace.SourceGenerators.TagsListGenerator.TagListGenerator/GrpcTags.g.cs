@@ -24,6 +24,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] MethodPackageBytes = new byte[] { 114, 112, 99, 46, 103, 114, 112, 99, 46, 112, 97, 99, 107, 97, 103, 101 };
         // MethodServiceBytes = System.Text.Encoding.UTF8.GetBytes("rpc.service");
         private static readonly byte[] MethodServiceBytes = new byte[] { 114, 112, 99, 46, 115, 101, 114, 118, 105, 99, 101 };
+        // RpcSystemBytes = System.Text.Encoding.UTF8.GetBytes("rpc.system");
+        private static readonly byte[] RpcSystemBytes = new byte[] { 114, 112, 99, 46, 115, 121, 115, 116, 101, 109 };
 
         public override string? GetTag(string key)
         {
@@ -36,6 +38,7 @@ namespace Datadog.Trace.Tagging
                 "rpc.grpc.path" => MethodPath,
                 "rpc.grpc.package" => MethodPackage,
                 "rpc.service" => MethodService,
+                "rpc.system" => RpcSystem,
                 _ => base.GetTag(key),
             };
         }
@@ -61,6 +64,7 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "span.kind": 
                 case "component": 
+                case "rpc.system": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(GrpcTags));
                     break;
                 default: 
@@ -104,6 +108,11 @@ namespace Datadog.Trace.Tagging
             if (MethodService is not null)
             {
                 processor.Process(new TagItem<string>("rpc.service", MethodService, MethodServiceBytes));
+            }
+
+            if (RpcSystem is not null)
+            {
+                processor.Process(new TagItem<string>("rpc.system", RpcSystem, RpcSystemBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -157,6 +166,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("rpc.service (tag):")
                   .Append(MethodService)
+                  .Append(',');
+            }
+
+            if (RpcSystem is not null)
+            {
+                sb.Append("rpc.system (tag):")
+                  .Append(RpcSystem)
                   .Append(',');
             }
 
