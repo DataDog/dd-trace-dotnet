@@ -9,7 +9,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
-using Datadog.Trace.Ci.Coverage.Util;
+using Datadog.Trace.Util;
 
 #pragma warning disable SA1649 // File name must match first type name
 

@@ -6,7 +6,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Ci.Coverage.Util;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage.Metadata;
 

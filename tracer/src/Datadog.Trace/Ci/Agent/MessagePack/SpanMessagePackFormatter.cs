@@ -289,7 +289,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if !NETCOREAPP
         private void WriteTag(ref byte[] bytes, ref int offset, byte[] keyBytes, string value, ITagProcessor[] tagProcessors)
+#else
+        private void WriteTag(ref byte[] bytes, ref int offset, ReadOnlySpan<byte> keyBytes, string value, ITagProcessor[] tagProcessors)
+#endif
         {
             if (tagProcessors is not null)
             {
@@ -380,7 +384,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if !NETCOREAPP
         private void WriteMetric(ref byte[] bytes, ref int offset, byte[] keyBytes, double value, ITagProcessor[] tagProcessors)
+#else
+        private void WriteMetric(ref byte[] bytes, ref int offset, ReadOnlySpan<byte> keyBytes, double value, ITagProcessor[] tagProcessors)
+#endif
         {
             if (tagProcessors is not null)
             {
@@ -420,6 +428,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             public void Process(TagItem<string> item)
             {
+#if !NETCOREAPP
                 if (item.KeyUtf8 is null)
                 {
                     _formatter.WriteTag(ref Bytes, ref Offset, item.Key, item.Value, _tagProcessors);
@@ -428,12 +437,23 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 {
                     _formatter.WriteTag(ref Bytes, ref Offset, item.KeyUtf8, item.Value, _tagProcessors);
                 }
+#else
+                if (item.KeyUtf8.IsEmpty)
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.Key, item.Value, _tagProcessors);
+                }
+                else
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.KeyUtf8, item.Value, _tagProcessors);
+                }
+#endif
 
                 Count++;
             }
 
             public void Process(TagItem<double> item)
             {
+#if !NETCOREAPP
                 if (item.KeyUtf8 is null)
                 {
                     _formatter.WriteMetric(ref Bytes, ref Offset, item.Key, item.Value, _tagProcessors);
@@ -442,6 +462,16 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 {
                     _formatter.WriteMetric(ref Bytes, ref Offset, item.KeyUtf8, item.Value, _tagProcessors);
                 }
+#else
+                if (item.KeyUtf8.IsEmpty)
+                {
+                    _formatter.WriteMetric(ref Bytes, ref Offset, item.Key, item.Value, _tagProcessors);
+                }
+                else
+                {
+                    _formatter.WriteMetric(ref Bytes, ref Offset, item.KeyUtf8, item.Value, _tagProcessors);
+                }
+#endif
 
                 Count++;
             }

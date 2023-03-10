@@ -8,13 +8,13 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.Ci.Coverage.Util;
+namespace Datadog.Trace.Util;
 
 internal static class ArrayExtensions
 {
     /// <summary>
     /// Gets the item value reference of an array avoiding bound checks
-    /// WARNING: This method tries to avoid bound checks. This completely unsafe, use only if you know what you are doing.
+    /// WARNING: This method tries to avoid bound checks. This is completely unsafe, use only if you know what you are doing.
     /// </summary>
     /// <param name="array">Array instance</param>
     /// <param name="index">Index of the item</param>
