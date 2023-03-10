@@ -30,8 +30,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: CreateQueue,
-      messaging.destination: MyAsyncSQSQueue,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -39,6 +37,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      messaging.destination: MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -57,8 +57,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: CreateQueue,
-      messaging.destination: MyAsyncSQSQueue2,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -66,6 +64,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      messaging.destination: MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -194,7 +194,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -202,6 +201,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -220,7 +220,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -228,6 +227,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -246,7 +246,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -254,6 +253,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -272,7 +272,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -280,6 +279,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -298,7 +298,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -306,6 +305,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -324,7 +324,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -332,6 +331,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -350,7 +350,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -358,6 +357,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -376,7 +376,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -384,6 +383,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -402,7 +402,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -410,6 +409,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -428,7 +428,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -436,6 +435,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -454,7 +454,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -462,6 +461,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -480,7 +480,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -488,6 +487,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -506,7 +506,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -514,6 +513,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -532,7 +532,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -540,6 +539,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -558,7 +558,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -566,6 +565,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -584,7 +584,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -592,6 +591,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -610,7 +610,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -618,6 +617,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -636,7 +636,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -644,6 +643,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -662,7 +662,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -670,6 +669,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -688,7 +688,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -696,6 +695,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -714,7 +714,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -722,6 +721,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -740,7 +740,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -748,6 +747,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -766,7 +766,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -774,6 +773,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -792,7 +792,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -800,6 +799,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -818,7 +818,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteQueue,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -826,6 +825,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -844,7 +844,6 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteQueue,
-      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
       component: aws-sdk,
@@ -852,6 +851,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      messaging.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
