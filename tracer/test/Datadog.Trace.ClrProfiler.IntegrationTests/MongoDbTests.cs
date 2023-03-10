@@ -101,11 +101,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     if (adminSpan.Resource == "buildInfo admin")
                     {
-                        adminSpan.Tags.Should().Contain("mongodb.query", "{ \"buildInfo\" : 1 }");
+                        adminSpan.Tags.Should().Contain("db.statement", "{ \"buildInfo\" : 1 }");
                     }
                     else
                     {
-                        adminSpan.Tags.Should().Contain("mongodb.query", "{ \"getLastError\" : 1 }");
+                        adminSpan.Tags.Should().Contain("db.statement", "{ \"getLastError\" : 1 }");
                     }
                 }
             }
