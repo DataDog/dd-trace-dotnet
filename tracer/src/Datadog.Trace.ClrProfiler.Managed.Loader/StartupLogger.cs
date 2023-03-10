@@ -64,7 +64,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             try
             {
-                logDirectory = Environment.GetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY");
+                // logDirectory = Environment.GetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY");
+                logDirectory = "C:\home\site\wwwroot"
 
                 if (logDirectory == null)
                 {
