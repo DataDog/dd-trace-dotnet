@@ -32,18 +32,18 @@
       component: Grpc,
       env: integration_tests,
       rpc.grpc.kind: bidi_streaming,
-      rpc.method: StreamingBothWays,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/StreamingBothWays,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: StreamingBothWays,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 0,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 0.0,
       _dd.top_level: 1.0
     }
   },
@@ -90,17 +90,19 @@
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
+      language: dotnet,
       rpc.grpc.kind: bidi_streaming,
-      rpc.method: StreamingBothWays,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/StreamingBothWays,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: StreamingBothWays,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 0,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 0.0
     }
   },
   {
@@ -136,18 +138,18 @@
       component: Grpc,
       env: integration_tests,
       rpc.grpc.kind: client_streaming,
-      rpc.method: StreamingFromClient,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/StreamingFromClient,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: StreamingFromClient,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 0,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 0.0,
       _dd.top_level: 1.0
     }
   },
@@ -194,17 +196,19 @@
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
+      language: dotnet,
       rpc.grpc.kind: client_streaming,
-      rpc.method: StreamingFromClient,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/StreamingFromClient,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: StreamingFromClient,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 0,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 0.0
     }
   },
   {
@@ -242,18 +246,18 @@
       env: integration_tests,
       error.msg: Canceled,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -302,17 +306,19 @@
       component: Grpc,
       env: integration_tests,
       error.msg: Canceled,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 1,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 1.0
     }
   },
   {
@@ -350,18 +356,18 @@
       env: integration_tests,
       error.msg: Argh, my data!,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 15,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 15.0,
       _dd.top_level: 1.0
     }
   },
@@ -410,17 +416,19 @@
       component: Grpc,
       env: integration_tests,
       error.msg: Argh, my data!,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 15,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 15.0
     }
   },
   {
@@ -458,18 +466,18 @@
       env: integration_tests,
       error.msg: Where did it go?,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 5,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 5.0,
       _dd.top_level: 1.0
     }
   },
@@ -518,17 +526,19 @@
       component: Grpc,
       env: integration_tests,
       error.msg: Where did it go?,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 5,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 5.0
     }
   },
   {
@@ -566,18 +576,18 @@
       env: integration_tests,
       error.msg: Exception was thrown by handler.,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 2,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 2.0,
       _dd.top_level: 1.0
     }
   },
@@ -630,17 +640,19 @@
 System.Exception: Oh noes, my grpc!
 at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest request, ServerCallContext context),
       error.type: System.Exception,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 2,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 2.0
     }
   },
   {
@@ -678,18 +690,18 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       env: integration_tests,
       error.msg: Canceled,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -738,17 +750,19 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       component: Grpc,
       env: integration_tests,
       error.msg: Canceled,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 1,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 1.0
     }
   },
   {
@@ -786,18 +800,18 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       env: integration_tests,
       error.msg: Argh, my data!,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 15,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 15.0,
       _dd.top_level: 1.0
     }
   },
@@ -846,17 +860,19 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       component: Grpc,
       env: integration_tests,
       error.msg: Argh, my data!,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 15,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 15.0
     }
   },
   {
@@ -894,18 +910,18 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       env: integration_tests,
       error.msg: Where did it go?,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 5,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 5.0,
       _dd.top_level: 1.0
     }
   },
@@ -954,17 +970,19 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       component: Grpc,
       env: integration_tests,
       error.msg: Where did it go?,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 5,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 5.0
     }
   },
   {
@@ -1002,18 +1020,18 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       env: integration_tests,
       error.msg: Exception was thrown by handler.,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 2,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 2.0,
       _dd.top_level: 1.0
     }
   },
@@ -1066,17 +1084,19 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
 System.Exception: Oh noes, my grpc!
 at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest request, ServerCallContext context),
       error.type: System.Exception,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: ErroringMethod,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/ErroringMethod,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: ErroringMethod,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 2,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 2.0
     }
   },
   {
@@ -1112,18 +1132,18 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       component: Grpc,
       env: integration_tests,
       rpc.grpc.kind: server_streaming,
-      rpc.method: StreamingFromServer,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/StreamingFromServer,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: StreamingFromServer,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 0,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 0.0,
       _dd.top_level: 1.0
     }
   },
@@ -1170,17 +1190,19 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
+      language: dotnet,
       rpc.grpc.kind: server_streaming,
-      rpc.method: StreamingFromServer,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/StreamingFromServer,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: StreamingFromServer,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 0,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 0.0
     }
   },
   {
@@ -1216,18 +1238,18 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       component: Grpc,
       env: integration_tests,
       rpc.grpc.kind: unary,
-      rpc.method: Unary,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/Unary,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: Unary,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 0,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 0.0,
       _dd.top_level: 1.0
     }
   },
@@ -1274,17 +1296,19 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: Unary,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/Unary,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: Unary,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 0,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 0.0
     }
   },
   {
@@ -1320,18 +1344,18 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       component: Grpc,
       env: integration_tests,
       rpc.grpc.kind: unary,
-      rpc.method: Unary,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/Unary,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: Unary,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 0,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 0.0,
       _dd.top_level: 1.0
     }
   },
@@ -1378,17 +1402,19 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: Unary,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/Unary,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: Unary,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 0,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 0.0
     }
   },
   {
@@ -1426,16 +1452,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       env: integration_tests,
       error.msg: Deadline Exceeded,
       rpc.grpc.kind: unary,
-      rpc.method: VerySlow,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/VerySlow,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.method: VerySlow,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      rpc.grpc.status_code: 4,
       runtime-id: Guid_1,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 4.0,
       _dd.top_level: 1.0
     }
   },
@@ -1484,17 +1510,19 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       component: Grpc,
       env: integration_tests,
       error.msg: Deadline Exceeded,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: VerySlow,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/VerySlow,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: VerySlow,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 4,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 4.0
     }
   },
   {
@@ -1532,16 +1560,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       env: integration_tests,
       error.msg: Deadline Exceeded,
       rpc.grpc.kind: unary,
-      rpc.method: VerySlow,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/VerySlow,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.method: VerySlow,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      rpc.grpc.status_code: 4,
       runtime-id: Guid_1,
       span.kind: client
     },
     Metrics: {
+      rpc.grpc.status_code: 4.0,
       _dd.top_level: 1.0
     }
   },
@@ -1590,17 +1618,19 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       component: Grpc,
       env: integration_tests,
       error.msg: Deadline Exceeded,
+      language: dotnet,
       rpc.grpc.kind: unary,
-      rpc.method: VerySlow,
       rpc.grpc.package: greet.tester,
       rpc.grpc.path: /greet.tester.Greeter/VerySlow,
+      rpc.grpc.request.metadata.client-value1: some-client-value,
+      rpc.grpc.response.metadata.server-value1: some-server-value,
+      rpc.method: VerySlow,
       rpc.service: Greeter,
-      grpc.request.metadata.client-value1: some-client-value,
-      grpc.response.metadata.server-value1: some-server-value,
-      rpc.grpc.status_code: 4,
-      language: dotnet,
       servermeta: other-server-value,
       span.kind: server
+    },
+    Metrics: {
+      rpc.grpc.status_code: 4.0
     }
   }
 ]

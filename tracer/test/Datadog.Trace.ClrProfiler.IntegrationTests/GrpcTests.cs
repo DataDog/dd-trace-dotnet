@@ -220,9 +220,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "grpc.request" => span.IsGrpc(excludeTags: new HashSet<string>
                     {
                         "clientmeta",
-                        "grpc.request.metadata.client-value1",
+                        "rpc.grpc.request.metadata.client-value1",
                         "servermeta",
-                        "grpc.response.metadata.server-value1"
+                        "rpc.grpc.response.metadata.server-value1"
                     }),
                 _ => Result.DefaultSuccess
             };
