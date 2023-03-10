@@ -89,24 +89,19 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return CallTargetReturn.GetDefault();
         }
 
-        internal static Scope CreatePlaceholderScope(Tracer tracer, string traceIdString, string samplingPriority)
+        internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
         {
             Span span;
 
-            if (traceIdString == null)
+            if (traceId == null)
             {
                 Serverless.Debug("traceId not found");
                 span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
             }
-            else if (!ulong.TryParse(traceIdString, out var traceId))
-            {
-                Serverless.Debug($"traceId not valid: {traceIdString}");
-                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
-            }
             else
             {
-                Serverless.Debug($"creating the placeholder traceId = {traceIdString}");
-                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: (TraceId)traceId, addToTraceContext: false);
+                Serverless.Debug($"creating the placeholder traceId = {traceId}");
+                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), addToTraceContext: false);
             }
 
             if (samplingPriority == null)
