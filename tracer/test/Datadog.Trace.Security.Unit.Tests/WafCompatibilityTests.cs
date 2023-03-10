@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -14,6 +15,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void ShouldNotInitialize()
         {
+            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.MacOs, SkipOn.ArchitectureValue.ARM64);
             var libraryInitializationResult = WafLibraryInvoker.Initialize("1.4.0");
             libraryInitializationResult.Success.Should().BeFalse();
             libraryInitializationResult.ExportErrorHappened.Should().BeTrue();
