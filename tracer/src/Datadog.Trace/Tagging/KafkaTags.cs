@@ -32,9 +32,11 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
 
+        // TODO: Seems to be remapped as a metric in the backend but we put non castable strings in here so...
         [Tag(Trace.Tags.KafkaPartition)]
         public string Partition { get; set; }
 
+        // TODO: Seems to be remapped as a metric in the backend but we put non castable strings in here so...
         [Tag(Trace.Tags.KafkaOffset)]
         public string Offset { get; set; }
 

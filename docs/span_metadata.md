@@ -165,9 +165,9 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `CosmosDb`
-cosmosdb.container | No
 db.instance | No
 db.system | `cosmosdb`
+messaging.destination | No
 out.host | Yes
 span.kind | `client`
 
@@ -277,11 +277,11 @@ Type | `queue`
 Name | Required |
 ---------|----------------|
 component | `kafka`
-kafka.group | No
 kafka.offset | No
 kafka.partition | No
-kafka.tombstone | No
 message.queue_time_ms | No
+messaging.kafka.consumer_group | No
+messaging.kafka.tombstone | No
 span.kind | Yes
 
 ## MongoDb

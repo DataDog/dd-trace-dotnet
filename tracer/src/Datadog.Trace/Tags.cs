@@ -289,12 +289,12 @@ namespace Datadog.Trace
         /// <summary>
         /// The consumer group that consumed the message
         /// </summary>
-        internal const string KafkaConsumerGroup = "kafka.group";
+        internal const string KafkaConsumerGroup = "messaging.kafka.consumer_group";
 
         /// <summary>
         /// Whether the record was a "tombstone" record
         /// </summary>
-        internal const string KafkaTombstone = "kafka.tombstone";
+        internal const string KafkaTombstone = "messaging.kafka.tombstone";
 
         /// <summary>
         /// The agent that instrumented the associated AWS SDK span.
@@ -458,7 +458,7 @@ namespace Datadog.Trace
         /// <summary>
         /// A CosmosDb container name.
         /// </summary>
-        internal const string CosmosDbContainer = "cosmosdb.container";
+        internal const string CosmosDbContainer = "messaging.destination";
 
         /// <summary>
         /// If a span was involved with an application security event

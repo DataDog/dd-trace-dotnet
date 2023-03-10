@@ -18,10 +18,10 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] PartitionBytes = new byte[] { 107, 97, 102, 107, 97, 46, 112, 97, 114, 116, 105, 116, 105, 111, 110 };
         // OffsetBytes = System.Text.Encoding.UTF8.GetBytes("kafka.offset");
         private static readonly byte[] OffsetBytes = new byte[] { 107, 97, 102, 107, 97, 46, 111, 102, 102, 115, 101, 116 };
-        // TombstoneBytes = System.Text.Encoding.UTF8.GetBytes("kafka.tombstone");
-        private static readonly byte[] TombstoneBytes = new byte[] { 107, 97, 102, 107, 97, 46, 116, 111, 109, 98, 115, 116, 111, 110, 101 };
-        // ConsumerGroupBytes = System.Text.Encoding.UTF8.GetBytes("kafka.group");
-        private static readonly byte[] ConsumerGroupBytes = new byte[] { 107, 97, 102, 107, 97, 46, 103, 114, 111, 117, 112 };
+        // TombstoneBytes = System.Text.Encoding.UTF8.GetBytes("messaging.kafka.tombstone");
+        private static readonly byte[] TombstoneBytes = new byte[] { 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 107, 97, 102, 107, 97, 46, 116, 111, 109, 98, 115, 116, 111, 110, 101 };
+        // ConsumerGroupBytes = System.Text.Encoding.UTF8.GetBytes("messaging.kafka.consumer_group");
+        private static readonly byte[] ConsumerGroupBytes = new byte[] { 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 107, 97, 102, 107, 97, 46, 99, 111, 110, 115, 117, 109, 101, 114, 95, 103, 114, 111, 117, 112 };
 
         public override string? GetTag(string key)
         {
@@ -31,8 +31,8 @@ namespace Datadog.Trace.Tagging
                 "component" => InstrumentationName,
                 "kafka.partition" => Partition,
                 "kafka.offset" => Offset,
-                "kafka.tombstone" => Tombstone,
-                "kafka.group" => ConsumerGroup,
+                "messaging.kafka.tombstone" => Tombstone,
+                "messaging.kafka.consumer_group" => ConsumerGroup,
                 _ => base.GetTag(key),
             };
         }
@@ -47,10 +47,10 @@ namespace Datadog.Trace.Tagging
                 case "kafka.offset": 
                     Offset = value;
                     break;
-                case "kafka.tombstone": 
+                case "messaging.kafka.tombstone": 
                     Tombstone = value;
                     break;
-                case "kafka.group": 
+                case "messaging.kafka.consumer_group": 
                     ConsumerGroup = value;
                     break;
                 case "span.kind": 
@@ -87,12 +87,12 @@ namespace Datadog.Trace.Tagging
 
             if (Tombstone is not null)
             {
-                processor.Process(new TagItem<string>("kafka.tombstone", Tombstone, TombstoneBytes));
+                processor.Process(new TagItem<string>("messaging.kafka.tombstone", Tombstone, TombstoneBytes));
             }
 
             if (ConsumerGroup is not null)
             {
-                processor.Process(new TagItem<string>("kafka.group", ConsumerGroup, ConsumerGroupBytes));
+                processor.Process(new TagItem<string>("messaging.kafka.consumer_group", ConsumerGroup, ConsumerGroupBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -130,14 +130,14 @@ namespace Datadog.Trace.Tagging
 
             if (Tombstone is not null)
             {
-                sb.Append("kafka.tombstone (tag):")
+                sb.Append("messaging.kafka.tombstone (tag):")
                   .Append(Tombstone)
                   .Append(',');
             }
 
             if (ConsumerGroup is not null)
             {
-                sb.Append("kafka.group (tag):")
+                sb.Append("messaging.kafka.consumer_group (tag):")
                   .Append(ConsumerGroup)
                   .Append(',');
             }

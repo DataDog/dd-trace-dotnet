@@ -148,7 +148,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "cosmosdb.query")
                 .Matches(Type, "sql"))
             .Tags(s => s
-                .IsOptional("cosmosdb.container")
+                .IsOptional("messaging.destination")
                 .IsOptional("db.instance")
                 .Matches("db.system", "cosmosdb")
                 .IsPresent("out.host")
@@ -232,10 +232,10 @@ namespace Datadog.Trace.TestHelpers
                 .MatchesOneOf(Name, "kafka.consume", "kafka.produce")
                 .Matches(Type, "queue"))
             .Tags(s => s
-                .IsOptional("kafka.group")
+                .IsOptional("messaging.kafka.consumer_group")
                 .IsOptional("kafka.offset")
                 .IsOptional("kafka.partition")
-                .IsOptional("kafka.tombstone")
+                .IsOptional("messaging.kafka.tombstone")
                 .IsOptional("message.queue_time_ms")
                 .Matches("component", "kafka")
                 .IsPresent("span.kind"));

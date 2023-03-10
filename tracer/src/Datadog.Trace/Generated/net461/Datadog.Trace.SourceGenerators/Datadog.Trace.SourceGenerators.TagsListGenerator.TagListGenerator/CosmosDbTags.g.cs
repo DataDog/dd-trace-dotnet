@@ -14,8 +14,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // DbTypeBytes = System.Text.Encoding.UTF8.GetBytes("db.system");
         private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 115, 121, 115, 116, 101, 109 };
-        // ContainerIdBytes = System.Text.Encoding.UTF8.GetBytes("cosmosdb.container");
-        private static readonly byte[] ContainerIdBytes = new byte[] { 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
+        // ContainerIdBytes = System.Text.Encoding.UTF8.GetBytes("messaging.destination");
+        private static readonly byte[] ContainerIdBytes = new byte[] { 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110 };
         // DatabaseIdBytes = System.Text.Encoding.UTF8.GetBytes("db.instance");
         private static readonly byte[] DatabaseIdBytes = new byte[] { 100, 98, 46, 105, 110, 115, 116, 97, 110, 99, 101 };
         // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tagging
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
                 "db.system" => DbType,
-                "cosmosdb.container" => ContainerId,
+                "messaging.destination" => ContainerId,
                 "db.instance" => DatabaseId,
                 "out.host" => Host,
                 _ => base.GetTag(key),
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "cosmosdb.container": 
+                case "messaging.destination": 
                     ContainerId = value;
                     break;
                 case "db.instance": 
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tagging
 
             if (ContainerId is not null)
             {
-                processor.Process(new TagItem<string>("cosmosdb.container", ContainerId, ContainerIdBytes));
+                processor.Process(new TagItem<string>("messaging.destination", ContainerId, ContainerIdBytes));
             }
 
             if (DatabaseId is not null)
@@ -119,7 +119,7 @@ namespace Datadog.Trace.Tagging
 
             if (ContainerId is not null)
             {
-                sb.Append("cosmosdb.container (tag):")
+                sb.Append("messaging.destination (tag):")
                   .Append(ContainerId)
                   .Append(',');
             }
