@@ -201,6 +201,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             _usesAspNetCore = usesAspNetCore;
             SetEnvironmentVariable(ConfigurationKeys.GrpcTags, MetadataHeaders);
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         /// <summary>
