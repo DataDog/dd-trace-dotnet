@@ -3,27 +3,60 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class RabbitMQTags
     {
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // CommandBytes = System.Text.Encoding.UTF8.GetBytes("amqp.command");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CommandBytes => new byte[] { 97, 109, 113, 112, 46, 99, 111, 109, 109, 97, 110, 100 };
+#else
         private static readonly byte[] CommandBytes = new byte[] { 97, 109, 113, 112, 46, 99, 111, 109, 109, 97, 110, 100 };
+#endif
         // DeliveryModeBytes = System.Text.Encoding.UTF8.GetBytes("amqp.delivery_mode");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> DeliveryModeBytes => new byte[] { 97, 109, 113, 112, 46, 100, 101, 108, 105, 118, 101, 114, 121, 95, 109, 111, 100, 101 };
+#else
         private static readonly byte[] DeliveryModeBytes = new byte[] { 97, 109, 113, 112, 46, 100, 101, 108, 105, 118, 101, 114, 121, 95, 109, 111, 100, 101 };
+#endif
         // ExchangeBytes = System.Text.Encoding.UTF8.GetBytes("amqp.exchange");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ExchangeBytes => new byte[] { 97, 109, 113, 112, 46, 101, 120, 99, 104, 97, 110, 103, 101 };
+#else
         private static readonly byte[] ExchangeBytes = new byte[] { 97, 109, 113, 112, 46, 101, 120, 99, 104, 97, 110, 103, 101 };
+#endif
         // RoutingKeyBytes = System.Text.Encoding.UTF8.GetBytes("amqp.routing_key");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> RoutingKeyBytes => new byte[] { 97, 109, 113, 112, 46, 114, 111, 117, 116, 105, 110, 103, 95, 107, 101, 121 };
+#else
         private static readonly byte[] RoutingKeyBytes = new byte[] { 97, 109, 113, 112, 46, 114, 111, 117, 116, 105, 110, 103, 95, 107, 101, 121 };
+#endif
         // MessageSizeBytes = System.Text.Encoding.UTF8.GetBytes("message.size");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MessageSizeBytes => new byte[] { 109, 101, 115, 115, 97, 103, 101, 46, 115, 105, 122, 101 };
+#else
         private static readonly byte[] MessageSizeBytes = new byte[] { 109, 101, 115, 115, 97, 103, 101, 46, 115, 105, 122, 101 };
+#endif
         // QueueBytes = System.Text.Encoding.UTF8.GetBytes("amqp.queue");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> QueueBytes => new byte[] { 97, 109, 113, 112, 46, 113, 117, 101, 117, 101 };
+#else
         private static readonly byte[] QueueBytes = new byte[] { 97, 109, 113, 112, 46, 113, 117, 101, 117, 101 };
+#endif
 
         public override string? GetTag(string key)
         {

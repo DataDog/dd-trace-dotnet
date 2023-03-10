@@ -3,67 +3,180 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Ci.Tagging
 {
     partial class TestSessionSpanTags
     {
         // CommandBytes = System.Text.Encoding.UTF8.GetBytes("test.command");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CommandBytes => new byte[] { 116, 101, 115, 116, 46, 99, 111, 109, 109, 97, 110, 100 };
+#else
         private static readonly byte[] CommandBytes = new byte[] { 116, 101, 115, 116, 46, 99, 111, 109, 109, 97, 110, 100 };
+#endif
         // WorkingDirectoryBytes = System.Text.Encoding.UTF8.GetBytes("test.working_directory");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> WorkingDirectoryBytes => new byte[] { 116, 101, 115, 116, 46, 119, 111, 114, 107, 105, 110, 103, 95, 100, 105, 114, 101, 99, 116, 111, 114, 121 };
+#else
         private static readonly byte[] WorkingDirectoryBytes = new byte[] { 116, 101, 115, 116, 46, 119, 111, 114, 107, 105, 110, 103, 95, 100, 105, 114, 101, 99, 116, 111, 114, 121 };
+#endif
         // CommandExitCodeBytes = System.Text.Encoding.UTF8.GetBytes("test.exit_code");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CommandExitCodeBytes => new byte[] { 116, 101, 115, 116, 46, 101, 120, 105, 116, 95, 99, 111, 100, 101 };
+#else
         private static readonly byte[] CommandExitCodeBytes = new byte[] { 116, 101, 115, 116, 46, 101, 120, 105, 116, 95, 99, 111, 100, 101 };
+#endif
         // StatusBytes = System.Text.Encoding.UTF8.GetBytes("test.status");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> StatusBytes => new byte[] { 116, 101, 115, 116, 46, 115, 116, 97, 116, 117, 115 };
+#else
         private static readonly byte[] StatusBytes = new byte[] { 116, 101, 115, 116, 46, 115, 116, 97, 116, 117, 115 };
+#endif
         // LibraryVersionBytes = System.Text.Encoding.UTF8.GetBytes("library_version");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> LibraryVersionBytes => new byte[] { 108, 105, 98, 114, 97, 114, 121, 95, 118, 101, 114, 115, 105, 111, 110 };
+#else
         private static readonly byte[] LibraryVersionBytes = new byte[] { 108, 105, 98, 114, 97, 114, 121, 95, 118, 101, 114, 115, 105, 111, 110 };
+#endif
         // CIProviderBytes = System.Text.Encoding.UTF8.GetBytes("ci.provider.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CIProviderBytes => new byte[] { 99, 105, 46, 112, 114, 111, 118, 105, 100, 101, 114, 46, 110, 97, 109, 101 };
+#else
         private static readonly byte[] CIProviderBytes = new byte[] { 99, 105, 46, 112, 114, 111, 118, 105, 100, 101, 114, 46, 110, 97, 109, 101 };
+#endif
         // CIPipelineIdBytes = System.Text.Encoding.UTF8.GetBytes("ci.pipeline.id");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CIPipelineIdBytes => new byte[] { 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 105, 100 };
+#else
         private static readonly byte[] CIPipelineIdBytes = new byte[] { 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 105, 100 };
+#endif
         // CIPipelineNameBytes = System.Text.Encoding.UTF8.GetBytes("ci.pipeline.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CIPipelineNameBytes => new byte[] { 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 97, 109, 101 };
+#else
         private static readonly byte[] CIPipelineNameBytes = new byte[] { 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 97, 109, 101 };
+#endif
         // CIPipelineNumberBytes = System.Text.Encoding.UTF8.GetBytes("ci.pipeline.number");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CIPipelineNumberBytes => new byte[] { 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 117, 109, 98, 101, 114 };
+#else
         private static readonly byte[] CIPipelineNumberBytes = new byte[] { 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 117, 109, 98, 101, 114 };
+#endif
         // CIPipelineUrlBytes = System.Text.Encoding.UTF8.GetBytes("ci.pipeline.url");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CIPipelineUrlBytes => new byte[] { 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 117, 114, 108 };
+#else
         private static readonly byte[] CIPipelineUrlBytes = new byte[] { 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 117, 114, 108 };
+#endif
         // CIJobUrlBytes = System.Text.Encoding.UTF8.GetBytes("ci.job.url");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CIJobUrlBytes => new byte[] { 99, 105, 46, 106, 111, 98, 46, 117, 114, 108 };
+#else
         private static readonly byte[] CIJobUrlBytes = new byte[] { 99, 105, 46, 106, 111, 98, 46, 117, 114, 108 };
+#endif
         // CIJobNameBytes = System.Text.Encoding.UTF8.GetBytes("ci.job.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CIJobNameBytes => new byte[] { 99, 105, 46, 106, 111, 98, 46, 110, 97, 109, 101 };
+#else
         private static readonly byte[] CIJobNameBytes = new byte[] { 99, 105, 46, 106, 111, 98, 46, 110, 97, 109, 101 };
+#endif
         // StageNameBytes = System.Text.Encoding.UTF8.GetBytes("ci.stage.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> StageNameBytes => new byte[] { 99, 105, 46, 115, 116, 97, 103, 101, 46, 110, 97, 109, 101 };
+#else
         private static readonly byte[] StageNameBytes = new byte[] { 99, 105, 46, 115, 116, 97, 103, 101, 46, 110, 97, 109, 101 };
+#endif
         // CIWorkspacePathBytes = System.Text.Encoding.UTF8.GetBytes("ci.workspace_path");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CIWorkspacePathBytes => new byte[] { 99, 105, 46, 119, 111, 114, 107, 115, 112, 97, 99, 101, 95, 112, 97, 116, 104 };
+#else
         private static readonly byte[] CIWorkspacePathBytes = new byte[] { 99, 105, 46, 119, 111, 114, 107, 115, 112, 97, 99, 101, 95, 112, 97, 116, 104 };
+#endif
         // GitRepositoryBytes = System.Text.Encoding.UTF8.GetBytes("git.repository_url");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitRepositoryBytes => new byte[] { 103, 105, 116, 46, 114, 101, 112, 111, 115, 105, 116, 111, 114, 121, 95, 117, 114, 108 };
+#else
         private static readonly byte[] GitRepositoryBytes = new byte[] { 103, 105, 116, 46, 114, 101, 112, 111, 115, 105, 116, 111, 114, 121, 95, 117, 114, 108 };
+#endif
         // GitCommitBytes = System.Text.Encoding.UTF8.GetBytes("git.commit.sha");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitCommitBytes => new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 115, 104, 97 };
+#else
         private static readonly byte[] GitCommitBytes = new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 115, 104, 97 };
+#endif
         // GitBranchBytes = System.Text.Encoding.UTF8.GetBytes("git.branch");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitBranchBytes => new byte[] { 103, 105, 116, 46, 98, 114, 97, 110, 99, 104 };
+#else
         private static readonly byte[] GitBranchBytes = new byte[] { 103, 105, 116, 46, 98, 114, 97, 110, 99, 104 };
+#endif
         // GitTagBytes = System.Text.Encoding.UTF8.GetBytes("git.tag");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitTagBytes => new byte[] { 103, 105, 116, 46, 116, 97, 103 };
+#else
         private static readonly byte[] GitTagBytes = new byte[] { 103, 105, 116, 46, 116, 97, 103 };
+#endif
         // GitCommitAuthorNameBytes = System.Text.Encoding.UTF8.GetBytes("git.commit.author.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitCommitAuthorNameBytes => new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 110, 97, 109, 101 };
+#else
         private static readonly byte[] GitCommitAuthorNameBytes = new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 110, 97, 109, 101 };
+#endif
         // GitCommitAuthorEmailBytes = System.Text.Encoding.UTF8.GetBytes("git.commit.author.email");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitCommitAuthorEmailBytes => new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 101, 109, 97, 105, 108 };
+#else
         private static readonly byte[] GitCommitAuthorEmailBytes = new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 101, 109, 97, 105, 108 };
+#endif
         // GitCommitCommitterNameBytes = System.Text.Encoding.UTF8.GetBytes("git.commit.committer.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitCommitCommitterNameBytes => new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 110, 97, 109, 101 };
+#else
         private static readonly byte[] GitCommitCommitterNameBytes = new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 110, 97, 109, 101 };
+#endif
         // GitCommitCommitterEmailBytes = System.Text.Encoding.UTF8.GetBytes("git.commit.committer.email");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitCommitCommitterEmailBytes => new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 101, 109, 97, 105, 108 };
+#else
         private static readonly byte[] GitCommitCommitterEmailBytes = new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 101, 109, 97, 105, 108 };
+#endif
         // GitCommitMessageBytes = System.Text.Encoding.UTF8.GetBytes("git.commit.message");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitCommitMessageBytes => new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101 };
+#else
         private static readonly byte[] GitCommitMessageBytes = new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101 };
+#endif
         // BuildSourceRootBytes = System.Text.Encoding.UTF8.GetBytes("build.source_root");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> BuildSourceRootBytes => new byte[] { 98, 117, 105, 108, 100, 46, 115, 111, 117, 114, 99, 101, 95, 114, 111, 111, 116 };
+#else
         private static readonly byte[] BuildSourceRootBytes = new byte[] { 98, 117, 105, 108, 100, 46, 115, 111, 117, 114, 99, 101, 95, 114, 111, 111, 116 };
+#endif
         // GitCommitAuthorDateBytes = System.Text.Encoding.UTF8.GetBytes("git.commit.author.date");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitCommitAuthorDateBytes => new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 100, 97, 116, 101 };
+#else
         private static readonly byte[] GitCommitAuthorDateBytes = new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 97, 117, 116, 104, 111, 114, 46, 100, 97, 116, 101 };
+#endif
         // GitCommitCommitterDateBytes = System.Text.Encoding.UTF8.GetBytes("git.commit.committer.date");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> GitCommitCommitterDateBytes => new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 100, 97, 116, 101 };
+#else
         private static readonly byte[] GitCommitCommitterDateBytes = new byte[] { 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 99, 111, 109, 109, 105, 116, 116, 101, 114, 46, 100, 97, 116, 101 };
+#endif
         // CiEnvVarsBytes = System.Text.Encoding.UTF8.GetBytes("_dd.ci.env_vars");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CiEnvVarsBytes => new byte[] { 95, 100, 100, 46, 99, 105, 46, 101, 110, 118, 95, 118, 97, 114, 115 };
+#else
         private static readonly byte[] CiEnvVarsBytes = new byte[] { 95, 100, 100, 46, 99, 105, 46, 101, 110, 118, 95, 118, 97, 114, 115 };
+#endif
         // TestsSkippedBytes = System.Text.Encoding.UTF8.GetBytes("_dd.ci.itr.tests_skipped");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> TestsSkippedBytes => new byte[] { 95, 100, 100, 46, 99, 105, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 101, 100 };
+#else
         private static readonly byte[] TestsSkippedBytes = new byte[] { 95, 100, 100, 46, 99, 105, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 101, 100 };
+#endif
 
         public override string? GetTag(string key)
         {

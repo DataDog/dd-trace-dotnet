@@ -3,25 +3,54 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class KafkaTags
     {
         // MessageQueueTimeMsBytes = System.Text.Encoding.UTF8.GetBytes("message.queue_time_ms");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MessageQueueTimeMsBytes => new byte[] { 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+#else
         private static readonly byte[] MessageQueueTimeMsBytes = new byte[] { 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+#endif
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // PartitionBytes = System.Text.Encoding.UTF8.GetBytes("kafka.partition");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> PartitionBytes => new byte[] { 107, 97, 102, 107, 97, 46, 112, 97, 114, 116, 105, 116, 105, 111, 110 };
+#else
         private static readonly byte[] PartitionBytes = new byte[] { 107, 97, 102, 107, 97, 46, 112, 97, 114, 116, 105, 116, 105, 111, 110 };
+#endif
         // OffsetBytes = System.Text.Encoding.UTF8.GetBytes("kafka.offset");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> OffsetBytes => new byte[] { 107, 97, 102, 107, 97, 46, 111, 102, 102, 115, 101, 116 };
+#else
         private static readonly byte[] OffsetBytes = new byte[] { 107, 97, 102, 107, 97, 46, 111, 102, 102, 115, 101, 116 };
+#endif
         // TombstoneBytes = System.Text.Encoding.UTF8.GetBytes("kafka.tombstone");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> TombstoneBytes => new byte[] { 107, 97, 102, 107, 97, 46, 116, 111, 109, 98, 115, 116, 111, 110, 101 };
+#else
         private static readonly byte[] TombstoneBytes = new byte[] { 107, 97, 102, 107, 97, 46, 116, 111, 109, 98, 115, 116, 111, 110, 101 };
+#endif
         // ConsumerGroupBytes = System.Text.Encoding.UTF8.GetBytes("kafka.group");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ConsumerGroupBytes => new byte[] { 107, 97, 102, 107, 97, 46, 103, 114, 111, 117, 112 };
+#else
         private static readonly byte[] ConsumerGroupBytes = new byte[] { 107, 97, 102, 107, 97, 46, 103, 114, 111, 117, 112 };
+#endif
 
         public override string? GetTag(string key)
         {

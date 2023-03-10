@@ -3,23 +3,48 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class CosmosDbTags
     {
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // DbTypeBytes = System.Text.Encoding.UTF8.GetBytes("db.type");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> DbTypeBytes => new byte[] { 100, 98, 46, 116, 121, 112, 101 };
+#else
         private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 116, 121, 112, 101 };
+#endif
         // ContainerIdBytes = System.Text.Encoding.UTF8.GetBytes("cosmosdb.container");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ContainerIdBytes => new byte[] { 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
+#else
         private static readonly byte[] ContainerIdBytes = new byte[] { 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
+#endif
         // DatabaseIdBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> DatabaseIdBytes => new byte[] { 100, 98, 46, 110, 97, 109, 101 };
+#else
         private static readonly byte[] DatabaseIdBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
+#endif
         // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> HostBytes => new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
         private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
 
         public override string? GetTag(string key)
         {

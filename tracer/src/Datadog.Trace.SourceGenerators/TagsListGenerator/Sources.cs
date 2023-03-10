@@ -66,6 +66,7 @@ internal sealed class MetricAttribute : System.Attribute
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace ");
             sb.Append(tagList.Namespace)
@@ -99,12 +100,20 @@ namespace ");
                       .Append(@""");");
 
                     sb.Append(
-                           @"
+                            @"
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ")
+                        .Append(property.PropertyName)
+                        .Append(@"Bytes => new byte[] { ")
+                        .Append(tagByteArray)
+                        .Append(@" };
+#else
         private static readonly byte[] ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes = new byte[] { ")
-                      .Append(tagByteArray)
-                      .Append(@" };");
+                        .Append(property.PropertyName)
+                        .Append(@"Bytes = new byte[] { ")
+                        .Append(tagByteArray)
+                        .Append(@" };
+#endif");
                 }
             }
 
@@ -130,12 +139,20 @@ namespace ");
                       .Append(@""");");
 
                     sb.Append(
-                           @"
+                            @"
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ")
+                        .Append(property.PropertyName)
+                        .Append(@"Bytes => new byte[] { ")
+                        .Append(tagByteArray)
+                        .Append(@" };
+#else
         private static readonly byte[] ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes = new byte[] { ")
-                      .Append(tagByteArray)
-                      .Append(@" };");
+                        .Append(property.PropertyName)
+                        .Append(@"Bytes = new byte[] { ")
+                        .Append(tagByteArray)
+                        .Append(@" };
+#endif");
                 }
 
                 sb.Append(

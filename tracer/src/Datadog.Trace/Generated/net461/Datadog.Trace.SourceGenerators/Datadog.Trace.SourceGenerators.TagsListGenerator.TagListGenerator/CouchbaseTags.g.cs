@@ -3,25 +3,54 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class CouchbaseTags
     {
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // OperationCodeBytes = System.Text.Encoding.UTF8.GetBytes("couchbase.operation.code");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> OperationCodeBytes => new byte[] { 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 99, 111, 100, 101 };
+#else
         private static readonly byte[] OperationCodeBytes = new byte[] { 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 99, 111, 100, 101 };
+#endif
         // BucketBytes = System.Text.Encoding.UTF8.GetBytes("couchbase.operation.bucket");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> BucketBytes => new byte[] { 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 98, 117, 99, 107, 101, 116 };
+#else
         private static readonly byte[] BucketBytes = new byte[] { 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 98, 117, 99, 107, 101, 116 };
+#endif
         // KeyBytes = System.Text.Encoding.UTF8.GetBytes("couchbase.operation.key");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> KeyBytes => new byte[] { 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 107, 101, 121 };
+#else
         private static readonly byte[] KeyBytes = new byte[] { 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 107, 101, 121 };
+#endif
         // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> HostBytes => new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
         private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
         // PortBytes = System.Text.Encoding.UTF8.GetBytes("out.port");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> PortBytes => new byte[] { 111, 117, 116, 46, 112, 111, 114, 116 };
+#else
         private static readonly byte[] PortBytes = new byte[] { 111, 117, 116, 46, 112, 111, 114, 116 };
+#endif
 
         public override string? GetTag(string key)
         {

@@ -3,25 +3,54 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class SqlTags
     {
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // DbTypeBytes = System.Text.Encoding.UTF8.GetBytes("db.type");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> DbTypeBytes => new byte[] { 100, 98, 46, 116, 121, 112, 101 };
+#else
         private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 116, 121, 112, 101 };
+#endif
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // DbNameBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> DbNameBytes => new byte[] { 100, 98, 46, 110, 97, 109, 101 };
+#else
         private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
+#endif
         // DbUserBytes = System.Text.Encoding.UTF8.GetBytes("db.user");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> DbUserBytes => new byte[] { 100, 98, 46, 117, 115, 101, 114 };
+#else
         private static readonly byte[] DbUserBytes = new byte[] { 100, 98, 46, 117, 115, 101, 114 };
+#endif
         // OutHostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> OutHostBytes => new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
         private static readonly byte[] OutHostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
         // DbmDataPropagatedBytes = System.Text.Encoding.UTF8.GetBytes("_dd.dbm_trace_injected");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> DbmDataPropagatedBytes => new byte[] { 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
+#else
         private static readonly byte[] DbmDataPropagatedBytes = new byte[] { 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
+#endif
 
         public override string? GetTag(string key)
         {
