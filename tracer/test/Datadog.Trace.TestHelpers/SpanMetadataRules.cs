@@ -148,7 +148,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "cosmosdb.query")
                 .Matches(Type, "sql"))
             .Tags(s => s
-                .IsOptional("messaging.destination")
+                .IsOptional("db.cosmosdb.container")
                 .IsOptional("db.instance")
                 .Matches("db.system", "cosmosdb")
                 .IsPresent("out.host")

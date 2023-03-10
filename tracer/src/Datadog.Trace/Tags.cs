@@ -458,7 +458,7 @@ namespace Datadog.Trace
         /// <summary>
         /// A CosmosDb container name.
         /// </summary>
-        internal const string CosmosDbContainer = "messaging.destination";
+        internal const string CosmosDbContainer = "db.cosmosdb.container";
 
         /// <summary>
         /// If a span was involved with an application security event

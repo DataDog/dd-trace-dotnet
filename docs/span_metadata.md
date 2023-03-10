@@ -165,9 +165,9 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `CosmosDb`
+db.cosmosdb.container | No
 db.instance | No
 db.system | `cosmosdb`
-messaging.destination | No
 out.host | Yes
 span.kind | `client`
 
