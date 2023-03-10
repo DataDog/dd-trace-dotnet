@@ -83,17 +83,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             }
 
             string host = null;
-            string port = null;
+            int port = default;
 
             if (connection.EndPoint is IPEndPoint ipEndPoint)
             {
                 host = ipEndPoint.Address.ToString();
-                port = ipEndPoint.Port.ToString();
+                port = ipEndPoint.Port;
             }
             else if (connection.EndPoint is DnsEndPoint dnsEndPoint)
             {
                 host = dnsEndPoint.Host;
-                port = dnsEndPoint.Port.ToString();
+                port = dnsEndPoint.Port;
             }
 
             string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);

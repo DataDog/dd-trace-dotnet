@@ -168,7 +168,7 @@ component | `CosmosDb`
 cosmosdb.container | No
 db.name | No
 db.type | `cosmosdb`
-out.host | Yes
+network.destination.ip | Yes
 span.kind | `client`
 
 ## Couchbase
@@ -184,9 +184,12 @@ component | `Couchbase`
 couchbase.operation.bucket | No
 couchbase.operation.code | Yes
 couchbase.operation.key | Yes
-out.host | No
-out.port | No
+network.destination.ip | No
 span.kind | `client`
+### Metrics
+Name | Required |
+---------|----------------|
+network.destination.port | Yes
 
 ## ElasticsearchNet
 ### Span properties
@@ -238,7 +241,7 @@ span.kind | `client`; `server`
 ### Metrics
 Name | Required |
 ---------|----------------|
-rpc.grpc.status_code | No
+rpc.grpc.status_code | Yes
 
 ## HotChocolate
 ### Span properties
@@ -301,9 +304,12 @@ component | `MongoDb`
 db.name | No
 mongodb.collection | No
 mongodb.query | No
-out.host | Yes
-out.port | Yes
+network.destination.ip | Yes
 span.kind | `client`
+### Metrics
+Name | Required |
+---------|----------------|
+network.destination.port | Yes
 
 ## Msmq
 ### Span properties
@@ -334,7 +340,7 @@ component | `MySql`
 db.name | Yes
 db.type | `mysql`
 db.user | Yes
-out.host | Yes
+network.destination.ip | Yes
 span.kind | `client`
 
 ## Npgsql
@@ -349,7 +355,7 @@ Name | Required |
 component | `Npgsql`
 db.name | Yes
 db.type | `postgres`
-out.host | Yes
+network.destination.ip | Yes
 span.kind | `client`
 
 ## OpenTelemetry
@@ -442,10 +448,13 @@ Type | `redis`
 Name | Required |
 ---------|----------------|
 component | `ServiceStackRedis`
-out.host | Yes
-out.port | Yes
+network.destination.ip | Yes
 redis.raw_command | Yes
 span.kind | `client`
+### Metrics
+Name | Required |
+---------|----------------|
+network.destination.port | Yes
 
 ## StackExchangeRedis
 ### Span properties
@@ -457,10 +466,13 @@ Type | `redis`
 Name | Required |
 ---------|----------------|
 component | `StackExchangeRedis`
-out.host | Yes
-out.port | Yes
+network.destination.ip | Yes
 redis.raw_command | Yes
 span.kind | `client`
+### Metrics
+Name | Required |
+---------|----------------|
+network.destination.port | Yes
 
 ## Sqlite
 ### Span properties
@@ -474,7 +486,7 @@ Name | Required |
 component | `Sqlite`
 db.name | No
 db.type | `sqlite`
-out.host | Yes
+network.destination.ip | Yes
 span.kind | `client`
 
 ## SqlClient
@@ -489,7 +501,7 @@ Name | Required |
 component | `SqlClient`
 db.name | No
 db.type | `sql-server`
-out.host | Yes
+network.destination.ip | Yes
 span.kind | `client`
 
 ## Wcf

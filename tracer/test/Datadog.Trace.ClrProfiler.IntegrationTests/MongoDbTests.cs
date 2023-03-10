@@ -61,8 +61,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // v2.5.x records additional info in the insert query which is execution-specific
                 settings.AddRegexScrubber(ObjectIdRegex, @"ObjectId(""ABC123"")");
                 // normalise between running directly against localhost and against mongo container
-                settings.AddSimpleScrubber("out.host: localhost", "out.host: mongo");
-                settings.AddSimpleScrubber("out.host: mongo_arm64", "out.host: mongo");
+                settings.AddSimpleScrubber("network.destination.ip: localhost", "network.destination.ip: mongo");
+                settings.AddSimpleScrubber("network.destination.ip: mongo_arm64", "network.destination.ip: mongo");
                 // In some package versions, aggregate queries have an ID, others don't
                 settings.AddSimpleScrubber("\"$group\" : { \"_id\" : null, \"n\"", "\"$group\" : { \"_id\" : 1, \"n\"");
                 // In 2.19, The explain query includes { "$expr" : true }, whereas in earlier versions it doesn't
