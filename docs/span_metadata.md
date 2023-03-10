@@ -231,10 +231,13 @@ component | `Grpc`
 rpc.grpc.kind | Yes
 rpc.grpc.package | Yes
 rpc.grpc.path | Yes
-rpc.grpc.status_code | Yes
 rpc.method | Yes
 rpc.service | Yes
 span.kind | `client`; `server`
+### Metrics
+Name | Required |
+---------|----------------|
+rpc.grpc.status_code | No
 
 ## HotChocolate
 ### Span properties
