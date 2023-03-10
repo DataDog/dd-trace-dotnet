@@ -358,6 +358,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("db.statement")
                 .IsPresent("out.host")
                 .IsPresent("out.port")
+                .Matches("db.system", "redis")
                 .Matches("component", "ServiceStackRedis")
                 .Matches("span.kind", "client"));
 
@@ -369,6 +370,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("db.statement")
                 .IsPresent("out.host")
                 .IsPresent("out.port")
+                .Matches("db.system", "redis")
                 .Matches("component", "StackExchangeRedis")
                 .Matches("span.kind", "client"));
 

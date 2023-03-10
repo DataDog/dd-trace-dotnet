@@ -18,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
         // PortBytes = System.Text.Encoding.UTF8.GetBytes("out.port");
         private static readonly byte[] PortBytes = new byte[] { 111, 117, 116, 46, 112, 111, 114, 116 };
+        // DbSystemBytes = System.Text.Encoding.UTF8.GetBytes("db.system");
+        private static readonly byte[] DbSystemBytes = new byte[] { 100, 98, 46, 115, 121, 115, 116, 101, 109 };
 
         public override string? GetTag(string key)
         {
@@ -28,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 "db.statement" => RawCommand,
                 "out.host" => Host,
                 "out.port" => Port,
+                "db.system" => DbSystem,
                 _ => base.GetTag(key),
             };
         }
@@ -49,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                     Port = value;
                     break;
                 case "span.kind": 
+                case "db.system": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(RedisTags));
                     break;
                 default: 
@@ -82,6 +86,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             if (Port is not null)
             {
                 processor.Process(new TagItem<string>("out.port", Port, PortBytes));
+            }
+
+            if (DbSystem is not null)
+            {
+                processor.Process(new TagItem<string>("db.system", DbSystem, DbSystemBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -121,6 +130,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             {
                 sb.Append("out.port (tag):")
                   .Append(Port)
+                  .Append(',');
+            }
+
+            if (DbSystem is not null)
+            {
+                sb.Append("db.system (tag):")
+                  .Append(DbSystem)
                   .Append(',');
             }
 
