@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange;
 
@@ -27,6 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ConnectionMultiplexerSelectServerIntegration
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ConnectionMultiplexerSelectServerIntegration));
+
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult result, Exception exception, in CallTargetState state)
     {
         var span = Tracer.Instance.InternalActiveScope?.Span;
@@ -40,7 +43,12 @@ public class ConnectionMultiplexerSelectServerIntegration
 
             if (tags.Host.Length > 1)
             {
-                tags.Port = hostAndPort[1];
+                if (!int.TryParse(hostAndPort[1], out var port))
+                {
+                    Log.Debug("Unable to parse the Redis port ({Port}) to an int", hostAndPort[1]);
+                }
+
+                tags.Port = port;
             }
         }
 

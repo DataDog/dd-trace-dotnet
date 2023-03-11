@@ -135,8 +135,8 @@ namespace Datadog.Trace
         public const string ManualDrop = "manual.drop";
         public const string ManualKeep = "manual.keep";
         public const string MessageSize = "message.size";
-        public const string OutHost = "out.host";
-        public const string OutPort = "out.port";
+        public const string OutHost = "network.destination.ip";
+        public const string OutPort = "network.destination.port";
         public const string SamplingPriority = "sampling.priority";
         public const string SpanKind = "span.kind";
         public const string SqlQuery = "sql.query";

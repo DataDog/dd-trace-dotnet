@@ -9,8 +9,8 @@
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: APPEND ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -33,8 +33,8 @@
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: APPEND StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -57,8 +57,8 @@
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: BITCOUNT ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -81,8 +81,8 @@
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: BITCOUNT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -105,8 +105,8 @@
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: BITOP,
       runtime-id: Guid_1,
       span.kind: client
@@ -129,8 +129,8 @@
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: BITOP,
       runtime-id: Guid_1,
       span.kind: client
@@ -153,8 +153,8 @@
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: BITPOS ssetkey1,
       runtime-id: Guid_1,
       span.kind: client
@@ -177,8 +177,8 @@
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: BITPOS StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -207,8 +207,8 @@
 StackExchange.Redis.RedisServerException: ERR no such key
 ,
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: DEBUG StackExchange.Redis.Batch.DebugObjectAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -237,8 +237,8 @@ StackExchange.Redis.RedisServerException: ERR no such key
 StackExchange.Redis.RedisServerException: ERR no such key
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: DEBUG StackExchange.Redis.Database.DebugObject,
       runtime-id: Guid_1,
       span.kind: client
@@ -261,8 +261,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: DEL key,
       runtime-id: Guid_1,
       span.kind: client
@@ -285,8 +285,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: DEL StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -309,8 +309,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: DEL StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
       span.kind: client
@@ -333,8 +333,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: DUMP key,
       runtime-id: Guid_1,
       span.kind: client
@@ -357,8 +357,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: DUMP StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -381,8 +381,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: EXEC,
       runtime-id: Guid_1,
       span.kind: client
@@ -405,8 +405,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: EXEC,
       runtime-id: Guid_1,
       span.kind: client
@@ -429,8 +429,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: EXISTS key,
       runtime-id: Guid_1,
       span.kind: client
@@ -453,8 +453,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: EXISTS StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -477,8 +477,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: EXPIRE StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
       span.kind: client
@@ -501,8 +501,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: FLUSHDB,
       runtime-id: Guid_1,
       span.kind: client
@@ -525,8 +525,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GET key,
       runtime-id: Guid_1,
       span.kind: client
@@ -555,8 +555,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
 StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key holding the wrong kind of value
 ,
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GET listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -579,8 +579,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -603,8 +603,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GET StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
       span.kind: client
@@ -627,8 +627,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GET StackExchange.Redis.INCR,
       runtime-id: Guid_1,
       span.kind: client
@@ -651,8 +651,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GETBIT key,
       runtime-id: Guid_1,
       span.kind: client
@@ -675,8 +675,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GETBIT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -699,8 +699,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GETRANGE key,
       runtime-id: Guid_1,
       span.kind: client
@@ -723,8 +723,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GETRANGE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -747,8 +747,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GETSET key,
       runtime-id: Guid_1,
       span.kind: client
@@ -771,8 +771,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: GETSET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -795,8 +795,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HDEL StackExchange.Redis.Batch.HashDeleteAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -819,8 +819,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HDEL StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
       span.kind: client
@@ -843,8 +843,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HEXISTS StackExchange.Redis.Batch.HashExistsAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -867,8 +867,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HEXISTS StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
       span.kind: client
@@ -891,8 +891,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HGET StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
       span.kind: client
@@ -915,8 +915,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HGETALL StackExchange.Redis.Batch.HashGetAllAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -939,8 +939,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HGETALL StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
       span.kind: client
@@ -963,8 +963,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HINCRBY StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
       span.kind: client
@@ -987,8 +987,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Batch.HashDecrementAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -1011,8 +1011,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Batch.HashIncrementAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -1035,8 +1035,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
       span.kind: client
@@ -1059,8 +1059,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HKEYS StackExchange.Redis.Batch.HashKeysAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -1083,8 +1083,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HKEYS StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
       span.kind: client
@@ -1107,8 +1107,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HLEN StackExchange.Redis.Batch.HashLengthAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -1131,8 +1131,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HLEN StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
       span.kind: client
@@ -1155,8 +1155,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HMSET StackExchange.Redis.Batch.HashSetAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -1179,8 +1179,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HMSET StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
       span.kind: client
@@ -1203,8 +1203,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HVALS StackExchange.Redis.Batch.HashValuesAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -1227,8 +1227,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: HVALS StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
       span.kind: client
@@ -1257,8 +1257,8 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
 StackExchange.Redis.RedisServerException: ERR value is not an integer or out of range
 ,
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: INCR key,
       runtime-id: Guid_1,
       span.kind: client
@@ -1281,8 +1281,8 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: INCR StackExchange.Redis.INCR,
       runtime-id: Guid_1,
       span.kind: client
@@ -1305,8 +1305,8 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: INCRBYFLOAT key,
       runtime-id: Guid_1,
       span.kind: client
@@ -1329,8 +1329,8 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: INCRBYFLOAT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -1359,8 +1359,8 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
 StackExchange.Redis.RedisServerException: ERR value is not a valid float
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: INCRBYFLOAT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -1383,8 +1383,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: INCRBYFLOAT StackExchange.Redis.INCR,
       runtime-id: Guid_1,
       span.kind: client
@@ -1407,8 +1407,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LINDEX listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -1431,8 +1431,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LINDEX StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -1455,8 +1455,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LINSERT listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -1479,8 +1479,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LINSERT listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -1503,8 +1503,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LINSERT StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -1527,8 +1527,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LINSERT StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -1551,8 +1551,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LLEN listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -1575,8 +1575,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LLEN StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -1599,8 +1599,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LPOP listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -1623,8 +1623,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LPOP StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -1647,8 +1647,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LPUSH listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -1671,8 +1671,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LPUSH StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -1695,8 +1695,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LRANGE listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -1719,8 +1719,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LRANGE StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -1743,8 +1743,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LREM listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -1767,8 +1767,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LREM StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -1791,8 +1791,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LSET listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -1815,8 +1815,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LSET StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -1839,8 +1839,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LTRIM listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -1863,8 +1863,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: LTRIM StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -1893,8 +1893,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
 StackExchange.Redis.RedisConnectionException: Unexpected response to MIGRATE: SimpleString: NOKEY
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
       error.type: StackExchange.Redis.RedisConnectionException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: MIGRATE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -1923,8 +1923,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
 StackExchange.Redis.RedisServerException: ERR source and destination objects are the same
 ,
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: MOVE key,
       runtime-id: Guid_1,
       span.kind: client
@@ -1953,8 +1953,8 @@ StackExchange.Redis.RedisServerException: ERR source and destination objects are
 StackExchange.Redis.RedisServerException: ERR source and destination objects are the same
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: MOVE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -1977,8 +1977,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PERSIST key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2001,8 +2001,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PERSIST StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2025,8 +2025,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PEXPIRE key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2049,8 +2049,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PEXPIRE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2073,8 +2073,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PFADD StackExchange.Redis.Batch.HyperLogLogAddAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -2097,8 +2097,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PFADD StackExchange.Redis.Database.HyperLogLog,
       runtime-id: Guid_1,
       span.kind: client
@@ -2121,8 +2121,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PFCOUNT StackExchange.Redis.Batch.HyperLogLogLengthAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -2145,8 +2145,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PFCOUNT StackExchange.Redis.Database.HyperLogLog,
       runtime-id: Guid_1,
       span.kind: client
@@ -2169,8 +2169,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PFMERGE StackExchange.Redis.Batch.HyperLogLogMergeAsync,
       runtime-id: Guid_1,
       span.kind: client
@@ -2193,8 +2193,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PFMERGE StackExchange.Redis.Database.HyperLogLog2,
       runtime-id: Guid_1,
       span.kind: client
@@ -2217,8 +2217,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PING,
       runtime-id: Guid_1,
       span.kind: client
@@ -2241,8 +2241,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PING,
       runtime-id: Guid_1,
       span.kind: client
@@ -2265,8 +2265,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PING,
       runtime-id: Guid_1,
       span.kind: client
@@ -2289,8 +2289,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PING,
       runtime-id: Guid_1,
       span.kind: client
@@ -2313,8 +2313,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PTTL key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2337,8 +2337,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PTTL StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2361,8 +2361,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PTTL+GET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2385,8 +2385,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PUBLISH channel,
       runtime-id: Guid_1,
       span.kind: client
@@ -2409,8 +2409,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: PUBLISH value,
       runtime-id: Guid_1,
       span.kind: client
@@ -2433,8 +2433,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RANDOMKEY,
       runtime-id: Guid_1,
       span.kind: client
@@ -2457,8 +2457,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RANDOMKEY,
       runtime-id: Guid_1,
       span.kind: client
@@ -2487,8 +2487,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
 StackExchange.Redis.RedisServerException: ERR no such key
 ,
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RENAME key1,
       runtime-id: Guid_1,
       span.kind: client
@@ -2517,8 +2517,8 @@ StackExchange.Redis.RedisServerException: ERR no such key
 StackExchange.Redis.RedisServerException: ERR no such key
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RENAME StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2547,8 +2547,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
 StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum are wrong
 ,
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RESTORE key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2577,8 +2577,8 @@ StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum a
 StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum are wrong
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
       error.type: StackExchange.Redis.RedisServerException,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RESTORE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2601,8 +2601,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RPOP listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -2625,8 +2625,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RPOP StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -2649,8 +2649,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RPOPLPUSH listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -2673,8 +2673,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RPOPLPUSH StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -2697,8 +2697,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RPUSH listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -2721,8 +2721,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: RPUSH StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
       span.kind: client
@@ -2745,8 +2745,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SADD setkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -2769,8 +2769,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SADD StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -2793,8 +2793,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SCARD setkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -2817,8 +2817,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SCARD StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -2841,8 +2841,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SET key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2865,8 +2865,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SET listkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -2889,8 +2889,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2913,8 +2913,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SET StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
       span.kind: client
@@ -2937,8 +2937,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SET StackExchange.Redis.INCR,
       runtime-id: Guid_1,
       span.kind: client
@@ -2961,8 +2961,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SETBIT key,
       runtime-id: Guid_1,
       span.kind: client
@@ -2985,8 +2985,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SETBIT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -3009,8 +3009,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SETRANGE key,
       runtime-id: Guid_1,
       span.kind: client
@@ -3033,8 +3033,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SETRANGE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -3057,8 +3057,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SISMEMBER setkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3081,8 +3081,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SISMEMBER StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -3105,8 +3105,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SMEMBERS setkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3129,8 +3129,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SMEMBERS StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -3153,8 +3153,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SMOVE setkey1,
       runtime-id: Guid_1,
       span.kind: client
@@ -3177,8 +3177,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SMOVE StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -3201,8 +3201,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SORT setkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3225,8 +3225,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SORT setkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3249,8 +3249,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SORT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -3273,8 +3273,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SORT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -3297,8 +3297,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SPOP setkey1,
       runtime-id: Guid_1,
       span.kind: client
@@ -3321,8 +3321,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SPOP StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -3345,8 +3345,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SRANDMEMBER setkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3369,8 +3369,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SRANDMEMBER setkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3393,8 +3393,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SRANDMEMBER StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -3417,8 +3417,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SRANDMEMBER StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -3441,8 +3441,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SREM setkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3465,8 +3465,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SREM StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -3489,8 +3489,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: STRLEN key,
       runtime-id: Guid_1,
       span.kind: client
@@ -3513,8 +3513,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: STRLEN StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -3537,8 +3537,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SUNION setkey1,
       runtime-id: Guid_1,
       span.kind: client
@@ -3561,8 +3561,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SUNION StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -3585,8 +3585,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SUNIONSTORE setkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3609,8 +3609,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: SUNIONSTORE StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
       span.kind: client
@@ -3633,8 +3633,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: TYPE key,
       runtime-id: Guid_1,
       span.kind: client
@@ -3657,8 +3657,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: TYPE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
       span.kind: client
@@ -3681,8 +3681,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZADD ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3705,8 +3705,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZADD StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -3729,8 +3729,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZCARD ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3753,8 +3753,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZCARD StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -3777,8 +3777,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZINCRBY ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3801,8 +3801,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZINCRBY ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3825,8 +3825,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZINCRBY StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -3849,8 +3849,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZINCRBY StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -3873,8 +3873,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZLEXCOUNT ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3897,8 +3897,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZLEXCOUNT StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -3921,8 +3921,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANGE ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3945,8 +3945,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANGE ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -3969,8 +3969,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANGE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -3993,8 +3993,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANGE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -4017,8 +4017,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANGEBYLEX ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -4041,8 +4041,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANGEBYLEX StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -4065,8 +4065,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANGEBYSCORE ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -4089,8 +4089,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANGEBYSCORE ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -4113,8 +4113,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -4137,8 +4137,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -4161,8 +4161,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANK ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -4185,8 +4185,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZRANK StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -4209,8 +4209,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZREM ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -4233,8 +4233,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZREM StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -4257,8 +4257,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZREMRANGEBYLEX ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -4281,8 +4281,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZREMRANGEBYLEX StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -4305,8 +4305,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZREMRANGEBYRANK ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -4329,8 +4329,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZREMRANGEBYRANK StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -4353,8 +4353,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZREMRANGEBYSCORE ssetkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -4377,8 +4377,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZREMRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -4401,8 +4401,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZSCORE ssestkey,
       runtime-id: Guid_1,
       span.kind: client
@@ -4425,8 +4425,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
       span.kind: client
@@ -4449,8 +4449,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZUNIONSTORE ssetkey1,
       runtime-id: Guid_1,
       span.kind: client
@@ -4473,8 +4473,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      out.host: stackexchangeredis,
-      out.port: 6379,
+      network.destination.ip: stackexchangeredis,
+      network.destination.port: 6379,
       redis.raw_command: ZUNIONSTORE StackExchange.Redis.Database.SortedSet2,
       runtime-id: Guid_1,
       span.kind: client

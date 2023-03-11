@@ -59,8 +59,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.UseFileName($"{nameof(ServiceStackRedisTests)}.RunServiceStack");
                 settings.DisableRequireUniquePrefix();
                 settings.AddSimpleScrubber($" {TestPrefix}ServiceStack.Redis.", " ServiceStack.Redis.");
-                settings.AddSimpleScrubber($"out.host: {host}", "out.host: servicestackredis");
-                settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
+                settings.AddSimpleScrubber($"network.destination.ip: {host}", "network.destination.ip: servicestackredis");
+                settings.AddSimpleScrubber($"network.destination.port: {port}", "network.destination.port: 6379");
 
                 // The test application runs the same RunServiceStack method X number of times
                 // Use the snapshot to verify each run of RunServiceStack, instead of testing all of the application spans

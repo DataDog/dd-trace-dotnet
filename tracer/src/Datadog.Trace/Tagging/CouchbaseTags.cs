@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
-        [Tag(Trace.Tags.OutPort)]
-        public string Port { get; set; }
+        [Metric(Trace.Tags.OutPort)]
+        public double? Port { get; set; }
     }
 }

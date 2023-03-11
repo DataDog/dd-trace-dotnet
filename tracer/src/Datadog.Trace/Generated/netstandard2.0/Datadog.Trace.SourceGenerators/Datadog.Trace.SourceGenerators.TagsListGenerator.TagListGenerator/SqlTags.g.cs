@@ -18,8 +18,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
         // DbUserBytes = System.Text.Encoding.UTF8.GetBytes("db.user");
         private static readonly byte[] DbUserBytes = new byte[] { 100, 98, 46, 117, 115, 101, 114 };
-        // OutHostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
-        private static readonly byte[] OutHostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+        // OutHostBytes = System.Text.Encoding.UTF8.GetBytes("network.destination.ip");
+        private static readonly byte[] OutHostBytes = new byte[] { 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 105, 112 };
         // DbmDataPropagatedBytes = System.Text.Encoding.UTF8.GetBytes("_dd.dbm_trace_injected");
         private static readonly byte[] DbmDataPropagatedBytes = new byte[] { 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
 
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tagging
                 "component" => InstrumentationName,
                 "db.name" => DbName,
                 "db.user" => DbUser,
-                "out.host" => OutHost,
+                "network.destination.ip" => OutHost,
                 "_dd.dbm_trace_injected" => DbmDataPropagated,
                 _ => base.GetTag(key),
             };
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tagging
                 case "db.user": 
                     DbUser = value;
                     break;
-                case "out.host": 
+                case "network.destination.ip": 
                     OutHost = value;
                     break;
                 case "_dd.dbm_trace_injected": 
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tagging
 
             if (OutHost is not null)
             {
-                processor.Process(new TagItem<string>("out.host", OutHost, OutHostBytes));
+                processor.Process(new TagItem<string>("network.destination.ip", OutHost, OutHostBytes));
             }
 
             if (DbmDataPropagated is not null)
@@ -148,7 +148,7 @@ namespace Datadog.Trace.Tagging
 
             if (OutHost is not null)
             {
-                sb.Append("out.host (tag):")
+                sb.Append("network.destination.ip (tag):")
                   .Append(OutHost)
                   .Append(',');
             }

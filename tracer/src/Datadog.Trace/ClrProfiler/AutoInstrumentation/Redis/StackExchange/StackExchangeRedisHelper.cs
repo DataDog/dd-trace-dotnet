@@ -5,6 +5,8 @@
 
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
@@ -16,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         internal const string IntegrationName = nameof(Configuration.IntegrationId.StackExchangeRedis);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
 
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StackExchangeRedisHelper));
+
         /// <summary>
         /// Get the host and port from the config
         /// </summary>
@@ -24,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         public static HostAndPort GetHostAndPort(string config)
         {
             string host = null;
-            string port = null;
+            int port = default;
 
             if (config != null)
             {
@@ -43,7 +47,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
                 // check length because port is optional
                 if (hostAndPort?.Length > 1)
                 {
-                    port = hostAndPort[1];
+                    if (!int.TryParse(hostAndPort[1], out port))
+                    {
+                        Log.Debug("Unable to parse the Redis port ({Port}) to an int", hostAndPort[1]);
+                    }
                 }
             }
 
@@ -53,9 +60,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         internal readonly struct HostAndPort
         {
             public readonly string Host;
-            public readonly string Port;
+            public readonly int Port;
 
-            public HostAndPort(string host, string port)
+            public HostAndPort(string host, int port)
             {
                 Host = host;
                 Port = port;

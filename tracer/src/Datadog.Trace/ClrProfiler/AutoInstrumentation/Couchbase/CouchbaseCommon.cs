@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             var operation = tOperation.DuckCast<OperationStruct>();
 
             var host = operation.CurrentHost?.Address?.ToString();
-            var port = operation.CurrentHost?.Port.ToString();
+            var port = operation.CurrentHost?.Port;
             var code = operation.OperationCode.ToString();
 
             var tags = new CouchbaseTags()

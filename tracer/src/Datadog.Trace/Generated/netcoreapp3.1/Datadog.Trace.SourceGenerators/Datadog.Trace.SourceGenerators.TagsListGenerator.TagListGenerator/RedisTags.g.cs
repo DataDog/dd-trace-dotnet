@@ -8,16 +8,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     partial class RedisTags
     {
+        // PortBytes = System.Text.Encoding.UTF8.GetBytes("network.destination.port");
+        private static readonly byte[] PortBytes = new byte[] { 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // RawCommandBytes = System.Text.Encoding.UTF8.GetBytes("redis.raw_command");
         private static readonly byte[] RawCommandBytes = new byte[] { 114, 101, 100, 105, 115, 46, 114, 97, 119, 95, 99, 111, 109, 109, 97, 110, 100 };
-        // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
-        private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
-        // PortBytes = System.Text.Encoding.UTF8.GetBytes("out.port");
-        private static readonly byte[] PortBytes = new byte[] { 111, 117, 116, 46, 112, 111, 114, 116 };
+        // HostBytes = System.Text.Encoding.UTF8.GetBytes("network.destination.ip");
+        private static readonly byte[] HostBytes = new byte[] { 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 105, 112 };
 
         public override string? GetTag(string key)
         {
@@ -26,8 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
                 "redis.raw_command" => RawCommand,
-                "out.host" => Host,
-                "out.port" => Port,
+                "network.destination.ip" => Host,
                 _ => base.GetTag(key),
             };
         }
@@ -42,11 +41,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 case "redis.raw_command": 
                     RawCommand = value;
                     break;
-                case "out.host": 
+                case "network.destination.ip": 
                     Host = value;
-                    break;
-                case "out.port": 
-                    Port = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(RedisTags));
@@ -76,12 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
             if (Host is not null)
             {
-                processor.Process(new TagItem<string>("out.host", Host, HostBytes));
-            }
-
-            if (Port is not null)
-            {
-                processor.Process(new TagItem<string>("out.port", Port, PortBytes));
+                processor.Process(new TagItem<string>("network.destination.ip", Host, HostBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -112,19 +103,55 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
             if (Host is not null)
             {
-                sb.Append("out.host (tag):")
+                sb.Append("network.destination.ip (tag):")
                   .Append(Host)
                   .Append(',');
             }
 
+            base.WriteAdditionalTags(sb);
+        }
+        public override double? GetMetric(string key)
+        {
+            return key switch
+            {
+                "network.destination.port" => Port,
+                _ => base.GetMetric(key),
+            };
+        }
+
+        public override void SetMetric(string key, double? value)
+        {
+            switch(key)
+            {
+                case "network.destination.port": 
+                    Port = value;
+                    break;
+                default: 
+                    base.SetMetric(key, value);
+                    break;
+            }
+        }
+
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
+        {
             if (Port is not null)
             {
-                sb.Append("out.port (tag):")
-                  .Append(Port)
+                processor.Process(new TagItem<double>("network.destination.port", Port.Value, PortBytes));
+            }
+
+            base.EnumerateMetrics(ref processor);
+        }
+
+        protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
+        {
+            if (Port is not null)
+            {
+                sb.Append("network.destination.port (metric):")
+                  .Append(Port.Value)
                   .Append(',');
             }
 
-            base.WriteAdditionalTags(sb);
+            base.WriteAdditionalMetrics(sb);
         }
     }
 }

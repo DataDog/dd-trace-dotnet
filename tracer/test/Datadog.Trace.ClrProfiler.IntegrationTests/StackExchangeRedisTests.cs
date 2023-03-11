@@ -76,16 +76,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddSimpleScrubber($" {TestPrefix}StackExchange.Redis.", " StackExchange.Redis.");
                 if (EnvironmentTools.IsOsx())
                 {
-                    settings.AddSimpleScrubber("out.host: localhost", "out.host: stackexchangeredis");
-                    settings.AddSimpleScrubber("out.host: 127.0.0.1", "out.host: stackexchangeredis-replica");
-                    settings.AddSimpleScrubber("out.port: 6390", "out.port: 6379");
-                    settings.AddSimpleScrubber("out.port: 6391", "out.port: 6379");
-                    settings.AddSimpleScrubber("out.port: 6392", "out.port: 6379");
+                    settings.AddSimpleScrubber("network.destination.ip: localhost", "network.destination.ip: stackexchangeredis");
+                    settings.AddSimpleScrubber("network.destination.ip: 127.0.0.1", "network.destination.ip: stackexchangeredis-replica");
+                    settings.AddSimpleScrubber("network.destination.port: 6390", "network.destination.port: 6379");
+                    settings.AddSimpleScrubber("network.destination.port: 6391", "network.destination.port: 6379");
+                    settings.AddSimpleScrubber("network.destination.port: 6392", "network.destination.port: 6379");
                 }
                 else
                 {
-                    settings.AddSimpleScrubber($"out.host: {host}", "out.host: stackexchangeredis");
-                    settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
+                    settings.AddSimpleScrubber($"network.destination.ip: {host}", "network.destination.ip: stackexchangeredis");
+                    settings.AddSimpleScrubber($"network.destination.port: {port}", "network.destination.port: 6379");
                 }
 
                 await VerifyHelper.VerifySpans(

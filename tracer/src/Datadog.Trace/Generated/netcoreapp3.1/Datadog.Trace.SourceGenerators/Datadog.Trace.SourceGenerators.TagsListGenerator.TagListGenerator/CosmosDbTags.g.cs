@@ -18,8 +18,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] ContainerIdBytes = new byte[] { 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
         // DatabaseIdBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
         private static readonly byte[] DatabaseIdBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
-        // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
-        private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+        // HostBytes = System.Text.Encoding.UTF8.GetBytes("network.destination.ip");
+        private static readonly byte[] HostBytes = new byte[] { 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 105, 112 };
 
         public override string? GetTag(string key)
         {
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tagging
                 "db.type" => DbType,
                 "cosmosdb.container" => ContainerId,
                 "db.name" => DatabaseId,
-                "out.host" => Host,
+                "network.destination.ip" => Host,
                 _ => base.GetTag(key),
             };
         }
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tagging
                 case "db.name": 
                     DatabaseId = value;
                     break;
-                case "out.host": 
+                case "network.destination.ip": 
                     Host = value;
                     break;
                 case "span.kind": 
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tagging
 
             if (Host is not null)
             {
-                processor.Process(new TagItem<string>("out.host", Host, HostBytes));
+                processor.Process(new TagItem<string>("network.destination.ip", Host, HostBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Tagging
 
             if (Host is not null)
             {
-                sb.Append("out.host (tag):")
+                sb.Append("network.destination.ip (tag):")
                   .Append(Host)
                   .Append(',');
             }

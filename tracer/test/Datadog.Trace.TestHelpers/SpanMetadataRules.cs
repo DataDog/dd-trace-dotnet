@@ -151,7 +151,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("cosmosdb.container")
                 .IsOptional("db.name")
                 .Matches("db.type", "cosmosdb")
-                .IsPresent("out.host")
+                .IsPresent("network.destination.ip")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
 
@@ -159,12 +159,13 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "couchbase.query")
                 .Matches(Type, "db"))
+            .Metrics(s => s
+                .IsPresent("network.destination.port"))
             .Tags(s => s
                 .IsOptional("couchbase.operation.bucket")
                 .IsPresent("couchbase.operation.code")
                 .IsPresent("couchbase.operation.key")
-                .IsOptional("out.port")
-                .IsOptional("out.host")
+                .IsOptional("network.destination.ip")
                 .Matches("component", "Couchbase")
                 .Matches("span.kind", "client"));
 
@@ -246,12 +247,13 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "mongodb.query")
                 .Matches(Type, "mongodb"))
+            .Metrics(s => s
+                .IsPresent("network.destination.port"))
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsOptional("mongodb.collection")
                 .IsOptional("mongodb.query")
-                .IsPresent("out.host")
-                .IsPresent("out.port")
+                .IsPresent("network.destination.ip")
                 .Matches("component", "MongoDb")
                 .Matches("span.kind", "client"));
 
@@ -274,7 +276,7 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsPresent("db.name")
                 .IsPresent("db.user")
-                .IsPresent("out.host")
+                .IsPresent("network.destination.ip")
                 .Matches("db.type", "mysql")
                 .Matches("component", "MySql")
                 .Matches("span.kind", "client"));
@@ -285,7 +287,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsPresent("db.name")
-                .IsPresent("out.host")
+                .IsPresent("network.destination.ip")
                 .Matches("db.type", "postgres")
                 .Matches("component", "Npgsql")
                 .Matches("span.kind", "client"));
@@ -356,10 +358,11 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "redis.command")
                 .Matches(Type, "redis"))
+            .Metrics(s => s
+                .IsPresent("network.destination.port"))
             .Tags(s => s
                 .IsPresent("redis.raw_command")
-                .IsPresent("out.host")
-                .IsPresent("out.port")
+                .IsPresent("network.destination.ip")
                 .Matches("component", "ServiceStackRedis")
                 .Matches("span.kind", "client"));
 
@@ -367,10 +370,11 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "redis.command")
                 .Matches(Type, "redis"))
+            .Metrics(s => s
+                .IsPresent("network.destination.port"))
             .Tags(s => s
                 .IsPresent("redis.raw_command")
-                .IsPresent("out.host")
-                .IsPresent("out.port")
+                .IsPresent("network.destination.ip")
                 .Matches("component", "StackExchangeRedis")
                 .Matches("span.kind", "client"));
 
@@ -380,7 +384,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsOptional("db.name")
-                .IsPresent("out.host")
+                .IsPresent("network.destination.ip")
                 .Matches("db.type", "sqlite")
                 .Matches("component", "Sqlite")
                 .Matches("span.kind", "client"));
@@ -391,7 +395,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsOptional("db.name")
-                .IsPresent("out.host")
+                .IsPresent("network.destination.ip")
                 .Matches("db.type", "sql-server")
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client"));

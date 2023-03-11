@@ -86,8 +86,8 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true },
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -109,8 +109,8 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "insert" : "employees", "ordered" : true },
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -132,8 +132,8 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -155,8 +155,8 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -175,8 +175,8 @@
     Tags: {
       component: MongoDb,
       env: integration_tests,
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -198,8 +198,8 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true },
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -221,8 +221,8 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "insert" : "employees", "ordered" : true },
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -244,8 +244,8 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -267,8 +267,8 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -287,8 +287,8 @@
     Tags: {
       component: MongoDb,
       env: integration_tests,
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -307,8 +307,8 @@
     Tags: {
       component: MongoDb,
       env: integration_tests,
-      out.host: mongo,
-      out.port: 27017,
+      network.destination.ip: mongo,
+      network.destination.port: 27017,
       runtime-id: Guid_1,
       span.kind: client
     },

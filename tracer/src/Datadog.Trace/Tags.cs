@@ -104,12 +104,12 @@ namespace Datadog.Trace
         /// <summary>
         /// The hostname of a outgoing server connection.
         /// </summary>
-        public const string OutHost = "out.host";
+        public const string OutHost = "network.destination.ip";
 
         /// <summary>
         /// The port of a outgoing server connection.
         /// </summary>
-        public const string OutPort = "out.port";
+        public const string OutPort = "network.destination.port";
 
         /// <summary>
         /// The size of the message.
