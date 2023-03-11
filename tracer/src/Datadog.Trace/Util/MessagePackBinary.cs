@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
 
 #if NETCOREAPP
@@ -14,6 +15,7 @@ namespace Datadog.Trace.Vendors.MessagePack;
 /// </summary>
 internal partial class MessagePackBinary
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static int WriteRawReadOnlySpan(ref byte[] bytes, int offset, ReadOnlySpan<byte> rawMessagePackBlock)
     {
         var bytesCount = rawMessagePackBlock.Length;
