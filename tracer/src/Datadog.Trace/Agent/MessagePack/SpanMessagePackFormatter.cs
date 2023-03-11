@@ -61,10 +61,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
 
         private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
-        private readonly byte[][] _samplingPriorityValueBytes;
 
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
-        private readonly byte[] _processIdValueBytes;
 
         // Azure App Service tag names and values
         private byte[] _aasSiteNameTagNameBytes;
@@ -81,18 +79,6 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private SpanMessagePackFormatter()
         {
-            double processId = DomainMetadata.Instance.ProcessId;
-            _processIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
-
-            // values begin at -1, so they are shifted by 1 from their array index: [-1, 0, 1, 2]
-            // these must serialized as msgpack float64 (Double in .NET).
-            _samplingPriorityValueBytes = new[]
-                                          {
-                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserReject),
-                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoReject),
-                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoKeep),
-                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep),
-                                          };
         }
 
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
@@ -107,7 +93,6 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // start writing span[]
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, traceChunk.SpanCount);
-
             // serialize each span
             for (var i = 0; i < traceChunk.SpanCount; i++)
             {
@@ -470,11 +455,13 @@ namespace Datadog.Trace.Agent.MessagePack
             count += tagWriter.Count;
 
             // add "process_id" tag to local root span (if present)
-            if (model.IsLocalRoot && _processIdValueBytes != null)
+            var processId = DomainMetadata.Instance.ProcessId;
+
+            if (processId != 0 && model.IsLocalRoot)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, _processIdValueBytes);
+                offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
             }
 
             // add "_sampling_priority_v1" tag to all "chunk orphans"
@@ -484,16 +471,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
 
-                if (samplingPriority is >= -1 and <= 2)
-                {
-                    // values begin at -1, so they are shifted by 1 from their array index: [-1, 0, 1, 2]
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, _samplingPriorityValueBytes[samplingPriority + 1]);
-                }
-                else
-                {
-                    // fallback to support unknown future values that are not cached
-                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
-                }
+                // sampling priority must be serialized as msgpack float64 (Double in .NET).
+                offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
             }
 
             if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
