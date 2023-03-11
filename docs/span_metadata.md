@@ -238,7 +238,7 @@ span.kind | `client`; `server`
 ### Metrics
 Name | Required |
 ---------|----------------|
-rpc.grpc.status_code | No
+rpc.grpc.status_code | Yes
 
 ## HotChocolate
 ### Span properties
