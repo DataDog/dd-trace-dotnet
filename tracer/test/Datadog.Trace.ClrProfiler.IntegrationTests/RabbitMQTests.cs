@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in rabbitmqSpans)
                 {
-                    var command = span.Tags[Tags.AmqpCommand];
+                    var command = span.Tags[Tags.MessagingOperation];
 
                     if (command.StartsWith("basic.", StringComparison.OrdinalIgnoreCase))
                     {

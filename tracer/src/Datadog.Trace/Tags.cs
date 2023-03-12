@@ -252,11 +252,6 @@ namespace Datadog.Trace
         internal const string GraphQLSource = "graphql.source";
 
         /// <summary>
-        /// The AMQP method.
-        /// </summary>
-        internal const string AmqpCommand = "messaging.operation";
-
-        /// <summary>
         /// The name of the AMQP exchange the message was originally published to.
         /// </summary>
         internal const string AmqpExchange = "messaging.rabbitmq.exchange";
@@ -441,6 +436,11 @@ namespace Datadog.Trace
         /// The queue name associated with the AWS SDK span.
         /// </summary>
         internal const string MessagingDestination = "messaging.destination";
+
+        /// <summary>
+        /// The AMQP method.
+        /// </summary>
+        internal const string MessagingOperation = "messaging.operation";
 
         /// <summary>
         /// A boolean indicating if it's part of a transaction.

@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [Tag(Trace.Tags.AmqpCommand)]
+        [Tag(Trace.Tags.MessagingOperation)]
         public string Command { get; set; }
 
         [Tag(Trace.Tags.AmqpDeliveryMode)]
