@@ -313,8 +313,8 @@ Name | Required |
 component | `msmq`
 messaging.destination | Yes
 messaging.msmq.message.transactional | No
+messaging.msmq.queue.transactional | No
 messaging.operation | Yes
-msmq.queue.transactional | No
 span.kind | `client`; `producer`; `consumer`
 
 ## MySql

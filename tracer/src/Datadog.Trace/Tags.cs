@@ -423,7 +423,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Is the msmq queue supporting transactional messages
         /// </summary>
-        internal const string MsmqIsTransactionalQueue = "msmq.queue.transactional";
+        internal const string MsmqIsTransactionalQueue = "messaging.msmq.queue.transactional";
 
         /// <summary>
         /// The name of the queue for the AMQP message.

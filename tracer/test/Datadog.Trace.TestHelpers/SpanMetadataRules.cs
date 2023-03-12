@@ -261,7 +261,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("messaging.operation")
                 .IsOptional("messaging.msmq.message.transactional")
                 .IsPresent("messaging.destination")
-                .IsOptional("msmq.queue.transactional")
+                .IsOptional("messaging.msmq.queue.transactional")
                 .Matches("component", "msmq")
                 .MatchesOneOf("span.kind", "client", "producer", "consumer"));
 

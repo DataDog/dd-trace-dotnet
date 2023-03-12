@@ -18,8 +18,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] PathBytes = new byte[] { 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110 };
         // MessageWithTransactionBytes = System.Text.Encoding.UTF8.GetBytes("messaging.msmq.message.transactional");
         private static readonly byte[] MessageWithTransactionBytes = new byte[] { 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 115, 109, 113, 46, 109, 101, 115, 115, 97, 103, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
-        // IsTransactionalQueueBytes = System.Text.Encoding.UTF8.GetBytes("msmq.queue.transactional");
-        private static readonly byte[] IsTransactionalQueueBytes = new byte[] { 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
+        // IsTransactionalQueueBytes = System.Text.Encoding.UTF8.GetBytes("messaging.msmq.queue.transactional");
+        private static readonly byte[] IsTransactionalQueueBytes = new byte[] { 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
 
         public override string? GetTag(string key)
         {
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tagging
                 "component" => InstrumentationName,
                 "messaging.destination" => Path,
                 "messaging.msmq.message.transactional" => MessageWithTransaction,
-                "msmq.queue.transactional" => IsTransactionalQueue,
+                "messaging.msmq.queue.transactional" => IsTransactionalQueue,
                 _ => base.GetTag(key),
             };
         }
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tagging
                 case "messaging.msmq.message.transactional": 
                     MessageWithTransaction = value;
                     break;
-                case "msmq.queue.transactional": 
+                case "messaging.msmq.queue.transactional": 
                     IsTransactionalQueue = value;
                     break;
                 case "span.kind": 
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tagging
 
             if (IsTransactionalQueue is not null)
             {
-                processor.Process(new TagItem<string>("msmq.queue.transactional", IsTransactionalQueue, IsTransactionalQueueBytes));
+                processor.Process(new TagItem<string>("messaging.msmq.queue.transactional", IsTransactionalQueue, IsTransactionalQueueBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Tagging
 
             if (IsTransactionalQueue is not null)
             {
-                sb.Append("msmq.queue.transactional (tag):")
+                sb.Append("messaging.msmq.queue.transactional (tag):")
                   .Append(IsTransactionalQueue)
                   .Append(',');
             }
