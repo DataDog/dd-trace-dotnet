@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tagging
         /// <param name="spanKind">kind of span</param>
         public MsmqTags(string spanKind) => SpanKind = spanKind;
 
-        [Tag(Trace.Tags.MsmqCommand)]
+        [Tag(Trace.Tags.MessagingOperation)]
         public string Command { get; set; }
 
         /// <inheritdoc/>

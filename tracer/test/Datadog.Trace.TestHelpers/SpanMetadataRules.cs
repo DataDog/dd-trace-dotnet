@@ -258,7 +258,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "msmq.command")
                 .Matches(Type, "queue"))
             .Tags(s => s
-                .IsPresent("msmq.command")
+                .IsPresent("messaging.operation")
                 .IsOptional("msmq.message.transactional")
                 .IsPresent("messaging.destination")
                 .IsOptional("msmq.queue.transactional")

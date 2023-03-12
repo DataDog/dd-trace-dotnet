@@ -310,4 +310,3 @@ using Datadog.Trace;
 ## Get in touch
 
 If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).
-

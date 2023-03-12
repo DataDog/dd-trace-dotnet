@@ -421,11 +421,6 @@ namespace Datadog.Trace
         internal const string PartialSnapshot = "_dd.partial_version";
 
         /// <summary>
-        /// The name of the Msmq command the message was published to.
-        /// </summary>
-        internal const string MsmqCommand = "msmq.command";
-
-        /// <summary>
         /// Is the msmq queue supporting transactional messages
         /// </summary>
         internal const string MsmqIsTransactionalQueue = "msmq.queue.transactional";
@@ -439,6 +434,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// The AMQP method.
+        /// The name of the Msmq command the message was published to.
         /// </summary>
         internal const string MessagingOperation = "messaging.operation";
 

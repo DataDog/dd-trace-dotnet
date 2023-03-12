@@ -312,7 +312,7 @@ Name | Required |
 ---------|----------------|
 component | `msmq`
 messaging.destination | Yes
-msmq.command | Yes
+messaging.operation | Yes
 msmq.message.transactional | No
 msmq.queue.transactional | No
 span.kind | `client`; `producer`; `consumer`

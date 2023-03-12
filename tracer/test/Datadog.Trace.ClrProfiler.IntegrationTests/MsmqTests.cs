@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     nonTransactionalTraces++;
                 }
 
-                var command = span.Tags[Tags.MsmqCommand];
+                var command = span.Tags[Tags.MessagingOperation];
 
                 if (string.Equals(command, "msmq.send", StringComparison.OrdinalIgnoreCase))
                 {

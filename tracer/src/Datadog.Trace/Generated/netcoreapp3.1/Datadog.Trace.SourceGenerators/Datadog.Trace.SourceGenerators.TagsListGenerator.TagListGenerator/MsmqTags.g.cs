@@ -8,8 +8,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class MsmqTags
     {
-        // CommandBytes = System.Text.Encoding.UTF8.GetBytes("msmq.command");
-        private static readonly byte[] CommandBytes = new byte[] { 109, 115, 109, 113, 46, 99, 111, 109, 109, 97, 110, 100 };
+        // CommandBytes = System.Text.Encoding.UTF8.GetBytes("messaging.operation");
+        private static readonly byte[] CommandBytes = new byte[] { 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "msmq.command" => Command,
+                "messaging.operation" => Command,
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
                 "messaging.destination" => Path,
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "msmq.command": 
+                case "messaging.operation": 
                     Command = value;
                     break;
                 case "messaging.destination": 
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Tagging
         {
             if (Command is not null)
             {
-                processor.Process(new TagItem<string>("msmq.command", Command, CommandBytes));
+                processor.Process(new TagItem<string>("messaging.operation", Command, CommandBytes));
             }
 
             if (SpanKind is not null)
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Tagging
         {
             if (Command is not null)
             {
-                sb.Append("msmq.command (tag):")
+                sb.Append("messaging.operation (tag):")
                   .Append(Command)
                   .Append(',');
             }
