@@ -441,7 +441,7 @@ namespace Datadog.Trace
         /// <summary>
         /// A boolean indicating if it's part of a transaction.
         /// </summary>
-        internal const string MsmqMessageWithTransaction = "msmq.message.transactional";
+        internal const string MsmqMessageWithTransaction = "messaging.msmq.message.transactional";
 
         /// <summary>
         /// A CosmosDb container name.

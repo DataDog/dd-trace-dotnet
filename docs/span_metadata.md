@@ -312,8 +312,8 @@ Name | Required |
 ---------|----------------|
 component | `msmq`
 messaging.destination | Yes
+messaging.msmq.message.transactional | No
 messaging.operation | Yes
-msmq.message.transactional | No
 msmq.queue.transactional | No
 span.kind | `client`; `producer`; `consumer`
 
