@@ -26,7 +26,7 @@ namespace Datadog.Trace.TestHelpers
             .IsOptional("language") // TODO: Make language required on all spans, per our span attributes push
             .IsOptional("version")
             .IsOptional("_dd.p.dm")
-            .IsOptional("error.msg")
+            .IsOptional("error.message")
             .IsOptional("error.type")
             .IsOptional("error.stack")
             .IsOptional(Tags.GitRepositoryUrl)

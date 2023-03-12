@@ -64,7 +64,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The error message of an exception
         /// </summary>
-        public const string ErrorMsg = "error.msg";
+        public const string ErrorMsg = "error.message";
 
         /// <summary>
         /// The type of an exception

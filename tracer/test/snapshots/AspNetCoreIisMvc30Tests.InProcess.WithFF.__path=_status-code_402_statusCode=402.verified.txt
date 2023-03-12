@@ -31,7 +31,7 @@
       aspnet_core.route: status-code/{statuscode},
       component: aspnet_core,
       env: integration_tests,
-      error.msg: The HTTP response has status code 402.,
+      error.message: The HTTP response has status code 402.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: status-code/{statuscode},

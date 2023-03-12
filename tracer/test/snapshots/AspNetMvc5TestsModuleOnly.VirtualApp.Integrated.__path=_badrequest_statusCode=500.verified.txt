@@ -9,7 +9,7 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: Oops, it broke.,
+      error.message: Oops, it broke.,
       error.stack:
 System.Exception: Oops, it broke.
 at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),

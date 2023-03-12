@@ -106,7 +106,7 @@
     Tags: {
       component: GraphQL,
       env: integration_tests,
-      error.msg: 2 error(s),
+      error.message: 2 error(s),
       error.stack:
 errors: [
 {
@@ -284,7 +284,7 @@ errors: [
     Tags: {
       component: GraphQL,
       env: integration_tests,
-      error.msg: 1 error(s),
+      error.message: 1 error(s),
       error.stack:
 errors: [
 {

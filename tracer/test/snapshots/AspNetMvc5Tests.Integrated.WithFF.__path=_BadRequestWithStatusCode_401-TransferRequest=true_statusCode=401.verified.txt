@@ -56,7 +56,7 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: Oops, it broke. Specified status code was: 401,
+      error.message: Oops, it broke. Specified status code was: 401,
       error.stack:
 System.Exception: Oops, it broke. Specified status code was: 401
 at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 statuscode),
@@ -97,7 +97,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       aspnet.controller: home,
       aspnet.route: BadRequestWithStatusCode/{statuscode},
       env: integration_tests,
-      error.msg: Oops, it broke. Specified status code was: 401,
+      error.message: Oops, it broke. Specified status code was: 401,
       error.stack:
 System.Exception: Oops, it broke. Specified status code was: 401
 at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 statuscode),

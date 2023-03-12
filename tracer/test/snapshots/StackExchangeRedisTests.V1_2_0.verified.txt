@@ -202,7 +202,7 @@
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR no such key,
+      error.message: ERR no such key,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR no such key
 ,
@@ -232,7 +232,7 @@ StackExchange.Redis.RedisServerException: ERR no such key
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR no such key,
+      error.message: ERR no such key,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR no such key
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
@@ -790,7 +790,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: WRONGTYPE Operation against a key holding the wrong kind of value,
+      error.message: WRONGTYPE Operation against a key holding the wrong kind of value,
       error.stack:
 StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key holding the wrong kind of value
 ,
@@ -1492,7 +1492,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR value is not an integer or out of range,
+      error.message: ERR value is not an integer or out of range,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR value is not an integer or out of range
 ,
@@ -1594,7 +1594,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR value is not a valid float,
+      error.message: ERR value is not a valid float,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR value is not a valid float
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
@@ -2128,7 +2128,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: Unexpected response to MIGRATE: SimpleString: NOKEY,
+      error.message: Unexpected response to MIGRATE: SimpleString: NOKEY,
       error.stack:
 StackExchange.Redis.RedisConnectionException: Unexpected response to MIGRATE: SimpleString: NOKEY
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
@@ -2158,7 +2158,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR source and destination objects are the same,
+      error.message: ERR source and destination objects are the same,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR source and destination objects are the same
 ,
@@ -2188,7 +2188,7 @@ StackExchange.Redis.RedisServerException: ERR source and destination objects are
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR source and destination objects are the same,
+      error.message: ERR source and destination objects are the same,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR source and destination objects are the same
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
@@ -2722,7 +2722,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR no such key,
+      error.message: ERR no such key,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR no such key
 ,
@@ -2752,7 +2752,7 @@ StackExchange.Redis.RedisServerException: ERR no such key
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR no such key,
+      error.message: ERR no such key,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR no such key
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
@@ -2782,7 +2782,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR DUMP payload version or checksum are wrong,
+      error.message: ERR DUMP payload version or checksum are wrong,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum are wrong
 ,
@@ -2812,7 +2812,7 @@ StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum a
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR DUMP payload version or checksum are wrong,
+      error.message: ERR DUMP payload version or checksum are wrong,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum are wrong
 at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),

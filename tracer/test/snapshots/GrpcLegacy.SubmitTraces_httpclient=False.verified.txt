@@ -204,7 +204,7 @@
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"","grpc_status":1},
+      error.message: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"","grpc_status":1},
       error.stack:
 Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"","grpc_status":1}
 ,
@@ -243,7 +243,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: Canceled,
+      error.message: Canceled,
       grpc.method.kind: unary,
       grpc.method.name: ErroringMethod,
       grpc.method.package: greet.tester,
@@ -298,7 +298,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"My spices!","grpc_status":15},
+      error.message: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"My spices!","grpc_status":15},
       error.stack:
 Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"My spices!","grpc_status":15}
 ,
@@ -337,7 +337,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: My spices!,
+      error.message: My spices!,
       grpc.method.kind: unary,
       grpc.method.name: ErroringMethod,
       grpc.method.package: greet.tester,
@@ -392,7 +392,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Where did it go?","grpc_status":5},
+      error.message: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Where did it go?","grpc_status":5},
       error.stack:
 Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Where did it go?","grpc_status":5}
 ,
@@ -431,7 +431,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: Where did it go?,
+      error.message: Where did it go?,
       grpc.method.kind: unary,
       grpc.method.name: ErroringMethod,
       grpc.method.package: greet.tester,
@@ -486,7 +486,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Exception was thrown by handler.","grpc_status":2},
+      error.message: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Exception was thrown by handler.","grpc_status":2},
       error.stack:
 Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Exception was thrown by handler.","grpc_status":2}
 ,
@@ -525,7 +525,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: Exception was thrown by handler.,
+      error.message: Exception was thrown by handler.,
       grpc.method.kind: unary,
       grpc.method.name: ErroringMethod,
       grpc.method.package: greet.tester,
@@ -580,7 +580,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"","grpc_status":1},
+      error.message: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"","grpc_status":1},
       error.stack:
 Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"","grpc_status":1}
 ,
@@ -619,7 +619,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: Canceled,
+      error.message: Canceled,
       grpc.method.kind: unary,
       grpc.method.name: ErroringMethod,
       grpc.method.package: greet.tester,
@@ -674,7 +674,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"My spices!","grpc_status":15},
+      error.message: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"My spices!","grpc_status":15},
       error.stack:
 Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"My spices!","grpc_status":15}
 ,
@@ -713,7 +713,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: My spices!,
+      error.message: My spices!,
       grpc.method.kind: unary,
       grpc.method.name: ErroringMethod,
       grpc.method.package: greet.tester,
@@ -768,7 +768,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Where did it go?","grpc_status":5},
+      error.message: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Where did it go?","grpc_status":5},
       error.stack:
 Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Where did it go?","grpc_status":5}
 ,
@@ -807,7 +807,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: Where did it go?,
+      error.message: Where did it go?,
       grpc.method.kind: unary,
       grpc.method.name: ErroringMethod,
       grpc.method.package: greet.tester,
@@ -862,7 +862,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Exception was thrown by handler.","grpc_status":2},
+      error.message: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Exception was thrown by handler.","grpc_status":2},
       error.stack:
 Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Exception was thrown by handler.","grpc_status":2}
 ,
@@ -901,7 +901,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: Exception was thrown by handler.,
+      error.message: Exception was thrown by handler.,
       grpc.method.kind: unary,
       grpc.method.name: ErroringMethod,
       grpc.method.package: greet.tester,
@@ -1214,7 +1214,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: Deadline Exceeded,
+      error.message: Deadline Exceeded,
       error.type: Grpc.Core.Internal.CoreErrorDetailException,
       grpc.method.kind: unary,
       grpc.method.name: VerySlow,
@@ -1248,7 +1248,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: Deadline Exceeded,
+      error.message: Deadline Exceeded,
       grpc.method.kind: unary,
       grpc.method.name: VerySlow,
       grpc.method.package: greet.tester,
@@ -1303,7 +1303,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: Deadline Exceeded,
+      error.message: Deadline Exceeded,
       error.type: Grpc.Core.Internal.CoreErrorDetailException,
       grpc.method.kind: unary,
       grpc.method.name: VerySlow,
@@ -1337,7 +1337,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: Deadline Exceeded,
+      error.message: Deadline Exceeded,
       grpc.method.kind: unary,
       grpc.method.name: VerySlow,
       grpc.method.package: greet.tester,

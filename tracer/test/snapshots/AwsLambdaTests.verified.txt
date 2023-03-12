@@ -1310,7 +1310,7 @@
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address,
+      error.message: Cannot assign requested address,
       error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
@@ -1333,7 +1333,7 @@
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address,
+      error.message: Cannot assign requested address,
       error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
@@ -1356,7 +1356,7 @@
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address,
+      error.message: Cannot assign requested address,
       error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
@@ -1379,7 +1379,7 @@
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address,
+      error.message: Cannot assign requested address,
       error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
@@ -1402,7 +1402,7 @@
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address,
+      error.message: Cannot assign requested address,
       error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
@@ -1425,7 +1425,7 @@
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address,
+      error.message: Cannot assign requested address,
       error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,

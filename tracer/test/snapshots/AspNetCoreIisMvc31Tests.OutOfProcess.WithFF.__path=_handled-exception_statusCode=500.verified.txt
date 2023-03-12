@@ -14,7 +14,7 @@
       aspnet_core.route: handled-exception,
       component: aspnet_core,
       env: integration_tests,
-      error.msg: Exception of type 'System.Exception' was thrown.,
+      error.message: Exception of type 'System.Exception' was thrown.,
       error.stack:
 System.Exception: Exception of type 'System.Exception' was thrown.
 ,
@@ -39,7 +39,7 @@ System.Exception: Exception of type 'System.Exception' was thrown.
       aspnet_core.route: handled-exception,
       component: aspnet_core,
       env: integration_tests,
-      error.msg: The HTTP response has status code 500.,
+      error.message: The HTTP response has status code 500.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: handled-exception,

@@ -13,7 +13,7 @@
       aspnet.controller: error,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
-      error.msg: The HTTP response has status code 503.,
+      error.message: The HTTP response has status code 503.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
@@ -37,7 +37,7 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: The HTTP response has status code 503.,
+      error.message: The HTTP response has status code 503.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
@@ -60,7 +60,7 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: Oops, it broke. Specified status code was: 503,
+      error.message: Oops, it broke. Specified status code was: 503,
       error.stack:
 System.Exception: Oops, it broke. Specified status code was: 503
 at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 statuscode),
@@ -101,7 +101,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       aspnet.controller: home,
       aspnet.route: BadRequestWithStatusCode/{statuscode},
       env: integration_tests,
-      error.msg: Oops, it broke. Specified status code was: 503,
+      error.message: Oops, it broke. Specified status code was: 503,
       error.stack:
 System.Exception: Oops, it broke. Specified status code was: 503
 at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 statuscode),

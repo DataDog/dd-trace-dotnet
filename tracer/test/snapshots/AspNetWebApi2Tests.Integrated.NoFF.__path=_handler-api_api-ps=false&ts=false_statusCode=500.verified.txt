@@ -25,7 +25,7 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: Source: PassThroughQuerySuccessMessageHandler. Error: Query param ps was set to a non-true value,
+      error.message: Source: PassThroughQuerySuccessMessageHandler. Error: Query param ps was set to a non-true value,
       error.stack:
 System.ArgumentException: Source: PassThroughQuerySuccessMessageHandler. Error: Query param ps was set to a non-true value
 at Samples.AspNetMvc5.Handlers.PassThroughQuerySuccessMessageHandler.<SendAsync>d__1.MoveNext(),

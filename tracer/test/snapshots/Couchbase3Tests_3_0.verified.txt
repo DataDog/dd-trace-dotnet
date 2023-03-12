@@ -36,7 +36,7 @@
       couchbase.operation.code: Delete,
       couchbase.operation.key: does-not-exist,
       env: integration_tests,
-      error.msg: Exception of type 'Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException' was thrown.,
+      error.message: Exception of type 'Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException' was thrown.,
       error.stack:
 Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException: Exception of type 'Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException' was thrown.
 at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object state, CancellationToken token),

@@ -97,7 +97,7 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: SetStatus-Error,
+      error.message: SetStatus-Error,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_ERROR,

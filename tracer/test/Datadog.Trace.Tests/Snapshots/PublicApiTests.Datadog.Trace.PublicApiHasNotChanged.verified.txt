@@ -122,7 +122,7 @@ namespace Datadog.Trace
         public const string DbType = "db.type";
         public const string DbUser = "db.user";
         public const string Env = "env";
-        public const string ErrorMsg = "error.msg";
+        public const string ErrorMsg = "error.message";
         public const string ErrorStack = "error.stack";
         public const string ErrorType = "error.type";
         public const string HttpMethod = "http.method";

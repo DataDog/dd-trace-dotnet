@@ -313,7 +313,7 @@ namespace Datadog.Trace.Activity
             if (activity is IActivity6 { Status: ActivityStatusCode.Error } activity6)
             {
                 span.Error = true;
-                // First iterate through Activity events first and set error.msg, error.type, and error.stack
+                // First iterate through Activity events first and set error.message, error.type, and error.stack
                 if (span.GetTag(Tags.ErrorMsg) is null)
                 {
                     span.SetTag(Tags.ErrorMsg, activity6.StatusDescription);
@@ -322,7 +322,7 @@ namespace Datadog.Trace.Activity
             else if (span.GetTag("otel.status_code") == "STATUS_CODE_ERROR")
             {
                 span.Error = true;
-                // First iterate through Activity events first and set error.msg, error.type, and error.stack
+                // First iterate through Activity events first and set error.message, error.type, and error.stack
                 if (span.GetTag(Tags.ErrorMsg) is null)
                 {
                     if (span.GetTag("otel.status_description") is string statusDescription)

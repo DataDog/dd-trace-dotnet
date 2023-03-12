@@ -10,7 +10,7 @@
     Tags: {
       component: ServiceStackRedis,
       env: integration_tests,
-      error.msg: unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
+      error.message: unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
       error.stack:
 ServiceStack.Redis.RedisResponseException: unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, 
 at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),

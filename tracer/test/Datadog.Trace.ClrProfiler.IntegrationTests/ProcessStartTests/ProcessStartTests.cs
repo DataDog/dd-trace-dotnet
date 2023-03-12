@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class ProcessStartTests : TracingIntegrationTest
     {
         private static readonly Regex StackRegex = new(@"      error.stack:(\n|\r){1,2}.*(\n|\r){1,2}.*,(\r|\n){1,2}");
-        private static readonly Regex ErrorMsgRegex = new(@"      error.msg:.*,(\r|\n){1,2}");
+        private static readonly Regex ErrorMsgRegex = new(@"      error.message:.*,(\r|\n){1,2}");
 
         public ProcessStartTests(ITestOutputHelper output)
             : base("ProcessStart", output)

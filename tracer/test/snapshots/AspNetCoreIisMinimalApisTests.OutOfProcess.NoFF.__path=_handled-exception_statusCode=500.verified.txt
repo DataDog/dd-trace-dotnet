@@ -10,7 +10,7 @@
     Tags: {
       component: aspnet_core,
       env: integration_tests,
-      error.msg: Exception of type 'System.Exception' was thrown.,
+      error.message: Exception of type 'System.Exception' was thrown.,
       error.stack:
 System.Exception: Exception of type 'System.Exception' was thrown.
 ,

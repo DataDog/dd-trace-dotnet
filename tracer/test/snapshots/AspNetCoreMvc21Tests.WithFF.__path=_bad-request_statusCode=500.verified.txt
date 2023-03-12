@@ -31,7 +31,7 @@
       component: aspnet_core,
       datadog-header-tag: asp-net-core,
       env: integration_tests,
-      error.msg: This was a bad request.,
+      error.message: This was a bad request.,
       error.stack:
 System.Exception: This was a bad request.
 at Samples.AspNetCoreMvc.Controllers.HomeController.ThrowException(),

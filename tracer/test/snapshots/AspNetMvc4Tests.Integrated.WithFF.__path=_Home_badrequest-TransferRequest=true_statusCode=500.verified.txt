@@ -13,7 +13,7 @@
       aspnet.controller: error,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
-      error.msg: The HTTP response has status code 500.,
+      error.message: The HTTP response has status code 500.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
@@ -35,7 +35,7 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: The HTTP response has status code 500.,
+      error.message: The HTTP response has status code 500.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
@@ -56,7 +56,7 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: Oops, it broke.,
+      error.message: Oops, it broke.,
       error.stack:
 System.Exception: Oops, it broke.
 at Samples.AspNetMvc4.Controllers.HomeController.BadRequest(),
@@ -95,7 +95,7 @@ at Samples.AspNetMvc4.Controllers.HomeController.BadRequest(),
       aspnet.controller: home,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
-      error.msg: Oops, it broke.,
+      error.message: Oops, it broke.,
       error.stack:
 System.Exception: Oops, it broke.
 at Samples.AspNetMvc4.Controllers.HomeController.BadRequest(),

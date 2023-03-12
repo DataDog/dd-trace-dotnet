@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     public class AwsLambdaTests : TestHelper
     {
         private static readonly Regex StackRegex = new(@"(      error.stack:)(?:\n|\r){1,2}(?:[^,]*(?:\n|\r){1,2})+.*(,(?:\r|\n){1,2})");
-        private static readonly Regex ErrorMsgRegex = new(@"(      error.msg:).*(,(\r|\n){1,2})");
+        private static readonly Regex ErrorMsgRegex = new(@"(      error.message:).*(,(\r|\n){1,2})");
 
         public AwsLambdaTests(ITestOutputHelper output)
             : base("AWS.Lambda", output)

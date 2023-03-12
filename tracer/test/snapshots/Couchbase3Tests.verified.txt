@@ -36,7 +36,7 @@
       couchbase.operation.code: Delete,
       couchbase.operation.key: does-not-exist,
       env: integration_tests,
-      error.msg: KeyNotFound,
+      error.message: KeyNotFound,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.p.dm: -0

@@ -344,7 +344,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         foreach (var span in verySlowGrpcServerSpans)
                         {
                             span.Error = 1;
-                            span.Tags["error.msg"] = "Deadline Exceeded";
+                            span.Tags[Tags.ErrorMsg] = "Deadline Exceeded";
                             span.Tags.Remove("error.stack");
                             span.Tags.Remove("error.type");
                             span.Tags["grpc.status.code"] = "4";
@@ -372,7 +372,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             foreach (var span in httpClientSpans)
                             {
                                 span.Error = 0;
-                                span.Tags.Remove("error.msg");
+                                span.Tags.Remove(Tags.ErrorMsg);
                                 span.Tags.Remove("error.type");
                                 span.Tags.Remove("error.stack");
                                 span.Tags["http.status_code"] = "200";
@@ -390,7 +390,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         // deadline paths. For simplicity, normalise these to something simple
                         foreach (var span in verySlowGrpcClientSpans)
                         {
-                            span.Tags["error.msg"] = "Deadline Exceeded";
+                            span.Tags[Tags.ErrorMsg] = "Deadline Exceeded";
                             span.Tags.Remove("error.stack");
                         }
                     }

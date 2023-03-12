@@ -150,7 +150,7 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: Something went wrong,
+      error.message: Something went wrong,
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_ERROR,

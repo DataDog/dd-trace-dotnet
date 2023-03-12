@@ -193,7 +193,7 @@
       aspnet_core.route: /graphql/{**slug},
       component: aspnet_core,
       env: integration_tests,
-      error.msg: The HTTP response has status code 500.,
+      error.message: The HTTP response has status code 500.,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /graphql/{**slug},
@@ -282,7 +282,7 @@ mutation m {
     Tags: {
       component: HotChocolate,
       env: integration_tests,
-      error.msg: 1 error(s),
+      error.message: 1 error(s),
       error.stack:
 errors: [
 {
@@ -327,7 +327,7 @@ errors: [
     Tags: {
       component: HotChocolate,
       env: integration_tests,
-      error.msg: 1 error(s),
+      error.message: 1 error(s),
       error.stack:
 errors: [
 {

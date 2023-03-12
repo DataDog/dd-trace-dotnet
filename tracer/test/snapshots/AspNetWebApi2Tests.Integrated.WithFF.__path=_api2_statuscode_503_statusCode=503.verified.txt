@@ -13,7 +13,7 @@
       aspnet.controller: conventions,
       aspnet.route: api2/{action}/{value},
       env: integration_tests,
-      error.msg: The HTTP response has status code 503.,
+      error.message: The HTTP response has status code 503.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
@@ -36,7 +36,7 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: The HTTP response has status code 503.,
+      error.message: The HTTP response has status code 503.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api2/{action}/{value},
