@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.MessageSize)]
         public string MessageSize { get; set; }
 
-        [Tag(Trace.Tags.AmqpQueue)]
+        [Tag(Trace.Tags.MessagingDestination)]
         public string Queue { get; set; }
     }
 }

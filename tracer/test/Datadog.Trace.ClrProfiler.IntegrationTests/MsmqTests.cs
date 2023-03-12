@@ -59,12 +59,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 if (span.Tags[Tags.MsmqIsTransactionalQueue] == "True")
                 {
-                    span.Tags[Tags.MsmqQueuePath].Should().Be(".\\Private$\\private-transactional-queue");
+                    span.Tags[Tags.MessagingDestination].Should().Be(".\\Private$\\private-transactional-queue");
                     transactionalTraces++;
                 }
                 else
                 {
-                    span.Tags[Tags.MsmqQueuePath].Should().Be(".\\Private$\\private-nontransactional-queue");
+                    span.Tags[Tags.MessagingDestination].Should().Be(".\\Private$\\private-nontransactional-queue");
                     nonTransactionalTraces++;
                 }
 
@@ -74,25 +74,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     span.Tags[Tags.MsmqMessageWithTransaction].Should().Be(span.Tags[Tags.MsmqIsTransactionalQueue], "The program is supposed to send messages within transactions to transactional queues, and outside of transactions to non transactional queues");
                     span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Producer);
-                    span.Resource.Should().Be($"msmq.send {span.Tags[Tags.MsmqQueuePath]}");
+                    span.Resource.Should().Be($"msmq.send {span.Tags[Tags.MessagingDestination]}");
                     sendCount++;
                 }
                 else if (string.Equals(command, "msmq.receive", StringComparison.OrdinalIgnoreCase))
                 {
                     span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Consumer);
-                    span.Resource.Should().Be($"msmq.receive {span.Tags[Tags.MsmqQueuePath]}");
+                    span.Resource.Should().Be($"msmq.receive {span.Tags[Tags.MessagingDestination]}");
                     receiveCount++;
                 }
                 else if (string.Equals(command, "msmq.peek", StringComparison.OrdinalIgnoreCase))
                 {
                     span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Consumer);
-                    span.Resource.Should().Be($"msmq.peek {span.Tags[Tags.MsmqQueuePath]}");
+                    span.Resource.Should().Be($"msmq.peek {span.Tags[Tags.MessagingDestination]}");
                     peekCount++;
                 }
                 else if (string.Equals(command, "msmq.purge", StringComparison.OrdinalIgnoreCase))
                 {
                     span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Client);
-                    span.Resource.Should().Be($"msmq.purge {span.Tags[Tags.MsmqQueuePath]}");
+                    span.Resource.Should().Be($"msmq.purge {span.Tags[Tags.MessagingDestination]}");
                     purgeCount++;
                 }
                 else

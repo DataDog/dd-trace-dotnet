@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => "msmq";
 
-        [Tag(Trace.Tags.MsmqQueuePath)]
+        [Tag(Trace.Tags.MessagingDestination)]
         public string Path { get; set; }
 
         [Tag(Trace.Tags.MsmqMessageWithTransaction)]

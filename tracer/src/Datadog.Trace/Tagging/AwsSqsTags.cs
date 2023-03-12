@@ -9,7 +9,7 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class AwsSqsTags : AwsSdkTags
     {
-        [Tag(Trace.Tags.AwsQueueName)]
+        [Tag(Trace.Tags.MessagingDestination)]
         public string QueueName { get; set; }
 
         [Tag(Trace.Tags.AwsQueueUrl)]

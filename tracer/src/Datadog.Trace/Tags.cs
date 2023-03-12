@@ -267,11 +267,6 @@ namespace Datadog.Trace
         internal const string AmqpRoutingKey = "messaging.rabbitmq.routing_key";
 
         /// <summary>
-        /// The name of the queue for the AMQP message.
-        /// </summary>
-        internal const string AmqpQueue = "messaging.destination";
-
-        /// <summary>
         /// The delivery mode of the AMQP message.
         /// </summary>
         internal const string AmqpDeliveryMode = "messaging.rabbitmq.delivery_mode";
@@ -320,11 +315,6 @@ namespace Datadog.Trace
         /// The service associated with the AWS SDK span.
         /// </summary>
         internal const string AwsServiceName = "aws.service";
-
-        /// <summary>
-        /// The queue name associated with the AWS SDK span.
-        /// </summary>
-        internal const string AwsQueueName = "messaging.destination";
 
         /// <summary>
         /// The queue URL associated with the AWS SDK span.
@@ -446,9 +436,11 @@ namespace Datadog.Trace
         internal const string MsmqIsTransactionalQueue = "msmq.queue.transactional";
 
         /// <summary>
+        /// The name of the queue for the AMQP message.
         /// The name of the Msmq queue the message was published to, containing host name and path.
+        /// The queue name associated with the AWS SDK span.
         /// </summary>
-        internal const string MsmqQueuePath = "messaging.destination";
+        internal const string MessagingDestination = "messaging.destination";
 
         /// <summary>
         /// A boolean indicating if it's part of a transaction.

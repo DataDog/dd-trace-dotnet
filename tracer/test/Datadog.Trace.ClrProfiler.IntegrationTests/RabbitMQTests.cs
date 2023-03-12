@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             }
 
                             Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
-                            Assert.NotNull(span.Tags[Tags.AmqpQueue]);
+                            Assert.NotNull(span.Tags[Tags.MessagingDestination]);
 
                             // Enforce that the resource name has the following structure: "basic.get [<generated>|{actual queueName}]"
                             string regexPattern = @"basic\.get (?<queueName>\S*)";
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             Assert.True(match.Success);
 
                             var queueName = match.Groups["queueName"].Value;
-                            Assert.True(string.Equals(queueName, "<generated>") || string.Equals(queueName, span.Tags[Tags.AmqpQueue]));
+                            Assert.True(string.Equals(queueName, "<generated>") || string.Equals(queueName, span.Tags[Tags.MessagingDestination]));
                         }
                         else if (string.Equals(command, "basic.deliver", StringComparison.OrdinalIgnoreCase))
                         {
@@ -146,7 +146,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             }
 
                             Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
-                            // Assert.NotNull(span.Tags[Tags.AmqpQueue]); // Java does this but we're having difficulty doing this. Push to v2?
+                            // Assert.NotNull(span.Tags[Tags.MessagingDestination]); // Java does this but we're having difficulty doing this. Push to v2?
                             Assert.NotNull(span.Tags[Tags.AmqpExchange]);
                             Assert.NotNull(span.Tags[Tags.AmqpRoutingKey]);
 
@@ -159,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             // Assert.True(match.Success); // Enable once we can get the queue name included
 
                             var queueName = match.Groups["queueName"].Value;
-                            // Assert.True(string.Equals(queueName, "<generated>") || string.Equals(queueName, span.Tags[Tags.AmqpQueue])); // Enable once we can get the queue name included
+                            // Assert.True(string.Equals(queueName, "<generated>") || string.Equals(queueName, span.Tags[Tags.MessagingDestination])); // Enable once we can get the queue name included
                         }
                         else
                         {
@@ -179,13 +179,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         else if (string.Equals(command, "queue.declare", StringComparison.OrdinalIgnoreCase))
                         {
                             queueDeclareCount++;
-                            Assert.NotNull(span.Tags[Tags.AmqpQueue]);
+                            Assert.NotNull(span.Tags[Tags.MessagingDestination]);
                         }
                         else if (string.Equals(command, "queue.bind", StringComparison.OrdinalIgnoreCase))
                         {
                             queueBindCount++;
                             Assert.NotNull(span.Tags[Tags.AmqpExchange]);
-                            Assert.NotNull(span.Tags[Tags.AmqpQueue]);
+                            Assert.NotNull(span.Tags[Tags.MessagingDestination]);
                             Assert.NotNull(span.Tags[Tags.AmqpRoutingKey]);
                         }
                         else
