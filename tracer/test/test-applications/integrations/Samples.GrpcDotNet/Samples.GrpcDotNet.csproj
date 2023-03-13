@@ -37,4 +37,15 @@
     <PackageReference Include="Grpc.AspNetCore" Version="$(ApiVersion)" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
+
+  <!-- .NET Core 2.0/3.0/3.1 and .NET Framework don't have the Activity* APIs -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462' OR '$(TargetFramework)'=='netcoreapp2.1' OR '$(TargetFramework)'=='netcoreapp3.0' OR '$(TargetFramework)'=='netcoreapp3.1'">
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0" />
+  </ItemGroup>
+
 </Project>
