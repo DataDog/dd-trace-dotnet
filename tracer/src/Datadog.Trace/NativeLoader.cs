@@ -66,7 +66,7 @@ namespace Datadog.Trace
         // These methods are rewritten by the native tracer to use the correct paths
         private static class NativeMethods
         {
-            [DllImport("Datadog.Trace.ClrProfiler.Native", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
+            [DllImport("C:\\home\\site\\wwwroot\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
             public static extern IntPtr GetRuntimeIdFromNative();
         }
     }
