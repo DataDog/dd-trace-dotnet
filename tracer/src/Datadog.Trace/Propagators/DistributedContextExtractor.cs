@@ -44,10 +44,7 @@ namespace Datadog.Trace.Propagators
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.PropagatedTags);
             var w3CTraceState = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.AdditionalW3CTraceState);
 
-            var maxLength = Tracer.Instance?.Settings?.OutgoingTagPropagationHeaderMaxLength ??
-                            TagPropagation.OutgoingTagPropagationHeaderMaxLength;
-
-            var traceTags = TagPropagation.ParseHeader(propagatedTraceTags, maxLength);
+            var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
 
             spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId)
                           {

@@ -620,10 +620,7 @@ namespace Datadog.Trace.Propagators
                 false => SamplingPriorityValues.AutoReject,
             };
 
-            var maxLength = Tracer.Instance?.Settings?.OutgoingTagPropagationHeaderMaxLength ??
-                            TagPropagation.OutgoingTagPropagationHeaderMaxLength;
-
-            var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags, maxLength);
+            var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
 
             spanContext = new SpanContext(
                 traceId: traceParent.TraceId,
