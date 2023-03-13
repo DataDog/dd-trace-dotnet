@@ -18,6 +18,7 @@ namespace Datadog.Trace.Activity.Handlers
         private static readonly string[] SourcesNames =
         {
             "Couchbase.DotnetSdk.RequestTracer",
+            "Grpc.Net.Client",
             "HttpHandlerDiagnosticListener",
             "Microsoft.AspNetCore",
             "Microsoft.EntityFrameworkCore",
@@ -31,6 +32,7 @@ namespace Datadog.Trace.Activity.Handlers
         {
             "System.Net.Http.",
             "Microsoft.AspNetCore.",
+            "Grpc.Net.Client.",
         };
 
         public static bool ShouldIgnoreByOperationName<T>(T activity)
