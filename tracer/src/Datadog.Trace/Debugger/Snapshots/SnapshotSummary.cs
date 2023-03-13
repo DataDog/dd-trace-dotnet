@@ -36,11 +36,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        private static void AddVariablesToSpanAsTags(Snapshot snapshot)
+        internal static void AddVariablesToSpanAsTags(Snapshot snapshot)
         {
             Tracer.Instance.ActiveScope.Span.SetTag(Tags.HasDebugInfo, bool.TrueString);
 
-            var variables = GetArguments(snapshot).Concat(GetLocals(snapshot));
+            var args = GetArguments(snapshot) ?? Enumerable.Empty<CapturedValue>();
+            var locals = GetLocals(snapshot) ?? Enumerable.Empty<CapturedValue>();
+            var variables = args.Concat(locals);
             foreach (var argument in variables)
             {
                 AddVariableToSpan("debug.", argument);
