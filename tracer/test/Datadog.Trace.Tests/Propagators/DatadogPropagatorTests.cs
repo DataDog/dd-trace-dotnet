@@ -360,34 +360,4 @@ namespace Datadog.Trace.Tests.Propagators
             headers.VerifyNoOtherCalls();
         }
     }
-
-#pragma warning disable SA1402 // File may only contain a single type
-    // used to compare property values
-    internal class SpanContextMock
-    {
-        public ulong TraceId { get; set; }
-
-        public ulong SpanId { get; set; }
-
-        public string RawTraceId { get; set; }
-
-        public string RawSpanId { get; set; }
-
-        public string Origin { get; set; }
-
-        public int? SamplingPriority { get; set; }
-
-        public string PropagatedTags { get; set; }
-
-        public string AdditionalW3CTraceState { get; set; }
-
-        public ISpanContext Parent { get; set; }
-
-        public ulong? ParentId { get; set; }
-
-        public string ServiceName { get; set; }
-
-        public TraceContext TraceContext { get; set; }
-    }
-#pragma warning restore SA1402 // File may only contain a single type
 }
