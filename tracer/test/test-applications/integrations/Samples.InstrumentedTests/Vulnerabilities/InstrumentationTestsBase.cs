@@ -51,7 +51,7 @@ public class InstrumentationTestsBase
         AssertInstrumented();
         SampleHelpers.CreateScope("instrumentationTests");
         var scope = SampleHelpers.GetActiveScope();
-        scope.Should().NotBeNull(); 
+        scope.Should().NotBeNull();
         var span = _spanProperty.Invoke(scope, Array.Empty<object>());
         span.Should().NotBeNull();
         var context = _contextProperty.Invoke(span, Array.Empty<object>());
@@ -70,7 +70,7 @@ public class InstrumentationTestsBase
 
     protected object AddTainted(object tainted)
     {
-        var source = Activator.CreateInstance(_sourceType, new object[] { (byte)0, (string)null, (string)tainted });        
+        var source = Activator.CreateInstance(_sourceType, new object[] { (byte)0, (string)null, (string)tainted });
         _taintInputStringMethod.Invoke(_taintedObjects, new object[] { tainted, source });
         return tainted;
     }
@@ -98,7 +98,7 @@ public class InstrumentationTestsBase
     protected void AssertSpanGenerated(string operationName, int spansGenerated = 1)
     {
         var spans = GetGeneratedSpans(_traceContext);
-        spans = spans.Where(x => (string) _operationNameProperty.Invoke(x, Array.Empty<object>()) == operationName).ToList();
+        spans = spans.Where(x => (string)_operationNameProperty.Invoke(x, Array.Empty<object>()) == operationName).ToList();
         spansGenerated.Should().Be(spans.Count);
     }
 
@@ -128,7 +128,7 @@ public class InstrumentationTestsBase
     private static string EnvironmentVariableMessage(string variable)
     {
         var value = Environment.GetEnvironmentVariable(variable);
-        return variable + ": " +  (string.IsNullOrEmpty(value) ? "Empty" : value) + Environment.NewLine;
+        return variable + ": " + (string.IsNullOrEmpty(value) ? "Empty" : value) + Environment.NewLine;
     }
 
     private int GetIastSpansCount(List<object> spans)
@@ -186,7 +186,7 @@ public class InstrumentationTestsBase
 
         List<object> rangesList = new List<object>();
 
-        foreach(var range in ranges)
+        foreach (var range in ranges)
         {
             rangesList.Add(range);
         }
@@ -195,8 +195,8 @@ public class InstrumentationTestsBase
 
         foreach (var range in rangesList)
         {
-            var start = (int) _StartProperty.Invoke(range, Array.Empty<object>());
-            result = result.Insert(start + (int) _LengthProperty.Invoke(range, Array.Empty<object>()), "-+:");
+            var start = (int)_StartProperty.Invoke(range, Array.Empty<object>());
+            result = result.Insert(start + (int)_LengthProperty.Invoke(range, Array.Empty<object>()), "-+:");
             result = result.Insert(start, ":+-");
         }
 

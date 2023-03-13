@@ -25,6 +25,22 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestToCharArrayMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "ToCharArray", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestSubstringMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Substring", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestConcatMethodsAspectCover()
     {
         var overloadsToExclude = new List<string>() { "System.String Concat(System.Object)" };
@@ -53,7 +69,21 @@ public class IastInstrumentationUnitTests : TestHelper
 
     private string NormalizeName(string signature)
     {
-        return signature.Replace(" ", string.Empty).Replace("::", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
+        var indexOfTwoColons = signature.IndexOf("::");
+        if (indexOfTwoColons > -1)
+        {
+            signature = signature.Substring(indexOfTwoColons + 2);
+        }
+        else
+        {
+            var indexOfFirstSpace = signature.IndexOf(" ");
+            if (indexOfFirstSpace > -1)
+            {
+                signature = signature.Substring(indexOfFirstSpace + 1);
+            }
+        }
+
+        return signature.Replace(" ", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
             .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("(Char", "(System.Char").Replace(",Int32", ",System.Int32")
             .Replace(",Char", ",System.Char").Replace("(Int32", "(System.Int32");
     }
@@ -69,7 +99,7 @@ public class IastInstrumentationUnitTests : TestHelper
 
         foreach (var parameter in parameters)
         {
-            if (!typesToExclude.Contains(parameter.ParameterType))
+            if (typesToExclude?.Contains(parameter.ParameterType) != true)
             {
                 return true;
             }
@@ -80,15 +110,17 @@ public class IastInstrumentationUnitTests : TestHelper
 
     private void TestMethodOverloads(string typeToCheck, string methodToCheck, List<string> overloadsToExclude, List<Type> typesToExclude)
     {
-        var overloadsToExcludeNormalized = overloadsToExclude.Select(NormalizeName).ToList();
+        var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
         var aspects = Datadog.Trace.ClrProfiler.AspectDefinitions.Aspects.ToList();
-        Type type = Type.GetType(typeToCheck);
-        var typeMethods = type.GetMethods().Where(x => x.Name == methodToCheck);
+        var type = Type.GetType(typeToCheck);
+        type.Should().NotBeNull();
+        var typeMethods = type?.GetMethods().Where(x => x.Name == methodToCheck);
+        typeMethods.Should().NotBeNull();
 
         foreach (var method in typeMethods)
         {
             var methodSignature = NormalizeName(method.ToString());
-            if (MethodShouldBeChecked(method, typesToExclude) && !overloadsToExcludeNormalized.Contains(methodSignature))
+            if (MethodShouldBeChecked(method, typesToExclude) && overloadsToExcludeNormalized?.Contains(methodSignature) != true)
             {
                 var isCovered = aspects.Any(x => NormalizeName(x).Contains(methodSignature));
                 isCovered.Should().BeTrue(method.ToString() + " is not covered");

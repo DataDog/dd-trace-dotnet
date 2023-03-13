@@ -221,4 +221,55 @@ public partial class StringAspects
 
         return StringModuleImpl.OnStringConcat(values, string.Concat(valuesConverted));
     }
+
+    /// <summary>
+    /// String.Substring aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <param name="startIndex"> the starting index </param>
+    /// <returns> target.Substring(startIndex) </returns>
+    [AspectMethodReplace("System.String::Substring(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Substring(string target, int startIndex)
+    {
+        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.Substring(startIndex));
+    }
+
+    /// <summary>
+    /// String.Substring aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <param name="startIndex"> the starting index </param>
+    /// <param name="length"> the length </param>
+    /// <returns> target.Substring(beginIndex) </returns>
+    [AspectMethodReplace("System.String::Substring(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Substring(string target, int startIndex, int length)
+    {
+        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.Substring(startIndex, length));
+    }
+
+    /// <summary>
+    /// String.ToCharArray aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.ToCharArray() </returns>
+    [AspectMethodReplace("System.String::ToCharArray()", AspectFilter.StringLiteral_0)]
+    public static char[] ToCharArray(string target)
+    {
+        var result = target.ToCharArray();
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.ToCharArray aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <param name="length"> length parameter </param>
+    /// <returns> String.ToCharArray(System.Int32,System.Int32) </returns>
+    [AspectMethodReplace("System.String::ToCharArray(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
+    public static char[] ToCharArray(string target, int startIndex, int length)
+    {
+        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.ToCharArray(startIndex, length));
+    }
 }

@@ -22,6 +22,120 @@ internal static class StringModuleImpl
         return value == null ? null : taintedObjects.Get(value);
     }
 
+    public static object? PropagateTaint(object input, object result)
+    {
+        try
+        {
+            if (result is null)
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var taintedSelf = taintedObjects.Get(input);
+
+            if (taintedSelf == null)
+            {
+                return result;
+            }
+
+            taintedObjects.Taint(result, taintedSelf.Ranges);
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.TaintIfInputIsTainted exception");
+        }
+
+        return result;
+    }
+
+    /// <summary> Taints a string.substring operation </summary>
+    /// <param name="self"> original string </param>
+    /// <param name="beginIndex"> start index </param>
+    /// <param name="result"> Result </param>
+    /// <returns> result </returns>
+    public static char[]? OnStringSubSequence(string self, int beginIndex, char[]? result)
+    {
+        try
+        {
+            if (result is null || result.Length == 0)
+            {
+                return result;
+            }
+
+            OnStringSubSequence(self, beginIndex, result, result.Length);
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,int,char[]) exception");
+        }
+
+        return result;
+    }
+
+    /// <summary> Taints a string.substring operation </summary>
+    /// <param name="self"> original string </param>
+    /// <param name="beginIndex"> start index </param>
+    /// <param name="result"> Result </param>
+    /// <returns> result </returns>
+    public static string OnStringSubSequence(string self, int beginIndex, string result)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result) || self == result)
+            {
+                return result;
+            }
+
+            OnStringSubSequence(self, beginIndex, result, result.Length);
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringSubSequence(string,int,string) exception");
+        }
+
+        return result;
+    }
+
+    /// <summary> Taints a string.substring operation </summary>
+    /// <param name="self"> original string </param>
+    /// <param name="beginIndex"> start index </param>
+    /// <param name="result"> the substring result </param>
+    /// <param name="resultLength"> Result's length </param>
+    private static void OnStringSubSequence(string self, int beginIndex, object result, int resultLength)
+    {
+        var iastContext = IastModule.GetIastContext();
+        if (iastContext == null)
+        {
+            return;
+        }
+
+        var taintedObjects = iastContext.GetTaintedObjects();
+        var selfTainted = taintedObjects.Get(self);
+        if (selfTainted == null)
+        {
+            return;
+        }
+
+        var rangesSelf = selfTainted.Ranges;
+        if (rangesSelf.Length == 0)
+        {
+            return;
+        }
+
+        var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
+        if (newRanges != null && newRanges.Length > 0)
+        {
+            taintedObjects.Taint(result, newRanges);
+        }
+    }
+
     /// <summary> Mostly used overload </summary>
     /// <param name="left"> Param 1 </param>
     /// <param name="right"> Param 2</param>
@@ -70,7 +184,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnstringConcat(string,string) exception {Exception}", err.Message);
+            Log.Error(err, "StringModuleImpl.OnstringConcat(string,string) exception");
         }
 
         return result;
@@ -139,7 +253,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnstringConcat(StringConcatParams) exception {Exception}", err.Message);
+            Log.Error(err, "StringModuleImpl.OnstringConcat(StringConcatParams) exception");
         }
 
         return result;
@@ -208,7 +322,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnstringConcat(IEnumerable) exception {Exception}", err.Message);
+            Log.Error(err, "StringModuleImpl.OnstringConcat(IEnumerable) exception");
         }
 
         return result;

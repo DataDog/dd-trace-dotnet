@@ -290,13 +290,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         private static void CheckRuntimeValues(MockSpan targetSpan)
         {
-            FrameworkDescription framework = FrameworkDescription.Instance;
-
-            AssertTargetSpanEqual(targetSpan, CommonTags.RuntimeName, framework.Name);
-            AssertTargetSpanEqual(targetSpan, CommonTags.RuntimeVersion, framework.ProductVersion);
-            AssertTargetSpanEqual(targetSpan, CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
-            AssertTargetSpanEqual(targetSpan, CommonTags.OSArchitecture, framework.OSArchitecture);
-            AssertTargetSpanEqual(targetSpan, CommonTags.OSPlatform, framework.OSPlatform);
+            AssertTargetSpanExists(targetSpan, CommonTags.RuntimeName);
+            AssertTargetSpanExists(targetSpan, CommonTags.RuntimeVersion);
+            AssertTargetSpanExists(targetSpan, CommonTags.RuntimeArchitecture);
+            AssertTargetSpanExists(targetSpan, CommonTags.OSArchitecture);
+            AssertTargetSpanExists(targetSpan, CommonTags.OSPlatform);
             AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
         }
 

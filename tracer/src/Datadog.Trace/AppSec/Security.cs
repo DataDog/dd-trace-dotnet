@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.RcmModels;
+using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -283,27 +284,28 @@ namespace Datadog.Trace.AppSec
 
         private void AsmDDProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            if (!_enabled) { return; }
-
             var asmDd = e.GetConfigurationAsString().FirstOrDefault();
             if (!string.IsNullOrEmpty(asmDd.TypedFile))
             {
                 _remoteConfigurationStatus.RemoteRulesJson = asmDd.TypedFile;
-                var result = _waf?.UpdateRules(_remoteConfigurationStatus.RemoteRulesJson);
-                WafRuleFileVersion = result?.RuleFileVersion;
-                if (_wafInitResult?.Success ?? false)
+                if (_enabled)
                 {
-                    e.Acknowledge(asmDd.Name);
-                }
-                else
-                {
-                    e.Error(asmDd.Name, "An error happened updating waf rules");
+                    var result = _waf?.UpdateRules(_remoteConfigurationStatus.RemoteRulesJson);
+                    WafRuleFileVersion = result?.RuleFileVersion;
+                    if (_wafInitResult?.Success ?? false)
+                    {
+                        e.Acknowledge(asmDd.Name);
+                    }
+                    else
+                    {
+                        e.Error(asmDd.Name, "An error happened updating waf rules");
+                    }
+
+                    return;
                 }
             }
-            else
-            {
-                e.Acknowledge(asmDd.Name);
-            }
+
+            e.Acknowledge(asmDd.Name);
         }
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
@@ -325,30 +327,29 @@ namespace Datadog.Trace.AppSec
             e.Acknowledge(features.Name);
         }
 
-        private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        private void AsmDataProductConfigRemoved(object sender, ProductConfigChangedEventArgs e)
         {
-            if (!_enabled)
-            {
-                return;
-            }
-
             var asmDataConfigs = e.GetDeserializedConfigurations<RcmModels.AsmData.Payload>();
             foreach (var asmDataConfig in asmDataConfigs)
             {
-                if (asmDataConfig.TypedFile?.RulesData?.Length > 0)
+                if (_remoteConfigurationStatus.RulesDataByFile.ContainsKey(asmDataConfig.Name))
                 {
-                    _remoteConfigurationStatus.RulesData.AddRange(asmDataConfig.TypedFile.RulesData);
+                    _remoteConfigurationStatus.RulesDataByFile.Remove(asmDataConfig.Name);
                 }
-
-                e.Acknowledge(asmDataConfig.Name);
             }
 
-            var updated = UpdateWafWithRulesData();
+            var updated = true;
+            if (_enabled)
+            {
+                var ruleData = _remoteConfigurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
+                updated = UpdateWafWithRulesData(ruleData);
+            }
+
             foreach (var asmDataConfig in asmDataConfigs)
             {
                 if (!updated)
                 {
-                    e.Error(asmDataConfig.Name, "Waf could not update the rules");
+                    e.Error(asmDataConfig.Name, "Waf could not remove the rules data");
                 }
                 else
                 {
@@ -357,25 +358,95 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void AsmProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            if (!_enabled) { return; }
+            var asmDataConfigs = e.GetDeserializedConfigurations<RcmModels.AsmData.Payload>();
+            foreach (var asmDataConfig in asmDataConfigs)
+            {
+                if (asmDataConfig.TypedFile?.RulesData?.Length > 0)
+                {
+                    _remoteConfigurationStatus.RulesDataByFile[asmDataConfig.Name] = asmDataConfig.TypedFile.RulesData;
+                }
+            }
 
+            var updated = true;
+            if (_enabled)
+            {
+                var ruleData = _remoteConfigurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
+                updated = UpdateWafWithRulesData(ruleData);
+            }
+
+            foreach (var asmDataConfig in asmDataConfigs)
+            {
+                if (!updated)
+                {
+                    e.Error(asmDataConfig.Name, "Waf could not update the rules data");
+                }
+                else
+                {
+                    e.Acknowledge(asmDataConfig.Name);
+                }
+            }
+        }
+
+        private void AsmProductConfigRemoved(object sender, ProductConfigChangedEventArgs e)
+        {
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
 
-            _remoteConfigurationStatus.RulesOverrides.Clear();
-            _remoteConfigurationStatus.Exclusions.Clear();
+            foreach (var asmConfig in asmConfigs)
+            {
+                if (_remoteConfigurationStatus.RulesOverridesByFile.ContainsKey(asmConfig.Name))
+                {
+                    _remoteConfigurationStatus.RulesOverridesByFile.Remove(asmConfig.Name);
+                }
+
+                if (_remoteConfigurationStatus.ExclusionsByFile.ContainsKey(asmConfig.Name))
+                {
+                    _remoteConfigurationStatus.ExclusionsByFile.Remove(asmConfig.Name);
+                }
+            }
+
+            var result = true;
+            if (_enabled)
+            {
+                var overrides = _remoteConfigurationStatus.RulesOverridesByFile.SelectMany(x => x.Value).ToList();
+                var exclusions = _remoteConfigurationStatus.ExclusionsByFile.SelectMany(x => x.Value).ToList();
+
+                result = _waf.UpdateRulesStatus(overrides, exclusions);
+                Log.Debug<bool, int, int>(
+                    "_waf.Update was updated for removal: {Success}, ({RulesOverridesCount} rule status entries), ({ExclusionsCount} exclusion filters)",
+                    result,
+                    overrides.Count,
+                    exclusions.Count);
+            }
+
+            foreach (var asmConfig in asmConfigs)
+            {
+                if (result)
+                {
+                    e.Acknowledge(asmConfig.Name);
+                }
+                else
+                {
+                    e.Error(asmConfig.Name, "waf couldn't be remove with rule asm product");
+                }
+            }
+        }
+
+        private void AsmProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        {
+            var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
 
             foreach (var asmConfig in asmConfigs)
             {
                 if (asmConfig.TypedFile.RuleOverrides?.Length > 0)
                 {
-                    _remoteConfigurationStatus.RulesOverrides.AddRange(asmConfig.TypedFile.RuleOverrides);
+                    _remoteConfigurationStatus.RulesOverridesByFile[asmConfig.Name] = asmConfig.TypedFile.RuleOverrides;
                 }
 
                 if (asmConfig.TypedFile.Exclusions?.Count > 0)
                 {
-                    _remoteConfigurationStatus.Exclusions.AddRange(asmConfig.TypedFile.Exclusions);
+                    _remoteConfigurationStatus.ExclusionsByFile[asmConfig.Name] = asmConfig.TypedFile.Exclusions;
                 }
 
                 if (asmConfig.TypedFile.Actions != null)
@@ -395,12 +466,19 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            var result = _waf.UpdateRulesStatus(_remoteConfigurationStatus.RulesOverrides, _remoteConfigurationStatus.Exclusions);
-            Log.Debug<bool, int, int>(
-                "_waf.Update was updated: {Success}, ({RulesOverridesCount} rule status entries), ({ExclusionsCount} exclusion filters)",
-                result,
-                _remoteConfigurationStatus.RulesOverrides.Count,
-                _remoteConfigurationStatus.Exclusions.Count);
+            var result = true;
+            if (_enabled)
+            {
+                var overrides = _remoteConfigurationStatus.RulesOverridesByFile.SelectMany(x => x.Value).ToList();
+                var exclusions = _remoteConfigurationStatus.ExclusionsByFile.SelectMany(x => x.Value).ToList();
+
+                result = _waf.UpdateRulesStatus(overrides, exclusions);
+                Log.Debug<bool, int, int>(
+                    "_waf.Update was updated for change: {Success}, ({RulesOverridesCount} rule status entries), ({ExclusionsCount} exclusion filters)",
+                    result,
+                    overrides.Count,
+                    exclusions.Count);
+            }
 
             foreach (var asmConfig in asmConfigs)
             {
@@ -410,12 +488,12 @@ namespace Datadog.Trace.AppSec
                 }
                 else
                 {
-                    e.Error(asmConfig.Name, "waf couldn't be updated with rule overrides");
+                    e.Error(asmConfig.Name, "waf couldn't be updated with asm product");
                 }
             }
         }
 
-        private bool UpdateWafWithRulesData() => _waf?.UpdateRulesData(_remoteConfigurationStatus.RulesData) ?? false;
+        private bool UpdateWafWithRulesData(List<RuleData> ruleData) => _waf?.UpdateRulesData(ruleData) ?? false;
 
         private void InitWafAndInstrumentations(bool fromRemoteConfig = false)
         {
@@ -441,7 +519,8 @@ namespace Datadog.Trace.AppSec
                 _waf = _wafInitResult.Waf;
                 oldWaf?.Dispose();
                 Log.Debug("Disposed old waf and affected new waf");
-                UpdateWafWithRulesData();
+                var ruleData = _remoteConfigurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
+                UpdateWafWithRulesData(ruleData);
                 AddInstrumentationsAndProducts(fromRemoteConfig);
             }
             else
@@ -464,6 +543,8 @@ namespace Datadog.Trace.AppSec
             {
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
                 AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged += AsmProductConfigChanged;
+                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved += AsmDataProductConfigRemoved;
+                AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved += AsmProductConfigRemoved;
                 AddAppsecSpecificInstrumentations();
 
                 _rateLimiter ??= new AppSecRateLimiter(_settings.TraceRateLimit);
@@ -480,6 +561,8 @@ namespace Datadog.Trace.AppSec
             {
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
                 AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
+                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved -= AsmDataProductConfigRemoved;
+                AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved -= AsmProductConfigRemoved;
                 RemoveAppsecSpecificInstrumentations();
 
                 _enabled = false;
@@ -508,6 +591,8 @@ namespace Datadog.Trace.AppSec
         {
             AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
+            AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved -= AsmDataProductConfigRemoved;
+            AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved -= AsmProductConfigRemoved;
             AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged -= AsmDDProductConfigChanged;
             Dispose();
