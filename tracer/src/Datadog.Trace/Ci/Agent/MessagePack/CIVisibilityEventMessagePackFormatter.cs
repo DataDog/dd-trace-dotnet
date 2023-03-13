@@ -22,6 +22,15 @@ internal class CIVisibilityEventMessagePackFormatter<T> : EventMessagePackFormat
 
         offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
 
+#if NETCOREAPP
+        offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, TypeBytes);
+        offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
+
+        offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, VersionBytes);
+        offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.Version);
+
+        offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, ContentBytes);
+#else
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TypeBytes);
         offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
 
@@ -29,6 +38,7 @@ internal class CIVisibilityEventMessagePackFormatter<T> : EventMessagePackFormat
         offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.Version);
 
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ContentBytes);
+#endif
         offset += formatterResolver.GetFormatter<T>().Serialize(ref bytes, offset, value.Content, formatterResolver);
 
         return offset - originalOffset;

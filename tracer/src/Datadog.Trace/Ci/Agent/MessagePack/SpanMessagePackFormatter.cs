@@ -20,6 +20,30 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
     {
         public static readonly IMessagePackFormatter<Span> Instance = new SpanMessagePackFormatter();
 
+#if NETCOREAPP
+        private ReadOnlySpan<byte> TraceIdBytes => "trace_id"u8;
+
+        private ReadOnlySpan<byte> SpanIdBytes => "span_id"u8;
+
+        private ReadOnlySpan<byte> NameBytes => "name"u8;
+
+        private ReadOnlySpan<byte> ResourceBytes => "resource"u8;
+
+        private ReadOnlySpan<byte> ServiceBytes => "service"u8;
+
+        private ReadOnlySpan<byte> TypeBytes => "type"u8;
+
+        private ReadOnlySpan<byte> StartBytes => "start"u8;
+
+        private ReadOnlySpan<byte> DurationBytes => "duration"u8;
+
+        private ReadOnlySpan<byte> ParentIdBytes => "parent_id"u8;
+
+        private ReadOnlySpan<byte> ErrorBytes => "error"u8;
+
+        // string tags
+        private ReadOnlySpan<byte> MetaBytes => "meta"u8;
+#else
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
         private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
         private readonly byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
@@ -33,8 +57,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
+#endif
 
+#pragma warning disable SA1201
         private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
+#pragma warning restore SA1201
         private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
 
         private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
@@ -45,9 +72,15 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly byte[] _originValueBytes = StringEncoding.UTF8.GetBytes(TestTags.CIAppTestOriginName);
 
         // numeric tags
+#if NETCOREAPP
+        private ReadOnlySpan<byte> MetricsBytes => "metrics"u8;
+#else
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
+#endif
 
+#pragma warning disable SA1201
         private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
+#pragma warning restore SA1201
         private readonly byte[][] _samplingPriorityValueBytes;
 
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
@@ -116,6 +149,40 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
 
+#if NETCOREAPP
+            if (isSpan)
+            {
+                offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, TraceIdBytes);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId);
+
+                offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, SpanIdBytes);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
+            }
+
+            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, NameBytes);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, value.OperationName);
+
+            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, ResourceBytes);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, value.ResourceName);
+
+            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, ServiceBytes);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, value.ServiceName);
+
+            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, TypeBytes);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
+
+            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, StartBytes);
+            offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.StartTime.ToUnixTimeNanoseconds());
+
+            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, DurationBytes);
+            offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.Duration.ToNanoseconds());
+
+            if (context.ParentId is not null)
+            {
+                offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, ParentIdBytes);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.ParentId.Value);
+            }
+#else
             if (isSpan)
             {
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
@@ -148,6 +215,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.ParentId.Value);
             }
+#endif
 
             if (testSuiteTags is not null)
             {
@@ -167,7 +235,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, testSessionTags.SessionId);
             }
 
+#if NETCOREAPP
+            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, ErrorBytes);
+#else
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _errorBytes);
+#endif
             offset += MessagePackBinary.WriteByte(ref bytes, offset, (byte)(value.Error ? 1 : 0));
 
             ITagProcessor[] tagProcessors = null;
@@ -199,7 +271,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             var traceContext = span.Context.TraceContext;
 
             // Start of "meta" dictionary. Do not add any string tags before this line.
+#if NETCOREAPP
+            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, MetaBytes);
+#else
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaBytes);
+#endif
 
             int count = 0;
 
@@ -319,7 +395,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             int originalOffset = offset;
 
             // Start of "metrics" dictionary. Do not add any numeric tags before this line.
+#if NETCOREAPP
+            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, MetricsBytes);
+#else
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metricsBytes);
+#endif
 
             int count = 0;
 

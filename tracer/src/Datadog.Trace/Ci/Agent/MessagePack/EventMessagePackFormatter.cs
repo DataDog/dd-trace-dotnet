@@ -14,11 +14,21 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
     {
         private readonly IDatadogLogger _log;
 
+#if NETCOREAPP
+        protected static ReadOnlySpan<byte> TypeBytes => "type"u8;
+
+        protected static ReadOnlySpan<byte> VersionBytes => "version"u8;
+
+        protected static ReadOnlySpan<byte> ContentBytes => "content"u8;
+#else
         protected static readonly byte[] TypeBytes = StringEncoding.UTF8.GetBytes("type");
         protected static readonly byte[] VersionBytes = StringEncoding.UTF8.GetBytes("version");
         protected static readonly byte[] ContentBytes = StringEncoding.UTF8.GetBytes("content");
+#endif
 
+#pragma warning disable SA1201
         public EventMessagePackFormatter()
+#pragma warning restore SA1201
         {
             _log = DatadogLogging.GetLoggerFor(GetType());
         }
