@@ -79,6 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("GrpcDotNet", output, usesAspNetCore: true)
         {
             SetEnvironmentVariable("ASPNETCORE_URLS", "http://127.0.0.1:0"); // don't use SSL
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         [SkippableTheory]
@@ -133,6 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("GrpcDotNet", output, usesAspNetCore: true)
         {
             SetEnvironmentVariable("ASPNETCORE_URLS", "https://127.0.0.1:0"); // use SSL
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         [SkippableTheory]

@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -20,11 +21,21 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly IApplicationLifetime _lifetime;
     private static readonly ErrorType[] ErrorTypes = (ErrorType[])Enum.GetValues(typeof(ErrorType));
+    private readonly ActivitySource _source = new("Samples.GrpcDotNet");
 
     public Worker(ILogger<Worker> logger, IApplicationLifetime lifetime)
     {
         _logger = logger;
         _lifetime = lifetime;
+        var activityListener = new ActivityListener
+        {
+            ActivityStarted = activity => Console.WriteLine($"{activity.DisplayName}:{activity.Id} - Started"),
+            ActivityStopped = activity => Console.WriteLine($"{activity.DisplayName}:{activity.Id} - Stopped"),
+            ShouldListenTo = _ => true,
+            Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData
+        };
+
+        ActivitySource.AddActivityListener(activityListener);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -81,7 +92,7 @@ public class Worker : BackgroundService
 
     private async Task SendUnaryRequestAsync(Greeter.GreeterClient client)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         _logger.LogInformation("Sending unary async request to self");
         var reply = await client.UnaryAsync(
                         new HelloRequest { Name = "GreeterClient" });
@@ -91,7 +102,7 @@ public class Worker : BackgroundService
 
     private void SendUnaryRequest(Greeter.GreeterClient client)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         _logger.LogInformation("Sending unary request to self");
         var reply = client.Unary(new HelloRequest { Name = "GreeterClient" });
 
@@ -100,7 +111,7 @@ public class Worker : BackgroundService
 
     private async Task SendServerStreamingRequest(Greeter.GreeterClient client, CancellationToken ct)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         _logger.LogInformation("Sending streaming server request to self");
 
         using var messages = client.StreamingFromServer(
@@ -116,7 +127,7 @@ public class Worker : BackgroundService
 
     private async Task SendClientStreamingRequest(Greeter.GreeterClient client, CancellationToken ct)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         _logger.LogInformation("Sending streaming client requests to self");
 
         using var call = client.StreamingFromClient();
@@ -136,7 +147,7 @@ public class Worker : BackgroundService
 
     private async Task SendBothStreamingRequest(Greeter.GreeterClient client, CancellationToken ct)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         _logger.LogInformation("Sending streaming server request to self");
 
         using var call = client.StreamingBothWays();
@@ -165,7 +176,7 @@ public class Worker : BackgroundService
     {
         foreach (var errorType in ErrorTypes)
         {
-            using var scope = SampleHelpers.CreateScope($"SendErrors_{errorType}");
+            using var activity = _source.StartActivity($"SendErrors_{errorType}");
             try
             {
                 _logger.LogInformation("Sending erroring request to self with {ErrorType}", errorType);
@@ -186,7 +197,7 @@ public class Worker : BackgroundService
     {
         foreach (var errorType in ErrorTypes)
         {
-            using var scope = SampleHelpers.CreateScope($"SendErrorsAsync_{errorType}");
+            using var activity = _source.StartActivity($"SendErrorsAsync_{errorType}");
             try
             {
                 _logger.LogInformation("Sending erroring request to self with {ErrorType}", errorType);
@@ -205,7 +216,7 @@ public class Worker : BackgroundService
 
     private async Task SendVerySlowRequestAsync(Greeter.GreeterClient client)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         try
         {
             _logger.LogInformation("Sending very slow request to self");
@@ -221,7 +232,7 @@ public class Worker : BackgroundService
 
     private void SendVerySlowRequest(Greeter.GreeterClient client)
     {
-        using var scope = CreateScope();
+        using var activity = StartActivity();
         try
         {
             _logger.LogInformation("Sending very slow request to self");
@@ -264,6 +275,12 @@ public class Worker : BackgroundService
         };
     }
 
-    private static IDisposable CreateScope([CallerMemberName] string? name = null)
-        => SampleHelpers.CreateScope(name);
+    private IDisposable StartActivity([CallerMemberName] string name = "")
+    {
+        var activity = _source.StartActivity(name);
+
+        return activity is null
+            ? throw new Exception($"Attempted to start a new activity for {name} method, but activity returned was null.")
+            : activity;
+    }
 }
