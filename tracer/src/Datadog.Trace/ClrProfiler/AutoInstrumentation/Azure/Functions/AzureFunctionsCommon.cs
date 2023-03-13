@@ -12,6 +12,8 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
 using Microsoft.AspNetCore.Http;
 
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal static class AzureFunctionsCommon
@@ -56,9 +58,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return CallTargetState.GetDefault();
         }
 
-        internal static Scope CreateScope(Tracer tracer, IFunctionInstance instanceParam)
+        internal static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
+            where TFunction : IFunctionInstance
         {
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -117,16 +120,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
 
-                var tags = new AzureFunctionsTags
-                {
-                    TriggerType = triggerType,
-                    ShortName = functionName,
-                    FullName = instanceParam.FunctionDescriptor.FullName,
-                    BindingSource = bindingSourceType.FullName
-                };
-
                 if (tracer.InternalActiveScope == null)
                 {
+                    var tags = new AzureFunctionsTags
+                    {
+                        TriggerType = triggerType,
+                        ShortName = functionName,
+                        FullName = instanceParam.FunctionDescriptor.FullName,
+                        BindingSource = bindingSourceType.FullName
+                    };
+
                     // This is the root scope
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags);
@@ -134,7 +137,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 else
                 {
                     scope = tracer.StartActiveInternal(OperationName);
-                    tags.SetRootTags(scope.Root.Span);
+                    AzureFunctionsTags.SetRootSpanTags(
+                        scope.Root.Span,
+                        shortName: functionName,
+                        fullName: instanceParam.FunctionDescriptor.FullName,
+                        bindingSource: bindingSourceType.FullName,
+                        triggerType: triggerType);
                 }
 
                 scope.Root.Span.Type = SpanType;
