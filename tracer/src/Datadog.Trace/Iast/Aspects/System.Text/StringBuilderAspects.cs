@@ -12,7 +12,7 @@ using Datadog.Trace.Iast.Propagation;
 namespace Datadog.Trace.Iast.Aspects.System.Text;
 
 /// <summary> StringBuilder class aspects </summary>
-[AspectClass("mscorlib,netstandard,System.Private.CoreLib")]
+[AspectClass("mscorlib,netstandard,System.Runtime")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public partial class StringBuilderAspects
@@ -59,7 +59,7 @@ public partial class StringBuilderAspects
     /// <summary>  StringBuilder.ToString aspect </summary>
     /// <param name="target"> StringBuilder instance </param>
     /// <returns> instance.ToString() </returns>
-    [AspectMethodReplace("System.Object::ToString()", "mscorlib|System.Text.StringBuilder")]
+    [AspectMethodReplace("System.Object::ToString()", "System.Text.StringBuilder")]
     public static string ToString(StringBuilder target)
     {
         var result = target.ToString();
@@ -88,7 +88,8 @@ public partial class StringBuilderAspects
     public static StringBuilder Append(StringBuilder target, string? value)
     {
         var initialLength = target.Length;
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value), initialLength, value, value?.Length ?? 0, 0, value?.Length ?? 0);
+        var length = value?.Length ?? 0;
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value), initialLength, value, length, 0, length);
     }
 
     /// <summary>  StringBuilder.Append aspect </summary>
@@ -99,7 +100,8 @@ public partial class StringBuilderAspects
     public static StringBuilder Append(StringBuilder target, StringBuilder? value)
     {
         var initialLength = target.Length;
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value), initialLength, value, value?.Length ?? 0, 0, value?.Length ?? 0);
+        var length = value?.Length ?? 0;
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value), initialLength, value, length, 0, length);
     }
 
     /// <summary>  StringBuilder.Append aspect </summary>
@@ -133,18 +135,6 @@ public partial class StringBuilderAspects
     /// <summary>  StringBuilder.Append aspect </summary>
     /// <param name="target"> StringBuilder instance </param>
     /// <param name="value"> string parameter </param>
-    /// <param name="repeatCount"> repeatCount parameter </param>
-    /// <returns> instance.Append() </returns>
-    [AspectMethodReplace("System.Text.StringBuilder::Append(System.Char,System.Int32)")]
-    public static StringBuilder Append(StringBuilder target, char value, int repeatCount)
-    {
-        var initialLength = target.Length;
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value, repeatCount), initialLength, value, 1, 0, 1);
-    }
-
-    /// <summary>  StringBuilder.Append aspect </summary>
-    /// <param name="target"> StringBuilder instance </param>
-    /// <param name="value"> string parameter </param>
     /// <param name="startIndex"> startIndex parameter </param>
     /// <param name="charCount"> charCount parameter </param>
     /// <returns> instance.Append() </returns>
@@ -159,13 +149,37 @@ public partial class StringBuilderAspects
     /// <param name="target"> StringBuilder instance </param>
     /// <param name="value"> string parameter </param>
     /// <returns> instance.Append() </returns>
+#if NETFRAMEWORK
     [AspectMethodReplace("System.Text.StringBuilder::Append(System.Object)")]
     public static StringBuilder Append(StringBuilder target, object? value)
     {
         var initialLength = target.Length;
-        var length = value?.ToString()?.Length ?? 0;
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value), initialLength, value, length, 0, length);
+
+        object? valueObject;
+        int length;
+        if (value is StringBuilder valueStringBuilder)
+        {
+            valueObject = valueStringBuilder;
+            length = valueStringBuilder!.Length;
+        }
+        else
+        {
+            valueObject = value?.ToString();
+            length = (valueObject as string)?.Length ?? 0;
+        }
+
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value), initialLength, valueObject, length, 0, length);
     }
+#else
+    [AspectMethodReplace("System.Text.StringBuilder::Append(System.Object)")]
+    public static StringBuilder Append(StringBuilder target, object? value)
+    {
+        var initialLength = target.Length;
+        var valueToString = value?.ToString();
+        var length = valueToString?.Length ?? 0;
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value), initialLength, valueToString, length, 0, length);
+    }
+#endif
 
     /// <summary>  StringBuilder.Append aspect </summary>
     /// <param name="target"> StringBuilder instance </param>
@@ -175,7 +189,8 @@ public partial class StringBuilderAspects
     public static StringBuilder Append(StringBuilder target, char[]? value)
     {
         var initialLength = target.Length;
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value), initialLength, value, value?.Length ?? 0, 0, value?.Length ?? 0);
+        var length = value?.Length ?? 0;
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value), initialLength, value, length, 0, length);
     }
 
     /// <summary>  StringBuilder.AppendLine aspect </summary>
@@ -186,7 +201,8 @@ public partial class StringBuilderAspects
     public static StringBuilder AppendLine(StringBuilder target, string? value)
     {
         var initialLength = target.Length;
+        var length = value?.Length ?? 0;
         // We do not take into account the endline char because it is not tainted
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target.AppendLine(value), initialLength, value, value?.Length ?? 0, 0, value?.Length ?? 0);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target.AppendLine(value), initialLength, value, length, 0, length);
     }
 }
