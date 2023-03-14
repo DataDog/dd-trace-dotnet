@@ -1543,6 +1543,17 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - task: DockerCompose@0
+      displayName: docker-compose logs for aerospike
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+          framework=$(publishTargetFramework)
+          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+        dockerComposeCommand: logs aerospike
+        projectName: ddtrace_$(Build.BuildNumber)
+
+    - task: DockerCompose@0
       displayName: docker-compose stop services
       inputs:
         containerregistrytype: Container Registry
