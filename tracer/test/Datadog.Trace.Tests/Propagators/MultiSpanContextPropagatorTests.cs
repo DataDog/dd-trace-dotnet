@@ -201,7 +201,7 @@ namespace Datadog.Trace.Tests.Propagators
                    .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
 
             headers.Setup(h => h.GetValues("tracestate"))
-                   .Returns(new[] { "dd=s:2;o:rum;t.dm:-4;t.usr.id:12345" });
+                   .Returns(new[] { "dd=s:2;o:rum;t.key1:value1;t.key2:value2" });
 
             var result = Propagator.Extract(headers.Object);
 
