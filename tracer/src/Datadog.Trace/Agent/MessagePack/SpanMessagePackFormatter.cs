@@ -465,7 +465,7 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 for (var i = 0; i < tagProcessors.Length; i++)
                 {
-                    tagProcessors[i]?.ProcessMeta(ref key, ref value);
+                    tagProcessors.FastGetReference(i)?.ProcessMeta(ref key, ref value);
                 }
             }
 
@@ -485,7 +485,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 string key = null;
                 for (var i = 0; i < tagProcessors.Length; i++)
                 {
-                    tagProcessors[i]?.ProcessMeta(ref key, ref value);
+                    tagProcessors.FastGetReference(i)?.ProcessMeta(ref key, ref value);
                 }
             }
 
@@ -559,7 +559,7 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 for (var i = 0; i < tagProcessors.Length; i++)
                 {
-                    tagProcessors[i]?.ProcessMetric(ref key, ref value);
+                    tagProcessors.FastGetReference(i)?.ProcessMetric(ref key, ref value);
                 }
             }
 
@@ -579,7 +579,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 string key = null;
                 for (var i = 0; i < tagProcessors.Length; i++)
                 {
-                    tagProcessors[i]?.ProcessMetric(ref key, ref value);
+                    tagProcessors.FastGetReference(i)?.ProcessMetric(ref key, ref value);
                 }
             }
 
