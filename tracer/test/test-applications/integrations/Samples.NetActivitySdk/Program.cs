@@ -34,6 +34,7 @@ public static class Program
         // needs to be outside of the above root span as we don't want a parent here
         RunActivityConstructors(); // 4 spans (total 14)
         RunActivityUpdate(); //  9 spans (total 23)
+        RunNonW3CId(); // 2 spans (total 25)
         await Task.Delay(1000);
     }
 
@@ -140,6 +141,20 @@ public static class Program
         setBaggageSpan?.AddBaggage("string-value", "string-1");
         setBaggageSpan?.SetBaggage("string-value", "string-2"); // change existing
         setBaggageSpan?.SetBaggage("new-string", "new-string"); // create new
+    }
+
+    private static void RunNonW3CId()
+    {
+        using (var parent = new Activity("Parent-NonW3CId"))
+        {
+            parent.SetIdFormat(ActivityIdFormat.Hierarchical);
+            parent.Start();
+            using (var child = new Activity("Child-NonW3CId"))
+            {
+                child.SetIdFormat(ActivityIdFormat.Hierarchical);
+                child.Start();
+            }
+        }
     }
 
     private static void RunActivityUpdate()
