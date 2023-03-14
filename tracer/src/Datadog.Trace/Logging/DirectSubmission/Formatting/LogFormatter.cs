@@ -38,6 +38,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
         public LogFormatter(
             ImmutableDirectLogSubmissionSettings settings,
+            ImmutableAzureAppServiceSettings? aasSettings,
             string serviceName,
             string env,
             string version,
@@ -47,12 +48,24 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             _source = string.IsNullOrEmpty(settings.Source) ? null : settings.Source;
             _service = string.IsNullOrEmpty(serviceName) ? null : serviceName;
             _host = string.IsNullOrEmpty(settings.Host) ? null : settings.Host;
-            _tags = string.IsNullOrEmpty(settings.GlobalTags) ? null : settings.GlobalTags;
+            _tags = EnrichTagsWithAasMetadata(settings.GlobalTags, aasSettings);
             _env = string.IsNullOrEmpty(env) ? null : env;
             _version = string.IsNullOrEmpty(version) ? null : version;
         }
 
         internal delegate LogPropertyRenderingDetails FormatDelegate<T>(JsonTextWriter writer, in T state);
+
+        private string? EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)
+        {
+            if (aasSettings is null)
+            {
+                return string.IsNullOrEmpty(globalTags) ? null : globalTags;
+            }
+
+            var aasTags = $"{Tags.AzureAppServicesResourceId}:{aasSettings.ResourceId}";
+
+            return string.IsNullOrEmpty(globalTags) ? aasTags : aasTags + "," + globalTags;
+        }
 
         private void EnrichTagsStringWithGitMetadata()
         {
