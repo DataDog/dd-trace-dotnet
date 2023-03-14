@@ -297,7 +297,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Join(System.Char,System.String[])")]
     public static string Join(char separator, string[] values)
     {
-        return OnStringJoin(string.Join(separator.ToString(), values), separator.ToString(), values);
+        return OnStringJoin(string.Join(separator.ToString(), values), values);
     }
 
     /// <summary>
@@ -309,7 +309,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Join(System.Char,System.Object[])")]
     public static string Join(char separator, object[] values)
     {
-        return OnStringJoin(string.Join(separator.ToString(), values), separator.ToString(), values);
+        return OnStringJoin(string.Join(separator.ToString(), values), values);
     }
 
     /// <summary>
@@ -323,7 +323,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Join(System.Char,System.String[],System.Int32,System.Int32)")]
     public static string Join(char separator, string[] values, int startIndex, int count)
     {
-        return OnStringJoin(string.Join(separator.ToString(), values, startIndex, count), separator.ToString(), values, startIndex, count);
+        return OnStringJoin(string.Join(separator.ToString(), values, startIndex, count), values, startIndex, count);
     }
 
     /// <summary>
@@ -349,7 +349,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Join(System.Char,System.String[])")]
     public static string Join(char separator, string[] values)
     {
-        return OnStringJoin(string.Join(separator, values), separator.ToString(), values);
+        return OnStringJoin(string.Join(separator, values), values);
     }
 
     /// <summary>
@@ -361,7 +361,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Join(System.Char,System.Object[])")]
     public static string Join(char separator, object[] values)
     {
-        return OnStringJoin(string.Join(separator, values), separator.ToString(), values);
+        return OnStringJoin(string.Join(separator, values), values);
     }
 
     /// <summary>
@@ -375,7 +375,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::Join(System.Char,System.String[],System.Int32,System.Int32)")]
     public static string Join(char separator, string[] values, int startIndex, int count)
     {
-        return OnStringJoin(string.Join(separator, values, startIndex, count), separator.ToString(), values, startIndex, count);
+        return OnStringJoin(string.Join(separator, values, startIndex, count), values, startIndex, count);
     }
 
     /// <summary>

@@ -138,6 +138,49 @@ internal static class StringModuleImpl
         }
     }
 
+    public static string OnStringJoin(string result, IEnumerable<object> values, int startIndex = 0, int count = -1)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+
+            var newRanges = new List<Range>();
+            int pos = 0;
+            int i = 0;
+            foreach (var element in values)
+            {
+                if (i >= startIndex && (count < 0 || i < startIndex + count))
+                {
+                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, null, 1, element?.ToString() ?? string.Empty, false);
+                }
+
+                i++;
+            }
+
+            if (newRanges.Count > 0)
+            {
+                taintedObjects.Taint(result, newRanges.ToArray());
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringJoinChar exception");
+        }
+
+        return result;
+    }
+
     public static string OnStringJoin(string result, string delimiter, IEnumerable<object> values, int startIndex = 0, int count = -1)
     {
         try
