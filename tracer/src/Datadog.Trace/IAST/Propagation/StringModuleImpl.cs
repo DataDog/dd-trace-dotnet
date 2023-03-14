@@ -181,7 +181,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnStringJoin exception {Exception}", err.Message);
+            Log.Error(err, "StringModuleImpl.OnStringJoin exception");
         }
 
         return result;

@@ -25,6 +25,46 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestJoinMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Join", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestToUpperMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "ToUpper", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestToUpperInvariantMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "ToUpperInvariant", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestToLowerArrayMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "ToLower", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestToLowerInvariantMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "ToLowerInvariant", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestToCharArrayMethodsAspectCover()
     {
         TestMethodOverloads("System.String", "ToCharArray", null, null);
