@@ -423,11 +423,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-#if !NETCOREAPP
             offset += MessagePackBinary.WriteRaw(ref bytes, offset, keyBytes);
-#else
-            offset += MessagePackBinary.WriteRawReadOnlySpan(ref bytes, offset, keyBytes);
-#endif
             offset += MessagePackBinary.WriteString(ref bytes, offset, value);
         }
 
@@ -521,11 +517,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-#if !NETCOREAPP
             offset += MessagePackBinary.WriteRaw(ref bytes, offset, keyBytes);
-#else
-            offset += MessagePackBinary.WriteRawReadOnlySpan(ref bytes, offset, keyBytes);
-#endif
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
         }
 

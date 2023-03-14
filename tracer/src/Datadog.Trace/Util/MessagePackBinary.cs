@@ -16,7 +16,7 @@ namespace Datadog.Trace.Vendors.MessagePack;
 internal partial class MessagePackBinary
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static int WriteRawReadOnlySpan(ref byte[] bytes, int offset, ReadOnlySpan<byte> rawMessagePackBlock)
+    public static int WriteRaw(ref byte[] bytes, int offset, ReadOnlySpan<byte> rawMessagePackBlock)
     {
         var bytesCount = rawMessagePackBlock.Length;
         EnsureCapacity(ref bytes, offset, bytesCount);
