@@ -409,6 +409,18 @@ public partial class StringAspects
     /// <param name="separator"> sparator </param>
     /// <param name="values"> values to join </param>
     /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.String[])")]
+    public static string Join(string separator, string[] values)
+    {
+        return OnStringJoin(string.Join(separator, values), separator, values);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
     [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)")]
     public static string Join(string separator, IEnumerable values)
     {

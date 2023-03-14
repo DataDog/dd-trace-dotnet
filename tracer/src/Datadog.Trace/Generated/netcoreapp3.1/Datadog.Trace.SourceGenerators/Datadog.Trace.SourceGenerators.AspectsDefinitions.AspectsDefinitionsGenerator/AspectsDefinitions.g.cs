@@ -36,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::Join(System.Char,System.String[],System.Int32,System.Int32)\",\"\",[0],[False],[None],Propagation,[])] Join(System.Char,System.String[],System.Int32,System.Int32)",
 "  [AspectMethodReplace(\"System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)\",\"\",[0],[False],[None],Propagation,[])] Join(System.Char,System.Collections.IEnumerable)",
 "  [AspectMethodReplace(\"System.String::Join(System.String,System.Object[])\",\"\",[0],[False],[None],Propagation,[])] Join(System.String,System.Object[])",
+"  [AspectMethodReplace(\"System.String::Join(System.String,System.String[])\",\"\",[0],[False],[None],Propagation,[])] Join(System.String,System.String[])",
 "  [AspectMethodReplace(\"System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)\",\"\",[0],[False],[None],Propagation,[])] Join(System.String,System.Collections.IEnumerable)",
 "  [AspectMethodReplace(\"System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)\",\"\",[0],[False],[None],Propagation,[])] Join2(System.String,System.Collections.IEnumerable)",
 "  [AspectMethodReplace(\"System.String::ToUpper()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToUpper(System.String)",
