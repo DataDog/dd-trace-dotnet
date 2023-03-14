@@ -77,9 +77,8 @@ namespace Datadog.Trace.Ci.Tags
 
         /// <summary>
         /// Error message
-        /// TODO: check with Tony, but I assume we shouldn't change the CI app spans
         /// </summary>
-        public const string ErrorMessage = "error.msg";
+        public const string ErrorMessage = "error.message";
 
         /// <summary>
         /// Error type
