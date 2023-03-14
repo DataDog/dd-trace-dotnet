@@ -153,7 +153,7 @@ namespace Datadog.Trace.Agent.MessagePack
         }
 
         // overload of IMessagePackFormatter<TraceChunkModel>.Serialize() with `in` modifier on `TraceChunkModel` parameter
-        public int Serialize(ref byte[] bytes, int offset, in TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
+        public int Serialize(ref byte[] bytes, int offset, in TraceChunkModel traceChunk, IFormatterResolver formatterResolver, int? maxSize = null)
         {
             int originalOffset = offset;
 
@@ -162,6 +162,12 @@ namespace Datadog.Trace.Agent.MessagePack
             // serialize each span
             for (var i = 0; i < traceChunk.SpanCount; i++)
             {
+                if (maxSize != null && offset - originalOffset >= maxSize)
+                {
+                    // We've already reached the maximum size, give up
+                    return 0;
+                }
+
                 // when serializing each span, we need additional information that is not
                 // available in the span object itself, like its position in the trace chunk
                 // or if its parent can also be found in the same chunk, so we use SpanModel
