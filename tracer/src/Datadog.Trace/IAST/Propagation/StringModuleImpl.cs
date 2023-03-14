@@ -7,6 +7,8 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -113,173 +115,20 @@ internal static class StringModuleImpl
         var iastContext = IastModule.GetIastContext();
         if (iastContext == null)
         {
-            if (!CanBeTainted(result) || (!CanBeTainted(left) && !CanBeTainted(right)))
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-            TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_1 ? GetTainted(taintedObjects, left) : null;
-            TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_0 ? GetTainted(taintedObjects, right) : null;
-            if (taintedLeft == null && taintedRight == null)
-            {
-                return result;
-            }
-
-            Range[]? ranges;
-            if (taintedRight == null)
-            {
-                ranges = taintedLeft!.Ranges;
-            }
-            else if (taintedLeft == null)
-            {
-                ranges = new Range[taintedRight!.Ranges!.Length];
-                Ranges.CopyShift(taintedRight!.Ranges, ranges, 0, left.Length);
-            }
-            else
-            {
-                ranges = Ranges.MergeRanges(left.Length, taintedLeft!.Ranges, taintedRight!.Ranges);
-            }
-
-            taintedObjects.Taint(result, ranges);
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "StringModuleImpl.OnstringConcat(string,string) exception {Exception}", err.Message);
+            return;
         }
 
         var taintedObjects = iastContext.GetTaintedObjects();
         var selfTainted = taintedObjects.Get(self);
         if (selfTainted == null)
         {
-            if (!CanBeTainted(result) || !parameters.CanBeTainted())
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-
-            Range[]? ranges = null;
-            int length = 0;
-            for (int parameterIndex = 0; parameterIndex < parameters.ParamCount; parameterIndex++)
-            {
-                var currentParameter = parameters[parameterIndex];
-                if (!CanBeTainted(currentParameter))
-                {
-                    continue;
-                }
-
-                var parameterTainted = GetTainted(taintedObjects, currentParameter);
-                if (parameterTainted != null)
-                {
-                    if (ranges == null)
-                    {
-                        if (parameterTainted != null)
-                        {
-                            if (length == 0)
-                            {
-                                ranges = parameterTainted.Ranges;
-                            }
-                            else
-                            {
-                                ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted!.Ranges, ranges, 0, length);
-                            }
-                        }
-
-                        length += currentParameter!.Length;
-                        continue;
-                    }
-
-                    ranges = Ranges.MergeRanges(length, ranges, parameterTainted.Ranges);
-                }
-
-                length += currentParameter!.Length;
-            }
-
-            if (ranges != null)
-            {
-                taintedObjects.Taint(result, ranges);
-            }
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "StringModuleImpl.OnstringConcat(StringConcatParams) exception {Exception}", err.Message);
+            return;
         }
 
         var rangesSelf = selfTainted.Ranges;
         if (rangesSelf.Length == 0)
         {
-            if (!CanBeTainted(result))
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-
-            Range[]? ranges = null;
-            int length = 0;
-            foreach (var currentParameter in parameters)
-            {
-                if (!CanBeTainted(currentParameter))
-                {
-                    continue;
-                }
-
-                var parameterTainted = GetTainted(taintedObjects, currentParameter);
-                if (parameterTainted != null)
-                {
-                    if (ranges == null)
-                    {
-                        if (parameterTainted != null)
-                        {
-                            if (length == 0)
-                            {
-                                ranges = parameterTainted.Ranges;
-                            }
-                            else
-                            {
-                                ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, length);
-                            }
-                        }
-
-                        length += currentParameter!.Length;
-                        continue;
-                    }
-
-                    ranges = Ranges.MergeRanges(length, ranges, parameterTainted.Ranges);
-                }
-
-                length += currentParameter!.Length;
-            }
-
-            if (ranges != null)
-            {
-                taintedObjects.Taint(result, ranges);
-            }
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "StringModuleImpl.OnstringConcat");
+            return;
         }
 
         var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
@@ -287,6 +136,90 @@ internal static class StringModuleImpl
         {
             taintedObjects.Taint(result, newRanges);
         }
+    }
+
+    public static string OnStringJoin(string result, string delimiter, IEnumerable<object> values, int startIndex = 0, int count = -1)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+
+            var newRanges = new List<Range>();
+            int pos = 0;
+
+            // Delimiter info
+            var delimiterRanges = GetTainted(taintedObjects, delimiter)?.Ranges;
+            var delimiterHasRanges = delimiterRanges?.Length > 0;
+            var delimiterLength = delimiter?.Length ?? 0;
+
+            int i = 0;
+            foreach (var element in values)
+            {
+                if (i >= startIndex && (count < 0 || i < startIndex + count))
+                {
+                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, delimiterRanges, delimiterLength, element?.ToString() ?? string.Empty, delimiterHasRanges && i < values.Count() - 1);
+                }
+
+                i++;
+            }
+
+            if (newRanges.Count > 0)
+            {
+                taintedObjects.Taint(result, newRanges.ToArray());
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringJoin exception {Exception}", err.Message);
+        }
+
+        return result;
+    }
+
+    /**
+ * Iterates over the element and delimiter ranges (if necessary) to update them and calculate the
+ * new pos value
+ */
+    private static int GetPositionAndUpdateRangesInStringJoin(TaintedObjects taintedObjects, List<Range> newRanges, int pos, Range[]? delimiterRanges, int delimiterLength, string element, bool addDelimiterRanges)
+    {
+        if (!string.IsNullOrEmpty(element))
+        {
+            var elementTainted = GetTainted(taintedObjects, element);
+            if (elementTainted != null)
+            {
+                var elementRanges = elementTainted.Ranges;
+                if (elementRanges.Length > 0)
+                {
+                    for (int i = 0; i < elementRanges.Length; i++)
+                    {
+                        newRanges.Add(elementRanges[i].Shift(pos));
+                    }
+                }
+            }
+        }
+
+        pos += element.Length;
+        if (addDelimiterRanges && delimiterRanges != null)
+        {
+            for (int i = 0; i < delimiterRanges.Length; i++)
+            {
+                newRanges.Add(delimiterRanges[i].Shift(pos));
+            }
+        }
+
+        pos += delimiterLength;
+        return pos;
     }
 
     /// <summary> Mostly used overload </summary>

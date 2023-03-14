@@ -331,7 +331,7 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenStringJoinObjectWithBoth()
+    public void GivenStringJoinObjectWithBoth_WhenJoin_ResultIsOk()
     {
         object[] sArr = new object[] { TaintedObject, UntaintedObject };
         Assert.Equal(":+-TaintedObject-+:|UntaintedObject", FormatTainted(String.Join("|", sArr)));
@@ -359,7 +359,7 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenStringJoinIndexWithBoth()
+    public void GivenStringJoinIndexWithBoth_WhenJoin_ResultIsOk()
     {
         string[] sArr = new string[] { TaintedString, UntaintedString, OtherUntaintedString };
         Assert.Equal(":+-TaintedString-+:|UntaintedString", FormatTainted(String.Join("|", sArr, 0, 2)));

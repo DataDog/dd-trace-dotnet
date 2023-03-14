@@ -274,6 +274,199 @@ public partial class StringAspects
     }
 
     /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <param name="startIndex"> start index </param>
+    /// <param name="count"> number of elemnts to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.String[],System.Int32,System.Int32)")]
+    public static string Join(string separator, string[] values, int startIndex, int count)
+    {
+        return OnStringJoin(string.Join(separator, values, startIndex, count), separator, values, startIndex, count);
+    }
+
+#if NETSTANDARD
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.String[])")]
+    public static string Join(char separator, string[] values)
+    {
+        return OnStringJoin(string.Join(separator.ToString(), values), separator.ToString(), values);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.Object[])")]
+    public static string Join(char separator, object[] values)
+    {
+        return OnStringJoin(string.Join(separator.ToString(), values), separator.ToString(), values);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <param name="startIndex"> start index </param>
+    /// <param name="count"> number of elemnts to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.String[],System.Int32,System.Int32)")]
+    public static string Join(char separator, string[] values, int startIndex, int count)
+    {
+        return OnStringJoin(string.Join(separator.ToString(), values, startIndex, count), separator.ToString(), values, startIndex, count);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Join(char separator, IEnumerable values)
+    {
+        return Join(separator.ToString(), values);
+    }
+#endif
+
+#if NETCOREAPP
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.String[])")]
+    public static string Join(char separator, string[] values)
+    {
+        return OnStringJoin(string.Join(separator, values), separator.ToString(), values);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.Object[])")]
+    public static string Join(char separator, object[] values)
+    {
+        return OnStringJoin(string.Join(separator, values), separator.ToString(), values);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <param name="startIndex"> start index </param>
+    /// <param name="count"> number of elemnts to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.String[],System.Int32,System.Int32)")]
+    public static string Join(char separator, string[] values, int startIndex, int count)
+    {
+        return OnStringJoin(string.Join(separator, values, startIndex, count), separator.ToString(), values, startIndex, count);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Join(char separator, IEnumerable values)
+    {
+        return Join(separator.ToString(), values);
+    }
+#endif
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.Object[])")]
+    public static string Join(string separator, object[] values)
+    {
+        return OnStringJoin(string.Join(separator, values), separator, values);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)")]
+    public static string Join(string separator, IEnumerable values)
+    {
+        if (values is null)
+        {
+            return OnStringJoin(string.Join(separator, values), separator, null);
+        }
+
+        var valuesConverted = values as IEnumerable<string>;
+        if (valuesConverted != null)
+        {
+            return OnStringJoin(string.Join(separator, valuesConverted), separator, valuesConverted);
+        }
+        else
+        {
+            // This should neve happen
+            Log.Warning("Could not taint the string.join call in System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)");
+            return string.Join(separator, values);
+        }
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Join2(string separator, IEnumerable values)
+    {
+        if (values is null)
+        {
+            return OnStringJoin(string.Join(separator, values), separator, null);
+        }
+
+        var valuesConverted = values as IEnumerable<object>;
+        if (valuesConverted != null)
+        {
+            return OnStringJoin(string.Join(separator, valuesConverted), separator, valuesConverted);
+        }
+
+        // We have a IEnumerable of structs or basic types. This is a corner case.
+
+        try
+        {
+            valuesConverted = values.Cast<object>();
+        }
+        catch
+        {
+            // This sould never happen, but just in case, we return the join...
+            Log.Warning("Could not taint the string.join call in System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)");
+            return string.Join(separator, values);
+        }
+
+        return OnStringJoin(string.Join(separator, valuesConverted), separator, valuesConverted);
+    }
+
+    /// <summary>
     /// String.ToUpper aspect
     /// </summary>
     /// <param name="target"> the target string </param>
@@ -281,7 +474,9 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToUpper()", AspectFilter.StringLiteral_0)]
     public static string ToUpper(string target)
     {
-        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToUpper());
+        var result = target.ToUpper();
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
     }
 
     /// <summary>
@@ -293,7 +488,9 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToUpper(System.Globalization.CultureInfo)", AspectFilter.StringLiteral_0)]
     public static string ToUpper(string target, global::System.Globalization.CultureInfo culture)
     {
-        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToUpper(culture));
+        var result = target.ToUpper(culture);
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
     }
 
     /// <summary>
@@ -304,7 +501,9 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToUpperInvariant()", AspectFilter.StringLiteral_0)]
     public static string ToUpperInvariant(string target)
     {
-        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToUpperInvariant());
+        var result = target.ToUpperInvariant();
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
     }
 
     /// <summary>
@@ -315,7 +514,9 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToLower()", AspectFilter.StringLiteral_0)]
     public static string ToLower(string target)
     {
-        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToLower());
+        var result = target.ToLower();
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
     }
 
     /// <summary>
@@ -327,7 +528,9 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToLower(System.Globalization.CultureInfo)", AspectFilter.StringLiteral_0)]
     public static string ToLower(string target, global::System.Globalization.CultureInfo culture)
     {
-        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToLower(culture));
+        var result = target.ToLower(culture);
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
     }
 
     /// <summary>
@@ -338,6 +541,8 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::ToLowerInvariant()", AspectFilter.StringLiteral_0)]
     public static string ToLowerInvariant(string target)
     {
-        return StringModuleImpl.TaintIfInputIsTainted(target, target.ToLowerInvariant());
+        var result = target.ToLowerInvariant();
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
     }
 }

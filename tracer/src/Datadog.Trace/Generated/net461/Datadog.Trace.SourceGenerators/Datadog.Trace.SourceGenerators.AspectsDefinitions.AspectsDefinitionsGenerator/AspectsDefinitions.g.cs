@@ -51,6 +51,16 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::Substring(System.Int32,System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Substring(System.String,System.Int32,System.Int32)",
 "  [AspectMethodReplace(\"System.String::ToCharArray()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToCharArray(System.String)",
 "  [AspectMethodReplace(\"System.String::ToCharArray(System.Int32,System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToCharArray(System.String,System.Int32,System.Int32)",
+"  [AspectMethodReplace(\"System.String::Join(System.String,System.String[],System.Int32,System.Int32)\",\"\",[0],[False],[None],Propagation,[])] Join(System.String,System.String[],System.Int32,System.Int32)",
+"  [AspectMethodReplace(\"System.String::Join(System.String,System.Object[])\",\"\",[0],[False],[None],Propagation,[])] Join(System.String,System.Object[])",
+"  [AspectMethodReplace(\"System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)\",\"\",[0],[False],[None],Propagation,[])] Join(System.String,System.Collections.IEnumerable)",
+"  [AspectMethodReplace(\"System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)\",\"\",[0],[False],[None],Propagation,[])] Join2(System.String,System.Collections.IEnumerable)",
+"  [AspectMethodReplace(\"System.String::ToUpper()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToUpper(System.String)",
+"  [AspectMethodReplace(\"System.String::ToUpper(System.Globalization.CultureInfo)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToUpper(System.String,System.Globalization.CultureInfo)",
+"  [AspectMethodReplace(\"System.String::ToUpperInvariant()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToUpperInvariant(System.String)",
+"  [AspectMethodReplace(\"System.String::ToLower()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToLower(System.String)",
+"  [AspectMethodReplace(\"System.String::ToLower(System.Globalization.CultureInfo)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToLower(System.String,System.Globalization.CultureInfo)",
+"  [AspectMethodReplace(\"System.String::ToLowerInvariant()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToLowerInvariant(System.String)",
         };
     }
 }
