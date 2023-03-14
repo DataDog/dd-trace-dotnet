@@ -266,7 +266,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <typeparam name="TTopicPartitionMarker">The TopicPartition type (used  optimisation purposes)</typeparam>
         /// <typeparam name="TMessage">The type of the duck-type proxy</typeparam>
         internal static void TryInjectHeaders<TTopicPartitionMarker, TMessage>(
-            SpanContext context,
+            Span span,
             DataStreamsManager dataStreamsManager,
             string topic,
             TMessage message)
@@ -293,7 +293,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
-                    context.SetCheckpoint(dataStreamsManager, edgeTags);
+                    span.SetDataStreamsCheckpoint(dataStreamsManager, edgeTags);
                     dataStreamsManager.InjectPathwayContext(context.PathwayContext, adapter);
                 }
             }
