@@ -20,6 +20,25 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
     {
         public static readonly IMessagePackFormatter<Span> Instance = new SpanMessagePackFormatter();
 
+        private readonly byte[][] _samplingPriorityValueBytes;
+        private readonly byte[] _processIdValueBytes;
+
+        private SpanMessagePackFormatter()
+        {
+            double processId = DomainMetadata.Instance.ProcessId;
+            _processIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
+
+            // values begin at -1, so they are shifted by 1 from their array index: [-1, 0, 1, 2]
+            // these must serialized as msgpack float64 (Double in .NET).
+            _samplingPriorityValueBytes = new[]
+            {
+                MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserReject),
+                MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoReject),
+                MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoKeep),
+                MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep),
+            };
+        }
+
 #if NETCOREAPP
         private ReadOnlySpan<byte> TraceIdBytes => "trace_id"u8;
 
@@ -43,64 +62,68 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         // string tags
         private ReadOnlySpan<byte> MetaBytes => "meta"u8;
-#else
-        private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
-        private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
-        private readonly byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
-        private readonly byte[] _resourceBytes = StringEncoding.UTF8.GetBytes("resource");
-        private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("service");
-        private readonly byte[] _typeBytes = StringEncoding.UTF8.GetBytes("type");
-        private readonly byte[] _startBytes = StringEncoding.UTF8.GetBytes("start");
-        private readonly byte[] _durationBytes = StringEncoding.UTF8.GetBytes("duration");
-        private readonly byte[] _parentIdBytes = StringEncoding.UTF8.GetBytes("parent_id");
-        private readonly byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
 
-        // string tags
-        private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
-#endif
+        private ReadOnlySpan<byte> LanguageNameBytes => "language"u8;
 
-#pragma warning disable SA1201
-        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
-#pragma warning restore SA1201
-        private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
+        private ReadOnlySpan<byte> LanguageValueBytes => "dotnet"u8;
 
-        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
+        private ReadOnlySpan<byte> EnvironmentNameBytes => "env"u8;
 
-        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
+        private ReadOnlySpan<byte> VersionNameBytes => "version"u8;
 
-        private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
-        private readonly byte[] _originValueBytes = StringEncoding.UTF8.GetBytes(TestTags.CIAppTestOriginName);
+        private ReadOnlySpan<byte> OriginNameBytes => "_dd.origin"u8;
+
+        private ReadOnlySpan<byte> OriginValueBytes => "ciapp-test"u8;
 
         // numeric tags
-#if NETCOREAPP
         private ReadOnlySpan<byte> MetricsBytes => "metrics"u8;
+
+        private ReadOnlySpan<byte> SamplingPriorityNameBytes => "_sampling_priority_v1"u8;
+
+        private ReadOnlySpan<byte> ProcessIdNameBytes => "process_id"u8;
 #else
-        private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
+        private byte[] TraceIdBytes { get; } = StringEncoding.UTF8.GetBytes("trace_id");
+
+        private byte[] SpanIdBytes { get; } = StringEncoding.UTF8.GetBytes("span_id");
+
+        private byte[] NameBytes { get; } = StringEncoding.UTF8.GetBytes("name");
+
+        private byte[] ResourceBytes { get; } = StringEncoding.UTF8.GetBytes("resource");
+
+        private byte[] ServiceBytes { get; } = StringEncoding.UTF8.GetBytes("service");
+
+        private byte[] TypeBytes { get; } = StringEncoding.UTF8.GetBytes("type");
+
+        private byte[] StartBytes { get; } = StringEncoding.UTF8.GetBytes("start");
+
+        private byte[] DurationBytes { get; } = StringEncoding.UTF8.GetBytes("duration");
+
+        private byte[] ParentIdBytes { get; } = StringEncoding.UTF8.GetBytes("parent_id");
+
+        private byte[] ErrorBytes { get; } = StringEncoding.UTF8.GetBytes("error");
+
+        // string tags
+        private byte[] MetaBytes { get; } = StringEncoding.UTF8.GetBytes("meta");
+
+        private byte[] LanguageNameBytes { get; } = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
+
+        private byte[] LanguageValueBytes { get; } = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
+
+        private byte[] EnvironmentNameBytes { get; } = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
+
+        private byte[] VersionNameBytes { get; } = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
+
+        private byte[] OriginNameBytes { get; } = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
+
+        private byte[] OriginValueBytes { get; } = StringEncoding.UTF8.GetBytes(TestTags.CIAppTestOriginName);
+
+        // numeric tags
+        private byte[] MetricsBytes { get; } = StringEncoding.UTF8.GetBytes("metrics");
+
+        private byte[] SamplingPriorityNameBytes { get; } = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
+
+        private byte[] ProcessIdNameBytes { get; } = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
 #endif
-
-#pragma warning disable SA1201
-        private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
-#pragma warning restore SA1201
-        private readonly byte[][] _samplingPriorityValueBytes;
-
-        private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
-        private readonly byte[] _processIdValueBytes;
-
-        private SpanMessagePackFormatter()
-        {
-            double processId = DomainMetadata.Instance.ProcessId;
-            _processIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
-
-            // values begin at -1, so they are shifted by 1 from their array index: [-1, 0, 1, 2]
-            // these must serialized as msgpack float64 (Double in .NET).
-            _samplingPriorityValueBytes = new[]
-                                          {
-                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserReject),
-                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoReject),
-                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoKeep),
-                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep),
-                                          };
-        }
 
         public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
         {
@@ -149,73 +172,38 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
 
-#if NETCOREAPP
             if (isSpan)
             {
-                offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, TraceIdBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TraceIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId);
 
-                offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, SpanIdBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SpanIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
             }
 
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, NameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, NameBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.OperationName);
 
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, ResourceBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ResourceBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.ResourceName);
 
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, ServiceBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ServiceBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.ServiceName);
 
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, TypeBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TypeBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
 
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, StartBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StartBytes);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.StartTime.ToUnixTimeNanoseconds());
 
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, DurationBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, DurationBytes);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.Duration.ToNanoseconds());
 
             if (context.ParentId is not null)
             {
-                offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, ParentIdBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ParentIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.ParentId.Value);
             }
-#else
-            if (isSpan)
-            {
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId);
-
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
-            }
-
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value.OperationName);
-
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _resourceBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value.ResourceName);
-
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value.ServiceName);
-
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
-
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _startBytes);
-            offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.StartTime.ToUnixTimeNanoseconds());
-
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _durationBytes);
-            offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.Duration.ToNanoseconds());
-
-            if (context.ParentId is not null)
-            {
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.ParentId.Value);
-            }
-#endif
 
             if (testSuiteTags is not null)
             {
@@ -235,11 +223,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, testSessionTags.SessionId);
             }
 
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, ErrorBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _errorBytes);
-#endif
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ErrorBytes);
             offset += MessagePackBinary.WriteByte(ref bytes, offset, (byte)(value.Error ? 1 : 0));
 
             ITagProcessor[] tagProcessors = null;
@@ -271,11 +255,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             var traceContext = span.Context.TraceContext;
 
             // Start of "meta" dictionary. Do not add any string tags before this line.
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, MetaBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaBytes);
-#endif
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetaBytes);
 
             int count = 0;
 
@@ -305,8 +285,8 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             // add "_dd.origin" tag to all spans
             count++;
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, OriginNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, OriginValueBytes);
 
             // add "env" to all spans
             var env = traceContext?.Environment;
@@ -314,7 +294,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             if (!string.IsNullOrWhiteSpace(env))
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EnvironmentNameBytes);
                 offset += MessagePackBinary.WriteString(ref bytes, offset, env);
             }
 
@@ -323,8 +303,8 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageValueBytes);
             }
 
             // add "version" tags to all spans whose service name is the default service name
@@ -335,7 +315,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 if (!string.IsNullOrWhiteSpace(version))
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionNameBytes);
                     offset += MessagePackBinary.WriteString(ref bytes, offset, version);
                 }
             }
@@ -380,11 +360,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 }
             }
 
-#if !NETCOREAPP
             offset += MessagePackBinary.WriteRaw(ref bytes, offset, keyBytes);
-#else
-            offset += MessagePackBinary.WriteRawReadOnlySpan(ref bytes, offset, keyBytes);
-#endif
             offset += MessagePackBinary.WriteString(ref bytes, offset, value);
         }
 
@@ -395,11 +371,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             int originalOffset = offset;
 
             // Start of "metrics" dictionary. Do not add any numeric tags before this line.
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, MetricsBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metricsBytes);
-#endif
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetricsBytes);
 
             int count = 0;
 
@@ -420,7 +392,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 {
                     // add "process_id" tag
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessIdNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, _processIdValueBytes);
                 }
 
@@ -428,7 +400,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 if (span.Context.TraceContext.SamplingPriority is { } samplingPriority)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SamplingPriorityNameBytes);
 
                     if (samplingPriority is >= -1 and <= 2)
                     {
@@ -483,11 +455,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 }
             }
 
-#if !NETCOREAPP
             offset += MessagePackBinary.WriteRaw(ref bytes, offset, keyBytes);
-#else
-            offset += MessagePackBinary.WriteRawReadOnlySpan(ref bytes, offset, keyBytes);
-#endif
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
         }
 

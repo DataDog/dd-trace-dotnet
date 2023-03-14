@@ -7,7 +7,6 @@ using System;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
 
-#if NETCOREAPP
 namespace Datadog.Trace.Vendors.MessagePack;
 
 /// <summary>
@@ -15,8 +14,9 @@ namespace Datadog.Trace.Vendors.MessagePack;
 /// </summary>
 internal partial class MessagePackBinary
 {
+#if NETCOREAPP
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static int WriteRawReadOnlySpan(ref byte[] bytes, int offset, ReadOnlySpan<byte> rawMessagePackBlock)
+    public static int WriteRaw(ref byte[] bytes, int offset, ReadOnlySpan<byte> rawMessagePackBlock)
     {
         var bytesCount = rawMessagePackBlock.Length;
         EnsureCapacity(ref bytes, offset, bytesCount);
@@ -25,7 +25,7 @@ internal partial class MessagePackBinary
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static int WriteStringReadOnlySpan(ref byte[] bytes, int offset, ReadOnlySpan<byte> utf8StringBytes)
+    public static int WriteStringBytes(ref byte[] bytes, int offset, ReadOnlySpan<byte> utf8StringBytes)
     {
         var byteCount = utf8StringBytes.Length;
         if (byteCount <= MessagePackRange.MaxFixStringLength)
@@ -64,5 +64,5 @@ internal partial class MessagePackBinary
         utf8StringBytes.CopyTo(new Span<byte>(bytes, offset + 5, byteCount));
         return byteCount + 5;
     }
-}
 #endif
+}

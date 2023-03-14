@@ -24,12 +24,17 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
 
     private ReadOnlySpan<byte> SegmentsBytes => "segments"u8;
 #else
-    private readonly byte[] _testSessionIdBytes = StringEncoding.UTF8.GetBytes("test_session_id");
-    private readonly byte[] _testSuiteIdBytes = StringEncoding.UTF8.GetBytes("test_suite_id");
-    private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
-    private readonly byte[] _filesBytes = StringEncoding.UTF8.GetBytes("files");
-    private readonly byte[] _filenameBytes = StringEncoding.UTF8.GetBytes("filename");
-    private readonly byte[] _segmentsBytes = StringEncoding.UTF8.GetBytes("segments");
+    private byte[] TestSessionIdBytes { get; } = StringEncoding.UTF8.GetBytes("test_session_id");
+
+    private byte[] TestSuiteIdBytes { get; } = StringEncoding.UTF8.GetBytes("test_suite_id");
+
+    private byte[] SpanIdBytes { get; } = StringEncoding.UTF8.GetBytes("span_id");
+
+    private byte[] FilesBytes { get; } = StringEncoding.UTF8.GetBytes("files");
+
+    private byte[] FilenameBytes { get; } = StringEncoding.UTF8.GetBytes("filename");
+
+    private byte[] SegmentsBytes { get; } = StringEncoding.UTF8.GetBytes("segments");
 #endif
 
     public override int Serialize(ref byte[] bytes, int offset, TestCoverage value, IFormatterResolver formatterResolver)
@@ -61,39 +66,23 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
 
         if (value.SessionId != 0)
         {
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, TestSessionIdBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionIdBytes);
-#endif
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSessionIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SessionId);
         }
 
         if (value.SuiteId != 0)
         {
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, TestSuiteIdBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSuiteIdBytes);
-#endif
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSuiteIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SuiteId);
         }
 
         if (value.SpanId != 0)
         {
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, SpanIdBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-#endif
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SpanIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SpanId);
         }
 
-#if NETCOREAPP
-        offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, FilesBytes);
-#else
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filesBytes);
-#endif
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FilesBytes);
         if (value.Files is { Count: > 0 } files)
         {
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)files.Count);
@@ -101,18 +90,10 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
             {
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
 
-#if NETCOREAPP
-                offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, FilenameBytes);
-#else
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filenameBytes);
-#endif
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FilenameBytes);
                 offset += MessagePackBinary.WriteString(ref bytes, offset, file.FileName);
 
-#if NETCOREAPP
-                offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, SegmentsBytes);
-#else
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _segmentsBytes);
-#endif
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SegmentsBytes);
                 if (file.Segments is { Count: > 0 } segments)
                 {
                     offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)segments.Count);

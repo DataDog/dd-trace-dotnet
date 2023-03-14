@@ -15,6 +15,19 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 {
     internal class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibilityProtocolPayload>
     {
+        private readonly byte[]? _environmentValueBytes;
+        private readonly ArraySegment<byte> _envelopBytes;
+
+        public CIEventMessagePackFormatter(TracerSettings tracerSettings)
+        {
+            if (!string.IsNullOrEmpty(tracerSettings.Environment))
+            {
+                _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Environment);
+            }
+
+            _envelopBytes = GetEnvelopeArraySegment();
+        }
+
 #if NETCOREAPP
         private ReadOnlySpan<byte> MetadataBytes => "metadata"u8;
 
@@ -31,33 +44,31 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private ReadOnlySpan<byte> EnvironmentBytes => "env"u8;
 
         private ReadOnlySpan<byte> EventsBytes => "events"u8;
+
+        private byte[] RuntimeIdValueBytes { get; } = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+
+        private byte[] LibraryVersionValueBytes { get; } = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
 #else
-        private readonly byte[] _metadataBytes = StringEncoding.UTF8.GetBytes("metadata");
-        private readonly byte[] _asteriskBytes = StringEncoding.UTF8.GetBytes("*");
-        private readonly byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
-        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language");
-        private readonly byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes("dotnet");
-        private readonly byte[] _libraryVersionBytes = StringEncoding.UTF8.GetBytes(CommonTags.LibraryVersion);
-        private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("env");
-        private readonly byte[] _eventsBytes = StringEncoding.UTF8.GetBytes("events");
+        private byte[] MetadataBytes { get; } = StringEncoding.UTF8.GetBytes("metadata");
+
+        private byte[] AsteriskBytes { get; } = StringEncoding.UTF8.GetBytes("*");
+
+        private byte[] RuntimeIdBytes { get; } = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
+
+        private byte[] LanguageNameBytes { get; } = StringEncoding.UTF8.GetBytes("language");
+
+        private byte[] LanguageNameValueBytes { get; } = StringEncoding.UTF8.GetBytes("dotnet");
+
+        private byte[] LibraryVersionBytes { get; } = StringEncoding.UTF8.GetBytes(CommonTags.LibraryVersion);
+
+        private byte[] EnvironmentBytes { get; } = StringEncoding.UTF8.GetBytes("env");
+
+        private byte[] EventsBytes { get; } = StringEncoding.UTF8.GetBytes("events");
+
+        private byte[] RuntimeIdValueBytes { get; } = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+
+        private byte[] LibraryVersionValueBytes { get; } = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
 #endif
-
-#pragma warning disable SA1201
-        private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
-#pragma warning restore SA1201
-        private readonly byte[] _libraryVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
-        private readonly byte[]? _environmentValueBytes;
-        private readonly ArraySegment<byte> _envelopBytes;
-
-        public CIEventMessagePackFormatter(TracerSettings tracerSettings)
-        {
-            if (!string.IsNullOrEmpty(tracerSettings.Environment))
-            {
-                _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Environment);
-            }
-
-            _envelopBytes = GetEnvelopeArraySegment();
-        }
 
         public override int Serialize(ref byte[] bytes, int offset, CIVisibilityProtocolPayload? value, IFormatterResolver formatterResolver)
         {
@@ -100,22 +111,15 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // # Version
 
             // Key
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, VersionBytes);
-#else
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionBytes);
-#endif
+
             // Value
             offset += MessagePackBinary.WriteInt32(ref bytes, offset, 1);
 
             // # Metadata
 
             // Key
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, MetadataBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metadataBytes);
-#endif
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetadataBytes);
 
             // Value
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
@@ -123,11 +127,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // ->  * : {}
 
             // Key
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, AsteriskBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _asteriskBytes);
-#endif
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AsteriskBytes);
 
             // Value (RuntimeId, Language, library_version, Env?)
             int valuesCount = 3;
@@ -138,44 +138,25 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, valuesCount);
 
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, RuntimeIdBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
-#endif
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdValueBytes);
 
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, LanguageNameBytes);
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, LanguageNameValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameValueBytes);
 
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, LibraryVersionBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameValueBytes);
-
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _libraryVersionBytes);
-#endif
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _libraryVersionValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LibraryVersionBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LibraryVersionValueBytes);
 
             if (_environmentValueBytes is not null)
             {
-#if NETCOREAPP
-                offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, EnvironmentBytes);
-#else
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentBytes);
-#endif
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EnvironmentBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentValueBytes);
             }
 
             // # Events
 
             // Key
-#if NETCOREAPP
-            offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, EventsBytes);
-#else
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _eventsBytes);
-#endif
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EventsBytes);
 
             return new ArraySegment<byte>(bytes, 0, offset);
         }

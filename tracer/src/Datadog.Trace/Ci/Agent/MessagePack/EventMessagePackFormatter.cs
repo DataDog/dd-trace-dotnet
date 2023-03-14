@@ -8,12 +8,12 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 
+#pragma warning disable SA1402
+
 namespace Datadog.Trace.Ci.Agent.MessagePack
 {
-    internal abstract class EventMessagePackFormatter<T> : IMessagePackFormatter<T>
+    internal abstract class EventMessagePackFormatter
     {
-        private readonly IDatadogLogger _log;
-
 #if NETCOREAPP
         protected static ReadOnlySpan<byte> TypeBytes => "type"u8;
 
@@ -21,14 +21,19 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         protected static ReadOnlySpan<byte> ContentBytes => "content"u8;
 #else
-        protected static readonly byte[] TypeBytes = StringEncoding.UTF8.GetBytes("type");
-        protected static readonly byte[] VersionBytes = StringEncoding.UTF8.GetBytes("version");
-        protected static readonly byte[] ContentBytes = StringEncoding.UTF8.GetBytes("content");
-#endif
+        protected static byte[] TypeBytes { get; } = StringEncoding.UTF8.GetBytes("type");
 
-#pragma warning disable SA1201
-        public EventMessagePackFormatter()
-#pragma warning restore SA1201
+        protected static byte[] VersionBytes { get; } = StringEncoding.UTF8.GetBytes("version");
+
+        protected static byte[] ContentBytes { get; } = StringEncoding.UTF8.GetBytes("content");
+#endif
+    }
+
+    internal abstract class EventMessagePackFormatter<T> : EventMessagePackFormatter, IMessagePackFormatter<T>
+    {
+        private readonly IDatadogLogger _log;
+
+        protected EventMessagePackFormatter()
         {
             _log = DatadogLogging.GetLoggerFor(GetType());
         }

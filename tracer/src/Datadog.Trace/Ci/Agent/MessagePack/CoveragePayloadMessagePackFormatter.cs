@@ -14,7 +14,7 @@ internal class CoveragePayloadMessagePackFormatter : EventMessagePackFormatter<C
 #if NETCOREAPP
     private ReadOnlySpan<byte> CoveragesBytes => "coverages"u8;
 #else
-    private readonly byte[] _coveragesBytes = StringEncoding.UTF8.GetBytes("coverages");
+    private byte[] CoveragesBytes { get; } = StringEncoding.UTF8.GetBytes("coverages");
 #endif
 
     public override int Serialize(ref byte[] bytes, int offset, CICodeCoveragePayload.CoveragePayload value, IFormatterResolver formatterResolver)
@@ -23,17 +23,10 @@ internal class CoveragePayloadMessagePackFormatter : EventMessagePackFormatter<C
 
         offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
 
-#if NETCOREAPP
-        offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, VersionBytes);
-        offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
-
-        offset += MessagePackBinary.WriteStringReadOnlySpan(ref bytes, offset, CoveragesBytes);
-#else
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionBytes);
         offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _coveragesBytes);
-#endif
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, CoveragesBytes);
 
         // Write events
         if (value.TestCoverageData.Lock())
