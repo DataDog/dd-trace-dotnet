@@ -31,7 +31,7 @@ internal static class StringModuleImpl
             if (result is null)
             {
                 return result;
-        }
+            }
 
             var iastContext = IastModule.GetIastContext();
             if (iastContext == null)

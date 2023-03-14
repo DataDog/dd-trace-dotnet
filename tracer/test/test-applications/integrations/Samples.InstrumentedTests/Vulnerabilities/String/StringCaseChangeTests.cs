@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Security.Cryptography;
-using FluentAssertions;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
@@ -19,74 +16,72 @@ public class StringCaseChangeTests : InstrumentationTestsBase
     [Fact]
     public void GivenANotTaintedObject_WhenCallingToUpper_ResultIsOk()
     {
-        string txt = "0a2";
-        string txt1 = txt.ToUpper();
-        string txt2 = "0a2".ToUpper();
-        Assert.Equal(txt1, txt2);
+        string txt = AddTaintedString("0a2");
+        AssertTaintedFormatWithOriginalCallCheck(":+-0A2-+:", txt.ToUpper(), () => "0a2".ToUpper());
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingToUpper_ResultIsOk()
     {
         string testString1 = AddTaintedString("01234");
-        Assert.Equal(":+-01234-+:", FormatTainted(testString1.ToUpper()));
+        AssertTaintedFormatWithOriginalCallCheck(":+-01234-+:", testString1.ToUpper(), () => testString1.ToUpper());
 
         string testString2 = AddTaintedString("abcde");
-        Assert.Equal(":+-ABCDE-+:", FormatTainted(testString2.ToUpper()));
+        AssertTaintedFormatWithOriginalCallCheck(":+-ABCDE-+:", testString2.ToUpper(), () => testString2.ToUpper());
 
         string str1 = AddTaintedString("0a2");
         string str2 = AddTaintedString("0b2");
-        string testString = String.Concat("    ", str1, "    ", str2);
-
-        Assert.Equal("    :+-0A2-+:    :+-0B2-+:", FormatTainted(testString.ToUpper()));
+        AssertTaintedFormatWithOriginalCallCheck("    :+-0A2-+:    :+-0B2-+:",
+            String.Concat("    ", str1, "    ", str2).ToUpper(),
+            () => String.Concat("    ", str1, "    ", str2).ToUpper());
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingToLower_ResultIsOk()
     {
         string testString1 = AddTaintedString("01234");
-        Assert.Equal(":+-01234-+:", FormatTainted(testString1.ToLower()));
+        AssertTaintedFormatWithOriginalCallCheck(":+-01234-+:", testString1.ToLower(), () => testString1.ToLower());
 
         string testString2 = AddTaintedString("ABCDE");
-        Assert.Equal(":+-abcde-+:", FormatTainted(testString2.ToLower()));
+        AssertTaintedFormatWithOriginalCallCheck(":+-abcde-+:", testString2.ToLower(), () => testString2.ToLower());
 
         string str1 = AddTaintedString("0A2");
         string str2 = AddTaintedString("0B2");
-        string testString = String.Concat("    ", str1, "    ", str2);
-
-        Assert.Equal("    :+-0a2-+:    :+-0b2-+:", FormatTainted(testString.ToLower()));
+        AssertTaintedFormatWithOriginalCallCheck("    :+-0a2-+:    :+-0b2-+:",
+            String.Concat("    ", str1, "    ", str2).ToLower(),
+            () => String.Concat("    ", str1, "    ", str2).ToLower());
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingToUpperInvariant_ResultIsOk()
     {
         string testString1 = AddTaintedString("01234");
-        Assert.Equal(":+-01234-+:", FormatTainted(testString1.ToUpperInvariant()));
+        AssertTaintedFormatWithOriginalCallCheck(":+-01234-+:", testString1.ToUpperInvariant(), () => testString1.ToUpperInvariant());
 
         string testString2 = AddTaintedString("abcde");
-        Assert.Equal(":+-ABCDE-+:", FormatTainted(testString2.ToUpperInvariant()));
+        AssertTaintedFormatWithOriginalCallCheck(":+-ABCDE-+:", testString2.ToUpperInvariant(), () => testString2.ToUpperInvariant());
 
         string str1 = AddTaintedString("0a2");
         string str2 = AddTaintedString("0b2");
-        string testString = String.Concat("    ", str1, "    ", str2);
-
-        Assert.Equal("    :+-0A2-+:    :+-0B2-+:", FormatTainted(testString.ToUpperInvariant()));
+        AssertTaintedFormatWithOriginalCallCheck("    :+-0A2-+:    :+-0B2-+:",
+            String.Concat("    ", str1, "    ", str2).ToUpperInvariant(),
+            () => String.Concat("    ", str1, "    ", str2).ToUpperInvariant());
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingToLowerInvariant_ResultIsOk()
     {
         string testString1 = AddTaintedString("01234");
-        Assert.Equal(":+-01234-+:", FormatTainted(testString1.ToLowerInvariant()));
+        AssertTaintedFormatWithOriginalCallCheck(":+-01234-+:", testString1.ToLowerInvariant(), () => testString1.ToLowerInvariant());
 
         string testString2 = AddTaintedString("ABCDE");
-        Assert.Equal(":+-abcde-+:", FormatTainted(testString2.ToLowerInvariant()));
+        AssertTaintedFormatWithOriginalCallCheck(":+-abcde-+:", testString2.ToLowerInvariant(), () => testString2.ToLowerInvariant());
 
         string str1 = AddTaintedString("0A2");
         string str2 = AddTaintedString("0B2");
-        string testString = String.Concat("    ", str1, "    ", str2);
-
-        Assert.Equal("    :+-0a2-+:    :+-0b2-+:", FormatTainted(testString.ToLowerInvariant()));
+        AssertTaintedFormatWithOriginalCallCheck("    :+-0a2-+:    :+-0b2-+:", 
+            String.Concat("    ", str1, "    ", str2).ToLowerInvariant(), 
+            () => String.Concat("    ", str1, "    ", str2).ToLowerInvariant());
     }
 
     [Fact]
