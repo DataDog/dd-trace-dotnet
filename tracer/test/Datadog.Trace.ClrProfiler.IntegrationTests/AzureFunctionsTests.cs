@@ -103,6 +103,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
 #if NETCOREAPP3_1
     [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
     public class InProcessRuntimeV3 : AzureFunctionsTests
     {
         public InProcessRuntimeV3(ITestOutputHelper output)
@@ -134,6 +135,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
 #if NET6_0
     [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
     public class InProcessRuntimeV4 : AzureFunctionsTests
     {
         public InProcessRuntimeV4(ITestOutputHelper output)
@@ -163,6 +165,7 @@ public abstract class AzureFunctionsTests : TestHelper
     }
 
     [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
     public class IsolatedRuntimeV4 : AzureFunctionsTests
     {
         public IsolatedRuntimeV4(ITestOutputHelper output)
@@ -191,4 +194,9 @@ public abstract class AzureFunctionsTests : TestHelper
         }
     }
 #endif
+
+    [CollectionDefinition(nameof(AzureFunctionsTestsCollection), DisableParallelization = true)]
+    public class AzureFunctionsTestsCollection
+    {
+    }
 }
