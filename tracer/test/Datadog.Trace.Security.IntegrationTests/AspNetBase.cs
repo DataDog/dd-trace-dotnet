@@ -139,7 +139,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var start = DateTime.Now;
                 var nextBatch = start.AddSeconds(1);
 
-                await SendRequestsAsyncNoWaitForSpans(url, null, totalRequests, string.Empty);
+                await SendRequestsAsyncNoWaitForSpans(url, null, totalRequests, string.Empty, string.Empty);
 
                 var now = DateTime.Now;
 
@@ -221,11 +221,21 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
-        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent)
+        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent, string ip)
         {
             if (!string.IsNullOrEmpty(userAgent) && _httpClient.DefaultRequestHeaders.GetValues("user-agent").All(c => c != userAgent))
             {
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
+            }
+
+            if (!string.IsNullOrEmpty(ip) && _httpClient.DefaultRequestHeaders.GetValues(XffHeader).All(c => c != ip))
+            {
+                if (_httpClient.DefaultRequestHeaders.GetValues(XffHeader).Any())
+                {
+                    _httpClient.DefaultRequestHeaders.Remove(XffHeader);
+                }
+
+                _httpClient.DefaultRequestHeaders.Add(XffHeader,  ip);
             }
 
             try
@@ -245,10 +255,19 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected virtual string GetTestName() => _testName;
 
-        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null, string userAgent = null)
+        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(
+            MockTracerAgent agent,
+            string url,
+            string body,
+            int numberOfAttacks,
+            int expectedSpans,
+            string phase,
+            string contentType = null,
+            string userAgent = null,
+            string ip = null)
         {
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
-            await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent);
+            await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent, ip);
 
             return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
         }
@@ -269,11 +288,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             return spans.ToImmutableList();
         }
 
-        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
+        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null, string ip = null)
         {
             for (var x = 0; x < numberOfAttacks; x++)
             {
-                await SubmitRequest(url, body, contentType, userAgent);
+                await SubmitRequest(url, body, contentType, userAgent, ip);
             }
         }
 
