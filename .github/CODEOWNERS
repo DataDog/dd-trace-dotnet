@@ -17,6 +17,7 @@
 /tracer/test/test-applications/security   @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.Security.IntegrationTests @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.Security.Unit.Tests       @DataDog/asm-dotnet
+/tracer/test/snapshots/Security*          @DataDog/asm-dotnet
 
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
