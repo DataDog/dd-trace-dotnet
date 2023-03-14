@@ -53,7 +53,8 @@ namespace Datadog.Trace.Propagators
         {
             new(',', '_'),
             new(';', '_'),
-            new('=', '_'),
+            new('~', '_'),
+            new('=', '~'), // note '=' is encoded as '~' when injecting
         };
 
         private static readonly KeyValuePair<char, char>[] InjectPropagatedTagKeyReplacements =
@@ -277,7 +278,7 @@ namespace Datadog.Trace.Propagators
             }
             else
             {
-                sampled = false;
+                return false;
             }
 #else
             rawTraceId = header.Substring(startIndex: 3, length: 32);
@@ -301,7 +302,7 @@ namespace Datadog.Trace.Propagators
             }
             else
             {
-                sampled = false;
+                return false;
             }
 #endif
 
@@ -608,12 +609,16 @@ namespace Datadog.Trace.Propagators
             var traceStateHeader = TrimAndJoinStrings(traceStateHeaders);
             var traceState = ParseTraceState(traceStateHeader);
 
-            // if we can't get the more specific sampling priority from "tracestate",
-            // then fallback to the boolean in "traceparent"
-            var samplingPriority = traceState.SamplingPriority ??
-                                   (traceParent.Sampled ?
-                                        SamplingPriorityValues.AutoKeep :
-                                        SamplingPriorityValues.AutoReject);
+            // Consider both the traceparent sampled flag and the Datadog sampling priority value to determine the final sampling priority value.
+            // If both values agree (both say sample or both say do not sample), use the Datadog sampling priority value
+            // Otherwise, prefer the traceparent sampled flag. Set to 1 for sampled=true or 0 for sampled=false
+            var samplingPriority = traceParent.Sampled switch
+            {
+                true when traceState.SamplingPriority is > 0 => traceState.SamplingPriority.Value,
+                true => SamplingPriorityValues.AutoKeep,
+                false when traceState.SamplingPriority is <= 0 => traceState.SamplingPriority.Value,
+                false => SamplingPriorityValues.AutoReject,
+            };
 
             spanContext = new SpanContext(
                 traceId: traceParent.TraceId,
