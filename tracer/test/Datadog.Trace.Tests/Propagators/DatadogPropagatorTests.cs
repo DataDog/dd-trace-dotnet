@@ -6,10 +6,14 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -82,17 +86,22 @@ namespace Datadog.Trace.Tests.Propagators
                 {
                     new("x-datadog-trace-id", TraceId.ToString(InvariantCulture)),
                     new("x-datadog-parent-id", SpanId.ToString(InvariantCulture)),
-
-                    // TODO: sampling priority, origin
+                    new("x-datadog-sampling-priority", SamplingPriority.ToString(InvariantCulture)),
+                    new("x-datadog-origin", Origin),
                 };
 
             var settings = new TracerSettings { OutgoingTagPropagationHeaderMaxLength = 0 };
-            var traceContext = new TraceContext(new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, null, telemetry: null));
-            var context = new SpanContext(null, traceContext, serviceName: null, TraceId, SpanId) { PropagatedTags = PropagatedTagsCollection };
+            var tracer = new Tracer(settings, agentWriter: Mock.Of<IAgentWriter>(), sampler: null, scopeManager: null, null, telemetry: null);
 
+            var traceContext = new TraceContext(tracer);
+            traceContext.SetSamplingPriority(SamplingPriority);
+            traceContext.Origin = Origin;
+            traceContext.Tags.SetTags(PropagatedTagsCollection);
+
+            var context = new SpanContext(parent: null, traceContext, serviceName: null, TraceId, SpanId);
             var headers = new Mock<IHeadersCollection>();
-
             Propagator.Inject(context, headers.Object);
+
             VerifySetCalls(headers, expectedHeaders);
         }
 
