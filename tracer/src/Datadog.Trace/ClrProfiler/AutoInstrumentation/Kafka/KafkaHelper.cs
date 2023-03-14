@@ -259,7 +259,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <summary>
         /// Try to inject the prop
         /// </summary>
-        /// <param name="context">The Span context to propagate</param>
+        /// <param name="span">Current span</param>
         /// <param name="dataStreamsManager">The global data streams manager</param>
         /// <param name="topic">Topic name</param>
         /// <param name="message">The duck-typed Kafka Message object</param>
@@ -286,7 +286,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
 
-                SpanContextPropagator.Instance.Inject(context, adapter);
+                SpanContextPropagator.Instance.Inject(span.Context, adapter);
 
                 if (dataStreamsManager.IsEnabled)
                 {
@@ -294,7 +294,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         ? defaultProduceEdgeTags
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
                     span.SetDataStreamsCheckpoint(dataStreamsManager, edgeTags);
-                    dataStreamsManager.InjectPathwayContext(context.PathwayContext, adapter);
+                    dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
                 }
             }
             catch (Exception ex)

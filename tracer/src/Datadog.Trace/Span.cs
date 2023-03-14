@@ -6,13 +6,13 @@
 using System;
 using System.Globalization;
 using System.Security.Cryptography;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.DataStreamsMonitoring;
 
 namespace Datadog.Trace
 {
@@ -466,12 +466,14 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="manager">The <see cref="DataStreamsManager"/> to use</param>
         /// <param name="edgeTags">The edge tags for this checkpoint. NOTE: These MUST be sorted alphabetically</param>
-        internal void SetDataStreamsCheckpoint(DataStreamsManager manager, string[] edgeTags){
+        internal void SetDataStreamsCheckpoint(DataStreamsManager manager, string[] edgeTags)
+        {
             Context.SetCheckpoint(manager, edgeTags);
-            
-            var pathwayHash = Context.PathwayContext?.Hash ?? 0;
-            if (pathwayHash != 0){
-                SetTag("pathway.hash", pathwayHash.ToString());
+
+            var hash = Context.PathwayContext?.Hash.Value ?? 0;
+            if (hash != 0)
+            {
+                SetTag("pathway.hash", hash.ToString());
             }
         }
     }
