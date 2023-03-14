@@ -17,10 +17,11 @@ namespace Datadog.Trace.TestHelpers
     {
         public static LogFormatter GetFormatter() => new(
             GetValidSettings(),
+            aasSettings: null,
             serviceName: "MyTestService",
             env: "integration_tests",
             version: "1.0.0",
-            new NullGitMetadataProvider());
+            gitMetadataTagsProvider: new NullGitMetadataProvider());
 
         public static ImmutableDirectLogSubmissionSettings GetValidSettings()
         {
