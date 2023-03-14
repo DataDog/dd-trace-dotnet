@@ -1544,6 +1544,7 @@ stages:
 
     - task: DockerCompose@0
       displayName: docker-compose logs for aerospike
+      condition: succeededOrFailed()
       inputs:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
