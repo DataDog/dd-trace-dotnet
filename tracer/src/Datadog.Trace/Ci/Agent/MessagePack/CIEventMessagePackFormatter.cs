@@ -111,7 +111,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // # Version
 
             // Key
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, VersionBytes);
 
             // Value
             offset += MessagePackBinary.WriteInt32(ref bytes, offset, 1);
@@ -119,7 +119,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // # Metadata
 
             // Key
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetadataBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, MetadataBytes);
 
             // Value
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // ->  * : {}
 
             // Key
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AsteriskBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, AsteriskBytes);
 
             // Value (RuntimeId, Language, library_version, Env?)
             int valuesCount = 3;
@@ -138,25 +138,25 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, valuesCount);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdValueBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, RuntimeIdBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, RuntimeIdValueBytes);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameValueBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, LanguageNameBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, LanguageNameValueBytes);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LibraryVersionBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LibraryVersionValueBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, LibraryVersionBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, LibraryVersionValueBytes);
 
             if (_environmentValueBytes is not null)
             {
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EnvironmentBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentValueBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, EnvironmentBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _environmentValueBytes);
             }
 
             // # Events
 
             // Key
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EventsBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, EventsBytes);
 
             return new ArraySegment<byte>(bytes, 0, offset);
         }

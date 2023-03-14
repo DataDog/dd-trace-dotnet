@@ -197,39 +197,39 @@ namespace Datadog.Trace.Agent.MessagePack
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TraceIdBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, TraceIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, span.Context.TraceId);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SpanIdBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, SpanIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, span.Context.SpanId);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, NameBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, span.OperationName);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, NameBytes);
+            offset += MessagePackBinary.UnsafeWriteString(ref bytes, offset, span.OperationName);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ResourceBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, span.ResourceName);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, ResourceBytes);
+            offset += MessagePackBinary.UnsafeWriteString(ref bytes, offset, span.ResourceName);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ServiceBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, span.ServiceName);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, ServiceBytes);
+            offset += MessagePackBinary.UnsafeWriteString(ref bytes, offset, span.ServiceName);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TypeBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, span.Type);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, TypeBytes);
+            offset += MessagePackBinary.UnsafeWriteString(ref bytes, offset, span.Type);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StartBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, StartBytes);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, span.StartTime.ToUnixTimeNanoseconds());
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, DurationBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, DurationBytes);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, span.Duration.ToNanoseconds());
 
             if (span.Context.ParentId > 0)
             {
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ParentIdBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, ParentIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, (ulong)span.Context.ParentId);
             }
 
             if (span.Error)
             {
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ErrorBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, ErrorBytes);
                 offset += MessagePackBinary.WriteByte(ref bytes, offset, 1);
             }
 
@@ -253,7 +253,7 @@ namespace Datadog.Trace.Agent.MessagePack
             int originalOffset = offset;
 
             // Start of "meta" dictionary. Do not add any string tags before this line.
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetaBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, MetaBytes);
 
             int count = 0;
 
@@ -285,8 +285,8 @@ namespace Datadog.Trace.Agent.MessagePack
             if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdValueBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, RuntimeIdNameBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, RuntimeIdValueBytes);
             }
 
             // add "_dd.origin" tag to all spans
@@ -295,7 +295,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (originRawBytes is not null)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, OriginNameBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, OriginNameBytes);
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, originRawBytes);
             }
 
@@ -305,7 +305,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (envRawBytes is not null)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EnvironmentNameBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, EnvironmentNameBytes);
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, envRawBytes);
             }
 
@@ -313,7 +313,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (gitCommitShaRawBytes is not null)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GitCommitShaNameBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, GitCommitShaNameBytes);
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, gitCommitShaRawBytes);
             }
 
@@ -321,7 +321,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (gitRepositoryUrlRawBytes is not null)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GitRepositoryUrlNameBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, GitRepositoryUrlNameBytes);
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, gitRepositoryUrlRawBytes);
             }
 
@@ -330,8 +330,8 @@ namespace Datadog.Trace.Agent.MessagePack
             if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageValueBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, LanguageNameBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, LanguageValueBytes);
             }
 
             // add "version" tags to all spans whose service name is the default service name
@@ -342,7 +342,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (versionRawBytes is not null)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionNameBytes);
+                    offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, VersionNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, versionRawBytes);
                 }
             }
@@ -361,7 +361,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     if (tagBytes is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteKindTagNameBytes);
+                        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasSiteKindTagNameBytes);
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
@@ -369,7 +369,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     if (tagBytes is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasResourceGroupTagNameBytes);
+                        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasResourceGroupTagNameBytes);
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
@@ -377,7 +377,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     if (tagBytes is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSubscriptionIdTagNameBytes);
+                        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasSubscriptionIdTagNameBytes);
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
@@ -385,7 +385,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     if (tagBytes is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasResourceIdTagNameBytes);
+                        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasResourceIdTagNameBytes);
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
@@ -393,7 +393,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     if (tagBytes is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasInstanceIdTagNameBytes);
+                        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasInstanceIdTagNameBytes);
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
@@ -401,7 +401,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     if (tagBytes is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasInstanceNameTagNameBytes);
+                        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasInstanceNameTagNameBytes);
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
@@ -409,7 +409,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     if (tagBytes is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasOperatingSystemTagNameBytes);
+                        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasOperatingSystemTagNameBytes);
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
@@ -418,7 +418,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     if (tagBytes is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasRuntimeTagNameBytes);
+                        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasRuntimeTagNameBytes);
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
@@ -426,7 +426,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     if (tagBytes is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasExtensionVersionTagNameBytes);
+                        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasExtensionVersionTagNameBytes);
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
                 }
@@ -436,7 +436,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (tagBytes is not null)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteNameTagNameBytes);
+                    offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasSiteNameTagNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                 }
 
@@ -444,7 +444,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (tagBytes is not null)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _aasSiteTypeTagNameBytes);
+                    offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, _aasSiteTypeTagNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                 }
             }
@@ -469,8 +469,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, key);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value);
+            offset += MessagePackBinary.UnsafeWriteString(ref bytes, offset, key);
+            offset += MessagePackBinary.UnsafeWriteString(ref bytes, offset, value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -490,7 +490,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             offset += MessagePackBinary.WriteRaw(ref bytes, offset, keyBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value);
+            offset += MessagePackBinary.UnsafeWriteString(ref bytes, offset, value);
         }
 
         // METRICS
@@ -501,7 +501,7 @@ namespace Datadog.Trace.Agent.MessagePack
             int originalOffset = offset;
 
             // Start of "metrics" dictionary. Do not add any numeric tags before this line.
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetricsBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, MetricsBytes);
 
             int count = 0;
 
@@ -522,7 +522,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (processId != 0 && model.IsLocalRoot)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessIdNameBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, ProcessIdNameBytes);
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
             }
 
@@ -531,7 +531,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (model.IsChunkOrphan && model.TraceChunk.SamplingPriority is { } samplingPriority)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SamplingPriorityNameBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, SamplingPriorityNameBytes);
 
                 // sampling priority must be serialized as msgpack float64 (Double in .NET).
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
@@ -563,7 +563,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+            offset += MessagePackBinary.UnsafeWriteString(ref bytes, offset, key);
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
         }
 

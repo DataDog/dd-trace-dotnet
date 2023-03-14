@@ -23,10 +23,10 @@ internal class CoveragePayloadMessagePackFormatter : EventMessagePackFormatter<C
 
         offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionBytes);
+        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, VersionBytes);
         offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, CoveragesBytes);
+        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, CoveragesBytes);
 
         // Write events
         if (value.TestCoverageData.Lock())

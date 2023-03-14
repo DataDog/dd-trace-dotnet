@@ -66,23 +66,23 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
 
         if (value.SessionId != 0)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSessionIdBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, TestSessionIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SessionId);
         }
 
         if (value.SuiteId != 0)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSuiteIdBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, TestSuiteIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SuiteId);
         }
 
         if (value.SpanId != 0)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SpanIdBytes);
+            offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, SpanIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SpanId);
         }
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FilesBytes);
+        offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, FilesBytes);
         if (value.Files is { Count: > 0 } files)
         {
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)files.Count);
@@ -90,10 +90,10 @@ internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<Test
             {
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
 
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FilenameBytes);
-                offset += MessagePackBinary.WriteString(ref bytes, offset, file.FileName);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, FilenameBytes);
+                offset += MessagePackBinary.UnsafeWriteString(ref bytes, offset, file.FileName);
 
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SegmentsBytes);
+                offset += MessagePackBinary.UnsafeWriteStringBytes(ref bytes, offset, SegmentsBytes);
                 if (file.Segments is { Count: > 0 } segments)
                 {
                     offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)segments.Count);
