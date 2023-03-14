@@ -12,6 +12,7 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.DataStreamsMonitoring;
 
 namespace Datadog.Trace
 {
