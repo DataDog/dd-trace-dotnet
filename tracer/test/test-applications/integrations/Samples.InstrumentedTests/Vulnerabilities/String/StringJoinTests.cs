@@ -104,7 +104,7 @@ public class StringJoinTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingJoinWithObjectArrayAndTaintedSeparatorOneNullParams_ResultIsTainted()
     {
 
-        AssertUntaintedFormatWithOriginalCallCheck(String.Empty, String.Join(taintedValue, new object[] { null, "eee" }),
+        AssertUntaintedWithOriginalCallCheck(String.Empty, String.Join(taintedValue, new object[] { null, "eee" }),
                 () => String.Join(taintedValue, new object[] { null, "eee" }));
     }
 #else

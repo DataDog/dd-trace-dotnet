@@ -446,9 +446,9 @@ internal static class StringModuleImpl
 
             if (ranges != null)
             {
-        taintedObjects.Taint(result, ranges);
-    }
-}
+                taintedObjects.Taint(result, ranges);
+            }
+        }
         catch (Exception err)
         {
             Log.Error(err, "StringModuleImpl.OnstringConcat(IEnumerable) exception");

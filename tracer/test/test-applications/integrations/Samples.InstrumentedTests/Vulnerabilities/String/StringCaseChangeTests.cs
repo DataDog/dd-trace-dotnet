@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using FluentAssertions;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
@@ -96,6 +97,16 @@ public class StringCaseChangeTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED-+:", taintedValue.ToUpper(CultureInfo.InvariantCulture), () => taintedValue.ToUpper(CultureInfo.InvariantCulture));
     }
 
+    [Fact]
+    public void GivenATaintedObject_WhenCallingToUpperWithTurkishCulture_ResultIsTainted()
+    {
+        CultureInfo turkishCulture = CultureInfo.GetCultureInfo("tr-TR");
+        var tainted = AddTaintedString("turkish i");
+
+        tainted.ToUpper(turkishCulture).Should().NotBe(tainted.ToUpper(CultureInfo.InvariantCulture));
+        AssertTaintedFormatWithOriginalCallCheck(":+-TURKİSH İ-+:", tainted.ToUpper(turkishCulture), () => tainted.ToUpper(turkishCulture));
+    }
+
 #if NETFRAMEWORK || NETCOREAPP2_1
     [Fact]
     public void GivenATaintedObject_WhenCallingToUpperWithNullCulture_ArgumentNullException()
@@ -142,6 +153,15 @@ public class StringCaseChangeTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", taintedValue.ToLower(CultureInfo.InvariantCulture), () => taintedValue.ToLower(CultureInfo.InvariantCulture));
     }
 
+    [Fact]
+    public void GivenATaintedObject_WhenCallingToLowerWithTurkishCulture_ResultIsTainted()
+    {
+        CultureInfo turkishCulture = CultureInfo.GetCultureInfo("tr-TR");
+        var tainted = AddTaintedString("TURKİSH İ");
+
+        tainted.ToLower(turkishCulture).Should().NotBe(tainted.ToLower(CultureInfo.InvariantCulture));
+        AssertTaintedFormatWithOriginalCallCheck(":+-turkish i-+:", tainted.ToLower(turkishCulture), () => tainted.ToLower(turkishCulture));
+    }
     [Fact]
     public void GivenATaintedObject_WhenCallingToLowerInvariant_ResultIsTainted()
     {
