@@ -190,7 +190,7 @@ namespace Datadog.Profiler.SmokeTests
                     var stackTrace = sample.StackTrace(profile);
                     for (var i = 0; i < stackTrace.FramesCount; i++)
                     {
-                        stackTrace[i].Function.Should().BeEmpty();
+                        stackTrace[i].Filename.Should().BeEmpty();
                         stackTrace[i].StartLine.Should().Equals(0);
                     }
                 }
