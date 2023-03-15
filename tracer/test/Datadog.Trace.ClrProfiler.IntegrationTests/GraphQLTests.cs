@@ -12,10 +12,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -358,47 +361,116 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private async Task SubmitWebsocketRequest(int aspNetCorePort, RequestInfo requestInfo)
         {
+            // Output.WriteLine("[DATE1] " + DateTime.Now.TimeOfDay + " : " + requestInfo.RequestBody);
             var uri = new Uri($"ws://localhost:{aspNetCorePort}{requestInfo.Url}");
+
             var webSocket = new ClientWebSocket();
             webSocket.Options.AddSubProtocol("graphql-ws");
-
-            var cancellationTokenSource = new CancellationTokenSource();
-            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(120)); // 120 seconds timeout
+            // Output.WriteLine("[DATE2] " + DateTime.Now.TimeOfDay + " : " + requestInfo.RequestBody);
 
             try
             {
-                await webSocket.ConnectAsync(uri, cancellationTokenSource.Token);
+                // Output.WriteLine("[DATE3] " + DateTime.Now.TimeOfDay + " : " + requestInfo.RequestBody);
+                await webSocket.ConnectAsync(uri, CancellationToken.None);
                 Output.WriteLine("[websocket] WebSocket connection established");
+                // Output.WriteLine("[DATE4] " + DateTime.Now.TimeOfDay + " : " + requestInfo.RequestBody);
 
                 // GraphQL First packet initialization
                 const string initPayload = @"{
                     ""type"": ""connection_init"",
-                    ""payload"": {""payload"": {""Accept"":""application/json""}}
+                    ""payload"": {""Accept"":""application/json""}
                 }";
                 var initBuffer = System.Text.Encoding.UTF8.GetBytes(initPayload);
                 var initSegment = new ArraySegment<byte>(initBuffer);
-                await webSocket.SendAsync(initSegment, WebSocketMessageType.Text, true, cancellationTokenSource.Token);
-                Output.WriteLine("[websocket] Connection initialized");
+                // Output.WriteLine("[DATE5] " + DateTime.Now.TimeOfDay + " : " + initSegment);
+                await webSocket.SendAsync(initSegment, WebSocketMessageType.Text, true, CancellationToken.None);
+                Output.WriteLine("[websocket] Connection initialized (init packet sent) 1/2");
+                // Output.WriteLine("[DATE6] " + DateTime.Now.TimeOfDay + " : " + requestInfo.RequestBody);
+
+                // var receivedBytes = new ArraySegment<byte>(new byte[1024]);
+                // var result = await webSocket.ReceiveAsync(receivedBytes, CancellationToken.None);
+                // Console.WriteLine("[websocket] Received:" + Encoding.UTF8.GetString(receivedBytes.Array, 0, result.Count));
+                await WaitForMessage();
+                Output.WriteLine("[websocket] Connection initialized (init packet received) 2/2");
 
                 // Send test request
+                Console.WriteLine($"[websocket] Send request: {requestInfo.RequestBody}");
                 var buffer = System.Text.Encoding.UTF8.GetBytes(requestInfo.RequestBody);
                 var segment = new ArraySegment<byte>(buffer);
-                await webSocket.SendAsync(segment, WebSocketMessageType.Text, true, cancellationTokenSource.Token);
-                Output.WriteLine("[websocket] Request sent");
+                // Output.WriteLine("[DATE6-1] " + DateTime.Now.TimeOfDay + " : " + requestInfo.RequestBody);
+                await webSocket.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
+                Console.WriteLine("[websocket] Request sent");
+                Console.WriteLine("[websocket] Waiting for the response:");
+                // Output.WriteLine("[DATE6-2] " + DateTime.Now.TimeOfDay + " : " + requestInfo.RequestBody);
+                await WaitForMessage();
             }
             catch (Exception ex)
             {
                 Output.WriteLine($"[websocket] WebSocket connection error: {ex.Message}");
+                // Output.WriteLine("[DATE7-ERROR] " + DateTime.Now.TimeOfDay + " : " + requestInfo.RequestBody);
             }
             finally
             {
                 if (webSocket.State == WebSocketState.Open)
                 {
+                    // Output.WriteLine("[DATE7-FINALLY] " + DateTime.Now.TimeOfDay + " : " + requestInfo.RequestBody);
                     await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                    // Output.WriteLine("[DATE8-FINALLY] " + DateTime.Now.TimeOfDay + " : " + requestInfo.RequestBody);
                     Output.WriteLine("[websocket] WebSocket connection closed");
                 }
 
                 webSocket.Dispose();
+            }
+
+            async Task WaitForMessage()
+            {
+                Output.WriteLine("[websocket] Start waiting for a message!");
+                var ms = new MemoryStream();
+                while (webSocket.State == WebSocketState.Open)
+                {
+                    WebSocketReceiveResult res;
+                    do
+                    {
+                        var messageBuffer = WebSocket.CreateClientBuffer(1024, 16);
+                        res = await webSocket.ReceiveAsync(messageBuffer, CancellationToken.None);
+                        ms.Write(messageBuffer.Array, messageBuffer.Offset, res.Count);
+                    }
+                    while (!res.EndOfMessage);
+
+                    // only for debug
+                    if (res.MessageType != WebSocketMessageType.Text)
+                    {
+                        Console.WriteLine("Message received type: " + res.MessageType);
+                    }
+
+                    // Message received from the websocket
+                    var msgString = Encoding.UTF8.GetString(ms.ToArray());
+                    ms = new MemoryStream(); // Reset Stream
+
+                    if (msgString.Length == 0)
+                    {
+                        Output.WriteLine("[websocket] Received an empty message.");
+                        continue;
+                    }
+
+                    // Check if the data received is a 'complete' message
+                    Output.WriteLine("[websocket] before json: " + msgString);
+                    var jsonObj = JObject.Parse(msgString);
+                    var typeData = jsonObj.GetValue("type")?.Value<string>();
+                    if (typeData is "complete" or "error" or "connection_ack")
+                    {
+                        Output.WriteLine("[websocket][debug] Complete or Error or Connection_ack Message");
+                        break;
+                    }
+
+                    if (res.MessageType == WebSocketMessageType.Close)
+                    {
+                        Output.WriteLine("[websocket][debug] Close websocket");
+                        break;
+                    }
+                }
+
+                Output.WriteLine("[websocket] Stopped waiting for a message");
             }
         }
 
