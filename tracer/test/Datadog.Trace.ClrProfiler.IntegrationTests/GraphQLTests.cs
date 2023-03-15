@@ -145,7 +145,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected async Task RunSubmitsTraces(string packageVersion = "", bool usingWebsockets = false)
         {
             SetInstrumentationVerification();
-            // using var telemetry = this.ConfigureTelemetry();
 
             await Fixture.TryStartApp(this);
             var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
@@ -174,8 +173,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix(); // all package versions should be the same
 
             VerifyInstrumentation(Fixture.Process);
-
-            // telemetry.AssertIntegrationEnabled(IntegrationId.GraphQL);
         }
 
         private async Task<int> SubmitRequests(int aspNetCorePort, bool usingWebsockets)
