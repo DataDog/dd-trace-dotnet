@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -192,6 +193,7 @@ internal static class TagPropagation
         public bool IsValid;
         public bool IsTooLong;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal TraceTagEnumerator(StringBuilder sb, TraceTagCollection tagsCollection, int maxOutgoingHeaderLength)
         {
             _sb = sb;
@@ -201,6 +203,7 @@ internal static class TagPropagation
             IsTooLong = false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Next(KeyValuePair<string, string> tag)
         {
             if (!IsValid || IsTooLong)

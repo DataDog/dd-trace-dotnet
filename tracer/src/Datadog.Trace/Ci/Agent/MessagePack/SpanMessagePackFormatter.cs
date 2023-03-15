@@ -409,6 +409,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             public int Offset;
             public int Count;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal TagWriter(SpanMessagePackFormatter formatter, ITagProcessor[] tagProcessors, byte[] bytes, int offset)
             {
                 _formatter = formatter;
@@ -418,6 +419,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 Count = 0;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Process(TagItem<string> item)
             {
                 if (item.KeyUtf8 is null)
@@ -432,6 +434,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 Count++;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Process(TagItem<double> item)
             {
                 if (item.KeyUtf8 is null)
@@ -456,6 +459,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             public int Offset;
             public int Count;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal TraceTagWriter(SpanMessagePackFormatter formatter, ITagProcessor[] tagProcessors, byte[] bytes, int offset)
             {
                 _formatter = formatter;
@@ -465,6 +469,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 Count = 0;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Next(KeyValuePair<string, string> item)
             {
                 _formatter.WriteTag(ref Bytes, ref Offset, item.Key, item.Value, _tagProcessors);

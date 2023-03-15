@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
@@ -810,11 +811,13 @@ namespace Datadog.Trace.Propagators
         {
             private readonly StringBuilder _sb;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal TraceTagAppender(StringBuilder sb)
             {
                 _sb = sb;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Next(KeyValuePair<string, string> tag)
             {
                 if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))

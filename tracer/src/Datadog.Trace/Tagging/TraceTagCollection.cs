@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Util;
 
@@ -234,6 +235,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Enumerate<TTagEnumerator>(ref TTagEnumerator tagEnumerator)
             where TTagEnumerator : ITagEnumerator
         {
@@ -256,6 +258,7 @@ namespace Datadog.Trace.Tagging
         public interface ITagEnumerator
 #pragma warning restore SA1201
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             void Next(KeyValuePair<string, string> item);
         }
 
@@ -263,11 +266,13 @@ namespace Datadog.Trace.Tagging
         {
             private readonly TraceTagCollection _traceTagCollection;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal TraceTagSetter(TraceTagCollection traceTagCollection)
             {
                 _traceTagCollection = traceTagCollection;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Next(KeyValuePair<string, string> tag)
             {
                 _traceTagCollection.SetTag(tag.Key, tag.Value);
