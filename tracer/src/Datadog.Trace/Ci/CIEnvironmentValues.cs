@@ -887,21 +887,8 @@ namespace Datadog.Trace.Ci
         {
             IsCI = true;
             Provider = "teamcity";
-            Repository = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_URL");
-            WorkspacePath = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_URL");
-            Commit = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_NUMBER");
-            SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("BUILD_CHECKOUTDIR");
-            PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BUILD_ID");
-            PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILD_NUMBER");
-            string serverUrl = EnvironmentHelpers.GetEnvironmentVariable("SERVER_URL");
-            if (PipelineId != null && serverUrl != null)
-            {
-                PipelineUrl = $"{serverUrl}/viewLog.html?buildId={PipelineId}";
-            }
-            else
-            {
-                PipelineUrl = null;
-            }
+            JobName = EnvironmentHelpers.GetEnvironmentVariable("TEAMCITY_BUILDCONF_NAME");
+            JobUrl = EnvironmentHelpers.GetEnvironmentVariable("BUILD_URL");
         }
 
         private void SetupBuildkiteEnvironment()

@@ -40,6 +40,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [MemberData(nameof(TestData))]
         public async Task DetectAgentUrl((string, string)[] environmentVariables)
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(enableProfiler: false, environmentVariables);
 
             using var console = ConsoleHelper.Redirect();
@@ -57,6 +58,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public async Task DetectTransportHttp()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var agent = MockTracerAgent.Create(Output, TcpPortProvider.GetOpenPort());
 
             var url = $"http://127.0.0.1:{agent.Port}/";
@@ -79,6 +81,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public async Task DetectTransportUds()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             var url = $"unix://{tracesUdsPath}";
             var uri = new System.Uri(url);

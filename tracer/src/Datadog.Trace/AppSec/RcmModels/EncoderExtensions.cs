@@ -10,6 +10,7 @@ using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec;
 
@@ -21,9 +22,13 @@ internal static class EncoderExtensions
         return Encoder.Encode(dictionary, wafLibraryInvoker, argsToDispose, false);
     }
 
-    internal static Obj Encode(this List<RuleOverride> ruleStatus, WafLibraryInvoker wafLibraryInvoker, List<Obj> argsToDispose)
+    internal static Obj Encode(List<RuleOverride> ruleStatus, List<JToken> exclusions, WafLibraryInvoker wafLibraryInvoker, List<Obj> argsToDispose)
     {
-        var dictionary = new Dictionary<string, object> { { "rules_override", ruleStatus.Select(r => r.ToKeyValuePair()).ToArray() } };
+        var dictionary = new Dictionary<string, object>
+        {
+            { "rules_override", ruleStatus.Select(r => r.ToKeyValuePair()).ToArray() },
+            { "exclusions", new JArray(exclusions) },
+        };
         return Encoder.Encode(dictionary, wafLibraryInvoker, argsToDispose);
     }
 }

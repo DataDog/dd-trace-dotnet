@@ -5,12 +5,15 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec
 {
@@ -18,6 +21,8 @@ namespace Datadog.Trace.AppSec
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ObjectExtractor));
         private static readonly IReadOnlyDictionary<string, object> EmptyDictionary = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>(0));
+
+        private static readonly ConcurrentDictionary<Type, FieldExtractor[]> TypeToExtractorMap = new();
 
         private static readonly HashSet<Type> AdditionalPrimitives = new()
         {
@@ -31,8 +36,8 @@ namespace Datadog.Trace.AppSec
 
         internal static object Extract(object body)
         {
-            var visted = new HashSet<object>();
-            var item = ExtractType(body.GetType(), body, 0, visted);
+            var visited = new HashSet<object>();
+            var item = ExtractType(body.GetType(), body, 0, visited);
 
             return item;
         }
@@ -51,44 +56,92 @@ namespace Datadog.Trace.AppSec
 
             visited.Add(body);
 
-            Log.Debug("ExtractProperties - body: {Body}", body);
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("ExtractProperties - body: {Body}", body);
+            }
 
-            var fields = body.GetType()
-                        .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-                        .Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField"))
-                        .ToArray();
+            var bodyType = body.GetType();
 
             depth++;
 
-            var dictSize = Math.Min(WafConstants.MaxContainerSize, fields.Length);
+            FieldExtractor[] fieldExtractors = null;
+            if (!TypeToExtractorMap.TryGetValue(bodyType, out fieldExtractors))
+            {
+                var fields =
+                    bodyType
+                       .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+                       .Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField"))
+                       .ToArray();
+
+                fieldExtractors = new FieldExtractor[fields.Length];
+                for (var i = 0; i < fields.Length; i++)
+                {
+                    var field = fields[i];
+
+                    var propertyName = GetPropertyName(field.Name);
+                    if (string.IsNullOrEmpty(propertyName))
+                    {
+                        Log.Warning("ExtractProperties - couldn't extract property name from: {FieldName}", field.Name);
+                        continue;
+                    }
+
+                    var dynMethod = new DynamicMethod(
+                        bodyType + "_get_" + propertyName,
+                        typeof(object),
+                        new[] { typeof(object) },
+                        typeof(ObjectExtractor).Module,
+                        true);
+                    var ilGen = dynMethod.GetILGenerator();
+                    ilGen.Emit(OpCodes.Ldarg_0);
+                    if (bodyType.IsValueType)
+                    {
+                        ilGen.Emit(OpCodes.Unbox_Any, bodyType);
+                    }
+
+                    ilGen.Emit(OpCodes.Ldfld, field);
+                    if (field.FieldType.IsValueType)
+                    {
+                        ilGen.Emit(OpCodes.Box, field.FieldType);
+                    }
+
+                    ilGen.Emit(OpCodes.Ret);
+                    var func = (Func<object, object>)dynMethod.CreateDelegate(typeof(Func<object, object>));
+
+                    fieldExtractors[i] = new FieldExtractor() { Name = propertyName, Type = field.FieldType, Accessor = func };
+                }
+
+                // this would be expect to fail sometimes, when several threads attempt process the same body
+                TypeToExtractorMap.TryAdd(bodyType, fieldExtractors);
+            }
+
+            var dictSize = Math.Min(WafConstants.MaxContainerSize, fieldExtractors.Length);
             var dict = new Dictionary<string, object>(dictSize);
 
-            for (var i = 0; i < fields.Length; i++)
+            for (var i = 0; i < fieldExtractors.Length; i++)
             {
                 if (dict.Count >= WafConstants.MaxContainerSize || depth >= WafConstants.MaxContainerDepth)
                 {
                     return dict;
                 }
 
-                var field = fields[i];
+                var fieldExtractor = fieldExtractors[i];
 
-                var propertyName = GetPropertyName(field.Name);
-                if (string.IsNullOrEmpty(propertyName))
+                if (fieldExtractor != null)
                 {
-                    Log.Warning("ExtractProperties - couldn't extract property name from: {FieldName}", field.Name);
-                    continue;
+                    var value = fieldExtractor.Accessor.Invoke(body);
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug("ExtractProperties - property: {BodyType}.{Name} {Value}", bodyType.FullName, fieldExtractor.Name, value);
+                    }
+
+                    var item =
+                        value == null ?
+                            null :
+                            ExtractType(fieldExtractor.Type, value, depth, visited);
+
+                    dict.Add(fieldExtractor.Name, item);
                 }
-
-                var value = field.GetValue(body);
-
-                Log.Debug("ExtractProperties - property: {Name} {Value}", propertyName, value);
-
-                var item =
-                    value == null ?
-                        null :
-                        ExtractType(field.FieldType, value, depth, visited);
-
-                dict.Add(propertyName, item);
             }
 
             return dict;
@@ -187,6 +240,15 @@ namespace Datadog.Trace.AppSec
             }
 
             return items;
+        }
+
+        private class FieldExtractor
+        {
+            public string Name { get; set; }
+
+            public Type Type { get; set; }
+
+            public Func<object, object> Accessor { get; set; }
         }
     }
 }

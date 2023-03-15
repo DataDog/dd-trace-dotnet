@@ -440,7 +440,7 @@ namespace Datadog.Trace.ClrProfiler
 
         private static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
         {
-            var tc = new TaskCompletionSource<bool>();
+            var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             // Stop waiting if we're shutting down
             LifetimeManager.Instance.AddShutdownTask(() => tc.TrySetResult(false));
 
