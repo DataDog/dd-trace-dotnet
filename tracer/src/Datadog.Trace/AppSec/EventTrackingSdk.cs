@@ -100,7 +100,7 @@ public static class EventTrackingSdk
 
             setTag(Tags.AppSec.EventsUsersLogin.FailureTrack, "true");
             setTag(Tags.AppSec.EventsUsersLogin.FailureUserId, userId);
-            setTag(Tags.AppSec.EventsUsersLogin.FailureUserExists, exists.ToString());
+            setTag(Tags.AppSec.EventsUsersLogin.FailureUserExists, exists.ToString().ToLower());
 
             if (metadata != null)
             {
