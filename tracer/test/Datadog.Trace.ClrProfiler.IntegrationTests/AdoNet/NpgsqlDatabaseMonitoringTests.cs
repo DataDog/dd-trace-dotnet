@@ -84,14 +84,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 foreach (var span in spans)
                 {
-                    Assert.True(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
+                    span.Tags?.Should().ContainKey(Tags.DbmDataPropagated);
                 }
             }
             else
             {
                 foreach (var span in spans)
                 {
-                    Assert.False(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
+                    span.Tags?.Should().NotContainKey(Tags.DbmDataPropagated);
                 }
             }
         }
@@ -130,19 +130,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             actualSpanCount.Should().Be(expectedSpanCount);
             ValidatePresentDbmTag(spans, propagationLevel);
 
-            if (propagationLevel == "service" || propagationLevel == "full")
-            {
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
 
-                var fileVersion = string.Empty;
+            var fileName = nameof(NpgsqlDatabaseMonitoringTests);
 #if NET462
-                fileVersion = "Net462";
+            fileName = fileName + "Net462";
 #endif
-                await VerifyHelper.VerifySpans(spans, settings)
-                    .DisableRequireUniquePrefix()
-                    .UseFileName(nameof(NpgsqlDatabaseMonitoringTests) + fileVersion);
-            }
+            fileName = fileName + (propagationLevel switch
+            {
+                "service" or "full" => ".enabled",
+                _ => ".disabled",
+            });
+
+            await VerifyHelper.VerifySpans(spans, settings)
+                .DisableRequireUniquePrefix()
+                .UseFileName(fileName);
         }
     }
 }

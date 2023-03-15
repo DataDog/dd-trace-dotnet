@@ -97,14 +97,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 foreach (var span in spans)
                 {
-                    (span.Tags?.ContainsKey(Tags.DbmDataPropagated)).Should().BeTrue();
+                    span.Tags?.Should().ContainKey(Tags.DbmDataPropagated);
                 }
          }
             else
             {
                 foreach (var span in spans)
                 {
-                    (span.Tags?.ContainsKey(Tags.DbmDataPropagated)).Should().NotBeTrue();
+                    span.Tags?.Should().NotContainKey(Tags.DbmDataPropagated);
                 }
             }
         }
@@ -145,23 +145,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             actualSpanCount.Should().Be(expectedSpanCount);
             ValidatePresentDbmTag(spans, propagationLevel);
 
-            if (propagationLevel == "service" || propagationLevel == "full")
-            {
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
 
-                var fileName = nameof(MySqlDatabaseMonitoringTests);
+            var fileName = nameof(MySqlDatabaseMonitoringTests);
 #if NET5_0_OR_GREATER
-                fileName = fileName + "Net";
+            fileName = fileName + "Net";
 #elif NET462
-                fileName = fileName + "Net462";
+            fileName = fileName + "Net462";
 #else
-                fileName = fileName + "NetCore";
+            fileName = fileName + "NetCore";
 #endif
-                await VerifyHelper.VerifySpans(spans, settings)
-                    .DisableRequireUniquePrefix()
-                    .UseFileName(fileName);
-            }
+            fileName = fileName + (propagationLevel switch
+            {
+                "service" or "full" => ".enabled",
+                _ => ".disabled",
+            });
+
+            await VerifyHelper.VerifySpans(spans, settings)
+                .DisableRequireUniquePrefix()
+                .UseFileName(fileName);
         }
     }
 }
