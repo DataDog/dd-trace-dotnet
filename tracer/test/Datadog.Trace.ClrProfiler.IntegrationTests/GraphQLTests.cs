@@ -130,6 +130,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected AspNetCoreTestFixture Fixture { get; }
 
+        public override void Dispose()
+        {
+            Fixture.SetOutput(null);
+        }
+
         public override Result ValidateIntegrationSpan(MockSpan span) =>
             span.Type switch
             {
@@ -144,9 +149,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             await Fixture.TryStartApp(this);
             var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
-            Fixture.Dispose();
 
-            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, returnAllOperations: true);
+            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans);
             foreach (var span in spans)
             {
                 // TODO: Refactor to use ValidateIntegrationSpans when the graphql server integration is fixed. It currently produces a service name of {service]-graphql
