@@ -6,8 +6,8 @@ using Datadog.Trace.Processors;
 
 namespace Benchmarks.Trace
 {
+    // This benchmark is currently disabled in CI (Not assigned to an agent)
     [MemoryDiagnoser]
-    [BenchmarkAgent5]
     public class TraceProcessorBenchmark
     {
         private readonly ITraceProcessor _normalizerTraceProcessor;
