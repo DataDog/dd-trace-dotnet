@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
@@ -76,6 +77,12 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenATaintedObject_WhenCallingJoinWithStringListAndTaintedSeparator_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:", String.Join(taintedValue, new List<string> { taintedValue2}), () => String.Join(taintedValue, new List<string> { taintedValue2}));
+    }
+
+    [Fact]
     public void GivenATaintedObject_WhenCallingJoinWithStringArrayAndIndex_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Join(",", new string[] { taintedValue, taintedValue2 }, 0, 1), () => String.Join(",", new string[] { taintedValue, taintedValue2 }, 0, 1));
@@ -94,6 +101,18 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenATaintedObject_WhenCallingJoinWithStringArrayAndIndex_ResultIsTainted4()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Join(",", new string[] { taintedValue }), () => String.Join(",", new string[] { taintedValue}, 0, 1));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingJoinWithStringArrayAndIndex_ResultIsTainted5()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Join(",", new string[] { taintedValue }), () => String.Join(",", new string[] { taintedValue }));
+    }
+
+    [Fact]
     public void GivenATaintedObject_WhenCallingJoinWithStringArrayAndIndexAndTaintedSeparator_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+::+-tainted-+:eee", String.Join(taintedValue, new string[] { taintedValue2, "eee" }, 0, 2), () => String.Join(taintedValue, new string[] { taintedValue2, "eee" }, 0, 2));
@@ -109,11 +128,18 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 #else
     [Fact]
-        public void GivenATaintedObject_WhenCallingJoinWithObjectArrayAndTaintedSeparatorOneNullParams_ResultIsTainted()
-        {
-            AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:eee", String.Join(taintedValue, new object[] { null, "eee" }), 
-                () => String.Join(taintedValue, new object[] { null, "eee" }));
-        }
+    public void GivenATaintedObject_WhenCallingJoinWithObjectArrayAndTaintedSeparatorOneNullParams_ResultIsTainted()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:eee", String.Join(taintedValue, new object[] { null, "eee" }), 
+            () => String.Join(taintedValue, new object[] { null, "eee" }));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingJoinWithObjectArrayAndTaintedSeparatorOneNullParams_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:", String.Join(taintedValue, new object[] { taintedValue2 }), 
+            () => String.Join(taintedValue, new object[] { taintedValue2 }));
+    }
 #endif
     [Fact]
     public void GivenATaintedObject_WhenCallingJoinWithStringArrayOneNullParams_ResultIsTainted2()
@@ -206,15 +232,21 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenATaintedStringInClass_WhenCallingJoin_ResultIsTainted3()
+    {
+        AssertTaintedFormatWithOriginalCallCheck("UntaintedString,:+-tainted-+:", String.Join(",", new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue)), () => String.Join(",", new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue)));
+    }
+
+    [Fact]
     public void GivenATaintedStringInClass_WhenCallingJoin_ResultIsTainted4()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString,:+-tainted-+:", String.Join(",", new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue)), () => String.Join(",", new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue)));
     }
 
     [Fact]
-    public void GivenATaintedStringInClass_WhenCallingJoin_ResultIsTainted3()
+    public void GivenATaintedStringInClass_WhenCallingJoin_ResultIsTainted5()
     {
-        AssertTaintedFormatWithOriginalCallCheck("UntaintedString,:+-tainted-+:", String.Join(",", new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue)), () => String.Join(",", new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue)));
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Join(",", new ClassForStringTest(taintedValue)), () => String.Join(",", new ClassForStringTest(taintedValue)));
     }
 
 #if !NET462

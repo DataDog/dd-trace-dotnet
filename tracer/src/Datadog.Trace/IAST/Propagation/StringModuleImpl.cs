@@ -205,13 +205,14 @@ internal static class StringModuleImpl
             var delimiterRanges = GetTainted(taintedObjects, delimiter)?.Ranges;
             var delimiterHasRanges = delimiterRanges?.Length > 0;
             var delimiterLength = delimiter?.Length ?? 0;
+            var valuesCount = values.Count();
 
             int i = 0;
             foreach (var element in values)
             {
                 if (i >= startIndex && (count < 0 || i < startIndex + count))
                 {
-                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, delimiterRanges, delimiterLength, element?.ToString() ?? string.Empty, delimiterHasRanges && i < values.Count() - 1);
+                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, delimiterRanges, delimiterLength, element?.ToString() ?? string.Empty, delimiterHasRanges && i < valuesCount - 1);
                 }
 
                 i++;
