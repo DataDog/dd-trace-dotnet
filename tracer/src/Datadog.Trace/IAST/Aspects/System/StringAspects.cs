@@ -436,7 +436,7 @@ public partial class StringAspects
         }
         else
         {
-            // This should neve happen
+            // This should never happen
             Log.Warning("Could not taint the string.join call in System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)");
             return string.Join(separator, values);
         }
