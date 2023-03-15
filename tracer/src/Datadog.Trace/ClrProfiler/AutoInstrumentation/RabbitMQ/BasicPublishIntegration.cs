@@ -77,6 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     }
 
                     SpanContextPropagator.Instance.Inject(scope.Span.Context, basicProperties.Headers, default(ContextPropagation));
+                    RabbitMQIntegration.SetDataStreamsCheckpoint(Tracer.Instance, scope.Span, tags, basicProperties);
                 }
             }
 

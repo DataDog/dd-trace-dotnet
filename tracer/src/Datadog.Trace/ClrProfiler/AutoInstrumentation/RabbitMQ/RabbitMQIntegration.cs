@@ -4,10 +4,9 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -68,6 +67,46 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             return scope;
         }
 
+        internal static void SetDataStreamsCheckpoint(Tracer tracer, Span span, RabbitMQTags tags, IBasicProperties basicProperties)
+        {
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled)
+            {
+                return;
+            }
+
+            try
+            {
+                RabbitMQHeadersCollectionAdapter headers;
+                string[] edgeTags;
+                switch (tags.SpanKind)
+                {
+                    case SpanKinds.Producer:
+                        headers = new RabbitMQHeadersCollectionAdapter(basicProperties.Headers);
+                        edgeTags = string.IsNullOrEmpty(tags.Exchange) ?
+                                       new[] { "direction:out", $"topic:{tags.Queue}", "type:rabbitmq" } :
+                                       new[] { "direction:out", $"exchange:{tags.Exchange}", $"has_routing_key:{string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
+                        span.SetDataStreamsCheckpoint(dataStreamsManager, edgeTags);
+                        dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headers);
+                        break;
+
+                    case SpanKinds.Consumer:
+                        headers = new RabbitMQHeadersCollectionAdapter(basicProperties.Headers);
+                        edgeTags = string.IsNullOrEmpty(tags.Exchange) ?
+                                       new[] { "direction:in", $"topic:{tags.Queue}", "type:rabbitmq" } :
+                                       new[] { "direction:in", $"exchange:{tags.Exchange}", $"has_routing_key:{string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
+                        var pathwayContext = dataStreamsManager.ExtractPathwayContext(headers);
+                        span.Context.MergePathwayContext(pathwayContext);
+                        span.SetDataStreamsCheckpoint(dataStreamsManager, edgeTags);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to set data streams checkpoint");
+            }
+        }
+
         internal static CallTargetState BasicDeliver_OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, TBasicProperties basicProperties, TBody body)
             where TBasicProperties : IBasicProperties
             where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
@@ -101,6 +140,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 tags.MessageSize = body?.Length.ToString() ?? "0";
             }
 
+            SetDataStreamsCheckpoint(Tracer.Instance, scope.Span, tags, basicProperties);
             return new CallTargetState(scope);
         }
 

@@ -81,9 +81,7 @@ public class DataStreamsMonitoringTests : TestHelper
         using var assertionScope = new AssertionScope();
 
         var payload = NormalizeDataStreams(agent.DataStreams);
-
         agent.AssertConfiguration(ConfigTelemetryData.DataStreamsMonitoringEnabled, true);
-
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
@@ -93,7 +91,6 @@ public class DataStreamsMonitoringTests : TestHelper
                 _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
                 _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
             });
-
         await Verifier.Verify(payload, settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(SubmitsDataStreams)}")
                       .DisableRequireUniquePrefix();
