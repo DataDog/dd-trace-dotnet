@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             where TReturn : IDelayedException, IDuckType
         {
-            if (exception == null && returnValue.Instance != null)
+            if (exception is null && returnValue.Instance is not null)
             {
                 exception = returnValue.Exception;
             }

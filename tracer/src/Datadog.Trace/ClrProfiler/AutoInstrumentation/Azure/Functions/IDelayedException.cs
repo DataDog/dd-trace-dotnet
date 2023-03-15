@@ -5,13 +5,15 @@
 
 #if !NETFRAMEWORK
 
+#nullable enable
+
 using System;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal interface IDelayedException
     {
-        public Exception Exception { get; }
+        public Exception? Exception { get; }
     }
 }
 
