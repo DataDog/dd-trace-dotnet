@@ -67,7 +67,7 @@ internal static class StringModuleImpl
     {
         try
         {
-            if (string.IsNullOrEmpty(result) || object.ReferenceEquals(result, target))
+            if (string.IsNullOrEmpty(result))
             {
                 return result;
             }
@@ -80,16 +80,6 @@ internal static class StringModuleImpl
 
             var taintedObjects = iastContext.GetTaintedObjects();
             var taintedTarget = GetTainted(taintedObjects, target);
-
-            // if we have the same target and result but not the same reference, that means that
-            // we have called insert() with an empty insert string and the method has created a new string
-            // with the same value but different reference (which actually happens in .net462)
-            if (result == target && taintedTarget != null)
-            {
-                taintedObjects.Taint(result, taintedTarget!.Ranges);
-                return result;
-            }
-
             var taintedValue = GetTainted(taintedObjects, value);
             if (taintedValue == null && taintedTarget == null)
             {
