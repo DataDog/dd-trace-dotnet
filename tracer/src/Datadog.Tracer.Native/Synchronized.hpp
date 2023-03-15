@@ -1,5 +1,6 @@
 #pragma once
 #include <mutex>
+#include <optional>
 
 template <class T>
 class Synchronized
@@ -35,6 +36,18 @@ public:
     Scope Get()
     {
         return {*this};
+    }
+
+    std::optional<Scope> TryGet()
+    {
+        try
+        {
+            return {*this};
+        }
+        catch (...)
+        {
+            return std::nullopt;
+        }
     }
 
 private:
