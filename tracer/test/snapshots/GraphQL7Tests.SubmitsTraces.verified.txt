@@ -376,16 +376,16 @@ errors: [
     TraceId: Id_20,
     SpanId: Id_21,
     Name: aspnet_core.request,
-    Resource: GET /shutdown,
+    Resource: POST /graphql,
     Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
       env: integration_tests,
-      http.method: GET,
+      http.method: POST,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost:00000/shutdown,
+      http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
@@ -442,7 +442,7 @@ errors: [
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
-      http.status_code: 200,
+      http.status_code: 405,
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
@@ -471,7 +471,7 @@ errors: [
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
-      http.status_code: 405,
+      http.status_code: 400,
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
@@ -500,35 +500,6 @@ errors: [
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
-      http.status_code: 400,
-      http.url: http://localhost:00000/graphql,
-      http.useragent: testhelper,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_30,
-    SpanId: Id_31,
-    Name: aspnet_core.request,
-    Resource: POST /graphql,
-    Service: Samples.GraphQL7,
-    Type: web,
-    Tags: {
-      component: aspnet_core,
-      env: integration_tests,
-      http.method: POST,
-      http.request.headers.host: localhost:00000,
       http.status_code: 405,
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
@@ -547,13 +518,13 @@ errors: [
     }
   },
   {
-    TraceId: Id_22,
-    SpanId: Id_32,
+    TraceId: Id_20,
+    SpanId: Id_30,
     Name: graphql.validate,
     Resource: graphql.validate,
     Service: Samples.GraphQL7-graphql,
     Type: graphql,
-    ParentId: Id_23,
+    ParentId: Id_21,
     Tags: {
       component: GraphQL,
       env: integration_tests,
@@ -567,19 +538,61 @@ errors: [
     }
   },
   {
-    TraceId: Id_22,
-    SpanId: Id_33,
+    TraceId: Id_20,
+    SpanId: Id_31,
     Name: graphql.execute,
     Resource: Query HeroQuery,
     Service: Samples.GraphQL7-graphql,
     Type: graphql,
-    ParentId: Id_23,
+    ParentId: Id_21,
     Tags: {
       component: GraphQL,
       env: integration_tests,
       graphql.operation.name: HeroQuery,
       graphql.operation.type: Query,
       graphql.source: query HeroQuery{hero {name appearsIn}},
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_32,
+    Name: graphql.validate,
+    Resource: graphql.validate,
+    Service: Samples.GraphQL7-graphql,
+    Type: graphql,
+    ParentId: Id_23,
+    Tags: {
+      component: GraphQL,
+      env: integration_tests,
+      graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_33,
+    Name: graphql.execute,
+    Resource: Mutation AddBobaFett,
+    Service: Samples.GraphQL7-graphql,
+    Type: graphql,
+    ParentId: Id_23,
+    Tags: {
+      component: GraphQL,
+      env: integration_tests,
+      graphql.operation.name: AddBobaFett,
+      graphql.operation.type: Mutation,
+      graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -596,48 +609,6 @@ errors: [
     Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_25,
-    Tags: {
-      component: GraphQL,
-      env: integration_tests,
-      graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_24,
-    SpanId: Id_35,
-    Name: graphql.execute,
-    Resource: Mutation AddBobaFett,
-    Service: Samples.GraphQL7-graphql,
-    Type: graphql,
-    ParentId: Id_25,
-    Tags: {
-      component: GraphQL,
-      env: integration_tests,
-      graphql.operation.name: AddBobaFett,
-      graphql.operation.type: Mutation,
-      graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_26,
-    SpanId: Id_36,
-    Name: graphql.validate,
-    Resource: graphql.validate,
-    Service: Samples.GraphQL7-graphql,
-    Type: graphql,
-    ParentId: Id_27,
     Error: 1,
     Tags: {
       component: GraphQL,
@@ -668,13 +639,13 @@ errors: [
     }
   },
   {
-    TraceId: Id_28,
-    SpanId: Id_37,
+    TraceId: Id_26,
+    SpanId: Id_35,
     Name: graphql.validate,
     Resource: graphql.validate,
     Service: Samples.GraphQL7-graphql,
     Type: graphql,
-    ParentId: Id_29,
+    ParentId: Id_27,
     Error: 1,
     Tags: {
       component: GraphQL,
@@ -715,13 +686,13 @@ errors: [
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_38,
+    TraceId: Id_28,
+    SpanId: Id_36,
     Name: graphql.validate,
     Resource: graphql.validate,
     Service: Samples.GraphQL7-graphql,
     Type: graphql,
-    ParentId: Id_31,
+    ParentId: Id_29,
     Error: 1,
     Tags: {
       component: GraphQL,
