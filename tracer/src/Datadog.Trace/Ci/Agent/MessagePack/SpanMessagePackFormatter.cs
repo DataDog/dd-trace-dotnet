@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
@@ -217,14 +218,13 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // TODO: for each trace tag, determine if it should be added to the local root,
             // to the first span in the chunk, or to all orphan spans.
             // For now, we add them to the local root which is correct in most cases.
-            if (span.IsRootSpan && traceContext?.Tags?.ToArray() is { Length: > 0 } traceTags)
+            if (span.IsRootSpan && traceContext?.Tags is { } traceTags)
             {
-                count += traceTags.Length;
-
-                foreach (var tag in traceTags)
-                {
-                    WriteTag(ref bytes, ref offset, tag.Key, tag.Value, tagProcessors);
-                }
+                var traceTagWriter = new TraceTagWriter(this, tagProcessors, bytes, offset);
+                traceTags.Enumerate(ref traceTagWriter);
+                bytes = traceTagWriter.Bytes;
+                offset = traceTagWriter.Offset;
+                count += traceTagWriter.Count;
             }
 
             // add "_dd.origin" tag to all spans
@@ -443,6 +443,31 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                     _formatter.WriteMetric(ref Bytes, ref Offset, item.KeyUtf8, item.Value, _tagProcessors);
                 }
 
+                Count++;
+            }
+        }
+
+        internal struct TraceTagWriter : TraceTagCollection.ITagEnumerator
+        {
+            private readonly SpanMessagePackFormatter _formatter;
+            private readonly ITagProcessor[] _tagProcessors;
+
+            public byte[] Bytes;
+            public int Offset;
+            public int Count;
+
+            internal TraceTagWriter(SpanMessagePackFormatter formatter, ITagProcessor[] tagProcessors, byte[] bytes, int offset)
+            {
+                _formatter = formatter;
+                _tagProcessors = tagProcessors;
+                Bytes = bytes;
+                Offset = offset;
+                Count = 0;
+            }
+
+            public void Next(KeyValuePair<string, string> item)
+            {
+                _formatter.WriteTag(ref Bytes, ref Offset, item.Key, item.Value, _tagProcessors);
                 Count++;
             }
         }

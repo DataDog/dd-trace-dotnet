@@ -153,23 +153,10 @@ namespace Datadog.Trace.Propagators
                 }
 
                 // propagated tags ("t.<key>:<value>")
-                if (context.TraceContext?.Tags?.ToArray() is { Length: > 0 } tags)
+                if (context.TraceContext?.Tags is { } tags)
                 {
-                    foreach (var tag in tags)
-                    {
-                        if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                        {
-#if NETCOREAPP
-                            var key = tag.Key.AsSpan(start: 6);
-#else
-                            var key = tag.Key.Substring(startIndex: 6);
-#endif
-
-                            var tagKey = ReplaceCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagKeyReplacements);
-                            var tagValue = ReplaceCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
-                            sb.Append(PropagatedTagPrefix).Append(tagKey).Append(TraceStateDatadogKeyValueSeparator).Append(tagValue).Append(TraceStateDatadogPairsSeparator);
-                        }
-                    }
+                    var traceTagAppender = new TraceTagAppender(sb);
+                    tags.Enumerate(ref traceTagAppender);
                 }
 
                 if (sb.Length == 3)
@@ -817,6 +804,32 @@ namespace Datadog.Trace.Propagators
             }
 
             return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        internal readonly struct TraceTagAppender : TraceTagCollection.ITagEnumerator
+        {
+            private readonly StringBuilder _sb;
+
+            internal TraceTagAppender(StringBuilder sb)
+            {
+                _sb = sb;
+            }
+
+            public void Next(KeyValuePair<string, string> tag)
+            {
+                if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
+                {
+#if NETCOREAPP
+                    var key = tag.Key.AsSpan(start: 6);
+#else
+                    var key = tag.Key.Substring(startIndex: 6);
+#endif
+
+                    var tagKey = ReplaceCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagKeyReplacements);
+                    var tagValue = ReplaceCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
+                    _sb.Append(PropagatedTagPrefix).Append(tagKey).Append(TraceStateDatadogKeyValueSeparator).Append(tagValue).Append(TraceStateDatadogPairsSeparator);
+                }
+            }
         }
     }
 }
