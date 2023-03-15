@@ -28,8 +28,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP3_1_OR_GREATER
     public class GraphQL7Tests : GraphQLTests
     {
-        public GraphQL7Tests(ITestOutputHelper output)
-            : base("GraphQL7", output, nameof(GraphQL7Tests))
+        public GraphQL7Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base("GraphQL7", fixture, output, nameof(GraphQL7Tests))
         {
         }
 
@@ -49,8 +49,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
     public class GraphQL4Tests : GraphQLTests
     {
-        public GraphQL4Tests(ITestOutputHelper output)
-            : base("GraphQL4", output, nameof(GraphQL4Tests))
+        public GraphQL4Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base("GraphQL4", fixture, output, nameof(GraphQL4Tests))
         {
         }
 
@@ -71,8 +71,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
     public class GraphQL3Tests : GraphQLTests
     {
-        public GraphQL3Tests(ITestOutputHelper output)
-            : base("GraphQL3", output, nameof(GraphQL3Tests))
+        public GraphQL3Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base("GraphQL3", fixture, output, nameof(GraphQL3Tests))
         {
         }
 
@@ -86,8 +86,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
     public class GraphQL2Tests : GraphQLTests
     {
-        public GraphQL2Tests(ITestOutputHelper output)
-            : base("GraphQL", output, nameof(GraphQL2Tests))
+        public GraphQL2Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base("GraphQL", fixture, output, nameof(GraphQL2Tests))
         {
         }
 
@@ -111,19 +111,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class GraphQLTests : TracingIntegrationTest
+    public abstract class GraphQLTests : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>
     {
         private const string ServiceVersion = "1.0.0";
 
         private readonly string _testName;
 
-        protected GraphQLTests(string sampleAppName, ITestOutputHelper output, string testName)
+        protected GraphQLTests(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
 
             _testName = testName;
+
+            Fixture = fixture;
+            Fixture.SetOutput(output);
         }
+
+        protected AspNetCoreTestFixture Fixture { get; }
 
         public override Result ValidateIntegrationSpan(MockSpan span) =>
             span.Type switch
@@ -136,78 +141,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
             using var telemetry = this.ConfigureTelemetry();
-            int? aspNetCorePort = null;
 
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (Process process = StartSample(agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0))
+            await Fixture.TryStartApp(this);
+            var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
+            Fixture.Dispose();
+
+            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, returnAllOperations: true);
+            foreach (var span in spans)
             {
-                var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
-
-                using var helper = new ProcessHelper(
-                    process,
-                    onDataReceived: data =>
-                    {
-                        if (data.Contains("Now listening on:"))
-                        {
-                            var splitIndex = data.LastIndexOf(':');
-                            aspNetCorePort = int.Parse(data.Substring(splitIndex + 1));
-
-                            wh.Set();
-                        }
-                        else if (data.Contains("Unable to start Kestrel"))
-                        {
-                            wh.Set();
-                        }
-
-                        Output.WriteLine($"[webserver][stdout] {data}");
-                    },
-                    onErrorReceived: data => Output.WriteLine($"[webserver][stderr] {data}"));
-
-                wh.WaitOne(15_000);
-
-                if (!aspNetCorePort.HasValue)
-                {
-                    throw new Exception("Unable to determine port application is listening on");
-                }
-
-                Output.WriteLine($"The ASP.NET Core server is ready on port {aspNetCorePort}");
-
-                var expectedSpans = await SubmitRequests(aspNetCorePort.Value, usingWebsockets);
-
-                if (!process.HasExited)
-                {
-                    // Try shutting down gracefully
-                    var shutdownRequest = new RequestInfo() { HttpMethod = "GET", Url = "/shutdown" };
-                    SubmitRequest(aspNetCorePort.Value, shutdownRequest);
-
-                    WaitForProcessResult(helper);
-                }
-
-                var spans = agent.WaitForSpans(expectedSpans);
-                foreach (var span in spans)
-                {
-                    // TODO: Refactor to use ValidateIntegrationSpans when the graphql server integration is fixed. It currently produces a service name of {service]-graphql
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-                }
-
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-
-                // hacky scrubber for the fact that version 4.1.0+ switched to using " in error message in one place
-                // where every other version uses '
-                settings.AddSimpleScrubber("Did you mean \"appearsIn\"", "Did you mean 'appearsIn'");
-                // Graphql 5 has different error message for missing subscription
-                settings.AddSimpleScrubber("Could not resolve source stream for field", "Error trying to resolve field");
-
-                // Overriding the type name here as we have multiple test classes in the file
-                // Ensures that we get nice file nesting in Solution Explorer
-                var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";
-                await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName($"{_testName}.SubmitsTraces{fxSuffix}")
-                                  .DisableRequireUniquePrefix(); // all package versions should be the same
-
-                VerifyInstrumentation(process);
+                // TODO: Refactor to use ValidateIntegrationSpans when the graphql server integration is fixed. It currently produces a service name of {service]-graphql
+                var result = ValidateIntegrationSpan(span);
+                Assert.True(result.Success, result.ToString());
             }
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+
+            // hacky scrubber for the fact that version 4.1.0+ switched to using " in error message in one place
+            // where every other version uses '
+            settings.AddSimpleScrubber("Did you mean \"appearsIn\"", "Did you mean 'appearsIn'");
+            // Graphql 5 has different error message for missing subscription
+            settings.AddSimpleScrubber("Could not resolve source stream for field", "Error trying to resolve field");
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseFileName($"{_testName}.SubmitsTraces{fxSuffix}")
+                              .DisableRequireUniquePrefix(); // all package versions should be the same
+
+            VerifyInstrumentation(Fixture.Process);
 
             telemetry.AssertIntegrationEnabled(IntegrationId.GraphQL);
         }
