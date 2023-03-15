@@ -1,4 +1,4 @@
-﻿// <copyright file="AzureFunctionsTests.cs" company="Datadog">
+// <copyright file="AzureFunctionsTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -130,7 +130,7 @@ public abstract class AzureFunctionsTests : TestHelper
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunAzureFunctionAndWaitForExit(agent, framework: "net6.0"))
             {
-                const int expectedSpanCount = 9;
+                const int expectedSpanCount = 12;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();

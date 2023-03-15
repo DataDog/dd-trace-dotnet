@@ -48,6 +48,18 @@ namespace Samples.AzureFunctions.AllTriggers
             return new OkObjectResult("This HTTP triggered function executed successfully. ");
         }
 
+        [FunctionName("Error")]
+        public async Task<IActionResult> Error(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "error")] HttpRequest req,
+            ILogger log)
+        {
+            await Task.Yield();
+
+            log.LogInformation("Called error HTTP trigger function.");
+
+            throw new InvalidOperationException("Task failed successfully.");
+        }
+        
         [FunctionName("TriggerCaller")]
         public async Task<IActionResult> Trigger(
                 [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "trigger")] HttpRequest req,
@@ -61,6 +73,7 @@ namespace Samples.AzureFunctions.AllTriggers
             if (doAll || triggers.Contains("http"))
             {
                 await Attempt(() => CallFunctionHttp("simple", log), log);
+                await Attempt(() => CallFunctionHttp("error", log), log);
             }
 
             return new OkObjectResult("Attempting triggers.");
@@ -82,7 +95,7 @@ namespace Samples.AzureFunctions.AllTriggers
             return response;
         }
 
-        private async Task Attempt(Func<Task> action, ILogger log)
+        private async Task Attempt(Func<Task> action, ILogger log, bool expectFailure = false)
         {
             try
             {
@@ -90,7 +103,14 @@ namespace Samples.AzureFunctions.AllTriggers
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Trigger attempt failure");
+                if (expectFailure)
+                {
+                    log.LogInformation(ex, "Trigger attempt failure as expected");
+                }
+                else
+                {
+                    log.LogError(ex, "Trigger attempt failure");
+                }
             }
         }
     }
