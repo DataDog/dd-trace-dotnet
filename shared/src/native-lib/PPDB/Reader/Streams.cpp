@@ -763,7 +763,7 @@ MetadataStreamReader::MetadataStreamReader(std::shared_ptr<PortablePdbReader> re
 }
 
 MetadataStreamReader::MetadataStreamReader(std::shared_ptr<PortablePdbReader> reader, RelativeLocation loc)
-    : MetadataStreamReader{ std::move(reader), { loc.Length, reader->GetOffset(loc.Offset) } }
+    : MetadataStreamReader{ reader, { loc.Length, reader->GetOffset(loc.Offset) } }
 {
 }
 
