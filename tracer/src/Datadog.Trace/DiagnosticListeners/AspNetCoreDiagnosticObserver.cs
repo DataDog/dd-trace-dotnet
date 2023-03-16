@@ -400,7 +400,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 parentTags.AspNetCoreRoute = aspNetRoute;
                 parentSpan.ResourceName = span.ResourceName;
-                parentSpan.SetTag(Tags.HttpRoute, aspNetRoute);
+                parentTags.HttpRoute = aspNetRoute;
             }
 
             return span;
@@ -557,7 +557,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     span.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-                    span.SetTag(Tags.HttpRoute, normalizedRoute);
+                    tags.HttpRoute = normalizedRoute;
                 }
 
                 CurrentSecurity.CheckPathParams(httpContext, span, routeValues);

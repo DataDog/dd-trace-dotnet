@@ -203,7 +203,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetController = controller;
                     tags.AspNetArea = area;
                     tags.AspNetRoute = route;
-                    span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
+                    if (span.Context.TraceContext.RootSpan.Tags is AspNetTags rootAspNetTags)
+                    {
+                        rootAspNetTags.HttpRoute = route;
+                    }
+                    else
+                    {
+                        span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
+                    }
                 }
 
                 if (newResourceNamesEnabled)
