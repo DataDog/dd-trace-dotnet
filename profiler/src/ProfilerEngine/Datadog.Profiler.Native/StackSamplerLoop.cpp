@@ -247,10 +247,9 @@ void StackSamplerLoop::CpuProfilingIteration()
             // sample only if the thread is currently running on a core
             uint64_t currentConsumption = 0;
             uint64_t lastConsumption = _targetThread->GetCpuConsumptionMilliseconds();
-            bool isRunning = OsSpecificApi::IsRunning(_targetThread.get(), currentConsumption);
-            // Note: it is not possible to get this information on Windows 32-bit
-            //       so true is returned if this thread consumed some CPU since
-            //       the last iteration
+            bool isRunning = OsSpecificApi::IsRunning(_targetThread.get(), currentConsumption, failure);
+            // Note: it is not possible to get this information on Windows 32-bit or in some cases in 64-bit
+            //       so isRunning should be true if this thread consumed some CPU since the last iteration
 #if _WINDOWS
     #if BIT64   // Windows 64-bit
             if (failure)

@@ -126,8 +126,11 @@ bool IsRunning(ULONG threadState)
     // If some callstacks show non cpu-bound frames at the top, return true only for Running state
 }
 
-bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
+bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 {
+    failed = true;
+    cpuTime = 0;
+
     if (NtQueryInformationThread == nullptr)
     {
         if (!InitializeCallback())
@@ -173,6 +176,7 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
         return false;
     }
 
+    failed = false;
     cpuTime = GetTotalMilliseconds(sti.UserTime) + GetTotalMilliseconds(sti.KernelTime);
 
     return IsRunning(sti.ThreadState);
