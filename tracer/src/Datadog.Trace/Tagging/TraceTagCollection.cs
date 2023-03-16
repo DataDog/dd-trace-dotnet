@@ -145,7 +145,7 @@ namespace Datadog.Trace.Tagging
             }
 
             var tags = _tags;
-            if (tags == null)
+            if (tags == null || tags.Count == 0)
             {
                 // tag not found
                 return false;
@@ -182,16 +182,18 @@ namespace Datadog.Trace.Tagging
             }
 
             var tags = _tags;
-            if (tags?.Count > 0)
+            if (tags == null || tags.Count == 0)
             {
-                lock (tags)
+                return null;
+            }
+
+            lock (tags)
+            {
+                for (var i = 0; i < tags.Count; i++)
                 {
-                    for (var i = 0; i < tags.Count; i++)
+                    if (string.Equals(tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return tags[i].Value;
-                        }
+                        return tags[i].Value;
                     }
                 }
             }
@@ -239,7 +241,7 @@ namespace Datadog.Trace.Tagging
             where TTagEnumerator : struct, ITagEnumerator
         {
             var tags = _tags;
-            if (tags is null)
+            if (tags is null || tags.Count == 0)
             {
                 return;
             }

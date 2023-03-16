@@ -157,7 +157,7 @@ internal static class TagPropagation
         var tagsEnumerator = new TraceTagEnumerator(sb, tagsCollection, maxOutgoingHeaderLength);
         tagsCollection.Enumerate(ref tagsEnumerator);
 
-        if (tagsEnumerator is { IsValid: true, IsTooLong: false })
+        if (tagsEnumerator.IsValid)
         {
             return StringBuilderCache.GetStringAndRelease(sb);
         }
@@ -196,7 +196,6 @@ internal static class TagPropagation
         private readonly int _maxOutgoingHeaderLength;
 
         public bool IsValid;
-        public bool IsTooLong;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal TraceTagEnumerator(StringBuilder sb, TraceTagCollection tagsCollection, int maxOutgoingHeaderLength)
@@ -205,13 +204,12 @@ internal static class TagPropagation
             _tagsCollection = tagsCollection;
             _maxOutgoingHeaderLength = maxOutgoingHeaderLength;
             IsValid = true;
-            IsTooLong = false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Next(KeyValuePair<string, string> tag)
         {
-            if (!IsValid || IsTooLong)
+            if (!IsValid)
             {
                 return;
             }
@@ -251,7 +249,7 @@ internal static class TagPropagation
                 _tagsCollection.SetTag(Tags.TagPropagationError, PropagationErrorTagValues.InjectMaxSize);
 
                 // ... and don't set the header
-                IsTooLong = true;
+                IsValid = false;
             }
         }
     }
