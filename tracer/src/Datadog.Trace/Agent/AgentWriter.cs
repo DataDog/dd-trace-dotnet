@@ -23,7 +23,7 @@ namespace Datadog.Trace.Agent
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
 
-        private static readonly ArraySegment<byte> EmptyPayload;
+        private static readonly ArraySegment<byte> EmptyPayload = new(new byte[] { 0x90 });
 
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
         private readonly IDogStatsd _statsd;
@@ -61,13 +61,7 @@ namespace Datadog.Trace.Agent
         private long _droppedP0Traces;
         private long _droppedP0Spans;
 
-        private long _droppedSpans;
-
-        static AgentWriter()
-        {
-            var data = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[]>());
-            EmptyPayload = new ArraySegment<byte>(data);
-        }
+        private long _droppedTraces;
 
         public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, ISpanSampler spanSampler, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
         : this(api, statsAggregator, statsd, spanSampler, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval)
@@ -112,10 +106,7 @@ namespace Datadog.Trace.Agent
 
         public bool CanComputeStats => _statsAggregator?.CanComputeStats == true;
 
-        public Task<bool> Ping()
-        {
-            return _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
-        }
+        public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
@@ -317,11 +308,11 @@ namespace Datadog.Trace.Agent
                         _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
                     }
 
-                    var droppedSpans = Interlocked.Exchange(ref _droppedSpans, 0);
+                    var droppedTraces = Interlocked.Exchange(ref _droppedTraces, 0);
 
-                    if (droppedSpans > 0)
+                    if (droppedTraces > 0)
                     {
-                        Log.Warning("{Count} traces were dropped since the last flush operation.", droppedSpans);
+                        Log.Warning("{Count} traces were dropped since the last flush operation.", droppedTraces);
                     }
 
                     if (buffer.TraceCount > 0)
@@ -457,9 +448,18 @@ namespace Datadog.Trace.Agent
             // This allows the serialization thread to keep doing its job while a buffer is being flushed
             var buffer = _activeBuffer;
 
-            if (buffer.TryWrite(spans, ref _temporaryBuffer, chunkSamplingPriority))
+            var writeStatus = buffer.TryWrite(spans, ref _temporaryBuffer, chunkSamplingPriority);
+
+            if (writeStatus == SpanBuffer.WriteStatus.Success)
             {
                 // Serialization to the primary buffer succeeded
+                return;
+            }
+
+            if (writeStatus == SpanBuffer.WriteStatus.Overflow)
+            {
+                // The trace is too big for the buffer, no point in trying again
+                DropTrace(spans);
                 return;
             }
 
@@ -471,7 +471,7 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(spans, ref _temporaryBuffer, chunkSamplingPriority))
+                if (buffer.TryWrite(spans, ref _temporaryBuffer, chunkSamplingPriority) == SpanBuffer.WriteStatus.Success)
                 {
                     // Serialization to the secondary buffer succeeded
                     return;
@@ -479,7 +479,12 @@ namespace Datadog.Trace.Agent
             }
 
             // All the buffers are full :( drop the trace
-            Interlocked.Increment(ref _droppedSpans);
+            DropTrace(spans);
+        }
+
+        private void DropTrace(ArraySegment<Span> spans)
+        {
+            Interlocked.Increment(ref _droppedTraces);
             _traceKeepRateCalculator.IncrementDrops(1);
 
             if (_statsd != null)

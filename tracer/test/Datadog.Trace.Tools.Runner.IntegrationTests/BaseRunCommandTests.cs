@@ -151,7 +151,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             exitCode.Should().Be(1);
             callbackInvoked.Should().BeFalse();
-            console.Output.Should().Contain("Error: Missing command");
+            console.Output.Should().Contain("Missing command");
         }
 
         private static MockTracerAgent.TcpUdpAgent GetMockTracerAgent()
