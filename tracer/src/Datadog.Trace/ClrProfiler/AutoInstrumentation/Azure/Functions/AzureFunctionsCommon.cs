@@ -6,15 +6,12 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
-using Microsoft.AspNetCore.Http;
 
 #nullable enable
 
@@ -29,24 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
-        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, OperationName, IntegrationId);
-
-        public static CallTargetState OnFunctionMiddlewareBegin<TTarget>(TTarget instance, HttpContext httpContext)
-        {
-            var tracer = Tracer.Instance;
-
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
-            {
-                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, Security.Instance, httpContext, resourceName: null);
-
-                if (scope != null)
-                {
-                    return new CallTargetState(scope);
-                }
-            }
-
-            return CallTargetState.GetDefault();
-        }
 
         public static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam)
             where TFunction : IFunctionInstance
