@@ -23,7 +23,7 @@ namespace Datadog.Trace.Agent
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
 
-        private static readonly ArraySegment<byte> EmptyPayload = new(new byte[] { 0x90 });
+        private static readonly ArraySegment<byte> EmptyPayload;
 
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
         private readonly IDogStatsd _statsd;
@@ -62,6 +62,12 @@ namespace Datadog.Trace.Agent
         private long _droppedP0Spans;
 
         private long _droppedTraces;
+
+        static AgentWriter()
+        {
+            var data = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[]>());
+            EmptyPayload = new ArraySegment<byte>(data);
+        }
 
         public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, ISpanSampler spanSampler, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
         : this(api, statsAggregator, statsd, spanSampler, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval)
@@ -106,7 +112,10 @@ namespace Datadog.Trace.Agent
 
         public bool CanComputeStats => _statsAggregator?.CanComputeStats == true;
 
-        public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
+        public Task<bool> Ping()
+        {
+            return _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
+        }
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
