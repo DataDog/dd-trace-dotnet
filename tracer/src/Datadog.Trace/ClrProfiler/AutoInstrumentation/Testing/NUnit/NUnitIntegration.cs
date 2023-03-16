@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static Test? CreateTest(ITest currentTest)
         {
-            if (ExistingTestCreation.TryGetValue(currentTest.Instance, out _))
+            if (ExistingTestCreation.TryGetValue(currentTest.Instance!, out _))
             {
                 return null;
             }
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             var test = suite.CreateTest(testMethod.Name);
-            ExistingTestCreation.GetOrCreateValue(currentTest.Instance);
+            ExistingTestCreation.GetOrCreateValue(currentTest.Instance!);
             string? skipReason = null;
 
             // Get test parameters
@@ -203,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             if (test is not null &&
-                ModulesItems.TryGetValue(test.Instance, out var moduleObject) &&
+                ModulesItems.TryGetValue(test.Instance!, out var moduleObject) &&
                 moduleObject is TestModule module)
             {
                 return module;
@@ -216,11 +216,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             if (test.TestType == TestModuleConst)
             {
-                ModulesItems.Add(test.Instance, module);
+                ModulesItems.Add(test.Instance!, module);
             }
             else if (GetParentWithTestType(test, TestModuleConst) is { } assemblyITest)
             {
-                ModulesItems.Add(assemblyITest.Instance, module);
+                ModulesItems.Add(assemblyITest.Instance!, module);
             }
         }
 
@@ -237,7 +237,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             if (test is not null &&
-                SuiteItems.TryGetValue(test.Instance, out var suiteObject) &&
+                SuiteItems.TryGetValue(test.Instance!, out var suiteObject) &&
                 suiteObject is TestSuite suite)
             {
                 return suite;
@@ -250,11 +250,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             if (test.TestType == TestSuiteConst)
             {
-                SuiteItems.Add(test.Instance, suite);
+                SuiteItems.Add(test.Instance!, suite);
             }
             else if (GetParentWithTestType(test, TestSuiteConst) is { } suiteITest)
             {
-                SuiteItems.Add(suiteITest.Instance, suite);
+                SuiteItems.Add(suiteITest.Instance!, suite);
             }
         }
 

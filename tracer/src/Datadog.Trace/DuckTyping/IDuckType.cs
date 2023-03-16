@@ -20,7 +20,7 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Gets instance
         /// </summary>
-        object Instance { get; }
+        object? Instance { get; }
 
         /// <summary>
         /// Gets instance Type
