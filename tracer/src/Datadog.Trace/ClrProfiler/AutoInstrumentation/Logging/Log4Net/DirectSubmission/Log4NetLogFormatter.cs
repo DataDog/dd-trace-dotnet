@@ -25,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                 logEntry.RenderedMessage,
                 eventId: null,
                 logEntry.Level.ToStandardLevelString(),
+                logCategory: logEntry.LoggerName,
                 exception: null, // We can't pass the exception here, as it might be null if the event has been serialized
                 (JsonTextWriter w, in ILoggingEventDuckBase e) => RenderProperties(w, in e));
         }

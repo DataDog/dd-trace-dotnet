@@ -136,7 +136,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 .And.OnlyContain(x => x.Host == hostName)
                 .And.OnlyContain(x => x.Source == "csharp")
                 .And.OnlyContain(x => x.Exception == null)
-                .And.OnlyContain(x => x.LogLevel == DirectSubmissionLogLevel.Information);
+                .And.OnlyContain(x => x.LogLevel == DirectSubmissionLogLevel.Information)
+                .And.OnlyContain(x => !string.IsNullOrEmpty(x.SourceContext));
 
             logs
                .Where(x => !x.Message.Contains(ExcludeMessagePrefix))

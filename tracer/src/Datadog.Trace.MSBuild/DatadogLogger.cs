@@ -379,6 +379,7 @@ namespace Datadog.Trace.MSBuild
                     _message,
                     eventId: null,
                     logLevel: _level,
+                    logCategory: null,
                     exception: null,
                     (JsonTextWriter writer, in Context? state) =>
                     {

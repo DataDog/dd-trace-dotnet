@@ -197,6 +197,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             string message,
             int? eventId,
             string logLevel,
+            string? logCategory,
             Exception? exception,
             FormatDelegate<T> renderPropertiesDelegate)
         {
@@ -227,6 +228,12 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             {
                 writer.WritePropertyName("@x", escape: false);
                 writer.WriteValue(exception.ToString());
+            }
+
+            if (!string.IsNullOrEmpty(logCategory))
+            {
+                WritePropertyName(writer, "SourceContext");
+                WriteValue(writer, logCategory);
             }
 
             var renderingDetails = renderPropertiesDelegate(writer, in state);

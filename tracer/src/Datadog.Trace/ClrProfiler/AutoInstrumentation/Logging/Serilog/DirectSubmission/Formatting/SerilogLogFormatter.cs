@@ -30,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
                 message,
                 eventId: null,
                 GetLogLevelString(logEvent.Level),
+                logCategory: null, // serilog includes the category as a property called SourceContext, so it's not easy to grab it here.
                 logEvent.Exception,
                 (JsonTextWriter w, in ILogEvent e) => RenderProperties(w, e));
         }

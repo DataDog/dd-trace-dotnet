@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 logEntry.FormattedMessage,
                 eventId: null,
                 GetLogLevelString(logEntry.Level),
+                logCategory: logEntry.LoggerName,
                 logEntry.Exception,
                 (JsonTextWriter w, in LogEntry e) => RenderProperties(w, e));
         }

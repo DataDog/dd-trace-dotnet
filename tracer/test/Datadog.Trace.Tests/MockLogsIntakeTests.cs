@@ -72,6 +72,7 @@ namespace Datadog.Trace.Tests
                 message,
                 null,
                 level.GetName(),
+                logCategory: null,
                 exception: null,
                 RenderPropertiesDelegate);
             return sb.ToString();

@@ -179,7 +179,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 .And.OnlyContain(x => x.Exception == null)
                 .And.OnlyContain(x => x.LogLevel == DirectSubmissionLogLevel.Information)
                 .And.OnlyContain(x => x.Tags.Contains(CommonTags.GitRepository))
-                .And.OnlyContain(x => x.Tags.Contains(CommonTags.GitCommit));
+                .And.OnlyContain(x => x.Tags.Contains(CommonTags.GitCommit))
+                .And.OnlyContain(x => !string.IsNullOrEmpty(x.SourceContext));
 
             if (PackageSupportsLogsInjection(packageVersion))
             {

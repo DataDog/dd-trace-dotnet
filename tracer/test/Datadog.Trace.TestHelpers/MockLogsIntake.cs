@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -218,6 +219,9 @@ namespace Datadog.Trace.TestHelpers
 
             [JsonProperty("dd_span_id")]
             public string SpanId { get; set; }
+
+            [JsonProperty("SourceContext")]
+            public string SourceContext { get; set; }
 
             [JsonExtensionData]
             internal Dictionary<string, JToken> OtherProperties { get; } = new();
