@@ -400,7 +400,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 parentTags.AspNetCoreRoute = aspNetRoute;
                 parentSpan.ResourceName = span.ResourceName;
-                parentSpan.SetTag(Tags.HttpRoute, aspNetRoute);
+                parentTags.HttpRoute = aspNetRoute;
             }
 
             return span;

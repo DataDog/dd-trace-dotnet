@@ -148,6 +148,11 @@ internal static class TagPropagation
             return string.Empty;
         }
 
+        if (tagsCollection.Count == 0)
+        {
+            return string.Empty;
+        }
+
         var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
         var tagsEnumerator = new TraceTagEnumerator(sb, tagsCollection, maxOutgoingHeaderLength);
         tagsCollection.Enumerate(ref tagsEnumerator);

@@ -85,12 +85,10 @@ namespace Datadog.Trace.Tagging
                 return RemoveTag(name);
             }
 
-            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
-
             var tags = _tags;
             if (tags == null)
             {
-                var newTags = new List<KeyValuePair<string, string>>(1);
+                var newTags = new List<KeyValuePair<string, string>>(2);
                 tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
             }
 
@@ -110,7 +108,7 @@ namespace Datadog.Trace.Tagging
                                 tags[i] = new(name, value);
 
                                 // clear the cached header
-                                if (isPropagated)
+                                if (name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
                                 {
                                     _cachedPropagationHeader = null;
                                 }
@@ -130,7 +128,7 @@ namespace Datadog.Trace.Tagging
                 tags.Add(new(name, value));
 
                 // clear the cached header if we added a propagated tag
-                if (isPropagated)
+                if (name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
                 {
                     _cachedPropagationHeader = null;
                 }
@@ -146,27 +144,28 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
-            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
-
             var tags = _tags;
-            if (tags?.Count > 0)
+            if (tags == null)
             {
-                lock (tags)
+                // tag not found
+                return false;
+            }
+
+            lock (tags)
+            {
+                for (var i = 0; i < tags.Count; i++)
                 {
-                    for (var i = 0; i < tags.Count; i++)
+                    if (string.Equals(tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
+                        tags.RemoveAt(i);
+
+                        // clear the cached header
+                        if (name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
                         {
-                            tags.RemoveAt(i);
-
-                            // clear the cached header
-                            if (isPropagated)
-                            {
-                                _cachedPropagationHeader = null;
-                            }
-
-                            return true;
+                            _cachedPropagationHeader = null;
                         }
+
+                        return true;
                     }
                 }
             }
@@ -237,7 +236,7 @@ namespace Datadog.Trace.Tagging
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Enumerate<TTagEnumerator>(ref TTagEnumerator tagEnumerator)
-            where TTagEnumerator : ITagEnumerator
+            where TTagEnumerator : struct, ITagEnumerator
         {
             var tags = _tags;
             if (tags is null)
