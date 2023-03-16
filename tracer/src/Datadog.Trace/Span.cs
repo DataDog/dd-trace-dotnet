@@ -460,21 +460,5 @@ namespace Datadog.Trace
         {
             Duration = duration;
         }
-
-        /// <summary>
-        /// Sets a DataStreams checkpoint and adds pathway tag to the span
-        /// </summary>
-        /// <param name="manager">The <see cref="DataStreamsManager"/> to use</param>
-        /// <param name="edgeTags">The edge tags for this checkpoint. NOTE: These MUST be sorted alphabetically</param>
-        internal void SetDataStreamsCheckpoint(DataStreamsManager manager, string[] edgeTags)
-        {
-            Context.SetCheckpoint(manager, edgeTags);
-
-            var hash = Context.PathwayContext?.Hash.Value ?? 0;
-            if (hash != 0)
-            {
-                SetTag("pathway.hash", hash.ToString());
-            }
-        }
     }
 }
