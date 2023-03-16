@@ -507,7 +507,7 @@ public partial class StringAspects
     }
 
     /// <summary>
-    /// String.ToCharArray aspect
+    /// String.Remove aspect
     /// </summary>
     /// <param name="target"> string base instance </param>
     /// <param name="startIndex"> startIndex parameter </param>
@@ -521,7 +521,7 @@ public partial class StringAspects
     }
 
     /// <summary>
-    /// String.ToCharArray aspect
+    /// String.Remove aspect
     /// </summary>
     /// <param name="target"> string base instance </param>
     /// <param name="startIndex"> startIndex parameter </param>
