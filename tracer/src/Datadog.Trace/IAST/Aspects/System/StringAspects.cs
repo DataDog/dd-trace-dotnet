@@ -287,7 +287,7 @@ public partial class StringAspects
         return OnStringJoin(string.Join(separator, values, startIndex, count), separator, values, startIndex, count);
     }
 
-#if NETSTANDARD
+#if NETSTANDARD || NETCOREAPP
     /// <summary>
     /// String.Join aspect
     /// </summary>
@@ -324,58 +324,6 @@ public partial class StringAspects
     public static string Join(char separator, string[] values, int startIndex, int count)
     {
         return OnStringJoin(string.Join(separator.ToString(), values, startIndex, count), values, startIndex, count);
-    }
-
-    /// <summary>
-    /// String.Join aspect
-    /// </summary>
-    /// <param name="separator"> sparator </param>
-    /// <param name="values"> values to join </param>
-    /// <returns> Join result </returns>
-    [AspectMethodReplace("System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static string Join(char separator, IEnumerable values)
-    {
-        return Join(separator.ToString(), values);
-    }
-#endif
-
-#if NETCOREAPP
-    /// <summary>
-    /// String.Join aspect
-    /// </summary>
-    /// <param name="separator"> sparator </param>
-    /// <param name="values"> values to join </param>
-    /// <returns> Join result </returns>
-    [AspectMethodReplace("System.String::Join(System.Char,System.String[])")]
-    public static string Join(char separator, string[] values)
-    {
-        return OnStringJoin(string.Join(separator, values), values);
-    }
-
-    /// <summary>
-    /// String.Join aspect
-    /// </summary>
-    /// <param name="separator"> sparator </param>
-    /// <param name="values"> values to join </param>
-    /// <returns> Join result </returns>
-    [AspectMethodReplace("System.String::Join(System.Char,System.Object[])")]
-    public static string Join(char separator, object[] values)
-    {
-        return OnStringJoin(string.Join(separator, values), values);
-    }
-
-    /// <summary>
-    /// String.Join aspect
-    /// </summary>
-    /// <param name="separator"> sparator </param>
-    /// <param name="values"> values to join </param>
-    /// <param name="startIndex"> start index </param>
-    /// <param name="count"> number of elemnts to join </param>
-    /// <returns> Join result </returns>
-    [AspectMethodReplace("System.String::Join(System.Char,System.String[],System.Int32,System.Int32)")]
-    public static string Join(char separator, string[] values, int startIndex, int count)
-    {
-        return OnStringJoin(string.Join(separator, values, startIndex, count), values, startIndex, count);
     }
 
     /// <summary>
