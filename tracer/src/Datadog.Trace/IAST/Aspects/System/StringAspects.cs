@@ -546,17 +546,6 @@ public partial class StringAspects
     public static string Insert(string target, int startIndex, string value)
     {
         var result = target.Insert(startIndex, value);
-
-        // if we have the same target and result, that means that we have called insert() with an empty insert string
-        if (result == target)
-        {
-#if NETFRAMEWORK
-            // In .net462 (not in netcore or netstandard), the method creates in this case a new string with the same value but a different reference, so we need to taint it
-            PropagateTaint(target, result);
-#endif
-            return result;
-        }
-
         OnStringInsert(target, startIndex, value, result);
         return result;
     }
