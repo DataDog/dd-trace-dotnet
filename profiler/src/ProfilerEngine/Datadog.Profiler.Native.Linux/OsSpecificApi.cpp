@@ -155,15 +155,17 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
     return cpuTime;
 }
 
-bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
+bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 {
     bool isRunning = false;
     if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), isRunning, cpuTime))
     {
         cpuTime = 0;
+        failed = true;
         return false;
     }
 
+    failed = false;
     return isRunning;
 }
 
