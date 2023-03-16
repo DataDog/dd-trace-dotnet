@@ -4,13 +4,10 @@
 // </copyright>
 
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -22,10 +19,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private static readonly Regex StackRegex = new(@"      error.stack:(\n|\r){1,2}.*(\n|\r){1,2}.*,(\r|\n){1,2}");
         private static readonly Regex ErrorMsgRegex = new(@"      error.msg:.*,(\r|\n){1,2}");
+        private readonly ITestOutputHelper _testOutputHelper;
 
-        public AgentMalfunctionTests(ITestOutputHelper output)
+        private readonly Dictionary<TestTransports, MockTracerAgent> _agents = new();
+
+        public AgentMalfunctionTests(ITestOutputHelper output, ITestOutputHelper testOutputHelper)
             : base("ProcessStart", output)
         {
+            _testOutputHelper = testOutputHelper;
             SetServiceVersion("1.0.0");
         }
 
@@ -57,10 +58,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
             }
 
-            EnvironmentHelper.EnableTransport(transportType);
-            using var agent = EnvironmentHelper.GetMockAgent();
-            agent.SetBehaviour(behaviour);
-            TestInstrumentation(agent);
+            try
+            {
+                if (!_agents.TryGetValue(transportType, out var agent))
+                {
+                    agent = EnvironmentHelper.GetMockAgent();
+                    _agents.Add(transportType, agent);
+                }
+
+                EnvironmentHelper.EnableTransport(transportType);
+                agent.SetBehaviour(behaviour);
+                TestInstrumentation(agent);
+            }
+            catch (Exception)
+            {
+                _testOutputHelper.WriteLine("Error while executing test. Disposing the agent");
+                _agents[transportType].Dispose();
+                _agents.Remove(transportType);
+                throw;
+            }
         }
 
         private async void TestInstrumentation(MockTracerAgent agent)
