@@ -33,7 +33,7 @@ namespace Samples.Computer01
         {
             CallSecondMethod();
         }
-#line default
+#line default // The CallSecondMethod must stay at line 39, otherwise an integration test will fail.
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void CallSecondMethod()

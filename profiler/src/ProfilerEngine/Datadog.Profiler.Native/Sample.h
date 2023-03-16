@@ -56,7 +56,7 @@ public:
     // but it seems better for encapsulation to do the transformation between collected raw data
     // and a Sample in each Provider (this is behind CollectorBase template class)
     void AddValue(std::int64_t value, size_t index);
-    void AddFrame(FrameInfoView&& frame);
+    void AddFrame(FrameInfoView const& frame);
 
     template<typename T>
     void AddLabel(T&& label)

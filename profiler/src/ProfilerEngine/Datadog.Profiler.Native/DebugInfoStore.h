@@ -9,6 +9,7 @@
 // end
 
 #include "IDebugInfoStore.h"
+#include "Log.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 
@@ -22,12 +23,11 @@ class IConfiguration;
 class DebugInfoStore : public IDebugInfoStore
 {
 public:
-    DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* configuration);
+    DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* configuration) noexcept;
 
     SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef);
 
 private:
-
     struct ModuleDebugInfo
     {
     public:
@@ -38,6 +38,22 @@ private:
 
     void ParseModuleDebugInfo(ModuleID moduleID);
     fs::path GetModuleFilePath(ModuleID moduleId) const;
+
+    template <typename TInfo>
+    SymbolDebugInfo Get(TInfo& info, ModuleID moduleId, RID rid)
+    {
+        if (!info.IsValid || rid >= info.SymbolsDebugInfo.size())
+        {
+            if (info.IsValid && rid >= info.SymbolsDebugInfo.size())
+            {
+                Log::Info("The debug info for the module `", moduleId, "` seems to be invalid: RID is out of the symbols array bounds.(RID: ",
+                          rid, "). We will mark it as invalid to avoid returning invalid information");
+                info.IsValid = false;
+            }
+            return SymbolDebugInfo{NoFileFound, NoStartLine};
+        }
+        return info.SymbolsDebugInfo[rid];
+    }
 
     static const std::string NoFileFound;
     static const std::uint32_t NoStartLine;

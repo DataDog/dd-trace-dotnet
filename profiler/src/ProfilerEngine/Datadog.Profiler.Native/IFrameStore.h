@@ -23,8 +23,6 @@ public:
 
     // return
     //  - true if managed frame
-    //  - module name
-    //  - frame text
     virtual std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) = 0;
     virtual bool GetTypeName(ClassID classId, std::string& name) = 0;
     virtual bool GetTypeName(ClassID classId, std::string_view& name) = 0;

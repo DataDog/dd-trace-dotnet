@@ -239,7 +239,7 @@ partial class Build
                                                                                         .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
                                                                                         .WithDatadogLogger()
                                                                                         .SetProjectFile(project)),
-                        degreeOfParallelism: 2);
+                        degreeOfParallelism: 4);
         }
         finally
         {

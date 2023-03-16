@@ -4,8 +4,8 @@
 #include "DebugInfoStore.h"
 
 #include "COMHelpers.h"
-#include "Log.h"
 #include "IConfiguration.h"
+#include "Log.h"
 
 #include "shared/src/native-src/string.h"
 
@@ -18,7 +18,7 @@
 const std::string DebugInfoStore::NoFileFound = "";
 const std::uint32_t DebugInfoStore::NoStartLine = 0;
 
-DebugInfoStore::DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* _configuration) :
+DebugInfoStore::DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* _configuration) noexcept :
     _profilerInfo{profilerInfo},
     _isEnabled{_configuration->IsDebugInfoEnabled()}
 {
@@ -35,29 +35,27 @@ SymbolDebugInfo DebugInfoStore::Get(ModuleID moduleId, mdMethodDef methodDef)
 
     auto rid = RidFromToken(methodDef);
     auto it = _modulesInfo.find(moduleId);
-    if (it == _modulesInfo.cend())
+    if (it != _modulesInfo.cend())
     {
-        ParseModuleDebugInfo(moduleId);
+        return Get(it->second, moduleId, rid);
     }
 
-    auto const& info = _modulesInfo[moduleId];
-    if (info.IsValid)
-    {
-        return info.SymbolsDebugInfo[rid];
-    }
+    ParseModuleDebugInfo(moduleId);
 
-    return {NoFileFound, NoStartLine};
+    auto& info = _modulesInfo[moduleId];
+    return Get(info, moduleId, rid);
 }
 
 void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
 {
+    // This lookup creates an invalid ModuleInfo
     auto& moduleInfo = _modulesInfo[moduleId];
 
     fs::path filePath = GetModuleFilePath(moduleId);
     if (!filePath.has_extension() || (filePath.extension() != ".dll" && filePath.extension() != ".exe"))
     {
         // An invalid entry has been created for this file
-        Log::Debug("Unrecognized file path: ", filePath, ". No debug info will be retrieve for module ID", moduleId);
+        Log::Debug("Unrecognized file path: ", filePath, ". No debug info will be retrieved for module ID", moduleId);
         return;
     }
 
@@ -68,7 +66,7 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
     if (!fs::exists(pdbFile, ec))
     {
         // TODO: we may supply other path to search for the pdb file
-        Log::Info("No PDB file `", pdbFile.filename(), "` were found in ", filePath.parent_path());
+        Log::Info("No PDB file `", pdbFile.filename(), "` was found in ", filePath.parent_path());
         return;
     }
 
@@ -79,7 +77,7 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
         auto dtTable = m->GetTableReader<PPDB::DocumentTableReader>();
         if (dtTable == nullptr)
         {
-            Log::Debug("Unable to get the DocumentTable from the PDB file ", pdbFile, ".");
+            Log::Info("Unable to get the DocumentTable from the PDB file ", pdbFile, ".");
             return;
         }
 
@@ -127,7 +125,7 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
     catch (PPDB::Exception const& ec)
     {
         Log::Info("Failed to parse debug info from ", pdbFile,
-            ".(Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
+                  ".(Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
     }
     catch (...)
     {

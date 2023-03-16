@@ -220,7 +220,7 @@ private:
 
             if (isResolved)
             {
-                sample->AddFrame(std::move(frame));
+                sample->AddFrame(frame);
             }
         }
     }

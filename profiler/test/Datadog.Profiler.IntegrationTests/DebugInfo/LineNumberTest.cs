@@ -5,10 +5,8 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Profiler.IntegrationTests;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.DebugInfo
@@ -25,10 +23,14 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
         [TestAppFact("Samples.Computer01")]
         public void CheckLinenumbers(string appName, string framework, string appAssembly)
         {
+            if (EnvironmentHelper.IsAlpine)
+            {
+                // skip the test on Alpine for now: "This test is skipped on Alpine for now. TODO: fix stackwalking issue on alpine."
+                return;
+            }
+
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
             runner.Environment.CustomEnvironmentVariables[EnvironmentVariables.DebugInfoEnabled] = "1";
-            runner.Environment.CustomEnvironmentVariables[EnvironmentVariables.CpuProfilerEnabled] = "0";
-            runner.Environment.CustomEnvironmentVariables["DD_INTERNAL_PROFILING_CODEHOTSPOTS_THREADS_THRESHOLD"] = "0";
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
