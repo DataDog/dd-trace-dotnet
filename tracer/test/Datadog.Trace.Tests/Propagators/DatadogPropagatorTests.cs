@@ -242,6 +242,7 @@ namespace Datadog.Trace.Tests.Propagators
                            TraceId = TraceId.Lower,
                            RawTraceId = RawTraceId,
                            RawSpanId = "0000000000000000",
+                           PropagatedTags = EmptyPropagatedTags,
                        });
         }
 
