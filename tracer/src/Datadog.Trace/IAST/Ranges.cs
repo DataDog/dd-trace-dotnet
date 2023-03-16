@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry;
 
 namespace Datadog.Trace.Iast;
 internal static class Ranges
