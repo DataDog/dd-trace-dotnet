@@ -149,21 +149,30 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
     ULONG buflen = 0;
     static bool isFirstError = true;
     NTSTATUS lResult = NtQueryInformationThread(pThreadInfo->GetOsThreadHandle(), SYSTEMTHREADINFORMATION, &sti, static_cast<ULONG>(size), &buflen);
+
+    // deal with an invalid thread handle case (thread might have died)
     if (lResult != 0)
     {
-        if (isFirstError)
+        if (isFirstError && (lResult != STATUS_INVALID_HANDLE))
         {
             isFirstError = false;
             LPVOID msgBuffer;
             DWORD errorCode = GetLastError();
 
-            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                          NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
-
-            if (msgBuffer != NULL)
+            if (errorCode == 0)
             {
-                Log::Error("IsRunning() error 0x", std::hex, lResult, " calling NtQueryInformationThread (last error =  0x", std::hex, errorCode, std::dec, "): ", (LPTSTR)msgBuffer);
-                LocalFree(msgBuffer);
+                Log::Error("IsRunning() error 0x", std::hex, lResult, " calling NtQueryInformationThread");
+            }
+            else
+            {
+                FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                              NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+                if (msgBuffer != NULL)
+                {
+                    Log::Error("IsRunning() error 0x", std::hex, lResult, " calling NtQueryInformationThread (last error =  0x", std::hex, errorCode, std::dec, "): ", (LPTSTR)msgBuffer);
+                    LocalFree(msgBuffer);
+                }
             }
         }
 
