@@ -11,6 +11,8 @@ namespace Samples.Aerospike
         {
             var host = Host();
 
+            Console.WriteLine($"Trying to connect to Aerospike on {host.Item1}, {host.Item2}");
+
             var client = new AsyncClient(host.Item1, host.Item2);
 
             var key1 = new Key("test", "myset1", "mykey1");

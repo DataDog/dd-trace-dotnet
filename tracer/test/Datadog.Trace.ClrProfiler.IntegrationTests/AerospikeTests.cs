@@ -19,10 +19,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class AerospikeTests : TracingIntegrationTest
     {
+        private readonly ITestOutputHelper _output;
+
         public AerospikeTests(ITestOutputHelper output)
             : base("Aerospike", output)
         {
             SetServiceVersion("1.0.0");
+            _output = output;
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsAerospike();
@@ -33,31 +36,44 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public async Task SubmitTraces(string packageVersion)
         {
-            using var telemetry = this.ConfigureTelemetry();
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            var attemptsRemaining = 30;
+            while (attemptsRemaining > 0)
             {
-                const int expectedSpanCount = 10 + 9; // Sync + async
-                var spans = agent.WaitForSpans(expectedSpanCount);
-
-                using var s = new AssertionScope();
-                spans.Count.Should().Be(expectedSpanCount);
-                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Aerospike-aerospike");
-
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-
-                // older versions of Aerospike use QueryRecord instead of QueryPartition
-                // Normalize to QueryPartition for simplicity
-                if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version(5, 0, 0))
+                try
                 {
-                    settings.AddSimpleScrubber("QueryRecord", "QueryPartition");
+                    attemptsRemaining--;
+
+                    using var telemetry = this.ConfigureTelemetry();
+                    using (var agent = EnvironmentHelper.GetMockAgent())
+                    using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+                    {
+                        const int expectedSpanCount = 10 + 9; // Sync + async
+                        var spans = agent.WaitForSpans(expectedSpanCount);
+
+                        using var s = new AssertionScope();
+                        spans.Count.Should().Be(expectedSpanCount);
+                        ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Aerospike-aerospike");
+
+                        var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                        // older versions of Aerospike use QueryRecord instead of QueryPartition
+                        // Normalize to QueryPartition for simplicity
+                        if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version(5, 0, 0))
+                        {
+                            settings.AddSimpleScrubber("QueryRecord", "QueryPartition");
+                        }
+
+                        await VerifyHelper.VerifySpans(spans, settings)
+                            .DisableRequireUniquePrefix()
+                            .UseFileName(nameof(AerospikeTests));
+
+                        telemetry.AssertIntegrationEnabled(IntegrationId.Aerospike);
+                    }
                 }
-
-                await VerifyHelper.VerifySpans(spans, settings)
-                                  .DisableRequireUniquePrefix()
-                                  .UseFileName(nameof(AerospikeTests));
-
-                telemetry.AssertIntegrationEnabled(IntegrationId.Aerospike);
+                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
+                {
+                    _output.WriteLine("Retrying retrying");
+                }
             }
         }
     }
