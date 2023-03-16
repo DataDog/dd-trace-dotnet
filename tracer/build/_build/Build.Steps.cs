@@ -96,11 +96,26 @@ partial class Build
     [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
     [LazyPathExecutable(name: "lipo")] readonly Lazy<Tool> Lipo;
 
+    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform
+    {
+        get
+        {
+            if (TargetPlatform == MSBuildTargetPlatform.x64)
+            {
+                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
+            }
+            else if (TargetPlatform == MSBuildTargetPlatform.x86)
+            {
+                return new[] { MSBuildTargetPlatform.x86 };
+            }
+            else if (TargetPlatform == ARM64TargetPlatform)
+            {
+                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64TargetPlatform };
+            }
 
-    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
-        Equals(TargetPlatform, MSBuildTargetPlatform.x64)
-            ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-            : new[] { MSBuildTargetPlatform.x86 };
+            return new[] { TargetPlatform };
+        }
+    }
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
     string UnixArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
@@ -193,10 +208,7 @@ partial class Build
         .Executes(() =>
         {
             // If we're building for x64, build for x86 too
-            var platforms =
-                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
-                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                    : new[] { MSBuildTargetPlatform.x86 };
+            var platforms = ArchitecturesForPlatform;
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native tracer assets

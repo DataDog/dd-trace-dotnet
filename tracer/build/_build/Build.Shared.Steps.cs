@@ -25,10 +25,7 @@ partial class Build
         .Executes(() =>
         {
             // If we're building for x64, build for x86 too
-            var platforms =
-                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
-                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                    : new[] { MSBuildTargetPlatform.x86 };
+            var platforms = ArchitecturesForPlatform;
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native profiler assets
