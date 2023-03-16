@@ -187,6 +187,7 @@ namespace Datadog.Trace.Agent
 
             if (!success)
             {
+                Environment.FailFast("(╯°□°)╯︵ ┻━┻ ");
                 Log.Warning("Could not flush all traces before process exit");
             }
         }
