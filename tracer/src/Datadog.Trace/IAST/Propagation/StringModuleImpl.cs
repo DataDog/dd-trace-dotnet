@@ -231,10 +231,8 @@ internal static class StringModuleImpl
         return result;
     }
 
-    /**
- * Iterates over the element and delimiter ranges (if necessary) to update them and calculate the
- * new pos value
- */
+    // Iterates over the element and delimiter ranges (if necessary) to update them and calculate the
+    // new pos value
     private static int GetPositionAndUpdateRangesInStringJoin(TaintedObjects taintedObjects, List<Range> newRanges, int pos, Range[]? delimiterRanges, int delimiterLength, string element, bool addDelimiterRanges)
     {
         if (!string.IsNullOrEmpty(element))
