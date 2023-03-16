@@ -22,45 +22,67 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private static readonly Regex StackRegex = new(@"      error.stack:(\n|\r){1,2}.*(\n|\r){1,2}.*,(\r|\n){1,2}");
         private static readonly Regex ErrorMsgRegex = new(@"      error.msg:.*,(\r|\n){1,2}");
+        private readonly ITestOutputHelper _testOutputHelper;
 
-        public AgentMalfunctionTests(ITestOutputHelper output)
+        public AgentMalfunctionTests(ITestOutputHelper output, ITestOutputHelper testOutputHelper)
             : base("ProcessStart", output)
         {
+            _testOutputHelper = testOutputHelper;
             SetServiceVersion("1.0.0");
         }
+
+        // ProcessStart sample fails
+        // Missing 2 spans
+        // Only on WindowsNamedPipe
+        // Only on WrongAnswer
+        // On 2.1 mainly
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [InlineData(AgentBehaviour.Normal, TestTransports.Tcp)]
-        [InlineData(AgentBehaviour.NoAnswer, TestTransports.Tcp)]
-        [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Tcp)]
-        [InlineData(AgentBehaviour.Return404, TestTransports.Tcp)]
-        [InlineData(AgentBehaviour.Return500, TestTransports.Tcp)]
-        [InlineData(AgentBehaviour.Normal, TestTransports.WindowsNamedPipe)]
-        [InlineData(AgentBehaviour.NoAnswer, TestTransports.WindowsNamedPipe)]
+        // [InlineData(AgentBehaviour.Normal, TestTransports.Tcp)]
+        // [InlineData(AgentBehaviour.NoAnswer, TestTransports.Tcp)]
+        // [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Tcp)]
+        // [InlineData(AgentBehaviour.Return404, TestTransports.Tcp)]
+        // [InlineData(AgentBehaviour.Return500, TestTransports.Tcp)]
+        // [InlineData(AgentBehaviour.Normal, TestTransports.WindowsNamedPipe)]
+        // [InlineData(AgentBehaviour.NoAnswer, TestTransports.WindowsNamedPipe)]
         [InlineData(AgentBehaviour.WrongAnswer, TestTransports.WindowsNamedPipe)]
-        [InlineData(AgentBehaviour.Return404, TestTransports.WindowsNamedPipe)]
-        [InlineData(AgentBehaviour.Return500, TestTransports.WindowsNamedPipe)]
-#if NETCOREAPP3_1_OR_GREATER
-        [InlineData(AgentBehaviour.Normal, TestTransports.Uds)]
-        [InlineData(AgentBehaviour.NoAnswer, TestTransports.Uds)]
-        [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Uds)]
-        [InlineData(AgentBehaviour.Return404, TestTransports.Uds)]
-        [InlineData(AgentBehaviour.Return500, TestTransports.Uds)]
-#endif
+        // [InlineData(AgentBehaviour.Return404, TestTransports.WindowsNamedPipe)]
+        // [InlineData(AgentBehaviour.Return500, TestTransports.WindowsNamedPipe)]
+// #if NETCOREAPP3_1_OR_GREATER
+//         [InlineData(AgentBehaviour.Normal, TestTransports.Uds)]
+//         [InlineData(AgentBehaviour.NoAnswer, TestTransports.Uds)]
+//         [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Uds)]
+//         [InlineData(AgentBehaviour.Return404, TestTransports.Uds)]
+//         [InlineData(AgentBehaviour.Return500, TestTransports.Uds)]
+// #endif
         public void SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType)
         {
-            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-            if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
+            EnableDebugMode();
+            var remaining = 100;
+            while (remaining > 0)
             {
-                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
-            }
+                remaining--;
+                try
+                {
+                    SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+                    if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
+                    {
+                        throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+                    }
 
-            EnvironmentHelper.EnableTransport(transportType);
-            using var agent = EnvironmentHelper.GetMockAgent();
-            agent.SetBehaviour(behaviour);
-            TestInstrumentation(agent);
+                    EnvironmentHelper.EnableTransport(transportType);
+                    using var agent = EnvironmentHelper.GetMockAgent();
+                    agent.SetBehaviour(behaviour);
+                    TestInstrumentation(agent);
+                }
+                catch (Exception e) when (e is not SkipException)
+                {
+                    _testOutputHelper.WriteLine(e.ToString());
+                    throw;
+                }
+            }
         }
 
         private async void TestInstrumentation(MockTracerAgent agent)
