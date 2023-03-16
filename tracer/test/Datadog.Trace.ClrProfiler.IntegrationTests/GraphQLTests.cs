@@ -149,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             await Fixture.TryStartApp(this);
             var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
 
-            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans);
+            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans + 100);
             foreach (var span in spans)
             {
                 // TODO: Refactor to use ValidateIntegrationSpans when the graphql server integration is fixed. It currently produces a service name of {service]-graphql
