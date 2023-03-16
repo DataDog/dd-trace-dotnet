@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
@@ -53,7 +54,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            where TReturn : IDelayedException, IDuckType
         {
+            if (exception is null && returnValue.Instance is not null)
+            {
+                exception = returnValue.Exception;
+            }
+
             state.Scope?.DisposeWithException(exception);
             return returnValue;
         }

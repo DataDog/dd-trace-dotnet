@@ -112,18 +112,6 @@ public class InstrumentationTestsBase
     {
         AssertVulnerable(0);
     }
-    private static string GetErrorMessage(Assembly[] assemblies)
-    {
-        var assemblyListString = "DD Assemblies:" + Environment.NewLine + string.Join(Environment.NewLine, assemblies.Where(x => x.GetName().Name.IndexOf("datadog", StringComparison.OrdinalIgnoreCase) >= 0).Select(x => x.GetName().Name));
-
-        return "Test is not instrumented." + Environment.NewLine +
-            EnvironmentVariableMessage("CORECLR_ENABLE_PROFILING") +
-            EnvironmentVariableMessage("CORECLR_PROFILER_PATH") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_64") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_32") +
-            EnvironmentVariableMessage("COR_ENABLE_PROFILING") + EnvironmentVariableMessage("COR_PROFILER_PATH_32") +
-            EnvironmentVariableMessage("COR_PROFILER_PATH") +
-            EnvironmentVariableMessage("COR_PROFILER_PATH_64") + EnvironmentVariableMessage("DD_DOTNET_TRACER_HOME") + Environment.NewLine +
-            assemblyListString + Environment.NewLine;
-    }
 
     private static string EnvironmentVariableMessage(string variable)
     {
@@ -159,6 +147,14 @@ public class InstrumentationTestsBase
     {
         AssertTainted(instrumented);
         FormatTainted(instrumented).Should().Be(expected);
+        var notInstrumentedCompiled = notInstrumented.Compile();
+        var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
+        instrumented.Should().Be(notInstrumentedResult.ToString());
+    }
+
+    protected void AssertUntaintedWithOriginalCallCheck(string expected, string instrumented, Expression<Func<Object>> notInstrumented)
+    {
+        instrumented.Should().Be(expected);
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
         instrumented.Should().Be(notInstrumentedResult.ToString());
