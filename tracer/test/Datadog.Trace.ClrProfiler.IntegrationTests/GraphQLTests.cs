@@ -159,6 +159,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected async Task RunSubmitsTraces(string testName = "SubmitsTraces", string packageVersion = "", bool usingWebsockets = false)
         {
             SetInstrumentationVerification();
+            EnableDebugMode();
 
             await Fixture.TryStartApp(this);
             var testStart = DateTime.UtcNow;
