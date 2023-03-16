@@ -241,6 +241,9 @@ void StackSamplerLoop::CpuProfilingIteration()
         _targetThread = _pManagedThreadList->LoopNext(_iteratorCpuTime);
         if (_targetThread != nullptr)
         {
+            // detect Windows API call failure
+            bool failure = false;
+
             // sample only if the thread is currently running on a core
             uint64_t currentConsumption = 0;
             uint64_t lastConsumption = _targetThread->GetCpuConsumptionMilliseconds();
@@ -249,8 +252,12 @@ void StackSamplerLoop::CpuProfilingIteration()
             //       so true is returned if this thread consumed some CPU since
             //       the last iteration
 #if _WINDOWS
-    #if BIT64  // nothing to do for Windows 64-bit
-    #else  // Windows 32-bit
+    #if BIT64   // Windows 64-bit
+            if (failure)
+            {
+                isRunning = (lastConsumption < currentConsumption);
+            }
+    #else       // Windows 32-bit
             isRunning = (lastConsumption < currentConsumption);
     #endif
 #else  // nothing to do for Linux

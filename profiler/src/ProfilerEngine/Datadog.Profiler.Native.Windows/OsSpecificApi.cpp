@@ -139,9 +139,26 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
     SYSTEM_THREAD_INFORMATION sti = {0};
     auto size = sizeof(SYSTEM_THREAD_INFORMATION);
     ULONG buflen = 0;
+    static bool isFirstError = true;
     NTSTATUS lResult = NtQueryInformationThread(pThreadInfo->GetOsThreadHandle(), SYSTEMTHREADINFORMATION, &sti, static_cast<ULONG>(size), &buflen);
     if (lResult != 0)
     {
+        if (isFirstError)
+        {
+            isFirstError = false;
+            LPVOID msgBuffer;
+            DWORD errorCode = GetLastError();
+
+            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                          NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+            if (msgBuffer != NULL)
+            {
+                Log::Error("IsRunning() error 0x", std::hex, lResult, " calling NtQueryInformationThread (last error =  0x", std::hex, errorCode, std::dec, "): ", (LPTSTR)msgBuffer);
+                LocalFree(msgBuffer);
+            }
+        }
+
         // This always happens in 32 bit so uses another API to at least get the CPU consumption
         cpuTime = GetThreadCpuTime(pThreadInfo);
         return false;
