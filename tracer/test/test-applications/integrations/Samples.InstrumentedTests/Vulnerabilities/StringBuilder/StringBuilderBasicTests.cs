@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Text;
 using FluentAssertions;
 using Xunit;
@@ -141,5 +142,50 @@ public class StringBuilderBasicTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongSubString_ArgumentOutOfRangeException9()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).ToString(2, -2));
+    }
+
+    [Fact]
+    public void GivenAStringBuilder_WhenUsingNotCoveredMethod_RangesAreOk()
+    {
+        var stringBuilder = new StringBuilder().Append(taintedValue);
+        MethodInfo replaceMethod = typeof(StringBuilder).GetMethod("Replace", new Type[] {typeof(string), typeof(string) });
+        replaceMethod.Invoke(stringBuilder, new object[] { taintedValue, "a" });
+        var mystring = stringBuilder.ToString();
+        ValidateRanges(mystring);
+    }
+
+    [Fact]
+    public void GivenAStringBuilder_WhenUsingNotCoveredMethod_RangesAreOk2()
+    {
+        var stringBuilder = new StringBuilder().Append(taintedValue + taintedValue);
+        MethodInfo replaceMethod = typeof(StringBuilder).GetMethod("Replace", new Type[] { typeof(string), typeof(string) });
+        replaceMethod.Invoke(stringBuilder, new object[] { taintedValue + taintedValue, taintedValue });
+        var mystring = stringBuilder.ToString();
+        ValidateRanges(mystring);
+    }
+
+    [Fact]
+    public void GivenAStringBuilder_WhenUsingNotCoveredMethod_RangesAreOk3()
+    {
+        var stringBuilder = new StringBuilder(taintedValue);
+        for (int i = 0; i < 100; i++)
+        {
+            stringBuilder.Append(taintedValue);
+        }
+
+        MethodInfo replaceMethod = typeof(StringBuilder).GetMethod("Replace", new Type[] { typeof(string), typeof(string) });
+        replaceMethod.Invoke(stringBuilder, new object[] { taintedValue, string.Empty});
+
+        stringBuilder.Append(taintedValue);
+        stringBuilder.Append(taintedValue, 2, 3);
+#if !NETFRAMEWORK
+        stringBuilder.AppendJoin("s", new object[] { taintedValue });
+#endif
+        stringBuilder.Remove(2, 2);
+        stringBuilder.Replace("ta", "TA");
+        stringBuilder.AppendFormat("{0} {1}", taintedValue, taintedValue);
+        stringBuilder.Insert(4, taintedValue);
+        var mystring = stringBuilder.ToString();
+        ValidateRanges(mystring);
     }
 }

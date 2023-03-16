@@ -64,6 +64,7 @@ public partial class StringBuilderAspects
     {
         var result = target.ToString();
         PropagationModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.FixRangesIfNeeded(result);
         return result;
     }
 
@@ -77,6 +78,7 @@ public partial class StringBuilderAspects
     {
         var result = target.ToString(startIndex, length);
         PropagationModuleImpl.OnStringSubSequence(target, startIndex, result, result.Length);
+        PropagationModuleImpl.FixRangesIfNeeded(result);
         return result;
     }
 

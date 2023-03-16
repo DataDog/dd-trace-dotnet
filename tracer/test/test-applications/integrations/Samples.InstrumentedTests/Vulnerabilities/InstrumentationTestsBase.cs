@@ -240,4 +240,18 @@ public class InstrumentationTestsBase
         return result;
     }
 
+    protected void ValidateRanges(object value)
+    {
+        AssertTainted(value);
+        string result = value.ToString();
+        var tainted = GetTainted(value);
+        var ranges = _rangesProperty.Invoke(tainted, Array.Empty<object>()) as Array;
+
+        foreach (var range in ranges)
+        {
+            var start = (int)_StartProperty.Invoke(range, Array.Empty<object>());
+            var length = (int)_LengthProperty.Invoke(range, Array.Empty<object>());
+            (start + length).Should().BeLessThanOrEqualTo(result.Length);
+        }
+    }
 }
