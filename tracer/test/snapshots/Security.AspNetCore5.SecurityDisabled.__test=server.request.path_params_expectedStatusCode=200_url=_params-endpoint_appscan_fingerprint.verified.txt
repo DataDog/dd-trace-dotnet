@@ -8,7 +8,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: /params-endpoint/{s} HTTP: GET,
-      aspnet_core.route: /params-endpoint/{s},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -39,7 +38,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: /params-endpoint/{s} HTTP: GET,
-      aspnet_core.route: /params-endpoint/{s},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -70,7 +68,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: /params-endpoint/{s} HTTP: GET,
-      aspnet_core.route: /params-endpoint/{s},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -101,7 +98,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: /params-endpoint/{s} HTTP: GET,
-      aspnet_core.route: /params-endpoint/{s},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -132,7 +128,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: /params-endpoint/{s} HTTP: GET,
-      aspnet_core.route: /params-endpoint/{s},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,

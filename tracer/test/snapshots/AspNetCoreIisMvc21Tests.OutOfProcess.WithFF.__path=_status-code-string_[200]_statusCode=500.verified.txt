@@ -10,9 +10,9 @@
     Tags: {
       aspnet_core.action: statuscodeteststring,
       aspnet_core.controller: home,
-      aspnet_core.route: status-code-string/{statuscode},
       component: aspnet_core,
       env: integration_tests,
+      http.route: status-code-string/{statuscode},
       language: dotnet,
       span.kind: server,
       version: 1.0.0
@@ -27,7 +27,6 @@
     Type: web,
     Error: 1,
     Tags: {
-      aspnet_core.route: status-code-string/{statuscode},
       component: aspnet_core,
       env: integration_tests,
       error.msg: Input was not a status code,

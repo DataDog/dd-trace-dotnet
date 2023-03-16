@@ -10,9 +10,9 @@
     Tags: {
       aspnet_core.action: throwexception,
       aspnet_core.controller: home,
-      aspnet_core.route: bad-request,
       component: aspnet_core,
       env: integration_tests,
+      http.route: bad-request,
       language: dotnet,
       span.kind: server,
       version: 1.0.0
@@ -27,7 +27,6 @@
     Type: web,
     Error: 1,
     Tags: {
-      aspnet_core.route: bad-request,
       component: aspnet_core,
       datadog-header-tag: asp-net-core,
       env: integration_tests,

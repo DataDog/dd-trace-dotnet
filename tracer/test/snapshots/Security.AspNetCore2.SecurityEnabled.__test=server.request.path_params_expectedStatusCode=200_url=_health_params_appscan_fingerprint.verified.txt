@@ -9,7 +9,6 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
-      aspnet_core.route: health/params/{id},
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
@@ -55,7 +54,6 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
-      aspnet_core.route: health/params/{id},
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
@@ -101,7 +99,6 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
-      aspnet_core.route: health/params/{id},
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
@@ -147,7 +144,6 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
-      aspnet_core.route: health/params/{id},
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
@@ -193,7 +189,6 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
-      aspnet_core.route: health/params/{id},
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,

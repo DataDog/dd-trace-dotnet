@@ -9,10 +9,10 @@
     ParentId: Id_3,
     Tags: {
       aspnet.controller: health,
-      aspnet.route: api/{controller}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: api/{controller}/{id},
       http.status_code: 200,
       http.url: http://localhost/api/health,
       http.useragent: Mistake Not...,
@@ -58,10 +58,10 @@
     ParentId: Id_6,
     Tags: {
       aspnet.controller: health,
-      aspnet.route: api/{controller}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: api/{controller}/{id},
       http.status_code: 200,
       http.url: http://localhost/api/health,
       http.useragent: Mistake Not...,

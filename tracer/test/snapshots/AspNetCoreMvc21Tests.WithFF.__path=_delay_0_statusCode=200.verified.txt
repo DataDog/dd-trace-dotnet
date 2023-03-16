@@ -10,9 +10,9 @@
     Tags: {
       aspnet_core.action: delay,
       aspnet_core.controller: home,
-      aspnet_core.route: delay/{seconds},
       component: aspnet_core,
       env: integration_tests,
+      http.route: delay/{seconds},
       language: dotnet,
       span.kind: server,
       version: 1.0.0
@@ -26,7 +26,6 @@
     Service: Samples.AspNetCoreMvc21,
     Type: web,
     Tags: {
-      aspnet_core.route: delay/{seconds},
       component: aspnet_core,
       datadog-header-tag: asp-net-core,
       env: integration_tests,

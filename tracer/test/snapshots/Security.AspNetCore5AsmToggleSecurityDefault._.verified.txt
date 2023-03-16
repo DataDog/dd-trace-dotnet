@@ -8,7 +8,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.HealthController.Index (Samples.Security.AspNetCore5),
-      aspnet_core.route: health,
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -39,7 +38,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.HealthController.Index (Samples.Security.AspNetCore5),
-      aspnet_core.route: health,
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
@@ -72,7 +70,6 @@
       actor.ip: 86.242.244.246,
       appsec.event: true,
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.HealthController.Index (Samples.Security.AspNetCore5),
-      aspnet_core.route: health,
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,

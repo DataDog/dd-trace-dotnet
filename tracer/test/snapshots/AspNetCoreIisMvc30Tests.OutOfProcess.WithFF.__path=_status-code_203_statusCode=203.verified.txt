@@ -10,7 +10,7 @@
     Tags: {
       aspnet_core.action: statuscodetest,
       aspnet_core.controller: home,
-      aspnet_core.route: status-code/{statuscode},
+      http.route: status-code/{statuscode},
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
@@ -27,7 +27,7 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTest (Samples.AspNetCoreMvc30),
-      aspnet_core.route: status-code/{statuscode},
+      http.route: status-code/{statuscode},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,

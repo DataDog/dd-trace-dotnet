@@ -7,7 +7,6 @@
     Service: Samples.Owin.WebApi2,
     Type: web,
     Tags: {
-      aspnet.route: api/absolute-route,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,

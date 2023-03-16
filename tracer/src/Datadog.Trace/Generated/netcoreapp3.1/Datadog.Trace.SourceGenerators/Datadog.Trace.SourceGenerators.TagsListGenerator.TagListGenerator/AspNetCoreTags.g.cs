@@ -10,15 +10,15 @@ namespace Datadog.Trace.Tagging
     {
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // AspNetCoreRouteBytes = System.Text.Encoding.UTF8.GetBytes("aspnet_core.route");
-        private static readonly byte[] AspNetCoreRouteBytes = new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
+        // AspNetCoreRouteBytes = System.Text.Encoding.UTF8.GetBytes("http.route");
+        private static readonly byte[] AspNetCoreRouteBytes = new byte[] { 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
 
         public override string? GetTag(string key)
         {
             return key switch
             {
                 "component" => InstrumentationName,
-                "aspnet_core.route" => AspNetCoreRoute,
+                "http.route" => AspNetCoreRoute,
                 _ => base.GetTag(key),
             };
         }
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tagging
                 case "component": 
                     InstrumentationName = value;
                     break;
-                case "aspnet_core.route": 
+                case "http.route": 
                     AspNetCoreRoute = value;
                     break;
                 default: 
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tagging
 
             if (AspNetCoreRoute is not null)
             {
-                processor.Process(new TagItem<string>("aspnet_core.route", AspNetCoreRoute, AspNetCoreRouteBytes));
+                processor.Process(new TagItem<string>("http.route", AspNetCoreRoute, AspNetCoreRouteBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Tagging
 
             if (AspNetCoreRoute is not null)
             {
-                sb.Append("aspnet_core.route (tag):")
+                sb.Append("http.route (tag):")
                   .Append(AspNetCoreRoute)
                   .Append(',');
             }

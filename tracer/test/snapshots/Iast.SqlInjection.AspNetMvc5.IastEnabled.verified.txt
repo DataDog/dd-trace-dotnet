@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -69,10 +69,10 @@
     Tags: {
       aspnet.action: sqlquery,
       aspnet.controller: iast,
-      aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
       http.status_code: 200,
       http.url: http://localhost/Iast/SqlQuery?username=Vicent,
       http.useragent: Mistake Not...,

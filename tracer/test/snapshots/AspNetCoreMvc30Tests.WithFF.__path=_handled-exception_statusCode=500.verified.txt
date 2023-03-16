@@ -11,7 +11,7 @@
     Tags: {
       aspnet_core.action: handledexception,
       aspnet_core.controller: home,
-      aspnet_core.route: handled-exception,
+      http.route: handled-exception,
       component: aspnet_core,
       env: integration_tests,
       error.msg: Exception of type 'System.Exception' was thrown.,
@@ -34,7 +34,7 @@ System.Exception: Exception of type 'System.Exception' was thrown.
     Error: 1,
     Tags: {
       aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.HandledException (Samples.AspNetCoreMvc30),
-      aspnet_core.route: handled-exception,
+      http.route: handled-exception,
       component: aspnet_core,
       datadog-header-tag: asp-net-core,
       env: integration_tests,

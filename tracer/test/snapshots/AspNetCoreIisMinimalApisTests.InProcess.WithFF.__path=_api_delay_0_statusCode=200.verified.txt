@@ -8,7 +8,6 @@
     Type: web,
     Tags: {
       aspnet_core.endpoint: HTTP: GET /api/delay/{seconds},
-      aspnet_core.route: /api/delay/{seconds},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,

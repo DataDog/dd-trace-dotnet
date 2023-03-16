@@ -129,7 +129,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary EmptyTags() => new()
         {
-            { Tags.AspNetCoreRoute, null },
+            { Tags.HttpRoute, null },
             { Tags.AspNetCoreController, null },
             { Tags.AspNetCoreAction, null },
             { Tags.AspNetCoreArea, null },
@@ -141,7 +141,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             string action = "index",
             string controller = "home") => new()
         {
-            { Tags.AspNetCoreRoute, "{controller=home}/{action=index}/{id?}" },
+            { Tags.HttpRoute, "{controller=home}/{action=index}/{id?}" },
             { Tags.AspNetCoreController, null },
             { Tags.AspNetCoreAction, null },
             { Tags.AspNetCoreArea, null },
@@ -153,7 +153,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             string action = "index",
             string controller = "home") => new()
         {
-            { Tags.AspNetCoreRoute, "{controller=home}/{action=index}/{id?}" },
+            { Tags.HttpRoute, "{controller=home}/{action=index}/{id?}" },
             { Tags.AspNetCoreController, controller },
             { Tags.AspNetCoreAction, action },
             { Tags.AspNetCoreArea, null },
@@ -163,7 +163,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary StatusCodeParentTags() => new()
         {
-            { Tags.AspNetCoreRoute, "statuscode/{value=200}" },
+            { Tags.HttpRoute, "statuscode/{value=200}" },
             { Tags.AspNetCoreController, null },
             { Tags.AspNetCoreAction, null },
             { Tags.AspNetCoreArea, null },
@@ -173,7 +173,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary StatusCodeChildTags() => new()
         {
-            { Tags.AspNetCoreRoute, "statuscode/{value=200}" },
+            { Tags.HttpRoute, "statuscode/{value=200}" },
             { Tags.AspNetCoreController, "mytest" },
             { Tags.AspNetCoreAction, "setstatuscode" },
             { Tags.AspNetCoreArea, null },
@@ -183,7 +183,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary ApiIndexParentTags() => new()
         {
-            { Tags.AspNetCoreRoute, "api/index" },
+            { Tags.HttpRoute, "api/index" },
             { Tags.AspNetCoreController, null },
             { Tags.AspNetCoreAction, null },
             { Tags.AspNetCoreArea, null },
@@ -193,7 +193,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary ApiIndexChildTags() => new()
         {
-            { Tags.AspNetCoreRoute, "api/index" },
+            { Tags.HttpRoute, "api/index" },
             { Tags.AspNetCoreController, "api" },
             { Tags.AspNetCoreAction, "index" },
             { Tags.AspNetCoreArea, null },
@@ -203,7 +203,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary ApiValueParentTags() => new()
         {
-            { Tags.AspNetCoreRoute, "api/value/{value}" },
+            { Tags.HttpRoute, "api/value/{value}" },
             { Tags.AspNetCoreController, null },
             { Tags.AspNetCoreAction, null },
             { Tags.AspNetCoreArea, null },
@@ -213,7 +213,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary ApiValueChildTags() => new()
         {
-            { Tags.AspNetCoreRoute, "api/value/{value}" },
+            { Tags.HttpRoute, "api/value/{value}" },
             { Tags.AspNetCoreController, "api" },
             { Tags.AspNetCoreAction, "value" },
             { Tags.AspNetCoreArea, null },

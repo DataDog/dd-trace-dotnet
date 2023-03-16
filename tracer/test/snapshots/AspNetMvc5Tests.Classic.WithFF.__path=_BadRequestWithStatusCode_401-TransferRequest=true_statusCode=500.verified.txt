@@ -48,7 +48,6 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
     Tags: {
       aspnet.action: badrequestwithstatuscode,
       aspnet.controller: home,
-      aspnet.route: BadRequestWithStatusCode/{statuscode},
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 401,
       error.stack:
@@ -57,6 +56,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       error.type: System.Exception,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: BadRequestWithStatusCode/{statuscode},
       http.status_code: 500,
       http.url: http://localhost/BadRequestWithStatusCode/401?TransferRequest=true,
       http.useragent: testhelper,

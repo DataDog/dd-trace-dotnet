@@ -8,7 +8,6 @@
     Type: web,
     Error: 1,
     Tags: {
-      aspnet.route: api/transient-failure/{value},
       env: integration_tests,
       error.msg: Passed in value was not 'true': false,
       error.stack:

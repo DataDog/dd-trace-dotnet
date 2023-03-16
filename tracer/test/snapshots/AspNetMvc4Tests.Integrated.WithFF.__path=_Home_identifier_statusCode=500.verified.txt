@@ -49,7 +49,6 @@ at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo 
     Tags: {
       aspnet.action: identifier,
       aspnet.controller: home,
-      aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
       error.msg:
 The parameters dictionary contains a null entry for parameter 'id' of non-nullable type 'System.Int32' for method 'System.Web.Mvc.ActionResult Identifier(Int32)' in 'Samples.AspNetMvc4.Controllers.HomeController'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
@@ -61,6 +60,7 @@ at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo 
       error.type: System.ArgumentException,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
       http.status_code: 500,
       http.url: http://localhost/Home/identifier,
       http.useragent: testhelper,

@@ -8,7 +8,6 @@
     Type: web,
     Error: 1,
     Tags: {
-      aspnet.route: api/statuscode/{value},
       env: integration_tests,
       error.msg: The HTTP response has status code 503.,
       http.method: GET,

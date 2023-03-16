@@ -8,10 +8,10 @@
     Type: web,
     ParentId: Id_3,
     Tags: {
-      aspnet.route: api/statuscode/{value},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: api/statuscode/{value},
       http.status_code: 401,
       http.url: http://localhost/api/statuscode/401,
       http.useragent: testhelper,
@@ -91,7 +91,6 @@ at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTrans
     ParentId: Id_4,
     Error: 1,
     Tags: {
-      aspnet.route: api/TransferRequest/{statuscode},
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 401,
       error.stack:
@@ -100,6 +99,7 @@ at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTrans
       error.type: System.Exception,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: api/TransferRequest/{statuscode},
       http.status_code: 500,
       http.url: http://localhost/api/TransferRequest/401,
       http.useragent: testhelper,

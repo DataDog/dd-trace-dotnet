@@ -57,7 +57,6 @@
     ParentId: Id_3,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/StreamingBothWays,
-      aspnet_core.route: /greet.tester.greeter/streamingbothways,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -161,7 +160,6 @@
     ParentId: Id_8,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/StreamingFromClient,
-      aspnet_core.route: /greet.tester.greeter/streamingfromclient,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -267,7 +265,6 @@
     ParentId: Id_13,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/ErroringMethod,
-      aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -375,7 +372,6 @@
     ParentId: Id_18,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/ErroringMethod,
-      aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -483,7 +479,6 @@
     ParentId: Id_23,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/ErroringMethod,
-      aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -591,7 +586,6 @@
     ParentId: Id_28,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/ErroringMethod,
-      aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -703,7 +697,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     ParentId: Id_33,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/ErroringMethod,
-      aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -811,7 +804,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     ParentId: Id_38,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/ErroringMethod,
-      aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -919,7 +911,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     ParentId: Id_43,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/ErroringMethod,
-      aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -1027,7 +1018,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     ParentId: Id_48,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/ErroringMethod,
-      aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -1137,7 +1127,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     ParentId: Id_53,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/StreamingFromServer,
-      aspnet_core.route: /greet.tester.greeter/streamingfromserver,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -1241,7 +1230,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     ParentId: Id_58,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/Unary,
-      aspnet_core.route: /greet.tester.greeter/unary,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -1345,7 +1333,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     ParentId: Id_63,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/Unary,
-      aspnet_core.route: /greet.tester.greeter/unary,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -1449,7 +1436,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     ParentId: Id_68,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/VerySlow,
-      aspnet_core.route: /greet.tester.greeter/veryslow,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
@@ -1555,7 +1541,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     ParentId: Id_73,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/VerySlow,
-      aspnet_core.route: /greet.tester.greeter/veryslow,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,

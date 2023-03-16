@@ -10,7 +10,7 @@
     Tags: {
       aspnet_core.action: throwexception,
       aspnet_core.controller: home,
-      aspnet_core.route: bad-request,
+      http.route: bad-request,
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
@@ -28,7 +28,7 @@
     Error: 1,
     Tags: {
       aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.ThrowException (Samples.AspNetCoreMvc30),
-      aspnet_core.route: bad-request,
+      http.route: bad-request,
       component: aspnet_core,
       datadog-header-tag: asp-net-core,
       env: integration_tests,

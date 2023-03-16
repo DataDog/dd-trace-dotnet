@@ -9,7 +9,6 @@
     Tags: {
       aspnet.action: optional,
       aspnet.controller: conventions,
-      aspnet.route: api2/{action}/{value},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,

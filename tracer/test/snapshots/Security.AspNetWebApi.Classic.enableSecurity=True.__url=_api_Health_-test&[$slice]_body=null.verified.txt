@@ -9,7 +9,7 @@
     ParentId: Id_3,
     Tags: {
       aspnet.controller: health,
-      aspnet.route: api/{controller}/{id},
+      http.route: api/{controller}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -64,7 +64,7 @@
     ParentId: Id_6,
     Tags: {
       aspnet.controller: health,
-      aspnet.route: api/{controller}/{id},
+      http.route: api/{controller}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -119,7 +119,7 @@
     ParentId: Id_9,
     Tags: {
       aspnet.controller: health,
-      aspnet.route: api/{controller}/{id},
+      http.route: api/{controller}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -174,7 +174,7 @@
     ParentId: Id_12,
     Tags: {
       aspnet.controller: health,
-      aspnet.route: api/{controller}/{id},
+      http.route: api/{controller}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -229,7 +229,7 @@
     ParentId: Id_15,
     Tags: {
       aspnet.controller: health,
-      aspnet.route: api/{controller}/{id},
+      http.route: api/{controller}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
