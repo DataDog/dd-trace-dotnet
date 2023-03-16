@@ -84,13 +84,55 @@ public class AllTriggers
     {
         using var s = SampleHelpers.CreateScope("Manual inside Trigger");
        
-        await Attempt(() => CallFunctionHttp("simple"));
+        _logger.LogInformation("Calling simple");
+        await Attempt("simple", _logger);
+        await Attempt("exception", _logger, expectFailure: true);
+        await Attempt("error", _logger, expectFailure: true);
+        await Attempt("badrequest", _logger, expectFailure: true);
 
         var res = req.CreateResponse(HttpStatusCode.OK);
         res.Headers.Add("Content-Type", "text/plain; charset=utf-8");
         await res.WriteStringAsync("Attempting triggers");
 
         return res;
+    }
+
+    [Function("Exception")]
+    public async Task<HttpResponseData> Exception(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "exception")] HttpRequestData req,
+        ILogger log)
+    {
+        using var s = SampleHelpers.CreateScope("Manual inside Exception");
+
+        await Task.Yield();
+
+        _logger.LogInformation("Called exception HTTP trigger function.");
+
+        throw new InvalidOperationException("Task failed successfully.");
+    }
+
+    [Function("ServerError")]
+    public async Task<HttpResponseData> ServerError(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "error")] HttpRequestData req)
+    {
+        using var s = SampleHelpers.CreateScope("Manual inside ServerError");
+
+        await Task.Yield();
+
+        _logger.LogInformation("Called error HTTP trigger function.");
+
+        return req.CreateResponse(HttpStatusCode.InternalServerError);
+    }
+
+    [Function("BadRequest")]
+    public HttpResponseData BadRequest(
+        [HttpTrigger(AuthorizationLevel.System, "get", "post", Route = "badrequest")] HttpRequestData req)
+    {
+        using var s = SampleHelpers.CreateScope("Manual inside BadRequest");
+
+        _logger.LogInformation("Called badrequest HTTP trigger function.");
+
+        return req.CreateResponse(HttpStatusCode.BadRequest);
     }
 
     private async Task<string> CallFunctionHttp(string path)
@@ -102,15 +144,22 @@ public class AllTriggers
         return simpleResponse;
     }
 
-    private async Task Attempt(Func<Task> action)
+    private async Task Attempt(string endpoint, ILogger log, bool expectFailure = false)
     {
         try
         {
-            await action();
+            await CallFunctionHttp(endpoint);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Trigger attempt failure");
+            if (expectFailure)
+            {
+                log.LogInformation(ex, "Trigger attempt failure for {endpoint} as expected", endpoint);
+            }
+            else
+            {
+                log.LogError(ex, "Trigger attempt failure for {endpoint}", endpoint);
+            }
         }
     }
 
@@ -128,6 +177,16 @@ public class AllTriggers
         public DateTime Next { get; set; }
 
         public DateTime LastUpdated { get; set; }
+    }
+
+    public class SomeClass
+    {
+        public string Name { get; }
+
+        public SomeClass(string name)
+        {
+            Name = name;
+        }
     }
 }
 
