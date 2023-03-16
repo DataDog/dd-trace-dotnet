@@ -44,7 +44,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(string packageVersion)
-            => await RunSubmitsTraces(packageVersion, true);
+            => await RunSubmitsTraces(packageVersion: packageVersion);
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTracesWebsockets(string packageVersion)
+            => await RunSubmitsTraces("SubmitsTracesWebsockets", packageVersion, true);
     }
 
     public class GraphQL4Tests : GraphQLTests
@@ -65,7 +72,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(string packageVersion)
-            => await RunSubmitsTraces(packageVersion, true);
+            => await RunSubmitsTraces(packageVersion: packageVersion);
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTracesWebsockets(string packageVersion)
+            => await RunSubmitsTraces("SubmitsTracesWebsockets", packageVersion, true);
     }
 #endif
 
@@ -142,7 +156,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => Result.DefaultSuccess,
             };
 
-        protected async Task RunSubmitsTraces(string packageVersion = "", bool usingWebsockets = false)
+        protected async Task RunSubmitsTraces(string testName = "SubmitsTraces", string packageVersion = "", bool usingWebsockets = false)
         {
             SetInstrumentationVerification();
 
@@ -150,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var testStart = DateTime.UtcNow;
             var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
 
-            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans + 100, minDateTime: testStart, returnAllOperations: true);
+            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
             foreach (var span in spans)
             {
                 // TODO: Refactor to use ValidateIntegrationSpans when the graphql server integration is fixed. It currently produces a service name of {service]-graphql
@@ -170,7 +184,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Ensures that we get nice file nesting in Solution Explorer
             var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName($"{_testName}.SubmitsTraces{fxSuffix}")
+                              .UseFileName($"{_testName}.{testName}{fxSuffix}")
                               .DisableRequireUniquePrefix(); // all package versions should be the same
 
             VerifyInstrumentation(Fixture.Process);
@@ -181,11 +195,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedGraphQlValidateSpanCount = 0;
             var expectedGraphQlExecuteSpanCount = 0;
 
-            SubmitHttpRequests();
-
             if (usingWebsockets)
             {
                 await SubmitWebsocketRequests();
+            }
+            else
+            {
+                SubmitHttpRequests();
             }
 
             return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount;
