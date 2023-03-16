@@ -73,7 +73,7 @@ namespace Samples.AzureFunctions.AllTriggers
             if (doAll || triggers.Contains("http"))
             {
                 await Attempt(() => CallFunctionHttp("simple", log), log);
-                await Attempt(() => CallFunctionHttp("error", log), log);
+                await Attempt(() => CallFunctionHttp("error", log), log, expectFailure: true);
             }
 
             return new OkObjectResult("Attempting triggers.");
