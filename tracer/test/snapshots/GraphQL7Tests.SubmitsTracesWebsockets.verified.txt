@@ -164,7 +164,7 @@
     Tags: {
       component: GraphQL,
       env: integration_tests,
-      graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
+      graphql.source: subscription NotImplementedSub{throwNotImplementedException {name}},
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -177,16 +177,34 @@
     TraceId: Id_3,
     SpanId: Id_12,
     Name: graphql.execute,
-    Resource: Mutation AddBobaFett,
+    Resource: Subscription NotImplementedSub,
     Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_4,
+    Error: 1,
     Tags: {
       component: GraphQL,
       env: integration_tests,
-      graphql.operation.name: AddBobaFett,
-      graphql.operation.type: Mutation,
-      graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
+      error.msg: 1 error(s),
+      error.stack:
+errors: [
+{
+"message": "Error trying to resolve field 'throwNotImplementedException'.",
+"path": "System.Object[]",
+"code": "NOT_IMPLEMENTED",
+"locations": [
+{
+"line": 1,
+"column": 32
+},
+]
+},
+]
+,
+      error.type: GraphQL.ExecutionError,
+      graphql.operation.name: NotImplementedSub,
+      graphql.operation.type: Subscription,
+      graphql.source: subscription NotImplementedSub{throwNotImplementedException {name}},
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -253,7 +271,7 @@ errors: [
     Tags: {
       component: GraphQL,
       env: integration_tests,
-      graphql.source: subscription NotImplementedSub{throwNotImplementedException {name}},
+      graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -266,34 +284,16 @@ errors: [
     TraceId: Id_7,
     SpanId: Id_15,
     Name: graphql.execute,
-    Resource: Subscription NotImplementedSub,
+    Resource: Mutation AddBobaFett,
     Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_8,
-    Error: 1,
     Tags: {
       component: GraphQL,
       env: integration_tests,
-      error.msg: 1 error(s),
-      error.stack:
-errors: [
-{
-"message": "Error trying to resolve field 'throwNotImplementedException'.",
-"path": "System.Object[]",
-"code": "NOT_IMPLEMENTED",
-"locations": [
-{
-"line": 1,
-"column": 32
-},
-]
-},
-]
-,
-      error.type: GraphQL.ExecutionError,
-      graphql.operation.name: NotImplementedSub,
-      graphql.operation.type: Subscription,
-      graphql.source: subscription NotImplementedSub{throwNotImplementedException {name}},
+      graphql.operation.name: AddBobaFett,
+      graphql.operation.type: Mutation,
+      graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server

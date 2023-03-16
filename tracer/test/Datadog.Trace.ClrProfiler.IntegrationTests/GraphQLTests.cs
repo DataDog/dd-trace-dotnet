@@ -194,6 +194,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             var expectedGraphQlValidateSpanCount = 0;
             var expectedGraphQlExecuteSpanCount = 0;
+            var expectedAspNetcoreRequestSpanCount = 0;
 
             if (usingWebsockets)
             {
@@ -201,12 +202,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
             else
             {
-                SubmitHttpRequests();
+                var isV7 = _testName.Contains("7");
+                SubmitHttpRequests(isV7);
             }
 
-            return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount;
+            Output.WriteLine($"[SPANS] Expected graphql.execute Spans: {expectedGraphQlExecuteSpanCount}");
+            Output.WriteLine($"[SPANS] Expected graphql.validate Spans: {expectedGraphQlValidateSpanCount}");
+            Output.WriteLine($"[SPANS] Expected aspnet_core.request Spans: {expectedAspNetcoreRequestSpanCount}");
+            Output.WriteLine($"[SPANS] Total Spans number: {(expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount + expectedAspNetcoreRequestSpanCount)}");
+            return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount + expectedAspNetcoreRequestSpanCount;
 
-            void SubmitHttpRequests()
+            void SubmitHttpRequests(bool isV7)
             {
                 // SUCCESS: query using GET
                 SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{hero{name appearsIn}}"), httpMethod: "GET", graphQlRequestBody: null);
@@ -217,16 +223,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // SUCCESS: mutation
                 SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""Boba Fett""}}}");
 
-                // SUCCESS: subscription
-                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{ ""query"":""subscription HumanAddedSub{humanAdded{name}}""}");
+                // SUCCESS: subscription or FAILURE: fails 'validate' (can't do POST for subscription on v7+)
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{ ""query"":""subscription HumanAddedSub{humanAdded{name}}""}", failsValidation: isV7);
 
                 // TODO: When parse is implemented, add a test that fails 'parse' step
 
                 // FAILURE: query fails 'validate' step
                 SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", failsValidation: true);
 
-                // FAILURE: query fails 'execute' step
-                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
+                // FAILURE: query fails 'execute' step but fails at 'validate' on v7
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}", failsValidation: isV7);
 
                 // TODO: When parse is implemented, add a test that fails 'resolve' step
             }
@@ -236,14 +242,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // SUCCESS: query using Websocket
                 await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query HeroQuery{hero {name appearsIn}}"",""variables"": {},}}", false);
 
-                // SUCCESS: mutation using Websocket
-                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"": {""human"":{""name"": ""Boba Fett""}},}}", false);
+                // FAILURE: query fails 'execute' step using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException {name}}"",""variables"": {},}}", false);
 
                 // FAILURE: query fails 'validate' step using Websocket
                 await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query HumanError{human(id:1){name apearsIn}}"",""variables"": {},}}", true);
 
-                // FAILURE: query fails 'execute' step using Websocket
-                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException {name}}"",""variables"": {},}}", false);
+                // SUCCESS: mutation using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"": {""human"":{""name"": ""Boba Fett""}},}}", false);
             }
 
             void SubmitGraphqlRequest(
@@ -259,6 +265,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     expectedGraphQlExecuteSpanCount++;
                 }
 
+                expectedAspNetcoreRequestSpanCount++;
                 SubmitRequest(
                     aspNetCorePort,
                     new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
@@ -277,6 +284,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     expectedGraphQlExecuteSpanCount++;
                 }
 
+                expectedAspNetcoreRequestSpanCount++;
                 await SubmitWebsocketRequest(
                     aspNetCorePort,
                     new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
