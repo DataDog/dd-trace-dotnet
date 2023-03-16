@@ -154,7 +154,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 // propagated tags ("t.<key>:<value>")
-                if (context.TraceContext?.Tags is { } tags)
+                if (context.TraceContext?.Tags is { Count: > 0 } tags)
                 {
                     var traceTagAppender = new TraceTagAppender(sb);
                     tags.Enumerate(ref traceTagAppender);
