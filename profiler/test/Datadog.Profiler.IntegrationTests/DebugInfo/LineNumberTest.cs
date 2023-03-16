@@ -27,6 +27,8 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
             runner.Environment.CustomEnvironmentVariables[EnvironmentVariables.DebugInfoEnabled] = "1";
+            runner.Environment.CustomEnvironmentVariables[EnvironmentVariables.CpuProfilerEnabled] = "0";
+            runner.Environment.CustomEnvironmentVariables["DD_INTERNAL_PROFILING_CODEHOTSPOTS_THREADS_THRESHOLD"] = "0";
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
