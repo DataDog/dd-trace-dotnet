@@ -17,7 +17,7 @@ public class DistributedPropagatorTests
 {
     private const int SamplingPriority = SamplingPriorityValues.UserReject;
     private const string Origin = "origin";
-    private const string PropagatedTags = "_dd.p.key1=value1,_dd.p.key2=value2";
+    private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
     private const string AdditionalW3CTraceState = "key3=value3,key4=value4";
     private const ulong SpanId = 0x1122334455667788;                       // 1234605616436508552
     private const string RawSpanId = "1122334455667788";                   // 1234605616436508552
