@@ -121,7 +121,7 @@ public abstract class AzureFunctionsTests : TestHelper
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunAzureFunctionAndWaitForExit(agent))
             {
-                const int expectedSpanCount = 9;
+                const int expectedSpanCount = 21;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -153,7 +153,7 @@ public abstract class AzureFunctionsTests : TestHelper
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunAzureFunctionAndWaitForExit(agent, framework: "net6.0"))
             {
-                const int expectedSpanCount = 12;
+                const int expectedSpanCount = 21;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();

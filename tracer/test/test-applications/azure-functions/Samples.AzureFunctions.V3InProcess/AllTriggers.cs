@@ -48,16 +48,44 @@ namespace Samples.AzureFunctions.AllTriggers
             return new OkObjectResult("This HTTP triggered function executed successfully. ");
         }
 
-        [FunctionName("Error")]
-        public async Task<IActionResult> Error(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "error")] HttpRequest req,
+        [FunctionName("Exception")]
+        public async Task<IActionResult> Exception(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "exception")] HttpRequest req,
             ILogger log)
         {
+            using var s = SampleHelpers.CreateScope("Manual inside Exception");
+
             await Task.Yield();
 
             log.LogInformation("Called error HTTP trigger function.");
 
             throw new InvalidOperationException("Task failed successfully.");
+        }
+
+        [FunctionName("ServerError")]
+        public async Task<IActionResult> ServerError(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "error")] HttpRequest req,
+            ILogger log)
+        {
+            using var s = SampleHelpers.CreateScope("Manual inside ServerError");
+
+            await Task.Yield();
+
+            log.LogInformation("Called error HTTP trigger function.");
+
+            return new InternalServerErrorResult();
+        }
+
+        [FunctionName("BadRequest")]
+        public IActionResult BadRequest(
+            [HttpTrigger(AuthorizationLevel.System, "get", "post", Route = "badrequest")] HttpRequest req,
+            ILogger log)
+        {
+            using var s = SampleHelpers.CreateScope("Manual inside BadRequest");
+
+            log.LogInformation("Called badrequest HTTP trigger function.");
+
+            return new BadRequestResult();
         }
         
         [FunctionName("TriggerCaller")]
@@ -73,7 +101,9 @@ namespace Samples.AzureFunctions.AllTriggers
             if (doAll || triggers.Contains("http"))
             {
                 await Attempt(() => CallFunctionHttp("simple", log), log);
+                await Attempt(() => CallFunctionHttp("exception", log), log, expectFailure: true);
                 await Attempt(() => CallFunctionHttp("error", log), log, expectFailure: true);
+                await Attempt(() => CallFunctionHttp("badrequest", log), log, expectFailure: true);
             }
 
             return new OkObjectResult("Attempting triggers.");
