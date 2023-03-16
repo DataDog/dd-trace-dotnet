@@ -17,7 +17,7 @@ namespace Samples.Aerospike
             {
                 try
                 {
-                    client = new AsyncClient(host.Item1, host.Item2);
+                    client = new AsyncClient(new AsyncClientPolicy { timeout = 10_000 }, host.Item1, host.Item2);
                     break;
                 }
                 catch (AerospikeException) when (retries > 0)
