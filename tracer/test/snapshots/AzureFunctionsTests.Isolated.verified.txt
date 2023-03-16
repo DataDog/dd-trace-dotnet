@@ -12,7 +12,6 @@
       aas.environment.instance_name: IntegrationTestHost,
       aas.environment.os: unknown,
       aas.environment.runtime: .NET,
-      aas.function.binding: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[Microsoft.Azure.WebJobs.TimerInfo, Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]],
       aas.function.method: Samples.AzureFunctions.AllTriggers.AllTriggers.TriggerAllTimer,
       aas.function.name: TriggerAllTimer,
       aas.function.trigger: Timer,
@@ -73,7 +72,6 @@
       aas.environment.os: unknown,
       aas.environment.runtime: .NET,
       aas.function.binding: Microsoft.Azure.WebJobs.Host.Executors.BindingSource,
-      aas.function.method: Samples.AzureFunctions.AllTriggers.AllTriggers.Trigger,
       aas.function.name: TriggerCaller,
       aas.function.trigger: Http,
       aas.site.kind: functionapp,
@@ -85,7 +83,7 @@
       http.request.headers.host: localhost:00000,
       http.url: http://localhost:00000/api/trigger,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
       _dd.p.dm: -0
     },
@@ -105,10 +103,29 @@
     Type: serverless,
     ParentId: Id_4,
     Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.AllTriggers.AllTriggers.Trigger,
+      aas.function.name: TriggerCaller,
+      aas.function.trigger: Http,
+      aas.site.kind: functionapp,
       aas.site.name: AzureFunctionsAllTriggers,
       aas.site.type: function,
+      component: AzureFunctions,
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -152,30 +169,6 @@
   {
     TraceId: Id_1,
     SpanId: Id_8,
-    Name: http.request,
-    Resource: GET localhost:00000/api/error,
-    Service: AzureFunctionsAllTriggers-http-client,
-    Type: http,
-    ParentId: Id_6,
-    Tags: {
-      aas.site.name: AzureFunctionsAllTriggers,
-      aas.site.type: function,
-      component: HttpMessageHandler,
-      env: integration_tests,
-      http-client-handler-type: System.Net.Http.HttpClientHandler,
-      http.method: GET,
-      http.status_code: 500,
-      http.url: http://localhost:00000/api/error,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_9,
     Name: azure-functions.invoke,
     Resource: GET /api/simple,
     Service: AzureFunctionsAllTriggers,
@@ -188,7 +181,6 @@
       aas.environment.os: unknown,
       aas.environment.runtime: .NET,
       aas.function.binding: Microsoft.Azure.WebJobs.Host.Executors.BindingSource,
-      aas.function.method: Samples.AzureFunctions.AllTriggers.AllTriggers.SimpleHttpTrigger,
       aas.function.name: SimpleHttpTrigger,
       aas.function.trigger: Http,
       aas.site.kind: functionapp,
@@ -199,6 +191,40 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.url: http://localhost:00000/api/simple,
+      language: dotnet,
+      runtime-id: Guid_2,
+      span.kind: server,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_9,
+    Name: azure-functions.invoke,
+    Resource: Http SimpleHttpTrigger,
+    Service: AzureFunctionsAllTriggers,
+    Type: serverless,
+    ParentId: Id_8,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.AllTriggers.AllTriggers.SimpleHttpTrigger,
+      aas.function.name: SimpleHttpTrigger,
+      aas.function.trigger: Http,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsAllTriggers,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
@@ -214,92 +240,10 @@
   {
     TraceId: Id_1,
     SpanId: Id_10,
-    Name: azure-functions.invoke,
-    Resource: GET /api/error,
-    Service: AzureFunctionsAllTriggers,
-    Type: serverless,
-    ParentId: Id_8,
-    Error: 1,
-    Tags: {
-      aas.environment.extension_version: unknown,
-      aas.environment.instance_id: unknown,
-      aas.environment.instance_name: IntegrationTestHost,
-      aas.environment.os: unknown,
-      aas.environment.runtime: .NET,
-      aas.function.binding: Microsoft.Azure.WebJobs.Host.Executors.BindingSource,
-      aas.function.method: Samples.AzureFunctions.AllTriggers.AllTriggers.Error,
-      aas.function.name: Error,
-      aas.function.trigger: Http,
-      aas.site.kind: functionapp,
-      aas.site.name: AzureFunctionsAllTriggers,
-      aas.site.type: function,
-      component: AzureFunctions,
-      env: integration_tests,
-      error.msg: Exception while executing function: Error,
-      error.stack:
-Microsoft.Azure.WebJobs.Host.FunctionInvocationException: Exception while executing function: Error
----> System.InvalidOperationException: Task failed successfully.
-at Samples.AzureFunctions.AllTriggers.AllTriggers.Error(HttpRequest req, ILogger log),
-      error.type: Microsoft.Azure.WebJobs.Host.FunctionInvocationException,
-      http.method: GET,
-      http.request.headers.host: localhost:00000,
-      http.url: http://localhost:00000/api/error,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_11,
-    Name: azure-functions.invoke,
-    Resource: Http SimpleHttpTrigger,
-    Service: AzureFunctionsAllTriggers,
-    Type: serverless,
-    ParentId: Id_9,
-    Tags: {
-      aas.site.name: AzureFunctionsAllTriggers,
-      aas.site.type: function,
-      env: integration_tests,
-      language: dotnet
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_12,
-    Name: azure-functions.invoke,
-    Resource: Http Error,
-    Service: AzureFunctionsAllTriggers,
-    Type: serverless,
-    ParentId: Id_10,
-    Error: 1,
-    Tags: {
-      aas.site.name: AzureFunctionsAllTriggers,
-      aas.site.type: function,
-      env: integration_tests,
-      error.msg: Exception while executing function: Error,
-      error.stack:
-Microsoft.Azure.WebJobs.Host.FunctionInvocationException: Exception while executing function: Error
----> System.InvalidOperationException: Task failed successfully.
-at Samples.AzureFunctions.AllTriggers.AllTriggers.Error(HttpRequest req, ILogger log),
-      error.type: Microsoft.Azure.WebJobs.Host.FunctionInvocationException,
-      language: dotnet
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_13,
     Name: Manual inside Simple,
     Resource: Manual inside Simple,
     Service: AzureFunctionsAllTriggers,
-    ParentId: Id_11,
+    ParentId: Id_9,
     Tags: {
       aas.site.name: AzureFunctionsAllTriggers,
       aas.site.type: function,

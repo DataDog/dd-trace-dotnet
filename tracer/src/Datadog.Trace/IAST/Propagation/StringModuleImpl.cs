@@ -7,6 +7,8 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -134,6 +136,132 @@ internal static class StringModuleImpl
         {
             taintedObjects.Taint(result, newRanges);
         }
+    }
+
+    public static string OnStringJoin(string result, IEnumerable<object> values, int startIndex = 0, int count = -1)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+
+            var newRanges = new List<Range>();
+            int pos = 0;
+            int i = 0;
+            foreach (var element in values)
+            {
+                if (i >= startIndex && (count < 0 || i < startIndex + count))
+                {
+                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, null, 1, element?.ToString() ?? string.Empty, false);
+                }
+
+                i++;
+            }
+
+            if (newRanges.Count > 0)
+            {
+                taintedObjects.Taint(result, newRanges.ToArray());
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringJoinChar exception");
+        }
+
+        return result;
+    }
+
+    public static string OnStringJoin(string result, string delimiter, IEnumerable<object> values, int startIndex = 0, int count = -1)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+
+            var newRanges = new List<Range>();
+            int pos = 0;
+
+            // Delimiter info
+            var delimiterRanges = GetTainted(taintedObjects, delimiter)?.Ranges;
+            var delimiterHasRanges = delimiterRanges?.Length > 0;
+            var delimiterLength = delimiter?.Length ?? 0;
+            var valuesCount = values.Count();
+
+            int i = 0;
+            foreach (var element in values)
+            {
+                if (i >= startIndex && (count < 0 || i < startIndex + count))
+                {
+                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, delimiterRanges, delimiterLength, element?.ToString() ?? string.Empty, delimiterHasRanges && i < valuesCount - 1);
+                }
+
+                i++;
+            }
+
+            if (newRanges.Count > 0)
+            {
+                taintedObjects.Taint(result, newRanges.ToArray());
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringJoin exception");
+        }
+
+        return result;
+    }
+
+    // Iterates over the element and delimiter ranges (if necessary) to update them and calculate the
+    // new pos value
+    private static int GetPositionAndUpdateRangesInStringJoin(TaintedObjects taintedObjects, List<Range> newRanges, int pos, Range[]? delimiterRanges, int delimiterLength, string element, bool addDelimiterRanges)
+    {
+        if (!string.IsNullOrEmpty(element))
+        {
+            var elementTainted = GetTainted(taintedObjects, element);
+            if (elementTainted != null)
+            {
+                var elementRanges = elementTainted.Ranges;
+                if (elementRanges.Length > 0)
+                {
+                    for (int i = 0; i < elementRanges.Length; i++)
+                    {
+                        newRanges.Add(elementRanges[i].Shift(pos));
+                    }
+                }
+            }
+        }
+
+        pos += element.Length;
+        if (addDelimiterRanges && delimiterRanges != null)
+        {
+            for (int i = 0; i < delimiterRanges.Length; i++)
+            {
+                newRanges.Add(delimiterRanges[i].Shift(pos));
+            }
+        }
+
+        pos += delimiterLength;
+        return pos;
     }
 
     /// <summary> Mostly used overload </summary>
