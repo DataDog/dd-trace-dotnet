@@ -163,26 +163,26 @@ namespace Datadog.Trace.Ci.Tags
         /// <summary>
         /// Test Session Intelligent Test Runner tests skipping is enabled flag
         /// </summary>
-        public const string TestSessionTestsSkippingEnabled = "test_session.itr.tests_skipping.enabled";
+        public const string TestSessionTestsSkippingEnabled = "test.itr.tests_skipping.enabled";
 
         /// <summary>
         /// Test Session Code Coverage is enabled flag
         /// </summary>
-        public const string TestSessionCodeCoverageEnabled = "test_session.code_coverage.enabled";
+        public const string TestSessionCodeCoverageEnabled = "test.code_coverage.enabled";
 
         /// <summary>
         /// Test Module Intelligent Test Runner tests skipping is enabled flag
         /// </summary>
-        public const string TestModuleTestsSkippingEnabled = "test_module.itr.tests_skipping.enabled";
+        public const string TestModuleTestsSkippingEnabled = "test.itr.tests_skipping.enabled";
 
         /// <summary>
         /// Test Module Code Coverage is enabled flag
         /// </summary>
-        public const string TestModuleCodeCoverageEnabled = "test_module.code_coverage.enabled";
+        public const string TestModuleCodeCoverageEnabled = "test.code_coverage.enabled";
 
         /// <summary>
         /// Code coverage global percentage value
         /// </summary>
-        public const string CodeCoverageTotalLines = "test.codecov_lines_total";
+        public const string CodeCoverageTotalLines = "test.code_coverage.lines_pct";
     }
 }
