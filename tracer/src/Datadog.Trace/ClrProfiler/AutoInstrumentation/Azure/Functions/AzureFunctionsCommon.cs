@@ -341,19 +341,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                 }
 
-                if (feature is null)
+                if (feature is null || !feature.TryDuckCast<FunctionBindingsFeatureStruct>(out var bindingFeature))
                 {
                     return null;
                 }
 
-                // Not using DuckType.TryCast<> to avoid boxing
-                var featureResult = DuckType.CreateCache<FunctionBindingsFeatureStruct>.GetProxy(feature.GetType());
-                if (!featureResult.Success)
-                {
-                    return null;
-                }
-
-                var bindingFeature = featureResult.CreateInstance<FunctionBindingsFeatureStruct>(feature);
                 if (bindingFeature.InputData is null
                  || !bindingFeature.InputData.TryGetValue(bindingName!, out var requestDataObject)
                  || requestDataObject is null)
@@ -361,14 +353,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return null;
                 }
 
-                // Not using DuckType.TryCast<> to avoid boxing
-                var httpRequestResult = DuckType.CreateCache<HttpRequestDataStruct>.GetProxy(requestDataObject.GetType());
-                if (!httpRequestResult.Success)
+                if (!requestDataObject.TryDuckCast<HttpRequestDataStruct>(out var httpRequest))
                 {
                     return null;
                 }
 
-                var httpRequest = httpRequestResult.CreateInstance<HttpRequestDataStruct>(requestDataObject);
                 return SpanContextPropagator.Instance.Extract(new HttpHeadersCollection(httpRequest.Headers));
             }
             catch (Exception ex)
