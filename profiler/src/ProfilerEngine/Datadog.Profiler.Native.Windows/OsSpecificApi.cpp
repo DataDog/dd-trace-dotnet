@@ -162,7 +162,7 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 
             if (msgBuffer != NULL)
             {
-                Log::Error("IsRunning() error calling NtQueryInformationThread (", errorCode, "): ", (LPTSTR)msgBuffer);
+                Log::Error("IsRunning() error 0x", std::hex, lResult, " calling NtQueryInformationThread (last error =  0x", std::hex, errorCode, std::dec, "): ", (LPTSTR)msgBuffer);
                 LocalFree(msgBuffer);
             }
         }

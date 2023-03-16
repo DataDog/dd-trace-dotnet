@@ -257,7 +257,7 @@ void StackSamplerLoop::CpuProfilingIteration()
     #if BIT64   // Windows 64-bit
             if (failure)
             {
-                isRunning == (lastConsumption < currentConsumption);
+                isRunning = (lastConsumption < currentConsumption);
             }
     #else       // Windows 32-bit
             isRunning = (lastConsumption < currentConsumption);
