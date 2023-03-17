@@ -101,6 +101,14 @@ public class StringTrimTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenATaintedObject_WhenCallingTrimWithCharArrayParam_ResultIsTainted5()
+    {
+        AssertNotTaintedWithOriginalCallCheck(String.Empty,
+            taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
+            () => taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
+    }
+
+    [Fact]
     public void GivenATaintedObject_WhenCallingTrimWithNullParams_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-trimtext-+:", (taintedValueSpaces2).Trim(null), () => (taintedValueSpaces2).Trim(null));
@@ -151,6 +159,14 @@ public class StringTrimTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenATaintedObject_WhenCallingTrimEndWithCharArrayParam_ResultIsTainted5()
+    {
+        AssertNotTaintedWithOriginalCallCheck(String.Empty,
+            taintedValue.TrimEnd(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
+            () => taintedValue.TrimEnd(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
+    }
+
+    [Fact]
     public void GivenATaintedObject_WhenCallingTrimEndNoParameters_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext-+:", taintedValueSpaces2.TrimEnd(), () => (taintedValueSpaces2).TrimEnd());
@@ -190,6 +206,14 @@ public class StringTrimTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingTrimStartCharArray_ResultIsTainted5()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+- trimtext \t-+:", taintedValueSpaces2.TrimStart(new char[] { '\t' }), () => (taintedValueSpaces2).TrimStart(new char[] { '\t' }));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimStartWithCharArrayParam_ResultIsTainted6()
+    {
+        AssertNotTaintedWithOriginalCallCheck(String.Empty,
+            taintedValue.TrimStart(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
+            () => taintedValue.TrimStart(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
     }
 
     [Fact]

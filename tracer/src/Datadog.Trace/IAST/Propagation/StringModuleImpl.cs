@@ -396,6 +396,11 @@ internal static class StringModuleImpl
     {
         try
         {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
             if (left && !right)
             {
                 return OnStringSubSequence(self, self.Length - result.Length, result);
@@ -406,14 +411,9 @@ internal static class StringModuleImpl
             }
             else
             {
-                if (string.IsNullOrEmpty(result))
-                {
-                    return result;
-                }
-
                 int indexLeft = 0;
 
-                while (trimChar is null ? char.IsWhiteSpace(self[indexLeft]) : self[indexLeft] == trimChar)
+                while (indexLeft < self.Length && trimChar is null ? char.IsWhiteSpace(self[indexLeft]) : self[indexLeft] == trimChar)
                 {
                     indexLeft++;
                 }
@@ -439,6 +439,11 @@ internal static class StringModuleImpl
     {
         try
         {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
             if (left && !right)
             {
                 return OnStringSubSequence(self, self.Length - result.Length, result);
@@ -449,11 +454,6 @@ internal static class StringModuleImpl
             }
             else
             {
-                if (string.IsNullOrEmpty(result))
-                {
-                    return result;
-                }
-
                 int indexLeft = 0;
                 bool found;
                 do
@@ -470,7 +470,7 @@ internal static class StringModuleImpl
                         }
                     }
                 }
-                while (found);
+                while (found && indexLeft < self.Length);
 
                 return OnStringSubSequence(self, indexLeft, result);
             }
