@@ -379,6 +379,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Output.WriteLine("[websocket] Waiting for the response:");
                 await WaitForMessage();
                 Output.WriteLine("[websocket] Response received.");
+
+                // Terminate the GraphQl Websocket connection
+                Output.WriteLine("[websocket] Send connection_terminate...");
+                const string terminatePayload = @"{
+                    ""type"": ""connection_terminate"",
+                    ""payload"": {}
+                }";
+                var terminateBuffer = System.Text.Encoding.UTF8.GetBytes(terminatePayload);
+                var terminateSegment = new ArraySegment<byte>(terminateBuffer);
+                await webSocket.SendAsync(terminateSegment, WebSocketMessageType.Text, true, CancellationToken.None);
+                Output.WriteLine("[websocket] connection_terminate sent");
             }
             catch (Exception ex)
             {
