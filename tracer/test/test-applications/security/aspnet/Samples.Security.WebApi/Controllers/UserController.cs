@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Web.Http;
 using System.Web.Mvc;
-using Datadog.Trace;
 
 namespace Samples.Security.WebApi.Controllers
 {
@@ -20,11 +19,7 @@ namespace Samples.Security.WebApi.Controllers
         {
             var userId = id ?? "user3";
 
-            var userDetails = new UserDetails()
-            {
-                Id = userId,
-            };
-            Tracer.Instance.ActiveScope?.Span.SetUser(userDetails);
+            SampleHelpers.TrySetUserOnActiveScope(userId);
 
             return userId;
         }

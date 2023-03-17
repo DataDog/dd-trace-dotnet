@@ -193,12 +193,6 @@
       <DependentUpon>Web.config</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
-      <Project>{5dfdf781-f24c-45b1-82ef-9125875a80a4}</Project>
-      <Name>Datadog.Trace</Name>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
@@ -239,4 +233,5 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Import Project="..\..\..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
 </Project>

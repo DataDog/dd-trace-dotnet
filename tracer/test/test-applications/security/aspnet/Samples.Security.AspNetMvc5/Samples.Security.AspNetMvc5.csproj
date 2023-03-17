@@ -161,7 +161,7 @@
     <Compile Include="Controllers\PostsController.cs" />
     <Compile Include="Controllers\RenderController.cs" />
     <Compile Include="Data\DatabaseHelper.cs" />
-	<Compile Include="..\..\Samples.Security.AspNetCore5\Data\IastControllerHelper.cs" Link="Data\IastControllerHelper.cs" />
+    <Compile Include="..\..\Samples.Security.AspNetCore5\Data\IastControllerHelper.cs" Link="Data\IastControllerHelper.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -194,12 +194,6 @@
     <None Include="packages.config" />
     <Content Include="Views\Home\Upload.cshtml" />
     <Content Include="Views\User\Index.cshtml" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
-      <Project>{5dfdf781-f24c-45b1-82ef-9125875a80a4}</Project>
-      <Name>Datadog.Trace</Name>
-    </ProjectReference>
   </ItemGroup>
   <Target Name="CopyFiles" AfterTargets="Build">
     <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(TargetDir)\%(RecursiveDir)" SkipUnchangedFiles="true" />

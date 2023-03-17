@@ -18,7 +18,4 @@
     <Compile Include="..\Samples.Security.AspNetCore5\Models\**\*.*" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
     <Content Include="..\Samples.Security.AspNetCore5\Views\**\*.*" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-  </ItemGroup>
 </Project>
