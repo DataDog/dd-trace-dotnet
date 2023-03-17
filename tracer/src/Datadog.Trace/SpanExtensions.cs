@@ -38,7 +38,7 @@ namespace Datadog.Trace
 
             var setTag = TaggingUtils.GetSpanSetter(span, out var spanClass);
 
-            // usr.id should always be set, even when PropagetId is true
+            // usr.id should always be set, even when PropagateId is true
             setTag(Tags.User.Id, userDetails.Id);
 
             if (userDetails.PropagateId)
