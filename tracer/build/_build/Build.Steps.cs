@@ -102,7 +102,7 @@ partial class Build
         {
             if (TargetPlatform == MSBuildTargetPlatform.x64)
             {
-                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
+                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64TargetPlatform };
             }
             else if (TargetPlatform == MSBuildTargetPlatform.x86)
             {
