@@ -7,10 +7,13 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -26,6 +29,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public override async Task TryStartApp()
         {
             EnableIast(IastEnabled);
+            DisableObfuscationQueryString();
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
@@ -63,6 +67,21 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public AspNetCore5IastTestsTwoVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
     : base(fixture, outputHelper, vulnerabilitiesPerRequest: 2)
         {
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastLocationSpanId()
+        {
+            var url = "/Iast/WeakHashing";
+            IncludeAllHttpSpans = true;
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var parentSpan = spans.First(x => x.ParentId == null);
+            var childSpan = spans.First(x => x.ParentId == parentSpan.SpanId);
+            var vulnerabilityJson = parentSpan.GetTag(Tags.IastJson);
+            vulnerabilityJson.Should().Contain("\"spanId\": " + childSpan.SpanId);
         }
     }
 
@@ -119,8 +138,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(ClientIp, string.Empty);
-            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
+            settings.AddIastScrubbing();
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
@@ -138,10 +156,28 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-            settings.AddRegexScrubber(ClientIp, string.Empty);
-            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
+            settings.AddIastScrubbing();
             await VerifyHelper.VerifySpans(spans, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
+
+        [SkippableFact]
+        [Trait("Category", "ArmUnsupported")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastSqlInjectionRequest()
+        {
+            var filename = IastEnabled ? "Iast.SqlInjection.AspNetCore5.IastEnabled" : "Iast.SqlInjection.AspNetCore5.IastDisabled";
+            var url = "/Iast/SqlQuery?username=Vicent";
+            IncludeAllHttpSpans = true;
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddIastScrubbing();
+            await VerifyHelper.VerifySpans(spansFiltered, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
         }
@@ -149,10 +185,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
 
     public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        protected static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
-        protected static readonly Regex ClientIp = new(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}");
-        protected static readonly Regex NetworkClientIp = new(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}");
-
         public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
         {
@@ -182,6 +214,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public virtual async Task TryStartApp()
         {
             EnableIast(IastEnabled);
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+            DisableObfuscationQueryString();
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
@@ -195,9 +229,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var spans = await SendRequestsAsync(agent, new string[] { url });
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-            settings.AddRegexScrubber(ClientIp, string.Empty);
-            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
+            settings.AddIastScrubbing();
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();

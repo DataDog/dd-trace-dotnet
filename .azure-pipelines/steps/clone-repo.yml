@@ -1,5 +1,8 @@
 parameters:
-  - name: masterCommitId
+  - name: targetShaId
+    type: string
+
+  - name: targetBranch
     type: string
 
 steps:
@@ -9,7 +12,7 @@ steps:
       # As this is a pull request, we need to do a fake merge
       # uses similar process to existing checkout task
       prBranch=$SYSTEM_PULLREQUEST_SOURCEBRANCH
-      echo "Checking out merge commit for ${{ parameters.masterCommitId }} and $prBranch"
+      echo "Checking out merge commit for ${{ parameters.targetShaId }} and $prBranch"
       git version
       git lfs version
       echo "Initializing repository at $BUILD_REPOSITORY_LOCALPATH ..."
@@ -22,8 +25,8 @@ steps:
       git config --get-regexp .*extraheader
       git config --get-all http.proxy
       git config http.version HTTP/1.1
-      echo "Force fetching master and $prBranch ..."
-      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/$prBranch:refs/remotes/origin/$prBranch
+      echo "Force fetching ${{ parameters.targetBranch }} and $prBranch ..."
+      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/$prBranch:refs/remotes/origin/$prBranch
       echo "Checking out $prBranch..."
       git checkout --force $prBranch
       echo "Resetting $prBranch to origin/$prBranch ..."
@@ -39,8 +42,8 @@ steps:
       git config user.name "Automatic Merge"
 
       prBranch=$SYSTEM_PULLREQUEST_SOURCEBRANCH
-      echo "Merging $prBranch with ${{ parameters.masterCommitId }} ..."
-      git merge ${{ parameters.masterCommitId }}
+      echo "Merging $prBranch with ${{ parameters.targetShaId }} ..."
+      git merge ${{ parameters.targetShaId }}
       
       mergeInProgress=$?
       if [ $mergeInProgress -ne 0 ]
@@ -59,15 +62,15 @@ steps:
       # As this is a pull request, we need to do a fake merge
       # uses similar process to existing checkout task
       $prBranch=$env:SYSTEM_PULLREQUEST_SOURCEBRANCH
-      echo "Checking out merge commit for ${{ parameters.masterCommitId }} and $prBranch"
-      echo "Checking out merge commit for ${{ parameters.masterCommitId }} and $prBranch"
+      echo "Checking out merge commit for ${{ parameters.targetShaId }} and $prBranch"
+      echo "Checking out merge commit for ${{ parameters.targetShaId }} and $prBranch"
       git version
       # Disabled in the windows version
       # git lfs version 
 
       $localPath=$env:BUILD_REPOSITORY_LOCALPATH
       echo "Initializing repository at $localPath ..."
-      git init --initial-branch=master "$localPath"
+      git init --initial-branch=${{ parameters.targetBranch }} "$localPath"
 
       cd $localPath
 
@@ -82,9 +85,9 @@ steps:
       git config --get-all http.proxy
       git config http.version HTTP/1.1
 
-      echo "Force fetching master and $prBranch ..."
-      echo "git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}"
-      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}
+      echo "Force fetching ${{ parameters.targetBranch }} and $prBranch ..."
+      echo "git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}"
+      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/${{ parameters.targetBranch }}:refs/remotes/origin/${{ parameters.targetBranch }} +refs/heads/${prBranch}:refs/remotes/origin/${prBranch}
 
       echo "Checking out $prBranch..."
       git checkout --force $prBranch
@@ -102,8 +105,8 @@ steps:
       git config user.name "Automatic Merge"
       $prBranch=$env:SYSTEM_PULLREQUEST_SOURCEBRANCH
 
-      echo "Merging $prBranch with ${{ parameters.masterCommitId }} ..."
-      git merge ${{ parameters.masterCommitId }}
+      echo "Merging $prBranch with ${{ parameters.targetShaId }} ..."
+      git merge ${{ parameters.targetShaId }}
 
       $mergeInProgress=$LASTEXITCODE
       if("$mergeInProgress" -ne "0") {

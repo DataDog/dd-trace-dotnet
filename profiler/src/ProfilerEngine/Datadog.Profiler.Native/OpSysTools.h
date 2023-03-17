@@ -36,7 +36,7 @@ public:
     static inline HANDLE GetCurrentProcess();
 
     static bool SetNativeThreadName(std::thread* pNativeThread, const WCHAR* description);
-    static bool GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadDescrBuff, const std::uint32_t threadDescrBuffSize);
+    static bool GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadDescrBuff, std::uint32_t threadDescrBuffSize);
 
     static bool GetModuleHandleFromInstructionPointer(void* nativeIP, std::uint64_t* pModuleHandle);
     static std::string GetModuleName(void* nativeIP);
@@ -48,7 +48,8 @@ public:
     static std::string GetHostname();
     static std::string GetProcessName();
 
-    static bool ParseThreadInfo(std::string line, char& state, int32_t& userTime, int32_t& kernelTime)
+#ifdef LINUX
+    static bool ParseThreadInfo(char const* line, char& state, int32_t& userTime, int32_t& kernelTime)
     {
         // based on https://linux.die.net/man/5/proc
         // state  = 3rd position  and 'R' for Running
@@ -57,17 +58,46 @@ public:
 
         // The thread name is in second position and wrapped by ()
         // Since the name can contain SPACE and () characters, skip it before scanning the values
-        auto pos = line.find_last_of(")");
-        const char* pEnd = line.c_str() + pos + 1;
+        auto* pos = strrchr(line, ')');
 
-#ifdef _WINDOWS
-        bool result = sscanf_s(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, 1, &userTime, &kernelTime) == 3;
-#else
-        bool result = sscanf(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, &userTime, &kernelTime) == 3;
-#endif
+        // paranoia
+        if (pos == nullptr)
+            return false;
 
-        return result;
+        int currentIdx = 2; // because we are currently at the thread name offset which is 2
+        int nbElement = 0;
+        while (nbElement != 3)
+        {
+            pos = strchr(pos, ' ');
+            if (pos == nullptr)
+                break;
+
+            // skip whitespaces
+            pos = pos + strspn(pos, " ");
+
+            if (*pos == '\0')
+                break;
+
+            currentIdx++;
+            if (currentIdx == 3)
+            {
+                state = *pos;
+                nbElement++;
+            }
+            else if (currentIdx == 14)
+            {
+                userTime = atoi(pos);
+                nbElement++;
+            }
+            else if (currentIdx == 15)
+            {
+                kernelTime = atoi(pos);
+                nbElement++;
+            }
+        }
+        return nbElement == 3;
     }
+#endif
 
     static bool IsSafeToStartProfiler(double coresThreshold);
     static std::int64_t GetHighPrecisionTimestamp();

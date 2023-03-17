@@ -10,6 +10,9 @@ namespace Samples.AspNetCoreSimpleController
     {
         public static void Main(string[] args)
         {
+            string managedTracerVersion = "None";
+            string nativeTracerVersion = "None";
+
             if (Environment.GetEnvironmentVariable("COR_ENABLE_PROFILING") == "1" ||
                 Environment.GetEnvironmentVariable("CORECLR_ENABLE_PROFILING") == "1")
             {
@@ -39,12 +42,26 @@ namespace Samples.AspNetCoreSimpleController
                     Environment.Exit(1);
                     return;
                 }
+
+                nativeTracerVersion = SampleHelpers.GetNativeTracerVersion();
             }
             else
             {
                 Console.WriteLine(" * Running without profiler.");
             }
 
+#if MANUAL_INSTRUMENTATION
+            managedTracerVersion = SampleHelpers.GetManagedTracerVersion();
+            if(managedTracerVersion == "None")
+            {
+                Console.WriteLine("Error: Managed tracer is required and is not loaded.");
+                Environment.Exit(1);
+                return;
+            }
+#endif
+
+            Console.WriteLine(" * Using managed tracer version '{0}' and native tracer version '{1}'",
+                              managedTracerVersion, nativeTracerVersion);
             Console.WriteLine();
 
             CreateHostBuilder(args).Build().Run();

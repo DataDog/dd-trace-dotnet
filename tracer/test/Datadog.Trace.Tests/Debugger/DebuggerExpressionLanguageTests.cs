@@ -76,11 +76,6 @@ namespace Datadog.Trace.Tests.Debugger
                 throw new SkipException("Skip because this test has an issue of not raising a KeyNotFoundException");
             }
 
-            if (!expressionTestFilePath.Contains("Exception"))
-            {
-                return;
-            }
-
             // Arrange
             var evaluator = GetEvaluator(expressionTestFilePath);
             var settings = ConfigureVerifySettings(expressionTestFilePath);
@@ -197,8 +192,12 @@ namespace Datadog.Trace.Tests.Debugger
             // Add "return" member
             scope.Return = new ScopeMember("Dummy Return", typeof(string), "I'm a return value", ScopeMemberKind.Return);
 
+            // Add "duration" member
+            scope.Duration = new ScopeMember("@duration", typeof(TimeSpan), TimeSpan.FromMilliseconds(20), ScopeMemberKind.Duration);
+
             // Add "exception" member
             scope.Exception = new InvalidCastException("Can not cast X to Y");
+
             return scope;
         }
 
@@ -230,16 +229,38 @@ namespace Datadog.Trace.Tests.Debugger
             if (evaluationResult.Errors is { Count: > 0 })
             {
                 builder.AppendLine("Errors:");
-                builder.AppendLine($"{string.Join(Environment.NewLine, evaluationResult.Errors)}");
+                builder.AppendLine($"{string.Join(Environment.NewLine, evaluationResult.Errors.Select(SanitizeEvaluationErrorStrings))}");
             }
 
-            return Sanitize(builder).ToString();
+            return builder.ToString();
         }
 
-        private StringBuilder Sanitize(StringBuilder builder)
+        private EvaluationError SanitizeEvaluationErrorStrings(EvaluationError error)
         {
-            return builder.Replace($"{Environment.NewLine}Parameter name: propertyOrFieldName ", " ").
-                           Replace(" (Parameter 'propertyOrFieldName') ", " ");
+            // The exception.Message returns different string depend on runtime version
+
+            var parameterNameIndex = error.Message.LastIndexOf($"{Environment.NewLine}Parameter name: ", StringComparison.CurrentCultureIgnoreCase);
+            if (parameterNameIndex > 0 && parameterNameIndex + 1 < error.Message.Length)
+            {
+                error.Message = error.Message.Substring(0, parameterNameIndex);
+            }
+            else
+            {
+                parameterNameIndex = error.Message.LastIndexOf(" (Parameter ", StringComparison.CurrentCultureIgnoreCase);
+                if (parameterNameIndex > 0 && parameterNameIndex + 1 < error.Message.Length)
+                {
+                    error.Message = error.Message.Substring(0, parameterNameIndex);
+                }
+            }
+
+            return SanitizeExpressionMessage(error);
+        }
+
+        private EvaluationError SanitizeExpressionMessage(EvaluationError error)
+        {
+            // The expression.ToString returns different string depend on runtime version
+            error.Expression = error.Expression.Replace("Convert(CollectionLocal.get_Item(100), String))", "Convert(CollectionLocal.get_Item(100)))");
+            return error;
         }
 
         internal struct TestStruct

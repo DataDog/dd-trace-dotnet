@@ -29,15 +29,22 @@ internal readonly partial struct SecurityCoordinator
 
     public void MarkBlocked() => _httpTransport.MarkBlocked();
 
-    private static void LogMatchesIfDebugEnabled(string result, bool blocked)
+    private static void LogMatchesIfDebugEnabled(string? result, bool blocked)
     {
-        if (Log.IsEnabled(LogEventLevel.Debug))
+        if (Log.IsEnabled(LogEventLevel.Debug) && result != null)
         {
             var results = JsonConvert.DeserializeObject<WafMatch[]>(result);
             for (var i = 0; i < results?.Length; i++)
             {
                 var match = results[i];
-                Log.Debug(blocked ? "DDAS-0012-02: Blocking current transaction (rule: {RuleId})" : "DDAS-0012-01: Detecting an attack from rule {RuleId}", match.Rule);
+                if (blocked)
+                {
+                    Log.Debug("DDAS-0012-02: Blocking current transaction (rule: {RuleId})", match.Rule);
+                }
+                else
+                {
+                    Log.Debug("DDAS-0012-01: Detecting an attack from rule {RuleId}", match.Rule);
+                }
             }
         }
     }
@@ -86,7 +93,7 @@ internal readonly partial struct SecurityCoordinator
         return result;
     }
 
-    public void Cleanup()
+    public void AddResponseHeadersToSpanAndCleanup()
     {
         if (_localRootSpan.IsAppsecEvent())
         {

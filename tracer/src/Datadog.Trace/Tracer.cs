@@ -199,6 +199,11 @@ namespace Datadog.Trace
         public string DefaultServiceName => TracerManager.DefaultServiceName;
 
         /// <summary>
+        /// Gets the git metadata provider.
+        /// </summary>
+        IGitMetadataTagsProvider IDatadogTracer.GitMetadataTagsProvider => TracerManager.GitMetadataTagsProvider;
+
+        /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
         public ImmutableTracerSettings Settings => TracerManager.Settings;
@@ -381,9 +386,13 @@ namespace Datadog.Trace
                     var activity = Activity.ActivityListener.GetCurrentActivity();
                     if (activity is Activity.DuckTypes.IW3CActivity w3CActivity)
                     {
-                        // If there's an existing activity we use the same traceId (converted).
-                        rawTraceId = w3CActivity.TraceId;
-                        traceId = Convert.ToUInt64(w3CActivity.TraceId.Substring(16), 16);
+                        // If the Activity has an ActivityIdFormat.Hierarchical instead of W3C it's TraceId & SpanId will be null
+                        if (w3CActivity.TraceId is { } w3cTraceId)
+                        {
+                            // If there's an existing activity we use the same traceId (converted).
+                            rawTraceId = w3cTraceId;
+                            traceId = Convert.ToUInt64(w3cTraceId.Substring(16), 16);
+                        }
                     }
                 }
             }
@@ -410,8 +419,8 @@ namespace Datadog.Trace
             // Apply any global tags
             if (Settings.GlobalTags.Count > 0)
             {
-                // if DD_TAGS contained "env" and "version", they were used to set
-                // ImmutableTracerSettings.Environment and ImmutableTracerSettings.ServiceVersion
+                // if DD_TAGS contained "env", "version", "git.commit.sha", or "git.repository.url",  they were used to set
+                // ImmutableTracerSettings.Environment, ImmutableTracerSettings.ServiceVersion, ImmutableTracerSettings.GitCommitSha, and ImmutableTracerSettings.GitRepositoryUrl
                 // and removed from Settings.GlobalTags
                 foreach (var entry in Settings.GlobalTags)
                 {
@@ -423,6 +432,11 @@ namespace Datadog.Trace
             {
                 spanContext.TraceContext.AddSpan(span);
             }
+
+            // Extract the Git metadata. This is done here because we may only be able to do it in the context of a request.
+            // However, to reduce memory consumption, we don't actually add the result as tags on the span, and instead
+            // write them directly to the <see cref="TraceChunkModel"/>.
+            TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
 
             return span;
         }

@@ -1,4 +1,4 @@
-﻿// <copyright file="BlockingMiddleware.cs" company="Datadog">
+// <copyright file="BlockingMiddleware.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,16 +6,22 @@
 #nullable enable
 #if !NETFRAMEWORK
 using System;
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.AspNet;
+using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 
 internal class BlockingMiddleware
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BlockingMiddleware>();
+
     private readonly bool _endPipeline;
+
     // if we add support for ASP.NET Core on .NET Framework, we can't directly reference RequestDelegate, so this would need to be written
     private readonly RequestDelegate? _next;
 
@@ -25,9 +31,10 @@ internal class BlockingMiddleware
         _endPipeline = endPipeline;
     }
 
-    private static Task WriteResponse(HttpContext context, SecuritySettings settings, out bool endedResponse)
+    private static Task WriteResponse(BlockingAction action, HttpContext context, out bool endedResponse)
     {
         var httpResponse = context.Response;
+
         if (!httpResponse.HasStarted)
         {
             httpResponse.Clear();
@@ -37,31 +44,21 @@ internal class BlockingMiddleware
             }
 
             httpResponse.Headers.Clear();
-            httpResponse.StatusCode = 403;
-            var template = settings.BlockedJsonTemplate;
-            httpResponse.ContentType = "application/json";
+            httpResponse.StatusCode = action.StatusCode;
 
-            foreach (var header in context.Request.Headers)
+            if (action.IsRedirect)
             {
-                if (string.Equals(header.Key, "Accept", StringComparison.OrdinalIgnoreCase))
-                {
-                    var textHtmlContentType = "text/html";
-                    foreach (var value in header.Value)
-                    {
-                        if (value.Contains(textHtmlContentType))
-                        {
-                            httpResponse.ContentType = textHtmlContentType;
-                            template = settings.BlockedHtmlTemplate;
-                            break;
-                        }
-                    }
-
-                    break;
-                }
+                httpResponse.Redirect(action.RedirectLocation, action.IsPermanentRedirect);
+                endedResponse = true;
+            }
+            else
+            {
+                httpResponse.ContentType = action.ContentType;
+                endedResponse = true;
+                return httpResponse.WriteAsync(action.ResponseContent);
             }
 
-            endedResponse = true;
-            return httpResponse.WriteAsync(template);
+            return Task.CompletedTask;
         }
 
         try
@@ -81,25 +78,34 @@ internal class BlockingMiddleware
     {
         var security = Security.Instance;
         var endedResponse = false;
+
         if (security.Settings.Enabled)
         {
-            var securityCoordinator = new SecurityCoordinator(security, context, (Span)Tracer.Instance.ActiveScope.Span);
-            if (_endPipeline && !context.Response.HasStarted)
+            if (Tracer.Instance?.ActiveScope?.Span is Span span)
             {
-                context.Response.StatusCode = 404;
-            }
-
-            var result = securityCoordinator.Scan();
-            if (result?.ShouldBeReported is true)
-            {
-                if (result.ShouldBlock)
+                var securityCoordinator = new SecurityCoordinator(security, context, span);
+                if (_endPipeline && !context.Response.HasStarted)
                 {
-                    await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
-                    securityCoordinator.MarkBlocked();
+                    context.Response.StatusCode = 404;
                 }
 
-                securityCoordinator.Report(result, endedResponse);
-                // security will be disposed in endrequest of diagnostic observer in any case
+                var result = securityCoordinator.Scan();
+                if (result?.ShouldBeReported is true)
+                {
+                    if (result.ShouldBlock)
+                    {
+                        var action = security.GetBlockingAction(result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                        await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
+                        securityCoordinator.MarkBlocked();
+                    }
+
+                    securityCoordinator.Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, endedResponse);
+                    // security will be disposed in endrequest of diagnostic observer in any case
+                }
+            }
+            else
+            {
+                Log.Error("No span available, can't check the request");
             }
         }
 
@@ -112,16 +118,24 @@ internal class BlockingMiddleware
             }
             catch (BlockException e)
             {
-                var securityCoordinator = new SecurityCoordinator(security, context, (Span)Tracer.Instance.ActiveScope.Span);
-                await WriteResponse(context, security.Settings, out endedResponse).ConfigureAwait(false);
+                var action = security.GetBlockingAction(e.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.Settings.Enabled)
                 {
-                    if (!e.Reported)
+                    if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {
-                        securityCoordinator.Report(e.Result, endedResponse);
-                    }
+                        var securityCoordinator = new SecurityCoordinator(security, context, span);
+                        if (!e.Reported)
+                        {
+                            securityCoordinator.Report(e.Result.Data, e.Result.AggregatedTotalRuntime, e.Result.AggregatedTotalRuntimeWithBindings, endedResponse);
+                        }
 
-                    securityCoordinator.Cleanup();
+                        securityCoordinator.AddResponseHeadersToSpanAndCleanup();
+                    }
+                    else
+                    {
+                        Log.Error("No span available, can't report the request");
+                    }
                 }
             }
         }

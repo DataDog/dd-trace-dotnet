@@ -27,8 +27,10 @@ namespace Samples.Computer01
         LinuxSignalHandler,
         GarbageCollection,   // parameter = generation 0, 1 or 2
         MemoryLeak,          // parameter = number of objects to allocate
-        QuicklyDeadThreads, // parameter = number of short lived threads to create
-        LinuxMallocDeadlock
+        QuicklyDeadThreads,  // parameter = number of short lived threads to create
+        LinuxMallocDeadlock,
+        MeasureAllocations,
+        InnerMethods
     }
 
     public class Program
@@ -53,6 +55,9 @@ namespace Samples.Computer01
             // 12: start garbage collections of a given generation
             // 13: leak x LOH object with GC in between
             // 14: start n threads creating short lived threads
+            // 15: trigger malloc deadlock on Linux
+            // 16: count sized allocations
+            // 17: generate frames with named and anonymous methods
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +

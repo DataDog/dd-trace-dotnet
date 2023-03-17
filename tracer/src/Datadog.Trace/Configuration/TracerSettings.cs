@@ -64,6 +64,12 @@ namespace Datadog.Trace.Configuration
 
             ServiceVersion = source?.GetString(ConfigurationKeys.ServiceVersion);
 
+            GitCommitSha = source?.GetString(ConfigurationKeys.GitCommitSha);
+
+            GitRepositoryUrl = source?.GetString(ConfigurationKeys.GitRepositoryUrl);
+
+            GitMetadataEnabled = source?.GetBool(ConfigurationKeys.GitMetadataEnabled) ?? true;
+
             TraceEnabled = source?.GetBool(ConfigurationKeys.TraceEnabled) ??
                            // default value
                            true;
@@ -270,6 +276,9 @@ namespace Datadog.Trace.Configuration
             {
                 HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator);
             }
+
+            var dbmPropagationMode = source?.GetString(ConfigurationKeys.DbmPropagationMode);
+            DbmPropagationMode = dbmPropagationMode == null ? DbmPropagationLevel.Disabled : ValidateDbmPropagationInput(dbmPropagationMode);
         }
 
         /// <summary>
@@ -289,6 +298,25 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
         public string ServiceVersion { get; set; }
+
+        /// <summary>
+        /// Gets or sets the application's git repository url.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
+        internal string GitRepositoryUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the application's git commit hash.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
+        internal string GitCommitSha { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether we should tag every telemetry event with git metadata.
+        /// Default value is <c>true</c> (enabled).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>
+        internal bool GitMetadataEnabled { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether tracing is enabled.
@@ -563,6 +591,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsRunningInAzureAppService { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the tracer should propagate service data in db queries
+        /// </summary>
+        internal DbmPropagationLevel DbmPropagationMode { get; set; }
+
+        /// <summary>
         /// Gets or sets the AAS settings
         /// </summary>
         internal ImmutableAzureAppServiceSettings AzureAppServiceMetadata { get; set; }
@@ -730,6 +763,31 @@ namespace Datadog.Trace.Configuration
             }
 
             return httpErrorCodesArray;
+        }
+
+        internal static DbmPropagationLevel ValidateDbmPropagationInput(string inputValue)
+        {
+            DbmPropagationLevel propagationValue;
+
+            if (inputValue.Equals("disabled", StringComparison.OrdinalIgnoreCase))
+            {
+                propagationValue = DbmPropagationLevel.Disabled;
+            }
+            else if (inputValue.Equals("service", StringComparison.OrdinalIgnoreCase))
+            {
+                propagationValue = DbmPropagationLevel.Service;
+            }
+            else if (inputValue.Equals("full", StringComparison.OrdinalIgnoreCase))
+            {
+                propagationValue = DbmPropagationLevel.Full;
+            }
+            else
+            {
+                propagationValue = DbmPropagationLevel.Disabled;
+                Log.Warning("Wrong setting '{0}' for DD_DBM_PROPAGATION_MODE supported values include: disabled, service or full.", inputValue);
+            }
+
+            return propagationValue;
         }
     }
 }

@@ -35,7 +35,7 @@ internal class CoveragePayloadMessagePackFormatter : EventMessagePackFormatter<C
         }
         else
         {
-            Log.Error<int>("Error while locking the events buffer with {count} events.", value.TestCoverageData.Count);
+            Log.Error<int>("Error while locking the events buffer with {Count} events.", value.TestCoverageData.Count);
             offset += MessagePackBinary.WriteNil(ref bytes, offset);
         }
 

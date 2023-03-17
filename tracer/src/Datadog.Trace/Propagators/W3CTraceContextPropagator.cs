@@ -9,7 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -52,7 +54,8 @@ namespace Datadog.Trace.Propagators
         {
             new(',', '_'),
             new(';', '_'),
-            new('=', '_'),
+            new('~', '_'),
+            new('=', '~'), // note '=' is encoded as '~' when injecting
         };
 
         private static readonly KeyValuePair<char, char>[] InjectPropagatedTagKeyReplacements =
@@ -91,6 +94,14 @@ namespace Datadog.Trace.Propagators
 
         private W3CTraceContextPropagator()
         {
+        }
+
+        [Flags]
+        [EnumExtensions]
+        internal enum TraceFlags : byte
+        {
+            None = 0,
+            Sampled = 1,
         }
 
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
@@ -143,23 +154,10 @@ namespace Datadog.Trace.Propagators
                 }
 
                 // propagated tags ("t.<key>:<value>")
-                if (context.TraceContext?.Tags?.ToArray() is { Length: > 0 } tags)
+                if (context.TraceContext?.Tags is { Count: > 0 } tags)
                 {
-                    foreach (var tag in tags)
-                    {
-                        if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                        {
-#if NETCOREAPP
-                            var key = tag.Key.AsSpan(start: 6);
-#else
-                            var key = tag.Key.Substring(startIndex: 6);
-#endif
-
-                            var tagKey = ReplaceCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagKeyReplacements);
-                            var tagValue = ReplaceCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
-                            sb.Append(PropagatedTagPrefix).Append(tagKey).Append(TraceStateDatadogKeyValueSeparator).Append(tagValue).Append(TraceStateDatadogPairsSeparator);
-                        }
-                    }
+                    var traceTagAppender = new TraceTagAppender(sb);
+                    tags.Enumerate(ref traceTagAppender);
                 }
 
                 if (sb.Length == 3)
@@ -247,44 +245,53 @@ namespace Datadog.Trace.Propagators
 #if NETCOREAPP
             var w3cTraceId = header.AsSpan(start: 3, length: 32);
             var w3cSpanId = header.AsSpan(start: 36, length: 16);
-            traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId[16..]);
 
-            if (traceId == 0)
+            if (!HexString.TryParseUInt64(w3cTraceId[16..], out traceId) || traceId == 0)
             {
                 return false;
             }
 
-            parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
-
-            if (parentId == 0)
+            if (!HexString.TryParseUInt64(w3cSpanId, out parentId) || parentId == 0)
             {
                 return false;
             }
 
             rawTraceId = w3cTraceId.ToString();
             rawSpanId = w3cSpanId.ToString();
+            bool sampled;
 
-            var traceFlags = header.AsSpan(start: 53, length: 2);
-            var sampled = (ParseUtility.ParseFromHexOrDefault(traceFlags) & 1) == 1;
+            if (HexString.TryParseByte(header.AsSpan(53, 2), out var traceFlags))
+            {
+                sampled = ((TraceFlags)traceFlags & TraceFlags.Sampled) == TraceFlags.Sampled;
+            }
+            else
+            {
+                return false;
+            }
 #else
             rawTraceId = header.Substring(startIndex: 3, length: 32);
             rawSpanId = header.Substring(startIndex: 36, length: 16);
-            traceId = ParseUtility.ParseFromHexOrDefault(rawTraceId.Substring(16));
 
-            if (traceId == 0)
+            if (!HexString.TryParseUInt64(rawTraceId.Substring(16), out traceId) || traceId == 0)
             {
                 return false;
             }
 
-            parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
-
-            if (parentId == 0)
+            if (!HexString.TryParseUInt64(rawSpanId, out parentId) || parentId == 0)
             {
                 return false;
             }
 
-            var traceFlags = header.Substring(53, 2);
-            var sampled = (ParseUtility.ParseFromHexOrDefault(traceFlags) & 1) == 1;
+            bool sampled;
+
+            if (HexString.TryParseByte(header.Substring(53, 2), out var traceFlags))
+            {
+                sampled = ((TraceFlags)traceFlags).HasFlagFast(TraceFlags.Sampled);
+            }
+            else
+            {
+                return false;
+            }
 #endif
 
             traceParent = new W3CTraceParent(
@@ -590,12 +597,16 @@ namespace Datadog.Trace.Propagators
             var traceStateHeader = TrimAndJoinStrings(traceStateHeaders);
             var traceState = ParseTraceState(traceStateHeader);
 
-            // if we can't get the more specific sampling priority from "tracestate",
-            // then fallback to the boolean in "traceparent"
-            var samplingPriority = traceState.SamplingPriority ??
-                                   (traceParent.Sampled ?
-                                        SamplingPriorityValues.AutoKeep :
-                                        SamplingPriorityValues.AutoReject);
+            // Consider both the traceparent sampled flag and the Datadog sampling priority value to determine the final sampling priority value.
+            // If both values agree (both say sample or both say do not sample), use the Datadog sampling priority value
+            // Otherwise, prefer the traceparent sampled flag. Set to 1 for sampled=true or 0 for sampled=false
+            var samplingPriority = traceParent.Sampled switch
+            {
+                true when traceState.SamplingPriority is > 0 => traceState.SamplingPriority.Value,
+                true => SamplingPriorityValues.AutoKeep,
+                false when traceState.SamplingPriority is <= 0 => traceState.SamplingPriority.Value,
+                false => SamplingPriorityValues.AutoReject,
+            };
 
             spanContext = new SpanContext(
                 traceId: traceParent.TraceId,
@@ -723,6 +734,12 @@ namespace Datadog.Trace.Propagators
                     break;
             }
 
+            if (sb.Length == 0)
+            {
+                StringBuilderCache.GetStringAndRelease(sb);
+                return string.Empty;
+            }
+
             // remove trailing ","
             if (sb[sb.Length - 1] == TraceStateHeaderValuesSeparator)
             {
@@ -788,6 +805,34 @@ namespace Datadog.Trace.Propagators
             }
 
             return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        internal readonly struct TraceTagAppender : TraceTagCollection.ITagEnumerator
+        {
+            private readonly StringBuilder _sb;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal TraceTagAppender(StringBuilder sb)
+            {
+                _sb = sb;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Next(KeyValuePair<string, string> tag)
+            {
+                if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
+                {
+#if NETCOREAPP
+                    var key = tag.Key.AsSpan(start: 6);
+#else
+                    var key = tag.Key.Substring(startIndex: 6);
+#endif
+
+                    var tagKey = ReplaceCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagKeyReplacements);
+                    var tagValue = ReplaceCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
+                    _sb.Append(PropagatedTagPrefix).Append(tagKey).Append(TraceStateDatadogKeyValueSeparator).Append(tagValue).Append(TraceStateDatadogPairsSeparator);
+                }
+            }
         }
     }
 }

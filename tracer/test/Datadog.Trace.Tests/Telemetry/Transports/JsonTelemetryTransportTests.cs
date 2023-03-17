@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     {
                         new(name: "pg") { Version = "8.6.0" },
                         new(name: "express") { Version = "4.17.1" },
-                        new(name: "body-parser") { Version = "1.19.0" },
+                        new(name: "body-parser") { Version = "1.19.0", Hash = "646DF3C3-959F-4011-8673-EE58BD9291E2" },
                     },
                     configuration: new List<TelemetryValue>())
                     {

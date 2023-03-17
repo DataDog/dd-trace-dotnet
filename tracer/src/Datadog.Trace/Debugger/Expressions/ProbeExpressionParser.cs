@@ -17,19 +17,24 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
+    private const string @Return = "@return";
+    private const string @Exceptions = "@exceptions";
+    private const string @Duration = "@duration";
+    private const string @It = "@it";
+
     private static readonly LabelTarget ReturnTarget = Expression.Label(typeof(T));
 
     /// <summary>
     /// This, Return, Exception, LocalsAndArgs
     /// </summary>
-    private static readonly Func<ScopeMember, ScopeMember, Exception, ScopeMember[], T> DefaultDelegate;
+    private static readonly Func<ScopeMember, ScopeMember, ScopeMember, Exception, ScopeMember[], T> DefaultDelegate;
 
     private List<EvaluationError> _errors;
     private int _arrayStack;
 
     static ProbeExpressionParser()
     {
-        DefaultDelegate = (_, _, _, _) =>
+        DefaultDelegate = (_, _, _, _, _) =>
         {
             if (typeof(T) == typeof(bool))
             {
@@ -289,22 +294,22 @@ internal partial class ProbeExpressionParser<T>
                                 return ParseTree(reader, parameters, itParameter);
                             }
 
-                            if (readerValue == "@return")
+                            if (readerValue == Return)
                             {
                                 return GetParameterExpression(parameters, ScopeMemberKind.Return);
                             }
 
-                            if (readerValue == "@exceptions")
+                            if (readerValue == Exceptions)
                             {
                                 return GetParameterExpression(parameters, ScopeMemberKind.Exception);
                             }
 
-                            if (readerValue == "@duration")
+                            if (readerValue == Duration)
                             {
-                                return Expression.Constant("@duration is not yet supported");
+                                return GetParameterExpression(parameters, ScopeMemberKind.Duration);
                             }
 
-                            if (readerValue == "@it")
+                            if (readerValue == It)
                             {
                                 // current item in iterator
                                 if (itParameter == null)
@@ -470,28 +475,28 @@ internal partial class ProbeExpressionParser<T>
         var expressions = new List<Expression>();
 
         // Add 'this'
-        var thisParameterExpression = Expression.Parameter(@this.GetType());
-        var thisVariable = Expression.Variable(thisType, "this");
-        expressions.Add(Expression.Assign(thisVariable, Expression.Convert(Expression.Field(thisParameterExpression, "Value"), thisType)));
-        scopeMembers.Add(thisVariable);
+        var thisParameterExpression = AddParameterAndVariable(@this, thisType, "this", expressions, scopeMembers);
 
         // add 'return'
         var @return = methodScopeMembers.Return;
         var returnType = @return.Type ?? @return.Value?.GetType();
-        ParameterExpression returnVariable;
-        var returnParameterExpression = Expression.Parameter(@return.GetType());
+        ParameterExpression returnParameterExpression;
         if (returnType == null || returnType == typeof(void))
         {
-            returnVariable = Expression.Variable(typeof(string), "@return");
+            returnParameterExpression = Expression.Parameter(@return.GetType());
+            var returnVariable = Expression.Variable(typeof(string), Return);
             expressions.Add(Expression.Assign(returnVariable, Expression.Constant($"Return type is {typeof(void).FullName}")));
+            scopeMembers.Add(returnVariable);
         }
         else
         {
-            returnVariable = Expression.Variable(returnType, "@return");
-            expressions.Add(Expression.Assign(returnVariable, Expression.Convert(Expression.Field(returnParameterExpression, "Value"), returnType)));
+            returnParameterExpression = AddParameterAndVariable(@return, returnType, Return, expressions, scopeMembers);
         }
 
-        scopeMembers.Add(returnVariable);
+        // add duration
+        var @duration = methodScopeMembers.Duration;
+        var durationType = @duration.Type ?? @duration.Value?.GetType();
+        var durationParameterExpression = AddParameterAndVariable(@duration, durationType, Duration, expressions, scopeMembers);
 
         // add exception
         var exceptionParameterExpression = Expression.Parameter(typeof(Exception));
@@ -519,7 +524,16 @@ internal partial class ProbeExpressionParser<T>
             body = body.ReduceAndCheck();
         }
 
-        return new ExpressionBodyAndParameters(body, thisParameterExpression, returnParameterExpression, exceptionParameterExpression, argsOrLocalsParameterExpression);
+        return new ExpressionBodyAndParameters(body, thisParameterExpression, returnParameterExpression, durationParameterExpression, exceptionParameterExpression, argsOrLocalsParameterExpression);
+    }
+
+    private ParameterExpression AddParameterAndVariable(ScopeMember scopeMember, Type type, string name, List<Expression> expressions, List<ParameterExpression> scopeMembers)
+    {
+        var parameterExpression = Expression.Parameter(scopeMember.GetType());
+        var variable = Expression.Variable(type, name);
+        expressions.Add(Expression.Assign(variable, Expression.Convert(Expression.Field(parameterExpression, "Value"), type)));
+        scopeMembers.Add(variable);
+        return parameterExpression;
     }
 
     internal static CompiledExpression<T> ParseExpression(JObject expressionJson, MethodScopeMembers scopeMembers)
@@ -534,7 +548,7 @@ internal partial class ProbeExpressionParser<T>
         try
         {
             parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers);
-            var expression = Expression.Lambda<Func<ScopeMember, ScopeMember, Exception, ScopeMember[], T>>(parsedExpression.ExpressionBody, parsedExpression.ThisParameterExpression, parsedExpression.ReturnParameterExpression, parsedExpression.ExceptionParameterExpression, parsedExpression.ArgsAndLocalsParameterExpression);
+            var expression = Expression.Lambda<Func<ScopeMember, ScopeMember, ScopeMember, Exception, ScopeMember[], T>>(parsedExpression.ExpressionBody, parsedExpression.ThisParameterExpression, parsedExpression.ReturnParameterExpression, parsedExpression.DurationParameterExpression, parsedExpression.ExceptionParameterExpression, parsedExpression.ArgsAndLocalsParameterExpression);
             var compiled = expression.Compile();
             return new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
         }

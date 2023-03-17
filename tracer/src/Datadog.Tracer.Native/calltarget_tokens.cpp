@@ -515,7 +515,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *exceptionIndex = newLocalsCount - indexStart--;
     *callTargetReturnIndex = newLocalsCount - indexStart--;
     
-    for (int i = 0; i < sizeOfOtherIndexes; i++)
+    for (unsigned int i = 0; i < sizeOfOtherIndexes; i++)
     {
         additionalLocalIndices[i] = newLocalsCount - indexStart--;
     }

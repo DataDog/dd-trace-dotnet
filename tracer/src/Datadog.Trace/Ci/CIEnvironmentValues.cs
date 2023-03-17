@@ -138,6 +138,28 @@ namespace Datadog.Trace.Ci
             return defaultValue;
         }
 
+        private static void SetEnvironmentVariablesIfNotEmpty(Dictionary<string, string> dictionary, params string[] keys)
+        {
+            if (dictionary is null || keys is null)
+            {
+                return;
+            }
+
+            foreach (var key in keys)
+            {
+                if (key is null)
+                {
+                    continue;
+                }
+
+                var value = EnvironmentHelpers.GetEnvironmentVariable(key);
+                if (!string.IsNullOrEmpty(value))
+                {
+                    dictionary[key] = value;
+                }
+            }
+        }
+
         private static bool IsHex(IEnumerable<char> chars)
         {
             foreach (var c in chars)
@@ -257,29 +279,29 @@ namespace Datadog.Trace.Ci
             else if (EnvironmentHelpers.GetEnvironmentVariable("CIRCLECI") != null)
             {
                 SetupCircleCiEnvironment();
-                VariablesToBypass = new Dictionary<string, string>
-                {
-                    ["CIRCLE_WORKFLOW_ID"] = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_WORKFLOW_ID"),
-                    ["CIRCLE_BUILD_NUM"] = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_BUILD_NUM"),
-                };
+                VariablesToBypass = new Dictionary<string, string>();
+                SetEnvironmentVariablesIfNotEmpty(
+                    VariablesToBypass,
+                    "CIRCLE_WORKFLOW_ID",
+                    "CIRCLE_BUILD_NUM");
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("JENKINS_URL") != null)
             {
                 SetupJenkinsEnvironment();
-                VariablesToBypass = new Dictionary<string, string>
-                {
-                    ["DD_CUSTOM_TRACE_ID"] = EnvironmentHelpers.GetEnvironmentVariable("DD_CUSTOM_TRACE_ID"),
-                };
+                VariablesToBypass = new Dictionary<string, string>();
+                SetEnvironmentVariablesIfNotEmpty(
+                    VariablesToBypass,
+                    "DD_CUSTOM_TRACE_ID");
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("GITLAB_CI") != null)
             {
                 SetupGitlabEnvironment();
-                VariablesToBypass = new Dictionary<string, string>
-                {
-                    ["CI_PROJECT_URL"] = EnvironmentHelpers.GetEnvironmentVariable("CI_PROJECT_URL"),
-                    ["CI_PIPELINE_ID"] = EnvironmentHelpers.GetEnvironmentVariable("CI_PIPELINE_ID"),
-                    ["CI_JOB_ID"] = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_ID"),
-                };
+                VariablesToBypass = new Dictionary<string, string>();
+                SetEnvironmentVariablesIfNotEmpty(
+                    VariablesToBypass,
+                    "CI_PROJECT_URL",
+                    "CI_PIPELINE_ID",
+                    "CI_JOB_ID");
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR") != null)
             {
@@ -288,12 +310,12 @@ namespace Datadog.Trace.Ci
             else if (EnvironmentHelpers.GetEnvironmentVariable("TF_BUILD") != null)
             {
                 SetupAzurePipelinesEnvironment();
-                VariablesToBypass = new Dictionary<string, string>
-                {
-                    ["SYSTEM_TEAMPROJECTID"] = EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMPROJECTID"),
-                    ["BUILD_BUILDID"] = EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDID"),
-                    ["SYSTEM_JOBID"] = EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_JOBID"),
-                };
+                VariablesToBypass = new Dictionary<string, string>();
+                SetEnvironmentVariablesIfNotEmpty(
+                    VariablesToBypass,
+                    "SYSTEM_TEAMPROJECTID",
+                    "BUILD_BUILDID",
+                    "SYSTEM_JOBID");
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_COMMIT") != null)
             {
@@ -302,13 +324,13 @@ namespace Datadog.Trace.Ci
             else if (EnvironmentHelpers.GetEnvironmentVariable("GITHUB_SHA") != null)
             {
                 SetupGithubActionsEnvironment();
-                VariablesToBypass = new Dictionary<string, string>
-                {
-                    ["GITHUB_SERVER_URL"] = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_SERVER_URL"),
-                    ["GITHUB_REPOSITORY"] = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY"),
-                    ["GITHUB_RUN_ID"] = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_ID"),
-                    ["GITHUB_RUN_ATTEMPT"] = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_ATTEMPT"),
-                };
+                VariablesToBypass = new Dictionary<string, string>();
+                SetEnvironmentVariablesIfNotEmpty(
+                    VariablesToBypass,
+                    "GITHUB_SERVER_URL",
+                    "GITHUB_REPOSITORY",
+                    "GITHUB_RUN_ID",
+                    "GITHUB_RUN_ATTEMPT");
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("TEAMCITY_VERSION") != null)
             {
@@ -317,11 +339,11 @@ namespace Datadog.Trace.Ci
             else if (EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE") != null)
             {
                 SetupBuildkiteEnvironment();
-                VariablesToBypass = new Dictionary<string, string>
-                {
-                    ["BUILDKITE_BUILD_ID"] = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_ID"),
-                    ["BUILDKITE_JOB_ID"] = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_JOB_ID"),
-                };
+                VariablesToBypass = new Dictionary<string, string>();
+                SetEnvironmentVariablesIfNotEmpty(
+                    VariablesToBypass,
+                    "BUILDKITE_BUILD_ID",
+                    "BUILDKITE_JOB_ID");
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("BITRISE_BUILD_SLUG") != null)
             {
@@ -390,7 +412,7 @@ namespace Datadog.Trace.Ci
             }
             else
             {
-                Log.Warning("Git commit in .git folder is different from the one in the environment variables. [{gitCommit} != {envVarCommit}]", gitInfo.Commit, Commit);
+                Log.Warning("Git commit in .git folder is different from the one in the environment variables. [{GitCommit} != {EnvVarCommit}]", gitInfo.Commit, Commit);
             }
 
             // **********
@@ -432,7 +454,7 @@ namespace Datadog.Trace.Ci
                             }
                             else
                             {
-                                Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{default}'", defaultValue);
+                                Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{Default}'", defaultValue);
                             }
 
                             return false;
@@ -442,11 +464,11 @@ namespace Datadog.Trace.Ci
                         {
                             if (string.IsNullOrEmpty(defaultValue))
                             {
-                                Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{value}'), and the Git repository could not be automatically extracted", value);
+                                Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), and the Git repository could not be automatically extracted", value);
                             }
                             else
                             {
-                                Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{value}'), defaulting to '{default}'", value, defaultValue);
+                                Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), defaulting to '{Default}'", value, defaultValue);
                             }
 
                             return false;
@@ -480,7 +502,7 @@ namespace Datadog.Trace.Ci
                             }
                             else
                             {
-                                Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA, defaulting to '{default}", defaultValue);
+                                Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA, defaulting to '{Default}", defaultValue);
                             }
 
                             return false;
@@ -513,16 +535,27 @@ namespace Datadog.Trace.Ci
             CleanBranchAndTag();
 
             // **********
+            // Sanitize Repository Url (Remove username:password info from the url)
+            // **********
+            if (!string.IsNullOrEmpty(Repository) &&
+                Uri.TryCreate(Repository, UriKind.Absolute, out var uriRepository) &&
+                !string.IsNullOrEmpty(uriRepository.UserInfo))
+            {
+                Repository = Repository.Replace(uriRepository.UserInfo + "@", string.Empty);
+                Repository = Repository.Replace(uriRepository.UserInfo, string.Empty);
+            }
+
+            // **********
             // Try load CodeOwners
             // **********
             if (!string.IsNullOrEmpty(SourceRoot))
             {
                 foreach (var codeOwnersPath in GetCodeOwnersPaths(SourceRoot))
                 {
-                    Log.Debug("Looking for CODEOWNERS file in: {path}", codeOwnersPath);
+                    Log.Debug("Looking for CODEOWNERS file in: {Path}", codeOwnersPath);
                     if (File.Exists(codeOwnersPath))
                     {
-                        Log.Debug("CODEOWNERS file found: {path}", codeOwnersPath);
+                        Log.Debug("CODEOWNERS file found: {Path}", codeOwnersPath);
                         CodeOwners = new CodeOwners(codeOwnersPath);
                         break;
                     }
@@ -847,27 +880,15 @@ namespace Datadog.Trace.Ci
             }
 
             JobUrl = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}/commit/{Commit}/checks";
+            JobName = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_JOB");
         }
 
         private void SetupTeamcityEnvironment()
         {
             IsCI = true;
             Provider = "teamcity";
-            Repository = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_URL");
-            WorkspacePath = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_URL");
-            Commit = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_NUMBER");
-            SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("BUILD_CHECKOUTDIR");
-            PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BUILD_ID");
-            PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILD_NUMBER");
-            string serverUrl = EnvironmentHelpers.GetEnvironmentVariable("SERVER_URL");
-            if (PipelineId != null && serverUrl != null)
-            {
-                PipelineUrl = $"{serverUrl}/viewLog.html?buildId={PipelineId}";
-            }
-            else
-            {
-                PipelineUrl = null;
-            }
+            JobName = EnvironmentHelpers.GetEnvironmentVariable("TEAMCITY_BUILDCONF_NAME");
+            JobUrl = EnvironmentHelpers.GetEnvironmentVariable("BUILD_URL");
         }
 
         private void SetupBuildkiteEnvironment()

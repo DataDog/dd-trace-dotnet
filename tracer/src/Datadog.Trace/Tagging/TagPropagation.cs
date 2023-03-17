@@ -7,6 +7,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -146,53 +148,22 @@ internal static class TagPropagation
             return string.Empty;
         }
 
-        var tagsArray = tagsCollection.ToArray();
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-
-        foreach (var tag in tagsArray)
+        if (tagsCollection.Count == 0)
         {
-            if (!string.IsNullOrEmpty(tag.Key) &&
-                !string.IsNullOrEmpty(tag.Value) &&
-                tag.Key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
-            {
-                if (!IsValid(tag.Key, tag.Value))
-                {
-                    Log.Debug("Propagated tag is not valid. Key: \"{key}\", Value: \"{value}\"", tag.Key, tag.Value);
-
-                    // if tag contains invalid chars,
-                    // set tag "_dd.propagation_error:encoding_error"...
-                    tagsCollection.SetTag(Tags.TagPropagationError, PropagationErrorTagValues.EncodingError);
-
-                    // ... and don't set the header
-                    StringBuilderCache.Release(sb);
-                    return string.Empty;
-                }
-
-                if (sb.Length > 0)
-                {
-                    sb.Append(TagPairSeparator);
-                }
-
-                sb.Append(tag.Key)
-                  .Append(KeyValueSeparator)
-                  .Append(tag.Value);
-            }
-
-            if (sb.Length > maxOutgoingHeaderLength)
-            {
-                Log.Debug<int, int>("Outgoing tag propagation header is too long. Length: {0}, Maximum: {1}.", sb.Length, maxOutgoingHeaderLength);
-
-                // if combined tags get too long for propagation headers,
-                // set tag "_dd.propagation_error:inject_max_size"...
-                tagsCollection.SetTag(Tags.TagPropagationError, PropagationErrorTagValues.InjectMaxSize);
-
-                // ... and don't set the header
-                StringBuilderCache.Release(sb);
-                return string.Empty;
-            }
+            return string.Empty;
         }
 
-        return StringBuilderCache.GetStringAndRelease(sb);
+        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var tagsEnumerator = new TraceTagEnumerator(sb, tagsCollection, maxOutgoingHeaderLength);
+        tagsCollection.Enumerate(ref tagsEnumerator);
+
+        if (tagsEnumerator.IsValid)
+        {
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        StringBuilderCache.Release(sb);
+        return string.Empty;
     }
 
     internal static bool IsValid(string key, string value)
@@ -216,5 +187,70 @@ internal static class TagPropagation
         }
 
         return true;
+    }
+
+    internal struct TraceTagEnumerator : TraceTagCollection.ITagEnumerator
+    {
+        private readonly StringBuilder _sb;
+        private readonly TraceTagCollection _tagsCollection;
+        private readonly int _maxOutgoingHeaderLength;
+
+        public bool IsValid;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal TraceTagEnumerator(StringBuilder sb, TraceTagCollection tagsCollection, int maxOutgoingHeaderLength)
+        {
+            _sb = sb;
+            _tagsCollection = tagsCollection;
+            _maxOutgoingHeaderLength = maxOutgoingHeaderLength;
+            IsValid = true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Next(KeyValuePair<string, string> tag)
+        {
+            if (!IsValid)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(tag.Key) &&
+                !string.IsNullOrEmpty(tag.Value) &&
+                tag.Key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
+            {
+                if (!IsValid(tag.Key, tag.Value))
+                {
+                    Log.Debug("Propagated tag is not valid. Key: \"{Key}\", Value: \"{Value}\"", tag.Key, tag.Value);
+
+                    // if tag contains invalid chars,
+                    // set tag "_dd.propagation_error:encoding_error"...
+                    _tagsCollection.SetTag(Tags.TagPropagationError, PropagationErrorTagValues.EncodingError);
+
+                    // ... and don't set the header
+                    IsValid = false;
+                }
+
+                if (_sb.Length > 0)
+                {
+                    _sb.Append(TagPairSeparator);
+                }
+
+                _sb.Append(tag.Key)
+                    .Append(KeyValueSeparator)
+                    .Append(tag.Value);
+            }
+
+            if (_sb.Length > _maxOutgoingHeaderLength)
+            {
+                Log.Debug<int, int>("Outgoing tag propagation header is too long. Length: {0}, Maximum: {1}.", _sb.Length, _maxOutgoingHeaderLength);
+
+                // if combined tags get too long for propagation headers,
+                // set tag "_dd.propagation_error:inject_max_size"...
+                _tagsCollection.SetTag(Tags.TagPropagationError, PropagationErrorTagValues.InjectMaxSize);
+
+                // ... and don't set the header
+                IsValid = false;
+            }
+        }
     }
 }

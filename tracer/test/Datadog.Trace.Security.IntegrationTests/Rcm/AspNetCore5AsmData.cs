@@ -7,6 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -38,6 +39,22 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         }
     }
 
+    public class AspNetCore5AsmDataSecurityDisabledBlockingUser : AspNetCore5AsmDataBlockingUser
+    {
+        public AspNetCore5AsmDataSecurityDisabledBlockingUser(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: false, testName: "AspNetCore5AsmDataSecurityDisabled")
+        {
+        }
+    }
+
+    public class AspNetCore5AsmDataSecurityEnabledBlockingUser : AspNetCore5AsmDataBlockingUser
+    {
+        public AspNetCore5AsmDataSecurityEnabledBlockingUser(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: "AspNetCore5AsmDataSecurityEnabled")
+        {
+        }
+    }
+
     public abstract class AspNetCore5AsmDataBlockingRequestIp : RcmBase
     {
         public AspNetCore5AsmDataBlockingRequestIp(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
@@ -53,33 +70,24 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         {
             await TryStartApp();
             var agent = Fixture.Agent;
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             // we want to see the ip here
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, sanitisedUrl });
             var spanBeforeAsmData = await SendRequestsAsync(agent, url);
+            var acknowledgeId = nameof(AspNetCore5AsmDataBlockingRequestIp) + Guid.NewGuid();
+            var acknowledgeId2 = nameof(AspNetCore5AsmDataBlockingRequestIp) + Guid.NewGuid();
 
             var product = new AsmDataProduct();
-            agent.SetupRcm(
+            await agent.SetupRcmAndWait(
                 Output,
                 new[]
                 {
-                    (
-                        (object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, "asm_data"),
-                    (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, "asm_data_servicea"),
+                    ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, acknowledgeId),
+                    (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgeId2),
                 },
-                product.Name);
-
-            var request1 = await agent.WaitRcmRequestAndReturnLast();
-            if (EnableSecurity == true)
-            {
-                await logEntryWatcher.WaitForLogEntry($"1 {RulesUpdatedMessage()}", LogEntryWatcherTimeout);
-            }
-            else
-            {
-                await Task.Delay(1500);
-            }
+                product.Name,
+                appliedServiceNames: new[] { acknowledgeId, acknowledgeId2 });
 
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
             var spans = new List<MockSpan>();
@@ -107,35 +115,27 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             // we want to see the ip here
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, sanitisedUrl });
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{Fixture.Process.ProcessName}*", LogDirectory);
             var spanBeforeAsmData = await SendRequestsAsync(agent, url);
+            var acknowledgeId = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
+            var acknowledgeId2 = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
 
             var product = new AsmDataProduct();
-            agent.SetupRcm(
+            await agent.SetupRcmAndWait(
                 Output,
-                new[]
-                {
-                    (
-                        (object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, "asm_data"),
-                    (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, "asm_data_servicea"),
-                },
-                product.Name);
+                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" } } } } }, acknowledgeId), ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgeId2) },
+                product.Name,
+                appliedServiceNames: new[] { acknowledgeId, acknowledgeId2 });
 
-            var request1 = await agent.WaitRcmRequestAndReturnLast();
-            var rulesUpdatedMessage = RulesUpdatedMessage();
-            await logEntryWatcher.WaitForLogEntry($"1 {rulesUpdatedMessage}", LogEntryWatcherTimeout);
-
+            var asmFeatures = new AsmFeaturesProduct();
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
             spanAfterAsmData.First().GetTag(Tags.AppSecEvent).Should().NotBeNull();
-            agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, "1") }, "ASM_FEATURES");
-            var requestAfterDeactivation = await agent.WaitRcmRequestAndReturnLast();
-            await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), LogEntryWatcherTimeout);
 
+            var acknowledgeId3 = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, acknowledgeId3) }, asmFeatures.Name, appliedServiceNames: new[] { acknowledgeId3 });
             var spanAfterAsmDeactivated = await SendRequestsAsync(agent, url);
 
-            agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "1") }, "ASM_FEATURES");
-            var requestAfterReactivation = await agent.WaitRcmRequestAndReturnLast();
-            await logEntryWatcher.WaitForLogEntries(new[] { $"1 {rulesUpdatedMessage}", AppSecEnabledMessage() }, LogEntryWatcherTimeout);
+            var acknowledgeId4 = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, acknowledgeId4) }, asmFeatures.Name, appliedServiceNames: new[] { acknowledgeId4 });
 
             var spanAfterAsmDataReactivated = await SendRequestsAsync(agent, url);
 
@@ -146,6 +146,43 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spanAfterAsmDataReactivated);
 
             await VerifySpans(spans.ToImmutableList(), settings);
+        }
+    }
+
+    public abstract class AspNetCore5AsmDataBlockingUser : RcmBase
+    {
+        public AspNetCore5AsmDataBlockingUser(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
+            : base(fixture, outputHelper, enableSecurity, testName: testName)
+        {
+            this.EnableDebugMode();
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
+        }
+
+        [SkippableTheory]
+        [InlineData("blocking-user", "/user")]
+        [Trait("RunOnWindows", "True")]
+        public async Task RunTest(string test, string url)
+        {
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(parameters: new object[] { test, sanitisedUrl });
+            var spanBeforeAsmData = await SendRequestsAsync(agent, url);
+
+            var product = new AsmDataProduct();
+            // make sure this is unique if it s going to be run parallel
+            var acknowledgedId = nameof(AspNetCore5AsmDataBlockingUser) + Guid.NewGuid();
+
+            await agent.SetupRcmAndWait(
+                Output,
+                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, acknowledgedId) },
+                product.Name,
+                appliedServiceNames: new[] { acknowledgedId });
+            var spanAfterAsmData = await SendRequestsAsync(agent, url);
+            var spans = new List<MockSpan>();
+            spans.AddRange(spanBeforeAsmData);
+            spans.AddRange(spanAfterAsmData);
+            await VerifySpans(spans.ToImmutableList(), settings, true);
         }
     }
 }

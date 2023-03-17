@@ -23,86 +23,67 @@ namespace Samples.Computer01
         }
     }
 
-    public class GenericsAllocation
+    public class GenericsAllocation : ScenarioBase
     {
         // The array will always trigger an AllocationTick event since 100KB is the threshold
         // and a few elements will also trigger the event
         private const int BufferSize = (100 * 1024) + 1;
 
-        private readonly int _nbThreads;
-        private ManualResetEvent _stopEvent;
-        private List<Task> _activeTasks;
-
         public GenericsAllocation(int nbThreads)
+            : base(nbThreads)
         {
-            _nbThreads = nbThreads;
         }
 
+        // expected allocations:
+        //    System.Byte[][,]
+        //    System.Byte[][]
+        //    System.Byte[]
+        //    Generic<System.Int32>[,]
+        //    Generic<System.Int32>[]
+        //    Generic<System.Int32>
+        //
         public void AllocateGeneric()
         {
+            // jagged array
+            byte[][] jagged = new byte[1024][];
+            for (int i = 0; i < 8; i++)
+            {
+                jagged = new byte[1024][];
+            }
+
+            for (int i = 0; i < 8; i++)
+            {
+                jagged[i] = new byte[BufferSize];
+            }
+
+            // matrix
+            byte[,][] buffers = new byte[1, 1024][];
+
+            // ensure that buffer allocations are seen at least once
+            for (int i = 0; i < 16; i++)
+            {
+                buffers = new byte[1, 1024][];
+            }
+
+            // ensure that buffers allocations are seen at least once
+            for (int i = 0; i < 2; i++)
+            {
+                buffers[0, i] = new byte[BufferSize];
+            }
+
+            // arrays with generic
+            Generic<int>[,] root = new Generic<int>[1, BufferSize];
             var buffer = new Generic<int>[BufferSize];
             for (int i = 0; i < BufferSize; i++)
             {
+                root[0, i] = new Generic<int>(i);
                 buffer[i] = new Generic<int>(i);
             }
         }
 
-        public void Start()
-        {
-            if (_stopEvent != null)
-            {
-                throw new InvalidOperationException("Already running...");
-            }
-
-            _stopEvent = new ManualResetEvent(false);
-            _activeTasks = CreateThreads();
-        }
-
-        public void Run()
+        public override void OnProcess()
         {
             AllocateGeneric();
-        }
-
-        public void Stop()
-        {
-            if (_stopEvent == null)
-            {
-                throw new InvalidOperationException("Not running...");
-            }
-
-            _stopEvent.Set();
-
-            Task.WhenAll(_activeTasks).Wait();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
-            _activeTasks = null;
-        }
-
-        private List<Task> CreateThreads()
-        {
-            var result = new List<Task>(_nbThreads);
-
-            for (var i = 0; i < _nbThreads; i++)
-            {
-                result.Add(
-                    Task.Factory.StartNew(
-                        () =>
-                        {
-                            while (!IsEventSet())
-                            {
-                                AllocateGeneric();
-                            }
-                        },
-                        TaskCreationOptions.LongRunning));
-            }
-
-            return result;
-        }
-
-        private bool IsEventSet()
-        {
-            return _stopEvent.WaitOne(0);
         }
     }
 }

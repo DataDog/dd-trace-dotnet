@@ -3,14 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Net;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Web;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AspNet;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -18,8 +23,13 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal readonly partial struct SecurityCoordinator
 {
+    private const string WebApiControllerHandlerTypeFullname = "System.Web.Http.WebHost.HttpControllerHandler";
+
     private static readonly bool? UsingIntegratedPipeline;
-    private readonly HttpContext _context = null;
+    private static readonly Lazy<Action<HttpStatusCode, string, string>?> _throwHttpResponseException = new(CreateThrowHttpResponseExceptionDynMeth);
+    private static readonly Lazy<Action<HttpStatusCode, string>?> _throwHttpResponseRedirectException = new(CreateThrowHttpResponseExceptionDynMethForRedirect);
+
+    private readonly HttpContext _context;
 
     static SecurityCoordinator()
     {
@@ -47,6 +57,139 @@ internal readonly partial struct SecurityCoordinator
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
 
+    private static Action<HttpStatusCode, string, string>? CreateThrowHttpResponseExceptionDynMeth()
+    {
+        try
+        {
+            var dynMethod = new DynamicMethod(
+                "ThrowHttpResponseExceptionDynMeth",
+                typeof(void),
+                new[] { typeof(HttpStatusCode), typeof(string), typeof(string) },
+                typeof(SecurityCoordinator).Module,
+                true);
+            var il = GetBaseIlForThrowingHttpResponseException(dynMethod);
+            if (il == null)
+            {
+                return null;
+            }
+
+            var messageType = Type.GetType("System.Net.Http.HttpResponseMessage, System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            if (messageType == null)
+            {
+                return null;
+            }
+
+            var contentType = Type.GetType("System.Net.Http.StringContent, System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            if (contentType == null)
+            {
+                return null;
+            }
+
+            var messageContentProperty = messageType.GetProperty("Content");
+            // StringContent(String content, Encoding, String mediaType)
+            var contentCtor = contentType.GetConstructor(new[] { typeof(string), typeof(Encoding), typeof(string) });
+
+            // body's content
+            il.Emit(OpCodes.Ldarg_1);
+            var encodingType = typeof(Encoding);
+            var encodingUtf8Prop = encodingType.GetProperty("UTF8");
+            il.EmitCall(OpCodes.Call, encodingUtf8Prop.GetMethod, null);
+            // media type
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Newobj, contentCtor);
+            il.EmitCall(OpCodes.Callvirt, messageContentProperty.SetMethod, null);
+            il.Emit(OpCodes.Ldloc_0);
+            il.Emit(OpCodes.Throw);
+            return (Action<HttpStatusCode, string, string>)dynMethod.CreateDelegate(typeof(Action<HttpStatusCode, string, string>));
+        }
+        catch (Exception e)
+        {
+            Log.Warning("An error occured while trying to write the IL for generating an HttpResponseException with message {Message}", e.Message);
+            return null;
+        }
+    }
+
+    private static Action<HttpStatusCode, string>? CreateThrowHttpResponseExceptionDynMethForRedirect()
+    {
+        try
+        {
+            var dynMethod = new DynamicMethod(
+                "ThrowHttpResponseRedirectExceptionDynMeth",
+                typeof(void),
+                new[] { typeof(HttpStatusCode), typeof(string), typeof(string) },
+                typeof(SecurityCoordinator).Module,
+                true);
+            var il = GetBaseIlForThrowingHttpResponseException(dynMethod);
+            if (il == null)
+            {
+                return null;
+            }
+
+            var messageType = Type.GetType("System.Net.Http.HttpResponseMessage, System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            if (messageType == null)
+            {
+                return null;
+            }
+
+            var headerProperty = messageType.GetProperty("Headers");
+            if (headerProperty == null)
+            {
+                return null;
+            }
+
+            var httpResponseHeadersType = Type.GetType("System.Net.Http.Headers.HttpResponseHeaders, System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            if (httpResponseHeadersType == null)
+            {
+                return null;
+            }
+
+            var tryAddWithoutValidationMethod = httpResponseHeadersType.GetMethod("TryAddWithoutValidation", new[] { typeof(string), typeof(string) });
+            if (tryAddWithoutValidationMethod == null)
+            {
+                return null;
+            }
+
+            il.EmitCall(OpCodes.Callvirt, headerProperty.GetMethod, null);
+            // location
+            il.Emit(OpCodes.Ldstr, "Location");
+            il.Emit(OpCodes.Ldarg_1);
+
+            il.EmitCall(OpCodes.Callvirt, tryAddWithoutValidationMethod, null);
+
+            il.Emit(OpCodes.Ldloc_0);
+            il.Emit(OpCodes.Throw);
+
+            return (Action<HttpStatusCode, string>)dynMethod.CreateDelegate(typeof(Action<HttpStatusCode, string>));
+        }
+        catch (Exception e)
+        {
+            Log.Warning("An error occured while trying to write the IL for generating an HttpResponseException with message {Message}", e.Message);
+            return null;
+        }
+    }
+
+    private static ILGenerator? GetBaseIlForThrowingHttpResponseException(DynamicMethod method)
+    {
+        var exceptionType = Type.GetType("System.Web.Http.HttpResponseException, System.Web.Http");
+        if (exceptionType == null)
+        {
+            return null;
+        }
+
+        var exceptionCtor = exceptionType.GetConstructor(new[] { typeof(HttpStatusCode) });
+        var exceptionResponseProperty = exceptionType.GetProperty("Response");
+
+        var il = method.GetILGenerator();
+        il.DeclareLocal(exceptionType);
+        // status code loading
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Newobj, exceptionCtor);
+        il.Emit(OpCodes.Stloc_0);
+        il.Emit(OpCodes.Ldloc_0);
+        il.EmitCall(OpCodes.Callvirt, exceptionResponseProperty.GetMethod, null);
+        return il;
+    }
+
     /// <summary>
     /// ! This method should be called from within a try-catch block !
     /// If the application is running in partial trust, then trying to call this method will result in
@@ -69,62 +212,97 @@ internal readonly partial struct SecurityCoordinator
     internal IDictionary<string, object> GetPathParams() => _context.Request.RequestContext.RouteData.Values.ToDictionary(c => c.Key, c => c.Value);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Coordinator.SecurityCoordinator"/> class.
-    /// framework can do it all at once, but framework only unfortunately
+    /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
     internal void CheckAndBlock(Dictionary<string, object> args)
     {
         var result = RunWaf(args);
-        if (result.ShouldBeReported)
+        if (result?.ShouldBeReported is true)
         {
+            var reporting = MakeReportingFunction(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
+
             var blocked = false;
             if (result.ShouldBlock)
             {
-                blocked = WriteAndEndResponse();
-                _httpTransport.MarkBlocked();
+                blocked = ChooseBlockingMethodAndBlock(result.Actions[0], reporting);
             }
 
-            Report(result, blocked);
+            reporting(blocked);
         }
     }
 
-    private bool WriteAndEndResponse()
+    private Action<bool> MakeReportingFunction(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
+    {
+        var securityCoordinator = this;
+        return blocked =>
+        {
+            if (blocked)
+            {
+                securityCoordinator._httpTransport.MarkBlocked();
+            }
+
+            securityCoordinator.Report(triggerData, aggregatedTotalRuntime, aggregatedTotalRuntimeWithBindings, blocked);
+        };
+    }
+
+    private bool ChooseBlockingMethodAndBlock(string blockActionId, Action<bool> reporting)
+    {
+        var blockingAction = _security.GetBlockingAction(blockActionId, new[] { _context.Request.Headers["Accept"] });
+        var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
+        if (isWebApiRequest)
+        {
+            if (!blockingAction.IsRedirect && _throwHttpResponseException.Value is { } throwException)
+            {
+                // in the normal case reporting will be by the caller function after we block
+                // in the webapi case we block with an exception, so can't report afterwards
+                reporting(true);
+                throwException((HttpStatusCode)blockingAction.StatusCode, blockingAction.ResponseContent, blockingAction.ContentType);
+            }
+            else if (blockingAction.IsRedirect && _throwHttpResponseRedirectException.Value is { } throwRedirectException)
+            {
+                // in the normal case reporting will be by the caller function after we block
+                // in the webapi case we block with an exception, so can't report afterwards
+                reporting(true);
+                throwRedirectException((HttpStatusCode)blockingAction.StatusCode, blockingAction.RedirectLocation);
+            }
+        }
+
+        // we will only hit this next line if we didn't throw
+        return WriteAndEndResponse(blockingAction);
+    }
+
+    private bool WriteAndEndResponse(BlockingAction blockingAction)
     {
         var httpResponse = _context.Response;
         httpResponse.Clear();
         httpResponse.Cookies.Clear();
 
-        var template = _security.Settings.BlockedJsonTemplate;
+        // cant clear headers, on some iis version we get a platform not supported exception
         if (CanAccessHeaders)
         {
-            // cant clear headers, on some iis version we get a platform not supported exception
             var keys = httpResponse.Headers.Keys.Cast<string>().ToList();
             foreach (var key in keys)
             {
                 httpResponse.Headers.Remove(key);
             }
+        }
 
-            if (_context.Request.Headers["Accept"] == "text/html")
-            {
-                httpResponse.ContentType = "text/html";
-                template = _security.Settings.BlockedHtmlTemplate;
-            }
-            else
-            {
-                httpResponse.ContentType = "application/json";
-            }
+        httpResponse.StatusCode = blockingAction.StatusCode;
+
+        if (blockingAction.IsRedirect)
+        {
+            httpResponse.Redirect(blockingAction.RedirectLocation, blockingAction.IsPermanentRedirect);
         }
         else
         {
-            httpResponse.ContentType = "application/json";
+            httpResponse.ContentType = blockingAction.ContentType;
+            httpResponse.Write(blockingAction.ResponseContent);
         }
-
-        httpResponse.StatusCode = 403;
-        httpResponse.Write(template);
 
         httpResponse.Flush();
         httpResponse.Close();
         _context.ApplicationInstance.CompleteRequest();
+
         return true;
     }
 
@@ -145,7 +323,7 @@ internal readonly partial struct SecurityCoordinator
                 }
                 else
                 {
-                    Log.Warning("Header {key} couldn't be added as argument to the waf", keyForDictionary);
+                    Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
                 }
             }
         }
@@ -186,7 +364,7 @@ internal readonly partial struct SecurityCoordinator
             }
             else
             {
-                Log.Warning("Query string {key} couldn't be added as argument to the waf", originalKey);
+                Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
             }
         }
 
@@ -200,6 +378,10 @@ internal readonly partial struct SecurityCoordinator
             { AddressesConstants.RequestCookies, cookiesDic },
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
         };
+        if (_localRootSpan.Context.TraceContext.Tags.GetTag(Tags.User.Id) is { } userIdTag)
+        {
+            dict.Add(AddressesConstants.UserId, userIdTag);
+        }
 
         return dict;
     }
@@ -220,7 +402,7 @@ internal readonly partial struct SecurityCoordinator
 
         internal override void MarkBlocked() => _context.Items["block"] = true;
 
-        internal override IContext GetAdditiveContext() => _context.Items[WafKey] as IContext;
+        internal override IContext? GetAdditiveContext() => _context.Items[WafKey] as IContext;
 
         internal override void SetAdditiveContext(IContext additiveContext) => _context.Items[WafKey] = additiveContext;
 

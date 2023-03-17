@@ -25,13 +25,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         internal static void DisableIntegration() => _disableIntegration = true;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void LogException(Exception exception, string message = null)
+        internal static void LogException(Exception exception)
         {
             // ReSharper disable twice ExplicitCallerInfoArgument
-            Log.Error(exception, message ?? exception?.Message);
+            Log.Error(exception, "Exception occurred when calling the CallTarget integration continuation.");
             if (exception is DuckTypeException or TargetInvocationException { InnerException: DuckTypeException })
             {
-                Log.Warning($"DuckTypeException has been detected, the integration <{typeof(TIntegration)}, {typeof(TTarget)}> will be disabled.");
+                Log.Warning("DuckTypeException has been detected, the integration <{TIntegration}, {TTarget}> will be disabled.", typeof(TIntegration), typeof(TTarget));
                 if (_integrationId.Value is not null)
                 {
                     Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(_integrationId.Value.Value, nameof(DuckTypeException));
@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
             else if (exception is CallTargetInvokerException)
             {
-                Log.Warning($"CallTargetInvokerException has been detected, the integration <{typeof(TIntegration)}, {typeof(TTarget)}> will be disabled.");
+                Log.Warning("CallTargetInvokerException has been detected, the integration <{TIntegration}, {TTarget}> will be disabled.", typeof(TIntegration), typeof(TTarget));
                 if (_integrationId.Value is not null)
                 {
                     Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(_integrationId.Value.Value, nameof(CallTargetInvokerException));

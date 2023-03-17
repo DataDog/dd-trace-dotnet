@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 2.22.0)
+project("Datadog.Tracer.Native" VERSION 2.27.0)
 
 # ******************************************************
 # Environment detection
@@ -171,7 +171,20 @@ add_library("Datadog.Tracer.Native.static" STATIC
         method_rewriter.cpp
         tracer_tokens.cpp
         debugger_environment_variables_util.cpp
-        probes_tracker.cpp
+        debugger_probes_tracker.cpp
+        iast/aspect.cpp
+        iast/aspect_filter.cpp
+        iast/dataflow.cpp
+        iast/dataflow_aspects.cpp
+        iast/dataflow_il_analysis.cpp
+        iast/dataflow_il_rewriter.cpp
+        iast/iast_util.cpp
+        iast/method_info.cpp
+        iast/module_info.cpp
+        iast/signature_info.cpp
+        iast/signature_types.cpp
+        iast/string_literal_aspect_filter.cpp
+        iast/string_optimization_aspect_filter.cpp
 )
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")

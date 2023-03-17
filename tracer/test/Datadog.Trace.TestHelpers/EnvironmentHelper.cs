@@ -130,8 +130,7 @@ namespace Datadog.Trace.TestHelpers
                 ("linux", "Arm64", _, _) => ("so", "linux-arm64"),
                 ("linux", "X64", _, false) => ("so", "linux-x64"),
                 ("linux", "X64", _, true) => ("so", "linux-musl-x64"),
-                ("osx", "X64", _, _) => ("dylib", "osx-x64"),
-                ("osx", "Arm64", _, _) => ("dylib", "osx-arm64"),
+                ("osx", _, _, _) => ("dylib", "osx"),
                 _ => throw new PlatformNotSupportedException()
             };
 
@@ -192,6 +191,10 @@ namespace Datadog.Trace.TestHelpers
 
             // see https://github.com/DataDog/dd-trace-dotnet/pull/3579
             environmentVariables["DD_INTERNAL_WORKAROUND_77973_ENABLED"] = "1";
+
+            // Set a canary variable that should always be ignored
+            // and check that it doesn't appear in the logs
+            environmentVariables["SUPER_SECRET_CANARY"] = "MySuperSecretCanary";
 
             // Everything should be using the native loader now
             var nativeLoaderPath = GetNativeLoaderPath();

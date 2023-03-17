@@ -152,14 +152,17 @@ namespace Datadog.Trace.Tagging
             where TProcessor : struct, IItemProcessor<double>
         {
             var metrics = Volatile.Read(ref _metrics);
-            if (metrics is not null)
+            if (metrics is null)
             {
-                lock (metrics)
+                return;
+            }
+
+            lock (metrics)
+            {
+                for (var i = 0; i < metrics.Count; i++)
                 {
-                    for (int i = 0; i < metrics.Count; i++)
-                    {
-                        processor.Process(new TagItem<double>(metrics[i].Key, metrics[i].Value, null));
-                    }
+                    var item = metrics[i];
+                    processor.Process(new TagItem<double>(item.Key, item.Value, null));
                 }
             }
         }

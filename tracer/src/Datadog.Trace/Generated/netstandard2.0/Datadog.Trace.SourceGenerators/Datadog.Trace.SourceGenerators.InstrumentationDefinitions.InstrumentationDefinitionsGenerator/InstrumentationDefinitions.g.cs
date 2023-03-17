@@ -35,8 +35,8 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteScalarAsync",  new[] { "System.Threading.Tasks.Task`1<System.Object>", "System.Threading.CancellationToken" }, 4, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"),
 
                 // Aerospike
-               new ("AerospikeClient", "Aerospike.Client.AsyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.AsyncCommandIntegration"),
-               new ("AerospikeClient", "Aerospike.Client.SyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration"),
+               new ("AerospikeClient", "Aerospike.Client.AsyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.AsyncCommandIntegration"),
+               new ("AerospikeClient", "Aerospike.Client.SyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration"),
 
                 // AspNetCore
                new ("Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Builder.ApplicationBuilder", "Build",  new[] { "Microsoft.AspNetCore.Http.RequestDelegate" }, 3, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"),
@@ -63,7 +63,9 @@ namespace Datadog.Trace.ClrProfiler
                new ("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "SendMessageBatchAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageBatchResponse>", "Amazon.SQS.Model.SendMessageBatchRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchAsyncIntegration"),
 
                 // AzureFunctions
+               new ("Microsoft.Azure.Functions.Worker.Core", "Microsoft.Azure.Functions.Worker.Pipeline.FunctionExecutionMiddleware", "Invoke",  new[] { "System.Threading.Tasks.Task", "Microsoft.Azure.Functions.Worker.FunctionContext" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionExecutionMiddlewareInvokeIntegration"),
                new ("Microsoft.Azure.WebJobs.Host", "Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor", "TryExecuteAsync",  new[] { "System.Threading.Tasks.Task`1[Microsoft.Azure.WebJobs.Host.Executors.IDelayedException]", "Microsoft.Azure.WebJobs.Host.Executors.IFunctionInstance", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.AzureFunctionsExecutorTryExecuteAsyncIntegration"),
+               new ("Microsoft.Azure.WebJobs.Script.Grpc", "Microsoft.Azure.WebJobs.Script.Grpc.GrpcMessageConversionExtensions", "ToRpcHttp",  new[] { "System.Threading.Tasks.Task`1[Microsoft.Azure.WebJobs.Script.Grpc.Messages.TypedData]", "Microsoft.AspNetCore.Http.HttpRequest", "Microsoft.Extensions.Logging.ILogger", "Microsoft.Azure.WebJobs.Script.Grpc.GrpcCapabilities" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.GrpcMessageConversionExtensionsToRpcHttpIntegration"),
                new ("Microsoft.Azure.WebJobs.Script.WebHost", "Microsoft.Azure.WebJobs.Script.WebHost.Middleware.FunctionInvocationMiddleware", "Invoke",  new[] { "System.Threading.Tasks.Task", "Microsoft.AspNetCore.Http.HttpContext" }, 3, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionInvocationMiddlewareInvokeIntegration"),
 
                 // CosmosDb
@@ -169,14 +171,14 @@ namespace Datadog.Trace.ClrProfiler
                new ("Microsoft.Extensions.Logging.Abstractions", "Microsoft.Extensions.Logging.LoggerExternalScopeProvider", "ForEachScope",  new[] { "System.Void", "System.Action`2[System.Object,!!0]", "!!0" }, 2, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerExternalScopeProviderForEachScopeIntegration"),
 
                 // Kafka
-               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", ".ctor",  new[] { "System.Void", "Confluent.Kafka.ConsumerBuilder`2[!0,!1]" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConstructorIntegration"),
-               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Close",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerCloseIntegration"),
-               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Consume",  new[] { "Confluent.Kafka.ConsumeResult`2[!0,!1]", "System.Int32" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConsumeIntegration"),
-               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Dispose",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerDisposeIntegration"),
-               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Unsubscribe",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerUnsubscribeIntegration"),
-               new ("Confluent.Kafka", "Confluent.Kafka.Producer`2", "Produce",  new[] { "System.Void", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"),
-               new ("Confluent.Kafka", "Confluent.Kafka.Producer`2", "ProduceAsync",  new[] { "System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"),
-               new ("Confluent.Kafka", "Confluent.Kafka.Producer`2+TypedDeliveryHandlerShim_Action", ".ctor",  new[] { "System.Void", "System.String", "!0", "!1", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncDeliveryHandlerIntegration"),
+               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", ".ctor",  new[] { "System.Void", "Confluent.Kafka.ConsumerBuilder`2[!0,!1]" }, 1, 4, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConstructorIntegration"),
+               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Close",  new[] { "System.Void" }, 1, 4, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerCloseIntegration"),
+               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Consume",  new[] { "Confluent.Kafka.ConsumeResult`2[!0,!1]", "System.Int32" }, 1, 4, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConsumeIntegration"),
+               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Dispose",  new[] { "System.Void" }, 1, 4, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerDisposeIntegration"),
+               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Unsubscribe",  new[] { "System.Void" }, 1, 4, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerUnsubscribeIntegration"),
+               new ("Confluent.Kafka", "Confluent.Kafka.Producer`2", "Produce",  new[] { "System.Void", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]" }, 1, 4, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"),
+               new ("Confluent.Kafka", "Confluent.Kafka.Producer`2", "ProduceAsync",  new[] { "System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken" }, 1, 4, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"),
+               new ("Confluent.Kafka", "Confluent.Kafka.Producer`2+TypedDeliveryHandlerShim_Action", ".ctor",  new[] { "System.Void", "System.String", "!0", "!1", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]" }, 1, 4, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncDeliveryHandlerIntegration"),
 
                 // Log4Net
                new ("log4net", "log4net.Appender.AppenderCollection", "ToArray",  new[] { "log4net.Appender.IAppender[]" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission.AppenderCollectionIntegration"),
@@ -265,8 +267,8 @@ namespace Datadog.Trace.ClrProfiler
                new ("Npgsql", "Npgsql.NpgsqlCommand", "ExecuteScalarAsync",  new[] { "System.Threading.Tasks.Task`1<System.Object>", "System.Threading.CancellationToken" }, 4, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"),
 
                 // NUnit
-               new ("nunit.framework", "NUnit.Framework.Internal.Commands.SkipCommand", "Execute",  new[] { "NUnit.Framework.Internal.TestResult", "NUnit.Framework.Internal.TestExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitSkipCommandExecuteIntegration"),
-               new ("nunit.framework", "NUnit.Framework.Internal.Commands.TestMethodCommand", "Execute",  new[] { "NUnit.Framework.Internal.TestResult", "NUnit.Framework.Internal.TestExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestMethodCommandExecuteIntegration"),
+               new ("nunit.framework", "NUnit.Framework.Internal.Execution.CompositeWorkItem", "PerformOneTimeSetUp",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemPerformOneTimeSetUpIntegration"),
+               new ("nunit.framework", "NUnit.Framework.Internal.Execution.CompositeWorkItem", "PerformOneTimeTearDown",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemPerformOneTimeTearDownIntegration"),
                new ("nunit.framework", "NUnit.Framework.Internal.Execution.CompositeWorkItem", "SkipChildren",  new[] { "System.Void", "_", "NUnit.Framework.Interfaces.ResultState", "System.String" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSkipChildrenIntegration"),
                new ("nunit.framework", "NUnit.Framework.Internal.Execution.WorkItem", "WorkItemComplete",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"),
 
@@ -470,6 +472,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteScalar",  new[] { "System.Object" }, 4, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"),
 
                 // NUnit
+               new ("nunit.framework", "NUnit.Framework.Internal.Commands.TestCommand", "Execute",  new[] { "NUnit.Framework.Internal.TestResult", "NUnit.Framework.Internal.TestExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestCommandExecuteIntegration"),
                new ("nunit.framework", "NUnit.Framework.Internal.Execution.WorkItem", "PerformWork",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemPerformWorkIntegration"),
 
                 // RabbitMQ
@@ -588,7 +591,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsSqs,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.AzureFunctionsExecutorTryExecuteAsyncIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionExecutionMiddlewareInvokeIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.AzureFunctionsExecutorTryExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.GrpcMessageConversionExtensionsToRpcHttpIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionInvocationMiddlewareInvokeIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AzureFunctions,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations"
@@ -743,8 +748,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryGetConfigurationForLoggerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NLog,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitSkipCommandExecuteIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestMethodCommandExecuteIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestCommandExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemPerformOneTimeSetUpIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemPerformOneTimeTearDownIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSkipChildrenIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemPerformWorkIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"

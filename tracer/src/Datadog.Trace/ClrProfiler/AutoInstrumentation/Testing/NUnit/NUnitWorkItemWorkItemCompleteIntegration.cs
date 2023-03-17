@@ -5,7 +5,6 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
@@ -43,6 +42,14 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
                 break;
             case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is { } suite:
                 suite.Close();
+                break;
+            case "TestMethod" when instance.Result.ResultState.Status == TestStatus.Failed && item.Method?.MethodInfo is not null:
+                if (NUnitIntegration.CreateTest(item) is { } test)
+                {
+                    test.SetErrorInfo("Exception", instance.Result.Message, instance.Result.StackTrace);
+                    test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
+                }
+
                 break;
         }
 

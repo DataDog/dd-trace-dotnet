@@ -3,12 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyXunit;
@@ -21,7 +21,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 public class WeakCipherTests : TestHelper
 {
     private const string ExpectedOperationName = "weak_cipher";
-    private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
 
     public WeakCipherTests(ITestOutputHelper output)
         : base("WeakCipher", output)
@@ -29,6 +28,7 @@ public class WeakCipherTests : TestHelper
         SetServiceVersion("1.0.0");
     }
 
+#if !NET7_0
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
@@ -44,19 +44,20 @@ public class WeakCipherTests : TestHelper
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
 
         VerifyInstrumentation(process.Process);
     }
+#endif
 
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [InlineData("DD_IAST_ENABLED", "false")]
-    [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "")]
+    [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "invalidAlgorithm")]
     [InlineData($"DD_TRACE_{nameof(IntegrationId.SymmetricAlgorithm)}_ENABLED", "false")]
     public void IntegrationDisabled(string variableName, string variableValue)
     {
@@ -70,4 +71,3 @@ public class WeakCipherTests : TestHelper
         Assert.Empty(spans.Where(s => s.Name.Equals(ExpectedOperationName)));
     }
 }
-#endif

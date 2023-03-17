@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Web;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;

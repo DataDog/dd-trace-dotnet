@@ -42,6 +42,25 @@ namespace Datadog.Trace.Configuration
         public const string ServiceVersion = "DD_VERSION";
 
         /// <summary>
+        /// Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
+        /// </summary>
+        /// <seealso cref="TracerSettings.GitRepositoryUrl"/>
+        public const string GitRepositoryUrl = "DD_GIT_REPOSITORY_URL";
+
+        /// <summary>
+        /// Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
+        /// </summary>
+        /// <seealso cref="TracerSettings.GitCommitSha"/>
+        public const string GitCommitSha = "DD_GIT_COMMIT_SHA";
+
+        /// <summary>
+        /// Configuration key for enabling the tagging of every telemetry event with git metadata.
+        /// Default is value is true (enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.GitMetadataEnabled"/>
+        public const string GitMetadataEnabled = "DD_TRACE_GIT_METADATA_ENABLED";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer.
         /// Default is value is true (enabled).
         /// </summary>
@@ -370,6 +389,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.QueryStringReportingEnabled"/>
         public const string QueryStringReportingEnabled = "DD_HTTP_SERVER_TAG_QUERY_STRING";
+
+        /// <summary>
+        /// Configuration key for setting DBM propagation mode
+        /// Default value is disabled, expected values are either: disabled, service or full
+        /// </summary>
+        /// <seealso cref="TracerSettings.DbmPropagationMode"/>
+        public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.

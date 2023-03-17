@@ -514,7 +514,7 @@ namespace Datadog.Trace.Ci
                             }
                             else
                             {
-                                Log.Warning<int>("The object size is outside of an acceptable range: {objectSize}", objectSize);
+                                Log.Warning<int>("The object size is outside of an acceptable range: {ObjectSize}", objectSize);
                             }
                         }
                     }

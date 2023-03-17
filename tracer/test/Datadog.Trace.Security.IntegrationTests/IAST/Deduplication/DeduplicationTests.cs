@@ -3,9 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -17,7 +18,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 public class DeduplicationTests : TestHelper
 {
     private const string ExpectedOperationName = "weak_hashing";
-    private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
 
     public DeduplicationTests(ITestOutputHelper output)
         : base("Deduplication", output)
@@ -36,8 +36,10 @@ public class DeduplicationTests : TestHelper
     [InlineData(true)]
     public async Task SubmitsTraces(bool deduplicationEnabled)
     {
-        SetEnvironmentVariable("DD_IAST_ENABLED", "true");
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+        SetEnvironmentVariable("DD_IAST_ENABLED", "1");
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", deduplicationEnabled.ToString());
+        SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory));
 
         int expectedSpanCount = deduplicationEnabled ? 1 : 5;
         var filename = deduplicationEnabled ? "iast.deduplication.deduplicated" : "iast.deduplication.duplicated";
@@ -47,7 +49,7 @@ public class DeduplicationTests : TestHelper
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
@@ -55,4 +57,3 @@ public class DeduplicationTests : TestHelper
         VerifyInstrumentation(process.Process);
     }
 }
-#endif

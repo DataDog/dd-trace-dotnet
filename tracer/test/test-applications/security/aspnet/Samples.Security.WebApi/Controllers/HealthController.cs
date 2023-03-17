@@ -1,4 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Text;
 using System.Web.Http;
 using System.Web.Mvc;
 
@@ -9,7 +13,7 @@ namespace Samples.Security.WebApi.Controllers
         // GET api/health
         public IEnumerable<string> Get()
         {
-            return new string[] { "value1", "value2" };
+            return new [] { "value1", "value2" };
         }
 
         [ValidateInput(false)]

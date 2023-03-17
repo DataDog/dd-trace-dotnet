@@ -42,6 +42,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
     pch.cpp
     integration_test.cpp
     version_struct_test.cpp
+    iast_util_test.cpp
 )
 
 # Define directories includes

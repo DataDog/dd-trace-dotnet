@@ -4,7 +4,7 @@
 #include "debugger_method_rewriter.h"
 #include "debugger_rejit_handler_module_method.h"
 #include "logger.h"
-#include "probes_tracker.h"
+#include "debugger_probes_tracker.h"
 
 namespace debugger
 {
@@ -238,14 +238,14 @@ const std::unique_ptr<RejitHandlerModuleMethod>
 DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
                                         const FunctionInfo& functionInfo, const MethodProbeDefinition& methodProbe)
 {
-    return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo);
+    return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo, std::make_unique<DebuggerMethodRewriter>(m_corProfiler));
 }
 
 const std::unique_ptr<RejitHandlerModuleMethod>
 DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
                                         const FunctionInfo& functionInfo) const
 {
-    return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo);
+    return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo, std::make_unique<DebuggerMethodRewriter>(m_corProfiler));
 }
 
 void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHandler,
@@ -294,7 +294,7 @@ void DebuggerRejitPreprocessor::EnqueueNewMethod(const MethodProbeDefinition& de
 }
 
 HRESULT DebuggerRejitPreprocessor::GetMoveNextMethodFromKickOffMethod(const ComPtr<IMetaDataImport2>& metadataImport, mdTypeDef typeDef, mdMethodDef methodDef, 
-                                                                      const FunctionInfo& function, mdMethodDef& moveNextMethod, mdTypeDef& nestedAsyncClassOrStruct) const
+                                                                      const FunctionInfo& function, mdMethodDef& moveNextMethod, mdTypeDef& nestedAsyncClassOrStruct) 
 {
     // TODO: We might consider rewriting this code using CustomAttributeParser [AsyncStateMachine(typeof(<X>d__1))]
 

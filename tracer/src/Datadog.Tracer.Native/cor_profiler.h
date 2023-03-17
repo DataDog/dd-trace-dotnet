@@ -28,6 +28,11 @@ namespace debugger
 class DebuggerMethodRewriter;
 }
 
+namespace iast
+{
+class Dataflow;
+}
+
 namespace trace
 {
 
@@ -81,11 +86,17 @@ private:
     //
     std::mutex module_ids_lock_;
     std::vector<ModuleID> module_ids_;
+    ModuleID managedProfilerModuleId_;
+
+    //
+    // Dataflow members
+    //
+    iast::Dataflow* _dataflow = nullptr;
 
     //
     // Helper methods
     //
-    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name, const shared::WSTRING& library_path = shared::WSTRING());
+    static void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name, const shared::WSTRING& library_path = shared::WSTRING());
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
@@ -95,14 +106,14 @@ private:
     HRESULT RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT TryRejitModule(ModuleID module_id);
-    bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
+    static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata);
     //
     // Startup methods
     //
-    HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&, const ModuleID module_id, const mdToken function_token, const FunctionInfo& caller, const ModuleMetadata& module_metadata);
-    HRESULT GenerateVoidILStartupMethod(const ModuleID module_id, mdMethodDef* ret_method_token);
-    HRESULT AddIISPreStartInitFlags(const ModuleID module_id, const mdToken function_token);
+    HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&, ModuleID module_id, mdToken function_token, const FunctionInfo& caller, const ModuleMetadata& module_metadata);
+    HRESULT GenerateVoidILStartupMethod(ModuleID module_id, mdMethodDef* ret_method_token);
+    HRESULT AddIISPreStartInitFlags(ModuleID module_id, mdToken function_token);
 
     //
     // Initialization methods
@@ -115,7 +126,7 @@ public:
     bool IsAttached() const;
 
     void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
-                                    int* symbolsSize) const;
+                                    int* symbolsSize) ;
 
     //
     // ICorProfilerCallback methods
@@ -183,7 +194,12 @@ public:
     // Disable profiler
     //
     void DisableTracerCLRProfiler();
-    
+
+    //
+    // Register Aspects into Dataflow
+    //
+    void RegisterIastAspects(WCHAR** aspects, int aspectsLength);
+
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;
     friend class TracerMethodRewriter;

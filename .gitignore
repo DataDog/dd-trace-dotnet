@@ -357,5 +357,14 @@ shared/src/Datadog.Trace.ClrProfiler.Native/cmake-build-debug/
 #profiler build files
 profiler/_build/
 
+# cmake build files
 .ionide/
 /devenv.bat
+*.cmake
+CMakeCache.txt
+Makefile
+_deps/
+CMakeFiles/
+lib/
+libdatadog-*/
+*-prefix/

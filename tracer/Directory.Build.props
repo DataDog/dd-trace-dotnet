@@ -30,4 +30,24 @@
   <PropertyGroup>
     <SolutionDir Condition="'$(SolutionDir)'==''">$(MSBuildThisFileDirectory)..\</SolutionDir>
   </PropertyGroup>
+  
+  <!-- OS Detection Properties -->
+  <PropertyGroup>
+    <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
+  </PropertyGroup>
+  <Choose>
+    <When Condition="'$(MSBuildRuntimeType)' == 'Core'">
+      <PropertyGroup>
+        <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
+        <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <IsOSX>false</IsOSX>
+        <IsLinux>false</IsLinux>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  
 </Project>

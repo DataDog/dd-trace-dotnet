@@ -124,7 +124,9 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
                             }
                             else if (methodValue?.SequencePoints is not null)
                             {
-                                Log.Warning($"Index doesn't found: {fileCoverageInfo.Path} | {seqPoint.StartLine}:{seqPoint.StartColumn}:{seqPoint.EndLine}:{seqPoint.EndColumn} | {methodDef.FullName} | {x} | {methodValue.SequencePoints.Length}");
+                                var location = $"{seqPoint.StartLine}:{seqPoint.StartColumn}:{seqPoint.EndLine}:{seqPoint.EndColumn}";
+                                var method = $"{methodDef.FullName} | {x} | {methodValue.SequencePoints.Length}";
+                                Log.Warning("Index not found: {Path} | {Location} | {Method}", fileCoverageInfo.Path, location, method);
                             }
 
                             fileCoverageInfo.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
@@ -143,7 +145,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("Global Coverage payload: {payload}", JsonConvert.SerializeObject(globalCoverage));
+                Log.Debug("Global Coverage payload: {Payload}", JsonConvert.SerializeObject(globalCoverage));
             }
 
             // Clean coverages
@@ -154,7 +156,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
             GlobalContainer?.Clear();
 
-            Log.Information($"Total time to calculate global coverage: {sw.Elapsed.TotalMilliseconds}ms");
+            Log.Information("Total time to calculate global coverage: {TotalMilliseconds}ms", sw.Elapsed.TotalMilliseconds);
             return globalCoverage;
         }
     }

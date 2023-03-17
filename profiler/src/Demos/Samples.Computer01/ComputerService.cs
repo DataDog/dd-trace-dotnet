@@ -36,6 +36,8 @@ namespace Samples.Computer01
         private LinuxSignalHandler _linuxSignalHandler;
 #endif
         private LinuxMallocDeadLock _linuxMallockDeadlock;
+        private MeasureAllocations _measureAllocations;
+        private InnerMethods _innerMethods;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -117,6 +119,14 @@ namespace Samples.Computer01
 
                 case Scenario.LinuxMallocDeadlock:
                     StartLinuxMallocDeadlock();
+                    break;
+
+                case Scenario.MeasureAllocations:
+                    StartMeasureAllocations();
+                    break;
+
+                case Scenario.InnerMethods:
+                    StartInnerMethods();
                     break;
 
                 default:
@@ -201,6 +211,14 @@ namespace Samples.Computer01
 
                 case Scenario.LinuxMallocDeadlock:
                     StopLinuxMallocDeadlock();
+                    break;
+
+                case Scenario.MeasureAllocations:
+                    StopMeasureAllocations();
+                    break;
+
+                case Scenario.InnerMethods:
+                    StopInnerMethods();
                     break;
             }
         }
@@ -289,6 +307,14 @@ namespace Samples.Computer01
 
                     case Scenario.LinuxMallocDeadlock:
                         RunLinuxMallocDeadlock();
+                        break;
+
+                    case Scenario.MeasureAllocations:
+                        RunMeasureAllocations();
+                        break;
+
+                    case Scenario.InnerMethods:
+                        RunInnerMethods();
                         break;
 
                     default:
@@ -420,6 +446,18 @@ namespace Samples.Computer01
             _linuxMallockDeadlock.Start();
         }
 
+        private void StartMeasureAllocations()
+        {
+            _measureAllocations = new MeasureAllocations();
+            _measureAllocations.Start();
+        }
+
+        private void StartInnerMethods()
+        {
+            _innerMethods = new InnerMethods();
+            _innerMethods.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -509,6 +547,16 @@ namespace Samples.Computer01
         private void StopLinuxMallocDeadlock()
         {
             _linuxMallockDeadlock.Stop();
+        }
+
+        private void StopMeasureAllocations()
+        {
+            _measureAllocations.Stop();
+        }
+
+        private void StopInnerMethods()
+        {
+            _innerMethods.Stop();
         }
 
         private void RunComputer()
@@ -621,6 +669,18 @@ namespace Samples.Computer01
         {
             var linuxSignalHandler = new LinuxMallocDeadLock();
             linuxSignalHandler.Run();
+        }
+
+        private void RunMeasureAllocations()
+        {
+            var measureAllocations = new MeasureAllocations();
+            measureAllocations.Run();
+        }
+
+        private void RunInnerMethods()
+        {
+            var innerMethods = new InnerMethods();
+            innerMethods.Run();
         }
 
         public class MySpecialClassA

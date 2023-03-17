@@ -14,6 +14,9 @@ internal abstract class HttpTransportBase
 
     internal abstract IContext GetAdditiveContext();
 
+    /// <summary>
+    /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash
+    /// </summary>
     internal void DisposeAdditiveContext() => GetAdditiveContext()?.Dispose();
 
     internal abstract void SetAdditiveContext(IContext additiveContext);

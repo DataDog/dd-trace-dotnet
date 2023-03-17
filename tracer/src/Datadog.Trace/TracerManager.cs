@@ -62,6 +62,7 @@ namespace Datadog.Trace
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -71,6 +72,7 @@ namespace Datadog.Trace
             Statsd = statsd;
             RuntimeMetrics = runtimeMetricsWriter;
             DefaultServiceName = defaultServiceName;
+            GitMetadataTagsProvider = gitMetadataTagsProvider;
             DataStreamsManager = dataStreamsManager;
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
@@ -108,6 +110,8 @@ namespace Datadog.Trace
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
         public string DefaultServiceName { get; }
+
+        public IGitMetadataTagsProvider GitMetadataTagsProvider { get; }
 
         /// <summary>
         /// Gets this tracer's settings.
@@ -616,7 +620,7 @@ namespace Datadog.Trace
                     }
                     catch (Exception e)
                     {
-                        Log.Error(e, e.Message);
+                        Log.Error(e, "Error executing trace processor {TraceProcessorType}", processor?.GetType());
                     }
                 }
             }

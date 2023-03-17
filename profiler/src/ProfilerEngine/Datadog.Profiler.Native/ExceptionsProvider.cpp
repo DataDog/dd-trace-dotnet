@@ -9,6 +9,7 @@
 #include "IConfiguration.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
+#include "ScopeFinalizer.h"
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
@@ -231,6 +232,10 @@ bool ExceptionsProvider::LoadExceptionMetadata()
         if (fields[i].ridOfField == messageFieldDef)
         {
             _messageFieldOffset = fields[i];
+            // Set the _exceptionClassId field to notify that we found
+            // the message field offset.
+            // So we do not enter this method anymore
+            _exceptionClassId = exceptionClassId;
             return true;
         }
     }

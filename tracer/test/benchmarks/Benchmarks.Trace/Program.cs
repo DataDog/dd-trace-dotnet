@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
@@ -26,7 +27,7 @@ namespace Benchmarks.Trace
             else
             {
                 var config = DefaultConfig.Instance
-                    .AddExporter(DatadogExporter.Default)
+                    .WithDatadog()
                     .AddExporter(JsonExporter.FullCompressed);
                 // config = config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
                 var agentName = Environment.GetEnvironmentVariable("AGENT_NAME");
@@ -47,7 +48,31 @@ namespace Benchmarks.Trace
 
         private static void ExecuteWithJetbrainsTools(string[] args)
         {
-            HashSet<string> hashSet = new HashSet<string>(args.Where(a => a != "-jetbrains").Select(a => a.ToLowerInvariant()));
+            var numIter = 100_000;
+            var numArg = args.FirstOrDefault(a => a.StartsWith("-n:", StringComparison.OrdinalIgnoreCase))?.Substring(3);
+            if (int.TryParse(numArg, out var numArgInt))
+            {
+                numIter = numArgInt;
+            }
+
+            if ((JetBrains.Profiler.Api.MeasureProfiler.GetFeatures() &
+                 JetBrains.Profiler.Api.MeasureFeatures.Ready) == 0 &&
+                (JetBrains.Profiler.Api.MemoryProfiler.GetFeatures() &
+                 JetBrains.Profiler.Api.MemoryFeatures.Ready) == 0)
+            {
+                Console.WriteLine("Waiting for jetbrains dotTrace/dotMemory to attach...");
+                var currentProcess = Process.GetCurrentProcess();
+                Console.WriteLine("Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
+                while ((JetBrains.Profiler.Api.MeasureProfiler.GetFeatures() &
+                        JetBrains.Profiler.Api.MeasureFeatures.Ready) == 0 &&
+                       (JetBrains.Profiler.Api.MemoryProfiler.GetFeatures() &
+                        JetBrains.Profiler.Api.MemoryFeatures.Ready) == 0)
+                {
+                    Thread.Sleep(1000);
+                }
+            }
+            Console.WriteLine("Connected. Running benchmarks (N: {0})", numIter);
+            HashSet<string> hashSet = new HashSet<string>(args.Where(a => a != "-jetbrains" && !a.StartsWith("-n:", StringComparison.OrdinalIgnoreCase)).Select(a => a.ToLowerInvariant()));
             var benchmarkTypes = typeof(Program).Assembly.GetTypes().Where(t => hashSet.Contains(t.Name.ToLowerInvariant()));
             foreach (var benchmarkType in benchmarkTypes)
             {
@@ -69,7 +94,7 @@ namespace Benchmarks.Trace
                         {
                             Console.WriteLine("  Collecting Data...");
                             JetBrains.Profiler.Api.MeasureProfiler.StartCollectingData(groupName);
-                            for (var i = 0; i < 100_000; i++)
+                            for (var i = 0; i < numIter; i++)
                             {
                                 method.Invoke(benchmarkInstance, null);
                             }
@@ -84,7 +109,7 @@ namespace Benchmarks.Trace
                             Console.WriteLine("  Getting memory snapshot...");
                             JetBrains.Profiler.Api.MemoryProfiler.ForceGc();
                             JetBrains.Profiler.Api.MemoryProfiler.CollectAllocations(true);
-                            for (var i = 0; i < 100_000; i++)
+                            for (var i = 0; i < numIter; i++)
                             {
                                 method.Invoke(benchmarkInstance, null);
                             }

@@ -1,4 +1,4 @@
-﻿// <copyright file="ReaderWriterLock.Core.cs" company="Datadog">
+// <copyright file="ReaderWriterLock.Core.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ internal partial class ReaderWriterLock : IDisposable
     {
         if (!_readerWriterLock.TryEnterReadLock(TimeoutInMs))
         {
-            Log.Error("Couldn't acquire reader lock in {timeout} ms", TimeoutInMs.ToString());
+            Log.Error<int>("Couldn't acquire reader lock in {Timeout} ms", TimeoutInMs);
             return false;
         }
 
@@ -29,7 +29,7 @@ internal partial class ReaderWriterLock : IDisposable
     {
         if (!_readerWriterLock.TryEnterWriteLock(TimeoutInMs))
         {
-            Log.Error("Couldn't acquire writer lock in {timeout} ms", TimeoutInMs.ToString());
+            Log.Error<int>("Couldn't acquire writer lock in {Timeout} ms", TimeoutInMs);
             return false;
         }
 
@@ -45,7 +45,7 @@ internal partial class ReaderWriterLock : IDisposable
         else
         {
             // this can happen, as Context can be created on a thread, disposed on another
-            Log.Debug("Reader lock wasn't held", TimeoutInMs.ToString());
+            Log.Debug<int>("Reader lock wasn't held {Timeout}", TimeoutInMs);
         }
     }
 

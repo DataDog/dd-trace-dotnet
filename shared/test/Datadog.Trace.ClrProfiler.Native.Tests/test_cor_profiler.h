@@ -105,11 +105,11 @@ public:
     {
         return E_FAIL;
     }
-    ULONG STDMETHODCALLTYPE AddRef(void) override
+    ULONG STDMETHODCALLTYPE AddRef() override
     {
         return ++m_Ref;
     }
-    ULONG STDMETHODCALLTYPE Release(void) override
+    ULONG STDMETHODCALLTYPE Release() override
     {
         return --m_Ref;
     }

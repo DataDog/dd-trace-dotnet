@@ -158,7 +158,11 @@
       "3.*.*",
       "4.*.*",
       "5.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "5.1.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "StackExchangeRedis",
@@ -282,10 +286,11 @@
     "SampleProjectName": "Samples.Kafka",
     "NugetPackageSearchName": "Confluent.Kafka",
     "MinVersion": "1.4.0",
-    "MaxVersionExclusive": "2.0.0",
+    "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
       "1.4.*",
-      "1.*.*"
+      "1.*.*",
+      "2.*.*"
     ]
   },
   {
@@ -357,13 +362,17 @@
     "SampleProjectName": "Samples.Aerospike",
     "NugetPackageSearchName": "Aerospike.Client",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "6.0.0",
+    "MaxVersionExclusive": "7.0.0",
     "SpecificVersions": [
       "4.0.*",
       "4.*.*",
-      "5.*.*"
+      "5.*.*",
+      "6.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "6.0.0",
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+    },{
       "MinVersion": "5.0.0",
       "ExcludeTargetFrameworks": ["net461"]
     }]

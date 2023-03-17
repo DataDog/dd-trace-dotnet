@@ -13,11 +13,13 @@ Expressions:
 (
     scopeMember,
     scopeMember,
+    scopeMember,
     exception,
     scopeMemberArray) =>
 {
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
     var @return = (string)scopeMember.Value;
+    var @duration = (TimeSpan)scopeMember.Value;
     var @exception = exception;
     var IntLocal = (int)scopeMemberArray[0].Value;
     var DoubleLocal = (double)scopeMemberArray[1].Value;
@@ -37,4 +39,4 @@ Expressions:
 }
 Result: The result of the expression is: 
 Errors:
-EvaluationError { Expression = Convert(CollectionLocal.get_Item(100), String)), Message = Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index') }
+EvaluationError { Expression = Convert(CollectionLocal.get_Item(100))), Message = Index was out of range. Must be non-negative and less than the size of the collection. }

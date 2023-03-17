@@ -13,6 +13,7 @@ using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Activity.Handlers
 {
@@ -82,15 +83,22 @@ namespace Datadog.Trace.Activity.Handlers
 
                 // We convert the activity traceId and spanId to use it in the
                 // Datadog span creation.
-                traceId ??= Convert.ToUInt64(w3cActivity.TraceId.Substring(16), 16);
-                spanId = Convert.ToUInt64(w3cActivity.SpanId, 16);
-                rawTraceId = w3cActivity.TraceId;
-                rawSpanId = w3cActivity.SpanId;
+                if (w3cActivity.TraceId is { } w3cTraceId && w3cActivity.SpanId is { } w3cSpanId)
+                {
+                    // If the Activity has an ActivityIdFormat.Hierarchical instead of W3C it's TraceId & SpanId will be null
+                    traceId ??= Convert.ToUInt64(w3cTraceId.Substring(16), 16);
+                    spanId = Convert.ToUInt64(w3cSpanId, 16);
+                    rawTraceId = w3cTraceId;
+                    rawSpanId = w3cActivity.SpanId;
+                }
             }
 
             try
             {
-                Log.Debug($"DefaultActivityHandler.ActivityStarted: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("DefaultActivityHandler.ActivityStarted: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                }
 
                 // We check if we have to ignore the activity by the operation name value
                 if (IgnoreActivityHandler.IgnoreByOperationName(activity, activeSpan))
@@ -98,7 +106,7 @@ namespace Datadog.Trace.Activity.Handlers
                     return;
                 }
 
-                ActivityMappingById.GetOrAdd(activity.Id, _ => new(activity.Instance, CreateScopeFromActivity(activity, parent, traceId, spanId, rawTraceId, rawSpanId)));
+                ActivityMappingById.GetOrAdd(activity.Id, _ => new(activity.Instance!, CreateScopeFromActivity(activity, parent, traceId, spanId, rawTraceId, rawSpanId)));
             }
             catch (Exception ex)
             {
@@ -129,7 +137,11 @@ namespace Datadog.Trace.Activity.Handlers
                     if (ActivityMappingById.TryRemove(activity.Id, out ActivityMapping value) && value.Scope?.Span is not null)
                     {
                         // We have the exact scope associated with the Activity
-                        Log.Debug($"DefaultActivityHandler.ActivityStopped: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                        }
+
                         CloseActivityScope(sourceName, activity, value.Scope);
                         return;
                     }
@@ -140,7 +152,10 @@ namespace Datadog.Trace.Activity.Handlers
                 // has been closed and then close the associated scope.
                 if (activity.Instance is not null)
                 {
-                    Log.Information($"DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={sourceName}, Id={activity!.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+                    if (Log.IsEnabled(LogEventLevel.Information))
+                    {
+                        Log.Information("DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity!.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                    }
                 }
                 else
                 {

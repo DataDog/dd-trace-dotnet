@@ -72,7 +72,7 @@ namespace Datadog.Trace.TestHelpers
         {
         }
 
-        public Process StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "")
+        public Process StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false)
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
@@ -84,7 +84,7 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"Starting Application: {sampleAppPath}");
             string testCli = EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
-            string appPath = testCli.StartsWith("dotnet") ? $"vstest {sampleAppPath}" : sampleAppPath;
+            string appPath = testCli.StartsWith("dotnet") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine("ApplicationPath: " + appPath);
             var process = ProfilerHelper.StartProcessWithProfiler(
@@ -93,16 +93,16 @@ namespace Datadog.Trace.TestHelpers
                 agent,
                 $"{appPath} {arguments ?? string.Empty}",
                 aspNetCorePort: aspNetCorePort,
-                processToProfile: exec + ";testhost.exe");
+                processToProfile: exec + ";testhost.exe;testhost.x86.exe");
 
             Output.WriteLine($"ProcessId: {process.Id}");
 
             return process;
         }
 
-        public ProcessResult RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "")
+        public ProcessResult RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false)
         {
-            var process = StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework);
+            var process = StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam);
 
             using var helper = new ProcessHelper(process);
 
@@ -193,7 +193,7 @@ namespace Datadog.Trace.TestHelpers
             return WaitForProcessResult(helper);
         }
 
-        public ProcessResult WaitForProcessResult(ProcessHelper helper)
+        public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0)
         {
             // this is _way_ too long, but we want to be v. safe
             // the goal is just to make sure we kill the test before
@@ -201,18 +201,6 @@ namespace Datadog.Trace.TestHelpers
             var process = helper.Process;
             var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
             var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
-
-            if (!ranToCompletion && !process.HasExited)
-            {
-                var tookMemoryDump = TakeMemoryDump(process);
-                process.Kill();
-                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump.Result}. Killing process.");
-            }
-
-            var exitCode = process.ExitCode;
-
-            Output.WriteLine($"ProcessId: " + process.Id);
-            Output.WriteLine($"Exit Code: " + exitCode);
 
             var standardOutput = helper.StandardOutput;
 
@@ -227,6 +215,18 @@ namespace Datadog.Trace.TestHelpers
             {
                 Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
             }
+
+            if (!ranToCompletion && !process.HasExited)
+            {
+                var tookMemoryDump = TakeMemoryDump(process);
+                process.Kill();
+                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump.Result}. Killing process.");
+            }
+
+            var exitCode = process.ExitCode;
+
+            Output.WriteLine($"ProcessId: " + process.Id);
+            Output.WriteLine($"Exit Code: " + exitCode);
 
 #if NETCOREAPP2_1
             if (exitCode == 139)
@@ -243,7 +243,7 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
             }
 
-            ExitCodeException.ThrowIfNonZero(exitCode);
+            ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
@@ -373,7 +373,12 @@ namespace Datadog.Trace.TestHelpers
 
         public void EnableIast(bool enable = true)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString().ToLower());
+        }
+
+        public void DisableObfuscationQueryString()
+        {
+            SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegex, string.Empty);
         }
 
         public void SetEnvironmentVariable(string key, string value)

@@ -4,7 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -14,10 +17,8 @@ namespace Datadog.Trace
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> interface
     /// </summary>
-    public static class SpanExtensions
+    public static partial class SpanExtensions
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
-
         /// <summary>
         /// Sets the details of the user on the local root span
         /// </summary>
@@ -35,16 +36,7 @@ namespace Datadog.Trace
                 ThrowHelper.ThrowArgumentException(nameof(userDetails) + ".Id must be set to a value other than null or the empty string", nameof(userDetails));
             }
 
-            TraceContext traceContext = null;
-            if (span is Span spanClass)
-            {
-                traceContext = spanClass.Context.TraceContext;
-            }
-
-            Action<string, string> setTag =
-                traceContext != null
-                    ? (name, value) => traceContext.Tags.SetTag(name, value)
-                    : (name, value) => span.SetTag(name, value);
+            var setTag = TaggingUtils.GetSpanSetter(span, out var spanClass);
 
             if (userDetails.PropagateId)
             {
@@ -80,6 +72,11 @@ namespace Datadog.Trace
             if (userDetails.Scope is not null)
             {
                 setTag(Tags.User.Scope, userDetails.Scope);
+            }
+
+            if (spanClass != null)
+            {
+                RunBlockingCheck(spanClass, userDetails.Id);
             }
         }
     }

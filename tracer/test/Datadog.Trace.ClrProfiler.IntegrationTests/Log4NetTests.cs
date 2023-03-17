@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -176,7 +177,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 .And.OnlyContain(x => x.Host == hostName)
                 .And.OnlyContain(x => x.Source == "csharp")
                 .And.OnlyContain(x => x.Exception == null)
-                .And.OnlyContain(x => x.LogLevel == DirectSubmissionLogLevel.Information);
+                .And.OnlyContain(x => x.LogLevel == DirectSubmissionLogLevel.Information)
+                .And.OnlyContain(x => x.Tags.Contains(CommonTags.GitRepository))
+                .And.OnlyContain(x => x.Tags.Contains(CommonTags.GitCommit));
 
             if (PackageSupportsLogsInjection(packageVersion))
             {

@@ -42,7 +42,7 @@ public sealed class TestModule
     internal TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate, TestSessionSpanTags? sessionSpanTags)
     {
         // First we make sure that CI Visibility is initialized.
-        CIVisibility.Initialize();
+        CIVisibility.InitializeFromManualInstrumentation();
 
         var environment = CIEnvironmentValues.Instance;
         var frameworkDescription = FrameworkDescription.Instance;
@@ -164,7 +164,7 @@ public sealed class TestModule
 
         _span = span;
         Current = this;
-        CIVisibility.Log.Debug("### Test Module Created: {name}", name);
+        CIVisibility.Log.Debug("### Test Module Created: {Name}", name);
 
         if (startDate is null)
         {
@@ -299,7 +299,7 @@ public sealed class TestModule
     {
         if (InternalClose(duration))
         {
-            CIVisibility.Log.Debug("### Test Module Flushing after close: {name}", Name);
+            CIVisibility.Log.Debug("### Test Module Flushing after close: {Name}", Name);
             CIVisibility.Flush();
         }
     }
@@ -322,7 +322,7 @@ public sealed class TestModule
     {
         if (InternalClose(duration))
         {
-            CIVisibility.Log.Debug("### Test Module Flushing after close: {name}", Name);
+            CIVisibility.Log.Debug("### Test Module Flushing after close: {Name}", Name);
             return CIVisibility.FlushAsync();
         }
 
@@ -362,11 +362,16 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
-        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
+        if (CIVisibility.Settings.CodeCoverageEnabled == true &&
+            CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
             coverageHandler.GetCodeCoveragePercentage() is { } globalCoverage)
         {
-            // Adds the global code coverage percentage to the module
-            span.SetTag(CommonTags.CodeCoverageTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+            // We only report global code coverage if we don't skip any test
+            if (!CIVisibility.HasSkippableTests())
+            {
+                // Adds the global code coverage percentage to the module
+                span.SetTag(CommonTags.CodeCoverageTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+            }
 
             // If the code coverage path environment variable is set, we store the json file
             if (!string.IsNullOrWhiteSpace(CIVisibility.Settings.CodeCoveragePath))
@@ -385,10 +390,21 @@ public sealed class TestModule
             }
         }
 
+        if (CIVisibility.Settings.TestsSkippingEnabled.HasValue)
+        {
+            span.SetTag(CommonTags.TestModuleTestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
+            span.SetTag(CommonTags.TestsSkipped, CIVisibility.HasSkippableTests() ? "true" : "false");
+        }
+
+        if (CIVisibility.Settings.CodeCoverageEnabled.HasValue)
+        {
+            span.SetTag(CommonTags.TestModuleCodeCoverageEnabled, CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false");
+        }
+
         span.Finish(duration.Value);
 
         Current = null;
-        CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
+        CIVisibility.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);
 
         if (_fakeSession is { } fakeSession)
         {

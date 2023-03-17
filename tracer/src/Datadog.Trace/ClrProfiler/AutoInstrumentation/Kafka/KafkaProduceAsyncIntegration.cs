@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         ReturnTypeName = KafkaConstants.TaskDeliveryReportTypeName,
         ParameterTypeNames = new[] { KafkaConstants.TopicPartitionTypeName, KafkaConstants.MessageTypeName, ClrNames.CancellationToken },
         MinimumVersion = "1.4.0",
-        MaximumVersion = "1.*.*",
+        MaximumVersion = "2.*.*",
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

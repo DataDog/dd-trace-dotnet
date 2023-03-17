@@ -5,8 +5,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -28,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class NUnitCompositeWorkItemSkipChildrenIntegration
 {
-    private static readonly ConditionalWeakTable<object, object> _errorSpansFromCompositeWorkItems = new();
-
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
@@ -43,55 +39,41 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TSuite, TResultState>(TTarget instance, TSuite testSuite, TResultState resultState, string message)
     {
-        if (testSuite is not null)
+        if (testSuite?.GetType() is { Name: { } typeName })
         {
-            string typeName = testSuite.GetType().Name;
-
-            if (typeName == "CompositeWorkItem")
+            const string startString = "OneTimeSetUp:";
+            message ??= string.Empty;
+            if (message.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
             {
-                // In case we have a CompositeWorkItem we check if there is a OneTimeSetUp failure
-                var compositeWorkItem = testSuite.DuckCast<ICompositeWorkItem>();
+                message = message.Substring(startString.Length).Trim();
+            }
 
-                if (compositeWorkItem.Result?.ResultState?.Status == TestStatus.Failed && compositeWorkItem.Result.ResultState.Site == FailureSite.SetUp)
+            if (typeName == "CompositeWorkItem" && testSuite.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem))
+            {
+                // In case we have a CompositeWorkItem we check if there is a setup or teardown failure
+                if (compositeWorkItem.Result.ResultState.Status == TestStatus.Failed || message.Contains("Exception:"))
                 {
-                    foreach (var item in compositeWorkItem.Children)
+                    if (compositeWorkItem.Result.ResultState.Site == FailureSite.SetUp)
                     {
-                        if (item.GetType().Name == "CompositeWorkItem")
-                        {
-                            var compositeWorkItem2 = item.DuckCast<ICompositeWorkItem>();
-                            foreach (var item2 in compositeWorkItem2.Children)
-                            {
-                                var testResult = item2.DuckCast<IWorkItem>().Result;
-                                if (NUnitIntegration.CreateTest(testResult.Test) is { } test)
-                                {
-                                    test.SetErrorInfo("SetUpException", compositeWorkItem.Result.Message, compositeWorkItem.Result.StackTrace);
-                                    test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
-                                }
-
-                                // we need to track all items that we tagged as error due this method uses recursion on child spans.
-                                _errorSpansFromCompositeWorkItems.GetOrCreateValue(item2);
-                            }
-                        }
-                        else
-                        {
-                            var testResult = item.DuckCast<IWorkItem>().Result;
-                            if (NUnitIntegration.CreateTest(testResult.Test) is { } test)
-                            {
-                                test.SetErrorInfo("SetUpException", compositeWorkItem.Result.Message, compositeWorkItem.Result.StackTrace);
-                                test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
-                            }
-
-                            // we need to track all items that we tagged as error due this method uses recursion on child spans.
-                            _errorSpansFromCompositeWorkItems.GetOrCreateValue(item);
-                        }
+                        NUnitIntegration.WriteSetUpOrTearDownError(compositeWorkItem, "SetUpException");
+                    }
+                    else if (compositeWorkItem.Result.ResultState.Site == FailureSite.TearDown)
+                    {
+                        NUnitIntegration.WriteSetUpOrTearDownError(compositeWorkItem, "TearDownException");
+                    }
+                    else if (message.Contains("Exception:"))
+                    {
+                        NUnitIntegration.WriteSetUpOrTearDownError(compositeWorkItem, "Exception");
                     }
 
-                    return new CallTargetState((Scope)null, (object)null);
+                    return CallTargetState.GetDefault();
                 }
             }
+
+            return new CallTargetState(null, new object[] { typeName, testSuite, message });
         }
 
-        return new CallTargetState(null, new object[] { testSuite, message });
+        return CallTargetState.GetDefault();
     }
 
     /// <summary>
@@ -107,49 +89,29 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
         if (state.State != null)
         {
             var stateArray = (object[])state.State;
-            var testSuiteOrWorkItem = stateArray[0];
-            var skipMessage = (string)stateArray[1];
+            var typeName = (string)stateArray[0];
+            var testSuiteOrWorkItem = stateArray[1];
+            var skipMessage = (string)stateArray[2] ?? string.Empty;
 
-            const string startString = "OneTimeSetUp:";
-            if (skipMessage?.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
+            if (typeName == "ParameterizedMethodSuite" && testSuiteOrWorkItem.TryDuckCast<ITestSuite>(out var testSuite))
             {
-                skipMessage = skipMessage.Substring(startString.Length).Trim();
-            }
-
-            if (testSuiteOrWorkItem is not null)
-            {
-                var typeName = testSuiteOrWorkItem.GetType().Name;
-
-                if (typeName == "ParameterizedMethodSuite")
+                // In case the TestSuite is a ParameterizedMethodSuite instance
+                foreach (var item in testSuite.Tests)
                 {
-                    // In case the TestSuite is a ParameterizedMethodSuite instance
-                    var testSuite = testSuiteOrWorkItem.DuckCast<ITestSuite>();
-                    foreach (var item in testSuite.Tests)
+                    if (item.TryDuckCast<ITest>(out var iTestItem) && NUnitIntegration.CreateTest(iTestItem) is { } test)
                     {
-                        if (NUnitIntegration.CreateTest(item.DuckCast<ITest>()) is { } test)
-                        {
-                            test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
-                        }
+                        test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
                     }
                 }
-                else if (typeName == "CompositeWorkItem")
+            }
+            else if (typeName == "CompositeWorkItem" && testSuiteOrWorkItem.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem))
+            {
+                // In case we have a CompositeWorkItem
+                foreach (var item in compositeWorkItem.Children)
                 {
-                    // In case we have a CompositeWorkItem
-                    var compositeWorkItem = testSuiteOrWorkItem.DuckCast<ICompositeWorkItem>();
-
-                    foreach (var item in compositeWorkItem.Children)
+                    if (item.TryDuckCast<IWorkItem>(out var testResult))
                     {
-                        // If we already created an error span for this item, we skip this other span creation.
-                        if (_errorSpansFromCompositeWorkItems.TryGetValue(item, out _))
-                        {
-                            continue;
-                        }
-
-                        var testResult = item.DuckCast<IWorkItem>().Result;
-                        if (NUnitIntegration.CreateTest(testResult.Test) is { } test)
-                        {
-                            test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
-                        }
+                        NUnitIntegration.WriteSkip(testResult.Test, skipMessage);
                     }
                 }
             }

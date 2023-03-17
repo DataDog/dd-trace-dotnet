@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Tools.Runner.Crank;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
@@ -125,6 +126,10 @@ namespace Datadog.Trace.Tools.Runner
                     c.AddCommand<RunCiCommand>("run")
                         .WithDescription("Run a command and instrument the tests")
                         .WithExample("ci run -- dotnet test".Split(' '));
+                    c.AddCommand<CrankCommand>("crank-import")
+                        .IsHidden()
+                        .WithDescription("Import a Microsoft Crank json file")
+                        .WithExample("ci crank-import ./crank-results.json".Split(' '));
                 });
 
             config.AddBranch(
