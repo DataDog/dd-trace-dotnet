@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using GraphQL;
 #if GRAPHQL_5_0 || GRAPHQL_7_0
+using System;
 using GraphQL.MicrosoftDI;
 using GraphQL.NewtonsoftJson;
 #endif
@@ -99,12 +100,12 @@ namespace Samples.GraphQL4
 
             // add http for Schema at default url /graphql
             app.UseWebSockets();
-#if !GRAPHQL_7_0
+#if GRAPHQL_7_0
+            app.UseGraphQL<ISchema>("/graphql", config => config.WebSockets.ConnectionInitWaitTimeout = TimeSpan.FromMinutes(5));
+#else
             app.UseGraphQLWebSockets<ISchema>("/graphql");
-#endif
-            
             app.UseGraphQL<ISchema>("/graphql");
-
+#endif
             // use graphql-playground at default url /ui/playground
             app.UseGraphQLPlayground("/ui/playground");
 
