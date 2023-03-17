@@ -47,22 +47,20 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            Range[] newRanges;
             if (offset != 0)
             {
-                newRanges = new Range[taintedSelf.Ranges.Length];
+                var newRanges = new Range[taintedSelf.Ranges.Length];
                 Ranges.CopyShift(taintedSelf.Ranges, newRanges, 0, offset);
+                taintedObjects.Taint(result, newRanges);
             }
             else
             {
-                newRanges = taintedSelf.Ranges;
+                taintedObjects.Taint(result, taintedSelf.Ranges);
             }
-
-            taintedObjects.Taint(result, newRanges);
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.TaintIfInputIsTainted exception");
+            Log.Error(err, "StringModuleImpl.PropagateTaint exception");
         }
 
         return result;
