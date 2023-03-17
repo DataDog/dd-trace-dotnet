@@ -24,7 +24,7 @@ internal static class StringModuleImpl
         return value == null ? null : taintedObjects.Get(value);
     }
 
-    public static object? PropagateTaint(object input, object result)
+    public static object? PropagateTaint(object input, object result, int offset = 0)
     {
         try
         {
@@ -239,170 +239,20 @@ internal static class StringModuleImpl
         var iastContext = IastModule.GetIastContext();
         if (iastContext == null)
         {
-            if (!CanBeTainted(result) || (!CanBeTainted(left) && !CanBeTainted(right)))
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-            TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_1 ? GetTainted(taintedObjects, left) : null;
-            TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_0 ? GetTainted(taintedObjects, right) : null;
-            if (taintedLeft == null && taintedRight == null)
-            {
-                return result;
-            }
-
-            Range[]? ranges;
-            if (taintedRight == null)
-            {
-                ranges = taintedLeft!.Ranges;
-            }
-            else if (taintedLeft == null)
-            {
-                ranges = new Range[taintedRight!.Ranges!.Length];
-                Ranges.CopyShift(taintedRight!.Ranges, ranges, 0, left.Length);
-            }
-            else
-            {
-                ranges = Ranges.MergeRanges(left.Length, taintedLeft!.Ranges, taintedRight!.Ranges);
-            }
-
-            taintedObjects.Taint(result, ranges);
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "StringModuleImpl.OnstringConcat(string,string) exception {Exception}", err.Message);
+            return;
         }
 
         var taintedObjects = iastContext.GetTaintedObjects();
         var selfTainted = taintedObjects.Get(self);
         if (selfTainted == null)
         {
-            if (string.IsNullOrEmpty(result) || !parameters.CanBeTainted())
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-
-            Range[]? ranges = null;
-            int length = 0;
-            for (int parameterIndex = 0; parameterIndex < parameters.ParamCount; parameterIndex++)
-            {
-                var currentParameter = parameters[parameterIndex];
-                if (string.IsNullOrEmpty(currentParameter))
-                {
-                    continue;
-                }
-
-                var parameterTainted = GetTainted(taintedObjects, currentParameter);
-                if (parameterTainted != null)
-                {
-                    if (ranges == null)
-                    {
-                        if (length == 0)
-                        {
-                            ranges = parameterTainted.Ranges;
-                        }
-                        else
-                        {
-                            ranges = new Range[parameterTainted!.Ranges!.Length];
-                            Ranges.CopyShift(parameterTainted!.Ranges, ranges, 0, length);
-                        }
-
-                        length += currentParameter!.Length;
-                        continue;
-                    }
-
-                    ranges = Ranges.MergeRanges(length, ranges, parameterTainted.Ranges);
-                }
-
-                length += currentParameter!.Length;
-            }
-
-            if (ranges != null)
-            {
-                taintedObjects.Taint(result, ranges);
-            }
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "StringModuleImpl.OnstringConcat(StringConcatParams) exception {Exception}", err.Message);
+            return;
         }
 
         var rangesSelf = selfTainted.Ranges;
         if (rangesSelf.Length == 0)
         {
-            if (!CanBeTainted(result))
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-
-            Range[]? ranges = null;
-            int length = 0;
-            foreach (var currentParameter in parameters)
-            {
-                if (!CanBeTainted(currentParameter))
-                {
-                    continue;
-                }
-
-                var parameterTainted = GetTainted(taintedObjects, currentParameter);
-                if (parameterTainted != null)
-                {
-                    if (ranges == null)
-                    {
-                        if (parameterTainted != null)
-                        {
-                            if (length == 0)
-                            {
-                                ranges = parameterTainted.Ranges;
-                            }
-                            else
-                            {
-                                ranges = new Range[parameterTainted!.Ranges!.Length];
-                                Ranges.CopyShift(parameterTainted.Ranges, ranges, 0, length);
-                            }
-                        }
-
-                        length += currentParameter!.Length;
-                        continue;
-                    }
-
-                    ranges = Ranges.MergeRanges(length, ranges, parameterTainted.Ranges);
-                }
-
-                length += currentParameter!.Length;
-            }
-
-            if (ranges != null)
-            {
-                taintedObjects.Taint(result, ranges);
-            }
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "StringModuleImpl.OnstringConcat");
+            return;
         }
 
         var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);

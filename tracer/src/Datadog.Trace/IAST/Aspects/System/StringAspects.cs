@@ -551,32 +551,6 @@ public partial class StringAspects
     }
 
     /// <summary>
-    /// String.ToCharArray aspect
-    /// </summary>
-    /// <param name="target"> string base instance </param>
-    /// <returns> String.ToCharArray() </returns>
-    [AspectMethodReplace("System.String::ToCharArray()", AspectFilter.StringLiteral_0)]
-    public static char[] ToCharArray(string target)
-    {
-        var result = target.ToCharArray();
-        StringModuleImpl.TaintIfInputIsTainted(target, result);
-        return result;
-    }
-
-    /// <summary>
-    /// String.ToCharArray aspect
-    /// </summary>
-    /// <param name="target"> string base instance </param>
-    /// <param name="startIndex"> startIndex parameter </param>
-    /// <param name="length"> length parameter </param>
-    /// <returns> String.ToCharArray() </returns>
-    [AspectMethodReplace("System.String::ToCharArray(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
-    public static char[] ToCharArray(string target, int startIndex, int length)
-    {
-        return StringModuleImpl.OnStringSubSequence(target, startIndex, target.ToCharArray(startIndex, length));
-    }
-
-    /// <summary>
     /// String.PadLeft aspect
     /// </summary>
     /// <param name="target"> string base instance </param>
@@ -586,7 +560,7 @@ public partial class StringAspects
     public static string PadLeft(string target, int totalWidth)
     {
         var result = target.PadLeft(totalWidth);
-        TaintIfInputIsTainted(target, result, (result?.Length - target?.Length) ?? 0);
+        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
         return result;
     }
 
@@ -601,7 +575,7 @@ public partial class StringAspects
     public static string PadLeft(string target, int totalWidth, char paddingChar)
     {
         var result = target.PadLeft(totalWidth, paddingChar);
-        TaintIfInputIsTainted(target, result, (result?.Length - target?.Length) ?? 0);
+        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
         return result;
     }
 
@@ -615,7 +589,7 @@ public partial class StringAspects
     public static string PadRight(string target, int totalWidth)
     {
         var result = target.PadRight(totalWidth);
-        TaintIfInputIsTainted(target, result);
+        PropagateTaint(target, result);
         return result;
     }
 
@@ -630,7 +604,7 @@ public partial class StringAspects
     public static string PadRight(string target, int totalWidth, char paddingChar)
     {
         var result = target.PadRight(totalWidth, paddingChar);
-        TaintIfInputIsTainted(target, result);
+        PropagateTaint(target, result);
         return result;
     }
 }
