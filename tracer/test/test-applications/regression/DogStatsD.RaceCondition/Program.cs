@@ -1,31 +1,31 @@
 using log4net;
+using Samples;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
-using Datadog.Trace.Configuration;
-using Tracer = Datadog.Trace.Tracer;
 
 namespace DogStatsD.RaceCondition
 {
     class Program
     {
         internal static readonly string ThreadFinishedMessage = "The current thread has finished";
-
+        private static readonly Type GlobalSettingsType = Type.GetType("Datadog.Trace.Configuration.GlobalSettings, Datadog.Trace");
+        private static readonly MethodInfo SetDebugEnabledMethod = GlobalSettingsType?.GetMethod("SetDebugEnabled");
         static int Main(string[] args)
         {
             try
             {
                 InMemoryLog4NetLogger.Setup();
                 var logger = LogManager.GetLogger(typeof(Program));
-                var ddTraceSettings = TracerSettings.FromDefaultSources();
-                ddTraceSettings.LogsInjectionEnabled = true;
-                ddTraceSettings.TraceEnabled = true;
-                ddTraceSettings.TracerMetricsEnabled = true;
-                GlobalSettings.SetDebugEnabled(true);
 
-                Tracer.Configure(ddTraceSettings);
-                var tracer = Tracer.Instance;
+                
+
+                Environment.SetEnvironmentVariable("DD_TRACE_METRICS_ENABLED", "true");
+                Environment.SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+                SetDebugEnabledMethod.Invoke(null, new object[] { true });
+                SampleHelpers.ConfigureTracer("DogStatsD.RaceCondition");
                 var totalIterations = 100;
                 var threadRepresentation = Enumerable.Range(0, 25).ToArray();
                 var threadCount = threadRepresentation.Length;
@@ -48,7 +48,7 @@ namespace DogStatsD.RaceCondition
 
                                         while (i++ < totalIterations)
                                         {
-                                            using (var outerScope = tracer.StartActive("outer-span"))
+                                            using (var outerScope = SampleHelpers.CreateScope("outer-span"))
                                             {
                                             }
                                         }
