@@ -55,16 +55,16 @@ namespace DataDogThreadTest
                                             using (var outerScope = SampleHelpers.CreateScope("thread-test"))
                                             {
                                                 var span = _getSpanProperty.Invoke(outerScope, Array.Empty<object>());
-                                                var outerTraceId = _getTraceIdProperty.Invoke(span, Array.Empty<object>());
-                                                var outerSpanId = _getSpanIdProperty.Invoke(span, Array.Empty<object>());
+                                                var outerTraceId = (ulong)_getTraceIdProperty.Invoke(span, Array.Empty<object>());
+                                                var outerSpanId = (ulong)_getSpanIdProperty.Invoke(span, Array.Empty<object>());
 
                                                 logger.Info($"TraceId: {outerTraceId}, SpanId: {outerSpanId}");
 
                                                 using (var innerScope = SampleHelpers.CreateScope("nest-thread-test"))
                                                 {
                                                     var innerSpan = _getSpanProperty.Invoke(innerScope, Array.Empty<object>());
-                                                    var innerTraceId = _getTraceIdProperty.Invoke(innerSpan, Array.Empty<object>());
-                                                    var innerSpanId = _getSpanIdProperty.Invoke(innerSpan, Array.Empty<object>());
+                                                    var innerTraceId = (ulong)_getTraceIdProperty.Invoke(innerSpan, Array.Empty<object>());
+                                                    var innerSpanId = (ulong)_getSpanIdProperty.Invoke(innerSpan, Array.Empty<object>());
 
                                                     if (outerTraceId != innerTraceId)
                                                     {
