@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     case SpanKinds.Producer:
                         headers = new RabbitMQHeadersCollectionAdapter(basicProperties.Headers);
                         edgeTags = string.IsNullOrEmpty(tags.Exchange) ?
-                                       new[] { "direction:out", $"topic:{tags.Queue}", "type:rabbitmq" } :
+                                       new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" } :
                                        new[] { "direction:out", $"exchange:{tags.Exchange}", $"has_routing_key:{string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
                         span.SetDataStreamsCheckpoint(dataStreamsManager, edgeTags);
                         dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headers);
