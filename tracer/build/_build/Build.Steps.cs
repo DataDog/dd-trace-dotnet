@@ -96,7 +96,28 @@ partial class Build
     [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
     [LazyPathExecutable(name: "lipo")] readonly Lazy<Tool> Lipo;
 
-    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform
+    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatformForTracer
+    {
+        get
+        {
+            if (TargetPlatform == MSBuildTargetPlatform.x64)
+            {
+                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64TargetPlatform };
+            }
+            else if (TargetPlatform == MSBuildTargetPlatform.x86)
+            {
+                return new[] { MSBuildTargetPlatform.x86 };
+            }
+            else if (TargetPlatform == ARM64TargetPlatform)
+            {
+                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64TargetPlatform };
+            }
+
+            return new[] { TargetPlatform };
+        }
+    }
+
+    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatformForProfiler
     {
         get
         {
@@ -107,10 +128,6 @@ partial class Build
             else if (TargetPlatform == MSBuildTargetPlatform.x86)
             {
                 return new[] { MSBuildTargetPlatform.x86 };
-            }
-            else if (TargetPlatform == ARM64TargetPlatform)
-            {
-                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64TargetPlatform };
             }
 
             return new[] { TargetPlatform };
@@ -208,7 +225,7 @@ partial class Build
         .Executes(() =>
         {
             // If we're building for x64, build for x86 too
-            var platforms = ArchitecturesForPlatform;
+            var platforms = ArchitecturesForPlatformForTracer;
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native tracer assets
@@ -536,7 +553,7 @@ partial class Build
       .After(CompileNativeSrc, PublishManagedTracer)
       .Executes(() =>
        {
-           foreach (var architecture in ArchitecturesForPlatform)
+           foreach (var architecture in ArchitecturesForPlatformForTracer)
            {
                var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                             $"{NativeTracerProject.Name}.pdb";
@@ -551,7 +568,7 @@ partial class Build
         .After(CompileNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
-            foreach (var architecture in ArchitecturesForPlatform)
+            foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
                 // Copy native tracer assets
                 var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
@@ -610,7 +627,7 @@ partial class Build
                     .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetMaxCpuCount(null)
-                    .CombineWith(ArchitecturesForPlatform, (o, arch) => o
+                    .CombineWith(ArchitecturesForPlatformForTracer, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
                         .SetTargetPlatform(arch)),
                 degreeOfParallelism: 2);

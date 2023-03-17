@@ -25,7 +25,7 @@ partial class Build
         .Executes(() =>
         {
             // If we're building for x64, build for x86 too
-            var platforms = ArchitecturesForPlatform;
+            var platforms = ArchitecturesForPlatformForTracer;
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native profiler assets
@@ -193,7 +193,7 @@ partial class Build
         .After(CompileNativeLoader)
         .Executes(() =>
         {
-            foreach (var architecture in ArchitecturesForPlatform)
+            foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
                 var archFolder = $"win-{architecture}";
 
