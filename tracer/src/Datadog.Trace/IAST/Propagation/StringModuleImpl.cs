@@ -386,7 +386,7 @@ internal static class StringModuleImpl
         return pos;
     }
 
-    /// <summary> Mostly used overload </summary>
+    /// <summary> OnStringTrim with single trimchar </summary>
     /// <param name="self"> Param 1 </param>
     /// <param name="result"> Result </param>
     /// <param name="trimChar"> the trim char, null for char.IsWhiteSpace(self[indexLeft]) </param>
@@ -423,13 +423,13 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnStringTrim(string,string,char,bool,bool) exception {Exception}", err.Message);
+            Log.Error(err, "StringModuleImpl.OnStringTrim(string,string,char,bool,bool) exception");
         }
 
         return result;
     }
 
-    /// <summary> Mostly used overload </summary>
+    /// <summary> OnStringTrim with a char array </summary>
     /// <param name="self"> Param 1 </param>
     /// <param name="result"> Result </param>
     /// <param name="trimChars"> the trim chars </param>
@@ -477,7 +477,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnStringTrim(string,string,char,bool,bool) exception {Exception}", err.Message);
+            Log.Error(err, "StringModuleImpl.OnStringTrim(string,string,char[],bool,bool) exception");
         }
 
         return result;
