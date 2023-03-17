@@ -24,7 +24,7 @@ internal static class StringModuleImpl
         return value == null ? null : taintedObjects.Get(value);
     }
 
-    public static object? PropagateTaint(object input, object result)
+    public static object? PropagateTaint(object input, object result, int offset = 0)
     {
         try
         {
@@ -47,11 +47,20 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            taintedObjects.Taint(result, taintedSelf.Ranges);
+            if (offset != 0)
+            {
+                var newRanges = new Range[taintedSelf.Ranges.Length];
+                Ranges.CopyShift(taintedSelf.Ranges, newRanges, 0, offset);
+                taintedObjects.Taint(result, newRanges);
+            }
+            else
+            {
+                taintedObjects.Taint(result, taintedSelf.Ranges);
+            }
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.TaintIfInputIsTainted exception");
+            Log.Error(err, "StringModuleImpl.PropagateTaint exception");
         }
 
         return result;

@@ -549,4 +549,62 @@ public partial class StringAspects
         OnStringInsert(target, startIndex, value, result);
         return result;
     }
+
+    /// <summary>
+    /// String.PadLeft aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <returns> String.PadLeft() </returns>
+    [AspectMethodReplace("System.String::PadLeft(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string PadLeft(string target, int totalWidth)
+    {
+        var result = target.PadLeft(totalWidth);
+        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadLeft aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <param name="paddingChar"> paddingChar parameter </param>
+    /// <returns> String.PadLeft() </returns>
+    [AspectMethodReplace("System.String::PadLeft(System.Int32,System.Char)", AspectFilter.StringLiteral_0)]
+    public static string PadLeft(string target, int totalWidth, char paddingChar)
+    {
+        var result = target.PadLeft(totalWidth, paddingChar);
+        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadRight aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <returns> String.PadRight() </returns>
+    [AspectMethodReplace("System.String::PadRight(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string PadRight(string target, int totalWidth)
+    {
+        var result = target.PadRight(totalWidth);
+        PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadRight aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <param name="paddingChar"> paddingChar parameter </param>
+    /// <returns> String.PadRight() </returns>
+    [AspectMethodReplace("System.String::PadRight(System.Int32,System.Char)", AspectFilter.StringLiteral_0)]
+    public static string PadRight(string target, int totalWidth, char paddingChar)
+    {
+        var result = target.PadRight(totalWidth, paddingChar);
+        PropagateTaint(target, result);
+        return result;
+    }
 }
