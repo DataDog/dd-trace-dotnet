@@ -49,7 +49,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
 
-            // adding these header so we can later assert it was collect properly
+            // adding these header so we can later assert it was collected properly
             _httpClient.DefaultRequestHeaders.Add(XffHeader, MainIp);
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             await VerifySpans(spans, settings, testInit, methodNameOverride);
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -108,7 +108,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // Ensures that we get nice file nesting in Solution Explorer
             await Verifier.Verify(spans, settings)
                           .UseMethodName(methodNameOverride ?? "_")
-                          .UseTypeName(GetTestName());
+                          .UseTypeName(testName ?? GetTestName());
         }
 
         protected void SetClientIp(string ip)
