@@ -83,7 +83,7 @@ services:
     - "127.0.0.1:6391:6379"
 
 
- # Dependencies
+# Dependencies
   aws_sqs:
     image: softwaremill/elasticmq
     ports:
