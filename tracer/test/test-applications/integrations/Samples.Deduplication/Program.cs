@@ -1,33 +1,15 @@
 using System;
 using System.Collections;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
 
 namespace Samples.Deduplication;
 
 internal static class Program
 {
-    private static string GetErrorMessage(Assembly[] assemblies)
-    {
-        var assemblyListString = string.Join(Environment.NewLine, assemblies.Where(x => x.GetName().Name.IndexOf("datadog", StringComparison.OrdinalIgnoreCase) >= 0).Select(x => x.GetName().Name));
-        
-        return $"Info: {Environment.NewLine}{EnvironmentVariableMessage("MonitoringHomeDirectory")}{EnvironmentVariableMessage("CORECLR_ENABLE_PROFILING")}{EnvironmentVariableMessage("CORECLR_PROFILER")}{EnvironmentVariableMessage("CORECLR_PROFILER_PATH")}{EnvironmentVariableMessage("CORECLR_PROFILER_PATH_64")}{EnvironmentVariableMessage("CORECLR_PROFILER_PATH_32")}{EnvironmentVariableMessage("COR_ENABLE_PROFILING")}{EnvironmentVariableMessage("COR_PROFILER_PATH_32")}{EnvironmentVariableMessage("COR_PROFILER_PATH_64")}{EnvironmentVariableMessage("DD_DOTNET_TRACER_HOME")}{(string.IsNullOrEmpty(assemblyListString) ? string.Empty : (Environment.NewLine + assemblyListString))}";
-    }
-
-    private static string EnvironmentVariableMessage(string variable)
-    {
-        var value = Environment.GetEnvironmentVariable(variable);
-        return variable + ": " + (string.IsNullOrEmpty(value) ? "Empty" : value) + Environment.NewLine;
-    }
     private static void Main(string[] args)
     {
         ComputeHashNTimes(GetExecutionTimes(args));
@@ -37,33 +19,11 @@ internal static class Program
     {
         for (int i = 0; i < times; i++)
         {
-            temp = MD5.Create().ComputeHash(bytes);
-            Console.WriteLine("LINE4 " + temp[0]);
-            temp = SHA1.Create().ComputeHash(temp);
-            Console.WriteLine("LINE3 " + temp[0]);
-
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             // Vulnerable section
-            temp = MD5.Create().ComputeHash(temp);
-            Console.WriteLine("LINE1 " + temp[0]);
-            HashAlgorithm t = MD5.Create();
-            temp = t.ComputeHash(temp);
-            Console.WriteLine("LINE2 " + temp[0]);
-            temp = SHA1.Create().ComputeHash(temp);
-            Console.WriteLine("LINE6 ");
+            MD5.Create().ComputeHash(new byte[] { 3, 5, 6 });
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
-
-        temp = MD5.Create().ComputeHash(temp);
-        Console.WriteLine("MAIN DUPLICATED OUT" + temp[0]);
-    }
-
-    private static void testMethod()
-    {
-        Console.WriteLine("LINE21 ");
-        ((HashAlgorithm)(MD5.Create())).ComputeHash(new byte[] { 63, 5, 6 });
-        DES.Create();
-        Console.WriteLine("LINE22 ");
     }
 
     private static int GetExecutionTimes(string[] args)
@@ -85,38 +45,5 @@ internal static class Program
         }
 
         return times;
-    }
-
-    private static void testHashAlgorithm(HashAlgorithm algorithm)
-    {
-        var byteArg = new byte[] { 3, 5, 6 };
-        algorithm.ComputeHash(byteArg);
-    }
-
-    private static void PrintCode()
-    {
-        string code = "";
-        Assembly currentAssem = Assembly.GetExecutingAssembly();
-        var assembly = AssemblyDefinition.ReadAssembly(currentAssem.Location);
-        var types = assembly.MainModule.Types.Where(o => o.IsClass);
-        var methods = types.SelectMany(type => type.Methods);
-
-        foreach (var method in methods)
-        {
-            if ((method.Name == "Main") || (method.Name == "testHashAlgorithm") || (method.Name == "testMethod"))
-            {
-                code += "METHOD: " + method.Name + Environment.NewLine;
-                var instructions = method.Body?.Instructions;
-                if (instructions != null)
-                {
-                    foreach (var instruction in instructions)
-                    {
-                        code += instruction.ToString() + Environment.NewLine;
-                    }
-                }
-            }
-        }
-
-        Console.WriteLine(code);
     }
 }
