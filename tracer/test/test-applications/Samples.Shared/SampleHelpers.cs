@@ -21,6 +21,8 @@ namespace Samples
         private static readonly Type SpanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
         private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.Configuration.TracerSettings, Datadog.Trace");
         private static readonly Type TracerConstantsType = Type.GetType("Datadog.Trace.TracerConstants, Datadog.Trace");
+        private static readonly Type UserDetailsType = Type.GetType("Datadog.Trace.UserDetails, Datadog.Trace");
+        private static readonly Type SpanExtensionsType = Type.GetType("Datadog.Trace.SpanExtensions, Datadog.Trace");
         private static readonly MethodInfo GetNativeTracerVersionMethod = InstrumentationType?.GetMethod("GetNativeTracerVersion");
         private static readonly MethodInfo GetTracerInstance = TracerType?.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetMethod;
         private static readonly MethodInfo StartActiveMethod = TracerType?.GetMethod("StartActive", types: new[] { typeof(string) });
@@ -39,7 +41,9 @@ namespace Samples
         private static readonly MethodInfo SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo SetServiceName = TracerSettingsType?.GetProperty("ServiceName")?.SetMethod;
+        private static readonly MethodInfo SetUserMethod = SpanExtensionsType?.GetMethod("SetUser", BindingFlags.Public | BindingFlags.Static);
         private static readonly FieldInfo TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
+        private static readonly ConstructorInfo UserDetailsStringCtor = UserDetailsType?.GetConstructor(new[] { typeof(string) });
 
 
         static SampleHelpers()
@@ -270,6 +274,25 @@ namespace Samples
 
             var span = SpanProperty.Invoke(scope, Array.Empty<object>());
             SetExceptionMethod.Invoke(span, new object[] { new Exception() });
+        }
+
+        public static void TrySetUserOnActiveScope(string userId)
+        {
+            if (GetTracerInstance is null || ActiveScopeProperty is null || SpanProperty is null || SetUserMethod is null || UserDetailsStringCtor is null)
+            {
+                return;
+            }
+
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+            var scope = ActiveScopeProperty.Invoke(tracer, Array.Empty<object>());
+            if (scope is null)
+            {
+                return;
+            }
+
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            var userDetails = UserDetailsStringCtor.Invoke(new object[] { userId });
+            SetUserMethod.Invoke(span, new object[] { span, userDetails });
         }
 
         public static IEnumerable<KeyValuePair<string,string>> GetDatadogEnvironmentVariables()
