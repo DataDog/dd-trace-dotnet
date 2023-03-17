@@ -10,14 +10,14 @@ using MongoDB.Driver.Core.Servers;
 
 namespace Samples.MongoDB
 {
-    internal static class Program
+    public static class Program
     {
         private static string Host()
         {
             return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
         }
 
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Console.WriteLine($"Profiler attached: {SampleHelpers.IsProfilerAttached()}");
             Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");

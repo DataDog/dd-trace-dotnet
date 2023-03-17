@@ -32,8 +32,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
     ParameterTypeNames = new[] { ClrNames.ByteArray, ClrNames.Int32, ClrNames.Int32 },
     MethodName = "ComputeHash",
     ReturnTypeName = ClrNames.ByteArray,
-    MinimumVersion = "1.0.0",
-    MaximumVersion = "8.*.*",
+    MinimumVersion = "7.0.0",
+    MaximumVersion = "7.*.*",
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 [Browsable(false)]
