@@ -65,6 +65,22 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestInsertMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Insert", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestRemoveMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Remove", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestToCharArrayMethodsAspectCover()
     {
         TestMethodOverloads("System.String", "ToCharArray", null, null);

@@ -62,6 +62,9 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::ToLower()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToLower(System.String)",
 "  [AspectMethodReplace(\"System.String::ToLower(System.Globalization.CultureInfo)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToLower(System.String,System.Globalization.CultureInfo)",
 "  [AspectMethodReplace(\"System.String::ToLowerInvariant()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToLowerInvariant(System.String)",
+"  [AspectMethodReplace(\"System.String::Remove(System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Remove(System.String,System.Int32)",
+"  [AspectMethodReplace(\"System.String::Remove(System.Int32,System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Remove(System.String,System.Int32,System.Int32)",
+"  [AspectMethodReplace(\"System.String::Insert(System.Int32,System.String)\",\"\",[0],[False],[StringOptimization],Propagation,[])] Insert(System.String,System.Int32,System.String)",
         };
     }
 }

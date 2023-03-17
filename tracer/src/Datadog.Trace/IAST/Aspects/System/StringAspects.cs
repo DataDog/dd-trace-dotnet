@@ -505,4 +505,48 @@ public partial class StringAspects
         StringModuleImpl.PropagateTaint(target, result);
         return result;
     }
+
+    /// <summary>
+    /// String.Remove aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <returns> String.Remove() </returns>
+    [AspectMethodReplace("System.String::Remove(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Remove(string target, int startIndex)
+    {
+        string result = target.Remove(startIndex);
+        OnStringRemove(target, result, startIndex, target.Length);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Remove aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <param name="count"> count parameter </param>
+    /// <returns> String.Remove() </returns>
+    [AspectMethodReplace("System.String::Remove(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Remove(string target, int startIndex, int count)
+    {
+        string result = target.Remove(startIndex, count);
+        OnStringRemove(target, result, startIndex, startIndex + count);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Insert aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <param name="value"> value to insert </param>
+    /// <returns> String.Insert() </returns>
+    [AspectMethodReplace("System.String::Insert(System.Int32,System.String)", AspectFilter.StringOptimization)]
+    public static string Insert(string target, int startIndex, string value)
+    {
+        var result = target.Insert(startIndex, value);
+        OnStringInsert(target, startIndex, value, result);
+        return result;
+    }
 }
