@@ -354,7 +354,7 @@ namespace Datadog.Trace.TestHelpers
 
         public virtual void Dispose()
         {
-            Output?.WriteLine("Dispose has been called");
+            Console.WriteLine("Dispose has been called");
             _cancellationTokenSource.Cancel();
         }
 
