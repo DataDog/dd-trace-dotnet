@@ -248,6 +248,10 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
+    - script: |
+        "C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe" modify --productId "Microsoft.VisualStudio.Product.Enterprise" --channelId "VisualStudio.17.Release" --add "Microsoft.VisualStudio.Component.VC.ATL.ARM64" --add "Microsoft.VisualStudio.Component.VC.Tools.ARM64" --add "Microsoft.VisualStudio.Component.VC.MFC.ARM64" --passive
+      displayName: Install ARM64 toolchain
+
     - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
       retryCountOnTaskFailure: 1
