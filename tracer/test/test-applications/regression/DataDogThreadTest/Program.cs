@@ -1,11 +1,11 @@
-using Datadog.Trace.Configuration;
 using log4net;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using log4net.Core;
-using Tracer = Datadog.Trace.Tracer;
+using Samples;
+using System.Reflection;
 
 namespace DataDogThreadTest
 {
@@ -15,6 +15,12 @@ namespace DataDogThreadTest
         internal static readonly string SpanIdKey = "dd.span_id";
         internal static readonly string NonTraceMessage = "TraceId: 0, SpanId: 0";
 
+        private static readonly Type _scopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
+        private static readonly Type _spanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
+        private static MethodInfo _getSpanProperty = _scopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+        private static MethodInfo _getTraceIdProperty = _spanType.GetProperty("TraceId", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+        private static MethodInfo _getSpanIdProperty = _spanType.GetProperty("SpanId", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+
         static int Main(string[] args)
         {
             try
@@ -22,11 +28,7 @@ namespace DataDogThreadTest
                 InMemoryLog4NetLogger.Setup();
                 var logger = LogManager.GetLogger(typeof(Program));
 
-                var ddTraceSettings = TracerSettings.FromDefaultSources();
-                ddTraceSettings.LogsInjectionEnabled = true;
-                ddTraceSettings.TraceEnabled = true;
-                Tracer.Configure(ddTraceSettings);
-                var tracer = Tracer.Instance;
+                SampleHelpers.ConfigureTracerWithLogsInjection(); // LogsInjectionEnabled = true; TraceEnabled = true (default value)
 
                 var totalIterations = 10_000;
                 var threadRepresentation = Enumerable.Range(0, 10).ToArray();
@@ -50,17 +52,19 @@ namespace DataDogThreadTest
                                         var i = 0;
                                         while (i++ < totalIterations)
                                         {
-                                            using (var outerScope = tracer.StartActive("thread-test"))
+                                            using (var outerScope = SampleHelpers.CreateScope("thread-test"))
                                             {
-                                                var outerTraceId = outerScope.Span.TraceId;
-                                                var outerSpanId = outerScope.Span.SpanId;
+                                                var span = _getSpanProperty.Invoke(outerScope, Array.Empty<object>());
+                                                var outerTraceId = _getTraceIdProperty.Invoke(span, Array.Empty<object>());
+                                                var outerSpanId = _getSpanIdProperty.Invoke(span, Array.Empty<object>());
 
                                                 logger.Info($"TraceId: {outerTraceId}, SpanId: {outerSpanId}");
 
-                                                using (var innerScope = tracer.StartActive("nest-thread-test"))
+                                                using (var innerScope = SampleHelpers.CreateScope("nest-thread-test"))
                                                 {
-                                                    var innerTraceId = innerScope.Span.TraceId;
-                                                    var innerSpanId = innerScope.Span.SpanId;
+                                                    var innerSpan = _getSpanProperty.Invoke(innerScope, Array.Empty<object>());
+                                                    var innerTraceId = _getTraceIdProperty.Invoke(innerSpan, Array.Empty<object>());
+                                                    var innerSpanId = _getSpanIdProperty.Invoke(innerSpan, Array.Empty<object>());
 
                                                     if (outerTraceId != innerTraceId)
                                                     {
