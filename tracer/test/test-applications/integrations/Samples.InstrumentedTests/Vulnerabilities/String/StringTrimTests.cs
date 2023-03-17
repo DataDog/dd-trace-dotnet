@@ -103,7 +103,7 @@ public class StringTrimTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingTrimWithCharArrayParam_ResultIsTainted5()
     {
-        AssertNotTaintedWithOriginalCallCheck(String.Empty,
+        AssertUntaintedWithOriginalCallCheck(String.Empty,
             taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
             () => taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
     }
@@ -161,7 +161,7 @@ public class StringTrimTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingTrimEndWithCharArrayParam_ResultIsTainted5()
     {
-        AssertNotTaintedWithOriginalCallCheck(String.Empty,
+        AssertUntaintedWithOriginalCallCheck(String.Empty,
             taintedValue.TrimEnd(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
             () => taintedValue.TrimEnd(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
     }
@@ -211,7 +211,7 @@ public class StringTrimTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingTrimStartWithCharArrayParam_ResultIsTainted6()
     {
-        AssertNotTaintedWithOriginalCallCheck(String.Empty,
+        AssertUntaintedWithOriginalCallCheck(String.Empty,
             taintedValue.TrimStart(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
             () => taintedValue.TrimStart(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
     }
