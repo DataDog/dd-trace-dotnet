@@ -96,9 +96,9 @@ namespace Datadog.Trace.AppSec
         public int TraceRateLimit { get; }
 
         /// <summary>
-        /// Gets the limit for the amount of time the WAF will perform analysis
+        /// Gets or sets the limit for the amount of time the WAF will perform analysis
         /// </summary>
-        public ulong WafTimeoutMicroSeconds { get; }
+        public ulong WafTimeoutMicroSeconds { get; set; }
 
         /// <summary>
         /// Gets the regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious

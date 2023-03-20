@@ -211,7 +211,7 @@ namespace Datadog.Trace.AppSec.Waf
             foreach (var ruleDatas in groups)
             {
                 var datasByValue = ruleDatas.SelectMany(d => d.Data!).GroupBy(d => d.Value);
-                var mergedDatas = new List<Data>();
+                var mergedDatas = new List<Datadog.Trace.AppSec.RcmModels.AsmData.Data>();
                 foreach (var data in datasByValue)
                 {
                     var longestLastingIp = data.OrderByDescending(d => d.Expiration ?? long.MaxValue).First();

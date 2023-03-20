@@ -22,5 +22,7 @@ internal class RemoteConfigurationStatus
 
     internal IDictionary<string, Action> Actions { get; set; } = new Dictionary<string, Action>();
 
+    internal IDictionary<string, Attributes> Attributes { get; set; } = new Dictionary<string, Attributes>();
+
     internal string RemoteRulesJson { get; set; }
 }

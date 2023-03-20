@@ -9,12 +9,14 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.RcmModels;
+using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
@@ -464,6 +466,17 @@ namespace Datadog.Trace.AppSec
                         _remoteConfigurationStatus.Actions.Clear();
                     }
                 }
+
+                if (asmConfig.TypedFile.Data != null)
+                {
+                    foreach (var data in asmConfig.TypedFile.Data)
+                    {
+                        if (data.Id is not null)
+                        {
+                            _remoteConfigurationStatus.Attributes[data.Id] = data.Attributes;
+                        }
+                    }
+                }
             }
 
             var result = true;
@@ -478,6 +491,9 @@ namespace Datadog.Trace.AppSec
                     result,
                     overrides.Count,
                     exclusions.Count);
+
+                // Handle attributes
+                HandleRcmAttributes(_remoteConfigurationStatus.Attributes.Values.ToList());
             }
 
             foreach (var asmConfig in asmConfigs)
@@ -489,6 +505,26 @@ namespace Datadog.Trace.AppSec
                 else
                 {
                     e.Error(asmConfig.Name, "waf couldn't be updated with asm product");
+                }
+            }
+        }
+
+        private void HandleRcmAttributes(List<Attributes> attributes)
+        {
+            // Handle the waf_timeout custom_attributes
+            var wafTimeout = attributes
+                            .Select(x => x.CustomAttributes?["waf_timeout"])
+                            .DefaultIfEmpty(null).First();
+            if (wafTimeout is not null)
+            {
+                var wafTimeoutValue = (ulong)wafTimeout;
+                if (wafTimeoutValue <= 0)
+                {
+                    Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", "waf_timeout", wafTimeoutValue.ToString());
+                }
+                else
+                {
+                    _settings.WafTimeoutMicroSeconds = wafTimeoutValue;
                 }
             }
         }
