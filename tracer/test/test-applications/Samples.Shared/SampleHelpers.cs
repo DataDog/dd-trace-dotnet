@@ -292,7 +292,7 @@ namespace Samples
 
             var span = SpanProperty.Invoke(scope, Array.Empty<object>());
             var userDetails = UserDetailsStringCtor.Invoke(new object[] { userId });
-            SetUserMethod.Invoke(span, new object[] { span, userDetails });
+            SetUserMethod.Invoke(null, new object[] { span, userDetails });
         }
 
         public static IEnumerable<KeyValuePair<string,string>> GetDatadogEnvironmentVariables()
