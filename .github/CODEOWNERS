@@ -13,16 +13,17 @@
 # ASM
 /tracer/src/Datadog.Trace/AppSec/         @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/IAST/           @DataDog/asm-dotnet
-/tracer/src/Datadog.Tracer.Native/iast    @DataDog/asm-dotnet
-/tracer/test/test-applications/security   @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Security.IntegrationTests @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Security.Unit.Tests       @DataDog/asm-dotnet
+/tracer/src/Datadog.Tracer.Native/iast/    @DataDog/asm-dotnet
+/tracer/test/test-applications/security/   @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Security.IntegrationTests/ @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Security.Unit.Tests/       @DataDog/asm-dotnet
+/tracer/test/snapshots/Security*          @DataDog/asm-dotnet
 
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
 .github/workflows/profiler-pipeline.yml   @DataDog/profiling-dotnet
-/tracer/src/Datadog.Trace/ContinuousProfiler @DataDog/profiling-dotnet @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.Tests/ContinuousProfiler @DataDog/profiling-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
 
 # Debugger
 /tracer/src/Datadog.Trace/Debugger/        @DataDog/debugger-dotnet
