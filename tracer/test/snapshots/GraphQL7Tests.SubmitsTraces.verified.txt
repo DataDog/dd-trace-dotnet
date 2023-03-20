@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: aspnet_core.request,
     Resource: GET /graphql,
-    Service: Samples.GraphQL3,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
@@ -33,7 +33,7 @@
     SpanId: Id_3,
     Name: graphql.validate,
     Resource: graphql.validate,
-    Service: Samples.GraphQL3-graphql,
+    Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_2,
     Tags: {
@@ -53,7 +53,7 @@
     SpanId: Id_4,
     Name: graphql.execute,
     Resource: Query operation,
-    Service: Samples.GraphQL3-graphql,
+    Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_2,
     Tags: {
@@ -74,7 +74,7 @@
     SpanId: Id_6,
     Name: aspnet_core.request,
     Resource: POST /graphql,
-    Service: Samples.GraphQL3,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
@@ -103,7 +103,7 @@
     SpanId: Id_8,
     Name: aspnet_core.request,
     Resource: POST /graphql,
-    Service: Samples.GraphQL3,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
@@ -132,14 +132,14 @@
     SpanId: Id_10,
     Name: aspnet_core.request,
     Resource: POST /graphql,
-    Service: Samples.GraphQL3,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
-      http.status_code: 200,
+      http.status_code: 405,
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
@@ -161,14 +161,14 @@
     SpanId: Id_12,
     Name: aspnet_core.request,
     Resource: POST /graphql,
-    Service: Samples.GraphQL3,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
-      http.status_code: 200,
+      http.status_code: 400,
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
@@ -190,14 +190,14 @@
     SpanId: Id_14,
     Name: aspnet_core.request,
     Resource: POST /graphql,
-    Service: Samples.GraphQL3,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
-      http.status_code: 200,
+      http.status_code: 405,
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
@@ -219,7 +219,7 @@
     SpanId: Id_15,
     Name: graphql.validate,
     Resource: graphql.validate,
-    Service: Samples.GraphQL3-graphql,
+    Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_6,
     Tags: {
@@ -239,7 +239,7 @@
     SpanId: Id_16,
     Name: graphql.execute,
     Resource: Query HeroQuery,
-    Service: Samples.GraphQL3-graphql,
+    Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_6,
     Tags: {
@@ -261,7 +261,7 @@
     SpanId: Id_17,
     Name: graphql.validate,
     Resource: graphql.validate,
-    Service: Samples.GraphQL3-graphql,
+    Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_8,
     Tags: {
@@ -281,7 +281,7 @@
     SpanId: Id_18,
     Name: graphql.execute,
     Resource: Mutation AddBobaFett,
-    Service: Samples.GraphQL3-graphql,
+    Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_8,
     Tags: {
@@ -303,34 +303,29 @@
     SpanId: Id_19,
     Name: graphql.validate,
     Resource: graphql.validate,
-    Service: Samples.GraphQL3-graphql,
+    Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_10,
+    Error: 1,
     Tags: {
       component: GraphQL,
       env: integration_tests,
-      graphql.source: subscription HumanAddedSub{humanAdded{name}},
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_9,
-    SpanId: Id_20,
-    Name: graphql.execute,
-    Resource: Subscription HumanAddedSub,
-    Service: Samples.GraphQL3-graphql,
-    Type: graphql,
-    ParentId: Id_10,
-    Tags: {
-      component: GraphQL,
-      env: integration_tests,
-      graphql.operation.name: HumanAddedSub,
-      graphql.operation.type: Subscription,
+      error.msg: 1 error(s),
+      error.stack:
+errors: [
+{
+"message": "Subscription operations are not supported for POST requests.",
+"code": "HTTP_METHOD_VALIDATION",
+"locations": [
+{
+"line": 1,
+"column": 1
+},
+]
+},
+]
+,
+      error.type: GraphQL.Validation.ValidationError,
       graphql.source: subscription HumanAddedSub{humanAdded{name}},
       language: dotnet,
       runtime-id: Guid_1,
@@ -342,10 +337,10 @@
   },
   {
     TraceId: Id_11,
-    SpanId: Id_21,
+    SpanId: Id_20,
     Name: graphql.validate,
     Resource: graphql.validate,
-    Service: Samples.GraphQL3-graphql,
+    Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_12,
     Error: 1,
@@ -356,7 +351,7 @@
       error.stack:
 errors: [
 {
-"message": "Argument "id" has invalid value 1.\nExpected type "String", found 1.",
+"message": "Argument 'id' has invalid value. Expected type 'String', found 1.",
 "code": "ARGUMENTS_OF_CORRECT_TYPE",
 "locations": [
 {
@@ -366,7 +361,7 @@ errors: [
 ]
 },
 {
-"message": "Cannot query field "apearsIn" on type "Human". Did you mean 'appearsIn'?",
+"message": "Cannot query field 'apearsIn' on type 'Human'. Did you mean 'appearsIn'?",
 "code": "FIELDS_ON_CORRECT_TYPE",
 "locations": [
 {
@@ -389,30 +384,10 @@ errors: [
   },
   {
     TraceId: Id_13,
-    SpanId: Id_22,
+    SpanId: Id_21,
     Name: graphql.validate,
     Resource: graphql.validate,
-    Service: Samples.GraphQL3-graphql,
-    Type: graphql,
-    ParentId: Id_14,
-    Tags: {
-      component: GraphQL,
-      env: integration_tests,
-      graphql.source: subscription NotImplementedSub{throwNotImplementedException{name}},
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_13,
-    SpanId: Id_23,
-    Name: graphql.execute,
-    Resource: Subscription NotImplementedSub,
-    Service: Samples.GraphQL3-graphql,
+    Service: Samples.GraphQL7-graphql,
     Type: graphql,
     ParentId: Id_14,
     Error: 1,
@@ -423,21 +398,18 @@ errors: [
       error.stack:
 errors: [
 {
-"message": "Error trying to resolve field 'throwNotImplementedException'.",
-"path": "System.Object[]",
-"code": "NOT_IMPLEMENTED",
+"message": "Subscription operations are not supported for POST requests.",
+"code": "HTTP_METHOD_VALIDATION",
 "locations": [
 {
 "line": 1,
-"column": 32
+"column": 1
 },
 ]
 },
 ]
 ,
-      error.type: GraphQL.ExecutionError,
-      graphql.operation.name: NotImplementedSub,
-      graphql.operation.type: Subscription,
+      error.type: GraphQL.Validation.ValidationError,
       graphql.source: subscription NotImplementedSub{throwNotImplementedException{name}},
       language: dotnet,
       runtime-id: Guid_1,

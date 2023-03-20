@@ -562,6 +562,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> GraphQL7 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP3_1
+                new object[] { "7.0.2" },
+                new object[] { "7.1.1" },
+                new object[] { "7.2.2" },
+                new object[] { "7.3.0" },
+#endif
+#if NET5_0
+                new object[] { "7.0.2" },
+                new object[] { "7.1.1" },
+                new object[] { "7.2.2" },
+                new object[] { "7.3.0" },
+#endif
+#if NET6_0
+                new object[] { "7.0.2" },
+                new object[] { "7.1.1" },
+                new object[] { "7.2.2" },
+                new object[] { "7.3.0" },
+#endif
+#if NET7_0
+                new object[] { "7.0.2" },
+                new object[] { "7.1.1" },
+                new object[] { "7.2.2" },
+                new object[] { "7.3.0" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> HotChocolate =>
 
             new List<object[]>
