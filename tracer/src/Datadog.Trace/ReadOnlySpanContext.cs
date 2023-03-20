@@ -9,7 +9,7 @@ namespace Datadog.Trace
     {
         public ReadOnlySpanContext(TraceId traceId, ulong spanId, string serviceName)
         {
-            TraceId = traceId;
+            TraceId128 = traceId;
             SpanId = spanId;
             ServiceName = serviceName;
         }
@@ -17,12 +17,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the lower 64 bits of the 128-bit trace identifier.
         /// </summary>
-        ulong ISpanContext.TraceId => TraceId.Lower;
+        ulong ISpanContext.TraceId => TraceId128.Lower;
 
         /// <summary>
         /// Gets the 128-bit trace identifier.
         /// </summary>
-        public TraceId TraceId { get; }
+        public TraceId TraceId128 { get; }
 
         /// <summary>
         /// Gets the 64-bit span identifier.
