@@ -11,6 +11,7 @@
 #include "AllocationsProvider.h"
 #include "IBatchedSamplesProvider.h"
 #include "IGarbageCollectionsListener.h"
+#include "IRootReferenceManager.h"
 #include "ISampledAllocationsListener.h"
 #include "IService.h"
 #include "LiveObjectInfo.h"
@@ -22,7 +23,6 @@ class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
 class IConfiguration;
-class ISampledAllocationsListener;
 
 class LiveObjectsProvider : public IService,
                             public IBatchedSamplesProvider,
@@ -42,7 +42,8 @@ public:
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        IRootReferenceManager* pRootReferenceManager);
 
 public:
     // Inherited via IService
@@ -76,6 +77,7 @@ private:
     ObjectHandleID CreateWeakHandle(uintptr_t address) const;
     void CloseWeakHandle(ObjectHandleID handle) const;
     bool IsAlive(ObjectHandleID handle) const;
+    ObjectID GetObjectId(ObjectHandleID handle) const;
 
 private:
     uint32_t _valueOffset = 0;
@@ -84,8 +86,9 @@ private:
     IAppDomainStore* _pAppDomainStore = nullptr;
     IRuntimeIdStore* _pRuntimeIdStore = nullptr;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
-    std::unique_ptr<AllocationsProvider> _pAllocationsProvider;
+    IRootReferenceManager* _pRootReferenceManager = nullptr;
 
+    std::unique_ptr<AllocationsProvider> _pAllocationsProvider;
     bool _isTimestampsAsLabelEnabled = false;
 
     std::mutex _liveObjectsLock;

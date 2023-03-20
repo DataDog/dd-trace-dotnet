@@ -246,6 +246,7 @@
     <ClInclude Include="IAllocationsRecorder.h" />
     <ClInclude Include="IBatchedSamplesProvider.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
+    <ClInclude Include="IRootReferenceManager.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="LiveObjectInfo.h" />
     <ClInclude Include="LiveObjectsProvider.h" />
@@ -254,6 +255,7 @@
     <ClInclude Include="MetricsRegistry.h" />
     <ClInclude Include="ProxyMetric.h" />
     <ClInclude Include="RawGarbageCollectionSample.h" />
+    <ClInclude Include="RootReferenceManager.h" />
     <ClInclude Include="StopTheWorldGCProvider.h" />
     <ClInclude Include="GenericSampler.h" />
     <ClInclude Include="GroupSampler.h" />
@@ -359,6 +361,7 @@
     <ClCompile Include="MetricsRegistry.cpp" />
     <ClCompile Include="ProxyMetric.cpp" />
     <ClCompile Include="RawGarbageCollectionSample.cpp" />
+    <ClCompile Include="RootReferenceManager.cpp" />
     <ClCompile Include="StopTheWorldGCProvider.cpp" />
     <ClCompile Include="GenericSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />

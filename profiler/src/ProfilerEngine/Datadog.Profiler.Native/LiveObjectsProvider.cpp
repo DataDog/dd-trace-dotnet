@@ -31,14 +31,16 @@ LiveObjectsProvider::LiveObjectsProvider(
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
-    MetricsRegistry& metricsRegistry)
+    MetricsRegistry& metricsRegistry,
+    IRootReferenceManager* pRootReferenceManager)
     :
     _valueOffset(valueOffset),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pFrameStore(pFrameStore),
     _pAppDomainStore(pAppDomainStore),
     _pRuntimeIdStore(pRuntimeIdStore),
-    _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled())
+    _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled()),
+    _pRootReferenceManager(pRootReferenceManager)
 {
     _pAllocationsProvider = std::make_unique<AllocationsProvider>(
         valueOffset,  // the values (allocation count and size are stored in the live object values, not tha allocation values)
@@ -82,11 +84,15 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
     uint64_t endTimestamp
     )
 {
+    // ICorProfilerCallback::GarbageCollectionFinished is called AFTER this event is received
+    // --> the heap is not reset yet here
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
     // it is now time to check if the monitored allocated objects have been collected or are still alive
     _monitoredObjects.remove_if([this](LiveObjectInfo& info) {
-        bool hasBeenCollected = !IsAlive(info.GetHandle());
+        ObjectID objectId = GetObjectId(info.GetHandle());
+        //bool hasBeenCollected = !IsAlive(info.GetHandle());
+        bool hasBeenCollected = (objectId == NULL);
         if (hasBeenCollected)
         {
             CloseWeakHandle(info.GetHandle());
@@ -95,8 +101,22 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
         {
             info.IncrementGC();
         }
+
         return hasBeenCollected;
     });
+
+    // TODO: check with CorProfilerCallback where to notify the end of GC
+    if (_pRootReferenceManager != nullptr)
+    {
+        // TODO: dump root references
+        for (LiveObjectInfo& info : _monitoredObjects)
+        {
+            ObjectID objectId = GetObjectId(info.GetHandle());
+            _pRootReferenceManager->DumpReferences(objectId);
+        }
+
+        _pRootReferenceManager->OnGarbageCollectionFinished();
+    }
 }
 
 std::list<std::shared_ptr<Sample>> LiveObjectsProvider::GetSamples()
@@ -154,21 +174,26 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
     }
 }
 
-bool LiveObjectsProvider::IsAlive(ObjectHandleID handle) const
+ObjectID LiveObjectsProvider::GetObjectId(ObjectHandleID handle) const
 {
     if (handle == nullptr)
     {
-        return false;
+        return NULL;
     }
 
     ObjectID object = NULL;
     auto hr = _pCorProfilerInfo->GetObjectIDFromHandle(handle, &object);
     if (SUCCEEDED(hr))
     {
-        return object != NULL;
+        return object;
     }
 
-    return false;
+    return NULL;
+}
+
+bool LiveObjectsProvider::IsAlive(ObjectHandleID handle) const
+{
+    return (GetObjectId(handle) != NULL);
 }
 
 ObjectHandleID LiveObjectsProvider::CreateWeakHandle(uintptr_t address) const

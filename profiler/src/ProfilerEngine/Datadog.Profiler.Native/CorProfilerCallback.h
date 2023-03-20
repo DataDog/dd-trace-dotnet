@@ -29,6 +29,7 @@
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
 #include "IAllocationsRecorder.h"
+#include "IRootReferenceManager.h"
 
 #include "shared/src/native-src/string.h"
 
@@ -233,6 +234,7 @@ private :
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;
     std::unique_ptr<IAllocationsRecorder> _pAllocationsRecorder = nullptr;
+    std::unique_ptr<IRootReferenceManager> _pRootReferenceManager = nullptr;
 
     MetricsRegistry _metricsRegistry;
     std::shared_ptr<ProxyMetric> _managedThreadsMetric;

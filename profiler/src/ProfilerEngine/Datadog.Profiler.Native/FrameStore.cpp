@@ -624,6 +624,11 @@ std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataIm
         typeName = "?";
     }
 
+    if (isArray)
+    {
+        typeName += arraySuffix;
+    }
+
     if (isNested)
     {
         return std::make_pair(std::move(ns), enclosingType + "." + typeName);
