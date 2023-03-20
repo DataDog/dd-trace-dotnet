@@ -365,7 +365,7 @@ namespace Datadog.Trace.MSBuild
             {
                 _level = level;
                 _message = message;
-                _context = span is null ? null : new Context(span.TraceId, span.Context.RawTraceId, span.SpanId, span.Context.Origin);
+                _context = span is null ? null : new Context(span.TraceId128, span.Context.RawTraceId, span.SpanId, span.Context.Origin);
             }
 
             public override void Format(StringBuilder sb, LogFormatter formatter)
