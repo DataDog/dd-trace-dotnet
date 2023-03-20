@@ -76,7 +76,6 @@ namespace Datadog.Trace.Propagators
             var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.PropagatedTags);
 
-            // HACK: fix this so we don't parse "x-datadog-tags" twice
             var traceTags = TagPropagation.ParseHeader(propagatedTraceTags, TagPropagation.OutgoingTagPropagationHeaderMaxLength);
             var traceId = GetFullTraceId((ulong)traceIdLower, traceTags);
 
