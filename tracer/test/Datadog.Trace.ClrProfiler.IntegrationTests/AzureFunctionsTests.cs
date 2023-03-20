@@ -163,7 +163,9 @@ public abstract class AzureFunctionsTests : TestHelper
             }
         }
     }
+#endif
 
+#if NET6_0_OR_GREATER
     [UsesVerify]
     [Collection(nameof(AzureFunctionsTestsCollection))]
     public class IsolatedRuntimeV4 : AzureFunctionsTests
@@ -181,7 +183,7 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunAzureFunctionAndWaitForExit(agent, framework: "net6.0", expectedExitCode: -1))
+            using (RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 21;
                 var spans = agent.WaitForSpans(expectedSpanCount);
