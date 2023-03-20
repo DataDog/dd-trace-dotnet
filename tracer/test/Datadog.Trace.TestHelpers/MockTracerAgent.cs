@@ -37,6 +37,15 @@ namespace Datadog.Trace.TestHelpers
 
         private AgentBehaviour behaviour = AgentBehaviour.Normal;
 
+        static MockTracerAgent()
+        {
+            // Eagerly initialize the serializers, to reduce the probability of timeout
+            var resolver = MessagePack.Resolvers.StandardResolver.Instance;
+            _ = resolver.GetFormatter<IList<IList<MockSpan>>>();
+            _ = resolver.GetFormatter<MockClientStatsPayload>();
+            _ = resolver.GetFormatter<MockDataStreamsPayload>();
+        }
+
         protected MockTracerAgent(bool telemetryEnabled, TestTransports transport)
         {
             TelemetryEnabled = telemetryEnabled;
