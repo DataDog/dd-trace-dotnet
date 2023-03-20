@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
@@ -18,6 +17,17 @@ namespace Datadog.Trace.Tests.Propagators
 {
     public class W3CTraceContextPropagatorTests
     {
+        private static readonly TraceTagCollection PropagatedTagsCollection = new(
+            TagPropagation.OutgoingTagPropagationHeaderMaxLength,
+            new List<KeyValuePair<string, string>>
+            {
+                new("_dd.p.dm", "-4"),
+                new("_dd.p.usr.id", "12345"),
+            },
+            cachedPropagationHeader: null);
+
+        private static readonly TraceTagCollection EmptyPropagatedTags = new(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+
         private static readonly SpanContextPropagator W3CPropagator;
 
         static W3CTraceContextPropagatorTests()
@@ -259,7 +269,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            Origin = "rum",
-                           PropagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345",
+                           PropagatedTags = PropagatedTagsCollection,
                            Parent = null,
                            ParentId = null,
                        });
@@ -302,7 +312,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = 1,
                            Origin = null,
-                           PropagatedTags = null,
+                           PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
                        });
@@ -337,7 +347,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            Origin = "rum",
-                           PropagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345",
+                           PropagatedTags = PropagatedTagsCollection,
                            Parent = null,
                            ParentId = null,
                        });
@@ -405,7 +415,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            Origin = "rum",
-                           PropagatedTags = "_dd.p.dm=-4,_dd.p.usr.id=12345",
+                           PropagatedTags = PropagatedTagsCollection,
                            AdditionalW3CTraceState = "abc=123,foo=bar",
                            Parent = null,
                            ParentId = null,
@@ -441,7 +451,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                            Origin = null,
-                           PropagatedTags = null,
+                           PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
                        });
@@ -575,7 +585,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = samplingPriority,
                            Origin = null,
-                           PropagatedTags = null,
+                           PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
                        });
@@ -613,7 +623,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = samplingPriority,
                            Origin = null,
-                           PropagatedTags = null,
+                           PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
                        });
@@ -648,7 +658,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = 1,
                            Origin = null,
-                           PropagatedTags = null,
+                           PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
                        });
@@ -683,7 +693,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = 0,
                            Origin = null,
-                           PropagatedTags = null,
+                           PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
                        });
@@ -718,7 +728,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = 1,
                            Origin = null,
-                           PropagatedTags = null,
+                           PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
                        });
@@ -753,7 +763,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = 0,
                            Origin = null,
-                           PropagatedTags = null,
+                           PropagatedTags = EmptyPropagatedTags,
                            Parent = null,
                            ParentId = null,
                        });

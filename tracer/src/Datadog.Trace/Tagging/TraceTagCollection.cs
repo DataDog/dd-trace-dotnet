@@ -37,6 +37,8 @@ namespace Datadog.Trace.Tagging
         /// </summary>
         public int Count => _tags?.Count ?? 0;
 
+        public IReadOnlyList<KeyValuePair<string, string>> Tags => ToArray();
+
         /// <summary>
         /// Adds a new tag to the collection.
         /// If the tag already exists, is not modified.
