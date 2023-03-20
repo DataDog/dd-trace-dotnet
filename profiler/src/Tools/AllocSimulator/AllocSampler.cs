@@ -56,7 +56,7 @@ namespace AllocSimulator
                 {
                     Key = sampled.Key,
                     Type = sampled.Type,
-                    Size = (long)((sampled.Size * _totalAllocatedAmount) / _totalSampledSize),
+                    Size = (long)(((double)sampled.Size * (double)_totalAllocatedAmount) / _totalSampledSize),
                     Count = (int)((sampled.Count * _totalAllocatedAmount) / _totalSampledSize),
                 };
 

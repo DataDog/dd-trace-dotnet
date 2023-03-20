@@ -9,21 +9,21 @@ namespace AllocSimulator
     {
         public static void Main(string[] args)
         {
-            ParseCommandLine(args, out string allocFile, out string allocDirectory);
+            ParseCommandLine(args, out string allocFile, out string allocDirectory, out bool skipMissed);
 
             if (string.IsNullOrEmpty(allocDirectory))
             {
-                SimulateAllocations(allocFile);
+                SimulateAllocations(allocFile, skipMissed);
                 return;
             }
 
             foreach (var filename in Directory.GetFiles(allocDirectory, "*.alloc"))
             {
-                SimulateAllocations(filename);
+                SimulateAllocations(filename, skipMissed);
             }
         }
 
-        private static void SimulateAllocations(string allocFile)
+        private static void SimulateAllocations(string allocFile, bool skipMissed)
         {
             try
             {
@@ -52,13 +52,13 @@ namespace AllocSimulator
                 var filename = Path.GetFileNameWithoutExtension(allocFile);
                 Console.WriteLine($"Simulate allocations - {filename}");
                 Console.WriteLine("---------------------------------------------");
-                foreach (var realAllocation in realAllocations)
+                foreach (var realAllocation in realAllocations.OrderBy(ra => ra.Size))
                 {
-                    var realKey = $"{realAllocation.Type}+{realAllocation.Key}";              // V--- use realKey when key is used
-                    Console.WriteLine($"{realAllocation.Count,9} | {realAllocation.Size,13} - {realAllocation.Type}");
+                    var realKey = $"{realAllocation.Type}+{realAllocation.Key}";
                     var sampled = sampledAllocations.FirstOrDefault(a => (realKey == $"{a.Type}+{a.Key}"));
                     if (sampled != null)
                     {
+                        Console.WriteLine($"{realAllocation.Count,9} | {realAllocation.Size,13} - {realAllocation.Type}");  // use realKey when key is used
                         Console.WriteLine($"{sampled.Count,9} | {sampled.Size,13}");
 
                         float countRatio = -(float)(realAllocation.Count - sampled.Count) / (float)realAllocation.Count;
@@ -68,6 +68,12 @@ namespace AllocSimulator
                     }
                     else
                     {
+                        if (skipMissed)
+                        {
+                            continue;
+                        }
+
+                        Console.WriteLine($"{realAllocation.Count,9} | {realAllocation.Size,13} - {realAllocation.Type}");  // use realKey when key is used
                         Console.WriteLine($"        ~ |-----------------^");
                     }
 
@@ -82,10 +88,11 @@ namespace AllocSimulator
             }
         }
 
-        private static void ParseCommandLine(string[] args, out string allocFile, out string allocDirectory)
+        private static void ParseCommandLine(string[] args, out string allocFile, out string allocDirectory, out bool skipMissed)
         {
             allocFile = string.Empty;
             allocDirectory = string.Empty;
+            skipMissed = false;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -97,6 +104,11 @@ namespace AllocSimulator
                     {
                         allocDirectory = args[i];
                     }
+                }
+                else
+                if ("-s".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    skipMissed = true;
                 }
                 else
                 {
