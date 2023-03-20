@@ -10,13 +10,10 @@ using System.IO;
 using System.Text;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
 
@@ -29,9 +26,9 @@ namespace Datadog.Trace.MSBuild
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogLogger));
 
-        private Tracer _tracer = null;
-        private Span _buildSpan = null;
-        private ConcurrentDictionary<int, Span> _projects = new ConcurrentDictionary<int, Span>();
+        private readonly ConcurrentDictionary<int, Span> _projects = new();
+        private Tracer _tracer;
+        private Span _buildSpan;
 
         static DatadogLogger()
         {
