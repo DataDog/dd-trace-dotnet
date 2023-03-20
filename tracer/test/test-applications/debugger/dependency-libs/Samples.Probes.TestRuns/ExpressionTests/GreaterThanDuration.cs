@@ -3,12 +3,12 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    public class GreaterThenDuration : IRun
+    public class GreaterThanDuration : IRun
     {
         private const string Json = @"{
     ""gt"": [
       {""ref"": ""@duration""},
-      0
+      100
     ]
 }";
 
@@ -28,7 +28,9 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         public string Method(int intArg)
         {
             Console.WriteLine(intArg);
+            System.Threading.Thread.Sleep(500);
             return $"Arg is: {intArg}";
         }
     }
 }
+

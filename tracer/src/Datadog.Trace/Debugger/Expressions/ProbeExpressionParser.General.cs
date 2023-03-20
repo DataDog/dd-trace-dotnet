@@ -8,21 +8,26 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
-    private static Expression WideNumericType(Expression expr)
+    private static Expression ConvertToDouble(Expression expr)
     {
-        var type = expr.Type;
-        if (type == typeof(float))
+        if (expr.Type == typeof(double))
+        {
+            return expr;
+        }
+
+        if (expr.Type.IsNumeric())
         {
             return Expression.Convert(expr, typeof(double));
         }
 
-        return IsIntegralNumericType(type) ? Expression.Convert(expr, typeof(long)) : expr;
+        return expr;
     }
 
     private static bool IsIntegralNumericType(Type type)
@@ -176,10 +181,5 @@ internal partial class ProbeExpressionParser<T>
                (@namespace is "System" or "Microsoft" ||
                 @namespace.StartsWith("System.") ||
                 @namespace.StartsWith("Microsoft."));
-    }
-
-    private Expression CallTimeSpanConstructor(Expression arg)
-    {
-        return Expression.New(typeof(TimeSpan).GetConstructor(new[] { typeof(long) }), WideNumericType(arg));
     }
 }

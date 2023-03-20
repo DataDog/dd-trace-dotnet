@@ -31,7 +31,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly StringBuilder _jsonUnderlyingString;
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
-        private readonly DateTimeOffset? _startTime;
+        private long _lastSampledTime;
+        private TimeSpan _accumulatedDuration;
         private CaptureBehaviour _captureBehaviour;
         private string _message;
         private List<EvaluationError> _errors;
@@ -43,12 +44,12 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
             _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
             MethodScopeMembers = default;
-            _startTime = DateTimeOffset.UtcNow;
             _captureBehaviour = CaptureBehaviour.Capture;
             _errors = null;
             _message = null;
             ProbeHasCondition = hasCondition;
             Tags = tags;
+            _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             Initialize();
         }
 
@@ -70,6 +71,16 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                 _captureBehaviour = value;
             }
+        }
+
+        internal void StartSampling()
+        {
+            _lastSampledTime = Stopwatch.GetTimestamp();
+        }
+
+        internal void StopSampling()
+        {
+            _accumulatedDuration += StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _lastSampledTime);
         }
 
         public static DebuggerSnapshotCreator BuildSnapshotCreator(ProbeProcessor processor)
@@ -192,8 +203,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void SetDuration()
         {
-            var duration = DateTimeOffset.UtcNow - _startTime;
-            MethodScopeMembers.Duration = new ScopeMember("duration", duration.GetType(), duration, ScopeMemberKind.Duration);
+            MethodScopeMembers.Duration = new ScopeMember("duration", typeof(double), _accumulatedDuration.TotalMilliseconds, ScopeMemberKind.Duration);
         }
 
         internal void Initialize()
@@ -294,9 +304,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator EndSnapshot(DateTimeOffset? startTime)
+        internal DebuggerSnapshotCreator EndSnapshot()
         {
-            var duration = DateTimeOffset.UtcNow - startTime;
             _jsonWriter.WritePropertyName("id");
             _jsonWriter.WriteValue(Guid.NewGuid());
 
@@ -304,7 +313,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
 
             _jsonWriter.WritePropertyName("duration");
-            _jsonWriter.WriteValue(duration.HasValue ? duration.Value.TotalMilliseconds : UnknownValue);
+            _jsonWriter.WriteValue(_accumulatedDuration.TotalMilliseconds);
 
             _jsonWriter.WritePropertyName("language");
             _jsonWriter.WriteValue(TracerConstants.Language);
@@ -644,7 +653,6 @@ namespace Datadog.Trace.Debugger.Snapshots
                    .FinalizeSnapshot(
                         methodName,
                         typeFullName,
-                        _startTime,
                         info.LineCaptureInfo.ProbeFilePath);
 
                 var snapshot = GetSnapshotJson();
@@ -671,7 +679,6 @@ namespace Datadog.Trace.Debugger.Snapshots
                    .FinalizeSnapshot(
                         methodName,
                         typeFullName,
-                        _startTime,
                         null);
 
                 var snapshot = GetSnapshotJson();
@@ -679,14 +686,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal void FinalizeSnapshot(string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath)
+        internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
         {
             var activeScope = Tracer.Instance.InternalActiveScope;
             var traceId = activeScope?.Span?.TraceId.ToString();
             var spanId = activeScope?.Span?.SpanId.ToString();
 
             AddStackInfo()
-            .EndSnapshot(startTime)
+            .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
             .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, traceId, spanId)
