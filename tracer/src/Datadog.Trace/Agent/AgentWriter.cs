@@ -6,6 +6,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
@@ -187,6 +190,33 @@ namespace Datadog.Trace.Agent
 
             if (!success)
             {
+                int? ppid = null;
+
+                foreach (var line in File.ReadLines("/proc/self/status"))
+                {
+                    if (line.StartsWith("PPid"))
+                    {
+                        Console.WriteLine(line);
+                        ppid = int.Parse(line.Split(':')[1].Trim());
+                    }
+                }
+
+                if (ppid == null)
+                {
+                    Console.WriteLine("Could not locate parent process");
+                    return;
+                }
+
+                var currentProcess = Process.GetCurrentProcess();
+
+                var coreclrModule = currentProcess.Modules.Cast<ProcessModule>().First(m => m.ModuleName.StartsWith("libcoreclr"));
+
+                var path = Path.GetDirectoryName(coreclrModule.FileName);
+
+                Console.WriteLine("Attempting to dump process " + ppid.Value);
+
+                Process.Start(Path.Combine(path, "createdump"), $"-f /tmp/coredump.0 -u {ppid.Value}").WaitForExit();
+
                 Environment.FailFast("(╯°□°)╯︵ ┻━┻ ");
                 Log.Warning("Could not flush all traces before process exit");
             }
