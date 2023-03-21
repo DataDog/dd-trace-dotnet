@@ -133,11 +133,15 @@ protected:
         return OpSysTools::GetHighPrecisionTimestamp();
     }
 
+    // TODO this can be cached but for now it's not heavy since it's done every call to Export
+    // so once per minute in general.
     std::vector<std::uintptr_t> GetValueOffsets(std::size_t nbValues)
     {
         std::vector<std::uintptr_t> valueOffsets;
         valueOffsets.reserve(nbValues);
 
+        // _valueOffset is the offset of the first value for a given collector.
+        // By construction, the other values for a collector are continguous
         for (auto i = _valueOffset; i < _valueOffset + nbValues; i++)
         {
             valueOffsets.push_back(i);

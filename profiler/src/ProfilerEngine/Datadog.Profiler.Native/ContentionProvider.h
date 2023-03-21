@@ -45,7 +45,7 @@ public:
     void OnContention(double contentionDurationNs) override;
 
     // Inherited via IContentionUpscaleProvider
-    UpscalingInfo GetUpscalingInfo() override;
+    UpscalingInfo GetInfo() override;
 
 private:
     static std::string GetBucket(double contentionDurationNs);

@@ -117,7 +117,7 @@ void ContentionProvider::OnContention(double contentionDurationNs)
     _sampledLockContentionsDurationMetric->Add(contentionDurationNs);
 }
 
-UpscalingInfo ContentionProvider::GetUpscalingInfo()
+UpscalingInfo ContentionProvider::GetInfo()
 {
     return {GetValueOffsets(SampleTypeDefinitions.size()), RawContentionSample::BucketLabelName, _sampler.GetGroups()};
 }

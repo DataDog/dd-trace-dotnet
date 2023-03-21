@@ -42,7 +42,7 @@ public:
     bool OnExceptionThrown(ObjectID thrownObjectId);
 
     // Inherited via IExceptionsUpscaleProvider
-    UpscalingInfo GetUpscalingInfo() override;
+    UpscalingInfo GetInfo() override;
 
 private:
     struct ExceptionBucket

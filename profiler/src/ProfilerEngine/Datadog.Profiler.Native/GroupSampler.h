@@ -91,25 +91,22 @@ public:
 
     std::vector<UpscaleGroupInfo<TGroup>> GetGroups()
     {
+        std::vector<UpscaleGroupInfo<TGroup>> upscaleGroups;
         std::unique_lock lock(_groupsMutex);
 
-        std::vector<UpscaleGroupInfo<TGroup>> upscaleGroups;
+        upscaleGroups.reserve(_groups.size());
 
-        for (auto& bucket : _groups)
+        for (auto& [name, counts] : _groups)
         {
-            auto count = bucket.second.Sampled;
-            if (count > 0)
+            auto sampledCount = counts.Sampled;
+            if (sampledCount > 0)
             {
-                UpscaleGroupInfo<TGroup> info;
-                info.Group = bucket.first;
-                info.SampledCount = count;
-                info.RealCount = bucket.second.Real;
-                upscaleGroups.push_back(info);
+                upscaleGroups.push_back(UpscaleGroupInfo<TGroup>{name, counts.Real, sampledCount});
             }
 
             // reset groups count
-            bucket.second.Real = 0;
-            bucket.second.Sampled = 0;
+            counts.Real = 0;
+            counts.Sampled = 0;
         }
 
         return upscaleGroups;

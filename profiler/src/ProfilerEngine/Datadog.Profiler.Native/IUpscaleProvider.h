@@ -24,5 +24,5 @@ class IUpscaleProvider
 public:
     virtual ~IUpscaleProvider() = default;
 
-    virtual UpscalingInfo GetUpscalingInfo() = 0;
+    virtual UpscalingInfo GetInfo() = 0;
 };

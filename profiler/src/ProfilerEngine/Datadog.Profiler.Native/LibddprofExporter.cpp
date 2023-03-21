@@ -438,20 +438,20 @@ void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t trace
     ddog_prof_Profile_add_endpoint_count(profile, endpointName, 1);
 }
 
-std::vector<UpscalingInfo> LibddprofExporter::GetUpscalingInfo()
+std::vector<UpscalingInfo> LibddprofExporter::GetUpscalingInfos()
 {
     std::vector<UpscalingInfo> samplingInfos;
     samplingInfos.reserve(_upscaledProviders.size());
 
     for (auto& provider : _upscaledProviders)
     {
-        samplingInfos.push_back(provider->GetUpscalingInfo());
+        samplingInfos.push_back(provider->GetInfo());
     }
 
     return samplingInfos;
 }
 
-void AddUpscalingRules(ddog_prof_Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos)
+void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos)
 {
     for (auto const& upscalingInfo : upscalingInfos)
     {
@@ -467,7 +467,7 @@ void AddUpscalingRules(ddog_prof_Profile* profile, std::vector<UpscalingInfo> co
             if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
             {
                 auto errorMessage = ddog_Error_message(&upscalingRuleAdd.err);
-                Log::Error("Failed to add an upscaling rule: ", std::string_view(errorMessage.ptr, errorMessage.len));
+                Log::Info("Failed to add an upscaling rule: ", std::string_view(errorMessage.ptr, errorMessage.len));
                 ddog_Error_drop(&upscalingRuleAdd.err);
             }
         }
@@ -507,6 +507,12 @@ bool LibddprofExporter::Export()
         Log::Debug("No sample has been collected. No profile will be sent.");
     }
 
+    // upscaling rules apply for all the process.
+    // In case of IIS, there may be multiple applications in the same process.
+    // As the profiler samples the events for the process, the upscaling rules are the same
+    // for all applications.
+    auto upscalingInfos = GetUpscalingInfos();
+
     for (auto& runtimeId : keys)
     {
         ddog_prof_Profile* profile;
@@ -542,7 +548,6 @@ bool LibddprofExporter::Export()
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
             continue;
         }
-        auto upscalingInfos = GetUpscalingInfo();
 
         AddUpscalingRules(profile, upscalingInfos);
 

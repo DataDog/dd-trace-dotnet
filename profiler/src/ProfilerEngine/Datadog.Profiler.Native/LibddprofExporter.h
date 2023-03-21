@@ -133,10 +133,12 @@ private:
     void SaveMetricsToDisk(const std::string& content) const;
 
     static bool Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter) ;
+    static void AddUpscalingRules(ddog_prof_Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos);
+    static fs::path CreatePprofOutputPath(IConfiguration* configuration);
+
     std::string GenerateFilePath(const std::string& applicationName, int idx, const std::string& extension) const;
-    static fs::path CreatePprofOutputPath(IConfiguration* configuration) ;
     std::string CreateMetricsFileContent() const;
-    std::vector<UpscalingInfo> GetUpscalingInfo();
+    std::vector<UpscalingInfo> GetUpscalingInfos();
 
     static tags CommonTags;
     static std::string const ProcessId;
