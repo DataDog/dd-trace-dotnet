@@ -8,8 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
