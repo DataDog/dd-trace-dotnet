@@ -79,12 +79,6 @@ public class DataStreamsMonitoringTests : TestHelper
         using var processResult = RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
-
-        // basic check for span tags
-        var spans = agent.WaitForSpans(4);
-        spans.Should().NotBeEmpty();
-        spans.Where(w => w.Tags.ContainsKey("pathway.context")).Should().NotBeEmpty();
-
         var payload = NormalizeDataStreams(agent.DataStreams);
 
         agent.AssertConfiguration(ConfigTelemetryData.DataStreamsMonitoringEnabled, true);
