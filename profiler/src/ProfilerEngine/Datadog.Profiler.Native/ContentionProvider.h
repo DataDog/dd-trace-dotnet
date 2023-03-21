@@ -45,7 +45,7 @@ public:
     void OnContention(double contentionDurationNs) override;
 
     // Inherited via IContentionUpscaleProvider
-    virtual bool GetGroups(std::vector<UpscaleStringGroup>& groups) override;
+    UpscalingInfo GetUpscalingInfo() override;
 
 private:
     static std::string GetBucket(double contentionDurationNs);

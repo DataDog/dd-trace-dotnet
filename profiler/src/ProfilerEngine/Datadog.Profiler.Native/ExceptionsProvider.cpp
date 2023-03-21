@@ -194,9 +194,9 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
     return true;
 }
 
-bool ExceptionsProvider::GetGroups(std::vector<UpscaleStringGroup>& groups)
+UpscalingInfo ExceptionsProvider::GetUpscalingInfo()
 {
-    return _sampler.GetGroups(groups);
+    return {GetValueOffsets(SampleTypeDefinitions.size()), Sample::ExceptionTypeLabel, _sampler.GetGroups()};
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()

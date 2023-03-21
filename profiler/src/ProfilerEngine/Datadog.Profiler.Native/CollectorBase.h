@@ -133,6 +133,19 @@ protected:
         return OpSysTools::GetHighPrecisionTimestamp();
     }
 
+    std::vector<std::uintptr_t> GetValueOffsets(std::size_t nbValues)
+    {
+        std::vector<std::uintptr_t> valueOffsets;
+        valueOffsets.reserve(nbValues);
+
+        for (auto i = _valueOffset; i < _valueOffset + nbValues; i++)
+        {
+            valueOffsets.push_back(i);
+        }
+
+        return valueOffsets;
+    }
+
 private:
     std::list<TRawSample> FetchRawSamples()
     {

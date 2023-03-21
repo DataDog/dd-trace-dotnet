@@ -5,6 +5,7 @@
 
 #include "IConfiguration.h"
 #include "IExporter.h"
+#include "IUpscaleProvider.h"
 #include "MetricsRegistry.h"
 #include "Sample.h"
 #include "TagsHelper.h"
@@ -27,8 +28,6 @@ class IApplicationStore;
 class IRuntimeInfo;
 class IEnabledProfilers;
 class IAllocationsRecorder;
-class IContentionUpscaleProvider;
-class IExceptionsUpscaleProvider;
 
 class LibddprofExporter : public IExporter
 {
@@ -40,15 +39,13 @@ public:
         IRuntimeInfo* runtimeInfo,
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
-        IAllocationsRecorder* allocationsRecorder,
-        IContentionUpscaleProvider* contentionUpscaleProvider,
-        IExceptionsUpscaleProvider* exceptionsUpscaleProvider
+        IAllocationsRecorder* allocationsRecorder
         );
     ~LibddprofExporter() override;
     bool Export() override;
     void Add(std::shared_ptr<Sample> const& sample) override;
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
-
+    void RegisterUpscaleProvider(IUpscaleProvider* provider);
 
 private:
     class SerializedProfile
@@ -139,6 +136,7 @@ private:
     std::string GenerateFilePath(const std::string& applicationName, int idx, const std::string& extension) const;
     static fs::path CreatePprofOutputPath(IConfiguration* configuration) ;
     std::string CreateMetricsFileContent() const;
+    std::vector<UpscalingInfo> GetUpscalingInfo();
 
     static tags CommonTags;
     static std::string const ProcessId;
@@ -174,8 +172,7 @@ private:
     MetricsRegistry& _metricsRegistry;
     fs::path _metricsFileFolder;
     IAllocationsRecorder* _allocationsRecorder;
-    IContentionUpscaleProvider* _contentionUpscaleProvider;
-    IExceptionsUpscaleProvider* _exceptionsUpscaleProvider;
+    std::vector<IUpscaleProvider*> _upscaledProviders;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

@@ -117,7 +117,7 @@ void ContentionProvider::OnContention(double contentionDurationNs)
     _sampledLockContentionsDurationMetric->Add(contentionDurationNs);
 }
 
-bool ContentionProvider::GetGroups(std::vector<UpscaleStringGroup>& groups)
+UpscalingInfo ContentionProvider::GetUpscalingInfo()
 {
-    return _sampler.GetGroups(groups);
+    return {GetValueOffsets(SampleTypeDefinitions.size()), RawContentionSample::BucketLabelName, _sampler.GetGroups()};
 }

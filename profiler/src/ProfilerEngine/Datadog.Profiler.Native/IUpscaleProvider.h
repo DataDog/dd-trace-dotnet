@@ -11,10 +11,18 @@
 
 using UpscaleStringGroup = UpscaleGroupInfo<std::string>;
 
+struct UpscalingInfo
+{
+public:
+    std::vector<std::uintptr_t> Offsets;
+    std::string LabelName;
+    std::vector<UpscaleStringGroup> UpscaleGroups;
+};
+
 class IUpscaleProvider
 {
 public:
     virtual ~IUpscaleProvider() = default;
 
-    virtual bool GetGroups(std::vector<UpscaleStringGroup>& groups) = 0;
+    virtual UpscalingInfo GetUpscalingInfo() = 0;
 };

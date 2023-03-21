@@ -5,6 +5,7 @@
 
 #include "IUpscaleProvider.h"
 
+
 class IContentionUpscaleProvider : public IUpscaleProvider
 {
 public:

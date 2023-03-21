@@ -4,20 +4,20 @@
 #include "LibddprofExporter.h"
 
 #include "FfiHelper.h"
-#include "ScopeFinalizer.h"
-#include "IApplicationStore.h"
-#include "IMetricsSender.h"
-#include "Log.h"
-#include "OsSpecificApi.h"
-#include "OpSysTools.h"
-#include "Sample.h"
-#include "dd_profiler_version.h"
-#include "IRuntimeInfo.h"
-#include "IEnabledProfilers.h"
 #include "IAllocationsRecorder.h"
+#include "IApplicationStore.h"
 #include "IContentionUpscaleProvider.h"
+#include "IEnabledProfilers.h"
 #include "IExceptionsUpscaleProvider.h"
+#include "IMetricsSender.h"
+#include "IRuntimeInfo.h"
 #include "IUpscaleProvider.h"
+#include "Log.h"
+#include "OpSysTools.h"
+#include "OsSpecificApi.h"
+#include "Sample.h"
+#include "ScopeFinalizer.h"
+#include "dd_profiler_version.h"
 
 #include <cassert>
 #include <fstream>
@@ -70,17 +70,12 @@ LibddprofExporter::LibddprofExporter(
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
-    IAllocationsRecorder* allocationsRecorder,
-    IContentionUpscaleProvider* contentionUpscaleProvider,
-    IExceptionsUpscaleProvider* exceptionsUpscaleProvider)
-    :
+    IAllocationsRecorder* allocationsRecorder) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
-    _allocationsRecorder{allocationsRecorder},
-    _contentionUpscaleProvider{contentionUpscaleProvider},
-    _exceptionsUpscaleProvider{exceptionsUpscaleProvider}
+    _allocationsRecorder{allocationsRecorder}
 {
     _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
@@ -153,6 +148,12 @@ struct ddog_prof_Profile* LibddprofExporter::CreateProfile()
     return ddog_prof_Profile_new(sample_types, &period, nullptr);
 }
 
+void LibddprofExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
+{
+    assert(provider != nullptr);
+    _upscaledProviders.push_back(provider);
+}
+
 LibddprofExporter::Tags LibddprofExporter::CreateTags(
     IConfiguration* configuration,
     IRuntimeInfo* runtimeInfo,
@@ -200,7 +201,7 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(
 
 std::string LibddprofExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers)
 {
-    const char* separator = "_";  // ',' are not allowed and +/SPACE would be transformed into '_' anyway
+    const char* separator = "_"; // ',' are not allowed and +/SPACE would be transformed into '_' anyway
     std::stringstream buffer;
     bool emptyList = true;
 
@@ -437,50 +438,47 @@ void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t trace
     ddog_prof_Profile_add_endpoint_count(profile, endpointName, 1);
 }
 
+std::vector<UpscalingInfo> LibddprofExporter::GetUpscalingInfo()
+{
+    std::vector<UpscalingInfo> samplingInfos;
+    samplingInfos.reserve(_upscaledProviders.size());
+
+    for (auto& provider : _upscaledProviders)
+    {
+        samplingInfos.push_back(provider->GetUpscalingInfo());
+    }
+
+    return samplingInfos;
+}
+
+void AddUpscalingRules(ddog_prof_Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos)
+{
+    for (auto const& upscalingInfo : upscalingInfos)
+    {
+        ddog_prof_Slice_Usize offsets_slice = {upscalingInfo.Offsets.data(), upscalingInfo.Offsets.size()};
+
+        for (const auto& group : upscalingInfo.UpscaleGroups)
+        {
+            ddog_CharSlice labelName = FfiHelper::StringToCharSlice(upscalingInfo.LabelName);
+            ddog_CharSlice groupName = FfiHelper::StringToCharSlice(group.Group);
+            ddog_prof_Profile_UpscalingInfo info = {DDOG_PROF_PROFILE_UPSCALING_INFO_PROPORTIONAL, {group.SampledCount, group.RealCount}};
+
+            auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule(profile, offsets_slice, labelName, groupName, info);
+            if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
+            {
+                auto errorMessage = ddog_Error_message(&upscalingRuleAdd.err);
+                Log::Error("Failed to add an upscaling rule: ", std::string_view(errorMessage.ptr, errorMessage.len));
+                ddog_Error_drop(&upscalingRuleAdd.err);
+            }
+        }
+    }
+}
+
 bool LibddprofExporter::Export()
 {
     bool exported = false;
 
     int32_t idx = 0;
-
-    // Prepare samples upscaling
-    if (_contentionUpscaleProvider != nullptr)
-    {
-        std::vector<UpscaleStringGroup> contentionGroups;
-        if (_contentionUpscaleProvider->GetGroups(contentionGroups))
-        {
-            Log::Debug(contentionGroups.size(), " contention groups");
-            for (const auto& contention : contentionGroups)
-            {
-                Log::Debug("  ", contention.Group, " | ", contention.SampledCount, " / ", contention.RealCount);
-            }
-        }
-        else
-        {
-            Log::Debug("No contention bucket...");
-        }
-
-        // TODO: pass the lock contention ratio to libdatadog
-    }
-
-    if (_exceptionsUpscaleProvider != nullptr)
-    {
-        std::vector<UpscaleStringGroup> exceptionGroups;
-        if (_exceptionsUpscaleProvider->GetGroups(exceptionGroups))
-        {
-            Log::Debug(exceptionGroups.size(), " exception groups");
-            for (const auto& exception : exceptionGroups)
-            {
-                Log::Debug("  ", exception.Group, " | ", exception.SampledCount, " / ", exception.RealCount);
-            }
-        }
-        else
-        {
-            Log::Debug("No exception bucket...");
-        }
-
-        // TODO: pass the per exception type count to libdatadog
-    }
 
     if (_allocationsRecorder != nullptr)
     {
@@ -544,6 +542,9 @@ bool LibddprofExporter::Export()
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
             continue;
         }
+        auto upscalingInfos = GetUpscalingInfo();
+
+        AddUpscalingRules(profile, upscalingInfos);
 
         auto profileAutoDelete = ProfileAutoDelete{profile};
         auto serializedProfile = SerializedProfile{profile};
@@ -675,7 +676,6 @@ std::string LibddprofExporter::CreateMetricsFileContent() const
             }
         }
         builder << "]";
-
     }
     return builder.str();
 }
@@ -695,7 +695,9 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
     // profile
     filesArray[0] = profile;
 
-    struct ddog_prof_Exporter_Slice_File files{};
+    struct ddog_prof_Exporter_Slice_File files
+    {
+    };
     files.len = 1;
     files.ptr = filesArray;
 

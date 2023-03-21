@@ -338,10 +338,17 @@ bool CorProfilerCallback::InitializeServices()
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get(),
         _metricsRegistry,
-        _pAllocationsRecorder.get(),
-        _pContentionProvider,
-        _pExceptionsProvider
+        _pAllocationsRecorder.get()
         );
+
+    if (_pContentionProvider != nullptr)
+    {
+        _pExporter->RegisterUpscaleProvider(_pContentionProvider);
+    }
+    if (_pExceptionsProvider != nullptr)
+    {
+        _pExporter->RegisterUpscaleProvider(_pExceptionsProvider);
+    }
 
     _pSamplesCollector = RegisterService<SamplesCollector>(
         _pConfiguration.get(),

@@ -89,11 +89,11 @@ public:
         groupInfo = &((*slot.first).second);
     }
 
-    bool GetGroups(std::vector<UpscaleGroupInfo<TGroup>>& upscaleGroups)
+    std::vector<UpscaleGroupInfo<TGroup>> GetGroups()
     {
         std::unique_lock lock(_groupsMutex);
 
-        upscaleGroups.clear();
+        std::vector<UpscaleGroupInfo<TGroup>> upscaleGroups;
 
         for (auto& bucket : _groups)
         {
@@ -112,7 +112,7 @@ public:
             bucket.second.Sampled = 0;
         }
 
-        return (upscaleGroups.size() > 0);
+        return upscaleGroups;
     }
 
 protected:
