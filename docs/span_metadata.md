@@ -446,6 +446,10 @@ out.host | Yes
 out.port | Yes
 redis.raw_command | Yes
 span.kind | `client`
+### Metrics
+Name | Required |
+---------|----------------|
+db.redis.database_index | Yes
 
 ## StackExchangeRedis
 ### Span properties
@@ -461,6 +465,10 @@ out.host | Yes
 out.port | Yes
 redis.raw_command | Yes
 span.kind | `client`
+### Metrics
+Name | Required |
+---------|----------------|
+db.redis.database_index | No
 
 ## Sqlite
 ### Span properties
