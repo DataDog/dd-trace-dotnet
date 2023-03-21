@@ -11,8 +11,7 @@ namespace DogStatsD.RaceCondition
     class Program
     {
         internal static readonly string ThreadFinishedMessage = "The current thread has finished";
-        private static readonly Type GlobalSettingsType = Type.GetType("Datadog.Trace.Configuration.GlobalSettings, Datadog.Trace");
-        private static readonly MethodInfo SetDebugEnabledMethod = GlobalSettingsType?.GetMethod("SetDebugEnabled");
+
         static int Main(string[] args)
         {
             try
@@ -20,11 +19,9 @@ namespace DogStatsD.RaceCondition
                 InMemoryLog4NetLogger.Setup();
                 var logger = LogManager.GetLogger(typeof(Program));
 
-                
-
                 Environment.SetEnvironmentVariable("DD_TRACE_METRICS_ENABLED", "true");
                 Environment.SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
-                SetDebugEnabledMethod.Invoke(null, new object[] { true });
+                Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
                 SampleHelpers.ConfigureTracer("DogStatsD.RaceCondition");
                 var totalIterations = 100;
                 var threadRepresentation = Enumerable.Range(0, 25).ToArray();
