@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler
                 tags.HttpMethod = httpMethod?.ToUpperInvariant();
                 if (requestUri is not null)
                 {
-                    tags.HttpUrl = GetObfuscatedQueryString(requestUri, tracer.TracerManager.QueryStringManager);
+                    tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
                 }
 
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
@@ -137,14 +137,5 @@ namespace Datadog.Trace.ClrProfiler
             // or we couldn't populate it completely (some tags is better than no tags)
             return span;
         }
-
-        private static string GetObfuscatedQueryString(Uri requestUri, QueryStringManager queryStringManager = null)
-            => HttpRequestUtils.GetUrl(
-                requestUri.Scheme,
-                requestUri.Host,
-                pathBase: string.Empty,
-                requestUri.AbsolutePath,
-                requestUri.Query,
-                queryStringManager);
     }
 }
