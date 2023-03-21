@@ -1,8 +1,6 @@
 using System;
 using System.IO;
 using System.Reflection;
-using Datadog.Trace;
-using Datadog.Trace.Configuration;
 
 namespace PluginApplication
 {
@@ -35,17 +33,15 @@ namespace PluginApplication
             var applicationAppDomain = AppDomain.CreateDomain("ApplicationAppDomain", null, applicationFilesDirectory, applicationFilesDirectory, false);
 #endif
 
-            // Set up Tracer and start a trace
             // Do not explicitly set LogsInjectionEnabled = true, use DD_LOGS_INJECTION environment variable to enable
-            var settings = TracerSettings.FromDefaultSources();
-            settings.Environment ??= "dev"; // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when Environment=null
-            settings.ServiceVersion ??= "1.0.0"; // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when when ServiceVersion=null
-            Tracer.Configure(settings);
+
+            Environment.SetEnvironmentVariable("DD_ENV", "dev"); // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when Environment=null
+            Environment.SetEnvironmentVariable("DD_VERSION", "1.0.0"); // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when when ServiceVersion=null
 
             try
             {
                 logAction($"{ExcludeMessagePrefix}Entering Datadog scope.");
-                using (var scope = Tracer.Instance.StartActive("transaction"))
+                using (var scope = Samples.SampleHelpers.CreateScope("transaction"))
                 {
                     // In the middle of the trace, make a call across AppDomains
                     // Unless handled properly, this can cause the following error due
