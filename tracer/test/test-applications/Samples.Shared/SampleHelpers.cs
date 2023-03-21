@@ -38,7 +38,7 @@ namespace Samples
         private static readonly MethodInfo SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.Public | BindingFlags.Static);
-        private static readonly MethodInfo SetService = TracerSettingsType?.GetProperty("Service")?.SetMethod;
+        private static readonly MethodInfo SetServiceName = TracerSettingsType?.GetProperty("ServiceName")?.SetMethod;
         private static readonly FieldInfo TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
 
 
@@ -66,7 +66,7 @@ namespace Samples
                 return;
             }
             var tracerSettings = FromDefaultSourcesMethod.Invoke(null, Array.Empty<object>());
-            SetService.Invoke(tracerSettings, new object[] { serviceName });
+            SetServiceName.Invoke(tracerSettings, new object[] { serviceName });
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
             ConfigureMethod.Invoke(tracer, new object[] { tracerSettings });
