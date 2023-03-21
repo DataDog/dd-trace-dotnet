@@ -385,6 +385,10 @@ namespace Datadog.Trace.Tools.Runner
                     tracerProfiler32 = FileExists(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
                     tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
                 }
+                else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                {
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-ARM64", "Datadog.Trace.ClrProfiler.Native.dll"));
+                }
                 else
                 {
                     WriteError($"Error: Windows {RuntimeInformation.OSArchitecture} architecture is not supported.");
