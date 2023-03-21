@@ -18,5 +18,5 @@ class IConfiguration;
 namespace OsSpecificApi {
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration);
 uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo);
-bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime);
+bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed);
 }
