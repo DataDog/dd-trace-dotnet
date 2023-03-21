@@ -376,23 +376,25 @@ namespace Datadog.Trace.Tools.Runner
             string tracerMsBuild = FileExists(Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.MSBuild.dll"));
             string tracerProfiler32 = string.Empty;
             string tracerProfiler64 = string.Empty;
+            string tracerProfilerArm64 = null;
             string ldPreload = string.Empty;
 
             if (platform == Platform.Windows)
             {
-                if (RuntimeInformation.OSArchitecture == Architecture.X64 || RuntimeInformation.OSArchitecture == Architecture.X86)
+                if (RuntimeInformation.OSArchitecture == Architecture.X64 || RuntimeInformation.OSArchitecture == Architecture.X86 || RuntimeInformation.OSArchitecture == Architecture.Arm64)
                 {
                     tracerProfiler32 = FileExists(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
                     tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
-                }
-                else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
-                {
-                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-ARM64", "Datadog.Trace.ClrProfiler.Native.dll"));
                 }
                 else
                 {
                     WriteError($"Error: Windows {RuntimeInformation.OSArchitecture} architecture is not supported.");
                     return null;
+                }
+
+                if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                {
+                    tracerProfilerArm64 = FileExists(Path.Combine(tracerHome, "win-ARM64", "Datadog.Trace.ClrProfiler.Native.dll"));
                 }
             }
             else if (platform == Platform.Linux)
@@ -401,11 +403,13 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     var archFolder = IsAlpine() ? "linux-musl-x64" : "linux-x64";
                     tracerProfiler64 = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Trace.ClrProfiler.Native.so"));
+                    tracerProfilerArm64 = tracerProfiler64;
                     ldPreload = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Linux.ApiWrapper.x64.so"));
                 }
                 else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
                 {
                     tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Trace.ClrProfiler.Native.so"));
+                    tracerProfilerArm64 = tracerProfiler64;
                     ldPreload = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Linux.ApiWrapper.x64.so"));
                 }
                 else
@@ -417,6 +421,7 @@ namespace Datadog.Trace.Tools.Runner
             else if (platform == Platform.MacOS)
             {
                 tracerProfiler64 = FileExists(Path.Combine(tracerHome, "osx", "Datadog.Trace.ClrProfiler.Native.dylib"));
+                tracerProfilerArm64 = tracerProfiler64;
             }
 
             var envVars = new Dictionary<string, string>
@@ -436,6 +441,12 @@ namespace Datadog.Trace.Tools.Runner
             if (!string.IsNullOrEmpty(ldPreload))
             {
                 envVars["LD_PRELOAD"] = ldPreload;
+            }
+
+            if (!string.IsNullOrEmpty(tracerProfilerArm64))
+            {
+                envVars["CORECLR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
+                envVars["COR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
             }
 
             return envVars;

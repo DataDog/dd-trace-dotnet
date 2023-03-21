@@ -97,9 +97,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
-#if defined(ARM64) || defined(ARM)
+#if !defined(_WIN32) && (defined(ARM64) || defined(ARM))
     //
-    // In ARM64 and ARM, complete ReJIT support is only available from .NET 5.0
+    // In ARM64 and ARM, complete ReJIT support is only available from .NET 5.0 (on .NET Core)
     //
     ICorProfilerInfo12* info12;
     HRESULT hrInfo12 = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo12), (void**) &info12);
