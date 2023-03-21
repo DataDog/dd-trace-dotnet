@@ -15,7 +15,7 @@ internal static class PropagationModuleImpl
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PropagationModuleImpl));
 
-    public static object? PropagateTaint(object? input, object? result)
+    public static object? PropagateTaint(object? input, object result, int offset = 0)
     {
         try
         {
@@ -38,17 +38,26 @@ internal static class PropagationModuleImpl
                 return result;
             }
 
-            taintedObjects.Taint(result, taintedSelf.Ranges);
+            if (offset != 0)
+            {
+                var newRanges = new Range[taintedSelf.Ranges.Length];
+                Ranges.CopyShift(taintedSelf.Ranges, newRanges, 0, offset);
+                taintedObjects.Taint(result, newRanges);
+            }
+            else
+            {
+                taintedObjects.Taint(result, taintedSelf.Ranges);
+            }
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.TaintIfInputIsTainted exception");
+            Log.Error(err, "StringModuleImpl.PropagateTaint exception");
         }
 
         return result;
     }
 
-    internal static TaintedObject? GetTainted(TaintedObjects taintedObjects, object? value)
+    public static TaintedObject? GetTainted(TaintedObjects taintedObjects, object? value)
     {
         return value == null ? null : taintedObjects.Get(value);
     }
@@ -92,7 +101,7 @@ internal static class PropagationModuleImpl
     // This situation could affect the string builder class, but not the string class because the string methods return new instances
     // After discussion, we assume that we can have incorrect ranges in special situations, but we should make sure that the ranges do not
     // exceed the string length
-    internal static void FixRangesIfNeeded(string result)
+    public static void FixRangesIfNeeded(string result)
     {
         var tainted = IastModule.GetIastContext()?.GetTaintedObjects()?.Get(result);
         var ranges = tainted?.Ranges;

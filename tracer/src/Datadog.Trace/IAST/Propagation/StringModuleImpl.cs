@@ -13,58 +13,13 @@ using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
+using static Datadog.Trace.Iast.Propagation.PropagationModuleImpl;
+
 namespace Datadog.Trace.Iast.Propagation;
 
 internal static class StringModuleImpl
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringModuleImpl));
-
-    internal static TaintedObject? GetTainted(TaintedObjects taintedObjects, object? value)
-    {
-        return value == null ? null : taintedObjects.Get(value);
-    }
-
-    public static object? PropagateTaint(object input, object result, int offset = 0)
-    {
-        try
-        {
-            if (result is null)
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            var taintedObjects = iastContext.GetTaintedObjects();
-            var taintedSelf = taintedObjects.Get(input);
-
-            if (taintedSelf == null)
-            {
-                return result;
-            }
-
-            if (offset != 0)
-            {
-                var newRanges = new Range[taintedSelf.Ranges.Length];
-                Ranges.CopyShift(taintedSelf.Ranges, newRanges, 0, offset);
-                taintedObjects.Taint(result, newRanges);
-            }
-            else
-            {
-                taintedObjects.Taint(result, taintedSelf.Ranges);
-            }
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "StringModuleImpl.PropagateTaint exception");
-        }
-
-        return result;
-    }
 
     /// <summary> Taints a string.Insert operation </summary>
     /// <param name="target"> original string </param>
@@ -225,39 +180,6 @@ internal static class StringModuleImpl
         }
 
         return result;
-    }
-
-    /// <summary> Taints a string.substring operation </summary>
-    /// <param name="self"> original string </param>
-    /// <param name="beginIndex"> start index </param>
-    /// <param name="result"> the substring result </param>
-    /// <param name="resultLength"> Result's length </param>
-    private static void OnStringSubSequence(string self, int beginIndex, object result, int resultLength)
-    {
-        var iastContext = IastModule.GetIastContext();
-        if (iastContext == null)
-        {
-            return;
-        }
-
-        var taintedObjects = iastContext.GetTaintedObjects();
-        var selfTainted = taintedObjects.Get(self);
-        if (selfTainted == null)
-        {
-            return;
-        }
-
-        var rangesSelf = selfTainted.Ranges;
-        if (rangesSelf.Length == 0)
-        {
-            return;
-        }
-
-        var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
-        if (newRanges != null && newRanges.Length > 0)
-        {
-            taintedObjects.Taint(result, newRanges);
-        }
     }
 
     public static string OnStringJoin(string result, IEnumerable<object> values, int startIndex = 0, int count = -1)

@@ -567,7 +567,7 @@ public partial class StringAspects
     public static string ToUpper(string target)
     {
         var result = target.ToUpper();
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -581,7 +581,7 @@ public partial class StringAspects
     public static string ToUpper(string target, global::System.Globalization.CultureInfo culture)
     {
         var result = target.ToUpper(culture);
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -594,7 +594,7 @@ public partial class StringAspects
     public static string ToUpperInvariant(string target)
     {
         var result = target.ToUpperInvariant();
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -607,7 +607,7 @@ public partial class StringAspects
     public static string ToLower(string target)
     {
         var result = target.ToLower();
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -621,7 +621,7 @@ public partial class StringAspects
     public static string ToLower(string target, global::System.Globalization.CultureInfo culture)
     {
         var result = target.ToLower(culture);
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -634,7 +634,7 @@ public partial class StringAspects
     public static string ToLowerInvariant(string target)
     {
         var result = target.ToLowerInvariant();
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -692,7 +692,7 @@ public partial class StringAspects
     public static string PadLeft(string target, int totalWidth)
     {
         var result = target.PadLeft(totalWidth);
-        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        PropagationModuleImpl.PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
         return result;
     }
 
@@ -707,7 +707,7 @@ public partial class StringAspects
     public static string PadLeft(string target, int totalWidth, char paddingChar)
     {
         var result = target.PadLeft(totalWidth, paddingChar);
-        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        PropagationModuleImpl.PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
         return result;
     }
 
@@ -721,7 +721,7 @@ public partial class StringAspects
     public static string PadRight(string target, int totalWidth)
     {
         var result = target.PadRight(totalWidth);
-        PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -736,7 +736,7 @@ public partial class StringAspects
     public static string PadRight(string target, int totalWidth, char paddingChar)
     {
         var result = target.PadRight(totalWidth, paddingChar);
-        PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 }
