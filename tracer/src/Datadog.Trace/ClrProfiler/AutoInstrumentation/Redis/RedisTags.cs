@@ -25,5 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }
+
+        [Metric(Trace.Metrics.RedisDatabaseIndex)]
+        public double? DatabaseIndex { get; set; }
     }
 }

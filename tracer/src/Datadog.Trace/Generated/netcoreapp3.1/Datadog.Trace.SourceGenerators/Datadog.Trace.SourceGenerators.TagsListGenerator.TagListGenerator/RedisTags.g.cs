@@ -8,6 +8,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     partial class RedisTags
     {
+        // DatabaseIndexBytes = System.Text.Encoding.UTF8.GetBytes("db.redis.database_index");
+        private static readonly byte[] DatabaseIndexBytes = new byte[] { 100, 98, 46, 114, 101, 100, 105, 115, 46, 100, 97, 116, 97, 98, 97, 115, 101, 95, 105, 110, 100, 101, 120 };
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
@@ -125,6 +127,49 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             }
 
             base.WriteAdditionalTags(sb);
+        }
+        public override double? GetMetric(string key)
+        {
+            return key switch
+            {
+                "db.redis.database_index" => DatabaseIndex,
+                _ => base.GetMetric(key),
+            };
+        }
+
+        public override void SetMetric(string key, double? value)
+        {
+            switch(key)
+            {
+                case "db.redis.database_index": 
+                    DatabaseIndex = value;
+                    break;
+                default: 
+                    base.SetMetric(key, value);
+                    break;
+            }
+        }
+
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
+        {
+            if (DatabaseIndex is not null)
+            {
+                processor.Process(new TagItem<double>("db.redis.database_index", DatabaseIndex.Value, DatabaseIndexBytes));
+            }
+
+            base.EnumerateMetrics(ref processor);
+        }
+
+        protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
+        {
+            if (DatabaseIndex is not null)
+            {
+                sb.Append("db.redis.database_index (metric):")
+                  .Append(DatabaseIndex.Value)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalMetrics(sb);
         }
     }
 }
