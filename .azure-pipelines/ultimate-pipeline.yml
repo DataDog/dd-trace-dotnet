@@ -251,7 +251,7 @@ stages:
     - script: |
         dir "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\"
         echo Installing
-        "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\setup.exe" modify --productId Microsoft.VisualStudio.Product.Enterprise --channelId VisualStudio.17.Release --passive --norestart --add Microsoft.VisualStudio.Component.VC.v141.ARM64 --add Microsoft.VisualStudio.Component.VC.14.29.16.11.ARM64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 --add Microsoft.VisualStudio.Component.VC.ATL.ARM64 --add Microsoft.VisualStudio.Component.VC.14.29.16.11.ATL.ARM64 --add Microsoft.VisualStudio.Component.VC.14.33.17.3.ATL.ARM64 --add Microsoft.VisualStudio.Component.VC.14.33.17.4.ATL.ARM64 --add Microsoft.VisualStudio.Component.VC.14.33.17.4.MFC.ARM64
+        "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\setup.exe" modify --productId Microsoft.VisualStudio.Product.Enterprise --channelId VisualStudio.17.Release --add Microsoft.VisualStudio.Component.VC.v141.ARM64 --add Microsoft.VisualStudio.Component.VC.14.29.16.11.ARM64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 --add Microsoft.VisualStudio.Component.VC.ATL.ARM64 --add Microsoft.VisualStudio.Component.VC.14.29.16.11.ATL.ARM64 --add Microsoft.VisualStudio.Component.VC.14.33.17.3.ATL.ARM64 --add Microsoft.VisualStudio.Component.VC.14.33.17.4.ATL.ARM64 --add Microsoft.VisualStudio.Component.VC.14.33.17.4.MFC.ARM64 --passive --norestart --wait
         echo Done.
         dir "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\"
       displayName: Install ARM64 toolchain
