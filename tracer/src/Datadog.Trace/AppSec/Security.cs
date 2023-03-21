@@ -469,13 +469,7 @@ namespace Datadog.Trace.AppSec
 
                 if (asmConfig.TypedFile.Data != null)
                 {
-                    foreach (var data in asmConfig.TypedFile.Data)
-                    {
-                        if (data.Id is not null)
-                        {
-                            _remoteConfigurationStatus.Attributes[data.Id] = data.Attributes;
-                        }
-                    }
+                    _remoteConfigurationStatus.DataObject = asmConfig.TypedFile.Data;
                 }
             }
 
@@ -493,7 +487,10 @@ namespace Datadog.Trace.AppSec
                     exclusions.Count);
 
                 // Handle attributes
-                HandleRcmAttributes(_remoteConfigurationStatus.Attributes.Values.ToList());
+                if (_remoteConfigurationStatus.DataObject is not null)
+                {
+                    HandleRcmAttributes(_remoteConfigurationStatus.DataObject.Attributes);
+                }
             }
 
             foreach (var asmConfig in asmConfigs)
@@ -509,23 +506,35 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void HandleRcmAttributes(List<Attributes> attributes)
+        private void HandleRcmAttributes(Attributes attributes)
         {
-            // Handle the waf_timeout custom_attributes
-            var wafTimeout = attributes
-                            .Select(x => x.CustomAttributes?["waf_timeout"])
-                            .DefaultIfEmpty(null).First();
-            if (wafTimeout is not null)
+            if (attributes.Values is null)
             {
-                var wafTimeoutValue = Convert.ToUInt64(wafTimeout);
-                if (wafTimeoutValue <= 0)
+                Log.Error("Failed to Handle Rcm Attributes: the Values dictionary is null");
+                return;
+            }
+
+            // Handle the waf_timeout custom_attributes
+            const string wafTimeoutKey = "waf_timeout";
+            var hasWafTimeout = attributes.Values.TryGetValue("waf_timeout", out var wafTimeout);
+            if (hasWafTimeout)
+            {
+                try
                 {
-                    Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", "waf_timeout", wafTimeoutValue.ToString());
+                    var wafTimeoutValue = Convert.ToUInt64(wafTimeout);
+                    if (wafTimeoutValue <= 0)
+                    {
+                        Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", wafTimeoutKey, wafTimeoutValue.ToString());
+                    }
+                    else
+                    {
+                        _settings.WafTimeoutMicroSeconds = wafTimeoutValue;
+                        Log.Debug("The {WafTimeoutMicroSecondsKey} has been set to '{NewWafTimeoutValue}' according to the attribute '{WafTimeoutKey}'", nameof(_settings.WafTimeoutMicroSeconds), wafTimeoutValue.ToString(), wafTimeoutKey);
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    _settings.WafTimeoutMicroSeconds = wafTimeoutValue;
-                    Log.Debug("The {WafTimeoutMicroSecondsKey} has been set to '{NewWafTimeoutValue}' according to the attribute '{WafTimeoutKey}'", nameof(_settings.WafTimeoutMicroSeconds), wafTimeoutValue.ToString(), "waf_timeout");
+                    Log.Error("The WafTimeoutMicroSecondsKey failed to be set according to the attribute '{WafTimeoutKey}': {Error}: {TimeoutValue}", wafTimeoutKey, e.Message, wafTimeout.ToString());
                 }
             }
         }

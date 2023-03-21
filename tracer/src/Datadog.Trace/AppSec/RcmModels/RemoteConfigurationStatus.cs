@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Data = Datadog.Trace.AppSec.RcmModels.Asm.Data;
 
 namespace Datadog.Trace.AppSec.RcmModels;
 
@@ -22,7 +23,7 @@ internal class RemoteConfigurationStatus
 
     internal IDictionary<string, Action> Actions { get; set; } = new Dictionary<string, Action>();
 
-    internal IDictionary<string, Attributes> Attributes { get; set; } = new Dictionary<string, Attributes>();
+    internal Data DataObject { get; set; } = null;
 
     internal string RemoteRulesJson { get; set; }
 }

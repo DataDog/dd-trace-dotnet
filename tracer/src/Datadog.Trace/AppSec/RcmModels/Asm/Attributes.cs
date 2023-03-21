@@ -5,12 +5,11 @@
 #nullable enable
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.RcmModels.Asm;
 
 internal class Attributes
 {
-    [JsonProperty("custom_attributes")]
-    public Dictionary<string, object>? CustomAttributes { get; set; }
+    [JsonProperty("values")]
+    public Dictionary<string, object>? Values { get; set; }
 }

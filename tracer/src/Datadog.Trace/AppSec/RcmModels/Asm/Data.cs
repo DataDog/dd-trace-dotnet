@@ -9,9 +9,12 @@ namespace Datadog.Trace.AppSec.RcmModels.Asm;
 
 internal class Data
 {
-    [JsonProperty("attributes")]
-    public Attributes? Attributes { get; set; }
-
     [JsonProperty("id")]
     public string? Id { get; set; }
+
+    [JsonProperty("type")]
+    public string? Type { get; set; }
+
+    [JsonProperty("attributes")]
+    public Attributes? Attributes { get; set; }
 }
