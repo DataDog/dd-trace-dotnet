@@ -23,6 +23,7 @@ namespace Datadog.Trace.Tests
 
             spanContext.SpanId.Should().Be(expectedSpanId);
             spanContext.TraceId128.Should().Be(expectedTraceId);
+            spanContext.TraceId.Should().Be(expectedTraceId.Lower);
         }
 
         [Fact]
@@ -40,6 +41,7 @@ namespace Datadog.Trace.Tests
 
             spanContext.SpanId.Should().Be(childSpanId);
             spanContext.TraceId128.Should().Be(parentTraceId, "trace id shouldn't be overriden if a parent trace exists. Doing so would break the HttpWebRequest.GetRequestStream/GetResponse integration.");
+            spanContext.TraceId.Should().Be(parentTraceId.Lower);
         }
 
         [Fact]

@@ -150,6 +150,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             result.Should().NotBeNull();
             result!.TraceId128.Should().Be(traceId);
+            result!.TraceId.Should().Be(traceId.Lower);
             result.SpanId.Should().Be(expectedSpanId);
 
             // Check the injection restoring the 128 bits traceId.

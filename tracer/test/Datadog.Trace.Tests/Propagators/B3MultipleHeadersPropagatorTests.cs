@@ -184,6 +184,7 @@ namespace Datadog.Trace.Tests.Propagators
             var expectedTraceId = new TraceId(0x0af7651916cd43dd, 0x8448eb211c80319c);
             var expectedSpanId = 0x00f067aa0ba902b7UL;
             result.TraceId128.Should().Be(expectedTraceId);
+            result.TraceId.Should().Be(expectedTraceId.Lower);
             Assert.Equal(expectedSpanId, result.SpanId);
 
             // Check truncation
