@@ -48,6 +48,10 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::Remove(System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Remove(System.String,System.Int32)",
 "  [AspectMethodReplace(\"System.String::Remove(System.Int32,System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Remove(System.String,System.Int32,System.Int32)",
 "  [AspectMethodReplace(\"System.String::Insert(System.Int32,System.String)\",\"\",[0],[False],[StringOptimization],Propagation,[])] Insert(System.String,System.Int32,System.String)",
+"  [AspectMethodReplace(\"System.String::PadLeft(System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadLeft(System.String,System.Int32)",
+"  [AspectMethodReplace(\"System.String::PadLeft(System.Int32,System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadLeft(System.String,System.Int32,System.Char)",
+"  [AspectMethodReplace(\"System.String::PadRight(System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadRight(System.String,System.Int32)",
+"  [AspectMethodReplace(\"System.String::PadRight(System.Int32,System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadRight(System.String,System.Int32,System.Char)",
         };
     }
 }
