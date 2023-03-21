@@ -356,13 +356,13 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
         auto& location = _locations[idx];
 
         line = {};
-        line.function.filename = {};
-        line.function.start_line = 0;
-        line.function.name = FfiHelper::StringToCharSlice(frame.second);
+        line.function.filename = FfiHelper::StringToCharSlice(frame.Filename);
+        line.function.start_line = frame.StartLine;
+        line.function.name = FfiHelper::StringToCharSlice(frame.Frame);
 
         // add filename mapping
         location.mapping = {};
-        location.mapping.filename = FfiHelper::StringToCharSlice(frame.first);
+        location.mapping.filename = FfiHelper::StringToCharSlice(frame.ModuleName);
         location.address = 0; // TODO check if we can get that information in the provider
         location.lines = {&line, 1};
         location.is_folded = false;

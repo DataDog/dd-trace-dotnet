@@ -240,8 +240,8 @@ TEST(WallTimeProviderTest, CheckFrames)
         auto frames = sample->GetCallstack();
         for (auto frame : frames)
         {
-            ASSERT_EQ(expectedModules[currentFrame], frame.first);
-            ASSERT_EQ(expectedFrames[currentFrame], frame.second);
+            ASSERT_EQ(expectedModules[currentFrame], frame.ModuleName);
+            ASSERT_EQ(expectedFrames[currentFrame], frame.Frame);
 
             currentFrame++;
         }

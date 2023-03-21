@@ -66,6 +66,7 @@ Configuration::Configuration()
     _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, false);
     _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
+    _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -433,6 +434,11 @@ bool Configuration::GetDefaultDebugLogEnabled()
 bool Configuration::IsAgentless() const
 {
     return _isAgentLess;
+}
+
+bool Configuration::IsDebugInfoEnabled() const
+{
+    return _isDebugInfoEnabled;
 }
 
 bool convert_to(shared::WSTRING const& s, bool& result)

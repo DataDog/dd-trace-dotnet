@@ -71,25 +71,25 @@ private:
     inline static void BuildCallStack(std::shared_ptr<Sample>& sample, uint32_t generation)
     {
         // add same root frame
-        sample->AddFrame(EmptyModule, RootFrame);
+        sample->AddFrame({EmptyModule, RootFrame, "", 0});
 
         // add generation based frame
         switch (generation)
         {
             case 0:
-                sample->AddFrame(EmptyModule, Gen0Frame);
+                sample->AddFrame({EmptyModule, Gen0Frame, "", 0});
                 break;
 
             case 1:
-                sample->AddFrame(EmptyModule, Gen1Frame);
+                sample->AddFrame({EmptyModule, Gen1Frame, "", 0});
                 break;
 
             case 2:
-                sample->AddFrame(EmptyModule, Gen2Frame);
+                sample->AddFrame({EmptyModule, Gen2Frame, "", 0});
                 break;
 
             default:
-                sample->AddFrame(EmptyModule, UnknownGenerationFrame);
+                sample->AddFrame({EmptyModule, UnknownGenerationFrame, "", 0});
                 break;
         }
     }

@@ -505,4 +505,106 @@ public partial class StringAspects
         StringModuleImpl.PropagateTaint(target, result);
         return result;
     }
+
+    /// <summary>
+    /// String.Remove aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <returns> String.Remove() </returns>
+    [AspectMethodReplace("System.String::Remove(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Remove(string target, int startIndex)
+    {
+        string result = target.Remove(startIndex);
+        OnStringRemove(target, result, startIndex, target.Length);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Remove aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <param name="count"> count parameter </param>
+    /// <returns> String.Remove() </returns>
+    [AspectMethodReplace("System.String::Remove(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Remove(string target, int startIndex, int count)
+    {
+        string result = target.Remove(startIndex, count);
+        OnStringRemove(target, result, startIndex, startIndex + count);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Insert aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <param name="value"> value to insert </param>
+    /// <returns> String.Insert() </returns>
+    [AspectMethodReplace("System.String::Insert(System.Int32,System.String)", AspectFilter.StringOptimization)]
+    public static string Insert(string target, int startIndex, string value)
+    {
+        var result = target.Insert(startIndex, value);
+        OnStringInsert(target, startIndex, value, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadLeft aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <returns> String.PadLeft() </returns>
+    [AspectMethodReplace("System.String::PadLeft(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string PadLeft(string target, int totalWidth)
+    {
+        var result = target.PadLeft(totalWidth);
+        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadLeft aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <param name="paddingChar"> paddingChar parameter </param>
+    /// <returns> String.PadLeft() </returns>
+    [AspectMethodReplace("System.String::PadLeft(System.Int32,System.Char)", AspectFilter.StringLiteral_0)]
+    public static string PadLeft(string target, int totalWidth, char paddingChar)
+    {
+        var result = target.PadLeft(totalWidth, paddingChar);
+        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadRight aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <returns> String.PadRight() </returns>
+    [AspectMethodReplace("System.String::PadRight(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string PadRight(string target, int totalWidth)
+    {
+        var result = target.PadRight(totalWidth);
+        PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadRight aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <param name="paddingChar"> paddingChar parameter </param>
+    /// <returns> String.PadRight() </returns>
+    [AspectMethodReplace("System.String::PadRight(System.Int32,System.Char)", AspectFilter.StringLiteral_0)]
+    public static string PadRight(string target, int totalWidth, char paddingChar)
+    {
+        var result = target.PadRight(totalWidth, paddingChar);
+        PropagateTaint(target, result);
+        return result;
+    }
 }

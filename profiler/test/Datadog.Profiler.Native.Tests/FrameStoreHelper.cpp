@@ -17,11 +17,11 @@ FrameStoreHelper::FrameStoreHelper(bool isManaged, std::string prefix, size_t co
         std::stringstream moduleBuilder;
         moduleBuilder << "module #" << i;
 
-        _mapping[i] = { isManaged, moduleBuilder.str(), frameBuilder.str() };
+        _mapping[i] = {isManaged, {moduleBuilder.str(), frameBuilder.str(), "", 0}};
     }
 }
 
-std::tuple<bool, std::string_view, std::string_view> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
+std::pair<bool, FrameInfoView> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
 {
     static std::string UnknownModuleName = "module???";
     static std::string UnknownFunctionName = "frame???";
@@ -32,7 +32,7 @@ std::tuple<bool, std::string_view, std::string_view> FrameStoreHelper::GetFrame(
         return item->second;
     }
 
-    return {true, UnknownModuleName, UnknownFunctionName};
+    return {true, {UnknownModuleName, UnknownFunctionName, "", 0}};
 }
 
 
