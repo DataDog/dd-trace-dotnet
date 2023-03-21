@@ -17,9 +17,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
-    /// <summary>
-    /// Product rcm named ASM, actions object being tested cf https://docs.google.com/document/d/1a_-isT9v_LiiGshzQZtzPzCK_CxMtMIil_2fOq9Z1RE
-    /// </summary>
     public class AspNetCore5AsmAttributesWafTimeout : RcmBase
     {
         private const string AsmProduct = "ASM";
@@ -31,18 +28,19 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         }
 
         [SkippableTheory]
-        [InlineData("/", 200)]
+        [InlineData("/params-endpoint/appscan_fingerprint", 200)]
         [Trait("RunOnWindows", "True")]
-        public async Task TestWafTimeout(string type, int statusCode)
+        public async Task TestWafTimeoutValueChanged(string type, int statusCode)
         {
-            var url = $"/health";
+            EnableDebugMode();
+
             await TryStartApp();
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode);
-            var acknowledgedId = nameof(TestWafTimeout) + Guid.NewGuid();
+            var acknowledgedId = nameof(TestWafTimeoutValueChanged) + Guid.NewGuid();
 
-            var spans1 = await SendRequestsAsync(agent, url);
-            acknowledgedId = nameof(TestWafTimeout) + Guid.NewGuid();
+            var spans1 = await SendRequestsAsync(agent, type);
+            acknowledgedId = nameof(TestWafTimeoutValueChanged) + Guid.NewGuid();
 
             var rcmWafData = new Payload
             {
@@ -54,7 +52,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                         {
                             CustomAttributes = new Dictionary<string, object>
                             {
-                                { "waf_timeout", 1 },
+                                { "waf_timeout", 2 }, // Set a low timeout to make the waf timeout
                             }
                         },
                         Id = "3dd-0uc-h1s"
@@ -63,8 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             };
 
             await agent.SetupRcmAndWait(Output, new[] { ((object)rcmWafData, acknowledgedId) }, AsmProduct, appliedServiceNames: new[] { acknowledgedId });
-
-            var spans2 = await SendRequestsAsync(agent, url);
+            var spans2 = await SendRequestsAsync(agent, type);
             var spans = new List<MockSpan>();
             spans.AddRange(spans1);
             spans.AddRange(spans2);
