@@ -151,7 +151,6 @@ public partial class StringBuilderAspects
     /// <param name="target"> StringBuilder instance </param>
     /// <param name="value"> string parameter </param>
     /// <returns> instance.Append() </returns>
-#if NETFRAMEWORK
     [AspectMethodReplace("System.Text.StringBuilder::Append(System.Object)")]
     public static StringBuilder Append(StringBuilder target, object? value)
     {
@@ -172,16 +171,6 @@ public partial class StringBuilderAspects
 
         return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value), initialLength, valueObject, length, 0, length);
     }
-#else
-    [AspectMethodReplace("System.Text.StringBuilder::Append(System.Object)")]
-    public static StringBuilder Append(StringBuilder target, object? value)
-    {
-        var initialLength = target.Length;
-        var valueToString = value?.ToString();
-        var length = valueToString?.Length ?? 0;
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value), initialLength, valueToString, length, 0, length);
-    }
-#endif
 
     /// <summary>  StringBuilder.Append aspect </summary>
     /// <param name="target"> StringBuilder instance </param>

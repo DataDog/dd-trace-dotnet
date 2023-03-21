@@ -193,12 +193,12 @@ public class InstrumentationTestsBase
         instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
     }
 
-    protected void AssertUntaintedWithOriginalCallCheck(string expected, string instrumented, Expression<Func<Object>> notInstrumented)
+    protected void AssertUntaintedWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
     {
-        instrumented.Should().Be(expected);
+        instrumented.ToString().Should().Be(expected.ToString());
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
-        instrumented.Should().Be(notInstrumentedResult.ToString());
+        instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
     }
 
     private static object ExecuteFunc(Func<Object> function)
