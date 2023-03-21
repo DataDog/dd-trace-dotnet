@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "IFrameStore.h"
+
 #include <array>
 #include <iostream>
 #include <list>
@@ -23,7 +25,7 @@ typedef std::pair<std::string_view, std::string> Label;
 typedef std::list<Label> Labels;
 typedef std::pair<std::string_view, int64_t> NumericLabel;
 typedef std::list<NumericLabel> NumericLabels;
-typedef std::vector<std::pair<std::string_view, std::string_view>> CallStack;
+typedef std::vector<FrameInfoView> CallStack;
 
 class Sample
 {
@@ -54,7 +56,7 @@ public:
     // but it seems better for encapsulation to do the transformation between collected raw data
     // and a Sample in each Provider (this is behind CollectorBase template class)
     void AddValue(std::int64_t value, size_t index);
-    void AddFrame(std::string_view moduleName, std::string_view frame);
+    void AddFrame(FrameInfoView const& frame);
 
     template<typename T>
     void AddLabel(T&& label)

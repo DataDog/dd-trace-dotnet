@@ -57,6 +57,7 @@ public:
     bool IsHeapProfilingEnabled() const override;
     bool UseBacktrace2() const override;
     bool IsAllocationRecorderEnabled() const override;
+    bool IsDebugInfoEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -129,4 +130,5 @@ private:
     double _minimumCores;
     std::string _namedPipeName;
     bool _isTimestampsAsLabelEnabled;
+    bool _isDebugInfoEnabled;
 };

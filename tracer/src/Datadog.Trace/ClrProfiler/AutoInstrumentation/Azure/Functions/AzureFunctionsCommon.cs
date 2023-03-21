@@ -10,10 +10,8 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
-using Microsoft.AspNetCore.Http;
 
 #nullable enable
 
@@ -28,24 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
-        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, OperationName, IntegrationId);
-
-        public static CallTargetState OnFunctionMiddlewareBegin<TTarget>(TTarget instance, HttpContext httpContext)
-        {
-            var tracer = Tracer.Instance;
-
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
-            {
-                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: null);
-
-                if (scope != null)
-                {
-                    return new CallTargetState(scope);
-                }
-            }
-
-            return CallTargetState.GetDefault();
-        }
 
         public static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam)
             where TFunction : IFunctionInstance
@@ -341,19 +321,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                 }
 
-                if (feature is null)
+                if (feature is null || !feature.TryDuckCast<FunctionBindingsFeatureStruct>(out var bindingFeature))
                 {
                     return null;
                 }
 
-                // Not using DuckType.TryCast<> to avoid boxing
-                var featureResult = DuckType.CreateCache<FunctionBindingsFeatureStruct>.GetProxy(feature.GetType());
-                if (!featureResult.Success)
-                {
-                    return null;
-                }
-
-                var bindingFeature = featureResult.CreateInstance<FunctionBindingsFeatureStruct>(feature);
                 if (bindingFeature.InputData is null
                  || !bindingFeature.InputData.TryGetValue(bindingName!, out var requestDataObject)
                  || requestDataObject is null)
@@ -361,14 +333,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return null;
                 }
 
-                // Not using DuckType.TryCast<> to avoid boxing
-                var httpRequestResult = DuckType.CreateCache<HttpRequestDataStruct>.GetProxy(requestDataObject.GetType());
-                if (!httpRequestResult.Success)
+                if (!requestDataObject.TryDuckCast<HttpRequestDataStruct>(out var httpRequest))
                 {
                     return null;
                 }
 
-                var httpRequest = httpRequestResult.CreateInstance<HttpRequestDataStruct>(requestDataObject);
                 return SpanContextPropagator.Instance.Extract(new HttpHeadersCollection(httpRequest.Headers));
             }
             catch (Exception ex)
