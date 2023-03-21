@@ -100,17 +100,20 @@ partial class Build
     {
         get
         {
-            if (TargetPlatform == MSBuildTargetPlatform.x64)
+            if (TargetPlatform == MSBuildTargetPlatform.x64 || TargetPlatform == ARM64TargetPlatform)
             {
-                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64TargetPlatform };
+                if (ForceARM64BuildInWindows)
+                {
+                    return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64TargetPlatform };
+                }
+                else
+                {
+                    return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
+                }
             }
             else if (TargetPlatform == MSBuildTargetPlatform.x86)
             {
                 return new[] { MSBuildTargetPlatform.x86 };
-            }
-            else if (TargetPlatform == ARM64TargetPlatform)
-            {
-                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64TargetPlatform };
             }
 
             return new[] { TargetPlatform };
