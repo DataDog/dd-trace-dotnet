@@ -356,11 +356,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 else
                 {
                     // 64-bit trace ids and span ids are encoded as decimal
-                    writer.WriteValue(span.TraceId);
+                    writer.WriteValue(span.TraceId.ToString(CultureInfo.InvariantCulture));
                 }
 
                 writer.WritePropertyName("dd.span_id", escape: false);
-                writer.WriteValue(span.SpanId);
+                writer.WriteValue(span.SpanId.ToString(CultureInfo.InvariantCulture));
 
                 if (span.GetTag(TestTags.Suite) is { } suite)
                 {
