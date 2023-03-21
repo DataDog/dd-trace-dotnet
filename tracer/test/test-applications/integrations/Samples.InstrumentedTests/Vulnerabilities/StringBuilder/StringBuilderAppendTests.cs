@@ -10,6 +10,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     protected string taintedValue = "tainted";
     protected string taintedValue2 = "TAINTED2";
     StringBuilder TaintedStringBuilder = new StringBuilder("TaintedStringBuilder");
+    StringBuilder TaintedStringBuilder2 = new StringBuilder("TaintedStringBuilder");
     string TaintedString = "TaintedString";
     string UntaintedString = "UntaintedString";
     char[] TaintedCharArray = "TaintedString".ToCharArray();
@@ -21,26 +22,26 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
         AddTainted(taintedValue2);
         AddTainted(TaintedString);
         AddTainted(TaintedStringBuilder);
+        AddTainted(TaintedStringBuilder2);
         AddTainted(TaintedCharArray);
     }
 
     [Fact]
     public void GivenAStringBuilder_WhenAppendBasic_ThenResultIsTainted()
     {
-        StringBuilder strb = new StringBuilder();
-        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", strb.Append(TaintedString), () => strb.Append(TaintedString));
+        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", new StringBuilder().Append(TaintedString), () => new StringBuilder().Append(TaintedString));
     }
 
     [Fact]
     public void GivenAStringBuilder_WhenStringBuilderAppendBasicWithUnTainted_ThenResultIsTainted()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+:UntaintedString", TaintedStringBuilder.Append(UntaintedString), () => TaintedStringBuilder.Append(UntaintedString));
+        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+:UntaintedString", TaintedStringBuilder.Append(UntaintedString), () => TaintedStringBuilder2.Append(UntaintedString));
     }
 
     [Fact]
     public void GivenAStringBuilder_WhenStringBuilderAppendBasicWithTainted_ThenResultIsTainted()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+::+-TaintedString-+:", TaintedStringBuilder.Append(TaintedString), () => TaintedStringBuilder.Append(TaintedString));
+        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+::+-TaintedString-+:", TaintedStringBuilder.Append(TaintedString), () => TaintedStringBuilder2.Append(TaintedString));
     }
 
     [Fact]
@@ -48,7 +49,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+:UntaintedString:+-TaintedString-+:",
             TaintedStringBuilder.Append(UntaintedString).Append(TaintedString),
-            () => TaintedStringBuilder.Append(UntaintedString).Append(TaintedString));
+            () => TaintedStringBuilder2.Append(UntaintedString).Append(TaintedString));
     }
 
     [Fact]
@@ -57,8 +58,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
         int start = 0;
         int count = 5;
 
-        StringBuilder strb = new StringBuilder();
-        AssertTaintedFormatWithOriginalCallCheck(":+-Taint-+:", strb.Append(TaintedString, start, count), () => strb.Append(TaintedString, start, count));
+        AssertTaintedFormatWithOriginalCallCheck(":+-Taint-+:", new StringBuilder().Append(TaintedString, start, count), () => new StringBuilder().Append(TaintedString, start, count));
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
         int count = 7;
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+:Untaint",
             TaintedStringBuilder.Append(UntaintedString, start, count),
-            () => TaintedStringBuilder.Append(UntaintedString, start, count));
+            () => TaintedStringBuilder2.Append(UntaintedString, start, count));
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
         int count = 7;
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+::+-Tainted-+:",
             TaintedStringBuilder.Append(TaintedString, start, count),
-            () => TaintedStringBuilder.Append(TaintedString, start, count));
+            () => TaintedStringBuilder2.Append(TaintedString, start, count));
     }
 
     [Fact]
@@ -90,14 +90,13 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
 
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+:UntaintedString:+-TaintedString-+:",
             TaintedStringBuilder.Append(UntaintedString, start, count).Append(TaintedString, start, count2),
-            () => TaintedStringBuilder.Append(UntaintedString, start, count).Append(TaintedString, start, count2));
+            () => TaintedStringBuilder2.Append(UntaintedString, start, count).Append(TaintedString, start, count2));
     }
 
     [Fact]
     public void GivenAStringBuilder_WhenStringBuilderAppendChars_ThenResultIsTainted()
     {
-        StringBuilder strb = new StringBuilder();
-        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", strb.Append(TaintedCharArray), () => strb.Append(TaintedCharArray));
+        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", new StringBuilder().Append(TaintedCharArray), () => new StringBuilder().Append(TaintedCharArray));
     }
 
     [Fact]
@@ -105,7 +104,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+:UntaintedCharArray",
             TaintedStringBuilder.Append(UntaintedCharArray),
-            () => TaintedStringBuilder.Append(UntaintedCharArray));
+            () => TaintedStringBuilder2.Append(UntaintedCharArray));
     }
 
     [Fact]
@@ -113,7 +112,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+::+-TaintedString-+:",
             TaintedStringBuilder.Append(TaintedCharArray),
-            () => TaintedStringBuilder.Append(TaintedCharArray));
+            () => TaintedStringBuilder2.Append(TaintedCharArray));
     }
 
     [Fact]
@@ -121,7 +120,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+:UntaintedCharArray:+-TaintedString-+:",
             TaintedStringBuilder.Append(UntaintedCharArray).Append(TaintedCharArray),
-            () => TaintedStringBuilder.Append(UntaintedCharArray).Append(TaintedCharArray));
+            () => TaintedStringBuilder2.Append(UntaintedCharArray).Append(TaintedCharArray));
     }
 
     [Fact]
@@ -179,7 +178,6 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
             new StringBuilder(taintedValue).Append(new StringBuilder(taintedValue)).ToString(),
             () => new StringBuilder(taintedValue).Append(new StringBuilder(taintedValue)).ToString());
     }
-
 
 #if !NETFRAMEWORK
     [Fact]

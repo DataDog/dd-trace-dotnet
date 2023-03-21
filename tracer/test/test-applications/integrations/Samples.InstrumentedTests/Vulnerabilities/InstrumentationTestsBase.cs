@@ -190,7 +190,7 @@ public class InstrumentationTestsBase
         FormatTainted(instrumented).Should().Be(expected.ToString());
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
-        instrumented.Should().Be(notInstrumentedResult.ToString());
+        instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
     }
 
     protected void AssertUntaintedWithOriginalCallCheck(string expected, string instrumented, Expression<Func<Object>> notInstrumented)
