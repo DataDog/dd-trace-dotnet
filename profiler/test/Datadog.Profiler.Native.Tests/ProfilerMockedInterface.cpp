@@ -51,7 +51,7 @@ std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vect
 
     for (auto& [module, frame] : callstack)
     {
-        sample->AddFrame(module, frame);
+        sample->AddFrame({module, frame, "", 0});
     }
 
     for (auto const& [name, value] : labels)

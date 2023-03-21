@@ -4,6 +4,7 @@
 #include "FrameStore.h"
 
 #include "COMHelpers.h"
+#include "DebugInfoStore.h"
 #include "IConfiguration.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -12,13 +13,14 @@
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
-FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration) :
+FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore) :
     _pCorProfilerInfo{pCorProfilerInfo},
-    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()}
+    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()},
+    _pDebugInfoStore{debugInfoStore}
 {
 }
 
-std::tuple<bool, std::string_view, std::string_view> FrameStore::GetFrame(uintptr_t instructionPointer)
+std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
     static const std::string NotResolvedModuleName("NotResolvedModule");
     static const std::string NotResolvedFrame("NotResolvedFrame");
@@ -28,18 +30,18 @@ std::tuple<bool, std::string_view, std::string_view> FrameStore::GetFrame(uintpt
 
     if (SUCCEEDED(hr))
     {
-        auto [moduleName, frame] = GetManagedFrame(functionId);
-        return {true, moduleName, frame};
+        auto frameInfo = GetManagedFrame(functionId);
+        return {true, frameInfo};
     }
     else
     {
         if (!_resolveNativeFrames)
         {
-            return {false, NotResolvedModuleName, NotResolvedFrame};
+            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
 
         auto [moduleName, frame] = GetNativeFrame(instructionPointer);
-        return {true, moduleName, frame};
+        return {true, {moduleName, frame, "", 0}};
     }
 }
 
@@ -82,7 +84,7 @@ std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr
     }
 }
 
-std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(FunctionID functionId)
+FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
 {
     {
         std::lock_guard<std::mutex> lock(_methodsLock);
@@ -105,27 +107,27 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
     ULONG32 genericParametersCount;
     if (!GetFunctionInfo(functionId, mdTokenFunc, classId, moduleId, genericParametersCount, genericParameters))
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame};
+        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
     }
 
     // Use metadata API to get method name
     ComPtr<IMetaDataImport2> pMetadataImport;
     if (!GetMetadataApi(moduleId, functionId, pMetadataImport))
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame};
+        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
     auto [methodName, mdTokenType] = GetMethodName(pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame};
+        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
     }
 
     // get type related description (assembly, namespace and type name)
     // look into the cache first
     TypeDesc* pTypeDesc = nullptr;  // if already in the cache
-    TypeDesc typeDesc; // if needed to be built from a given classId
+    TypeDesc typeDesc;              // if needed to be built from a given classId
     bool isEncoded = true;
     bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc, isEncoded);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
@@ -139,7 +141,7 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
             // It's safe to cache, because there is no reason that the next calls to
             // BuildTypeDesc will succeed.
             auto& value = _methods[functionId];
-            value = {UnknownManagedAssembly, UnknownManagedType + " |fn:" + std::move(methodName)};
+            value = {UnknownManagedAssembly, UnknownManagedType + " |fn:" + std::move(methodName), "", 0};
             return value;
         }
 
@@ -166,13 +168,15 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
     builder << " |ct:" << pTypeDesc->Type;
     builder << " |fn:" << methodName;
 
+    auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc);
+
     std::string managedFrame = builder.str();
 
     {
         std::lock_guard<std::mutex> lock(_methodsLock);
 
         // store it into the function cache and return an iterator to the stored elements
-        auto [it, _] = _methods.emplace(functionId, std::make_pair(pTypeDesc->Assembly, managedFrame));
+        auto [it, _] = _methods.emplace(functionId, FrameInfo{pTypeDesc->Assembly, managedFrame, debugInfo.File, debugInfo.StartLine});
         // first is the key, second is the associated value
         return it->second;
     }
@@ -227,7 +231,6 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
 
     return true;
 }
-
 
 bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded)
 {
@@ -702,7 +705,6 @@ std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata,
     return builder.str();
 }
 
-
 void FrameStore::ConcatUnknownGenericType(std::stringstream& builder, bool isEncoded)
 {
     if (isEncoded)
@@ -817,7 +819,7 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
 
     // figure out the instanciated generic parameters if any
     mdTypeDef mdType;
-    ClassID parentClassId; //useful if we need parent type
+    ClassID parentClassId; // useful if we need parent type
     ULONG32 numGenericTypeArgs = 0;
 
     HRESULT hr = pInfo->GetClassIDInfo2(classId, nullptr, &mdType, &parentClassId, 0, &numGenericTypeArgs, nullptr);

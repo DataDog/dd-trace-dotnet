@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <string>
 #include "IFrameStore.h"
+#include "IDebugInfoStore.h"
 
 #include "shared/src/native-src/com_ptr.h"
 
@@ -29,12 +30,13 @@ private:
     };
 
 public:
-    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration);
+    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore);
 
 public :
-    std::tuple<bool, std::string_view, std::string_view> GetFrame(uintptr_t instructionPointer) override;
+    std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override;
     bool GetTypeName(ClassID classId, std::string& name) override;
     bool GetTypeName(ClassID classId, std::string_view& name) override;
+
 
 private:
     bool GetFunctionInfo(
@@ -64,7 +66,7 @@ private:
         );
     bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded);
     bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded);
-    std::pair <std::string_view, std::string_view> GetManagedFrame(FunctionID functionId);
+    FrameInfoView GetManagedFrame(FunctionID functionId);
     std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
 
 public:   // global helpers
@@ -103,13 +105,28 @@ private:  // global helpers
     static void ConcatUnknownGenericType(std::stringstream& builder, bool isEncoded);
 
 private:
+    struct FrameInfo
+    {
+    public:
+        std::string ModuleName;
+        std::string Frame;
+        std::string_view Filename;
+        std::uint32_t StartLine;
+
+        operator FrameInfoView() const
+        {
+            return {ModuleName, Frame, Filename, StartLine};
+        }
+    };
+
     ICorProfilerInfo4* _pCorProfilerInfo;
+    IDebugInfoStore* _pDebugInfoStore;
 
     std::mutex _methodsLock;
     std::mutex _nativeLock;
 
-    // caches functions                      V-- module    V-- full frame
-    std::unordered_map<FunctionID, std::pair<std::string, std::string>> _methods;
+    // caches functions
+    std::unordered_map<FunctionID, FrameInfo> _methods;
     std::mutex _typesLock;
     std::unordered_map<ClassID, TypeDesc> _types;  // for allocations/exceptions
     std::mutex _encodedTypesLock;
