@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         internal const string Major3 = "3";
         internal const string Major4 = "4";
         internal const string Major5 = "5";
+        internal const string Major7 = "7";
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.GraphQL);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.GraphQL;
@@ -94,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             return scope;
         }
 
-        internal static Scope CreateScopeFromExecuteAsyncV5(Tracer tracer, IExecutionContextV5 executionContext)
+        internal static Scope CreateScopeFromExecuteAsyncV5AndV7(Tracer tracer, IExecutionContextV5AndV7 executionContext)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {

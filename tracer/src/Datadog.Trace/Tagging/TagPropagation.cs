@@ -49,6 +49,22 @@ internal static class TagPropagation
 
     /// <summary>
     /// Parses the "x-datadog-tags" header value in "key1=value1,key2=value2" format.
+    /// Propagated tags require the "_dd.p.*" prefix, so any other tags are ignored.
+    /// </summary>
+    /// <param name="propagationHeader">The header value to parse.</param>
+    /// <returns>
+    /// A <see cref="TraceTagCollection"/> containing the valid tags parsed from the specified header value, if any.
+    /// </returns>
+    public static TraceTagCollection ParseHeader(string? propagationHeader)
+    {
+        var maxLength = Tracer.Instance?.Settings?.OutgoingTagPropagationHeaderMaxLength ??
+                        OutgoingTagPropagationHeaderMaxLength;
+
+        return ParseHeader(propagationHeader, maxLength);
+    }
+
+    /// <summary>
+    /// Parses the "x-datadog-tags" header value in "key1=value1,key2=value2" format.
     /// Propagated tags require the an "_dd.p.*" prefix, so any other tags are ignored.
     /// </summary>
     /// <param name="propagationHeader">The header value to parse.</param>

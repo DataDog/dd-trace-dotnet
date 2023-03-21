@@ -1,4 +1,4 @@
-// <copyright file="ExecuteAsyncV5Integration.cs" company="Datadog">
+// <copyright file="ExecuteAsyncIntegrationV5AndV7.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Execution.ExecutionStrategy",
         MinimumVersion = GraphQLCommon.Major5,
-        MaximumVersion = GraphQLCommon.Major5)]
+        MaximumVersion = GraphQLCommon.Major7)]
     [InstrumentMethod(
         IntegrationName = GraphQLCommon.IntegrationName,
         MethodName = GraphQLCommon.ExecuteAsyncMethodName,
@@ -29,10 +29,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Execution.SubscriptionExecutionStrategy",
         MinimumVersion = GraphQLCommon.Major5,
-        MaximumVersion = GraphQLCommon.Major5)]
+        MaximumVersion = GraphQLCommon.Major7)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ExecuteAsyncV5Integration
+    public class ExecuteAsyncIntegrationV5AndV7
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -43,9 +43,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         /// <param name="context">The execution context of the GraphQL operation.</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
-            where TContext : IExecutionContextV5
+            where TContext : IExecutionContextV5AndV7
         {
-            return new CallTargetState(scope: GraphQLCommon.CreateScopeFromExecuteAsyncV5(Tracer.Instance, context), state: context);
+            return new CallTargetState(scope: GraphQLCommon.CreateScopeFromExecuteAsyncV5AndV7(Tracer.Instance, context), state: context);
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 {
                     scope.Span?.SetException(exception);
                 }
-                else if (state.State is IExecutionContextV5 context)
+                else if (state.State is IExecutionContextV5AndV7 context)
                 {
                     GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ExecuteErrorType, context.Errors);
                 }

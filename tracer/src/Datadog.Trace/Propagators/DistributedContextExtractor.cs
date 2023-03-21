@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Propagators
 {
@@ -43,9 +44,11 @@ namespace Datadog.Trace.Propagators
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.PropagatedTags);
             var w3CTraceState = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.AdditionalW3CTraceState);
 
+            var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
+
             spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId)
                           {
-                              PropagatedTags = propagatedTraceTags,
+                              PropagatedTags = traceTags,
                               AdditionalW3CTraceState = w3CTraceState,
                           };
 
