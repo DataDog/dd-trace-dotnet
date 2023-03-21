@@ -517,7 +517,7 @@ namespace Datadog.Trace.AppSec
                             .DefaultIfEmpty(null).First();
             if (wafTimeout is not null)
             {
-                var wafTimeoutValue = (ulong)wafTimeout;
+                var wafTimeoutValue = Convert.ToUInt64(wafTimeout);
                 if (wafTimeoutValue <= 0)
                 {
                     Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", "waf_timeout", wafTimeoutValue.ToString());
@@ -525,6 +525,7 @@ namespace Datadog.Trace.AppSec
                 else
                 {
                     _settings.WafTimeoutMicroSeconds = wafTimeoutValue;
+                    Log.Debug("The {WafTimeoutMicroSecondsKey} has been set to '{NewWafTimeoutValue}' according to the attribute '{WafTimeoutKey}'", nameof(_settings.WafTimeoutMicroSeconds), wafTimeoutValue.ToString(), "waf_timeout");
                 }
             }
         }
