@@ -65,13 +65,12 @@ internal static class StringBuilderModuleImpl
             }
             else
             {
-                var builderRanges = builderTainted.Ranges;
-                builderTainted.Ranges = Ranges.MergeRanges(initialBuilderLength, builderRanges, paramRanges);
+                builderTainted.Ranges = Ranges.MergeRanges(initialBuilderLength, builderTainted.Ranges, paramRanges);
             }
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.onStringBuilderAppend(StringBuilder,string) exception");
+            Log.Error(err, "StringBuilderModuleImpl.onStringBuilderAppend(StringBuilder, int, object, int, int, int) exception");
         }
 
         return builder;
@@ -90,7 +89,7 @@ internal static class StringBuilderModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnStringBuilderSubSequence(string,int,int,string) exception");
+            Log.Error(err, "StringBuilderModuleImpl.OnStringBuilderSubSequence(string,int,int,StringBuilder) exception");
         }
 
         return result;

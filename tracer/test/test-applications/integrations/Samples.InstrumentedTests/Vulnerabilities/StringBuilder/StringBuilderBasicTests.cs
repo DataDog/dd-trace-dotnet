@@ -9,76 +9,47 @@ public class StringBuilderBasicTests : InstrumentationTestsBase
 {
     protected string taintedValue = "tainted";
     string notTaintedValue = "notTaintedValue";
+    string UntaintedString = "UntaintedString";
 
     public StringBuilderBasicTests()
     {
         AddTainted(taintedValue);
     }
 
+    // System.Text.StringBuilder::.ctor(System.String)
+
     [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilder_ResultIsTainted()
+    public void GivenATaintedString_WhenCreateStringBuilder_ResultIsTainted()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", new StringBuilder(taintedValue).ToString(), () => new StringBuilder(taintedValue).ToString());
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", new StringBuilder(taintedValue), () => new StringBuilder(taintedValue));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilder_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-tainted-+:UntaintedString",
+            new StringBuilder(UntaintedString + taintedValue + UntaintedString),
+            () => new StringBuilder(UntaintedString + taintedValue + UntaintedString));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilder_ResultIsNotTainted3()
+    {
+        AssertUntaintedWithOriginalCallCheck("UntaintedString",
+            new StringBuilder(UntaintedString),
+            () => new StringBuilder(UntaintedString));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilder_ResultIsNotTainted4()
+    {
+        AssertUntaintedWithOriginalCallCheck(string.Empty, new StringBuilder(null), () => new StringBuilder(null));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingNewStringBuilder_ResultIsTainted2()
     {
         new StringBuilder(null).ToString().Should().Be(String.Empty);
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithMaxLenght_ResultIsTainted3()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", new StringBuilder(taintedValue, 500).ToString(), () => new StringBuilder(taintedValue, 500).ToString());
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithMaxLenght_ResultIsTainted4()
-    {
-        new StringBuilder(null, 500).ToString().Should().Be(String.Empty);
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongMaxLenght_ArgumentOutOfRangeException()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, -500));
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithSubString_ResultIsTainted()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-inte-+:", new StringBuilder(taintedValue, 2, 4, 100).ToString(), () => new StringBuilder(taintedValue, 2, 4, 100).ToString());
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongSubString_ArgumentOutOfRangeException()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, -2, 4, 100).ToString());
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongSubString_ArgumentOutOfRangeException2()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, 200, 4, 100));
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongSubString_ArgumentOutOfRangeException3()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, 2, -4, 100));
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongSubString_ArgumentOutOfRangeException4()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, 2, 4, -100));
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongSubString_ArgumentOutOfRangeException5()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(null, 2, 4, 100).ToString());
     }
 
     [Fact]
@@ -102,9 +73,9 @@ public class StringBuilderBasicTests : InstrumentationTestsBase
         string a4 = "4";
         string a5 = "5";
         string a6 = "6";
-        
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:123456", 
-            new StringBuilder(taintedValue + a1 + a2 + a3 + a4 + a5 + a6).ToString(), 
+
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:123456",
+            new StringBuilder(taintedValue + a1 + a2 + a3 + a4 + a5 + a6).ToString(),
             () => new StringBuilder(taintedValue + a1 + a2 + a3 + a4 + a5 + a6).ToString());
     }
 
@@ -114,10 +85,170 @@ public class StringBuilderBasicTests : InstrumentationTestsBase
         AssertNotTaintedWithOriginalCallCheck(new StringBuilder(notTaintedValue).ToString(), () => new StringBuilder(notTaintedValue).ToString());
     }
 
+    // System.Text.StringBuilder::.ctor(System.String,System.Int32)
+
     [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderToString2Params_ResultIsTainted()
+    public void GivenATaintedString_WhenCreateStringBuilderCapacity_ResultIsTainted()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-int-+:", new StringBuilder(taintedValue).ToString(2, 3), () => new StringBuilder(taintedValue).ToString(2, 3));
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", new StringBuilder(taintedValue, 100), () => new StringBuilder(taintedValue, 100));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacity_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-tainted-+:UntaintedString",
+            new StringBuilder(UntaintedString + taintedValue + UntaintedString, 100),
+            () => new StringBuilder(UntaintedString + taintedValue + UntaintedString, 100));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacity_ResultIsNotTainted3()
+    {
+        AssertUntaintedWithOriginalCallCheck("UntaintedString",
+            new StringBuilder(UntaintedString, 100),
+            () => new StringBuilder(UntaintedString, 100));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacity_ResultIsNotTainted4()
+    {
+        AssertUntaintedWithOriginalCallCheck(string.Empty, new StringBuilder(null, 3), () => new StringBuilder(null, 3));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingNewStringBuilderWithMaxLenght_ResultIsTainted3()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", new StringBuilder(taintedValue, 500).ToString(), () => new StringBuilder(taintedValue, 500).ToString());
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingNewStringBuilderWithMaxLenght_ResultIsTainted4()
+    {
+        new StringBuilder(null, 500).ToString().Should().Be(String.Empty);
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongMaxLenght_ArgumentOutOfRangeException()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, -500));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacity_ResultIsNotTainted5()
+    {
+        AssertUntaintedWithOriginalCallCheck("UntaintedString",
+            new StringBuilder(UntaintedString, 1),
+            () => new StringBuilder(UntaintedString, 1));
+    }
+
+    // System.Text.StringBuilder::.ctor(System.String,System.Int32,System.Int32,System.Int32)
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacityOffsets_ResultIsTainted()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", new StringBuilder(taintedValue, 0, 7, 10), () => new StringBuilder(taintedValue));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacityOffsets_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-in-+:",
+            new StringBuilder(taintedValue, 2, 2, 10),
+            () => new StringBuilder(taintedValue, 2, 2, 10));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacityOffsets_ResultIsTainted3()
+    {
+        AssertTaintedFormatWithOriginalCallCheck("intedString:+-tain-+:",
+            new StringBuilder(UntaintedString + taintedValue + UntaintedString, 4, 15, 22),
+            () => new StringBuilder(UntaintedString + taintedValue + UntaintedString, 4, 15, 22));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacityOffsets_ResultIsNotTainted3()
+    {
+        AssertUntaintedWithOriginalCallCheck("ta",
+            new StringBuilder(UntaintedString, 2, 2, 2),
+            () => new StringBuilder(UntaintedString, 2, 2, 2));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacityOffsets_ExceptionIsThrown()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(null, 2, 2, 2));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacityOffsets_ExceptionIsThrown2()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, -1, 3, 3));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacityOffsets_ExceptionIsThrown3()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, 1, -3, 3));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacityOffsets_ExceptionIsThrown4()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, 1, 3, -3));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacityOffsets_ExceptionIsThrown5()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, 1, 300, 3));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCreateStringBuilderCapacityOffsets_ExceptionIsThrown6()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue, 100, 3, 3));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingNewStringBuilderWithSubString_ResultIsTainted()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-inte-+:", new StringBuilder(taintedValue, 2, 4, 100).ToString(), () => new StringBuilder(taintedValue, 2, 4, 100).ToString());
+    }
+
+    // System.Text.StringBuilder::ToString(System.Int32,System.Int32)
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingStringBuilderToString_ResultIsTainted()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-ta-+:",
+            new StringBuilder(taintedValue).ToString(0, 2),
+            () => new StringBuilder(taintedValue).ToString(0, 2));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingStringBuilderToString_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-in-+:",
+            new StringBuilder(taintedValue).ToString(2, 2),
+            () => new StringBuilder(taintedValue).ToString(2, 2));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingStringBuilderToString_ResultIsTainted3()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).ToString(-1, 2));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingStringBuilderToString_ResultIsTainted4()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).ToString(1, -2));
+    }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingStringBuilderToString_ResultIsTainted5()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).ToString(1, 332));
     }
 
     [Fact]
@@ -127,22 +258,12 @@ public class StringBuilderBasicTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongSubString_ArgumentOutOfRangeException7()
+    public void GivenATaintedString_WhenCallingNewStringBuilderToString2Params_ResultIsTainted()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).ToString(-200, 2));
+        AssertTaintedFormatWithOriginalCallCheck(":+-int-+:", new StringBuilder(taintedValue).ToString(2, 3), () => new StringBuilder(taintedValue).ToString(2, 3));
     }
 
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongSubString_ArgumentOutOfRangeException8()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).ToString(2, 200));
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingNewStringBuilderWithWrongSubString_ArgumentOutOfRangeException9()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).ToString(2, -2));
-    }
+    // Ranges validation
 
     [Fact]
     public void GivenAStringBuilder_WhenUsingNotCoveredMethod_RangesAreOk()
