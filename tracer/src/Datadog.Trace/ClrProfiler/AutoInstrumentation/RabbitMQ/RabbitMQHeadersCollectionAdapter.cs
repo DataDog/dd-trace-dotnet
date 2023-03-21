@@ -29,7 +29,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
         public void Add(string name, byte[] value)
         {
-            _headers?.Add(name, value);
+            if (_headers == null)
+            {
+                return;
+            }
+
+            _headers[name] = value;
         }
     }
 }
