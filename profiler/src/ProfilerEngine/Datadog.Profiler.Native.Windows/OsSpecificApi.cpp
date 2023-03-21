@@ -35,11 +35,33 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
     FILETIME creationTime, exitTime = {}; // not used here
     FILETIME kernelTime = {};
     FILETIME userTime = {};
-
+    static bool isFirstError = true;
     if (::GetThreadTimes(pThreadInfo->GetOsThreadHandle(), &creationTime, &exitTime, &kernelTime, &userTime))
     {
         uint64_t milliseconds = GetTotalMilliseconds(userTime) + GetTotalMilliseconds(kernelTime);
         return milliseconds;
+    }
+    else if (isFirstError)
+    {
+        isFirstError = false;
+        LPVOID msgBuffer;
+        DWORD errorCode = GetLastError();
+
+        if (errorCode == 0)
+        {
+            Log::Error("GetThreadCpuTime() error calling GetThreadTimes (last error = 0)");
+        }
+        else
+        {
+            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                          NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+            if (msgBuffer != NULL)
+            {
+                Log::Error("GetThreadCpuTime() error calling GetThreadTimes (last error = 0x", std::hex, errorCode, std::dec, "): ", (LPTSTR)msgBuffer);
+                LocalFree(msgBuffer);
+            }
+        }
     }
 
     return 0;
@@ -153,6 +175,7 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
     // deal with an invalid thread handle case (thread might have died)
     if (lResult != 0)
     {
+#if BIT64 // Windows 64-bit
         if (isFirstError && (lResult != STATUS_INVALID_HANDLE))
         {
             isFirstError = false;
@@ -175,7 +198,7 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
                 }
             }
         }
-
+#endif
         // This always happens in 32 bit so uses another API to at least get the CPU consumption
         cpuTime = GetThreadCpuTime(pThreadInfo);
         return false;
