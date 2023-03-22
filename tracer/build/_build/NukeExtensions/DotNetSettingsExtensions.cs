@@ -91,9 +91,9 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProperty("BuildProjectReferences", false);
     }
 
-    public static DotNetTestSettings EnableCrashDumps(this DotNetTestSettings settings, MiniDumpType dumpType = MiniDumpType.MiniDumpWithPrivateReadWriteMemory)
+    public static DotNetTestSettings EnableCrashDumps(this DotNetTestSettings settings, MiniDumpType dumpType = MiniDumpType.MiniDumpWithFullMemory, bool force = false)
     {
-        if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
+        if (force || (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false")))
         {
             return settings
                 .SetProcessEnvironmentVariable("COMPlus_DbgEnableMiniDump", "1")
