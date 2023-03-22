@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -129,6 +130,16 @@ public class DataStreamsManagerTests
 
         var context = dsm.SetCheckpoint(parent, new[] { "some-tags" });
         context.Should().BeNull();
+    }
+
+    [Fact]
+    public void WhenEnabled_SetCheckpoint_SetsSpanTags()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+
+        span.SetDataStreamsCheckpoint(dsm, new[] { "direction:out" });
+        span.Tags.GetTag("pathway.hash").Should().NotBeNull();
     }
 
     [Fact]
