@@ -108,7 +108,16 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             await TryStartApp();
             var agent = Fixture.Agent;
+
             var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode);
+#if NET7_0_OR_GREATER
+            // for .NET 7+, the endpoint names changed from
+            // aspnet_core.endpoint: /params-endpoint/{s} HTTP: GET,
+            // to
+            // aspnet_core.endpoint: HTTP: GET /params-endpoint/{s},
+            // So normalize to the .NET 6 pattern for simplicity
+            settings.AddSimpleScrubber("HTTP: GET /params-endpoint/{s}", "/params-endpoint/{s} HTTP: GET");
+#endif
 
             var spans1 = await SendRequestsAsync(agent, type);
             var acknowledgedId = _testName + Guid.NewGuid();
