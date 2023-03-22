@@ -6,11 +6,9 @@
 #nullable enable
 #if !NETFRAMEWORK
 using System;
-using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.AspNet;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 
@@ -116,9 +114,8 @@ internal class BlockingMiddleware
             {
                 await _next(context).ConfigureAwait(false);
             }
-            catch (Exception e) when (e is BlockException || e.InnerException is BlockException)
+            catch (Exception e) when (GetBlockException(e) is { } blockException)
             {
-                var blockException = e as BlockException ?? e.InnerException as BlockException;
                 var action = security.GetBlockingAction(blockException!.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.Settings.Enabled)
@@ -140,6 +137,21 @@ internal class BlockingMiddleware
                 }
             }
         }
+    }
+
+    private static BlockException? GetBlockException(Exception? exception)
+    {
+        while (exception is not null)
+        {
+            if (exception is BlockException b)
+            {
+                return b;
+            }
+
+            exception = exception.InnerException;
+        }
+
+        return null;
     }
 }
 #endif
