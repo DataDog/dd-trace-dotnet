@@ -92,7 +92,7 @@ public partial class StringAspects
     [AspectMethodReplace("System.String::TrimStart(System.Char)", AspectFilter.StringLiteral_0)]
     public static string TrimStart(string target, char trimChar)
     {
-        return StringModuleImpl.OnStringTrim(target, target.TrimStart(), trimChar, true, false);
+        return StringModuleImpl.OnStringTrim(target, target.TrimStart(trimChar), trimChar, true, false);
     }
 
     /// <summary>
