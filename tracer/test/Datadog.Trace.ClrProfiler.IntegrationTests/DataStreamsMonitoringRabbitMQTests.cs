@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
-using Datadog.Trace.Vendors.StatsdClient.Statistic;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using ICSharpCode.Decompiler.Util;
@@ -42,11 +41,8 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}"))
         {
-            var payloads = agent.WaitForDataStreams(4);
-            var spans = agent.WaitForSpans(4);
-
+            var payloads = agent.WaitForDataStreams(1);
             payloads.Should().NotBeEmpty();
-            spans.Where(s => s.Tags.ContainsKey("pathway.hash")).Should().HaveCount(4);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.ModifySerialization(
@@ -60,8 +56,24 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
                         (_, v) =>  v?.Length == 0 ? v : new byte[] { 0xFF });
                 });
             await Verifier.Verify(PayloadsToPoints(payloads), settings)
-                          .UseFileName($"{nameof(DataStreamsMonitoringRabbitMQTests)}.{nameof(HandleProduceAndConsume)}")
                           .DisableRequireUniquePrefix();
+        }
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    public void ValidateSpanTags()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+
+        using var assertionScope = new AssertionScope();
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}"))
+        {
+            var spans = agent.WaitForSpans(8);
+            spans.Should().HaveCount(8);
+            var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
+            taggedSpans.Should().HaveCount(4);
         }
     }
 
