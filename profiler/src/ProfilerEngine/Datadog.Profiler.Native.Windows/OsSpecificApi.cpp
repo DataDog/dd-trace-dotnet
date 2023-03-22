@@ -39,25 +39,28 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
         uint64_t milliseconds = GetTotalMilliseconds(userTime) + GetTotalMilliseconds(kernelTime);
         return milliseconds;
     }
-    else if (isFirstError)
+    else
     {
-        isFirstError = false;
-        LPVOID msgBuffer;
         DWORD errorCode = GetLastError();
-
-        if (errorCode == 0)
+        if (isFirstError && (errorCode != ERROR_INVALID_HANDLE))  // expected invalid handle case
         {
-            Log::Error("GetThreadCpuTime() error calling GetThreadTimes (last error = 0)");
-        }
-        else
-        {
-            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                          NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+            isFirstError = false;
+            LPVOID msgBuffer;
 
-            if (msgBuffer != NULL)
+            if (errorCode == 0)
             {
-                Log::Error("GetThreadCpuTime() error calling GetThreadTimes (last error = 0x", std::hex, errorCode, std::dec, "): ", (LPTSTR)msgBuffer);
-                LocalFree(msgBuffer);
+                Log::Error("GetThreadCpuTime() error calling GetThreadTimes (last error = 0)");
+            }
+            else
+            {
+                FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                              NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+                if (msgBuffer != NULL)
+                {
+                    Log::Error("GetThreadCpuTime() error calling GetThreadTimes (last error = 0x", std::hex, errorCode, std::dec, "): ", (LPCTSTR)msgBuffer);
+                    LocalFree(msgBuffer);
+                }
             }
         }
     }
@@ -156,7 +159,7 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 
     if (NtQueryInformationThread == nullptr)
     {
-        if (!InitializeNtQueryInformationThreadCallback())
+        if (!InitializeCallback())
         {
             return false;
         }
