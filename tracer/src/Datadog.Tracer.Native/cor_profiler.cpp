@@ -577,15 +577,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
-
+    auto modules = module_ids.Get();
+    
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_ || rejit_handler == nullptr)
     {
         return S_OK;
     }
 
-    auto hr = TryRejitModule(module_id);
+    auto hr = TryRejitModule(module_id, modules.Ref());
 
     // Push integration definitions from past modules that were unable to be added
     auto rejit_size = rejit_module_method_pairs.size();
@@ -684,7 +684,7 @@ std::string GetNativeLoaderFilePath()
     return native_loader_file_path.string();
 }
 
-HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
+HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules)
 {
     const auto& module_info = GetModuleInfo(this->info_, module_id);
     if (!module_info.IsValid())
@@ -912,7 +912,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
     }
     else
     {
-        module_ids_.push_back(module_id);
+        modules.push_back(module_id);
 
         bool searchForTraceAttribute = trace_annotations_enabled;
         if (searchForTraceAttribute)
@@ -1180,7 +1180,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 
     // take this lock so we block until the
     // module metadata is not longer being used
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto modules = module_ids.Get();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1236,9 +1236,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto modules = module_ids.Get();
 
-    DEL(_dataflow);
+    DEL(_dataflow)
 
     if (rejit_handler != nullptr)
     {
@@ -1246,10 +1246,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
         rejit_handler = nullptr;
     }
 
+    auto definitions = definitions_ids.Get();
+
     Logger::Info("Exiting...");
-    Logger::Debug("   ModuleIds: ", module_ids_.size());
+    Logger::Debug("   ModuleIds: ", modules->size());
     Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
-    Logger::Debug("   DefinitionsIds: ", definitions_ids_.size());
+    Logger::Debug("   DefinitionsIds: ", definitions->size());
     Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
     Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
     Logger::Info("Stats: ", Stats::Instance()->ToString());
@@ -1290,7 +1292,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto modules = module_ids.Get();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1320,7 +1322,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto modules = module_ids.Get();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1340,7 +1342,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     // we have to check if the Id is in the module_ids_ vector.
     // In case is True we create a local ModuleMetadata to inject the loader.
-    if (!shared::Contains(module_ids_, module_id))
+    if (!shared::Contains(modules.Ref(), module_id))
     {
         if (debugger_instrumentation_requester != nullptr)
         {
@@ -1478,7 +1480,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
 {
     // take this lock so we block until the
     // module metadata is not longer being used
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    auto modules = module_ids.Get();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1620,9 +1622,9 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                                              bool isInterface, bool enable)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+    auto definitions = definitions_ids.Get();
 
-    auto defsIdFound = definitions_ids_.find(definitionsId) != definitions_ids_.end();
+    auto defsIdFound = definitions->find(definitionsId) != definitions->end();
     if (enable && defsIdFound)
     {
         Logger::Info("InitializeProfiler: Id already processed.");
@@ -1681,15 +1683,15 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             integrationDefinitions.push_back(integration);
         }
 
-        std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
+        auto modules = module_ids.Get();
 
         if (enable)
         {
-            definitions_ids_.emplace(definitionsId);
+            definitions->emplace(definitionsId);
         }
         else
         {
-            definitions_ids_.erase(definitionsId);
+            definitions->erase(definitionsId);
         }
 
         if (enable)
@@ -1700,12 +1702,12 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 integration_definitions_.push_back(integration);
             }
 
-            Logger::Info("Total number of modules to analyze: ", module_ids_.size());
+            Logger::Info("Total number of modules to analyze: ", modules->size());
             if (rejit_handler != nullptr)
             {
                 auto promise = std::make_shared<std::promise<ULONG>>();
                 std::future<ULONG> future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_,
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(),
                     integrationDefinitions, promise);
 
                 // wait and get the value from the future<int>
@@ -1727,12 +1729,12 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 }
             }
 
-            Logger::Info("Total number of modules to analyze: ", module_ids_.size());
+            Logger::Info("Total number of modules to analyze: ", modules->size());
             if (rejit_handler != nullptr)
             {
                 auto promise = std::make_shared<std::promise<ULONG>>();
                 std::future<ULONG> future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(module_ids_,
+                tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(modules.Ref(),
                     integrationDefinitions, promise);
 
                 // wait and get the value from the future<int>
@@ -1749,15 +1751,15 @@ void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration
                                                    WCHAR* integration_type_name_ptr)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+    auto definitions = definitions_ids.Get();
 
-    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    if (definitions->find(definitionsId) != definitions->end())
     {
         Logger::Info("AddTraceAttributeInstrumentation: Id already processed.");
         return;
     }
 
-    definitions_ids_.emplace(definitionsId);
+    definitions->emplace(definitionsId);
     shared::WSTRING integration_assembly_name = shared::WSTRING(integration_assembly_name_ptr);
     shared::WSTRING integration_type_name = shared::WSTRING(integration_type_name_ptr);
     trace_annotation_integration_type =
@@ -1772,9 +1774,9 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
                                          WCHAR* configuration_string_ptr)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+    auto definitions = definitions_ids.Get();
 
-    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    if (definitions->find(definitionsId) != definitions->end())
     {
         Logger::Info("InitializeTraceMethods: Id already processed.");
         return;
@@ -1803,7 +1805,7 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
 
     // TODO we do a handful of string splits here. We could probably do this with indexOf operations instead, but I'm gonna
     // first make sure this works
-    definitions_ids_.emplace(definitionsId);
+    definitions->emplace(definitionsId);
     if (rejit_handler != nullptr)
     {
         if (trace_annotation_integration_type == nullptr)
@@ -1824,15 +1826,15 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
         {
             std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
                 *trace_annotation_integration_type.get(), configuration_string);
-            std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
+            auto modules = module_ids.Get();
 
-            Logger::Debug("InitializeTraceMethods: Total number of modules to analyze: ", module_ids_.size());
+            Logger::Debug("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
             if (rejit_handler != nullptr)
             {
                 auto promise = std::make_shared<std::promise<ULONG>>();
                 std::future<ULONG> future = promise->get_future();
                 tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                    module_ids_, integrationDefinitions,
+                    modules.Ref(), integrationDefinitions,
                     promise);
 
                 // wait and get the value from the future<int>
@@ -3653,10 +3655,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     {
         return S_OK;
     }
-    
+
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);    
+    auto modulesOpt = module_ids.TryGet();
+
+    if (!modulesOpt.has_value())
+    {
+        Logger::Error(
+            "JITCachedFunctionSearchStarted: Failed on exception while tried to acquire the lock for the module_ids collection for functionId ",
+            functionId);
+        return S_OK;
+    }
+
+    auto& modules = modulesOpt.value();
 
     // Extract Module metadata
     ModuleID module_id;
@@ -3666,7 +3678,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     if (FAILED(hr))
     {
         Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ",
-                     functionId);
+                        functionId);
         return S_OK;
     }
 
@@ -3687,7 +3699,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     // Verify that we have the metadata for this module
-    if (!shared::Contains(module_ids_, module_id))
+    if (!shared::Contains(modules.Ref(), module_id))
     {
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.
@@ -3704,7 +3716,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     if (!has_loader_injected_in_appdomain)
     {
         Logger::Debug("Disabling NGEN due to missing loader.");
-        // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject it.
+        // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject
+        // it.
         *pbUseCachedFunction = false;
         return S_OK;
     }
