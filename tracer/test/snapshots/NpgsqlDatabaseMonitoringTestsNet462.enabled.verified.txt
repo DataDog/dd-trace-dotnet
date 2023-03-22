@@ -63,7 +63,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
@@ -90,7 +90,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -112,7 +112,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -134,7 +134,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -156,7 +156,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -178,7 +178,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -200,7 +200,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -222,7 +222,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -244,7 +244,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -266,7 +266,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -288,7 +288,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -310,7 +310,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -332,7 +332,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -354,7 +354,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -376,7 +376,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -398,7 +398,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -420,7 +420,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -442,7 +442,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -464,7 +464,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -486,7 +486,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -508,7 +508,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -530,7 +530,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -552,7 +552,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -574,7 +574,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -596,7 +596,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -618,7 +618,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -640,7 +640,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -662,7 +662,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -684,7 +684,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -706,7 +706,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -728,7 +728,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -750,7 +750,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -772,7 +772,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -794,7 +794,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -816,7 +816,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -838,7 +838,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -860,7 +860,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -882,7 +882,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -904,7 +904,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -926,7 +926,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -948,7 +948,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -970,7 +970,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -992,7 +992,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1014,7 +1014,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1036,7 +1036,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1058,7 +1058,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1080,7 +1080,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1102,7 +1102,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1124,7 +1124,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1146,7 +1146,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1168,7 +1168,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1190,7 +1190,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1212,7 +1212,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1234,7 +1234,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1256,7 +1256,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1278,7 +1278,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1300,7 +1300,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1322,7 +1322,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1344,7 +1344,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1366,7 +1366,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1388,7 +1388,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1410,7 +1410,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1432,7 +1432,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1454,7 +1454,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1476,7 +1476,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1498,7 +1498,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1520,7 +1520,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1542,7 +1542,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1564,7 +1564,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1586,7 +1586,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1608,7 +1608,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1630,7 +1630,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1652,7 +1652,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1674,7 +1674,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1696,7 +1696,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1718,7 +1718,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1740,7 +1740,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1762,7 +1762,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1784,7 +1784,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1806,7 +1806,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1828,7 +1828,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1850,7 +1850,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1872,7 +1872,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1894,7 +1894,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1916,7 +1916,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1938,7 +1938,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1960,7 +1960,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -1982,7 +1982,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2004,7 +2004,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2026,7 +2026,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2048,7 +2048,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2070,7 +2070,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2092,7 +2092,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2114,7 +2114,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2136,7 +2136,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2158,7 +2158,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2180,7 +2180,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2202,7 +2202,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2224,7 +2224,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2246,7 +2246,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2268,7 +2268,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2290,7 +2290,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2312,7 +2312,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2334,7 +2334,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2356,7 +2356,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2378,7 +2378,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2400,7 +2400,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2422,7 +2422,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2444,7 +2444,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2466,7 +2466,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2488,7 +2488,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2510,7 +2510,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2532,7 +2532,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2554,7 +2554,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2576,7 +2576,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2598,7 +2598,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2620,7 +2620,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2642,7 +2642,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2664,7 +2664,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2686,7 +2686,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2708,7 +2708,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2730,7 +2730,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2752,7 +2752,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2774,7 +2774,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2796,7 +2796,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2818,7 +2818,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2840,7 +2840,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2862,7 +2862,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2884,7 +2884,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2906,7 +2906,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2928,7 +2928,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2950,7 +2950,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2972,7 +2972,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -2994,7 +2994,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3016,7 +3016,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3038,7 +3038,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3060,7 +3060,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3082,7 +3082,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3104,7 +3104,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3126,7 +3126,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3148,7 +3148,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3170,7 +3170,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3192,7 +3192,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3214,7 +3214,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3236,7 +3236,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3258,7 +3258,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3280,7 +3280,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
@@ -3302,7 +3302,7 @@ ORDER BY oid, enumsortorder;
       db.name: postgres,
       db.type: postgres,
       env: testing,
-      out.host: localhost,
+      out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true

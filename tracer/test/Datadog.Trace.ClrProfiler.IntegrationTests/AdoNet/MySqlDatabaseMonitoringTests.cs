@@ -140,13 +140,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
+            var filteredSpans = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase));
 
-            actualSpanCount.Should().Be(expectedSpanCount);
+            filteredSpans.Count().Should().Be(expectedSpanCount);
             ValidatePresentDbmTag(spans, propagationLevel);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: mysql");
 
             var fileName = nameof(MySqlDatabaseMonitoringTests);
 #if NET5_0_OR_GREATER
