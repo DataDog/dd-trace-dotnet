@@ -3,7 +3,6 @@ using Samples;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 
 namespace DogStatsD.RaceCondition
@@ -11,6 +10,9 @@ namespace DogStatsD.RaceCondition
     class Program
     {
         internal static readonly string ThreadFinishedMessage = "The current thread has finished";
+        private static readonly string TraceMetrics = "DD_TRACE_METRICS_ENABLED";
+        private static readonly string LogsInjection = "DD_LOGS_INJECTION";
+        private static readonly string DebugEnabled = "DD_TRACE_DEBUG";
 
         static int Main(string[] args)
         {
@@ -19,9 +21,14 @@ namespace DogStatsD.RaceCondition
                 InMemoryLog4NetLogger.Setup();
                 var logger = LogManager.GetLogger(typeof(Program));
 
-                Environment.SetEnvironmentVariable("DD_TRACE_METRICS_ENABLED", "true");
-                Environment.SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
-                Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
+                // validate that our Environment Variables are set
+                // the tracer is already initialized at this point, so we can't set them here via .SetEnvironmentVariable
+                var envVars = Environment.GetEnvironmentVariables();
+                if (!envVars.Contains(TraceMetrics) || !envVars.Contains(LogsInjection) || !envVars.Contains(DebugEnabled))
+                {
+                    throw new Exception($"Make sure the following environment variables are set to \"true\": {TraceMetrics}, {LogsInjection}, {DebugEnabled}");
+                }
+
                 SampleHelpers.ConfigureTracer("DogStatsD.RaceCondition");
                 var totalIterations = 100;
                 var threadRepresentation = Enumerable.Range(0, 25).ToArray();
