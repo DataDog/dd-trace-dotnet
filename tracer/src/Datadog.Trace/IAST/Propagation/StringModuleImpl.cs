@@ -13,8 +13,6 @@ using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
-using static Datadog.Trace.Iast.Propagation.PropagationModuleImpl;
-
 namespace Datadog.Trace.Iast.Propagation;
 
 internal static class StringModuleImpl
@@ -41,7 +39,7 @@ internal static class StringModuleImpl
             {
 #if NETFRAMEWORK
                 // In .net462 (not in netcore or netstandard), the method creates in this case a new string with the same value but a different reference, so we need to taint it
-                PropagateTaint(target, result);
+                PropagationModuleImpl.PropagateTaint(target, result);
 #endif
                 return result;
             }
@@ -53,8 +51,8 @@ internal static class StringModuleImpl
             }
 
             var taintedObjects = iastContext.GetTaintedObjects();
-            var taintedTarget = GetTainted(taintedObjects, target);
-            var taintedValue = GetTainted(taintedObjects, value);
+            var taintedTarget = PropagationModuleImpl.GetTainted(taintedObjects, target);
+            var taintedValue = PropagationModuleImpl.GetTainted(taintedObjects, value);
             if (taintedValue == null && taintedTarget == null)
             {
                 return result;
@@ -114,7 +112,7 @@ internal static class StringModuleImpl
             }
 
             var taintedObjects = iastContext.GetTaintedObjects();
-            var taintedSelf = GetTainted(taintedObjects, self);
+            var taintedSelf = PropagationModuleImpl.GetTainted(taintedObjects, self);
             if (taintedSelf == null)
             {
                 return result;
@@ -246,7 +244,7 @@ internal static class StringModuleImpl
             int pos = 0;
 
             // Delimiter info
-            var delimiterRanges = GetTainted(taintedObjects, delimiter)?.Ranges;
+            var delimiterRanges = PropagationModuleImpl.GetTainted(taintedObjects, delimiter)?.Ranges;
             var delimiterHasRanges = delimiterRanges?.Length > 0;
             var delimiterLength = delimiter?.Length ?? 0;
             var valuesCount = values.Count();
@@ -281,7 +279,7 @@ internal static class StringModuleImpl
     {
         if (!string.IsNullOrEmpty(element))
         {
-            var elementTainted = GetTainted(taintedObjects, element);
+            var elementTainted = PropagationModuleImpl.GetTainted(taintedObjects, element);
             if (elementTainted != null)
             {
                 var elementRanges = elementTainted.Ranges;
