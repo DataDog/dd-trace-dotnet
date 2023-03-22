@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Ci;
@@ -384,19 +385,22 @@ namespace Datadog.Trace.MSBuild
                         {
                             writer.WritePropertyName("dd.trace_id");
 
-                            if (context.TraceId.Upper > 0)
+                            if (Tracer.Instance?.Settings?.TraceId128BitLoggingEnabled == true &&
+                                context.TraceId.Upper > 0)
                             {
-                                // 128-bit trace ids are encoded as hex
+                                // encode all 128 bits of the trace id as a hex string
                                 writer.WriteValue(context.RawTraceId);
                             }
                             else
                             {
-                                // 64-bit trace ids and span ids are encoded as decimal
-                                writer.WriteValue(context.TraceId.Lower);
+                                // encode only the lower 64 bits of the trace ids as decimal (not hex)
+                                writer.WriteValue(context.TraceId.Lower.ToString(CultureInfo.InvariantCulture));
                             }
 
+                            // 64-bit span ids are always encoded as decimal (not hex)
                             writer.WritePropertyName("dd.span_id");
-                            writer.WriteValue(context.SpanId);
+                            writer.WriteValue(context.SpanId.ToString(CultureInfo.InvariantCulture));
+
                             writer.WritePropertyName("_dd.origin");
                             writer.WriteValue(context.Origin);
                         }
