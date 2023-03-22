@@ -35,21 +35,17 @@ internal partial class ProbeExpressionParser<T>
                Expression.NewArrayInit(
                    typeof(string),
                    typeNameExpression,
-                   Expression.Constant(Environment.NewLine, typeof(string)),
+                   Expression.Constant(", "),
                    Expression.Property(expression, nameof(Exception.Message)),
-                   Expression.Constant(Environment.NewLine, typeof(string)),
+                   Expression.Constant(", "),
                    Expression.Property(expression, nameof(Exception.StackTrace))));
 
             return Expression.Condition(ifNull, typeNameExpression, exceptionAsString);
         }
 
-        return Expression.Call(
-            stringConcat,
-            Expression.NewArrayInit(
-                typeof(string),
-                Expression.Constant(expression.Type.FullName, typeof(string)),
-                Expression.Constant(Environment.NewLine, typeof(string)),
-                IsSafeCollection(expression.Type) ? DumpCollectionExpression(expression, scopeMembers) : DumpFieldsExpression(expression, scopeMembers)));
+        return IsSafeCollection(expression.Type) ?
+                   DumpCollectionExpression(expression, scopeMembers) :
+                   DumpFieldsExpression(expression, scopeMembers);
     }
 
     private Expression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
@@ -57,8 +53,7 @@ internal partial class ProbeExpressionParser<T>
         var loopItemType = collection.Type.IsGenericType ? collection.Type.GetGenericArguments()[0] : typeof(object);
         var enumerableType = typeof(IEnumerable<>).MakeGenericType(loopItemType);
         var enumeratorType = typeof(IEnumerator<>).MakeGenericType(loopItemType);
-        var appendLine = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.AppendLine), new[] { typeof(string) });
-        var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
+        var stringBuilderAppend = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.Append), new[] { typeof(string) });
         var getEnumeratorCall = Expression.Call(collection, GetMethodByReflection(enumerableType, nameof(IEnumerable.GetEnumerator), Type.EmptyTypes));
 
         var expressions = new List<Expression>();
@@ -80,20 +75,17 @@ internal partial class ProbeExpressionParser<T>
         scopeMembers.Add(result);
         expressions.Add(Expression.Assign(result, Expression.New(typeof(StringBuilder).GetConstructor(Type.EmptyTypes))));
 
+        expressions.Add(Expression.Call(result, stringBuilderAppend, Expression.Constant("[")));
+
         var dumpObjectCallExpression = Expression.Call(
             result,
-            appendLine,
+            stringBuilderAppend,
             Expression.Call(
                 Expression.Constant(this),
                 GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpObject), new[] { typeof(object), typeof(Type), typeof(string), typeof(int) }),
                 loopItem,
                 Expression.Constant(loopItem.Type),
-                Expression.Call(
-                    stringConcat,
-                    Expression.NewArrayInit(
-                        typeof(string),
-                        Expression.Constant("Item "),
-                        Expression.Call(index, GetMethodByReflection(typeof(int), nameof(int.ToString), Type.EmptyTypes)))),
+                Expression.Constant(string.Empty),
                 Expression.Constant(1) /* no nested collection */));
 
         var condition = Expression.AndAlso(
@@ -101,17 +93,26 @@ internal partial class ProbeExpressionParser<T>
             Expression.LessThan(index, Expression.Constant(3)));
 
         var breakLabel = Expression.Label("loopBreak");
-
         var loopBodyExpression = Expression.IfThenElse(
-            condition,
+            Expression.Equal(moveNextCall, Expression.Constant(true)),
             Expression.Block(
                 new[] { loopItem },
-                Expression.Assign(loopItem, Expression.Property(enumeratorVar, "Current")),
-                dumpObjectCallExpression,
-                Expression.PostIncrementAssign(index)),
+                Expression.IfThenElse(
+                    Expression.LessThan(index, Expression.Constant(3)),
+                    Expression.Block(
+                        Expression.IfThen(
+                            Expression.GreaterThan(index, Expression.Constant(0)),
+                            Expression.Call(result, stringBuilderAppend, Expression.Constant(", "))),
+                        Expression.Assign(loopItem, Expression.Property(enumeratorVar, "Current")),
+                        dumpObjectCallExpression,
+                        Expression.PostIncrementAssign(index)),
+                    Expression.Block(
+                        Expression.Call(result, stringBuilderAppend, Expression.Constant(", ...")),
+                        Expression.Break(breakLabel)))),
             Expression.Break(breakLabel));
 
         expressions.Add(Expression.Loop(loopBodyExpression, breakLabel));
+        expressions.Add(Expression.Call(result, stringBuilderAppend, Expression.Constant("]")));
         expressions.Add(Expression.Call(result, GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.ToString), Type.EmptyTypes)));
         return Expression.Block(expressions);
     }
@@ -122,7 +123,7 @@ internal partial class ProbeExpressionParser<T>
         var getTypeMethod = GetMethodByReflection(typeof(object), nameof(object.GetType), Type.EmptyTypes);
         var getFieldsMethod = GetMethodByReflection(typeof(Type), nameof(Type.GetFields), new[] { typeof(BindingFlags) });
         var getFields = Expression.Call(Expression.Call(expression, getTypeMethod), getFieldsMethod, Expression.Constant(flags));
-        var appendLine = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.AppendLine), new[] { typeof(string) });
+        var stringBuilderAppend = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.Append), new[] { typeof(string) });
         var expressions = new List<Expression>();
 
         var fields = Expression.Variable(typeof(FieldInfo[]), "fieldsArray");
@@ -149,15 +150,15 @@ internal partial class ProbeExpressionParser<T>
                expression);
 
         var dumpObjectCallExpression = Expression.Call(
-           result,
-           appendLine,
-           Expression.Call(
-               Expression.Constant(this),
-               GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpObject), new[] { typeof(Expression), typeof(Type), typeof(string), typeof(int) }),
-               fieldGetValueExpression,
-               fieldTypeExpression,
-               fieldNameExpression,
-               Expression.Constant(0)));
+            result,
+            stringBuilderAppend,
+            Expression.Call(
+                Expression.Constant(this),
+                GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpObject), new[] { typeof(Expression), typeof(Type), typeof(string), typeof(int) }),
+                fieldGetValueExpression,
+                fieldTypeExpression,
+                fieldNameExpression,
+                Expression.Constant(0)));
 
         // End Loop Content
 
@@ -170,8 +171,15 @@ internal partial class ProbeExpressionParser<T>
            condition,
            Expression.Block(
                dumpObjectCallExpression,
-               Expression.PostIncrementAssign(index)),
-           Expression.Break(breakLabel));
+               Expression.PostIncrementAssign(index),
+               Expression.IfThen(
+                   condition,
+                   Expression.Call(result, stringBuilderAppend, Expression.Constant(", ")))),
+           Expression.Block(
+               Expression.IfThen(
+                   Expression.LessThan(index, Expression.Property(fields, nameof(Array.Length))),
+                   Expression.Call(result, stringBuilderAppend, Expression.Constant(", ..."))),
+               Expression.Break(breakLabel)));
 
         expressions.Add(Expression.Loop(loopBodyExpression, breakLabel));
         expressions.Add(Expression.Call(result, GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.ToString), Type.EmptyTypes)));
@@ -184,19 +192,19 @@ internal partial class ProbeExpressionParser<T>
         // only one level depth of collection
         if (depth == 0 && IsTypeSupportIndex(type, out var assignableFrom))
         {
-            return DumpCollection(value, type, name, assignableFrom);
+            return DumpCollection(value, assignableFrom);
         }
 
         if (!string.IsNullOrEmpty(name))
         {
-            name += ": ";
+            name += "=";
         }
 
         if (IsMicrosoftException(type))
         {
             return value is not Exception ex
                        ? $"{name}{type?.FullName}"
-                       : $"{name}{ex.GetType().FullName}{Environment.NewLine}{ex.Message}{Environment.NewLine}{ex.StackTrace}";
+                       : $"{name}{ex.GetType().FullName}, {ex.Message}, {ex.StackTrace}";
         }
 
         return SupportedTypesService.IsSafeToCallToString(type) ?
@@ -204,60 +212,71 @@ internal partial class ProbeExpressionParser<T>
                    $"{name}{type?.FullName}";
     }
 
-    private string DumpCollection(object value, Type type, string name, Type assignableFrom)
+    private string DumpCollection(object value, Type assignableFrom)
     {
         var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
         try
         {
-            sb.AppendLine(DumpObject(value, type, name, 1));
             if (value == null)
             {
-                sb.AppendLine("null");
+                sb.Append("null");
                 return sb.ToString();
             }
 
             int count = 0;
             if (assignableFrom == typeof(IList))
             {
-                sb.AppendLine("{");
+                sb.Append("[");
                 foreach (var item in (value as IList))
                 {
-                    sb.AppendLine($"Item {count}: {DumpObject(item, item.GetType(), null, 1)}");
+                    sb.Append($"{DumpObject(item, item.GetType(), null, 1)}");
                     if (++count == 3)
                     {
-                        sb.AppendLine("}");
-                        return sb.ToString();
+                        sb.Append(", ...");
+                        break;
                     }
+
+                    sb.Append(", ");
                 }
+
+                sb.Append("]");
+                return sb.ToString();
             }
             else if (assignableFrom == typeof(IReadOnlyList<>))
             {
-                sb.AppendLine("{");
+                sb.Append("[");
                 foreach (var item in (value as IEnumerable))
                 {
-                    sb.AppendLine($"\tItem {count}: {DumpObject(item, item.GetType(), null, 1)}");
+                    sb.Append($"{DumpObject(item, item.GetType(), null, 1)}");
                     if (++count == 3)
                     {
-                        sb.AppendLine("}");
-                        return sb.ToString();
+                        sb.Append(", ...");
+                        break;
                     }
+
+                    sb.Append(", ");
                 }
+
+                sb.Append("]");
+                return sb.ToString();
             }
             else if (assignableFrom == typeof(IDictionary))
             {
-                sb.AppendLine("{");
+                sb.Append("{");
                 foreach (DictionaryEntry entry in (value as IDictionary))
                 {
-                    sb.AppendLine("\t{");
-                    sb.AppendLine("\t\tKey: " + DumpObject(entry.Key, entry.Key?.GetType(), null, 1));
-                    sb.AppendLine("\t\tValue: " + DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
-                    sb.AppendLine("\t}");
+                    sb.Append($"[{DumpObject(entry.Key, entry.Key?.GetType(), null, 1)}, {DumpObject(entry.Value, entry.Value?.GetType(), null, 1)}]");
                     if (++count == 3)
                     {
-                        sb.AppendLine("}");
-                        return sb.ToString();
+                        sb.Append(", ...");
+                        break;
                     }
+
+                    sb.Append(", ");
                 }
+
+                sb.Append("}");
+                return sb.ToString();
             }
 
             return sb.ToString();

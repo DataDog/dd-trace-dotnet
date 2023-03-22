@@ -30,36 +30,49 @@ Expressions:
     var StringArg = (string)scopeMemberArray[9].Value;
     var CollectionArg = (List<string>)scopeMemberArray[10].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
-    var $dd_el_result = "System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]" + @"
-" + enumerator = this.Collection.GetEnumerator();
-    var index = 0;
-    var itemValues = new StringBuilder();
-    while (true)
+    var $dd_el_result =
     {
-        if ((enumerator.MoveNext()) && (index < 3))
+        enumerator = this.Collection.GetEnumerator();
+        var index = 0;
+        var itemValues = new StringBuilder();
+        itemValues.Append("[");
+        while (true)
         {
-            string loopItem;
-            loopItem = enumerator.Current;
-            itemValues.AppendLine(
-                ProbeExpressionParser<string>.DumpObject(
-                    loopItem,
-                    typeof(string),
-                    "Item " + index,
-                    1));
-            index++;
-        }
-        else
-        {
-            break;
-        }
-    }
+            if (enumerator.MoveNext())
+            {
+                string loopItem;
 
-    return itemValues.ToString();;
+                if (index < 3)
+                {
+                    if (index > 0)
+                    {
+                        return itemValues.Append(", ");
+                    }
+
+                    loopItem = enumerator.Current;
+                    itemValues.Append(ProbeExpressionParser<string>.DumpObject(
+                        loopItem,
+                        typeof(string),
+                        "",
+                        1));
+                    index++;
+                }
+                else
+                {
+                    itemValues.Append(", ...");
+                    break;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+        itemValues.Append("]");
+
+        return itemValues.ToString();
+    };
 
     return $dd_el_result;
 }
-Result: The result of the expression is: System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]
-Item 0: hello
-Item 1: 1st Item
-Item 2: 2nd item
-
+Result: The result of the expression is: [hello, 1st Item, 2nd item, ...]
