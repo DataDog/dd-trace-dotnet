@@ -39,7 +39,6 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.Object::ToString()\",\"System.Text.StringBuilder\",[0],[False],[None],Propagation,[])] ToString(System.Text.StringBuilder)",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::ToString(System.Int32,System.Int32)\",\"\",[0],[False],[None],Propagation,[])] ToString(System.Text.StringBuilder,System.Int32,System.Int32)",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.String)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Append(System.Text.StringBuilder,System.String)",
-"  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.Text.StringBuilder)\",\"\",[0],[False],[None],Propagation,[])] Append(System.Text.StringBuilder,System.Text.StringBuilder)",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.String,System.Int32,System.Int32)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Append(System.Text.StringBuilder,System.String,System.Int32,System.Int32)",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.Char[],System.Int32,System.Int32)\",\"\",[0],[False],[None],Propagation,[])] Append(System.Text.StringBuilder,System.Char[],System.Int32,System.Int32)",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.Object)\",\"\",[0],[False],[None],Propagation,[])] Append(System.Text.StringBuilder,System.Object)",

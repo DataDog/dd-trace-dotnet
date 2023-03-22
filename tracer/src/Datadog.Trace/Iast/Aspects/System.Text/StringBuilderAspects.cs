@@ -17,8 +17,6 @@ namespace Datadog.Trace.Iast.Aspects.System.Text;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public partial class StringBuilderAspects
 {
-#pragma warning disable S2259 // Null pointers should not be dereferenced
-
     /// <summary> StringBuildr ctor aspect </summary>
     /// <param name="value"> Init string </param>
     /// <returns> New StringBuilder </returns>
@@ -94,6 +92,7 @@ public partial class StringBuilderAspects
         return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value), initialLength, value, length, 0, length);
     }
 
+#if !NETFRAMEWORK
     /// <summary>  StringBuilder.Append aspect </summary>
     /// <param name="target"> StringBuilder instance </param>
     /// <param name="value"> value parameter </param>
@@ -105,6 +104,7 @@ public partial class StringBuilderAspects
         var length = value?.Length ?? 0;
         return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value), initialLength, value, length, 0, length);
     }
+#endif
 
     /// <summary>  StringBuilder.Append aspect </summary>
     /// <param name="target"> StringBuilder instance </param>
@@ -116,7 +116,7 @@ public partial class StringBuilderAspects
     public static StringBuilder Append(StringBuilder target, string? value, int startIndex, int count)
     {
         var initialLength = target.Length;
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value, startIndex, count), initialLength, value, value?.Length ?? 0, startIndex, count);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value, startIndex, count), initialLength, value, value?.Length ?? 0, startIndex, count);
     }
 
 #if !NETFRAMEWORK
@@ -130,7 +130,7 @@ public partial class StringBuilderAspects
     public static StringBuilder Append(StringBuilder target, StringBuilder? value, int startIndex, int count)
     {
         var initialLength = target.Length;
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value?.ToString(), startIndex, count), initialLength, value, value?.Length ?? 0, startIndex, count);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value?.ToString(), startIndex, count), initialLength, value, value?.Length ?? 0, startIndex, count);
     }
 #endif
 
@@ -144,7 +144,7 @@ public partial class StringBuilderAspects
     public static StringBuilder Append(StringBuilder target, char[]? value, int startIndex, int charCount)
     {
         var initialLength = target.Length;
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value, startIndex, charCount), initialLength, value, value?.Length ?? 0, startIndex, charCount);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value, startIndex, charCount), initialLength, value, value?.Length ?? 0, startIndex, charCount);
     }
 
     /// <summary>  StringBuilder.Append aspect </summary>
@@ -169,7 +169,7 @@ public partial class StringBuilderAspects
             length = (valueObject as string)?.Length ?? 0;
         }
 
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value), initialLength, valueObject, length, 0, length);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value), initialLength, valueObject, length, 0, length);
     }
 
     /// <summary>  StringBuilder.Append aspect </summary>

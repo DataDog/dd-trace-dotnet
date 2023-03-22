@@ -70,7 +70,7 @@ internal static class StringBuilderModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringBuilderModuleImpl.onStringBuilderAppend(StringBuilder, int, object, int, int, int) exception");
+            Log.Error(err, "StringBuilderModuleImpl.OnStringBuilderAppend(StringBuilder, int, object, int, int, int) exception");
         }
 
         return builder;
