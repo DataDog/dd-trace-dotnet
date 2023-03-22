@@ -55,7 +55,7 @@ public class LiveDebuggerTests : TestHelper
 
     private async Task RunTest()
     {
-        var testType = DebuggerTestHelper.SpecificTestDescription<AsyncVoid>();
+        var testType = DebuggerTestHelper.SpecificTestDescription(typeof(AsyncVoid));
 
         using var agent = EnvironmentHelper.GetMockAgent();
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";

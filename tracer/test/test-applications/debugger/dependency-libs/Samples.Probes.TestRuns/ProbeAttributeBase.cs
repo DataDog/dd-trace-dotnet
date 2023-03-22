@@ -4,7 +4,7 @@ namespace Samples.Probes.TestRuns;
 
 public class ProbeAttributeBase : Attribute
 {
-    public ProbeAttributeBase(bool skip, int phase, bool unlisted, int expectedNumberOfSnapshots, string[] skipOnFrameworks, bool captureSnapshot = true, int evaluateAt = 1, string conditionDsl = null, string conditionJson = null, string templateDsl = null, string templateJson = null, string templateStr = null, string probeId = null)
+    public ProbeAttributeBase(bool skip, int phase, bool unlisted, int expectedNumberOfSnapshots, string[] skipOnFrameworks, bool captureSnapshot = true, string evaluateAt = null, string conditionJson = null, string templateJson = null, string templateStr = null, string metricJson = null, string metricName = null, string metricKind = null, string probeId = null)
     {
         Skip = skip;
         Phase = phase;
@@ -13,12 +13,13 @@ public class ProbeAttributeBase : Attribute
         ExpectedNumberOfSnapshots = expectedNumberOfSnapshots;
         CaptureSnapshot = captureSnapshot;
         EvaluateAt = evaluateAt;
-        ConditionDsl = conditionDsl;
         ConditionJson = conditionJson;
-        TemplateDsl = templateDsl;
         TemplateJson = templateJson;
         TemplateStr = templateStr;
-        ProbeId = probeId;
+        MetricJson = metricJson;
+        MetricName = metricName;
+        MetricKind = metricKind;
+		ProbeId = probeId;
     }
 
     public bool Skip { get; }
@@ -27,11 +28,12 @@ public class ProbeAttributeBase : Attribute
     public bool Unlisted { get; }
     public int ExpectedNumberOfSnapshots { get; }
     public bool CaptureSnapshot { get; set; }
-    public int EvaluateAt { get; }
-    public string ConditionDsl { get; }
+    public string EvaluateAt { get; }
     public string ConditionJson { get; set; }
-    public string TemplateDsl { get; set; }
+	public string ProbeId { get; set; }
     public string TemplateJson { get; set; }
     public string TemplateStr { get; set; }
-    public string ProbeId { get; set; }
+    public string MetricJson { get; set; }
+    public string MetricName { get; set; }
+    public string MetricKind { get; set; }
 }

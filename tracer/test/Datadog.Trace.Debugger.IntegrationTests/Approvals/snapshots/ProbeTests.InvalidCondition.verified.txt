@@ -25,10 +25,6 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"undefined > 2\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n    \"gt\": [\r\n       \"undefined\",\r\n      2\r\n    ]\r\n}"
