@@ -8,7 +8,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "27": {
+            "23": {
               "arguments": {
                 "arg": {
                   "type": "Double",
@@ -26,10 +26,6 @@
                 }
               },
               "staticFields": {
-                "Dsl": {
-                  "type": "String",
-                  "value": "{\r\n  \"dsl\": \"Result is: {ref arg}\"\r\n}"
-                },
                 "Json": {
                   "type": "String",
                   "value": "{\r\n        \"ref\": \"arg\"\r\n}"
@@ -46,7 +42,7 @@
           "location": {
             "file": "LineTemplateFullSnapshot.cs",
             "lines": [
-              27
+              23
             ]
           }
         },
