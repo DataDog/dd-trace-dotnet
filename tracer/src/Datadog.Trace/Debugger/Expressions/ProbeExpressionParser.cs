@@ -9,7 +9,6 @@ using System.IO;
 using System.Linq.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -395,7 +394,7 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private Expression HandleReturnType(Expression finalExpr)
+    private Expression HandleReturnType(Expression finalExpr, List<ParameterExpression> scopeMembers)
     {
         if (typeof(T).IsAssignableFrom(finalExpr.Type))
         {
@@ -414,33 +413,7 @@ internal partial class ProbeExpressionParser<T>
             return finalExpr;
         }
 
-        // for string, call ToString when possible, build exception message or return the type name
-        if (SupportedTypesService.IsSafeToCallToString(finalExpr.Type))
-        {
-            finalExpr = Expression.Call(finalExpr, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));
-        }
-        else if (IsMicrosoftException(finalExpr.Type))
-        {
-            var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
-            var typeNameExpression = Expression.Constant(finalExpr.Type.FullName, typeof(string));
-            var ifNull = Expression.Equal(finalExpr, Expression.Constant(null));
-            var exceptionAsString = Expression.Call(
-                stringConcat,
-                Expression.NewArrayInit(
-                    typeof(string),
-                    Expression.Constant(finalExpr.Type.FullName, typeof(string)),
-                    Expression.Constant(Environment.NewLine, typeof(string)),
-                    Expression.Property(finalExpr, nameof(Exception.Message)),
-                    Expression.Constant(Environment.NewLine, typeof(string)),
-                    Expression.Property(finalExpr, nameof(Exception.StackTrace))));
-            return Expression.Condition(ifNull, typeNameExpression, exceptionAsString);
-        }
-        else
-        {
-            finalExpr = Expression.Constant(finalExpr.Type.FullName, typeof(string));
-        }
-
-        return finalExpr;
+        return DumpExpression(finalExpr, scopeMembers);
     }
 
     private void AddLocalAndArgs(ScopeMember[] argsOrLocals, List<ParameterExpression> scopeMembers, List<Expression> expressions, ParameterExpression argsOrLocalsParameterExpression)
@@ -524,7 +497,7 @@ internal partial class ProbeExpressionParser<T>
         SetReaderAtExpressionStart(reader);
 
         var finalExpr = ParseRoot(reader, scopeMembers);
-        finalExpr = HandleReturnType(finalExpr);
+        finalExpr = HandleReturnType(finalExpr, scopeMembers);
         expressions.Add(finalExpr is not GotoExpression ? Expression.Assign(result, finalExpr) : finalExpr);
         expressions.Add(Expression.Label(ReturnTarget, result));
         var body = (Expression)Expression.Block(scopeMembers, expressions);

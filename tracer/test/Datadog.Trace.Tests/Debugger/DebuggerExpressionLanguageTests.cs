@@ -307,9 +307,56 @@ namespace Datadog.Trace.Tests.Debugger
 
             internal class NestedObject
             {
+                private string _string = "I'm a string field";
+
+                private TimeSpan _timeSpan = new TimeSpan();
+
+                private Dictionary<string, int> _dictionary = new Dictionary<string, int>() { { "one", 1 }, { "two", 2 }, { "three", 3 }, { "four", 4 } };
+
+                private IEnumerable<int> _ienumerable = Enumerable.Range(0, 4);
+
+                private IReadOnlyList<int> _readonlyList = new ArraySegment<int>(new int[] { 1, 2, 3, 4 });
+
+                private List<List<int>> _listOfLists = new List<List<int>>()
+                {
+                    new List<int>()
+                    {
+                        1,
+                        2,
+                        3,
+                        4,
+                    },
+                    new List<int>()
+                    {
+                        1,
+                        2,
+                        3,
+                        4,
+                    },
+                    new List<int>()
+                    {
+                        1,
+                        2,
+                        3,
+                        4,
+                    },
+                    new List<int>()
+                    {
+                        1,
+                        2,
+                        3,
+                        4,
+                    }
+                };
+
                 public string NestedString { get; set; }
 
                 public NestedObject Nested { get; set; }
+
+                public override string ToString()
+                {
+                    return _string + _timeSpan.ToString() + _dictionary.ToString() + _ienumerable.ToString() + _listOfLists.ToString() + _readonlyList.ToString();
+                }
             }
         }
     }

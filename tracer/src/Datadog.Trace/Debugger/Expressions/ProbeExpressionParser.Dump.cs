@@ -1,0 +1,270 @@
+// <copyright file="ProbeExpressionParser.Dump.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Text;
+using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Util;
+using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
+
+namespace Datadog.Trace.Debugger.Expressions;
+
+internal partial class ProbeExpressionParser<T>
+{
+    private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
+    {
+        if (SupportedTypesService.IsSafeToCallToString(expression.Type, includeCollection: false))
+        {
+            return Expression.Call(expression, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));
+        }
+
+        var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
+
+        if (IsMicrosoftException(expression.Type))
+        {
+            var typeNameExpression = Expression.Constant(expression.Type.FullName, typeof(string));
+            var ifNull = Expression.Equal(expression, Expression.Constant(null));
+            var exceptionAsString = Expression.Call(
+               stringConcat,
+               Expression.NewArrayInit(
+                   typeof(string),
+                   typeNameExpression,
+                   Expression.Constant(Environment.NewLine, typeof(string)),
+                   Expression.Property(expression, nameof(Exception.Message)),
+                   Expression.Constant(Environment.NewLine, typeof(string)),
+                   Expression.Property(expression, nameof(Exception.StackTrace))));
+
+            return Expression.Condition(ifNull, typeNameExpression, exceptionAsString);
+        }
+
+        return Expression.Call(
+            stringConcat,
+            Expression.NewArrayInit(
+                typeof(string),
+                Expression.Constant(expression.Type.FullName, typeof(string)),
+                Expression.Constant(Environment.NewLine, typeof(string)),
+                IsSafeCollection(expression.Type) ? DumpCollectionExpression(expression, scopeMembers) : DumpFieldsExpression(expression, scopeMembers)));
+    }
+
+    private Expression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
+    {
+        var loopItemType = collection.Type.IsGenericType ? collection.Type.GetGenericArguments()[0] : typeof(object);
+        var enumerableType = typeof(IEnumerable<>).MakeGenericType(loopItemType);
+        var enumeratorType = typeof(IEnumerator<>).MakeGenericType(loopItemType);
+        var appendLine = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.AppendLine), new[] { typeof(string) });
+        var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
+        var getEnumeratorCall = Expression.Call(collection, GetMethodByReflection(enumerableType, nameof(IEnumerable.GetEnumerator), Type.EmptyTypes));
+
+        var expressions = new List<Expression>();
+        var loopItem = Expression.Variable(loopItemType, "loopItem");
+        scopeMembers.Add(loopItem);
+
+        var enumeratorVar = Expression.Variable(enumeratorType, "enumerator");
+        scopeMembers.Add(enumeratorVar);
+        expressions.Add(enumeratorVar);
+        var moveNextCall = Expression.Call(enumeratorVar, GetMethodByReflection(typeof(IEnumerator), nameof(IEnumerator.MoveNext), Type.EmptyTypes));
+
+        expressions.Add(Expression.Assign(enumeratorVar, getEnumeratorCall));
+
+        var index = Expression.Variable(typeof(int), "index");
+        scopeMembers.Add(index);
+        expressions.Add(Expression.Assign(index, Expression.Constant(0)));
+
+        var result = Expression.Variable(typeof(StringBuilder), "itemValues");
+        scopeMembers.Add(result);
+        expressions.Add(Expression.Assign(result, Expression.New(typeof(StringBuilder).GetConstructor(Type.EmptyTypes))));
+
+        var dumpObjectCallExpression = Expression.Call(
+            result,
+            appendLine,
+            Expression.Call(
+                Expression.Constant(this),
+                GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpObject), new[] { typeof(object), typeof(Type), typeof(string), typeof(int) }),
+                loopItem,
+                Expression.Constant(loopItem.Type),
+                Expression.Call(
+                    stringConcat,
+                    Expression.NewArrayInit(
+                        typeof(string),
+                        Expression.Constant("Item "),
+                        Expression.Call(index, GetMethodByReflection(typeof(int), nameof(int.ToString), Type.EmptyTypes)))),
+                Expression.Constant(1) /* no nested collection */));
+
+        var condition = Expression.AndAlso(
+            Expression.Equal(moveNextCall, Expression.Constant(true)),
+            Expression.LessThan(index, Expression.Constant(3)));
+
+        var breakLabel = Expression.Label("loopBreak");
+
+        var loopBodyExpression = Expression.IfThenElse(
+            condition,
+            Expression.Block(
+                new[] { loopItem },
+                Expression.Assign(loopItem, Expression.Property(enumeratorVar, "Current")),
+                dumpObjectCallExpression,
+                Expression.PostIncrementAssign(index)),
+            Expression.Break(breakLabel));
+
+        expressions.Add(Expression.Loop(loopBodyExpression, breakLabel));
+        expressions.Add(Expression.Call(result, GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.ToString), Type.EmptyTypes)));
+        return Expression.Block(expressions);
+    }
+
+    private Expression DumpFieldsExpression(Expression expression, List<ParameterExpression> scopeMembers)
+    {
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+        var getTypeMethod = GetMethodByReflection(typeof(object), nameof(object.GetType), Type.EmptyTypes);
+        var getFieldsMethod = GetMethodByReflection(typeof(Type), nameof(Type.GetFields), new[] { typeof(BindingFlags) });
+        var getFields = Expression.Call(Expression.Call(expression, getTypeMethod), getFieldsMethod, Expression.Constant(flags));
+        var appendLine = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.AppendLine), new[] { typeof(string) });
+        var expressions = new List<Expression>();
+
+        var fields = Expression.Variable(typeof(FieldInfo[]), "fieldsArray");
+        scopeMembers.Add(fields);
+        expressions.Add(Expression.Assign(fields, getFields));
+
+        var result = Expression.Variable(typeof(StringBuilder), "fieldValues");
+        scopeMembers.Add(result);
+        expressions.Add(Expression.Assign(result, Expression.New(typeof(StringBuilder).GetConstructor(Type.EmptyTypes))));
+
+        var index = Expression.Variable(typeof(int), "index");
+        scopeMembers.Add(index);
+        expressions.Add(Expression.Assign(index, Expression.Constant(0)));
+
+        // Loop Content
+        var fieldAtIndex = Expression.ArrayIndex(fields, index);
+        var fieldTypeExpression = Expression.Property(fieldAtIndex, typeof(FieldInfo), nameof(FieldInfo.FieldType));
+        var fieldNameExpression = Expression.Property(fieldAtIndex, typeof(FieldInfo), nameof(FieldInfo.Name));
+
+        var fieldGetValueExpression =
+           Expression.Call(
+               fieldAtIndex,
+               GetMethodByReflection(typeof(FieldInfo), nameof(FieldInfo.GetValue), new[] { typeof(object) }),
+               expression);
+
+        var dumpObjectCallExpression = Expression.Call(
+           result,
+           appendLine,
+           Expression.Call(
+               Expression.Constant(this),
+               GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpObject), new[] { typeof(Expression), typeof(Type), typeof(string), typeof(int) }),
+               fieldGetValueExpression,
+               fieldTypeExpression,
+               fieldNameExpression,
+               Expression.Constant(0)));
+
+        // End Loop Content
+
+        var breakLabel = Expression.Label("loopBreak");
+        var condition = Expression.AndAlso(
+            Expression.LessThan(index, Expression.Property(fields, nameof(Array.Length))),
+            Expression.LessThan(index, Expression.Constant(5)));
+
+        var loopBodyExpression = Expression.IfThenElse(
+           condition,
+           Expression.Block(
+               dumpObjectCallExpression,
+               Expression.PostIncrementAssign(index)),
+           Expression.Break(breakLabel));
+
+        expressions.Add(Expression.Loop(loopBodyExpression, breakLabel));
+        expressions.Add(Expression.Call(result, GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.ToString), Type.EmptyTypes)));
+
+        return Expression.Block(expressions);
+    }
+
+    private string DumpObject(object value, Type type, string name, int depth = 0)
+    {
+        // only one level depth of collection
+        if (depth == 0 && IsTypeSupportIndex(type, out var assignableFrom))
+        {
+            return DumpCollection(value, type, name, assignableFrom);
+        }
+
+        if (!string.IsNullOrEmpty(name))
+        {
+            name += ": ";
+        }
+
+        if (IsMicrosoftException(type))
+        {
+            return value is not Exception ex
+                       ? $"{name}{type?.FullName}"
+                       : $"{name}{ex.GetType().FullName}{Environment.NewLine}{ex.Message}{Environment.NewLine}{ex.StackTrace}";
+        }
+
+        return SupportedTypesService.IsSafeToCallToString(type) ?
+                   $"{name}{value?.ToString() ?? type?.FullName}" :
+                   $"{name}{type?.FullName}";
+    }
+
+    private string DumpCollection(object value, Type type, string name, Type assignableFrom)
+    {
+        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        try
+        {
+            sb.AppendLine(DumpObject(value, type, name, 1));
+            if (value == null)
+            {
+                sb.AppendLine("null");
+                return sb.ToString();
+            }
+
+            int count = 0;
+            if (assignableFrom == typeof(IList))
+            {
+                sb.AppendLine("{");
+                foreach (var item in (value as IList))
+                {
+                    sb.AppendLine($"Item {count}: {DumpObject(item, item.GetType(), null, 1)}");
+                    if (++count == 3)
+                    {
+                        sb.AppendLine("}");
+                        return sb.ToString();
+                    }
+                }
+            }
+            else if (assignableFrom == typeof(IReadOnlyList<>))
+            {
+                sb.AppendLine("{");
+                foreach (var item in (value as IEnumerable))
+                {
+                    sb.AppendLine($"\tItem {count}: {DumpObject(item, item.GetType(), null, 1)}");
+                    if (++count == 3)
+                    {
+                        sb.AppendLine("}");
+                        return sb.ToString();
+                    }
+                }
+            }
+            else if (assignableFrom == typeof(IDictionary))
+            {
+                sb.AppendLine("{");
+                foreach (DictionaryEntry entry in (value as IDictionary))
+                {
+                    sb.AppendLine("\t{");
+                    sb.AppendLine("\t\tKey: " + DumpObject(entry.Key, entry.Key?.GetType(), null, 1));
+                    sb.AppendLine("\t\tValue: " + DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
+                    sb.AppendLine("\t}");
+                    if (++count == 3)
+                    {
+                        sb.AppendLine("}");
+                        return sb.ToString();
+                    }
+                }
+            }
+
+            return sb.ToString();
+        }
+        finally
+        {
+            StringBuilderCache.Release(sb);
+        }
+    }
+}
