@@ -396,7 +396,7 @@ internal static class StringModuleImpl
     {
         try
         {
-            if (string.IsNullOrEmpty(result))
+            if (string.IsNullOrEmpty(result) || ReferenceEquals(self, result))
             {
                 return result;
             }
