@@ -477,7 +477,7 @@ internal static class StringModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.OnStringTrim(string,string,char[],bool,bool) exception");
+            Log.Error(err, "StringModuleImpl. OnStringTrimArray(string,string,char[],bool,bool) exception");
         }
 
         return result;
