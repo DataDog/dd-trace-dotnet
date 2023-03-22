@@ -108,12 +108,6 @@ namespace Datadog.Trace.TestHelpers
 
                 var summary = new RunSummary();
 
-                // Start with single threaded collections
-                foreach (var test in collections.Where(t => t.DisableParallelization))
-                {
-                    summary.Aggregate(await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource));
-                }
-
                 using var runner = new ConcurrentRunner();
 
                 var tasks = new List<Task<RunSummary>>();
@@ -128,6 +122,12 @@ namespace Datadog.Trace.TestHelpers
                 foreach (var task in tasks)
                 {
                     summary.Aggregate(task.Result);
+                }
+
+                // Single threaded collections
+                foreach (var test in collections.Where(t => t.DisableParallelization))
+                {
+                    summary.Aggregate(await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource));
                 }
 
                 return summary;
