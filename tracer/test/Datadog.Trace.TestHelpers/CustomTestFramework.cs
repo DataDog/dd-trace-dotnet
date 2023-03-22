@@ -263,7 +263,7 @@ namespace Datadog.Trace.TestHelpers
 
             private async Task DoWork()
             {
-                foreach (var item in _queue)
+                foreach (var item in _queue.GetConsumingEnumerable())
                 {
                     await item();
                 }
