@@ -245,12 +245,6 @@ public class StringTrimTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingTrimEnd_ResultIsTainted2()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainte-+:", taintedValue.TrimEnd('d'), () => (taintedValue).TrimEnd('d'));
-    }
-
-    [Fact]
-    public void GivenATaintedObject_WhenCallingTrimStart_ResultIsTainted3()
-    {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainte-+:", taintedValue.TrimEnd('d'), () => taintedValue.TrimEnd('d'));
     }
 
