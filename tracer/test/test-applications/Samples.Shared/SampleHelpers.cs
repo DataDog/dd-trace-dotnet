@@ -201,6 +201,20 @@ namespace Samples
             spanId = (ulong) SpanIdProperty.Invoke(parentScope, null);
         }
 
+        public static ulong GetTraceId(IDisposable scope)
+        {
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            var context = SpanContextProperty.Invoke(span, Array.Empty<object>());
+            return (ulong) TraceIdProperty.Invoke(context, Array.Empty<object>());
+        }
+
+        public static ulong GetSpanId(IDisposable scope)
+        {
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            var context = SpanContextProperty.Invoke(span, Array.Empty<object>());
+            return (ulong) SpanIdProperty.Invoke(context, Array.Empty<object>());
+        }
+
         public static Task ForceTracerFlushAsync()
         {
             if (GetTracerInstance is null || ForceFlushAsyncMethod is null)
