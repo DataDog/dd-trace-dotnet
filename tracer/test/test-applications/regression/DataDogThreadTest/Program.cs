@@ -15,12 +15,6 @@ namespace DataDogThreadTest
         internal static readonly string SpanIdKey = "dd.span_id";
         internal static readonly string NonTraceMessage = "TraceId: 0, SpanId: 0";
 
-        private static readonly Type _scopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
-        private static readonly Type _spanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
-        private static MethodInfo _getSpanProperty = _scopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
-        private static MethodInfo _getTraceIdProperty = _spanType.GetProperty("TraceId", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
-        private static MethodInfo _getSpanIdProperty = _spanType.GetProperty("SpanId", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
-
         static int Main(string[] args)
         {
             try
@@ -28,7 +22,10 @@ namespace DataDogThreadTest
                 InMemoryLog4NetLogger.Setup();
                 var logger = LogManager.GetLogger(typeof(Program));
 
-                SampleHelpers.ConfigureTracerWithLogsInjection(); // LogsInjectionEnabled = true; TraceEnabled = true (default value)
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_LOGS_INJECTION")))
+                {
+                    throw new Exception("DD_LOGS_INJECTION must be set and it wasn't.");
+                }
 
                 var totalIterations = 10_000;
                 var threadRepresentation = Enumerable.Range(0, 10).ToArray();
@@ -54,17 +51,15 @@ namespace DataDogThreadTest
                                         {
                                             using (var outerScope = SampleHelpers.CreateScope("thread-test"))
                                             {
-                                                var span = _getSpanProperty.Invoke(outerScope, Array.Empty<object>());
-                                                var outerTraceId = (ulong)_getTraceIdProperty.Invoke(span, Array.Empty<object>());
-                                                var outerSpanId = (ulong)_getSpanIdProperty.Invoke(span, Array.Empty<object>());
+                                                var outerTraceId = SampleHelpers.GetTraceId(outerScope);
+                                                var outerSpanId = SampleHelpers.GetSpanId(outerScope);
 
                                                 logger.Info($"TraceId: {outerTraceId}, SpanId: {outerSpanId}");
 
                                                 using (var innerScope = SampleHelpers.CreateScope("nest-thread-test"))
                                                 {
-                                                    var innerSpan = _getSpanProperty.Invoke(innerScope, Array.Empty<object>());
-                                                    var innerTraceId = (ulong)_getTraceIdProperty.Invoke(innerSpan, Array.Empty<object>());
-                                                    var innerSpanId = (ulong)_getSpanIdProperty.Invoke(innerSpan, Array.Empty<object>());
+                                                    var innerTraceId = SampleHelpers.GetTraceId(innerScope);
+                                                    var innerSpanId = SampleHelpers.GetSpanId(innerScope);
 
                                                     if (outerTraceId != innerTraceId)
                                                     {
