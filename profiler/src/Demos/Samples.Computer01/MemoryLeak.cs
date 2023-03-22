@@ -29,6 +29,12 @@ namespace Samples.Computer01
         private void AllocateWithLeak()
         {
             List<byte[]> root = new List<byte[]>();
+
+            // the codes in #if allow different kind of arrays as roots
+#if false
+            //byte[][] root = new byte[_objectsToAllocateCount][];
+            //byte[,][] root = new byte[1, _objectsToAllocateCount][];
+#endif
             int count = 0;
 
             while (!IsEventSet() && (count <= _objectsToAllocateCount))
@@ -36,6 +42,10 @@ namespace Samples.Computer01
                 try
                 {
                     root.Add(new byte[BufferSize]);
+#if false
+                    //root[count] = new byte[BufferSize];
+                    //root[0, count] = new byte[BufferSize];
+#endif
                     GC.Collect();
 
                     count++;
@@ -44,6 +54,11 @@ namespace Samples.Computer01
                 {
                     // deal with Out Of Memory exceptions (important for x86 tests)
                     root.Clear();
+#if false
+                    //count = 0;
+                    //count = 0;
+#endif
+
                     GC.Collect();
                 }
             }

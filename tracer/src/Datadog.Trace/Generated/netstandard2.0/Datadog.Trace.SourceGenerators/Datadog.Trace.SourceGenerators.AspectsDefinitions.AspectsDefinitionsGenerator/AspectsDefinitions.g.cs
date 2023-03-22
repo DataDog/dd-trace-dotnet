@@ -12,6 +12,15 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static string[] Aspects = new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib,System.Runtime\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.StringAspects",
+"  [AspectMethodReplace(\"System.String::Trim()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Trim(System.String)",
+"  [AspectMethodReplace(\"System.String::Trim(System.Char[])\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Trim(System.String,System.Char[])",
+"  [AspectMethodReplace(\"System.String::Trim(System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Trim(System.String,System.Char)",
+"  [AspectMethodReplace(\"System.String::TrimStart(System.Char[])\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] TrimStart(System.String,System.Char[])",
+"  [AspectMethodReplace(\"System.String::TrimStart(System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] TrimStart(System.String,System.Char)",
+"  [AspectMethodReplace(\"System.String::TrimStart()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] TrimStart(System.String)",
+"  [AspectMethodReplace(\"System.String::TrimEnd(System.Char[])\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] TrimEnd(System.String,System.Char[])",
+"  [AspectMethodReplace(\"System.String::TrimEnd(System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] TrimEnd(System.String,System.Char)",
+"  [AspectMethodReplace(\"System.String::TrimEnd()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] TrimEnd(System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Concat_0(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Concat_1(System.String,System.String)",
@@ -45,6 +54,13 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::ToLower()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToLower(System.String)",
 "  [AspectMethodReplace(\"System.String::ToLower(System.Globalization.CultureInfo)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToLower(System.String,System.Globalization.CultureInfo)",
 "  [AspectMethodReplace(\"System.String::ToLowerInvariant()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] ToLowerInvariant(System.String)",
+"  [AspectMethodReplace(\"System.String::Remove(System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Remove(System.String,System.Int32)",
+"  [AspectMethodReplace(\"System.String::Remove(System.Int32,System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Remove(System.String,System.Int32,System.Int32)",
+"  [AspectMethodReplace(\"System.String::Insert(System.Int32,System.String)\",\"\",[0],[False],[StringOptimization],Propagation,[])] Insert(System.String,System.Int32,System.String)",
+"  [AspectMethodReplace(\"System.String::PadLeft(System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadLeft(System.String,System.Int32)",
+"  [AspectMethodReplace(\"System.String::PadLeft(System.Int32,System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadLeft(System.String,System.Int32,System.Char)",
+"  [AspectMethodReplace(\"System.String::PadRight(System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadRight(System.String,System.Int32)",
+"  [AspectMethodReplace(\"System.String::PadRight(System.Int32,System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadRight(System.String,System.Int32,System.Char)",
         };
     }
 }

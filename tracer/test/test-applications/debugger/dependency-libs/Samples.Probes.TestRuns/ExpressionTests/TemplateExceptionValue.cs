@@ -1,14 +1,11 @@
 using System;
 using System.Runtime.CompilerServices;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     internal class TemplateExceptionValue : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""Result is: {ref arg}""
-}";
-
         private const string Json = @"{
         ""ref"": ""@exceptions""
 }";
@@ -22,10 +19,9 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(
-            templateDsl: Dsl,
             templateJson: Json,
             captureSnapshot: false,
-            evaluateAt: 1,
+            evaluateAt: Const.Exit,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Object" })]
         private string ThrowExceptionMethod(object arg)

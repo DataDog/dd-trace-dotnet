@@ -35,10 +35,6 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"ref field > 6\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"_field\"},\r\n      6\r\n    ]\r\n}"

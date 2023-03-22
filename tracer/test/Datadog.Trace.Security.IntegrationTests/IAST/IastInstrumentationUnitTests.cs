@@ -65,9 +65,49 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestInsertMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Insert", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestRemoveMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Remove", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestToCharArrayMethodsAspectCover()
     {
         TestMethodOverloads("System.String", "ToCharArray", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestTrimStartMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "TrimStart", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestTrimEndMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "TrimEnd", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestTrimMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Trim", null, null);
     }
 
     [SkippableFact]
