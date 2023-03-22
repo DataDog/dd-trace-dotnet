@@ -35,7 +35,6 @@ namespace Datadog.Trace.ClrProfiler
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib,System.Runtime\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.StringAspects",
 "  [AspectMethodReplace(\"System.String::Trim()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Trim(System.String)",
 "  [AspectMethodReplace(\"System.String::Trim(System.Char[])\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Trim(System.String,System.Char[])",
-"  [AspectMethodReplace(\"System.String::Trim(System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Trim(System.String,System.Char)",
 "  [AspectMethodReplace(\"System.String::TrimStart(System.Char[])\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] TrimStart(System.String,System.Char[])",
 "  [AspectMethodReplace(\"System.String::TrimEnd(System.Char[])\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] TrimEnd(System.String,System.Char[])",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",

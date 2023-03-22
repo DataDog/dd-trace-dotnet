@@ -51,6 +51,7 @@ public partial class StringAspects
         }
     }
 
+#if !NETFRAMEWORK
     /// <summary>
     /// String.Trim aspect
     /// </summary>
@@ -62,6 +63,7 @@ public partial class StringAspects
     {
         return StringModuleImpl.OnStringTrim(target, target.Trim(trimChar), trimChar, true, true);
     }
+#endif
 
     /// <summary>
     /// String.TrimStart aspect
