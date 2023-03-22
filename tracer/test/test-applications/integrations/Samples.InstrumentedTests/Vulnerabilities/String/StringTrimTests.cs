@@ -19,6 +19,8 @@ public class StringTrimTests : InstrumentationTestsBase
         AddTainted(TaintedString);
     }
 
+    //Trim()
+
     [Fact]
     public void GivenATaintedString_WhenCallingTrim_ResultIsTainted()
     {
@@ -56,11 +58,7 @@ public class StringTrimTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-trimtext-+:", taintedValueSpaces2.Trim(), () => (taintedValueSpaces2).Trim());
     }
 
-    [Fact]
-    public void GivenATaintedObject_WhenCallingTrimWithoutParams_ResultIsTainted2()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-ainted-+:",taintedValue.Trim('t'), () => (taintedValue).Trim('t'));
-    }
+    // System.String::Trim(System.Char[])
 
     [Fact]
     public void GivenATaintedObject_WhenCallingTrimWithCharArrayParam_ResultIsTainted1()
@@ -114,68 +112,20 @@ public class StringTrimTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-trimtext-+:", (taintedValueSpaces2).Trim(null), () => (taintedValueSpaces2).Trim(null));
     }
 
-    [Fact]
-    public void GivenATaintedObject_WhenCallingTrimEnd_ResultIsTainted()
-    {
-        var fff = taintedValueSpaces + "WWW";
-        var ggg = taintedValueSpaces.TrimEnd(' ');
-        AssertTaintedFormatWithOriginalCallCheck(":+- trimtext-+:", taintedValueSpaces.TrimEnd(' '), () => (taintedValueSpaces).TrimEnd(' '));
-    }
+    // System.String::Trim(System.Char)
 
     [Fact]
-    public void GivenATaintedObject_WhenCallingTrimEndCharArray_ResultIsTainted()
+    public void GivenATaintedObject_WhenCallingTrimWithoutParams_ResultIsTainted2()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext-+:", taintedValueSpaces2.TrimEnd(new char[] {  }), () => (taintedValueSpaces2).TrimEnd(new char[] {  }));
+        AssertTaintedFormatWithOriginalCallCheck(":+-ainted-+:", taintedValue.Trim('t'), () => (taintedValue).Trim('t'));
     }
 
-    [Fact]
-    public void GivenATaintedObject_WhenCallingTrimEndCharArray_ResultIsTainted2()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext \t-+:", taintedValueSpaces2.TrimEnd(new char[] { ' ' }), () => (taintedValueSpaces2).TrimEnd(new char[] { ' ' }));
-    }
+    // System.String::TrimStart(System.Char[])
 
     [Fact]
-    public void GivenATaintedObject_WhenCallingTrimEndCharArray_ResultIsTainted3()
+    public void GivenATaintedObject_WhenCallingTrimStartWithNullParams_ResultIsTainted()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+- trimtex-+:", taintedValueSpaces.TrimEnd(new char[] { ' ', 't' }), () => (taintedValueSpaces).TrimEnd(new char[] { ' ', 't' }));
-    }
-
-    [Fact]
-    public void GivenATaintedObject_WhenCallingTrimEndCharArray_ResultIsTainted4()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext \t-+:", taintedValueSpaces2.TrimEnd(new char[] { ' ' }), () => (taintedValueSpaces2).TrimEnd(new char[] { ' ' }));
-    }
-
-    [Fact]
-    public void GivenATaintedObject_WhenCallingTrimEndCharArray_ResultIsTainted5()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext -+:", taintedValueSpaces2.TrimEnd(new char[] { '\t' }), () => (taintedValueSpaces2).TrimEnd(new char[] { '\t' }));
-    }
-
-    [Fact]
-    public void GivenATaintedObject_WhenCallingTrimEndWithNullParams_ResultIsTainted()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext-+:", taintedValueSpaces2.TrimEnd(null), () => (taintedValueSpaces2).TrimEnd(null));
-    }
-
-    [Fact]
-    public void GivenATaintedObject_WhenCallingTrimEndWithCharArrayParam_ResultIsTainted5()
-    {
-        AssertUntaintedWithOriginalCallCheck(String.Empty,
-            taintedValue.TrimEnd(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
-            () => taintedValue.TrimEnd(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
-    }
-
-    [Fact]
-    public void GivenATaintedObject_WhenCallingTrimEndNoParameters_ResultIsTainted()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext-+:", taintedValueSpaces2.TrimEnd(), () => (taintedValueSpaces2).TrimEnd());
-    }
-
-    [Fact]
-    public void GivenATaintedObject_WhenCallingTrimStart_ResultIsTainted()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-trimtext -+:", taintedValueSpaces.TrimStart(' '), () => (taintedValueSpaces).TrimStart(' '));
+        AssertTaintedFormatWithOriginalCallCheck(":+-trimtext \t-+:", taintedValueSpaces2.TrimStart(null), () => (taintedValueSpaces2).TrimStart(null));
     }
 
     [Fact]
@@ -216,16 +166,99 @@ public class StringTrimTests : InstrumentationTestsBase
             () => taintedValue.TrimStart(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
     }
 
+    // System.String::TrimStart(System.Char)
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimStart_ResultIsTainted()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-trimtext -+:", taintedValueSpaces.TrimStart(' '), () => (taintedValueSpaces).TrimStart(' '));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimStart_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-ainted-+:", taintedValue.TrimStart('t'), () => taintedValue.TrimStart('t'));
+    }
+
+    // System.String::TrimStart()
+
     [Fact]
     public void GivenATaintedObject_WhenCallingTrimStartNoParameters_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-trimtext \t-+:", taintedValueSpaces2.TrimStart(), () => (taintedValueSpaces2).TrimStart());
     }
 
+    // System.String::TrimEnd(System.Char[])
+
     [Fact]
-    public void GivenATaintedObject_WhenCallingTrimStartWithNullParams_ResultIsTainted()
+    public void GivenATaintedObject_WhenCallingTrimEndWithCharArrayParam_ResultIsTainted5()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-trimtext \t-+:", taintedValueSpaces2.TrimStart(null), () => (taintedValueSpaces2).TrimStart(null));
+        AssertUntaintedWithOriginalCallCheck(String.Empty,
+            taintedValue.TrimEnd(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
+            () => taintedValue.TrimEnd(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
     }
 
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimEndCharArray_ResultIsTainted()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext-+:", taintedValueSpaces2.TrimEnd(new char[] { }), () => (taintedValueSpaces2).TrimEnd(new char[] { }));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimEndCharArray_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext \t-+:", taintedValueSpaces2.TrimEnd(new char[] { ' ' }), () => (taintedValueSpaces2).TrimEnd(new char[] { ' ' }));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimEndCharArray_ResultIsTainted3()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+- trimtex-+:", taintedValueSpaces.TrimEnd(new char[] { ' ', 't' }), () => (taintedValueSpaces).TrimEnd(new char[] { ' ', 't' }));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimEndCharArray_ResultIsTainted4()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext \t-+:", taintedValueSpaces2.TrimEnd(new char[] { ' ' }), () => (taintedValueSpaces2).TrimEnd(new char[] { ' ' }));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimEndCharArray_ResultIsTainted5()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext -+:", taintedValueSpaces2.TrimEnd(new char[] { '\t' }), () => (taintedValueSpaces2).TrimEnd(new char[] { '\t' }));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimEndWithNullParams_ResultIsTainted()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext-+:", taintedValueSpaces2.TrimEnd(null), () => (taintedValueSpaces2).TrimEnd(null));
+    }
+
+    // System.String::TrimEnd(System.Char)
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimEnd_ResultIsTainted()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+- trimtext-+:", taintedValueSpaces.TrimEnd(' '), () => (taintedValueSpaces).TrimEnd(' '));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimEnd_ResultIsTainted2()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainte-+:", taintedValue.TrimEnd('d'), () => (taintedValue).TrimEnd('d'));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimStart_ResultIsTainted3()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainte-+:", taintedValue.TrimEnd('d'), () => taintedValue.TrimEnd('d'));
+    }
+
+    // System.String::TrimEnd()
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingTrimEndNoParameters_ResultIsTainted()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-\t trimtext-+:", taintedValueSpaces2.TrimEnd(), () => (taintedValueSpaces2).TrimEnd());
+    }
 }
