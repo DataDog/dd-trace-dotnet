@@ -48,6 +48,7 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("bad-request")]
         public IActionResult ThrowException()
         {
+            Environment.FailFast("test");
             AddCorrelationIdentifierToResponse();
             throw new Exception("This was a bad request.");
         }
