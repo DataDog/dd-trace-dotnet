@@ -241,10 +241,6 @@
       <Project>{0831386b-1a96-443f-b02b-c1d2b65fd845}</Project>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup Label="fmt">
-    <ClCompile Include="..\..\..\..\shared\src\native-lib\fmt\src\format.cc" />
-    <ClCompile Include="..\..\..\..\shared\src\native-lib\fmt\src\posix.cc" />
-  </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\Datadog.Profiler.Native.Windows\Resource.rc" />
   </ItemGroup>

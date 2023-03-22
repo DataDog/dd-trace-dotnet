@@ -394,10 +394,6 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup Label="fmt">
-    <ClCompile Include="..\..\..\..\shared\src\native-lib\fmt\src\format.cc" />
-    <ClCompile Include="..\..\..\..\shared\src\native-lib\fmt\src\posix.cc" />
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\shared\src\native-lib\PPDB\PPDB.vcxproj">
       <Project>{4b18a9ec-94fa-4098-a48d-83ed25e076d7}</Project>
