@@ -14,7 +14,6 @@ using FluentAssertions;
 using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
-using static Datadog.Profiler.IntegrationTests.Allocations.AllocationsProfilerTest;
 
 namespace Datadog.Profiler.IntegrationTests.Exceptions
 {

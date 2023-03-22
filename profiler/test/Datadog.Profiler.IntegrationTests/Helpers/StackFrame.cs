@@ -14,8 +14,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public readonly string Namespace;
         public readonly string Type;
         public readonly string Function;
+        public readonly string Filename;
+        public readonly long StartLine;
 
         public StackFrame(string rawStackFrame)
+            : this(rawStackFrame, string.Empty, 0)
+        {
+        }
+
+        public StackFrame(string rawStackFrame, string filename, long startLine)
         {
             // |lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_2
             var match = Regex.Match(rawStackFrame, @"^\|lm:(?<module>.*) \|ns:(?<namespace>.*) \|ct:(?<type>.*) \|fn:(?<function>.*)$");
@@ -29,6 +36,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Namespace = match.Groups["namespace"].Value;
             Type = match.Groups["type"].Value;
             Function = match.Groups["function"].Value;
+            Filename = filename;
+            StartLine = startLine;
         }
 
         public StackFrame(string module, string ns, string type, string function)
@@ -43,6 +52,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public bool Equals(StackFrame other)
         {
+            // for now we do not take into account Filename and StartLine.
+            // Expecially Filename since the path can vary in CI
             return Module == other.Module && Namespace == other.Namespace && Type == other.Type && Function == other.Function;
         }
 

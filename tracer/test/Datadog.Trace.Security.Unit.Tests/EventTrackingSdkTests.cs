@@ -37,7 +37,7 @@ public class EventTrackingSdkTests
         EventTrackingSdk.TrackUserLoginSuccessEvent(id, null, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
-        Assert.Equal(bool.TrueString, traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.SuccessTrack));
+        Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.SuccessTrack));
         Assert.Equal(id, traceContext.Tags.GetTag(Tags.User.Id));
     }
 
@@ -67,7 +67,7 @@ public class EventTrackingSdkTests
         EventTrackingSdk.TrackUserLoginSuccessEvent(id, meta, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
-        Assert.Equal(bool.TrueString, traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.SuccessTrack));
+        Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.SuccessTrack));
         Assert.Equal(id, traceContext.Tags.GetTag(Tags.User.Id));
 
         foreach (var kvp in meta)
@@ -97,8 +97,8 @@ public class EventTrackingSdkTests
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal(id, traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.FailureUserId));
-        Assert.Equal(bool.TrueString, traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.FailureTrack));
-        Assert.Equal(bool.TrueString, traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.FailureUserExists));
+        Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.FailureTrack));
+        Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.FailureUserExists));
     }
 
     [Fact]
@@ -127,8 +127,8 @@ public class EventTrackingSdkTests
         EventTrackingSdk.TrackUserLoginFailureEvent(id, false, meta, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
-        Assert.Equal(bool.TrueString, traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.FailureTrack));
-        Assert.Equal(bool.FalseString, traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.FailureUserExists));
+        Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.FailureTrack));
+        Assert.Equal("false", traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.FailureUserExists));
         Assert.Equal(id, traceContext.Tags.GetTag(Tags.AppSec.EventsUsersLogin.FailureUserId));
 
         foreach (var kvp in meta)
@@ -157,7 +157,7 @@ public class EventTrackingSdkTests
         EventTrackingSdk.TrackCustomEvent(eventName, null, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
-        Assert.Equal(bool.TrueString, traceContext.Tags.GetTag(Tags.AppSec.Track(eventName)));
+        Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.Track(eventName)));
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public class EventTrackingSdkTests
         EventTrackingSdk.TrackCustomEvent(eventName, meta, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
-        Assert.Equal(bool.TrueString, traceContext.Tags.GetTag(Tags.AppSec.Track(eventName)));
+        Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.Track(eventName)));
 
         foreach (var kvp in meta)
         {

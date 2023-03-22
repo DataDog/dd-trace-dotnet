@@ -15,6 +15,7 @@
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
 #include "IConfiguration.h"
+#include "IDebugInfoStore.h"
 #include "IExporter.h"
 #include "IFrameStore.h"
 #include "IMetricsSender.h"
@@ -233,6 +234,7 @@ private :
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;
     std::unique_ptr<IAllocationsRecorder> _pAllocationsRecorder = nullptr;
+    std::unique_ptr<IDebugInfoStore> _pDebugInfoStore = nullptr;
 
     MetricsRegistry _metricsRegistry;
     std::shared_ptr<ProxyMetric> _managedThreadsMetric;

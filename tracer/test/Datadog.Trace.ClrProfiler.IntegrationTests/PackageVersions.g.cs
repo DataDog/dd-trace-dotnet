@@ -38,6 +38,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> GraphQL => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.GraphQL : PackageVersionsLatestSpecific.GraphQL;
 
+        public static IEnumerable<object[]> GraphQL7 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.GraphQL7 : PackageVersionsLatestSpecific.GraphQL7;
+
         public static IEnumerable<object[]> HotChocolate => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.HotChocolate : PackageVersionsLatestSpecific.HotChocolate;
 
         public static IEnumerable<object[]> Npgsql => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Npgsql : PackageVersionsLatestSpecific.Npgsql;

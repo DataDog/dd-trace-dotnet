@@ -114,6 +114,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.HasArguments = false;
 
             isReEntryToMoveNext = asyncState; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
+            asyncState.SnapshotCreator.StartSampling();
             return isReEntryToMoveNext;
         }
 
@@ -132,9 +133,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            asyncState.SnapshotCreator.StopSampling();
             var localVariableNames = asyncState.MethodMetadataInfo.LocalVariableNames;
             if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
             {
+                asyncState.SnapshotCreator.StartSampling();
                 return;
             }
 
@@ -146,6 +149,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             asyncState.HasLocalsOrReturnValue = true;
             asyncState.HasArguments = false;
+            asyncState.SnapshotCreator.StartSampling();
         }
 
         /// <summary>
@@ -166,6 +170,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return DebuggerReturn.GetDefault();
             }
 
+            asyncState.SnapshotCreator.StopSampling();
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
             var capture = new CaptureInfo<Exception>(value: exception, methodState: MethodState.ExitStartAsync, asyncCaptureInfo: asyncCaptureInfo, memberKind: ScopeMemberKind.Exception);
 
@@ -174,6 +179,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 asyncState.IsActive = false;
             }
 
+            asyncState.SnapshotCreator.StartSampling();
             return DebuggerReturn.GetDefault();
         }
 
@@ -198,6 +204,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return new DebuggerReturn<TReturn>(returnValue);
             }
 
+            asyncState.SnapshotCreator.StopSampling();
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
             if (exception != null)
             {
@@ -218,6 +225,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 asyncState.HasLocalsOrReturnValue = true;
             }
 
+            asyncState.SnapshotCreator.StartSampling();
             return new DebuggerReturn<TReturn>(returnValue);
         }
 
@@ -233,6 +241,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            asyncState.SnapshotCreator.StopSampling();
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
                                       asyncState.HasArguments ||
                                       !asyncState.MethodMetadataInfo.Method.IsStatic;

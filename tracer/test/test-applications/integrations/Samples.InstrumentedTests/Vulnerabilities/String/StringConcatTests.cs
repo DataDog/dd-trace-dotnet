@@ -620,30 +620,78 @@ public class StringConcatTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }));
     }
 
-    struct StructForStringTest
+    [Fact]
+    public void GivenAListOfObjects_WhenCallingConcat_ThenNoExceptionIsThrown()
     {
-        readonly string str;
-        public StructForStringTest(string str)
-        {
-            this.str = str;
-        }
-        public override string ToString()
-        {
-            return str;
-        }
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:4str2", String.Concat(taintedValue, 4, null, "str2"), () => String.Concat(taintedValue, 4, null, "str2"));
     }
 
-    class ClassForStringTest
+    [Fact]
+    public void GivenAListOfStrings_WhenCallingConcat_ThenNoExceptionIsThrown()
     {
-        readonly string str;
-        public ClassForStringTest(string str)
-        {
-            this.str = str;
-        }
-        public override string ToString()
-        {
-            return str;
-        }
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:str2", String.Concat(taintedValue, null, "str2"), () => String.Concat(taintedValue, null, "str2"));
+    }
+
+    [Fact]
+    public void GivenAnArrayOfObjectsWithFirstNullArgument_WhenCalling_Concat_ResultIsOk()
+    {
+        string testString1 = AddTaintedString("01");
+        string testString2 = AddTaintedString("abc");
+        string testString3 = AddTaintedString("ABCD");
+
+        object[] obj = new object[4];
+
+        obj[0] = null;
+        obj[1] = testString1;
+        obj[2] = testString2;
+        obj[3] = testString3;
+
+        AssertTaintedFormatWithOriginalCallCheck(":+-01-+::+-abc-+::+-ABCD-+:", String.Concat(obj), () => String.Concat(obj));
+    }
+
+    [Fact]
+    public void GivenAnArrayOfObjectsWithOneNullArgument_WhenCalling_Concat_ResultIsOk()
+    {
+        string testString1 = AddTaintedString("01");
+        string testString2 = AddTaintedString("abc");
+        string testString3 = AddTaintedString("ABCD");
+
+        object[] obj = new object[4];
+
+        obj[0] = testString2;
+        obj[1] = testString1;
+        obj[2] = null;
+        obj[3] = testString3;
+
+        AssertTaintedFormatWithOriginalCallCheck(":+-abc-+::+-01-+::+-ABCD-+:", String.Concat(obj), () => String.Concat(obj));
+    }
+
+    [Fact]
+    public void GivenAnArrayOfObjectsWithOneNotNullArgument_WhenCalling_Concat_ResultIsArgument()
+    {
+        string testString1 = AddTaintedString("01");
+
+        object[] obj = new object[4];
+
+        obj[0] = testString1;
+        obj[1] = null;
+        obj[2] = null;
+        obj[3] = null;
+
+        AssertTaintedFormatWithOriginalCallCheck(":+-01-+:", String.Concat(obj), () => String.Concat(obj));
+    }
+
+    [Fact]
+    public void GivenAnArrayOfObjectsWithAllNullArguments_WhenCalling_Concat_ResultIsEmpty()
+    {
+        object[] obj = new object[4];
+
+        obj[0] = null;
+        obj[1] = null;
+        obj[2] = null;
+        obj[3] = null;
+
+        String.Concat(obj).Should().BeEmpty();
     }
 }
 

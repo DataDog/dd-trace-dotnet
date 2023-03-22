@@ -114,6 +114,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     libunwind-lib
     libdatadog-lib
     coreclr
+    PPDB
     spdlog-headers
     -static-libgcc
     -static-libstdc++
@@ -122,7 +123,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -ldl
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libdatadog-lib libunwind-lib coreclr spdlog-headers)
+add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
 
 # ******************************************************
 # Define shared target

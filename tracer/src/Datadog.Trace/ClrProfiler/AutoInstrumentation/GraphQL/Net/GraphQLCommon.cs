@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         internal const string Major3 = "3";
         internal const string Major4 = "4";
         internal const string Major5 = "5";
+        internal const string Major7 = "7";
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.GraphQL);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.GraphQL;
@@ -31,6 +32,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         internal const string ValidationErrorType = "GraphQL.Validation.ValidationError";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GraphQLCommon));
+        private static readonly string[] OperationTypeProxyString =
+        {
+            nameof(OperationTypeProxy.Query),
+            nameof(OperationTypeProxy.Mutation),
+            nameof(OperationTypeProxy.Subscription)
+        };
 
         internal static Scope CreateScopeFromValidate(Tracer tracer, string documentSource)
         {
@@ -77,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             {
                 string source = executionContext.Document.OriginalQuery;
                 string operationName = executionContext.Operation.Name;
-                var operationType = executionContext.Operation.OperationType.ToString();
+                var operationType = OperationTypeProxyString[(int)executionContext.Operation.OperationType];
                 scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
             }
             catch (Exception ex)
@@ -88,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             return scope;
         }
 
-        internal static Scope CreateScopeFromExecuteAsyncV5(Tracer tracer, IExecutionContextV5 executionContext)
+        internal static Scope CreateScopeFromExecuteAsyncV5AndV7(Tracer tracer, IExecutionContextV5AndV7 executionContext)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -102,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             {
                 string source = executionContext.Document.Source.ToString();
                 string operationName = executionContext.Operation.Name.StringValue;
-                string operationType = executionContext.Operation.Operation.ToString();
+                string operationType = OperationTypeProxyString[(int)executionContext.Operation.Operation];
                 scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
             }
             catch (Exception ex)

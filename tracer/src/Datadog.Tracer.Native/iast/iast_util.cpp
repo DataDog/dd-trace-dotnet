@@ -137,7 +137,7 @@ namespace iast
             {
                 if (pMatchLen != nullptr)
                 {
-                    *pMatchLen = valueTrim.length();
+                    *pMatchLen = static_cast<unsigned int>(valueTrim.length());
                 }
                 finalMatch = match;
                 if (match == MatchResult::Exact)

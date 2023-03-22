@@ -44,8 +44,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     .Select(id => profile.Location.First(l => l.Id == id))
                     .Select(l => l.Line[0].FunctionId)
                     .Select(l => profile.Function.First(f => f.Id == l))
-                    .Select(f => profile.StringTable[(int)f.Name])
-                    .Select(s => new StackFrame(s)));
+                    .Select(f => (Frame: profile.StringTable[(int)f.Name], Filename: profile.StringTable[(int)f.Filename], Startline: f.StartLine))
+                    .Select(f => new StackFrame(f.Frame, f.Filename, f.Startline)));
         }
 
         internal struct Label
