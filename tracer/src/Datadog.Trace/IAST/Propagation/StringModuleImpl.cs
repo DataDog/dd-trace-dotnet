@@ -386,6 +386,103 @@ internal static class StringModuleImpl
         return pos;
     }
 
+    /// <summary> OnStringTrim with single trimchar </summary>
+    /// <param name="self"> Param 1 </param>
+    /// <param name="result"> Result </param>
+    /// <param name="trimChar"> the trim char, null for char.IsWhiteSpace(self[indexLeft]) </param>
+    /// <param name="left"> Apply left trim </param>
+    /// <param name="right"> Apply right trim </param>
+    public static string? OnStringTrim(string self, string result, char? trimChar, bool left, bool right)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result) || ReferenceEquals(self, result))
+            {
+                return result;
+            }
+
+            if (left && !right)
+            {
+                return OnStringSubSequence(self, self.Length - result.Length, result);
+            }
+            else if (!left && right)
+            {
+                return OnStringSubSequence(self, 0, result);
+            }
+            else
+            {
+                int indexLeft = 0;
+
+                while (indexLeft < self.Length && trimChar is null ? char.IsWhiteSpace(self[indexLeft]) : self[indexLeft] == trimChar)
+                {
+                    indexLeft++;
+                }
+
+                return OnStringSubSequence(self, indexLeft, result);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringTrim(string,string,char,bool,bool) exception");
+        }
+
+        return result;
+    }
+
+    /// <summary> OnStringTrim with a char array </summary>
+    /// <param name="self"> Param 1 </param>
+    /// <param name="result"> Result </param>
+    /// <param name="trimChars"> the trim chars </param>
+    /// <param name="left"> Apply left trim </param>
+    /// <param name="right"> Apply right trim </param>
+    public static string OnStringTrimArray(string self, string result, char[] trimChars, bool left, bool right)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            if (left && !right)
+            {
+                return OnStringSubSequence(self, self.Length - result.Length, result);
+            }
+            else if (!left && right)
+            {
+                return OnStringSubSequence(self, 0, result);
+            }
+            else
+            {
+                int indexLeft = 0;
+                bool found;
+                do
+                {
+                    found = false;
+
+                    for (int i = 0; i < trimChars.Length; i++)
+                    {
+                        if (self[indexLeft] == trimChars[i])
+                        {
+                            found = true;
+                            indexLeft++;
+                            break;
+                        }
+                    }
+                }
+                while (found && indexLeft < self.Length);
+
+                return OnStringSubSequence(self, indexLeft, result);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl. OnStringTrimArray(string,string,char[],bool,bool) exception");
+        }
+
+        return result;
+    }
+
     /// <summary> Mostly used overload </summary>
     /// <param name="left"> Param 1 </param>
     /// <param name="right"> Param 2</param>
