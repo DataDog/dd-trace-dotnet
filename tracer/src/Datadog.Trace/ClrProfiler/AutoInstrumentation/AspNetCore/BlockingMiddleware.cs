@@ -116,18 +116,19 @@ internal class BlockingMiddleware
             {
                 await _next(context).ConfigureAwait(false);
             }
-            catch (BlockException e)
+            catch (Exception e) when (e is BlockException || e.InnerException is BlockException)
             {
-                var action = security.GetBlockingAction(e.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                var blockException = e as BlockException ?? e.InnerException as BlockException;
+                var action = security.GetBlockingAction(blockException!.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.Settings.Enabled)
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {
                         var securityCoordinator = new SecurityCoordinator(security, context, span);
-                        if (!e.Reported)
+                        if (!blockException.Reported)
                         {
-                            securityCoordinator.Report(e.Result.Data, e.Result.AggregatedTotalRuntime, e.Result.AggregatedTotalRuntimeWithBindings, endedResponse);
+                            securityCoordinator.Report(blockException.Result.Data, blockException.Result.AggregatedTotalRuntime, blockException.Result.AggregatedTotalRuntimeWithBindings, endedResponse);
                         }
 
                         securityCoordinator.AddResponseHeadersToSpanAndCleanup();
