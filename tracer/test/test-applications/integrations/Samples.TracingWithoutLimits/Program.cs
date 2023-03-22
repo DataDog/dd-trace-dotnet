@@ -129,24 +129,23 @@ namespace Samples.TracingWithoutLimits
                 Thread.Sleep(3);
             }
 
-            var metrics = SampleHelpers.GetMetrics(root);
             var rulePsrKey = "_dd.rule_psr";
             var limitPsrKey = "_dd.limit_psr";
             var priorityKey = "_sampling_priority_v1";
 
-            if (!metrics.ContainsKey(rulePsrKey))
+            if (!SampleHelpers.TryGetMetric(root, rulePsrKey, out _))
             {
                 throw new Exception($"{rulePsrKey} must be set in a user defined rule.");
             }
 
-            var priority = metrics[priorityKey];
+            SampleHelpers.TryGetMetric(root, priorityKey, out double priorityValue);
 
-            if (priority > 0f && !metrics.ContainsKey(limitPsrKey))
+            if (priorityValue > 0f && !SampleHelpers.TryGetMetric(root, limitPsrKey, out _))
             {
                 throw new Exception($"{limitPsrKey} must be set if a user defined rule is configured and the trace is sampled.");
             }
 
-            Counts[Key(serviceName, operationName, priority)]++;
+            Counts[Key(serviceName, operationName, priorityValue)]++;
         }
 
         private static void PrepKeys(string service, string operation, decimal? expectedKeeps)
