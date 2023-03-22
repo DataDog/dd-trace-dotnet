@@ -85,6 +85,10 @@ internal class ProbeExpressionEvaluator
             EnsureNotNull(_compiledTemplates);
 
             var compiledExpressions = _compiledTemplates.Value;
+            if (compiledExpressions == null)
+            {
+                return;
+            }
 
             for (int i = 0; i < compiledExpressions.Length; i++)
             {
@@ -177,6 +181,11 @@ internal class ProbeExpressionEvaluator
 
     private CompiledExpression<string>[] CompileTemplates(MethodScopeMembers scopeMembers)
     {
+        if (Templates == null)
+        {
+            return null;
+        }
+
         var compiledExpressions = new CompiledExpression<string>[Templates.Length];
         for (int i = 0; i < Templates.Length; i++)
         {

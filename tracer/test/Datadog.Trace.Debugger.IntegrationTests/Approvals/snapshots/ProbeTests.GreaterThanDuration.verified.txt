@@ -14,8 +14,8 @@
                 "value": "3"
               },
               "this": {
-                "type": "GreaterThenDuration",
-                "value": "GreaterThenDuration"
+                "type": "GreaterThanDuration",
+                "value": "GreaterThanDuration"
               }
             },
             "locals": {
@@ -25,13 +25,9 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"ref @duration > 0\"\r\n}"
-              },
               "Json": {
                 "type": "String",
-                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"@duration\"},\r\n      0\r\n    ]\r\n}"
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"@duration\"},\r\n      100\r\n    ]\r\n}"
               }
             }
           }
@@ -43,7 +39,7 @@
           "id": "ScrubbedValue",
           "location": {
             "method": "Method",
-            "type": "Samples.Probes.TestRuns.ExpressionTests.GreaterThenDuration"
+            "type": "Samples.Probes.TestRuns.ExpressionTests.GreaterThanDuration"
           }
         },
         "stack": "ScrubbedValue",
@@ -52,7 +48,7 @@
     },
     "logger": {
       "method": "Method",
-      "name": "Samples.Probes.TestRuns.ExpressionTests.GreaterThenDuration",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.GreaterThanDuration",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

@@ -3,16 +3,12 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    public class GreaterThenDuration : IRun
+    public class GreaterThanDuration : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""ref @duration > 0""
-}";
-
         private const string Json = @"{
     ""gt"": [
       {""ref"": ""@duration""},
-      0
+      100
     ]
 }";
 
@@ -24,16 +20,17 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(
-            conditionDsl: Dsl,
             conditionJson: Json,
             captureSnapshot: true,
-            evaluateAt: 1,
+            evaluateAt: "Exit",
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)
         {
             Console.WriteLine(intArg);
+            System.Threading.Thread.Sleep(500);
             return $"Arg is: {intArg}";
         }
     }
 }
+
