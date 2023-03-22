@@ -19,6 +19,7 @@
 #include <unordered_set>
 #include "clr_helpers.h"
 #include "debugger_probes_instrumentation_requester.h"
+#include "Synchronized.hpp"
 
 #include "../../../shared/src/native-src/pal.h"
 
@@ -44,8 +45,7 @@ private:
     std::vector<IntegrationDefinition> integration_definitions_;
     std::deque<std::pair<ModuleID, std::vector<MethodReference>>> rejit_module_method_pairs;
 
-    std::unordered_set<shared::WSTRING> definitions_ids_;
-    std::mutex definitions_ids_lock_;
+    Synchronized<std::unordered_set<shared::WSTRING>> definitions_ids;
 
     // Startup helper variables
     bool first_jit_compilation_completed = false;
@@ -84,8 +84,8 @@ private:
     //
     // Module helper variables
     //
-    std::mutex module_ids_lock_;
-    std::vector<ModuleID> module_ids_;
+    Synchronized<std::vector<ModuleID>> module_ids;
+
     ModuleID managedProfilerModuleId_;
 
     //
@@ -105,7 +105,7 @@ private:
     HRESULT RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
-    HRESULT TryRejitModule(ModuleID module_id);
+    HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules);
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata);
     //
