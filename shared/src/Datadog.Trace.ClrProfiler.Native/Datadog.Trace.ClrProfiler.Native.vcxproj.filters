@@ -16,6 +16,9 @@
     <Filter Include="shared">
       <UniqueIdentifier>{8b790ef2-ec5f-40ec-9f7a-6f1cb28c8195}</UniqueIdentifier>
     </Filter>
+    <Filter Include="fmt">
+      <UniqueIdentifier>{dbd02139-6550-4831-877d-5c64080e6656}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cor_profiler_class_factory.h">
@@ -139,6 +142,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\shared\src\native-src\dynamic_com_library.cpp">
       <Filter>shared</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\format.cc">
+      <Filter>fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\posix.cc">
+      <Filter>fmt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
