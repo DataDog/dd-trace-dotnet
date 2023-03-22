@@ -9,7 +9,7 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
-      aspnet_core.endpoint: HTTP: GET /params-endpoint/{s},
+      aspnet_core.endpoint: /params-endpoint/{s} HTTP: GET,
       aspnet_core.route: /params-endpoint/{s},
       component: aspnet_core,
       env: integration_tests,
@@ -27,7 +27,6 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.event_rules.version: 1.5.1,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["s"],"value":"appscan_fingerprint"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
@@ -54,7 +53,7 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
-      aspnet_core.endpoint: HTTP: GET /params-endpoint/{s},
+      aspnet_core.endpoint: /params-endpoint/{s} HTTP: GET,
       aspnet_core.route: /params-endpoint/{s},
       component: aspnet_core,
       env: integration_tests,
@@ -72,7 +71,6 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.event_rules.version: 1.5.1,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["s"],"value":"appscan_fingerprint"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
