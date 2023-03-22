@@ -116,9 +116,7 @@ namespace Datadog.Trace
                     if (span.TraceId128.Upper > 0)
                     {
                         // this is a 128-bit trace id, so add the "_dd.p.tid" ((P)ropagated (T)race (ID)) trace tag.
-                        // NOTE: we can't use the optimized HexString.ToHexString(span.TraceId.Upper)
-                        // because this tag CANNOT be zero-padded.
-                        var upperTraceIdHex = span.TraceId128.Upper.ToString("x");
+                        var upperTraceIdHex = HexString.ToHexString(span.TraceId128.Upper);
                         Tags.SetTag(Datadog.Trace.Tags.Propagated.TraceIdUpper, upperTraceIdHex);
                     }
                 }
