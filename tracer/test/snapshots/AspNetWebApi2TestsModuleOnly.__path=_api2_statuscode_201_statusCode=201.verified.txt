@@ -11,7 +11,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 201,
-      http.url: http://localhost/api2/statuscode/201,
+      http.url: http://localhost:00000/api2/statuscode/201,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,

@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -15,7 +15,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/health?arg=dummy_rule,
+      http.url: http://localhost:00000/health?arg=dummy_rule,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -34,7 +34,7 @@
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: http://localhost/health?arg=dummy_rule,
+      http.url: http://localhost:00000/health?arg=dummy_rule,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
@@ -65,7 +65,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/health?arg=dummy_rule,
+      http.url: http://localhost:00000/health?arg=dummy_rule,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
@@ -84,7 +84,7 @@
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: http://localhost/health?arg=dummy_rule,
+      http.url: http://localhost:00000/health?arg=dummy_rule,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,

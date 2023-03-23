@@ -91,23 +91,32 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Theory]
-        [InlineData("https://username:password@example.com/path/to/file.aspx?query=1#fragment", "https://example.com/path/to/file.aspx")]
-        [InlineData("https://username@example.com/path/to/file.aspx", "https://example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/to/file.aspx?query=1", "https://example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/to/file.aspx#fragment", "https://example.com/path/to/file.aspx")]
-        [InlineData("http://example.com/path/to/file.aspx", "http://example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/123/file.aspx", "https://example.com/path/123/file.aspx")]
-        [InlineData("https://example.com/path/123,123/file.aspx", "https://example.com/path/123,123/file.aspx")]
-        [InlineData("https://example.com/path/123/", "https://example.com/path/123/")]
-        [InlineData("https://example.com/path/123", "https://example.com/path/123")]
-        [InlineData("https://example.com/path/123,123/", "https://example.com/path/123,123/")]
-        [InlineData("https://example.com/path/123,123", "https://example.com/path/123,123")]
-        [InlineData("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3")]
-        [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3")]
-        public void CleanUri_HttpUrlTag(string uri, string expected)
+        [InlineData("https://username:password@example.com/path/to/file.aspx?query=1#fragment", "https://example.com/path/to/file.aspx", false)]
+        [InlineData("https://username:password@example.com/path/to/file.aspx?query=1#fragment", "https://example.com/path/to/file.aspx?query=1", true)]
+        [InlineData("https://username@example.com/path/to/file.aspx", "https://example.com/path/to/file.aspx", false)]
+        [InlineData("https://username@example.com/path/to/file.aspx", "https://example.com/path/to/file.aspx", true)]
+        [InlineData("https://example.com/path/to/file.aspx?query=1", "https://example.com/path/to/file.aspx", false)]
+        [InlineData("https://example.com/path/to/file.aspx?query=1", "https://example.com/path/to/file.aspx?query=1", true)]
+        [InlineData("https://example.com:5000/path/to/file.aspx?query=1", "https://example.com:5000/path/to/file.aspx", false)]
+        [InlineData("https://example.com:5000/path/to/file.aspx?query=1", "https://example.com:5000/path/to/file.aspx?query=1", true)]
+        [InlineData("https://example.com:443/path/to/file.aspx?query=1", "https://example.com/path/to/file.aspx", false)]
+        [InlineData("https://example.com:443/path/to/file.aspx?query=1", "https://example.com/path/to/file.aspx?query=1", true)]
+        [InlineData("http://example.com:80/path/to/file.aspx?query=1", "http://example.com/path/to/file.aspx", false)]
+        [InlineData("http://example.com:80/path/to/file.aspx?query=1", "http://example.com/path/to/file.aspx?query=1", true)]
+        [InlineData("https://example.com/path/to/file.aspx#fragment", "https://example.com/path/to/file.aspx", false)]
+        [InlineData("http://example.com/path/to/file.aspx", "http://example.com/path/to/file.aspx", false)]
+        [InlineData("https://example.com/path/123/file.aspx", "https://example.com/path/123/file.aspx", false)]
+        [InlineData("https://example.com/path/123,123/file.aspx", "https://example.com/path/123,123/file.aspx", false)]
+        [InlineData("https://example.com/path/123/", "https://example.com/path/123/", false)]
+        [InlineData("https://example.com/path/123", "https://example.com/path/123", false)]
+        [InlineData("https://example.com/path/123,123/", "https://example.com/path/123,123/", false)]
+        [InlineData("https://example.com/path/123,123", "https://example.com/path/123,123", false)]
+        [InlineData("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", false)]
+        [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", false)]
+        public void CleanUri_HttpUrlTag(string uri, string expected, bool includeQuerystring)
         {
             // Set up Tracer
-            var settings = new TracerSettings();
+            var settings = new TracerSettings { QueryStringReportingEnabled = includeQuerystring };
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
             var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);

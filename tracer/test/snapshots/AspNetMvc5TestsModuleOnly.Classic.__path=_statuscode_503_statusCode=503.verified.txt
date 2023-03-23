@@ -13,7 +13,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
-      http.url: http://localhost/statuscode/503,
+      http.url: http://localhost:00000/statuscode/503,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
