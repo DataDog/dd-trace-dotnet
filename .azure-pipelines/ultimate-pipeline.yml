@@ -3715,6 +3715,10 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
         DOTNET_ROOT: $(LOCALAPPDATA)\Microsoft\dotnet
+        DD_API_KEY: $(ddApiKey)
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+        DD_CIVISIBILITY_LOGS_ENABLED: 0
+        DD_CIVISIBILITY_ITR_ENABLED: 0
 
     - powershell: |
         mkdir -p $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
