@@ -154,6 +154,13 @@ namespace Datadog.Trace.TestHelpers
 
             Output.WriteLine($"ProcessId: {process.Id}");
 
+            var startInfo = process.StartInfo;
+
+            foreach (string key in startInfo.EnvironmentVariables.Keys)
+            {
+                Output.WriteLine($"{key}={startInfo.EnvironmentVariables[key]}");
+            }
+
             return process;
         }
 
