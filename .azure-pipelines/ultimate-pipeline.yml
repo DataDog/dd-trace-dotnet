@@ -3812,7 +3812,9 @@ stages:
     steps:
       - checkout: none
 
-      - script: sudo apt-get update && apt-get install python3.9-venv
+      - task: UsePythonVersion@0
+        inputs:
+            versionSpec: '3.9.x'
         displayName: Install python 3.9
 
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
