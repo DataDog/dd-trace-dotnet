@@ -67,8 +67,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddScrubber(QueueScrubber.ReplaceRabbitMqQueues);
 
                 var filename = $"{nameof(RabbitMQTests)}.{GetPackageVersionSuffix(packageVersion)}";
-                await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(filename);
+
+                // Default sorting isn't very reliable, so use our own (adds in name and resource)
+                await VerifyHelper.VerifySpans(
+                                       spans,
+                                       settings,
+                                       s => s
+                                           .OrderBy(x => VerifyHelper.GetRootSpanName(x, spans))
+                                           .ThenBy(x => VerifyHelper.GetSpanDepth(x, spans))
+                                           .ThenBy(x => x.Name)
+                                           .ThenBy(x => x.Resource)
+                                           .ThenBy(x => x.Start)
+                                           .ThenBy(x => x.Duration))
+                                  .UseFileName(filename)
+                                  .DisableRequireUniquePrefix();
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.RabbitMQ);
