@@ -3684,8 +3684,6 @@ stages:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
 
-    # These VMs have the Datadog Agent installed directly, as they don't run docker, and timeit doesn't support agentless yet
-
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -3732,12 +3730,6 @@ stages:
       artifact: execution_time_benchmarks_windows_x64_$(sampleName)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - task: PowerShell@2
-      displayName: Wait 20 seconds to agent flush before finishing pipeline
-      inputs:
-        targetType: 'inline'
-        script: 'Start-Sleep -s 20'
 
   - job: compare
     timeoutInMinutes: 60 #default value
