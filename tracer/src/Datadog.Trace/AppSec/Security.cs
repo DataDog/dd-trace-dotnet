@@ -534,7 +534,7 @@ namespace Datadog.Trace.AppSec
                 }
                 catch (Exception e)
                 {
-                    Log.Error("The WafTimeoutMicroSecondsKey failed to be set according to the attribute '{WafTimeoutKey}': {Error}: {TimeoutValue}", wafTimeoutKey, e.Message, wafTimeout.ToString());
+                    Log.Warning("The WafTimeoutMicroSecondsKey failed to be set according to the attribute '{WafTimeoutKey}': {Error}: {TimeoutValue}", wafTimeoutKey, e.Message, wafTimeout.ToString());
                 }
             }
         }
