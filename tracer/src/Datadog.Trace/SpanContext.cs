@@ -377,13 +377,15 @@ namespace Datadog.Trace
         {
             return context switch
                    {
-                       // use the 128-bit TraceId from SpanContext if possible
-                       SpanContext sc when !sc.TraceId128.IsZero() => sc.TraceId128,
-                       // otherwise use the 64-bit ulong from ISpanContext
-                       { TraceId: > 0 } => (TraceId)context.TraceId,
-                       // if there is not context or it has a zero id,
+                       // if there is not context or it has a zero trace id,
                        // use the specified fallback value
-                       _ => fallback,
+                       null or { TraceId: 0 } => fallback,
+
+                       // use the 128-bit trace id from SpanContext if possible
+                       SpanContext sc => sc.TraceId128,
+
+                       // otherwise use the 64-bit trace id from ISpanContext
+                       _ => (TraceId)context.TraceId
                    };
         }
 
