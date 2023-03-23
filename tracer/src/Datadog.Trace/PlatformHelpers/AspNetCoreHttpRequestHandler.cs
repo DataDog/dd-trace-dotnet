@@ -170,6 +170,15 @@ namespace Datadog.Trace.PlatformHelpers
                 }
 
                 span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+
+                if (httpContext.Request.Path.ToString().Contains("bad-request"))
+                {
+                    if (!string.IsNullOrEmpty(span.Tags.GetTag("http.response.headers.sample_correlation_identifier")))
+                    {
+                        Environment.FailFast("wrong header");
+                    }
+                }
+
                 if (security.Settings.Enabled)
                 {
                     var transport = new SecurityCoordinator(security, httpContext, span);
