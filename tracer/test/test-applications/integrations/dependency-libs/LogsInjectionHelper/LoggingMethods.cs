@@ -35,8 +35,8 @@ namespace PluginApplication
 
             // Do not explicitly set LogsInjectionEnabled = true, use DD_LOGS_INJECTION environment variable to enable
 
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_ENV")
-                || string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_VERSION"))
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_ENV"))
+                || string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_VERSION")))
             {
                 // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when Environment=null
                 // Ensure that we have a version value. In CI, this will automatically be assigned. Later we can test that everything is fine when when ServiceVersion=null
