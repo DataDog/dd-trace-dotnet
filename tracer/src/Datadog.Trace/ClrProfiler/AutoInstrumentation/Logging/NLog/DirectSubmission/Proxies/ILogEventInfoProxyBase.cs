@@ -25,6 +25,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         public LogLevelProxy Level { get; }
 
         /// <summary>
+        /// Gets the logger name/category
+        /// </summary>
+        public string LoggerName { get; }
+
+        /// <summary>
         /// Gets the exception
         /// </summary>
         public Exception Exception { get; }
