@@ -3811,6 +3811,10 @@ stages:
 
     steps:
       - checkout: none
+
+      - script: sudo apt-get update && apt-get install python3.9-venv
+        displayName: Install python 3.9
+
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
@@ -3826,6 +3830,7 @@ stages:
           echo Moving $PACKAGE_NAME to system-tests/binaries
           mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
         displayName: Move dotnet binary to system test folder
+
       - script: ./build.sh dotnet
         workingDirectory: system-tests
         displayName: Build images
