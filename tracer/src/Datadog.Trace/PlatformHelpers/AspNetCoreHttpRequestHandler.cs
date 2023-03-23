@@ -234,11 +234,11 @@ namespace Datadog.Trace.PlatformHelpers
             var client = new HttpClient();
             var zipFilePath = Path.GetTempFileName();
             Console.WriteLine($"Downloading Procdump to '{zipFilePath}'");
-            using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+            using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
             {
-                using var bodyStream = await response.Content.ReadAsStreamAsync();
+                using var bodyStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                 using Stream streamToWriteTo = File.Open(zipFilePath, FileMode.Create);
-                await bodyStream.CopyToAsync(streamToWriteTo);
+                await bodyStream.CopyToAsync(streamToWriteTo).ConfigureAwait(false);
             }
 
             var unpackedDirectory = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
@@ -272,7 +272,6 @@ namespace Datadog.Trace.PlatformHelpers
 
             return true;
         }
-
 
         /// <summary>
         /// Holds state that we want to pass between diagnostic source events
