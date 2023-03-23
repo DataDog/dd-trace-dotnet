@@ -198,10 +198,6 @@
     <ClInclude Include="test_dynamic_dispatcher.h" />
     <ClInclude Include="test_dynamic_instance.h" />
   </ItemGroup>
-	<ItemGroup Label="fmt">
-		<ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\format.cc" />
-		<ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\posix.cc" />
-	</ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.4\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets" Condition="Exists('..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.4\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" />
