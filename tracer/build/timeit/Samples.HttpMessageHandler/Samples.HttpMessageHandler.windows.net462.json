@@ -31,6 +31,10 @@
     "COR_PROFILER_PATH_64": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
     "COR_PROFILER_PATH_ARM64": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-ARM64\\Datadog.Trace.ClrProfiler.Native.dll"
   },
+  "pathValidations": [
+    "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll",
+    "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
+  ],
   "tags": {
     "runtime.architecture": "x64",
     "runtime.name": ".NET Framework",

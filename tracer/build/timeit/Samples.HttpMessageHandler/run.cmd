@@ -3,7 +3,6 @@ IF EXIST results_Samples.HttpMessageHandler.windows.net462.json DEL /F results_S
 IF EXIST results_Samples.HttpMessageHandler.windows.netcoreapp31.json DEL /F results_Samples.HttpMessageHandler.windows.netcoreapp31.json
 IF EXIST results_Samples.HttpMessageHandler.windows.net60.json DEL /F results_Samples.HttpMessageHandler.windows.net60.json
 
-echo %DOTNET_ROOT%
 echo *********************
 echo Installing timeitsharp
 echo *********************

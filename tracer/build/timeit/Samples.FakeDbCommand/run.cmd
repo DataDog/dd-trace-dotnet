@@ -3,7 +3,6 @@ IF EXIST results_Samples.FakeDbCommand.windows.net462.json DEL /F results_Sample
 IF EXIST results_Samples.FakeDbCommand.windows.netcoreapp31.json DEL /F results_Samples.FakeDbCommand.windows.netcoreapp31.json
 IF EXIST results_Samples.FakeDbCommand.windows.net60.json DEL /F results_Samples.FakeDbCommand.windows.net60.json
 
-echo %DOTNET_ROOT%
 echo *********************
 echo Installing timeitsharp
 echo *********************
