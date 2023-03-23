@@ -25,8 +25,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class HotChocolate12Tests : HotChocolateTests
     {
-        public HotChocolate12Tests(ITestOutputHelper output)
-            : base("HotChocolate", output, nameof(HotChocolate12Tests))
+        public HotChocolate12Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base("HotChocolate", fixture, output, nameof(HotChocolate12Tests))
         {
         }
 
@@ -40,18 +40,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class HotChocolateTests : TracingIntegrationTest
+    public abstract class HotChocolateTests : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>
     {
         private const string ServiceVersion = "1.0.0";
 
         private readonly string _testName;
 
-        protected HotChocolateTests(string sampleAppName, ITestOutputHelper output, string testName)
+        protected HotChocolateTests(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
 
             _testName = testName;
+
+            Fixture = fixture;
+            Fixture.SetOutput(output);
+        }
+
+        protected AspNetCoreTestFixture Fixture { get; }
+
+        public override void Dispose()
+        {
+            Fixture.SetOutput(null);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span) =>
@@ -64,71 +74,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected async Task RunSubmitsTraces(string packageVersion = "")
         {
             SetInstrumentationVerification();
-            using var telemetry = this.ConfigureTelemetry();
-            int? aspNetCorePort = null;
 
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (Process process = StartSample(agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0))
+            await Fixture.TryStartApp(this);
+            var testStart = DateTime.UtcNow;
+            var expectedSpans = SubmitRequests(Fixture.HttpPort);
+
+            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
+            foreach (var span in spans)
             {
-                var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
+                // TODO: Refactor to use ValidateIntegrationSpans when the HotChocolate server integration is fixed. It currently produces a service name of {service]-graphql
+                var result = ValidateIntegrationSpan(span);
+                Assert.True(result.Success, result.ToString());
+            }
 
-                using var helper = new ProcessHelper(
-                    process,
-                    onDataReceived: data =>
-                    {
-                        if (data.Contains("Now listening on:"))
-                        {
-                            var splitIndex = data.LastIndexOf(':');
-                            aspNetCorePort = int.Parse(data.Substring(splitIndex + 1));
+            var settings = VerifyHelper.GetSpanVerifierSettings();
 
-                            wh.Set();
-                        }
-                        else if (data.Contains("Unable to start Kestrel"))
-                        {
-                            wh.Set();
-                        }
-
-                        Output.WriteLine($"[webserver][stdout] {data}");
-                    },
-                    onErrorReceived: data => Output.WriteLine($"[webserver][stderr] {data}"));
-
-                wh.WaitOne(15_000);
-                if (!aspNetCorePort.HasValue)
-                {
-                    throw new Exception("Unable to determine port application is listening on");
-                }
-
-                Output.WriteLine($"The ASP.NET Core server is ready on port {aspNetCorePort}");
-
-                var expectedSpans = SubmitRequests(aspNetCorePort.Value);
-
-                if (!process.HasExited)
-                {
-                    // Try shutting down gracefully
-                    var shutdownRequest = new RequestInfo() { HttpMethod = "GET", Url = "/shutdown" };
-                    SubmitRequest(aspNetCorePort.Value, shutdownRequest);
-
-                    WaitForProcessResult(helper);
-                }
-
-                var spans = agent.WaitForSpans(expectedSpans);
-                foreach (var span in spans)
-                {
-                    // TODO: Refactor to use ValidateIntegrationSpans when the HotChocolate server integration is fixed. It currently produces a service name of {service]-graphql
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-                }
-
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-
-                await VerifyHelper.VerifySpans(spans, settings)
+            await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName("HotChocolateTests.SubmitsTraces")
                                   .DisableRequireUniquePrefix(); // all package versions should be the same
 
-                VerifyInstrumentation(process);
-            }
-
-            telemetry.AssertIntegrationEnabled(IntegrationId.HotChocolate);
+            VerifyInstrumentation(Fixture.Process);
         }
 
         private int SubmitRequests(int aspNetCorePort)
