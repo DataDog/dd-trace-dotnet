@@ -231,6 +231,7 @@
     <ClInclude Include="rejit_preprocessor.h" />
     <ClInclude Include="rejit_work_offloader.h" />
     <ClInclude Include="stats.h" />
+    <ClInclude Include="Synchronized.hpp" />
     <ClInclude Include="tracer_tokens.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>

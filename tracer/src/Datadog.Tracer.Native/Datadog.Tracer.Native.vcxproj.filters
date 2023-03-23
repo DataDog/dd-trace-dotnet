@@ -152,6 +152,7 @@
     <ClInclude Include="iast\string_optimization_aspect_filter.h" />
     <ClInclude Include="iast\dataflow_il_rewriter.h" />
     <ClInclude Include="iast\dataflow_il_analysis.h" />
+    <ClInclude Include="Synchronized.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
