@@ -4,7 +4,8 @@ IF EXIST results_Samples.HttpMessageHandler.windows.netcoreapp31.json DEL /F res
 IF EXIST results_Samples.HttpMessageHandler.windows.net60.json DEL /F results_Samples.HttpMessageHandler.windows.net60.json
 
 set DROOT=%HOME%\AppData\Local\Microsoft\dotnet
-echo %HOME%
+echo %HOMEPATH%
+echo %LOCALAPPDATA%
 echo %DOTNET_ROOT%
 echo %DROOT%
 echo *********************
