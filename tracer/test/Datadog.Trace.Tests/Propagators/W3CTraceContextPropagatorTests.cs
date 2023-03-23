@@ -112,13 +112,29 @@ namespace Datadog.Trace.Tests.Propagators
             };
 
             // use public APIs to add propagated tags
-            span.SetTraceSamplingPriority(SamplingPriority.UserKeep); // adds "_dd.p.dm"
+            span.SetTraceSamplingPriority(SamplingPriority.UserKeep); // adds "_dd.p.dm" and sampling priority
             span.SetUser(user);                                       // adds "_dd.p.usr.id"
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
 
             // note that "t.usr.id:MTIzNDU=" is encoded as "t.usr.id:MTIzNDU~"
             tracestate.Should().Be("dd=s:2;t.dm:-4;t.usr.id:MTIzNDU~");
+        }
+
+        [Fact]
+        public void CreateTraceStateHeader_With128Bit_TraceId()
+        {
+            var traceContext = new TraceContext(tracer: null);
+            traceContext.SetSamplingPriority(2);
+
+            var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: traceId, spanId: 2);
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            // note that there is no "t.tid" propagated tag when using W3C headers
+            // because the full 128-bit trace id fits in the "traceparent" header
+            tracestate.Should().Be("dd=s:2");
         }
 
         [Fact]

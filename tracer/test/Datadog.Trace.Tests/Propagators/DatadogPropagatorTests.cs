@@ -75,11 +75,11 @@ namespace Datadog.Trace.Tests.Propagators
 
             Propagator.Inject(context, headers.Object);
 
-            VerifySetCalls(headers);
+            VerifySetCalls(headers, DefaultHeaderValues);
         }
 
         [Fact]
-        public void Inject_IHeadersCollection_Propagation_Disabled()
+        public void Inject_IHeadersCollection_Tag_Propagation_Disabled()
         {
             KeyValuePair<string, string>[] expectedHeaders =
                 {
@@ -105,6 +105,54 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
+        public void Inject_IHeadersCollection_128Bit_TraceId()
+        {
+            var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
+            var spanId = 1UL;
+
+            KeyValuePair<string, string>[] expectedHeaders =
+            {
+                new("x-datadog-trace-id", traceId.Lower.ToString(InvariantCulture)),
+                new("x-datadog-parent-id", spanId.ToString(InvariantCulture)),
+                new("x-datadog-sampling-priority", SamplingPriority.ToString(InvariantCulture)),
+                new("x-datadog-origin", Origin),
+
+                // verify that "_dd.p.tid" tag is injected for 128-bit trace ids
+                new("x-datadog-tags", @"_dd.p.tid=1234567890abcdef"),
+            };
+
+            var context = new SpanContext(traceId, spanId, SamplingPriority, serviceName: null, Origin);
+            var headers = new Mock<IHeadersCollection>();
+
+            Propagator.Inject(context, headers.Object);
+
+            VerifySetCalls(headers, expectedHeaders);
+        }
+
+        [Fact]
+        public void Inject_IHeadersCollection_64Bit_TraceId()
+        {
+            var traceId = new TraceId(0, 0x1122334455667788);
+            var spanId = 1UL;
+
+            KeyValuePair<string, string>[] expectedHeaders =
+            {
+                new("x-datadog-trace-id", traceId.Lower.ToString(InvariantCulture)),
+                new("x-datadog-parent-id", spanId.ToString(InvariantCulture)),
+                new("x-datadog-sampling-priority", SamplingPriority.ToString(InvariantCulture)),
+                new("x-datadog-origin", Origin),
+                // verify that "_dd.p.tid" tag is not injected for 64-bit trace ids
+            };
+
+            var context = new SpanContext(traceId, spanId, SamplingPriority, serviceName: null, Origin);
+            var headers = new Mock<IHeadersCollection>();
+
+            Propagator.Inject(context, headers.Object);
+
+            VerifySetCalls(headers, expectedHeaders);
+        }
+
+        [Fact]
         public void Inject_CarrierAndDelegate()
         {
             var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTagsCollection };
@@ -114,7 +162,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             Propagator.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
-            VerifySetCalls(headers);
+            VerifySetCalls(headers, DefaultHeaderValues);
         }
 
         [Fact]
@@ -369,11 +417,11 @@ namespace Datadog.Trace.Tests.Propagators
             return headers;
         }
 
-        private static void VerifySetCalls(Mock<IHeadersCollection> headers, KeyValuePair<string, string>[] headersToCheck = null)
+        private static void VerifySetCalls(Mock<IHeadersCollection> headers, KeyValuePair<string, string>[] headersToCheck)
         {
             var once = Times.Once();
 
-            foreach (var pair in headersToCheck ?? DefaultHeaderValues)
+            foreach (var pair in headersToCheck)
             {
                 headers.Verify(h => h.Set(pair.Key, pair.Value), once);
             }
