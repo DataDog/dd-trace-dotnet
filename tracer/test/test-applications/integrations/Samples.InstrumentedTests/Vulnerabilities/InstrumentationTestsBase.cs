@@ -145,6 +145,22 @@ public class InstrumentationTestsBase
         }
     }
 
+    protected void AssertVulnerable(string type, string evidence = "")
+    {
+        var spans = GetGeneratedSpans(_traceContext);
+        var vulnerabilitySpan = spans.First(x => GetTag(x, "_dd.iast.enabled") != null);
+        var json = GetTag(vulnerabilitySpan, "_dd.iast.json");
+        var vulnerabilyList = JsonConvert.DeserializeObject<VulnerabilityList>(json.ToString());
+        vulnerabilyList.Vulnerabilities.Count.Should().Be(1);
+
+        if (evidence != string.Empty)
+        {
+            vulnerabilyList.Vulnerabilities[0].Evidence.Value.Should().Be(evidence);
+        }
+
+        vulnerabilyList.Vulnerabilities[0].type.Should().Be(type);
+    }
+
     protected void AssertNotVulnerable()
     {
         AssertVulnerable(0);
