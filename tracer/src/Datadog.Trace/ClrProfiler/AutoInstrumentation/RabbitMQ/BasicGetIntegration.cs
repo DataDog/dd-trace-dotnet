@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
                     if (basicProperties != null)
                     {
-                        RabbitMQIntegration.SetDataStreamsCheckpoint(Tracer.Instance, scope.Span, tags, basicProperties);
+                        RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(Tracer.Instance, scope.Span, tags, basicProperties.Headers);
                     }
                 }
             }

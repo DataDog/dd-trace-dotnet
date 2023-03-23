@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -67,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             return scope;
         }
 
-        internal static void SetDataStreamsCheckpoint(Tracer tracer, Span span, RabbitMQTags tags, IBasicProperties basicProperties)
+        internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
             if (dataStreamsManager == null || !dataStreamsManager.IsEnabled)
@@ -77,32 +78,39 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
             try
             {
-                RabbitMQHeadersCollectionAdapter headers;
-                string[] edgeTags;
-                switch (tags.SpanKind)
-                {
-                    case SpanKinds.Producer:
-                        headers = new RabbitMQHeadersCollectionAdapter(basicProperties.Headers);
-                        edgeTags = string.IsNullOrEmpty(tags.Exchange) ?
-                                       // exchange can be empty for "direct"
-                                       new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" } :
-                                       new[] { "direction:out", $"exchange:{tags.Exchange}", $"has_routing_key:{!string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
-                        span.SetDataStreamsCheckpoint(dataStreamsManager, edgeTags);
-                        dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headers);
-                        break;
-
-                    case SpanKinds.Consumer:
-                        headers = new RabbitMQHeadersCollectionAdapter(basicProperties.Headers);
-                        edgeTags = new[] { "direction:in", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" };
-                        var pathwayContext = dataStreamsManager.ExtractPathwayContext(headers);
-                        span.Context.MergePathwayContext(pathwayContext);
-                        span.SetDataStreamsCheckpoint(dataStreamsManager, edgeTags);
-                        break;
-                }
+                var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
+                var edgeTags = string.IsNullOrEmpty(tags.Exchange) ?
+                                   // exchange can be empty for "direct"
+                                   new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" } :
+                                   new[] { "direction:out", $"exchange:{tags.Exchange}", $"has_routing_key:{!string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
+                span.SetDataStreamsCheckpoint(dataStreamsManager, edgeTags);
+                dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headersAdapter);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to set data streams checkpoint");
+                Log.Error(ex, "Failed to set data streams checkpoint on produce");
+            }
+        }
+
+        internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers)
+        {
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled)
+            {
+                return;
+            }
+
+            try
+            {
+                var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
+                var edgeTags = new[] { "direction:in", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" };
+                var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
+                span.Context.MergePathwayContext(pathwayContext);
+                span.SetDataStreamsCheckpoint(dataStreamsManager, edgeTags);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to set data streams checkpoint on consume");
             }
         }
 
@@ -139,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 tags.MessageSize = body?.Length.ToString() ?? "0";
             }
 
-            RabbitMQIntegration.SetDataStreamsCheckpoint(Tracer.Instance, scope.Span, tags, basicProperties);
+            RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(Tracer.Instance, scope.Span, tags, basicProperties?.Headers);
             return new CallTargetState(scope);
         }
 
