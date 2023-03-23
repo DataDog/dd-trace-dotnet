@@ -3714,7 +3714,7 @@ stages:
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
-        DOTNET_ROOT: C:\Windows\ServiceProfiles\NetworkService\AppData\Local\Microsoft\dotnet
+        DOTNET_ROOT: $(LOCALAPPDATA)\Microsoft\dotnet
 
     - powershell: |
         mkdir -p $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
