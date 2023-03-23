@@ -40,7 +40,6 @@ namespace Samples
         private static readonly MethodInfo SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SetService = TracerSettingsType?.GetProperty("Service")?.SetMethod;
-        private static readonly MethodInfo SetLogsInjectionEnabled = TracerSettingsType?.GetProperty("SetLogsInjectionEnabled")?.SetMethod;
         private static readonly FieldInfo TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
 
 
@@ -69,20 +68,6 @@ namespace Samples
             }
             var tracerSettings = FromDefaultSourcesMethod.Invoke(null, Array.Empty<object>());
             SetService.Invoke(tracerSettings, new object[] { serviceName });
-
-            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            ConfigureMethod.Invoke(tracer, new object[] { tracerSettings });
-        }
-
-        public static void ConfigureTracerWithLogsInjection()
-        {
-            if (TracerSettingsType is null || GetTracerInstance is null || ConfigureMethod is null || FromDefaultSourcesMethod is null)
-            {
-                return;
-            }
-
-            var tracerSettings = FromDefaultSourcesMethod.Invoke(null, Array.Empty<object>());
-            SetLogsInjectionEnabled.Invoke(tracerSettings, new object[] { true });
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
             ConfigureMethod.Invoke(tracer, new object[] { tracerSettings });
