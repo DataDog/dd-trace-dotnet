@@ -220,9 +220,6 @@ namespace Datadog.Trace.TestHelpers
             [JsonProperty("dd_span_id")]
             public string SpanId { get; set; }
 
-            [JsonProperty("SourceContext")]
-            public string SourceContext { get; set; }
-
             [JsonExtensionData]
             internal Dictionary<string, JToken> OtherProperties { get; } = new();
 
@@ -261,6 +258,12 @@ namespace Datadog.Trace.TestHelpers
             {
                 set => Version = value;
             }
+
+            // Using tuple return instead of out, as can't use out parameters in FluentAssertion expressions
+            public (bool Exists, string Value) TryGetProperty(string key) =>
+                !OtherProperties.TryGetValue(key, out var obj)
+                    ? (false, null)
+                    : (true, obj.ToString());
         }
     }
 }

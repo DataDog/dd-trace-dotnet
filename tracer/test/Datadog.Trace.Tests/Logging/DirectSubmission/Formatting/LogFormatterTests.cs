@@ -148,7 +148,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             var message = "Some message";
             var logLevel = "Info";
 
-            _formatter.FormatLog(sb, state, timestamp, message, eventId: null, logLevel, logCategory: "logcat", exception: null, RenderProperties);
+            _formatter.FormatLog(sb, state, timestamp, message, eventId: null, logLevel, exception: null, RenderProperties);
 
             var log = sb.ToString();
 
@@ -165,7 +165,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             HasExpectedValue(log, !hasRenderedTags, $"\"ddtags\":\"Key1:Value1,Key2:Value2\"");
             HasExpectedValue(log, !hasRenderedEnv, $"\"dd_env\":\"{Env}\"");
             HasExpectedValue(log, !hasRenderedVersion, $"\"dd_version\":\"{Version}\"");
-            log.Should().Contain("\"SourceContext\":\"logcat\"");
 
             LogPropertyRenderingDetails RenderProperties(JsonTextWriter jsonTextWriter, in TestObject o) =>
                 new LogPropertyRenderingDetails(

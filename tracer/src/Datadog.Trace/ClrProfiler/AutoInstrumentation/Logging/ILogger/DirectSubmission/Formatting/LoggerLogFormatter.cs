@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     internal class LoggerLogFormatter
     {
         private const string MessageTemplateKey = "{OriginalFormat}";
+        internal const string LoggerNameKey = "Category";
 
         public static string FormatLogEvent<T>(LogFormatter logFormatter, in LogEntry<T> logEntry)
         {
@@ -34,7 +35,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 message,
                 logEntry.EventId == 0 ? null : logEntry.EventId,
                 GetLogLevelString(logEntry.LogLevel),
-                logEntry.Category,
                 logEntry.Exception,
                 (JsonTextWriter w, in LogEntry<T> e) => RenderProperties(w, e));
 
@@ -50,6 +50,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             var haveVersion = false;
             var haveEnv = false;
             string? messageTemplate = null;
+
+            if (!string.IsNullOrEmpty(logEntry.Category))
+            {
+                writer.WritePropertyName(LoggerNameKey, escape: false);
+                writer.WriteValue(logEntry.Category);
+            }
 
             if (logEntry.State is { } state)
             {

@@ -16,6 +16,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
 {
     internal class Log4NetLogFormatter
     {
+        internal const string LoggerNameKey = "logger";
+
         public static void FormatLogEvent(LogFormatter logFormatter, StringBuilder sb, ILoggingEventDuckBase logEntry, DateTime timestamp)
         {
             logFormatter.FormatLog(
@@ -25,7 +27,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                 logEntry.RenderedMessage,
                 eventId: null,
                 logEntry.Level.ToStandardLevelString(),
-                logCategory: logEntry.LoggerName,
                 exception: null, // We can't pass the exception here, as it might be null if the event has been serialized
                 (JsonTextWriter w, in ILoggingEventDuckBase e) => RenderProperties(w, in e));
         }
@@ -44,6 +45,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
             {
                 writer.WritePropertyName("@x", escape: false);
                 writer.WriteValue(exception);
+            }
+
+            if (!string.IsNullOrEmpty(logEntry.LoggerName))
+            {
+                writer.WritePropertyName(LoggerNameKey, escape: false);
+                writer.WriteValue(logEntry.LoggerName);
             }
 
             var properties = logEntry.GetProperties();
