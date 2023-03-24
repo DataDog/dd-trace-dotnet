@@ -172,12 +172,13 @@ internal static partial class DotNetSettingsExtensions
     {
         // To avoid annoying differences in the test code, convert the MSBuildTargetPlatform string values to
         // the same values returned by Environment.Platform(), and skip unsupported values (e.g. MSIL, arm)
-        var target = platform.ToString() switch
+        var strPlatform = platform.ToString().ToLowerInvariant();
+        var target = strPlatform switch
         {
             "x86" => "X86",
             "x64" => "X64",
             "arm64" => "ARM64",
-            _ => throw new InvalidOperationException("Should only use x64 and x86 for Test target platform"),
+            _ => throw new InvalidOperationException($"Should only use x64, x86 or ARM64 for Test target platform. (Invalid : {strPlatform})"),
         };
 
         return settings.SetProcessEnvironmentVariable("TargetPlatform", target);
