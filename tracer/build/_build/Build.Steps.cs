@@ -100,7 +100,7 @@ partial class Build
     {
         get
         {
-            if (TargetPlatform == MSBuildTargetPlatform.x64 || TargetPlatform == ARM64TargetPlatform)
+            if (TargetPlatform == MSBuildTargetPlatform.x64)
             {
                 if (ForceARM64BuildInWindows)
                 {
@@ -110,6 +110,10 @@ partial class Build
                 {
                     return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
                 }
+            }
+            else if (TargetPlatform == ARM64TargetPlatform)
+            {
+                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64ECTargetPlatform, ARM64TargetPlatform };
             }
             else if (TargetPlatform == MSBuildTargetPlatform.x86)
             {
