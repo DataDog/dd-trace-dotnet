@@ -36,11 +36,10 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
-            var sampled = samplingPriority > 0 ? "1" : "0";
+            CreateHeaders(context, out var traceId, out var spanId, out var sampled);
 
-            carrierSetter.Set(carrier, TraceId, context.RawTraceId);
-            carrierSetter.Set(carrier, SpanId, context.RawSpanId);
+            carrierSetter.Set(carrier, TraceId, traceId);
+            carrierSetter.Set(carrier, SpanId, spanId);
             carrierSetter.Set(carrier, Sampled, sampled);
         }
 
@@ -66,6 +65,15 @@ namespace Datadog.Trace.Propagators
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Sampled);
             spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
             return true;
+        }
+
+        internal static void CreateHeaders(SpanContext context, out string traceId, out string spanId, out string sampled)
+        {
+            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+            sampled = samplingPriority > 0 ? "1" : "0";
+
+            traceId = context.RawTraceId;
+            spanId = context.RawSpanId;
         }
     }
 }
