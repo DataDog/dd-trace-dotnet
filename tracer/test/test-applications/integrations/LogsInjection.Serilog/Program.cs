@@ -62,11 +62,18 @@ namespace LogsInjection.Serilog
                                .Enrich.FromLogContext()
                                .MinimumLevel.Is(LogEventLevel.Information)
                                .WriteTo.Logger(
-                                    lc => lc.WriteTo.File(
+                                    lc => lc
+#if SERILOG_2_12
+                                         .Filter.ByExcluding("RequestPath like '/health%'")
+#endif
+                                         .WriteTo.File(
                                                  textFilePath,
                                                  outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {{ dd_service: \"{dd_service}\", dd_version: \"{dd_version}\", dd_env: \"{dd_env}\", dd_trace_id: \"{dd_trace_id}\", dd_span_id: \"{dd_span_id}\" }} {Message:lj} {NewLine}{Exception}")
-                                            .WriteTo.Logger(lc2 => lc2.WriteTo.Console()))
+                                        .WriteTo.Logger(lc2 => lc2.WriteTo.Console()))
 #if SERILOG_2_0
+#if SERILOG_2_12
+                               .Filter.ByExcluding("RequestPath like '/health%'")
+#endif
                                .WriteTo.File(
                                     new JsonFormatter(),
                                     jsonFilePath)
@@ -75,6 +82,10 @@ namespace LogsInjection.Serilog
             }
 
             var log = configuration.CreateLogger();
+
+#if SERILOG_2_12
+            log.Information("[ExcludeMessage] This method is excluded from log files because {RequestPath} matches '/health%', but is still sent via direct log submission", "/healthz");
+#endif
 
             return LoggingMethods.RunLoggingProcedure(LogWrapper(log));
         }
