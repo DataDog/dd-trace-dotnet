@@ -212,6 +212,19 @@ namespace Datadog.Trace.Tagging
             }
         }
 
+        public void AddMissingPropagatedTags(TraceId traceId)
+        {
+            if (traceId.Upper == 0)
+            {
+                return;
+            }
+
+            if (GetTag(Trace.Tags.Propagated.TraceIdUpper) == null)
+            {
+                SetTag(Trace.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
+            }
+        }
+
         /// <summary>
         /// Constructs a string that can be used for horizontal propagation using the "x-datadog-tags" header
         /// in a "key1=value1,key2=value2" format. This header should only include tags with the "_dd.p.*" prefix.

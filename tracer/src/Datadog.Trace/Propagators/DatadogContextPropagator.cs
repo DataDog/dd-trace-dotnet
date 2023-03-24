@@ -49,25 +49,7 @@ namespace Datadog.Trace.Propagators
                 carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriorityString);
             }
 
-            var propagatedTags = context.TraceContext?.Tags ?? context.PropagatedTags;
-
-            // if needed, inject the upper 64 bits of the trace id into the propagated tags
-            if (context.TraceId128.Upper > 0 && propagatedTags?.GetTag(Tags.Propagated.TraceIdUpper) == null)
-            {
-                if (propagatedTags == null)
-                {
-                    // try to get the max header length from:
-                    // 1. the tracer associated to this span context
-                    // 2. the global tracer
-                    // 3. fallback to the default value
-                    var settings = context.TraceContext?.Tracer?.Settings ?? Tracer.Instance?.Settings;
-                    var maxHeaderLength = settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength;
-                    propagatedTags = new TraceTagCollection(maxHeaderLength);
-                }
-
-                propagatedTags.SetTag(Tags.Propagated.TraceIdUpper, HexString.ToHexString(context.TraceId128.Upper));
-            }
-
+            var propagatedTags = context.AddMissingPropagatedTags();
             var propagatedTagsHeader = propagatedTags?.ToPropagationHeader();
 
             if (!string.IsNullOrEmpty(propagatedTagsHeader))

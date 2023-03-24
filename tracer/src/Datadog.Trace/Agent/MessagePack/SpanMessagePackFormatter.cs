@@ -6,9 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -90,10 +88,17 @@ namespace Datadog.Trace.Agent.MessagePack
         // overload of IMessagePackFormatter<TraceChunkModel>.Serialize() with `in` modifier on `TraceChunkModel` parameter
         public int Serialize(ref byte[] bytes, int offset, in TraceChunkModel traceChunk, IFormatterResolver formatterResolver, int? maxSize = null)
         {
+            if (traceChunk.SpanCount > 0)
+            {
+                var spanModel = traceChunk.GetSpanModel(0);
+                traceChunk.Tags?.AddMissingPropagatedTags(spanModel.Span.TraceId128);
+            }
+
             int originalOffset = offset;
 
             // start writing span[]
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, traceChunk.SpanCount);
+
             // serialize each span
             for (var i = 0; i < traceChunk.SpanCount; i++)
             {
