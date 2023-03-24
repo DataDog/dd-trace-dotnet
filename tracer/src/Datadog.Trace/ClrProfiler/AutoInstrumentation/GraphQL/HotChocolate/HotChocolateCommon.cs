@@ -45,6 +45,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
+        internal static void UpdateScopeFromExecuteAsyncV13(Tracer tracer, in OperationContext context)
+        {
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return;
+            }
+
+            var scope = tracer.InternalActiveScope;
+            var span = scope?.Span;
+            if (span == null || span.OperationName != ExecuteOperationName)
+            {
+                // not in a Hotchocolate execution span
+                return;
+            }
+
+            try
+            {
+                var operation = context.Operation;
+                var operationType = operation.OperationType.ToString();
+                if (span.Tags is GraphQLTags tags)
+                {
+                    span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
+                    tags.OperationType = operationType;
+                }
+                else
+                {
+                    var operationName = span.GetTag(Trace.Tags.GraphQLOperationName);
+                    span.ResourceName = $"{operationType} {operationName ?? "operation"}";
+                    span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error updating HotChocolate scope.");
+            }
+        }
+
         internal static void UpdateScopeFromExecuteAsync<T>(Tracer tracer, in T context)
             where T : IOperationContext
         {

@@ -1,4 +1,4 @@
-// <copyright file="ExecuteAsyncIntegration.cs" company="Datadog">
+// <copyright file="ExecuteAsyncIntegrationV13.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,11 +21,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         ParameterTypeNames = new string[] { "HotChocolate.Execution.IQueryRequest", ClrNames.CancellationToken },
         AssemblyName = "HotChocolate.Execution",
         TypeName = "HotChocolate.Execution.RequestExecutor",
-        MinimumVersion = "11",
-        MaximumVersion = "12.*.*")]
+        MinimumVersion = "13",
+        MaximumVersion = "13.*.*")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ExecuteAsyncIntegration
+    public class ExecuteAsyncIntegrationV13
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         internal static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception exception, in CallTargetState state)
-            where TExecutionResult : IExecutionResult
+            where TExecutionResult : IExecutionResultV13
         {
             Scope scope = state.Scope;
             if (scope is null)
@@ -66,10 +66,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 {
                     scope.Span?.SetException(exception);
                 }
-                else if (executionResult != null && executionResult.Errors != null)
+
+                /* else if (executionResult != null && executionResult.Errors != null)
                 {
                     HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, HotChocolateCommon.ErrorType, executionResult.Errors);
                 }
+                */
             }
             finally
             {
