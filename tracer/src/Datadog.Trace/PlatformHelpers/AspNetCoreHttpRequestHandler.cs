@@ -182,13 +182,6 @@ namespace Datadog.Trace.PlatformHelpers
                         CaptureDumpAndFail("wrong header");
                     }
                 }
-                else if (httpContext.Request.Path.ToString().Contains("not-found"))
-                {
-                    if (string.IsNullOrEmpty(span.Tags.GetTag("http.status_code")))
-                    {
-                        CaptureDumpAndFail("missing status code");
-                    }
-                }
 
                 if (security.Settings.Enabled)
                 {
