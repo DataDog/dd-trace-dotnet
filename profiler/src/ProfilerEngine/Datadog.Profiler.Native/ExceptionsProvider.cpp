@@ -30,7 +30,7 @@ ExceptionsProvider::ExceptionsProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
@@ -196,7 +196,7 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
 
 UpscalingInfo ExceptionsProvider::GetInfo()
 {
-    return {GetValueOffsets(SampleTypeDefinitions.size()), Sample::ExceptionTypeLabel, _sampler.GetGroups()};
+    return {GetValueOffsets(), Sample::ExceptionTypeLabel, _sampler.GetGroups()};
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()

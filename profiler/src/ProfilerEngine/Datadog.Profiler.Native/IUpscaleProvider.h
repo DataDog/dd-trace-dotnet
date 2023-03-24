@@ -14,7 +14,7 @@ using UpscaleStringGroup = UpscaleGroupInfo<std::string>;
 struct UpscalingInfo
 {
 public:
-    std::vector<std::uintptr_t> Offsets;
+    std::vector<std::uintptr_t> const& Offsets;
     std::string LabelName;
     std::vector<UpscaleStringGroup> UpscaleGroups;
 };

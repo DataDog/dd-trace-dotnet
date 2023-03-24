@@ -31,7 +31,7 @@ ContentionProvider::ContentionProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval(), false),
@@ -119,5 +119,5 @@ void ContentionProvider::OnContention(double contentionDurationNs)
 
 UpscalingInfo ContentionProvider::GetInfo()
 {
-    return {GetValueOffsets(SampleTypeDefinitions.size()), RawContentionSample::BucketLabelName, _sampler.GetGroups()};
+    return {GetValueOffsets(), RawContentionSample::BucketLabelName, _sampler.GetGroups()};
 }

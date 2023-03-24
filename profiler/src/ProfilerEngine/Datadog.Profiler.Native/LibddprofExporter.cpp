@@ -461,9 +461,8 @@ void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vecto
         {
             ddog_CharSlice labelName = FfiHelper::StringToCharSlice(upscalingInfo.LabelName);
             ddog_CharSlice groupName = FfiHelper::StringToCharSlice(group.Group);
-            ddog_prof_Profile_UpscalingInfo info = {DDOG_PROF_PROFILE_UPSCALING_INFO_PROPORTIONAL, {group.SampledCount, group.RealCount}};
 
-            auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule(profile, offsets_slice, labelName, groupName, info);
+            auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(profile, offsets_slice, labelName, groupName, group.SampledCount, group.RealCount);
             if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
             {
                 auto errorMessage = ddog_Error_message(&upscalingRuleAdd.err);
