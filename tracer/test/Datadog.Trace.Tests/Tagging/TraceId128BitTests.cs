@@ -20,6 +20,7 @@ public class TraceId128BitTests
             serviceName: null,
             origin: "rum");
 
+        context.AddMissingPropagatedTags();
         context.PropagatedTags.GetTag(Tags.Propagated.TraceIdUpper).Should().Be("1234567890abcdef");
     }
 
@@ -33,6 +34,21 @@ public class TraceId128BitTests
             serviceName: null,
             origin: "rum");
 
-        context.PropagatedTags.GetTag(Tags.Propagated.TraceIdUpper).Should().BeNull();
+        context.AddMissingPropagatedTags();
+        context.PropagatedTags.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(0x1234567890abcdef, 0x1122334455667788, "1234567890abcdef1122334455667788")]
+    [InlineData(0, 0x1122334455667788, "00000000000000001122334455667788")]
+    public void TraceIdSpanTag(ulong upper, ulong lower, string expected)
+    {
+        var traceId = new TraceId(upper, lower);
+        var trace = new TraceContext(tracer: null);
+        var propagatedContext = new SpanContext(traceId, spanId: 1, samplingPriority: null, serviceName: null, origin: null);
+        var childContext = new SpanContext(propagatedContext, trace, serviceName: null);
+        var span = new Span(childContext, start: null);
+
+        span.GetTag(Tags.TraceId).Should().Be(expected);
     }
 }

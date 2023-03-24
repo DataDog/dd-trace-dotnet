@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Propagators
             var traceId = (TraceId)123456789;
             const ulong spanId = 987654321;
             const int samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: null);
             var headers = new Mock<IHeadersCollection>();
 
             B3Propagator.Inject(context, headers.Object);
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Propagators
             var traceId = (TraceId)0x00000000075bcd15; // 123456789
             ulong spanId = 0x000000003ade68b1; // 987654321;
             var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: null);
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
@@ -81,6 +81,32 @@ namespace Datadog.Trace.Tests.Propagators
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
             newHeaders.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void CreateHeaderWith64BitTraceId()
+        {
+            var traceId = (TraceId)0x00000000075bcd15; // 123456789
+            ulong spanId = 0x000000003ade68b1;         // 987654321;
+            var samplingPriority = SamplingPriorityValues.UserKeep;
+            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: null);
+
+            B3SingleHeaderContextPropagator.CreateHeader(context)
+                                           .Should()
+                                           .Be("000000000000000000000000075bcd15-000000003ade68b1-1");
+        }
+
+        [Fact]
+        public void CreateHeaderWith128BitTraceId()
+        {
+            var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
+            ulong spanId = 0x000000003ade68b1;
+            var samplingPriority = SamplingPriorityValues.AutoReject;
+            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: null);
+
+            B3SingleHeaderContextPropagator.CreateHeader(context)
+                                           .Should()
+                                           .Be("1234567890abcdef1122334455667788-000000003ade68b1-0");
         }
 
         [Fact]
@@ -137,8 +163,7 @@ namespace Datadog.Trace.Tests.Propagators
         public void ExtractAndInject_PreserveOriginalTraceId()
         {
             var traceId = new TraceId(0x0af7651916cd43dd, 0x8448eb211c80319c);
-            const string spanId = "00f067aa0ba902b7";
-            var expectedTraceParent = $"{traceId}-{spanId}-1";
+            var expectedTraceParent = "0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-1";
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
 
             headers.Setup(h => h.GetValues("b3"))
