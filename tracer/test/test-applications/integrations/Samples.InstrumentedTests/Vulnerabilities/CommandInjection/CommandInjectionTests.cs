@@ -141,8 +141,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
         process.StartInfo.FileName = taintedProcessName;
         process.StartInfo.Arguments = untaintedArgument;
         TestProcessCall(() => process.Start());
-        // AssertVulnerable(vulnerabilityType, taintedProcessName + " " + untaintedArgument);
-        AssertVulnerable();
+        AssertVulnerable(vulnerabilityType, taintedProcessName + " " + untaintedArgument);
     }
 
     [Fact]

@@ -145,20 +145,15 @@ public class InstrumentationTestsBase
         }
     }
 
-    protected void AssertVulnerable(string type, string evidence = "")
+    protected void AssertVulnerable(string expectedType, string expectedEvidence = "")
     {
-        var spans = GetGeneratedSpans(_traceContext);
-        var vulnerabilitySpan = spans.First(x => GetTag(x, "_dd.iast.enabled") != null);
-        var json = GetTag(vulnerabilitySpan, "_dd.iast.json");
-        var vulnerabilyList = JsonConvert.DeserializeObject<VulnerabilityList>(json.ToString());
-        vulnerabilyList.Vulnerabilities.Count.Should().Be(1);
-
-        if (evidence != string.Empty)
-        {
-            vulnerabilyList.Vulnerabilities[0].Evidence.Value.Should().Be(evidence);
-        }
-
-        vulnerabilyList.Vulnerabilities[0].type.Should().Be(type);
+        var vulnerabilityList = GetGeneratedVulnerabilities();
+        vulnerabilityList.Count.Should().Be(1);
+        var vulnerabilityType = _vulnerabilityTypeProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
+        vulnerabilityType.Should().Be(expectedType);
+        var evidence = _evidenceProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
+        var evidenceValue = _evidenceValueField.GetValue(evidence);
+        evidenceValue.Should().Be(expectedEvidence);        
     }
 
     protected void AssertNotVulnerable()
